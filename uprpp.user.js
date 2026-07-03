@@ -47,10 +47,13 @@
    * @property {string} buttonHoverBg  - 按钮悬停背景
    * @property {string} buttonShadow   - 按钮阴影
    * @property {string} linkColor      - 链接颜色
+   * @property {string} tabBg          - 登录方式标签默认背景
+   * @property {string} tabTextColor   - 登录方式标签默认文字色
    * @property {string} tabActiveBg    - 登录方式切换标签活跃背景
    * @property {string} tabActiveColor - 登录方式切换标签活跃文字色
    * @property {string} fontFamily     - 全局字体
    * @property {string} fontImport     - Google Fonts / 字体 CDN 的 @import URL（可选）
+   * @property {string|null} logoUrl   - 自定义 logo 图片 URL（可选，null 保留原始校徽）
    */
 
   const ThemeManager = {
@@ -120,15 +123,32 @@
         ? `background-image: ${theme.bodyBgImage}; background-size: cover; background-position: center; background-repeat: no-repeat;`
         : '';
 
+      const logoCSS = theme.logoUrl
+        ? `#formContent > div.fadeIn.first svg { display: none !important; }
+           #formContent > div.fadeIn.first::after {
+             content: '';
+             display: block;
+             width: 80px; height: 80px;
+             margin: 0 auto;
+             background: url('${theme.logoUrl}') center/contain no-repeat;
+           }`
+        : '';
+
       const css = `
         ${fontImport}
 
-        /* === 页面背景 === */
-        body {
+        /* === 页面背景（消除原始蓝色） === */
+        html, body {
           background: ${theme.bodyBg} !important;
           ${bodyBgImage}
           font-family: ${theme.fontFamily} !important;
+        }
+        body {
           min-height: 100vh;
+        }
+        /* 消除 wrapper 可能的背景残留 */
+        .wrapper {
+          background: transparent !important;
         }
 
         /* === 登录卡片 === */
@@ -152,41 +172,57 @@
         }
 
         /* === 登录方式切换标签 === */
-        #formContent > div:nth-child(2) {
+        /* 定位：h2 → div.fadeIn.first(SVG) → div(标签容器) */
+        #formContent > h2.active + div + div {
           display: flex !important;
           gap: 0 !important;
           margin-bottom: 24px !important;
         }
-        #formContent > div:nth-child(2) > div:first-child {
+        #formContent > h2.active + div + div > div:first-child {
           flex: 1 !important;
           width: auto !important;
           text-align: center !important;
           background: ${theme.tabActiveBg} !important;
           color: ${theme.tabActiveColor} !important;
-          border-radius: 8px 0 0 0 !important;
+          border-radius: 0 !important;
           cursor: pointer;
-          font-weight: 500;
+          font-weight: 600;
+          font-size: 15px;
           letter-spacing: 1px;
+          padding: 14px 10px !important;
+          height: auto !important;
+          line-height: 1.4;
         }
         #tocas {
           flex: 1 !important;
           width: auto !important;
           text-align: center !important;
-          background: rgba(0,0,0,0.03) !important;
-          border-radius: 0 8px 0 0 !important;
+          background: ${theme.tabBg || 'rgba(0,0,0,0.03)'} !important;
+          border-radius: 0 !important;
+          padding: 8px 10px !important;
+          height: auto !important;
         }
         #tocas a {
-          color: ${theme.linkColor} !important;
-          font-weight: 500;
+          color: ${theme.tabTextColor || theme.linkColor} !important;
+          font-weight: 600;
+          font-size: 15px;
           letter-spacing: 1px;
           text-decoration: none;
+          display: inline-block;
+          width: auto !important;
+          height: auto !important;
         }
         #tocas a:hover {
           opacity: 0.8;
         }
+        #tocas a br {
+          display: none;
+        }
         #tocas span {
+          display: block;
           font-size: 12px !important;
           color: #999 !important;
+          margin-top: 4px;
         }
 
         /* === 表单 === */
@@ -301,30 +337,30 @@
           opacity: 0.7;
         }
 
-        /* === 校徽 SVG 优化 === */
+        /* === 校徽 / Logo === */
         #formContent > div.fadeIn.first {
-          text-align: center;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          width: 100% !important;
           margin-bottom: 8px;
           opacity: 0.9;
         }
         #formContent > div.fadeIn.first svg {
           max-width: 160px;
           height: auto;
+          display: block;
+          margin: 0 auto;
         }
+        ${logoCSS}
 
         /* === 卡片入场动效 === */
+        @keyframes uprpp-fadeInUp {
+          from { opacity: 0; transform: translateY(24px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
         #formContent {
           animation: uprpp-fadeInUp 0.6s ease-out;
-        }
-        @keyframes uprpp-fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(24px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
         }
       `;
 
@@ -361,6 +397,8 @@
     buttonHoverBg: '#3d5bd9',
     buttonShadow: '0 4px 14px rgba(79,110,246,0.3)',
     linkColor: '#7c8db5',
+    tabBg: '#f5f6f8',
+    tabTextColor: '#7c8db5',
     tabActiveBg: '#f0f4ff',
     tabActiveColor: '#4f6ef6',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
@@ -389,6 +427,8 @@
     buttonHoverBg: '#6678e8',
     buttonShadow: '0 4px 14px rgba(123,140,255,0.3)',
     linkColor: '#6b6b8a',
+    tabBg: '#1e1e35',
+    tabTextColor: '#6b6b8a',
     tabActiveBg: '#252540',
     tabActiveColor: '#7b8cff',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
@@ -417,6 +457,8 @@
     buttonHoverBg: '#a33025',
     buttonShadow: '0 4px 14px rgba(192,57,43,0.3)',
     linkColor: '#b0887f',
+    tabBg: '#faf5f5',
+    tabTextColor: '#b0887f',
     tabActiveBg: '#fef5f5',
     tabActiveColor: '#c0392b',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", serif',
