@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         UPR++ 教务系统美化
 // @namespace    https://github.com/hanako/upr-plus
-// @version      0.3.3
+// @version      0.3.4
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -118,67 +118,151 @@
     formContent.insertAdjacentHTML('afterbegin', `
     <div id="uprpp-root">
       <style>
-        #uprpp-root,#uprpp-root *{box-sizing:border-box;margin:0;}
-        @keyframes uf{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-        #uprpp-root{animation:uf .45s ease-out}
+        #uprpp-root,#uprpp-root *{box-sizing:border-box;}
+        #uprpp-root *{border:0;outline:0;}
 
         /* 全局背景同步主题 */
         html,body{background:var(--bg)!important;min-height:100vh}
         .wrapper{background:transparent!important}
 
+        /* 版本水印 */
+        #uprpp-root::after{
+          content:'UPR++ v0.3.4';
+          position:fixed;bottom:14px;right:18px;
+          font-size:11px;color:var(--text-secondary);
+          opacity:.5;letter-spacing:1px;pointer-events:none;
+        }
+
+        /* 卡片入场 */
+        @keyframes uf{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        .uc{animation:uf .4s ease-out}
+
         .uc{
           background:var(--surface);
           border-radius:var(--radius);
           box-shadow:var(--shadow);
-          overflow:hidden;
+          padding:48px 44px 36px;
         }
-        .ub{
-          text-align:center;padding:32px 36px 20px;
-        }
-        .ub-logo{display:none;width:72px;height:72px;margin:0 auto 20px;opacity:.9}
-        .ub-logo.show{display:block}
-        .ub-logo svg{width:100%!important;height:100%!important;max-width:72px;max-height:72px;display:block}
-        .ub h1{font-size:17px;font-weight:600;color:var(--text);letter-spacing:1px}
-        .ub p{font-size:13px;color:var(--text-secondary);margin-top:4px}
 
-        .ut{display:flex;margin:0 36px 24px;background:var(--input-bg);border-radius:var(--radius-sm);padding:4px;gap:4px}
-        .ut button{flex:1;text-align:center;padding:11px 0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;color:var(--text-secondary);transition:all .2s;border:none;background:transparent;font-family:inherit}
-        .ut button.ac{background:var(--surface);color:var(--text);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+        /* === Brand === */
+        .ub-logo{
+          width:80px;height:80px;margin:0 auto 24px;
+          display:none;
+        }
+        .ub-logo.show{display:flex;align-items:center;justify-content:center}
+        .ub-logo svg{width:100%!important;height:100%!important;display:block}
+        .ub h1{
+          font-size:22px;font-weight:600;color:var(--text);
+          text-align:center;letter-spacing:2px;line-height:1.4;margin:0;
+        }
+        .ub p{
+          font-size:13px;color:var(--text-secondary);
+          text-align:center;margin-top:6px;letter-spacing:1px;
+        }
+
+        /* === Tabs === */
+        .ut{
+          display:flex;margin:36px 0 32px;
+          background:var(--input-bg);border-radius:var(--radius-sm);
+          padding:4px;gap:4px;
+        }
+        .ut button{
+          flex:1;padding:10px 0;
+          border-radius:8px;cursor:pointer;
+          font-size:14px;font-weight:500;
+          color:var(--text-secondary);
+          background:transparent;transition:all .2s;
+          font-family:inherit;
+        }
+        .ut button.ac{
+          background:var(--surface);color:var(--text);
+          font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.05);
+        }
         .ut button:hover:not(.ac){color:var(--text)}
 
-        .ufb{padding:24px 36px 28px}
-        .ufg{margin-bottom:20px;animation:uf .35s ease-out both}
-        .ufg:nth-child(1){animation-delay:.03s}
-        .ufg:nth-child(2){animation-delay:.08s}
-        .ufg:nth-child(3){animation-delay:.13s}
-        .ufl{display:block;font-size:13px;font-weight:500;color:var(--text);margin-bottom:8px}
-        .ui{display:block;width:100%;height:48px;padding:0 15px;background:var(--input-bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:15px;color:var(--text);font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
-        .ui:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px var(--ring)}
+        /* === Form === */
+        .ufg{margin-bottom:20px}
+        .ufg:last-of-type{margin-bottom:0}
+        .ufl{
+          display:block;font-size:13px;font-weight:500;
+          color:var(--text);margin-bottom:8px;letter-spacing:.5px;
+        }
+        .ui{
+          display:block;width:100%;height:46px;padding:0 14px;
+          background:var(--input-bg);
+          border:1.5px solid var(--border);
+          border-radius:var(--radius-sm);
+          font-size:15px;color:var(--text);
+          font-family:inherit;
+          transition:border-color .2s,box-shadow .2s;
+        }
+        .ui:focus{
+          border-color:var(--border-focus);
+          box-shadow:0 0 0 3px var(--ring);
+        }
         .ui::placeholder{color:var(--text-muted)}
 
-        .ucr{display:flex;gap:12px;align-items:stretch}
+        /* 验证码行 */
+        .ucr{display:flex;gap:10px;align-items:flex-end}
         .ucr .ufg{flex:1;margin-bottom:0}
-        .uci{height:48px;border-radius:var(--radius-sm);cursor:pointer;border:1.5px solid var(--border);flex-shrink:0}
+        .uci{
+          height:46px;width:96px;
+          border-radius:var(--radius-sm);
+          cursor:pointer;
+          border:1.5px solid var(--border);
+        }
 
-        .ubtn{display:block;width:100%;height:48px;margin-top:28px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;letter-spacing:3px;transition:all .2s}
-        .ubtn:hover{background:var(--primary-hover);transform:translateY(-1px);box-shadow:0 4px 12px var(--ring)}
+        /* === Button === */
+        .ubtn{
+          display:flex;align-items:center;justify-content:center;
+          width:100%;height:48px;margin-top:28px;
+          background:var(--primary);color:#fff;
+          border-radius:var(--radius-sm);
+          font-size:15px;font-weight:600;
+          font-family:inherit;
+          cursor:pointer;letter-spacing:4px;
+          transition:all .2s;
+        }
+        .ubtn:hover{
+          background:var(--primary-hover);
+          transform:translateY(-1px);
+          box-shadow:0 4px 12px var(--ring);
+        }
         .ubtn:active{transform:translateY(0)}
 
-        .uft{text-align:center;padding:12px 36px 18px;font-size:13px;color:var(--text-secondary)}
-        .uft a{color:var(--text-secondary);text-decoration:none;margin:0 14px;transition:color .2s}
+        /* === Footer === */
+        .uft{
+          display:flex;justify-content:center;gap:20px;
+          margin-top:20px;font-size:13px;
+        }
+        .uft a{
+          color:var(--text-secondary);text-decoration:none;
+          transition:color .2s;
+        }
         .uft a:hover{color:var(--primary)}
 
-        .us{display:flex;justify-content:center;gap:10px;padding:0 36px 22px}
-        .us span{width:10px;height:10px;border-radius:50%;cursor:pointer;border:2px solid var(--border);transition:all .2s}
-        .us span.ac{border-color:var(--primary);background:var(--primary)}
+        /* === 主题 === */
+        .us{
+          display:flex;justify-content:center;gap:8px;margin-top:24px;
+          padding-top:20px;border-top:1px solid var(--border);
+        }
+        .us span{
+          width:22px;height:22px;border-radius:50%;
+          cursor:pointer;border:2px solid var(--border);
+          transition:all .2s;
+        }
+        .us span.ac{
+          border-color:var(--primary);
+          transform:scale(1.15);
+        }
         .us span:hover{border-color:var(--text-secondary)}
       </style>
 
       <div class="uc">
         <div class="ub" id="uprpp-brand">
           <div class="ub-logo">${originalSvg || ''}</div>
-          <h1>${t('四川大学教务管理系统','Sichuan University Academic System')}</h1>
-          <p>${t('学生端','Student Portal')}</p>
+          <h1>${t('四川大学教务管理系统','SCU Academic System')}</h1>
+          <p>${t('学生端 · 欢迎登录','Student Portal · Welcome')}</p>
         </div>
 
         <div class="ut" id="uprpp-tabs">
@@ -202,14 +286,7 @@
             </div>
             <img class="uci" id="uprpp-capimg" src="" alt="Captcha" title="${t('点击刷新','Refresh')}">
           </div>
-          <button class="ubtn" id="uprpp-submit">${t('登  录','Sign In')}</button>
-        </div>
-
-        <div class="ufb" id="uprpp-sso" style="display:none;text-align:center">
-          <p style="font-size:14px;color:var(--text-secondary);margin-bottom:24px;line-height:1.8">
-            ${t('点击下方按钮跳转到<br>四川大学统一身份认证平台','Click below to redirect to<br>SCU Unified Authentication')}
-          </p>
-          <button class="ubtn" id="uprpp-sso-btn">${t('前往统一认证','Go to SSO')}</button>
+          <button class="ubtn" id="uprpp-submit">${t('登 录','Sign In')}</button>
         </div>
 
         <div class="uft">
@@ -218,9 +295,9 @@
         </div>
 
         <div class="us" id="uprpp-dots">
-          <span data-theme="default" title="简约白"></span>
-          <span data-theme="dark" title="深邃暗"></span>
-          <span data-theme="scu-red" title="川大红"></span>
+          <span data-theme="default" title="简约白" style="background:#1E3A5F"></span>
+          <span data-theme="dark" title="深邃暗" style="background:#93A8C7"></span>
+          <span data-theme="scu-red" title="川大红" style="background:#B53434"></span>
         </div>
       </div>
     </div>`);
@@ -317,7 +394,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.UPRPP = {
-    version: '0.3.3',
+    version: '0.3.4',
     showLogo(show) {
       const el = document.querySelector('#uprpp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
