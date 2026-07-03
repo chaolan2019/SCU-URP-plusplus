@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         UPR++ 教务系统美化
 // @namespace    https://github.com/hanako/upr-plus
-// @version      0.1.0
-// @description  四川大学 URP 教务系统美化插件，支持多主题切换
+// @version      0.2.0
+// @description  四川大学 URP 教务系统美化插件，多主题设计系统 | Design System: UI UX Pro Max
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
 // @match        http://202.115.47.141/*
@@ -17,87 +17,72 @@
   'use strict';
 
   // ============================================================
-  // 主题系统：ThemeManager
-  // 每个主题是一个 plain object，包含颜色、字体、间距等属性
-  // 注册新主题调用 UPRPP.theme.register(name, config)
-  // 切换主题调用 UPRPP.theme.apply(name)
+  // 设计系统：Design Token 架构
+  // 基于 UI UX Pro Max 方法论 — Minimalism & Swiss Style
+  //
+  // 色彩模型：Primary / Secondary / Background / Foreground /
+  //          Card / Muted / Border / Accent / Destructive / Ring
+  // 风格原则：清洁、功能优先、网格对齐、高对比度
+  // 效果策略：微阴影 + 200ms 过渡 + 清晰聚焦环
   // ============================================================
 
-  const THEME_STORAGE_KEY = 'uprpp_theme';
+  const THEME_STORAGE_KEY = 'uprpp_theme_v2';
 
   /**
-   * @typedef {Object} ThemeConfig
-   * @property {string} name           - 主题标识（英文）
-   * @property {string} displayName    - 中文显示名
-   * @property {string} bodyBg         - 页面背景
-   * @property {string} bodyBgImage    - 背景图（可选，CSS url() 内容）
-   * @property {string} cardBg         - 登录卡片背景
-   * @property {string} cardRadius     - 卡片圆角
-   * @property {string} cardShadow     - 卡片阴影
-   * @property {string} titleColor     - 标题颜色
-   * @property {string} inputBg        - 输入框背景
-   * @property {string} inputBorder    - 输入框边框
-   * @property {string} inputRadius    - 输入框圆角
-   * @property {string} inputColor     - 输入框文字颜色
-   * @property {string} inputFocusBorder - 输入框聚焦边框
-   * @property {string} inputFocusShadow - 输入框聚焦阴影
-   * @property {string} buttonBg       - 按钮背景
-   * @property {string} buttonColor    - 按钮文字颜色
-   * @property {string} buttonRadius   - 按钮圆角
-   * @property {string} buttonHoverBg  - 按钮悬停背景
-   * @property {string} buttonShadow   - 按钮阴影
-   * @property {string} linkColor      - 链接颜色
-   * @property {string} tabBg          - 登录方式标签默认背景
-   * @property {string} tabTextColor   - 登录方式标签默认文字色
-   * @property {string} tabActiveBg    - 登录方式切换标签活跃背景
-   * @property {string} tabActiveColor - 登录方式切换标签活跃文字色
-   * @property {string} fontFamily     - 全局字体
-   * @property {string} fontImport     - Google Fonts / 字体 CDN 的 @import URL（可选）
-   * @property {string|null} logoUrl   - 自定义 logo 图片 URL（可选，null 保留原始校徽）
+   * 完整设计 token 集
+   * @typedef {Object} DesignTokens
+   * @property {Object} colors
+   * @property {string} colors.primary       - 主色（按钮、活跃标签）
+   * @property {string} colors.onPrimary     - 主色上的文字
+   * @property {string} colors.secondary     - 辅色
+   * @property {string} colors.background    - 页面背景
+   * @property {string} colors.foreground    - 前景文字色
+   * @property {string} colors.card          - 卡片背景
+   * @property {string} colors.cardShadow    - 卡片阴影
+   * @property {string} colors.muted         - 弱化背景（输入框等）
+   * @property {string} colors.mutedForeground - 弱化文字（提示、链接等）
+   * @property {string} colors.border        - 边框色
+   * @property {string} colors.accent        - 强调色（可选，CTA）
+   * @property {string} colors.destructive   - 危险/错误色
+   * @property {string} colors.ring          - 聚焦环
+   * @property {Object} typography
+   * @property {string} typography.fontFamily
+   * @property {string} [typography.fontImport]
+   * @property {Object} shape
+   * @property {string} shape.borderRadius   - 通用圆角
+   * @property {string} shape.buttonRadius   - 按钮圆角
+   * @property {Object} [meta]
+   * @property {string} [meta.logoUrl]       - 自定义 logo
+   * @property {string} [meta.bodyBgImage]   - 背景图 CSS
    */
 
   const ThemeManager = {
-    /** @type {Map<string, ThemeConfig>} */
     _themes: new Map(),
     _current: null,
     _styleEl: null,
 
-    /**
-     * 注册一个主题
-     * @param {string} name
-     * @param {ThemeConfig} config
-     */
-    register(name, config) {
-      config.name = name;
-      this._themes.set(name, config);
+    register(name, displayName, tokens) {
+      tokens.name = name;
+      tokens.displayName = displayName;
+      this._themes.set(name, tokens);
     },
 
-    /**
-     * 应用指定主题（自动保存到本地存储）
-     * @param {string} name
-     */
     apply(name) {
       const theme = this._themes.get(name);
       if (!theme) {
-        console.warn(`[UPR++] 主题 "${name}" 未注册，使用默认主题`);
+        console.warn(`[UPR++] 主题 "${name}" 未注册`);
         return this.apply('default');
       }
       this._current = name;
       GM_setValue(THEME_STORAGE_KEY, name);
       this._injectCSS(theme);
-      console.log(`[UPR++] 已应用主题: ${theme.displayName}`);
+      console.log(`[UPR++] 已应用: ${theme.displayName}`);
     },
 
-    /**
-     * 获取当前主题名称
-     */
     getCurrent() {
       return this._current;
     },
 
-    /**
-     * 获取所有已注册主题
-     */
     list() {
       return Array.from(this._themes.values()).map(t => ({
         name: t.name,
@@ -106,63 +91,52 @@
       }));
     },
 
-    /**
-     * 注入 CSS
-     */
-    _injectCSS(theme) {
-      // 移除旧样式
-      if (this._styleEl) {
-        this._styleEl.remove();
-      }
+    _injectCSS(t) {
+      if (this._styleEl) this._styleEl.remove();
 
-      const fontImport = theme.fontImport
-        ? `@import url('${theme.fontImport}');`
+      const c = t.colors;
+      const ty = t.typography;
+      const sh = t.shape;
+      const m = t.meta || {};
+
+      const fontImport = ty.fontImport ? `@import url('${ty.fontImport}');` : '';
+      const bgImage = m.bodyBgImage
+        ? `background-image: ${m.bodyBgImage}; background-size: cover; background-position: center; background-repeat: no-repeat;`
         : '';
 
-      const bodyBgImage = theme.bodyBgImage
-        ? `background-image: ${theme.bodyBgImage}; background-size: cover; background-position: center; background-repeat: no-repeat;`
-        : '';
-
-      const logoCSS = theme.logoUrl
+      const logoCSS = m.logoUrl
         ? `#formContent > div.fadeIn.first svg { display: none !important; }
            #formContent > div.fadeIn.first::after {
-             content: '';
-             display: block;
-             width: 80px; height: 80px;
-             margin: 0 auto;
-             background: url('${theme.logoUrl}') center/contain no-repeat;
+             content: ''; display: block; width: 80px; height: 80px; margin: 0 auto;
+             background: url('${m.logoUrl}') center/contain no-repeat;
            }`
         : '';
 
-      const css = `
+      const css = /* css */ `
         ${fontImport}
 
-        /* === 页面背景（消除原始蓝色） === */
+        /* ========== 全局背景 ========== */
         html, body {
-          background: ${theme.bodyBg} !important;
-          ${bodyBgImage}
-          font-family: ${theme.fontFamily} !important;
+          background: ${c.background} !important;
+          ${bgImage}
+          font-family: ${ty.fontFamily} !important;
+          color: ${c.foreground};
         }
-        body {
-          min-height: 100vh;
-        }
-        /* 消除 wrapper 可能的背景残留 */
-        .wrapper {
-          background: transparent !important;
-        }
+        body { min-height: 100vh; }
+        .wrapper { background: transparent !important; }
 
-        /* === 登录卡片 === */
+        /* ========== 登录卡片 ========== */
         #formContent {
-          background: ${theme.cardBg} !important;
-          border-radius: ${theme.cardRadius} !important;
-          box-shadow: ${theme.cardShadow} !important;
+          background: ${c.card} !important;
+          border-radius: ${sh.borderRadius} !important;
+          box-shadow: ${c.cardShadow} !important;
           overflow: hidden;
           transition: box-shadow 0.3s ease;
         }
 
-        /* === 标题 === */
+        /* ========== 标题 ========== */
         #formContent > h2.active {
-          color: ${theme.titleColor} !important;
+          color: ${c.foreground} !important;
           font-size: 18px !important;
           font-weight: 600 !important;
           text-align: center;
@@ -171,8 +145,7 @@
           letter-spacing: 2px;
         }
 
-        /* === 登录方式切换标签 === */
-        /* 定位：h2 → div.fadeIn.first(SVG) → div(标签容器) */
+        /* ========== 登录方式标签 ========== */
         #formContent > h2.active + div + div {
           display: flex !important;
           gap: 0 !important;
@@ -182,8 +155,8 @@
           flex: 1 !important;
           width: auto !important;
           text-align: center !important;
-          background: ${theme.tabActiveBg} !important;
-          color: ${theme.tabActiveColor} !important;
+          background: ${c.primary} !important;
+          color: ${c.onPrimary} !important;
           border-radius: 0 !important;
           cursor: pointer;
           font-weight: 600;
@@ -197,13 +170,13 @@
           flex: 1 !important;
           width: auto !important;
           text-align: center !important;
-          background: ${theme.tabBg || 'rgba(0,0,0,0.03)'} !important;
+          background: ${c.muted} !important;
           border-radius: 0 !important;
           padding: 8px 10px !important;
           height: auto !important;
         }
         #tocas a {
-          color: ${theme.tabTextColor || theme.linkColor} !important;
+          color: ${c.mutedForeground} !important;
           font-weight: 600;
           font-size: 15px;
           letter-spacing: 1px;
@@ -212,30 +185,20 @@
           width: auto !important;
           height: auto !important;
         }
-        #tocas a:hover {
-          opacity: 0.8;
-        }
-        #tocas a br {
-          display: none;
-        }
+        #tocas a:hover { opacity: 0.8; }
+        #tocas a br { display: none; }
         #tocas span {
           display: block;
           font-size: 12px !important;
-          color: #999 !important;
+          color: ${c.mutedForeground} !important;
           margin-top: 4px;
         }
 
-        /* === 表单 === */
-        .form-signin {
-          padding: 0 32px !important;
-        }
+        /* ========== 表单 ========== */
+        .form-signin { padding: 0 32px !important; }
+        .form-signin > input[type="hidden"] { display: none; }
 
-        /* 隐藏不需要的 hidden input */
-        .form-signin > input[type="hidden"] {
-          display: none;
-        }
-
-        /* === 输入框 === */
+        /* ========== 输入框 ========== */
         #input_username,
         #input_password,
         #input_checkcode {
@@ -243,107 +206,93 @@
           height: 48px !important;
           margin: 8px 32px !important;
           padding: 0 16px !important;
-          background: ${theme.inputBg} !important;
-          border: ${theme.inputBorder} !important;
-          border-radius: ${theme.inputRadius} !important;
-          color: ${theme.inputColor} !important;
+          background: ${c.muted} !important;
+          border: 2px solid ${c.border} !important;
+          border-radius: ${sh.borderRadius} !important;
+          color: ${c.foreground} !important;
           font-size: 15px !important;
-          font-family: ${theme.fontFamily} !important;
-          transition: border-color 0.25s, box-shadow 0.25s !important;
+          font-family: ${ty.fontFamily} !important;
+          transition: border-color 0.2s, box-shadow 0.2s !important;
           outline: none !important;
           box-sizing: border-box !important;
         }
-
         #input_username::placeholder,
         #input_password::placeholder,
         #input_checkcode::placeholder,
         .form-signin input::placeholder {
-          color: #b0b0b0 !important;
+          color: ${c.mutedForeground} !important;
         }
-
         #input_username:focus,
         #input_password:focus,
         #input_checkcode:focus {
-          border: ${theme.inputFocusBorder} !important;
-          box-shadow: ${theme.inputFocusShadow} !important;
-          background: #fff !important;
+          border: 2px solid ${c.ring} !important;
+          box-shadow: 0 0 0 3px ${c.ring}22 !important;
         }
 
-        /* === 验证码图片 === */
+        /* ========== 验证码图片 ========== */
         .form-signin img {
           border-radius: 6px !important;
           margin-left: 8px !important;
           cursor: pointer;
           height: 48px !important;
           vertical-align: middle !important;
-          background: ${theme.inputBg} !important;
+          background: ${c.muted} !important;
           padding: 2px;
         }
 
-        /* === 登录按钮 === */
+        /* ========== 登录按钮 ========== */
         #loginButton {
           display: block !important;
           width: calc(100% - 64px) !important;
           height: 48px !important;
           margin: 24px 32px !important;
           padding: 0 !important;
-          background: ${theme.buttonBg} !important;
-          color: ${theme.buttonColor} !important;
+          background: ${c.primary} !important;
+          color: ${c.onPrimary} !important;
           border: none !important;
-          border-radius: ${theme.buttonRadius} !important;
+          border-radius: ${sh.buttonRadius} !important;
           font-size: 16px !important;
           font-weight: 600 !important;
-          font-family: ${theme.fontFamily} !important;
+          font-family: ${ty.fontFamily} !important;
           letter-spacing: 4px !important;
           cursor: pointer !important;
-          transition: all 0.25s ease !important;
-          box-shadow: ${theme.buttonShadow} !important;
+          transition: all 0.2s ease !important;
+          box-shadow: 0 4px 14px ${c.primary}44 !important;
         }
         #loginButton:hover {
-          background: ${theme.buttonHoverBg} !important;
+          filter: brightness(0.9);
           transform: translateY(-1px);
-          box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
+          box-shadow: 0 6px 20px ${c.primary}55 !important;
         }
-        #loginButton:active {
-          transform: translateY(0);
-        }
+        #loginButton:active { transform: translateY(0); }
 
-        /* === 表单内链接（EN / 忘记密码） === */
+        /* ========== 表单内链接 ========== */
         .form-signin > a {
-          color: ${theme.linkColor} !important;
+          color: ${c.mutedForeground} !important;
           text-decoration: none !important;
           font-size: 13px !important;
           margin: 0 8px !important;
         }
-        .form-signin > a:hover {
-          opacity: 0.7;
-        }
+        .form-signin > a:hover { opacity: 0.7; }
 
-        /* === 隐藏忘记密码弹窗表单 === */
-        #to_modify_pwd {
-          display: none !important;
-        }
-
-        /* === 底部 === */
+        /* ========== 底部 ========== */
         #formFooter {
-          background: ${theme.cardBg} !important;
+          background: ${c.card} !important;
           text-align: center !important;
           padding: 16px 0 24px 0 !important;
-          color: ${theme.linkColor} !important;
+          color: ${c.mutedForeground} !important;
           font-size: 12px !important;
         }
         #formFooter a {
-          color: ${theme.linkColor} !important;
+          color: ${c.mutedForeground} !important;
           text-decoration: none !important;
           font-size: 13px !important;
           margin: 0 12px !important;
           transition: opacity 0.2s;
         }
-        #formFooter a:hover {
-          opacity: 0.7;
-        }
+        #formFooter a:hover { opacity: 0.7; }
 
-        /* === 校徽 / Logo === */
+        /* ========== 校徽 / Logo ========== */
         #formContent > div.fadeIn.first {
           display: flex;
           justify-content: center;
@@ -360,16 +309,20 @@
         }
         ${logoCSS}
 
-        /* === 隐藏页面上其他孤立元素 === */
-        #schoolId {
-          display: none !important;
-        }
+        /* ========== 隐藏冗余元素 ========== */
+        #to_modify_pwd, #schoolId { display: none !important; }
+
+        /* ========== 入场动效 ========== */
         @keyframes uprpp-fadeInUp {
           from { opacity: 0; transform: translateY(24px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        #formContent {
-          animation: uprpp-fadeInUp 0.6s ease-out;
+        #formContent { animation: uprpp-fadeInUp 0.5s ease-out; }
+
+        /* ========== 聚焦环（无障碍） ========== */
+        *:focus-visible {
+          outline: 2px solid ${c.ring} !important;
+          outline-offset: 2px;
         }
       `;
 
@@ -381,97 +334,85 @@
   };
 
   // ============================================================
-  // 内置主题
+  // 内置主题（基于 UI UX Pro Max 设计 token 体系）
   // ============================================================
 
-  // 主题 1：默认（现代简约 · 浅色）
-  ThemeManager.register('default', {
-    name: 'default',
-    displayName: '简约白',
-    bodyBg: '#f0f4f8',
-    bodyBgImage: null,
-    cardBg: '#ffffff',
-    cardRadius: '16px',
-    cardShadow: '0 4px 24px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)',
-    titleColor: '#1a1a2e',
-    inputBg: '#f7f8fa',
-    inputBorder: '2px solid #e8ecf1',
-    inputRadius: '10px',
-    inputColor: '#1a1a2e',
-    inputFocusBorder: '2px solid #4f6ef6',
-    inputFocusShadow: '0 0 0 3px rgba(79,110,246,0.12)',
-    buttonBg: '#4f6ef6',
-    buttonColor: '#ffffff',
-    buttonRadius: '10px',
-    buttonHoverBg: '#3d5bd9',
-    buttonShadow: '0 4px 14px rgba(79,110,246,0.3)',
-    linkColor: '#7c8db5',
-    tabBg: '#f5f6f8',
-    tabTextColor: '#7c8db5',
-    tabActiveBg: '#f0f4ff',
-    tabActiveColor: '#4f6ef6',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
-    fontImport: null,
+  // ---------- 主题 1：简约白（Educational App 调色板 #9）----------
+  ThemeManager.register('default', '简约白', {
+    colors: {
+      primary: '#4F46E5',        // Indigo 主色
+      onPrimary: '#FFFFFF',
+      secondary: '#818CF8',
+      background: '#EEF2FF',     // 极浅 Indigo 背景
+      foreground: '#1E1B4B',     // 深 Indigo 文字
+      card: '#FFFFFF',
+      cardShadow: '0 4px 24px rgba(79,70,229,0.08), 0 0 0 1px rgba(0,0,0,0.04)',
+      muted: '#EBEEF8',          // 弱化底
+      mutedForeground: '#64748B',
+      border: '#C7D2FE',
+      accent: '#EA580C',         // Orange CTA
+      destructive: '#DC2626',
+      ring: '#4F46E5',
+    },
+    typography: {
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif',
+    },
+    shape: {
+      borderRadius: '12px',
+      buttonRadius: '10px',
+    },
   });
 
-  // 主题 2：暗色模式
-  ThemeManager.register('dark', {
-    name: 'dark',
-    displayName: '深邃暗',
-    bodyBg: '#0f0f1a',
-    bodyBgImage: null,
-    cardBg: '#1a1a2e',
-    cardRadius: '16px',
-    cardShadow: '0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05)',
-    titleColor: '#e8e8f0',
-    inputBg: '#252540',
-    inputBorder: '2px solid #2e2e48',
-    inputRadius: '10px',
-    inputColor: '#e8e8f0',
-    inputFocusBorder: '2px solid #7b8cff',
-    inputFocusShadow: '0 0 0 3px rgba(123,140,255,0.15)',
-    buttonBg: '#7b8cff',
-    buttonColor: '#ffffff',
-    buttonRadius: '10px',
-    buttonHoverBg: '#6678e8',
-    buttonShadow: '0 4px 14px rgba(123,140,255,0.3)',
-    linkColor: '#6b6b8a',
-    tabBg: '#1e1e35',
-    tabTextColor: '#6b6b8a',
-    tabActiveBg: '#252540',
-    tabActiveColor: '#7b8cff',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
-    fontImport: null,
+  // ---------- 主题 2：深邃暗（OLED Dark Mode + Indigo accent）----------
+  ThemeManager.register('dark', '深邃暗', {
+    colors: {
+      primary: '#818CF8',        // 淡 Indigo（暗色下不宜太亮）
+      onPrimary: '#0F172A',
+      secondary: '#6366F1',
+      background: '#0F0F1A',     // Deep black
+      foreground: '#E2E8F0',
+      card: '#1A1A2E',           // 暗蓝灰卡片
+      cardShadow: '0 4px 24px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04)',
+      muted: '#252540',
+      mutedForeground: '#94A3B8',
+      border: '#334155',
+      accent: '#22C55E',         // Green
+      destructive: '#EF4444',
+      ring: '#818CF8',
+    },
+    typography: {
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif',
+    },
+    shape: {
+      borderRadius: '12px',
+      buttonRadius: '10px',
+    },
   });
 
-  // 主题 3：川大红
-  ThemeManager.register('scu-red', {
-    name: 'scu-red',
-    displayName: '川大红',
-    bodyBg: '#fdf6f5',
-    bodyBgImage: null,
-    cardBg: '#ffffff',
-    cardRadius: '16px',
-    cardShadow: '0 4px 24px rgba(139,31,31,0.08), 0 0 0 1px rgba(139,31,31,0.06)',
-    titleColor: '#8b1f1f',
-    inputBg: '#fefafa',
-    inputBorder: '2px solid #f0d6d6',
-    inputRadius: '10px',
-    inputColor: '#2c1810',
-    inputFocusBorder: '2px solid #c0392b',
-    inputFocusShadow: '0 0 0 3px rgba(192,57,43,0.10)',
-    buttonBg: '#c0392b',
-    buttonColor: '#ffffff',
-    buttonRadius: '10px',
-    buttonHoverBg: '#a33025',
-    buttonShadow: '0 4px 14px rgba(192,57,43,0.3)',
-    linkColor: '#b0887f',
-    tabBg: '#faf5f5',
-    tabTextColor: '#b0887f',
-    tabActiveBg: '#fef5f5',
-    tabActiveColor: '#c0392b',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", serif',
-    fontImport: null,
+  // ---------- 主题 3：川大红（SCU 校色定制）----------
+  ThemeManager.register('scu-red', '川大红', {
+    colors: {
+      primary: '#C0392B',        // 川大红
+      onPrimary: '#FFFFFF',
+      secondary: '#E74C3C',
+      background: '#FDF6F5',     // 暖白底
+      foreground: '#2C1810',
+      card: '#FFFFFF',
+      cardShadow: '0 4px 24px rgba(139,31,31,0.08), 0 0 0 1px rgba(139,31,31,0.05)',
+      muted: '#FEF5F5',
+      mutedForeground: '#B0887F',
+      border: '#F0D6D6',
+      accent: '#8B1F1F',         // 深红
+      destructive: '#DC2626',
+      ring: '#C0392B',
+    },
+    typography: {
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Noto Serif SC", serif',
+    },
+    shape: {
+      borderRadius: '12px',
+      buttonRadius: '10px',
+    },
   });
 
   // ============================================================
@@ -487,27 +428,26 @@
 
   function init() {
     if (!isLoginPage()) {
-      console.log('[UPR++] 非登录页面，跳过（后续版本将扩展更多页面）');
+      console.log('[UPR++] 非登录页面，后续版本将扩展');
       return;
     }
 
-    // 读取保存的主题，没有则用默认
     const savedTheme = GM_getValue(THEME_STORAGE_KEY, 'default');
     ThemeManager.apply(savedTheme);
 
-    console.log(
-      `[UPR++] 登录页美化已加载 | 当前主题: ${ThemeManager._themes.get(ThemeManager._current)?.displayName}`,
-    );
-    console.log('[UPR++] 可用主题:', ThemeManager.list().map(t => t.displayName).join(' / '));
-    console.log('[UPR++] 切换主题: UPRPP.theme.apply("主题名")');
+    const t = ThemeManager._themes.get(ThemeManager._current);
+    console.log(`[UPR++] 已加载 | ${t?.displayName} | Minimalism & Swiss Style`);
+    console.log('[UPR++] 可用主题:', ThemeManager.list().map(i => i.displayName).join(' / '));
+    console.log('[UPR++] 切换: UPRPP.theme.apply("主题名")');
+    console.log('[UPR++] 注册新主题: UPRPP.theme.register("id", "名称", designTokens)');
   }
 
   // ============================================================
-  // 暴露全局 API
+  // 全局 API
   // ============================================================
 
   const UPRPP = {
-    version: '0.1.0',
+    version: '0.2.0',
     theme: {
       register: ThemeManager.register.bind(ThemeManager),
       apply: ThemeManager.apply.bind(ThemeManager),
@@ -516,11 +456,9 @@
     },
   };
 
-  // 挂载到页面全局（沙箱模式下必须用 unsafeWindow）
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.UPRPP = UPRPP;
 
-  // 等待 DOM 就绪后执行
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
