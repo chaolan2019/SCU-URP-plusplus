@@ -9,6 +9,7 @@
 // @grant        GM_addStyle
 // @grant        GM_getValue
 // @grant        GM_setValue
+// @grant        unsafeWindow
 // @run-at       document-start
 // ==/UserScript==
 
@@ -447,7 +448,7 @@
       `[UPR++] 登录页美化已加载 | 当前主题: ${ThemeManager._themes.get(ThemeManager._current)?.displayName}`,
     );
     console.log('[UPR++] 可用主题:', ThemeManager.list().map(t => t.displayName).join(' / '));
-    console.log('[UPR++] 切换主题: window.UPRPP.theme.apply("主题名")');
+    console.log('[UPR++] 切换主题: UPRPP.theme.apply("主题名")');
   }
 
   // ============================================================
@@ -464,8 +465,9 @@
     },
   };
 
-  // 挂载到 window，后续其他模块挂载到 UPRPP 下
-  window.UPRPP = UPRPP;
+  // 挂载到页面全局（沙箱模式下必须用 unsafeWindow）
+  const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+  global.UPRPP = UPRPP;
 
   // 等待 DOM 就绪后执行
   if (document.readyState === 'loading') {
