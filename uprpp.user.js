@@ -133,20 +133,20 @@
           overflow:hidden;
         }
         .ub{
-          text-align:center;padding:40px 36px 28px;
+          text-align:center;padding:36px 36px 28px;
         }
-        .ub svg{width:60px;height:60px;display:none;margin:0 auto 14px;opacity:.85}
+        .ub svg{width:80px;height:80px;display:none;margin:0 auto 16px;opacity:.9}
         .ub svg.show{display:block}
-        .ub h1{font-size:17px;font-weight:600;color:var(--text);letter-spacing:1px}
+        .ub h1{font-size:18px;font-weight:600;color:var(--text);letter-spacing:1px}
         .ub p{font-size:13px;color:var(--text-secondary);margin-top:4px}
 
-        .ut{display:flex;margin:0 36px 8px;background:var(--input-bg);border-radius:var(--radius-sm);padding:4px;gap:4px}
+        .ut{display:flex;margin:0 36px 20px;background:var(--input-bg);border-radius:var(--radius-sm);padding:4px;gap:4px}
         .ut button{flex:1;text-align:center;padding:11px 0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;color:var(--text-secondary);transition:all .2s;border:none;background:transparent;font-family:inherit}
         .ut button.ac{background:var(--surface);color:var(--text);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.05)}
         .ut button:hover:not(.ac){color:var(--text)}
 
-        .ufb{padding:28px 36px 32px}
-        .ufg{margin-bottom:18px;animation:uf .35s ease-out both}
+        .ufb{padding:24px 36px 28px}
+        .ufg{margin-bottom:16px;animation:uf .35s ease-out both}
         .ufg:nth-child(1){animation-delay:.03s}
         .ufg:nth-child(2){animation-delay:.08s}
         .ufg:nth-child(3){animation-delay:.13s}
@@ -159,15 +159,15 @@
         .ucr .ufg{flex:1;margin-bottom:0}
         .uci{height:48px;border-radius:var(--radius-sm);cursor:pointer;border:1.5px solid var(--border);flex-shrink:0}
 
-        .ubtn{display:block;width:100%;height:48px;margin-top:24px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;letter-spacing:3px;transition:all .2s}
+        .ubtn{display:block;width:100%;height:48px;margin-top:20px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;letter-spacing:3px;transition:all .2s}
         .ubtn:hover{background:var(--primary-hover);transform:translateY(-1px);box-shadow:0 4px 12px var(--ring)}
         .ubtn:active{transform:translateY(0)}
 
-        .uft{text-align:center;padding:6px 36px 24px;font-size:13px;color:var(--text-secondary)}
+        .uft{text-align:center;padding:8px 36px 20px;font-size:13px;color:var(--text-secondary)}
         .uft a{color:var(--text-secondary);text-decoration:none;margin:0 14px;transition:color .2s}
         .uft a:hover{color:var(--primary)}
 
-        .us{display:flex;justify-content:center;gap:10px;padding:0 36px 26px}
+        .us{display:flex;justify-content:center;gap:10px;padding:0 36px 24px}
         .us span{width:10px;height:10px;border-radius:50%;cursor:pointer;border:2px solid var(--border);transition:all .2s}
         .us span.ac{border-color:var(--primary);background:var(--primary)}
         .us span:hover{border-color:var(--text-secondary)}
