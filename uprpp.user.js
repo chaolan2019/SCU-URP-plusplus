@@ -238,8 +238,7 @@
         /* === 输入框 === */
         #input_username,
         #input_password,
-        .form-signin input[type="text"]:not([id]),
-        .form-signin input[type="password"]:not([id]) {
+        #input_checkcode {
           width: calc(100% - 64px) !important;
           height: 48px !important;
           margin: 8px 32px !important;
@@ -257,44 +256,32 @@
 
         #input_username::placeholder,
         #input_password::placeholder,
+        #input_checkcode::placeholder,
         .form-signin input::placeholder {
           color: #b0b0b0 !important;
         }
 
         #input_username:focus,
         #input_password:focus,
-        .form-signin input[type="text"]:focus,
-        .form-signin input[type="password"]:focus {
+        #input_checkcode:focus {
           border: ${theme.inputFocusBorder} !important;
           box-shadow: ${theme.inputFocusShadow} !important;
           background: #fff !important;
         }
 
-        /* === 验证码行 === */
-        .form-signin input[id=""]:not([type="submit"]):not([type="hidden"]) {
-          width: 60% !important;
-          margin: 8px 32px !important;
-          padding: 0 16px !important;
-          height: 48px !important;
-          background: ${theme.inputBg} !important;
-          border: ${theme.inputBorder} !important;
-          border-radius: ${theme.inputRadius} !important;
-          font-size: 15px !important;
-          outline: none !important;
-          box-sizing: border-box !important;
-        }
-
-        /* 验证码图片 */
+        /* === 验证码图片 === */
         .form-signin img {
           border-radius: 6px !important;
           margin-left: 8px !important;
           cursor: pointer;
           height: 48px !important;
           vertical-align: middle !important;
+          background: ${theme.inputBg} !important;
+          padding: 2px;
         }
 
         /* === 登录按钮 === */
-        .form-signin input[type="submit"] {
+        #loginButton {
           display: block !important;
           width: calc(100% - 64px) !important;
           height: 48px !important;
@@ -312,19 +299,38 @@
           transition: all 0.25s ease !important;
           box-shadow: ${theme.buttonShadow} !important;
         }
-        .form-signin input[type="submit"]:hover {
+        #loginButton:hover {
           background: ${theme.buttonHoverBg} !important;
           transform: translateY(-1px);
           box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
         }
-        .form-signin input[type="submit"]:active {
+        #loginButton:active {
           transform: translateY(0);
         }
 
-        /* === 底部链接 === */
+        /* === 表单内链接（EN / 忘记密码） === */
+        .form-signin > a {
+          color: ${theme.linkColor} !important;
+          text-decoration: none !important;
+          font-size: 13px !important;
+          margin: 0 8px !important;
+        }
+        .form-signin > a:hover {
+          opacity: 0.7;
+        }
+
+        /* === 隐藏忘记密码弹窗表单 === */
+        #to_modify_pwd {
+          display: none !important;
+        }
+
+        /* === 底部 === */
         #formFooter {
+          background: ${theme.cardBg} !important;
           text-align: center !important;
           padding: 16px 0 24px 0 !important;
+          color: ${theme.linkColor} !important;
+          font-size: 12px !important;
         }
         #formFooter a {
           color: ${theme.linkColor} !important;
@@ -354,7 +360,10 @@
         }
         ${logoCSS}
 
-        /* === 卡片入场动效 === */
+        /* === 隐藏页面上其他孤立元素 === */
+        #schoolId {
+          display: none !important;
+        }
         @keyframes uprpp-fadeInUp {
           from { opacity: 0; transform: translateY(24px); }
           to   { opacity: 1; transform: translateY(0); }
