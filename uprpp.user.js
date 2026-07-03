@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         UPR++ 教务系统美化
 // @namespace    https://github.com/hanako/upr-plus
-// @version      0.3.0
-// @description  四川大学 URP 教务系统登录页重建 | Design: UI UX Pro Max | Minimalism & Swiss Style
+// @version      0.3.1
+// @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
 // @match        http://202.115.47.141/*
@@ -10,587 +10,291 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        unsafeWindow
-// @run-at       document-start
+// @run-at       document-end
 // ==/UserScript==
 
 (function () {
   'use strict';
 
-  // ============================================================
-  // 设计 Token（CSS Custom Properties 驱动）
-  // 基于 UI UX Pro Max: Minimalism & Swiss Style
-  // 调色板: Institutional Navy #1E3A5F + Gold #A16207
-  // ============================================================
-
   const THEME_KEY = 'uprpp_theme_v3';
 
-  /**
-   * 主题定义：只需提供 colors 和 typography
-   * shape / spacing 由 base 统一控制
-   */
   const THEMES = {
-
     'default': {
       name: '简约白',
-      colors: {
-        '--uprpp-primary': '#1E3A5F',
-        '--uprpp-primary-hover': '#162D4A',
-        '--uprpp-primary-ghost': '#E8EDF3',
-        '--uprpp-accent': '#A16207',
-        '--uprpp-accent-hover': '#8B5206',
-        '--uprpp-bg': '#F4F6F9',
-        '--uprpp-surface': '#FFFFFF',
-        '--uprpp-surface-hover': '#F8FAFC',
-        '--uprpp-text': '#0F172A',
-        '--uprpp-text-secondary': '#64748B',
-        '--uprpp-text-muted': '#94A3B8',
-        '--uprpp-border': '#E2E8F0',
-        '--uprpp-border-focus': '#1E3A5F',
-        '--uprpp-input-bg': '#F8FAFC',
-        '--uprpp-ring': 'rgba(30,58,95,0.15)',
-        '--uprpp-divider': '#F1F5F9',
-        '--uprpp-shadow-sm': '0 1px 3px rgba(0,0,0,0.06)',
-        '--uprpp-shadow-card': '0 4px 32px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.03)',
-        '--uprpp-radius': '14px',
-        '--uprpp-radius-sm': '10px',
+      vars: {
+        '--bg': '#F4F6F9', '--surface': '#FFFFFF',
+        '--text': '#0F172A', '--text-secondary': '#64748B', '--text-muted': '#94A3B8',
+        '--border': '#E2E8F0', '--border-focus': '#1E3A5F',
+        '--input-bg': '#F8FAFC', '--primary': '#1E3A5F', '--primary-hover': '#162D4A',
+        '--ring': 'rgba(30,58,95,0.15)',
+        '--shadow': '0 2px 16px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03)',
+        '--radius': '16px', '--radius-sm': '10px',
       },
-      fontImport: null,
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
+      font: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
     },
-
     'dark': {
       name: '深邃暗',
-      colors: {
-        '--uprpp-primary': '#93A8C7',
-        '--uprpp-primary-hover': '#AFC0D8',
-        '--uprpp-primary-ghost': '#1E293B',
-        '--uprpp-accent': '#D4AF37',
-        '--uprpp-accent-hover': '#E5C550',
-        '--uprpp-bg': '#0B0F17',
-        '--uprpp-surface': '#151A24',
-        '--uprpp-surface-hover': '#1C2330',
-        '--uprpp-text': '#E2E8F0',
-        '--uprpp-text-secondary': '#94A3B8',
-        '--uprpp-text-muted': '#64748B',
-        '--uprpp-border': '#1E293B',
-        '--uprpp-border-focus': '#93A8C7',
-        '--uprpp-input-bg': '#1C2330',
-        '--uprpp-ring': 'rgba(147,168,199,0.15)',
-        '--uprpp-divider': '#1A1F2A',
-        '--uprpp-shadow-sm': '0 1px 3px rgba(0,0,0,0.3)',
-        '--uprpp-shadow-card': '0 4px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04)',
-        '--uprpp-radius': '14px',
-        '--uprpp-radius-sm': '10px',
+      vars: {
+        '--bg': '#0B0F17', '--surface': '#151A24',
+        '--text': '#E2E8F0', '--text-secondary': '#94A3B8', '--text-muted': '#64748B',
+        '--border': '#1E293B', '--border-focus': '#93A8C7',
+        '--input-bg': '#1C2330', '--primary': '#93A8C7', '--primary-hover': '#AFC0D8',
+        '--ring': 'rgba(147,168,199,0.15)',
+        '--shadow': '0 2px 16px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.04)',
+        '--radius': '16px', '--radius-sm': '10px',
       },
-      fontImport: null,
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
+      font: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
     },
-
     'scu-red': {
       name: '川大红',
-      colors: {
-        '--uprpp-primary': '#B53434',
-        '--uprpp-primary-hover': '#962929',
-        '--uprpp-primary-ghost': '#FDF0F0',
-        '--uprpp-accent': '#8B1F1F',
-        '--uprpp-accent-hover': '#6E1818',
-        '--uprpp-bg': '#FDF6F5',
-        '--uprpp-surface': '#FFFFFF',
-        '--uprpp-surface-hover': '#FFFAFA',
-        '--uprpp-text': '#2C1810',
-        '--uprpp-text-secondary': '#A0807A',
-        '--uprpp-text-muted': '#C0A8A2',
-        '--uprpp-border': '#F0E0DE',
-        '--uprpp-border-focus': '#B53434',
-        '--uprpp-input-bg': '#FEFCFB',
-        '--uprpp-ring': 'rgba(181,52,52,0.12)',
-        '--uprpp-divider': '#FAF0EE',
-        '--uprpp-shadow-sm': '0 1px 3px rgba(139,31,31,0.04)',
-        '--uprpp-shadow-card': '0 4px 32px rgba(139,31,31,0.07), 0 0 0 1px rgba(139,31,31,0.04)',
-        '--uprpp-radius': '14px',
-        '--uprpp-radius-sm': '10px',
+      vars: {
+        '--bg': '#FDF6F5', '--surface': '#FFFFFF',
+        '--text': '#2C1810', '--text-secondary': '#A0807A', '--text-muted': '#C0A8A2',
+        '--border': '#F0E0DE', '--border-focus': '#B53434',
+        '--input-bg': '#FEFCFB', '--primary': '#B53434', '--primary-hover': '#962929',
+        '--ring': 'rgba(181,52,52,0.12)',
+        '--shadow': '0 2px 16px rgba(139,31,31,0.05), 0 0 0 1px rgba(139,31,31,0.03)',
+        '--radius': '16px', '--radius-sm': '10px',
       },
-      fontImport: null,
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", serif',
-    },
-
-  };
-
-  // ============================================================
-  // 主题管理器（CSS 变量方式）
-  // ============================================================
-
-  const ThemeManager = {
-    _current: null,
-    _styleEl: null,
-
-    apply(name) {
-      const t = THEMES[name];
-      if (!t) { console.warn('[UPR++] 主题不存在:', name); return this.apply('default'); }
-      this._current = name;
-      GM_setValue(THEME_KEY, name);
-
-      // 更新 CSS 变量
-      let css = ':root {\n';
-      for (const [k, v] of Object.entries(t.colors)) {
-        css += `  ${k}: ${v};\n`;
-      }
-      css += '}';
-
-      if (this._styleEl) this._styleEl.remove();
-      this._styleEl = document.createElement('style');
-      this._styleEl.id = 'uprpp-vars';
-      this._styleEl.textContent = css;
-      document.head.appendChild(this._styleEl);
-
-      // 字体
-      document.body.style.fontFamily = t.fontFamily;
-      if (t.fontImport) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = t.fontImport;
-        document.head.appendChild(link);
-      }
-
-      console.log(`[UPR++] ${t.name} | Minimalism & Swiss Style`);
-    },
-
-    getCurrent() { return this._current; },
-
-    list() {
-      return Object.entries(THEMES).map(([k, v]) => ({
-        name: k, displayName: v.name, current: k === this._current,
-      }));
+      font: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", serif',
     },
   };
 
   // ============================================================
-  // 登录页重建器
+  // 主题管理
   // ============================================================
 
-  class LoginPageRebuilder {
+  function applyTheme(name) {
+    const t = THEMES[name] || THEMES['default'];
+    GM_setValue(THEME_KEY, name);
+    const el = document.getElementById('uprpp-theme-vars') || (() => {
+      const e = document.createElement('style'); e.id = 'uprpp-theme-vars';
+      document.head.appendChild(e); return e;
+    })();
+    let css = ':root {';
+    for (const [k, v] of Object.entries(t.vars)) css += `${k}:${v};`;
+    css += '}';
+    el.textContent = css;
+    document.body.style.fontFamily = t.font;
+    console.log(`[UPR++] ${t.name}`);
+  }
 
-    constructor() {
-      this.originalForm = null;
-      this.container = null;
-      this.mode = 'account'; // 'account' | 'sso'
+  function getCurrent() { return GM_getValue(THEME_KEY, 'default'); }
+
+  // ============================================================
+  // 登录页重建
+  // ============================================================
+
+  function rebuild() {
+    const path = location.pathname;
+    if (!['/login', '/loginEn', '/'].includes(path) && path !== '') return;
+
+    const formContent = document.getElementById('formContent');
+    const originalForm = document.querySelector('.form-signin');
+    if (!formContent || !originalForm) {
+      setTimeout(rebuild, 50); return;
     }
 
-    /**
-     * 入口：检查是否为登录页，是则重建
-     */
-    static maybeRebuild() {
-      const path = window.location.pathname;
-      const isLogin = path === '/login' || path === '/loginEn' || path === '/' || path === '';
-      if (!isLogin) {
-        console.log('[UPR++] 非登录页，跳过');
-        return;
-      }
-      const rebuilder = new LoginPageRebuilder();
-      // 轮询等待原始 DOM 就绪
-      const tryBuild = () => {
-        const form = document.querySelector('.form-signin');
-        const fc = document.getElementById('formContent');
-        if (form && fc) {
-          rebuilder.build(form, fc);
-        } else {
-          setTimeout(tryBuild, 50);
+    // 提取原始校徽 SVG
+    const originalSvg = (() => {
+      const svg = formContent.querySelector('.fadeIn.first svg');
+      return svg ? svg.outerHTML : '';
+    })();
+
+    // 提取 SSO 链接
+    const ssoHref = (() => {
+      const a = document.querySelector('#tocas a');
+      return a ? a.href : 'https://id.scu.edu.cn/';
+    })();
+
+    // 隐藏原始内容
+    for (const c of formContent.children) c.style.display = 'none';
+    formContent.style.cssText = 'max-width:420px;width:90%;margin:0 auto;background:transparent;box-shadow:none;border-radius:0;position:relative;z-index:1;';
+
+    const isEn = location.pathname === '/loginEn';
+    const t = (zh, en) => isEn ? en : zh;
+
+    // 注入新 UI
+    formContent.insertAdjacentHTML('afterbegin', `
+    <div id="uprpp-root">
+      <style>
+        #uprpp-root,#uprpp-root *{box-sizing:border-box;margin:0;}
+        @keyframes uf{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        #uprpp-root{animation:uf .45s ease-out}
+
+        .uc{
+          background:var(--surface);
+          border-radius:var(--radius);
+          box-shadow:var(--shadow);
+          overflow:hidden;
         }
-      };
-      tryBuild();
-    }
+        .ub{
+          text-align:center;padding:44px 36px 32px;
+        }
+        .ub svg{width:64px;height:64px;display:block;margin:0 auto;opacity:.9}
+        .ub h1{font-size:17px;font-weight:600;color:var(--text);margin-top:18px;letter-spacing:1px}
+        .ub p{font-size:13px;color:var(--text-secondary);margin-top:4px}
 
-    /**
-     * 构建新 UI
-     */
-    build(originalForm, formContent) {
-      this.originalForm = originalForm;
+        .ut{display:flex;margin:0 36px;background:var(--input-bg);border-radius:var(--radius-sm);padding:4px;gap:4px}
+        .ut button{flex:1;text-align:center;padding:11px 0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;color:var(--text-secondary);transition:all .2s;border:none;background:transparent;font-family:inherit}
+        .ut button.ac{background:var(--surface);color:var(--text);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+        .ut button:hover:not(.ac){color:var(--text)}
 
-      // 1. 隐藏原始内容
-      for (const child of formContent.children) {
-        child.style.display = 'none';
-      }
+        .ufb{padding:32px 36px 36px}
+        .ufg{margin-bottom:22px;animation:uf .35s ease-out both}
+        .ufg:nth-child(1){animation-delay:.03s}
+        .ufg:nth-child(2){animation-delay:.08s}
+        .ufg:nth-child(3){animation-delay:.13s}
+        .ufl{display:block;font-size:13px;font-weight:500;color:var(--text);margin-bottom:7px}
+        .ui{display:block;width:100%;height:48px;padding:0 15px;background:var(--input-bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:15px;color:var(--text);font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
+        .ui:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px var(--ring)}
+        .ui::placeholder{color:var(--text-muted)}
 
-      // 2. 覆盖卡片样式（全宽居中）
-      formContent.style.cssText = `
-        max-width: 440px; width: 90%; margin: 0 auto;
-        background: transparent; box-shadow: none; border-radius: 0;
-        position: relative; z-index: 1;
-      `;
+        .ucr{display:flex;gap:12px;align-items:stretch}
+        .ucr .ufg{flex:1;margin-bottom:0}
+        .uci{height:48px;border-radius:var(--radius-sm);cursor:pointer;border:1.5px solid var(--border);flex-shrink:0}
 
-      // 3. 注入新 UI
-      const html = this._renderHTML();
-      formContent.insertAdjacentHTML('afterbegin', html);
-      this.container = formContent.querySelector('#uprpp-root');
+        .ubtn{display:block;width:100%;height:48px;margin-top:28px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;letter-spacing:3px;transition:all .2s}
+        .ubtn:hover{background:var(--primary-hover);transform:translateY(-1px);box-shadow:0 4px 12px var(--ring)}
+        .ubtn:active{transform:translateY(0)}
 
-      // 4. 绑定事件
-      this._bindEvents(formContent);
+        .uft{text-align:center;padding:0 36px 28px;font-size:13px;color:var(--text-secondary)}
+        .uft a{color:var(--text-secondary);text-decoration:none;margin:0 14px;transition:color .2s}
+        .uft a:hover{color:var(--primary)}
 
-      // 5. 主题适配
-      this._applyThemeToUI();
+        .us{display:flex;justify-content:center;gap:10px;padding:0 36px 28px}
+        .us span{width:10px;height:10px;border-radius:50%;cursor:pointer;border:2px solid var(--border);transition:all .2s}
+        .us span.ac{border-color:var(--primary);background:var(--primary)}
+        .us span:hover{border-color:var(--text-secondary)}
+      </style>
 
-      console.log('[UPR++] 登录界面重建完成');
-    }
-
-    /**
-     * 渲染 HTML
-     */
-    _renderHTML() {
-      const isEn = window.location.pathname === '/loginEn';
-      const t = (zh, en) => isEn ? en : zh;
-
-      return `
-      <div id="uprpp-root" style="animation: uprpp-fadeIn 0.5s ease-out;">
-        <style>
-          @keyframes uprpp-fadeIn {
-            from { opacity: 0; transform: translateY(16px); }
-            to   { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes uprpp-slideUp {
-            from { opacity: 0; transform: translateY(8px); }
-            to   { opacity: 1; transform: translateY(0); }
-          }
-
-          #uprpp-root * { box-sizing: border-box; margin: 0; }
-
-          /* ===== 卡片 ===== */
-          .uprpp-card {
-            background: var(--uprpp-surface);
-            border-radius: var(--uprpp-radius);
-            box-shadow: var(--uprpp-shadow-card);
-            overflow: hidden;
-          }
-
-          /* ===== 品牌区 ===== */
-          .uprpp-brand {
-            text-align: center;
-            padding: 40px 32px 28px;
-          }
-          .uprpp-brand svg {
-            width: 56px; height: 56px; opacity: 0.85;
-          }
-          .uprpp-brand h1 {
-            font-size: 18px; font-weight: 600; color: var(--uprpp-text);
-            margin-top: 16px; letter-spacing: 1px;
-          }
-          .uprpp-brand p {
-            font-size: 13px; color: var(--uprpp-text-secondary);
-            margin-top: 6px;
-          }
-
-          /* ===== Tab 切换 ===== */
-          .uprpp-tabs {
-            display: flex; margin: 0 32px;
-            background: var(--uprpp-input-bg); border-radius: var(--uprpp-radius-sm);
-            padding: 4px; gap: 4px;
-          }
-          .uprpp-tab {
-            flex: 1; text-align: center; padding: 10px 0;
-            border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;
-            color: var(--uprpp-text-secondary); transition: all 0.2s;
-            border: none; background: transparent; font-family: inherit;
-          }
-          .uprpp-tab.active {
-            background: var(--uprpp-surface);
-            color: var(--uprpp-text); font-weight: 600;
-            box-shadow: var(--uprpp-shadow-sm);
-          }
-          .uprpp-tab:hover:not(.active) {
-            color: var(--uprpp-text);
-          }
-
-          /* ===== 表单区 ===== */
-          .uprpp-form-body {
-            padding: 28px 32px 32px;
-          }
-
-          .uprpp-field {
-            margin-bottom: 20px;
-            animation: uprpp-slideUp 0.4s ease-out both;
-          }
-          .uprpp-field:nth-child(1) { animation-delay: 0.05s; }
-          .uprpp-field:nth-child(2) { animation-delay: 0.1s; }
-          .uprpp-field:nth-child(3) { animation-delay: 0.15s; }
-
-          .uprpp-label {
-            display: block; font-size: 13px; font-weight: 500;
-            color: var(--uprpp-text); margin-bottom: 6px;
-          }
-          .uprpp-input {
-            display: block; width: 100%; height: 46px; padding: 0 14px;
-            background: var(--uprpp-input-bg); border: 1.5px solid var(--uprpp-border);
-            border-radius: var(--uprpp-radius-sm); font-size: 15px;
-            color: var(--uprpp-text); font-family: inherit;
-            outline: none; transition: border-color 0.2s, box-shadow 0.2s;
-          }
-          .uprpp-input:focus {
-            border-color: var(--uprpp-border-focus);
-            box-shadow: 0 0 0 3px var(--uprpp-ring);
-          }
-          .uprpp-input::placeholder {
-            color: var(--uprpp-text-muted);
-          }
-
-          /* 验证码行 */
-          .uprpp-captcha-row {
-            display: flex; gap: 12px; align-items: stretch;
-          }
-          .uprpp-captcha-row .uprpp-field {
-            flex: 1; margin-bottom: 0;
-          }
-          .uprpp-captcha-img {
-            height: 46px; border-radius: var(--uprpp-radius-sm);
-            cursor: pointer; border: 1.5px solid var(--uprpp-border);
-            flex-shrink: 0;
-          }
-
-          /* ===== 按钮 ===== */
-          .uprpp-btn {
-            display: block; width: 100%; height: 48px; margin-top: 24px;
-            background: var(--uprpp-primary); color: #FFFFFF; border: none;
-            border-radius: var(--uprpp-radius-sm); font-size: 16px;
-            font-weight: 600; font-family: inherit; cursor: pointer;
-            letter-spacing: 2px; transition: all 0.2s;
-            box-shadow: 0 2px 8px var(--uprpp-ring);
-          }
-          .uprpp-btn:hover {
-            background: var(--uprpp-primary-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 16px var(--uprpp-ring);
-          }
-          .uprpp-btn:active { transform: translateY(0); }
-
-          /* ===== 底部链接 ===== */
-          .uprpp-footer {
-            text-align: center; padding: 0 32px 28px;
-            font-size: 13px; color: var(--uprpp-text-secondary);
-          }
-          .uprpp-footer a {
-            color: var(--uprpp-text-secondary); text-decoration: none;
-            margin: 0 12px; transition: color 0.2s;
-          }
-          .uprpp-footer a:hover { color: var(--uprpp-primary); }
-
-          /* ===== 主题切换器 ===== */
-          .uprpp-theme-switcher {
-            display: flex; justify-content: center; gap: 8px;
-            padding: 0 32px 24px;
-          }
-          .uprpp-theme-dot {
-            width: 10px; height: 10px; border-radius: 50%;
-            cursor: pointer; border: 2px solid var(--uprpp-border);
-            transition: all 0.2s; background: transparent;
-          }
-          .uprpp-theme-dot.active {
-            border-color: var(--uprpp-primary);
-            background: var(--uprpp-primary);
-          }
-          .uprpp-theme-dot:hover { border-color: var(--uprpp-text-secondary); }
-        </style>
-
-        <div class="uprpp-card">
-          <!-- 品牌区 -->
-          <div class="uprpp-brand">
-            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="50" cy="50" r="48" stroke="var(--uprpp-primary)" stroke-width="2" fill="none" opacity="0.3"/>
-              <circle cx="50" cy="50" r="36" stroke="var(--uprpp-primary)" stroke-width="1.5" fill="none" opacity="0.5"/>
-              <path d="M50 18 L58 42 L84 42 L63 57 L71 81 L50 66 L29 81 L37 57 L16 42 L42 42 Z"
-                    fill="var(--uprpp-primary)" opacity="0.85"/>
-            </svg>
-            <h1>${t('四川大学教务管理系统', 'Sichuan University Academic System')}</h1>
-            <p>${t('学生端登录', 'Student Portal')}</p>
-          </div>
-
-          <!-- Tab 切换 -->
-          <div class="uprpp-tabs" id="uprpp-tabs">
-            <button class="uprpp-tab active" data-mode="account">${t('账号登录', 'Account')}</button>
-            <button class="uprpp-tab" data-mode="sso">${t('统一认证', 'SSO')}</button>
-          </div>
-
-          <!-- 表单 -->
-          <div class="uprpp-form-body" id="uprpp-form-body">
-            <div class="uprpp-field">
-              <label class="uprpp-label" for="uprpp-username">${t('学号', 'Student ID')}</label>
-              <input class="uprpp-input" id="uprpp-username" type="text"
-                     placeholder="${t('请输入学号', 'Enter student ID')}" autocomplete="username">
-            </div>
-            <div class="uprpp-field">
-              <label class="uprpp-label" for="uprpp-password">${t('密码', 'Password')}</label>
-              <input class="uprpp-input" id="uprpp-password" type="password"
-                     placeholder="${t('请输入密码', 'Enter password')}" autocomplete="current-password">
-            </div>
-            <div class="uprpp-captcha-row">
-              <div class="uprpp-field">
-                <label class="uprpp-label" for="uprpp-captcha">${t('验证码', 'Captcha')}</label>
-                <input class="uprpp-input" id="uprpp-captcha" type="text"
-                       placeholder="${t('请输入验证码', 'Enter captcha')}" maxlength="4" autocomplete="off">
-              </div>
-              <img class="uprpp-captcha-img" id="uprpp-captcha-img"
-                   src="" alt="Captcha" title="${t('点击刷新验证码', 'Click to refresh')}">
-            </div>
-            <button class="uprpp-btn" id="uprpp-submit" type="button">
-              ${t('登  录', 'Sign In')}
-            </button>
-          </div>
-
-          <!-- SSO 提示（默认隐藏） -->
-          <div class="uprpp-form-body" id="uprpp-sso-body" style="display:none; text-align:center;">
-            <p style="font-size:14px; color:var(--uprpp-text-secondary); margin-bottom:20px; line-height:1.8;">
-              ${t('点击下方按钮跳转到<br>四川大学统一身份认证平台', 'Click below to redirect to<br>SCU Unified Authentication')}
-            </p>
-            <button class="uprpp-btn" id="uprpp-sso-btn" type="button">
-              ${t('前往统一认证', 'Go to SSO')}
-            </button>
-          </div>
-
-          <!-- 底部链接 -->
-          <div class="uprpp-footer">
-            <a href="javascript:void(0)" id="uprpp-forgot">${t('忘记密码？', 'Forgot password?')}</a>
-            <a href="${isEn ? '/login' : '/loginEn'}" id="uprpp-lang">
-              ${isEn ? '中文' : 'EN'}
-            </a>
-          </div>
-
-          <!-- 主题切换 -->
-          <div class="uprpp-theme-switcher" id="uprpp-theme-dots">
-            <span class="uprpp-theme-dot" data-theme="default" title="简约白"></span>
-            <span class="uprpp-theme-dot" data-theme="dark" title="深邃暗"></span>
-            <span class="uprpp-theme-dot" data-theme="scu-red" title="川大红"></span>
-          </div>
+      <div class="uc">
+        <div class="ub" id="uprpp-brand">
+          ${originalSvg || ''}
+          <h1>${t('四川大学教务管理系统','Sichuan University Academic System')}</h1>
+          <p>${t('学生端','Student Portal')}</p>
         </div>
-      </div>`;
-    }
 
-    /**
-     * 绑定事件
-     */
-    _bindEvents(formContent) {
-      const root = formContent.querySelector('#uprpp-root');
+        <div class="ut" id="uprpp-tabs">
+          <button class="ac" data-mode="account">${t('账号登录','Account')}</button>
+          <button data-mode="sso">${t('统一认证','SSO')}</button>
+        </div>
 
-      // 输入框 ↔ 原始 input 双向同步
-      this._bindInput('#uprpp-username', '#input_username');
-      this._bindInput('#uprpp-password', '#input_password');
-      this._bindInput('#uprpp-captcha', '#input_checkcode');
+        <div class="ufb" id="uprpp-form">
+          <div class="ufg">
+            <label class="ufl" for="uprpp-user">${t('学号','Student ID')}</label>
+            <input class="ui" id="uprpp-user" type="text" placeholder="${t('请输入学号','Enter student ID')}" autocomplete="username">
+          </div>
+          <div class="ufg">
+            <label class="ufl" for="uprpp-pass">${t('密码','Password')}</label>
+            <input class="ui" id="uprpp-pass" type="password" placeholder="${t('请输入密码','Enter password')}" autocomplete="current-password">
+          </div>
+          <div class="ucr">
+            <div class="ufg">
+              <label class="ufl" for="uprpp-cap">${t('验证码','Captcha')}</label>
+              <input class="ui" id="uprpp-cap" type="text" placeholder="${t('请输入','Enter')}" maxlength="4" autocomplete="off">
+            </div>
+            <img class="uci" id="uprpp-capimg" src="" alt="Captcha" title="${t('点击刷新','Refresh')}">
+          </div>
+          <button class="ubtn" id="uprpp-submit">${t('登  录','Sign In')}</button>
+        </div>
 
-      // 验证码图片
-      const captchaImg = root.querySelector('#uprpp-captcha-img');
-      const originalCaptcha = document.querySelector('.form-signin img');
-      if (originalCaptcha) {
-        captchaImg.src = originalCaptcha.src;
-        captchaImg.addEventListener('click', () => {
-          const newSrc = originalCaptcha.src.replace(/\?.*/, '') + '?' + Date.now();
-          originalCaptcha.src = newSrc;
-          captchaImg.src = newSrc;
-        });
+        <div class="ufb" id="uprpp-sso" style="display:none;text-align:center">
+          <p style="font-size:14px;color:var(--text-secondary);margin-bottom:24px;line-height:1.8">
+            ${t('点击下方按钮跳转到<br>四川大学统一身份认证平台','Click below to redirect to<br>SCU Unified Authentication')}
+          </p>
+          <button class="ubtn" id="uprpp-sso-btn">${t('前往统一认证','Go to SSO')}</button>
+        </div>
+
+        <div class="uft">
+          <a href="javascript:void(0)" id="uprpp-forgot">${t('忘记密码？','Forgot password?')}</a>
+          <a href="${isEn?'/login':'/loginEn'}">${isEn?'中文':'EN'}</a>
+        </div>
+
+        <div class="us" id="uprpp-dots">
+          <span data-theme="default" title="简约白"></span>
+          <span data-theme="dark" title="深邃暗"></span>
+          <span data-theme="scu-red" title="川大红"></span>
+        </div>
+      </div>
+    </div>`);
+
+    // ---- 事件绑定 ----
+
+    const root = formContent.querySelector('#uprpp-root');
+
+    // 输入同步
+    [
+      ['#uprpp-user', '#input_username'],
+      ['#uprpp-pass', '#input_password'],
+      ['#uprpp-cap', '#input_checkcode'],
+    ].forEach(([ns, os]) => {
+      const ni = root.querySelector(ns), oi = document.querySelector(os);
+      if (ni && oi) {
+        if (oi.value) ni.value = oi.value;
+        ni.addEventListener('input', () => { oi.value = ni.value; });
       }
+    });
 
-      // Tab 切换
-      root.querySelectorAll('.uprpp-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-          this.mode = tab.dataset.mode;
-          root.querySelectorAll('.uprpp-tab').forEach(t => t.classList.remove('active'));
-          tab.classList.add('active');
-
-          const formBody = root.querySelector('#uprpp-form-body');
-          const ssoBody = root.querySelector('#uprpp-sso-body');
-          if (this.mode === 'sso') {
-            formBody.style.display = 'none';
-            ssoBody.style.display = 'block';
-          } else {
-            formBody.style.display = 'block';
-            ssoBody.style.display = 'none';
-          }
-        });
+    // 验证码
+    const capImg = root.querySelector('#uprpp-capimg');
+    const origCapImg = document.querySelector('.form-signin img');
+    if (capImg && origCapImg) {
+      capImg.src = origCapImg.src;
+      capImg.addEventListener('click', () => {
+        const u = origCapImg.src.replace(/\?.*/, '') + '?' + Date.now();
+        origCapImg.src = u; capImg.src = u;
       });
+    }
 
-      // SSO 按钮
-      const ssoBtn = root.querySelector('#uprpp-sso-btn');
-      if (ssoBtn) {
-        ssoBtn.addEventListener('click', () => {
-          const tocas = document.querySelector('#tocas a');
-          if (tocas) window.location.href = tocas.href;
-        });
+    // Tab
+    root.querySelectorAll('.ut button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        root.querySelectorAll('.ut button').forEach(b => b.classList.remove('ac'));
+        btn.classList.add('ac');
+        const isSso = btn.dataset.mode === 'sso';
+        root.querySelector('#uprpp-form').style.display = isSso ? 'none' : 'block';
+        root.querySelector('#uprpp-sso').style.display = isSso ? 'block' : 'none';
+      });
+    });
+
+    // SSO
+    const ssoBtn = root.querySelector('#uprpp-sso-btn');
+    if (ssoBtn) ssoBtn.addEventListener('click', () => { location.href = ssoHref; });
+
+    // 登录
+    const submitBtn = root.querySelector('#uprpp-submit');
+    submitBtn.addEventListener('click', () => {
+      const origBtn = document.getElementById('loginButton');
+      if (origBtn) origBtn.click();
+      originalForm.submit();
+    });
+    root.querySelectorAll('.ui').forEach(i => {
+      i.addEventListener('keydown', e => { if (e.key === 'Enter') submitBtn.click(); });
+    });
+
+    // 忘记密码
+    root.querySelector('#uprpp-forgot').addEventListener('click', e => {
+      e.preventDefault();
+      const links = document.querySelectorAll('a');
+      for (const a of links) {
+        if (a.textContent.includes('忘记') || a.textContent.includes('Forgot')) { a.click(); break; }
       }
+    });
 
-      // 登录按钮
-      const submitBtn = root.querySelector('#uprpp-submit');
-      submitBtn.addEventListener('click', () => {
-        const originalBtn = document.getElementById('loginButton');
-        if (originalBtn) {
-          // 先触发原始按钮的 onclick（MD5 加密密码）
-          originalBtn.click();
-        }
-        // 提交表单
-        if (this.originalForm) {
-          this.originalForm.submit();
-        }
+    // 主题
+    const dots = root.querySelector('#uprpp-dots');
+    const ct = getCurrent();
+    dots.querySelectorAll('span').forEach(d => {
+      if (d.dataset.theme === ct) d.classList.add('ac');
+      d.addEventListener('click', () => {
+        applyTheme(d.dataset.theme);
+        dots.querySelectorAll('span').forEach(dd => dd.classList.remove('ac'));
+        d.classList.add('ac');
       });
+    });
 
-      // 回车提交
-      root.querySelectorAll('.uprpp-input').forEach(input => {
-        input.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') submitBtn.click();
-        });
-      });
-
-      // 忘记密码
-      const forgotLink = root.querySelector('#uprpp-forgot');
-      forgotLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        const originalForgot = document.querySelector('a[href*="forgot"]');
-        if (!originalForgot) {
-          // 触发原始页面的忘记密码链接
-          const allLinks = document.querySelectorAll('a');
-          for (const a of allLinks) {
-            if (a.textContent.includes('忘记') || a.textContent.includes('Forgot')) {
-              a.click();
-              break;
-            }
-          }
-        }
-      });
-
-      // 主题切换
-      const dots = root.querySelector('#uprpp-theme-dots');
-      dots.querySelectorAll('.uprpp-theme-dot').forEach(dot => {
-        dot.addEventListener('click', () => {
-          ThemeManager.apply(dot.dataset.theme);
-          dots.querySelectorAll('.uprpp-theme-dot').forEach(d => d.classList.remove('active'));
-          dot.classList.add('active');
-        });
-      });
-
-      // 标记当前主题 dot
-      const currentTheme = ThemeManager.getCurrent() || 'default';
-      const activeDot = dots.querySelector(`[data-theme="${currentTheme}"]`);
-      if (activeDot) activeDot.classList.add('active');
-    }
-
-    /**
-     * 双向绑定：新 input ↔ 原始 input
-     */
-    _bindInput(newSelector, originalSelector) {
-      const newInput = document.querySelector(newSelector);
-      const originalInput = document.querySelector(originalSelector);
-      if (!newInput || !originalInput) return;
-
-      // 保留原始 input 的 name 等属性
-      newInput.addEventListener('input', () => {
-        originalInput.value = newInput.value;
-      });
-      // 初始值
-      if (originalInput.value) {
-        newInput.value = originalInput.value;
-      }
-    }
-
-    /**
-     * 主题适配 UI（更新中继数据）
-     */
-    _applyThemeToUI() {
-      // CSS 变量已由 ThemeManager 注入，UI 自动响应
-      // 此处仅需更新任何 JavaScript 相关的主题状态
-    }
+    console.log('[UPR++] 登录界面已重建');
   }
 
   // ============================================================
@@ -598,42 +302,25 @@
   // ============================================================
 
   function init() {
-    // 等待 DOM 主体就绪后再初始化
-    const doInit = () => {
-      if (!document.body || !document.head) {
-        setTimeout(doInit, 10);
-        return;
-      }
-      // 加载主题
-      const saved = GM_getValue(THEME_KEY, 'default');
-      ThemeManager.apply(saved);
-
-      // 重建登录页
-      LoginPageRebuilder.maybeRebuild();
-    };
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', doInit);
-    } else {
-      doInit();
-    }
+    if (!document.body) { setTimeout(init, 10); return; }
+    applyTheme(getCurrent());
+    rebuild();
   }
 
-  // ============================================================
   // 全局 API
-  // ============================================================
-
-  const UPRPP = {
-    version: '0.3.0',
+  const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+  global.UPRPP = {
+    version: '0.3.1',
     theme: {
-      apply: ThemeManager.apply.bind(ThemeManager),
-      getCurrent: ThemeManager.getCurrent.bind(ThemeManager),
-      list: ThemeManager.list.bind(ThemeManager),
+      apply: (n) => { applyTheme(n); },
+      getCurrent,
+      list: () => Object.entries(THEMES).map(([k, v]) => ({ name: k, displayName: v.name, current: k === getCurrent() })),
     },
   };
 
-  const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
-  global.UPRPP = UPRPP;
-
-  init();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
