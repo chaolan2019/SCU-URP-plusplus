@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         UPR++ 教务系统美化
 // @namespace    https://github.com/hanako/upr-plus
-// @version      0.3.2
+// @version      0.3.3
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -133,24 +133,25 @@
           overflow:hidden;
         }
         .ub{
-          text-align:center;padding:36px 36px 28px;
+          text-align:center;padding:32px 36px 20px;
         }
-        .ub svg{width:80px;height:80px;display:none;margin:0 auto 16px;opacity:.9}
-        .ub svg.show{display:block}
-        .ub h1{font-size:18px;font-weight:600;color:var(--text);letter-spacing:1px}
+        .ub-logo{display:none;width:72px;height:72px;margin:0 auto 20px;opacity:.9}
+        .ub-logo.show{display:block}
+        .ub-logo svg{width:100%!important;height:100%!important;max-width:72px;max-height:72px;display:block}
+        .ub h1{font-size:17px;font-weight:600;color:var(--text);letter-spacing:1px}
         .ub p{font-size:13px;color:var(--text-secondary);margin-top:4px}
 
-        .ut{display:flex;margin:0 36px 20px;background:var(--input-bg);border-radius:var(--radius-sm);padding:4px;gap:4px}
+        .ut{display:flex;margin:0 36px 24px;background:var(--input-bg);border-radius:var(--radius-sm);padding:4px;gap:4px}
         .ut button{flex:1;text-align:center;padding:11px 0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;color:var(--text-secondary);transition:all .2s;border:none;background:transparent;font-family:inherit}
         .ut button.ac{background:var(--surface);color:var(--text);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.05)}
         .ut button:hover:not(.ac){color:var(--text)}
 
         .ufb{padding:24px 36px 28px}
-        .ufg{margin-bottom:16px;animation:uf .35s ease-out both}
+        .ufg{margin-bottom:20px;animation:uf .35s ease-out both}
         .ufg:nth-child(1){animation-delay:.03s}
         .ufg:nth-child(2){animation-delay:.08s}
         .ufg:nth-child(3){animation-delay:.13s}
-        .ufl{display:block;font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px}
+        .ufl{display:block;font-size:13px;font-weight:500;color:var(--text);margin-bottom:8px}
         .ui{display:block;width:100%;height:48px;padding:0 15px;background:var(--input-bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:15px;color:var(--text);font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
         .ui:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px var(--ring)}
         .ui::placeholder{color:var(--text-muted)}
@@ -159,15 +160,15 @@
         .ucr .ufg{flex:1;margin-bottom:0}
         .uci{height:48px;border-radius:var(--radius-sm);cursor:pointer;border:1.5px solid var(--border);flex-shrink:0}
 
-        .ubtn{display:block;width:100%;height:48px;margin-top:20px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;letter-spacing:3px;transition:all .2s}
+        .ubtn{display:block;width:100%;height:48px;margin-top:28px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;letter-spacing:3px;transition:all .2s}
         .ubtn:hover{background:var(--primary-hover);transform:translateY(-1px);box-shadow:0 4px 12px var(--ring)}
         .ubtn:active{transform:translateY(0)}
 
-        .uft{text-align:center;padding:8px 36px 20px;font-size:13px;color:var(--text-secondary)}
+        .uft{text-align:center;padding:12px 36px 18px;font-size:13px;color:var(--text-secondary)}
         .uft a{color:var(--text-secondary);text-decoration:none;margin:0 14px;transition:color .2s}
         .uft a:hover{color:var(--primary)}
 
-        .us{display:flex;justify-content:center;gap:10px;padding:0 36px 24px}
+        .us{display:flex;justify-content:center;gap:10px;padding:0 36px 22px}
         .us span{width:10px;height:10px;border-radius:50%;cursor:pointer;border:2px solid var(--border);transition:all .2s}
         .us span.ac{border-color:var(--primary);background:var(--primary)}
         .us span:hover{border-color:var(--text-secondary)}
@@ -175,7 +176,7 @@
 
       <div class="uc">
         <div class="ub" id="uprpp-brand">
-          ${originalSvg ? originalSvg.replace('<svg','<svg class=""') : ''}
+          <div class="ub-logo">${originalSvg || ''}</div>
           <h1>${t('四川大学教务管理系统','Sichuan University Academic System')}</h1>
           <p>${t('学生端','Student Portal')}</p>
         </div>
@@ -316,10 +317,10 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.UPRPP = {
-    version: '0.3.2',
+    version: '0.3.3',
     showLogo(show) {
-      const svg = document.querySelector('#uprpp-brand svg');
-      if (svg) svg.classList.toggle('show', show);
+      const el = document.querySelector('#uprpp-brand .ub-logo');
+      if (el) el.classList.toggle('show', show);
     },
     theme: {
       apply: (n) => { applyTheme(n); },
