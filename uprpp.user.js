@@ -469,7 +469,7 @@
   // 初始化
   // ============================================================
 
-  const SUPPORTED_PATHS = ['/login', '/'];
+  const SUPPORTED_PATHS = ['/login', '/loginEn', '/'];
 
   function isLoginPage() {
     const path = window.location.pathname;
