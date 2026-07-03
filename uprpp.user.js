@@ -598,15 +598,24 @@
   // ============================================================
 
   function init() {
-    // 加载主题
-    const saved = GM_getValue(THEME_KEY, 'default');
-    ThemeManager.apply(saved);
+    // 等待 DOM 主体就绪后再初始化
+    const doInit = () => {
+      if (!document.body || !document.head) {
+        setTimeout(doInit, 10);
+        return;
+      }
+      // 加载主题
+      const saved = GM_getValue(THEME_KEY, 'default');
+      ThemeManager.apply(saved);
 
-    // 重建登录页
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', () => LoginPageRebuilder.maybeRebuild());
-    } else {
+      // 重建登录页
       LoginPageRebuilder.maybeRebuild();
+    };
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', doInit);
+    } else {
+      doInit();
     }
   }
 
