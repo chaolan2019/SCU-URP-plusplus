@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         UPR++ 教务系统美化
 // @namespace    https://github.com/hanako/upr-plus
-// @version      0.3.4
+// @version      0.3.5
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -127,7 +127,7 @@
 
         /* 版本水印 */
         #uprpp-root::after{
-          content:'UPR++ v0.3.4';
+          content:'UPR++ v0.3.5';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -208,8 +208,10 @@
         .uci{
           height:46px;width:96px;
           border-radius:var(--radius-sm);
+          background:var(--input-bg);
+          padding:3px;
           cursor:pointer;
-          border:1.5px solid var(--border);
+          display:block;
         }
 
         /* === Button === */
@@ -394,7 +396,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.UPRPP = {
-    version: '0.3.4',
+    version: '0.3.5',
     showLogo(show) {
       const el = document.querySelector('#uprpp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
