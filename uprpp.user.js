@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         UPR++ 教务系统美化
 // @namespace    https://github.com/hanako/upr-plus
-// @version      0.3.1
+// @version      0.3.2
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -122,6 +122,10 @@
         @keyframes uf{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         #uprpp-root{animation:uf .45s ease-out}
 
+        /* 全局背景同步主题 */
+        html,body{background:var(--bg)!important;min-height:100vh}
+        .wrapper{background:transparent!important}
+
         .uc{
           background:var(--surface);
           border-radius:var(--radius);
@@ -129,23 +133,24 @@
           overflow:hidden;
         }
         .ub{
-          text-align:center;padding:44px 36px 32px;
+          text-align:center;padding:40px 36px 28px;
         }
-        .ub svg{width:64px;height:64px;display:block;margin:0 auto;opacity:.9}
-        .ub h1{font-size:17px;font-weight:600;color:var(--text);margin-top:18px;letter-spacing:1px}
+        .ub svg{width:60px;height:60px;display:none;margin:0 auto 14px;opacity:.85}
+        .ub svg.show{display:block}
+        .ub h1{font-size:17px;font-weight:600;color:var(--text);letter-spacing:1px}
         .ub p{font-size:13px;color:var(--text-secondary);margin-top:4px}
 
-        .ut{display:flex;margin:0 36px;background:var(--input-bg);border-radius:var(--radius-sm);padding:4px;gap:4px}
+        .ut{display:flex;margin:0 36px 8px;background:var(--input-bg);border-radius:var(--radius-sm);padding:4px;gap:4px}
         .ut button{flex:1;text-align:center;padding:11px 0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:500;color:var(--text-secondary);transition:all .2s;border:none;background:transparent;font-family:inherit}
         .ut button.ac{background:var(--surface);color:var(--text);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.05)}
         .ut button:hover:not(.ac){color:var(--text)}
 
-        .ufb{padding:32px 36px 36px}
-        .ufg{margin-bottom:22px;animation:uf .35s ease-out both}
+        .ufb{padding:28px 36px 32px}
+        .ufg{margin-bottom:18px;animation:uf .35s ease-out both}
         .ufg:nth-child(1){animation-delay:.03s}
         .ufg:nth-child(2){animation-delay:.08s}
         .ufg:nth-child(3){animation-delay:.13s}
-        .ufl{display:block;font-size:13px;font-weight:500;color:var(--text);margin-bottom:7px}
+        .ufl{display:block;font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px}
         .ui{display:block;width:100%;height:48px;padding:0 15px;background:var(--input-bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:15px;color:var(--text);font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
         .ui:focus{border-color:var(--border-focus);box-shadow:0 0 0 3px var(--ring)}
         .ui::placeholder{color:var(--text-muted)}
@@ -154,15 +159,15 @@
         .ucr .ufg{flex:1;margin-bottom:0}
         .uci{height:48px;border-radius:var(--radius-sm);cursor:pointer;border:1.5px solid var(--border);flex-shrink:0}
 
-        .ubtn{display:block;width:100%;height:48px;margin-top:28px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;letter-spacing:3px;transition:all .2s}
+        .ubtn{display:block;width:100%;height:48px;margin-top:24px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;letter-spacing:3px;transition:all .2s}
         .ubtn:hover{background:var(--primary-hover);transform:translateY(-1px);box-shadow:0 4px 12px var(--ring)}
         .ubtn:active{transform:translateY(0)}
 
-        .uft{text-align:center;padding:0 36px 28px;font-size:13px;color:var(--text-secondary)}
+        .uft{text-align:center;padding:6px 36px 24px;font-size:13px;color:var(--text-secondary)}
         .uft a{color:var(--text-secondary);text-decoration:none;margin:0 14px;transition:color .2s}
         .uft a:hover{color:var(--primary)}
 
-        .us{display:flex;justify-content:center;gap:10px;padding:0 36px 28px}
+        .us{display:flex;justify-content:center;gap:10px;padding:0 36px 26px}
         .us span{width:10px;height:10px;border-radius:50%;cursor:pointer;border:2px solid var(--border);transition:all .2s}
         .us span.ac{border-color:var(--primary);background:var(--primary)}
         .us span:hover{border-color:var(--text-secondary)}
@@ -170,7 +175,7 @@
 
       <div class="uc">
         <div class="ub" id="uprpp-brand">
-          ${originalSvg || ''}
+          ${originalSvg ? originalSvg.replace('<svg','<svg class=""') : ''}
           <h1>${t('四川大学教务管理系统','Sichuan University Academic System')}</h1>
           <p>${t('学生端','Student Portal')}</p>
         </div>
@@ -247,20 +252,21 @@
       });
     }
 
-    // Tab
+    // Tab：账号登录显示表单；统一认证直接跳转
     root.querySelectorAll('.ut button').forEach(btn => {
       btn.addEventListener('click', () => {
+        if (btn.dataset.mode === 'sso') {
+          location.href = ssoHref;
+          return;
+        }
         root.querySelectorAll('.ut button').forEach(b => b.classList.remove('ac'));
         btn.classList.add('ac');
-        const isSso = btn.dataset.mode === 'sso';
-        root.querySelector('#uprpp-form').style.display = isSso ? 'none' : 'block';
-        root.querySelector('#uprpp-sso').style.display = isSso ? 'block' : 'none';
+        const formEl = root.querySelector('#uprpp-form');
+        const ssoEl = root.querySelector('#uprpp-sso');
+        if (formEl) formEl.style.display = 'block';
+        if (ssoEl) ssoEl.style.display = 'none';
       });
     });
-
-    // SSO
-    const ssoBtn = root.querySelector('#uprpp-sso-btn');
-    if (ssoBtn) ssoBtn.addEventListener('click', () => { location.href = ssoHref; });
 
     // 登录
     const submitBtn = root.querySelector('#uprpp-submit');
@@ -310,7 +316,11 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.UPRPP = {
-    version: '0.3.1',
+    version: '0.3.2',
+    showLogo(show) {
+      const svg = document.querySelector('#uprpp-brand svg');
+      if (svg) svg.classList.toggle('show', show);
+    },
     theme: {
       apply: (n) => { applyTheme(n); },
       getCurrent,
