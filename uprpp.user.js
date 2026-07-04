@@ -942,7 +942,9 @@
       .fc { background: var(--surface) !important; border-radius: var(--radius) !important; }
       .fc th, .fc td { border-color: var(--border) !important; }
       .fc-day-header { background: var(--input-bg) !important; color: var(--text-secondary) !important; }
-      .fc-time-grid-event, .fc-event { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; border-radius: var(--radius-sm) !important; }
+      .fc-time-grid-event, .fc-event { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; border-radius: var(--radius-sm) !important; margin: 2px 4px !important; }
+      .fc-event-container { padding: 2px !important; }
+      .fc-toolbar { margin-top: 8px !important; margin-bottom: 12px !important; padding: 0 8px !important; }
       .fc-button { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; }
       .fc-button.fc-state-active { background: var(--primary) !important; color: #fff !important; }
       .fc-today { background: var(--input-bg) !important; }
@@ -1016,8 +1018,12 @@
       .uprpp-stat-skeleton { cursor: default; pointer-events: none; }
       .uprpp-stat-skeleton .value { background: var(--input-bg); color: transparent !important; border-radius: 4px; width: 48px; height: 34px; }
       .uprpp-stat-skeleton .label { background: var(--input-bg); color: transparent !important; border-radius: 4px; width: 80px; height: 20px; }
-      .uprpp-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
+      .uprpp-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: stretch; }
       @media (max-width: 1100px) { .uprpp-main-grid { grid-template-columns: 1fr; } }
+      #uprpp-left { display: flex; flex-direction: column; }
+      #uprpp-left > .uprpp-card { height: 100%; display: flex; flex-direction: column; }
+      #uprpp-left > .uprpp-card > .uprpp-card-body { flex: 1; display: flex; flex-direction: column; }
+      #uprpp-left .fc { flex: 1; height: 100% !important; }
       .uprpp-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 20px; }
       .uprpp-card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
       .uprpp-card-header h4 { font-size: 16px; font-weight: 600; color: var(--text); margin: 0; }
