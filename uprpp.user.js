@@ -1392,6 +1392,7 @@
     // Header + toggle
     const header = document.createElement('div');
     header.className = 'uprpp-sidebar-header';
+    header.style.cssText = 'position:absolute;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:flex-end;padding:14px 14px 12px;border-bottom:1px solid var(--border);background:var(--surface)';
     const toggle = document.createElement('div');
     toggle.className = 'uprpp-sidebar-toggle';
     toggle.innerHTML = '<i class="fa fa-angle-left"></i>';
@@ -1421,6 +1422,7 @@
 
     const newMenus = document.createElement('ul');
     newMenus.id = 'uprpp-menus';
+    newMenus.style.cssText = 'margin-top:50px;list-style:none;padding:10px 12px 24px;overflow-y:auto;max-height:calc(100vh - 64px)';
 
     function setActiveBranch(li) {
       document.querySelectorAll('#uprpp-menus .uprpp-nav-item').forEach(el => el.classList.remove('active'));
