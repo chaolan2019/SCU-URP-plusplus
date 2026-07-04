@@ -1018,15 +1018,8 @@
       .uprpp-stat-skeleton { cursor: default; pointer-events: none; }
       .uprpp-stat-skeleton .value { background: var(--input-bg); color: transparent !important; border-radius: 4px; width: 48px; height: 34px; }
       .uprpp-stat-skeleton .label { background: var(--input-bg); color: transparent !important; border-radius: 4px; width: 80px; height: 20px; }
-      .uprpp-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: stretch; }
+      .uprpp-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
       @media (max-width: 1100px) { .uprpp-main-grid { grid-template-columns: 1fr; } }
-      #uprpp-left { display: flex; flex-direction: column; }
-      #uprpp-left > .uprpp-card { height: 100%; display: flex; flex-direction: column; }
-      #uprpp-left > .uprpp-card > .uprpp-card-body { flex: 1; display: flex; flex-direction: column; padding: 0 !important; }
-      #uprpp-left .widget-body { flex: 1; display: flex !important; flex-direction: column !important; height: 100% !important; padding: 16px 20px !important; }
-      #uprpp-left .fc { flex: 1; height: 100% !important; display: flex !important; flex-direction: column !important; }
-      #uprpp-left .fc-view-container { flex: 1 !important; height: auto !important; }
-      #uprpp-left .fc-view { height: 100% !important; }
       #uprpp-left .fc-toolbar { margin: 0 0 12px 0 !important; padding: 8px 8px 0 8px !important; }
       #uprpp-left .fc-toolbar .fc-center h2,
       #uprpp-left .fc-toolbar h2 { display: inline-block !important; background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; padding: 6px 14px !important; font-size: 14px !important; color: var(--text) !important; box-shadow: var(--shadow) !important; }
@@ -1592,20 +1585,12 @@
     if (studyWidget) studyWidget.style.display = 'none';
 
     // FullCalendar 重新渲染
-    function resizeSchedule() {
+    setTimeout(() => {
       const fcEl = left.querySelector('.fc');
-      if (!fcEl || !window.jQuery || !window.jQuery.fn.fullCalendar) return;
-      try {
-        const cardBody = fcEl.closest('.uprpp-card-body');
-        const toolbar = fcEl.querySelector('.fc-toolbar');
-        if (!cardBody) return;
-        const h = cardBody.clientHeight - (toolbar ? toolbar.offsetHeight : 0) - 16;
-        window.jQuery(fcEl).fullCalendar('option', 'height', Math.max(200, h));
-        window.jQuery(fcEl).fullCalendar('render');
-      } catch (e) {}
-    }
-    setTimeout(resizeSchedule, 500);
-    window.addEventListener('load', resizeSchedule);
+      if (fcEl && window.jQuery && window.jQuery.fn.fullCalendar) {
+        try { window.jQuery(fcEl).fullCalendar('render'); } catch (e) {}
+      }
+    }, 200);
 
     console.log('[UPR++] 首页仪表板已重构');
   }
