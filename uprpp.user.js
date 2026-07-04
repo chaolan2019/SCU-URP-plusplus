@@ -1023,7 +1023,10 @@
       #uprpp-left { display: flex; flex-direction: column; }
       #uprpp-left > .uprpp-card { height: 100%; display: flex; flex-direction: column; }
       #uprpp-left > .uprpp-card > .uprpp-card-body { flex: 1; display: flex; flex-direction: column; }
-      #uprpp-left .fc { flex: 1; height: 100% !important; }
+      #uprpp-left .fc { flex: 1; height: 100% !important; display: flex !important; flex-direction: column !important; }
+      #uprpp-left .fc-view-container { flex: 1 !important; height: auto !important; }
+      #uprpp-left .fc-view { height: 100% !important; }
+      #uprpp-left .fc-toolbar h2 { background: var(--input-bg) !important; border: 1px solid var(--border) !important; border-radius: var(--radius-sm) !important; padding: 4px 12px !important; font-size: 14px !important; color: var(--text) !important; }
       .uprpp-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 20px; }
       .uprpp-card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
       .uprpp-card-header h4 { font-size: 16px; font-weight: 600; color: var(--text); margin: 0; }
@@ -1589,9 +1592,13 @@
     setTimeout(() => {
       const fcEl = left.querySelector('.fc');
       if (fcEl && window.jQuery && window.jQuery.fn.fullCalendar) {
-        try { window.jQuery(fcEl).fullCalendar('render'); } catch (e) {}
+        try {
+          const h = fcEl.parentElement?.clientHeight || fcEl.clientHeight;
+          window.jQuery(fcEl).fullCalendar('option', 'height', h);
+          window.jQuery(fcEl).fullCalendar('render');
+        } catch (e) {}
       }
-    }, 100);
+    }, 200);
 
     console.log('[UPR++] 首页仪表板已重构');
   }
