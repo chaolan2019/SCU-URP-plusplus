@@ -1022,10 +1022,12 @@
       @media (max-width: 1100px) { .uprpp-main-grid { grid-template-columns: 1fr; } }
       #uprpp-left { display: flex; flex-direction: column; }
       #uprpp-left > .uprpp-card { height: 100%; display: flex; flex-direction: column; }
-      #uprpp-left > .uprpp-card > .uprpp-card-body { flex: 1; display: flex; flex-direction: column; }
+      #uprpp-left > .uprpp-card > .uprpp-card-body { flex: 1; display: flex; flex-direction: column; padding: 0 !important; }
+      #uprpp-left .widget-body { flex: 1; display: flex !important; flex-direction: column !important; height: 100% !important; padding: 16px 20px !important; }
       #uprpp-left .fc { flex: 1; height: 100% !important; display: flex !important; flex-direction: column !important; }
       #uprpp-left .fc-view-container { flex: 1 !important; height: auto !important; }
       #uprpp-left .fc-view { height: 100% !important; }
+      #uprpp-left .fc-toolbar { margin: 0 0 12px 0 !important; padding: 8px 8px 0 8px !important; }
       #uprpp-left .fc-toolbar .fc-center h2,
       #uprpp-left .fc-toolbar h2 { display: inline-block !important; background: var(--input-bg) !important; border: 1px solid var(--border) !important; border-radius: var(--radius-sm) !important; padding: 4px 12px !important; font-size: 14px !important; color: var(--text) !important; }
       .uprpp-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 20px; }
