@@ -469,8 +469,11 @@
     const style = document.createElement('style');
     style.id = 'uprpp-internal-style';
     style.textContent = `
-      /* 全局 */
+      /* 先隐藏原 UI，重构完成后再淡入 */
       html, body { background: var(--bg) !important; color: var(--text) !important; }
+      body { opacity: 0 !important; transition: opacity .25s ease; }
+      body.uprpp-ready { opacity: 1 !important; }
+      /* 全局 */
       a, a:link, a:visited { color: var(--primary) !important; }
       a:hover, a:focus { color: var(--primary-hover) !important; }
       h1, h2, h3, h4, h5, h6, .page-header { color: var(--text) !important; border-color: var(--border) !important; }
@@ -1110,164 +1113,10 @@
     rebuildNavbar();
     window.addEventListener('load', rebuildNavbar);
 
+    // 等 dashboard 骨架屏建立后再淡入，避免原 UI 闪烁
+    setTimeout(() => document.body.classList.add('uprpp-ready'), 600);
+
     console.log('[UPR++] 正式页面样式已注入');
-  }
-
-  // ============================================================
-  // 顶栏辅助函数
-  // ============================================================
-
-  // 旧函数已废弃
-  function setupNavbarSearchToggle() {
-    const clickDiv = document.getElementById('clickdiv');
-    const formSearch = document.getElementById('form-search');
-    const searchInput = document.getElementById('search-input');
-    if (!clickDiv || !formSearch) return;
-
-    // 阻止原 changeInfo，自己控制展开/折叠
-    clickDiv.removeAttribute('onclick');
-
-    // 把搜索按钮的父容器改为相对定位，限制宽度
-    const intelDiv = document.getElementById('intellegenceUDiv');
-    if (intelDiv) {
-      intelDiv.style.position = 'relative';
-      intelDiv.style.zIndex = '30';
-      intelDiv.style.display = 'inline-block';
-      intelDiv.style.width = '32px';
-      intelDiv.style.verticalAlign = 'middle';
-    }
-
-    const clicki = document.getElementById('clicki');
-    if (clicki) {
-      clicki.style.setProperty('color', 'var(--text-secondary)', 'important');
-      clicki.style.setProperty('margin-top', '0', 'important');
-    }
-
-    clickDiv.addEventListener('mouseenter', () => { clickDiv.style.setProperty('background-color', 'var(--input-bg)', 'important'); });
-    clickDiv.addEventListener('mouseleave', () => { clickDiv.style.setProperty('background-color', 'transparent', 'important'); });
-
-    // 把 clickDiv 提到 formSearch 之后，确保按钮在上方
-    if (formSearch.parentNode && formSearch.nextSibling !== clickDiv) {
-      formSearch.parentNode.insertBefore(clickDiv, formSearch.nextSibling);
-    }
-
-    // 把客服图标 a 内的 glyphicon 对齐
-    const serviceLink = document.querySelector('.ace-nav > li > a[href="/main/customerServiceCenter"]');
-    if (serviceLink) {
-      serviceLink.style.display = 'inline-flex';
-      serviceLink.style.alignItems = 'center';
-      serviceLink.style.justifyContent = 'center';
-      const icon = serviceLink.querySelector('.glyphicon');
-      if (icon) {
-        icon.style.top = 'auto';
-        icon.style.verticalAlign = 'middle';
-      }
-    }
-
-    clickDiv.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const isOpen = formSearch.dataset.open === '1';
-      if (isOpen) {
-        formSearch.style.width = '0px';
-        formSearch.style.opacity = '0';
-        formSearch.dataset.open = '0';
-      } else {
-        formSearch.style.width = '220px';
-        formSearch.style.opacity = '1';
-        formSearch.dataset.open = '1';
-        if (searchInput) setTimeout(() => searchInput.focus(), 50);
-      }
-    });
-
-    // 搜索框样式：在按钮左侧紧邻展开，无背景卡片
-    formSearch.style.setProperty('position', 'absolute', 'important');
-    // 只保留 JS 控制的 width/opacity/transition，位置样式交给 CSS
-    formSearch.style.width = '0px';
-    formSearch.style.opacity = '0';
-    formSearch.style.transition = 'width .2s ease, opacity .2s ease';
-
-    if (searchInput) {
-      searchInput.style.setProperty('background-color', 'var(--input-bg)', 'important');
-      searchInput.style.setProperty('border', '1px solid var(--border)', 'important');
-      searchInput.style.setProperty('color', 'var(--text)', 'important');
-      searchInput.style.setProperty('border-radius', '8px', 'important');
-      searchInput.style.setProperty('height', '32px', 'important');
-      searchInput.style.setProperty('padding', '0 12px', 'important');
-      searchInput.style.setProperty('line-height', '32px', 'important');
-      searchInput.style.setProperty('width', '100%', 'important');
-    }
-
-    // 删除搜索框内嵌图标
-    const innerIcon = formSearch.querySelector('.input-icon > .ace-icon.fa-search');
-    if (innerIcon) innerIcon.style.display = 'none';
-
-    // 点击外部收起
-    document.addEventListener('click', (e) => {
-      if (!clickDiv.contains(e.target) && !formSearch.contains(e.target) && formSearch.dataset.open === '1') {
-        formSearch.style.width = '0px';
-        formSearch.style.opacity = '0';
-        formSearch.dataset.open = '0';
-      }
-    });
-  }
-
-  function cleanupUserInfo() {
-    function setImportant(el, prop, value) {
-      el.style.setProperty(prop, value, 'important');
-    }
-
-    // 统一所有顶栏链接高度和垂直居中
-    document.querySelectorAll('.ace-nav > li > a').forEach(a => {
-      setImportant(a, 'display', 'inline-flex');
-      setImportant(a, 'align-items', 'center');
-      setImportant(a, 'height', '36px');
-      setImportant(a, 'padding', '0 10px');
-      setImportant(a, 'flex-wrap', 'nowrap');
-      setImportant(a, 'vertical-align', 'middle');
-    });
-
-    const userLink = document.querySelector('.ace-nav > li.light-blue > a');
-    if (userLink) {
-      setImportant(userLink, 'display', 'inline-flex');
-      setImportant(userLink, 'align-items', 'center');
-      setImportant(userLink, 'gap', '6px');
-    }
-
-    document.querySelectorAll('.ace-nav .user-info').forEach(el => {
-      setImportant(el, 'display', 'inline-flex');
-      setImportant(el, 'align-items', 'center');
-      setImportant(el, 'gap', '4px');
-      setImportant(el, 'max-width', 'none');
-      setImportant(el, 'white-space', 'nowrap');
-      setImportant(el, 'vertical-align', 'middle');
-      setImportant(el, 'line-height', '1');
-      Array.from(el.childNodes).forEach(node => {
-        if (node.nodeType === Node.TEXT_NODE) {
-          node.textContent = node.textContent.replace(/\s+/g, '').trim();
-        }
-      });
-      Array.from(el.children).forEach(child => {
-        setImportant(child, 'display', 'inline');
-        setImportant(child, 'white-space', 'nowrap');
-        setImportant(child, 'line-height', '1');
-      });
-    });
-
-    document.querySelectorAll('.ace-nav .nav-user-photo').forEach(img => {
-      img.alt = (img.alt || '').replace(/\s+/g, '').trim();
-      setImportant(img, 'vertical-align', 'middle');
-      setImportant(img, 'display', 'inline-block');
-      setImportant(img, 'width', '30px');
-      setImportant(img, 'height', '30px');
-    });
-
-    // 所有顶栏 li 垂直居中对齐
-    document.querySelectorAll('.ace-nav > li').forEach(li => {
-      setImportant(li, 'vertical-align', 'middle');
-      setImportant(li, 'text-align', 'left');
-      setImportant(li, 'display', 'inline-block');
-    });
   }
 
   // ============================================================
