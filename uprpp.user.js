@@ -859,6 +859,7 @@
       /* 折叠状态 */
       .sidebar.menu-min .uprpp-sidebar-header { justify-content: center; padding: 14px 0 12px; }
       .sidebar.menu-min #uprpp-menus { padding: 10px 6px 24px; }
+      .sidebar.menu-min #uprpp-menus { padding: 10px 6px 24px; }
       .sidebar.menu-min .uprpp-nav-link { padding: 12px 0; justify-content: center; }
       .sidebar.menu-min .uprpp-nav-text,
       .sidebar.menu-min .uprpp-nav-arrow {
