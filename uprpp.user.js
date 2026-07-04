@@ -769,6 +769,29 @@
         z-index: 100 !important;
         background: var(--surface) !important;
       }
+      /* 兜底：固定悬浮的 sidebar 切换按钮 */
+      .uprpp-sidebar-toggle-fixed {
+        position: fixed !important;
+        top: calc(var(--uprpp-navbar-height) + 10px) !important;
+        left: 10px !important;
+        z-index: 9999 !important;
+        width: 30px !important;
+        height: 30px !important;
+        border-radius: 8px !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text-secondary) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        font-size: 15px !important;
+        transition: left .25s ease, background .15s !important;
+        box-shadow: var(--shadow) !important;
+      }
+      .uprpp-sidebar-toggle-fixed:hover { background: var(--input-bg) !important; color: var(--text) !important; }
+      .sidebar:not(.menu-min) ~ .uprpp-sidebar-toggle-fixed { left: 220px !important; }
+      .sidebar.menu-min ~ .uprpp-sidebar-toggle-fixed { left: 10px !important; }
       .uprpp-sidebar-toggle {
         width: 30px;
         height: 30px;
@@ -1395,11 +1418,33 @@
     toggle.className = 'uprpp-sidebar-toggle';
     toggle.innerHTML = '<i class="fa fa-angle-left"></i>';
     toggle.title = '收起侧边栏';
-    toggle.addEventListener('click', () => {
+    const doToggle = () => {
       const origToggle = document.getElementById('sidebar-collapse');
       if (origToggle) origToggle.click();
-    });
+    };
+    toggle.addEventListener('click', doToggle);
     header.appendChild(toggle);
+
+    // 兜底：body 级别的固定切换按钮
+    let fixedToggle = document.getElementById('uprpp-sidebar-toggle-fixed');
+    if (!fixedToggle) {
+      fixedToggle = document.createElement('div');
+      fixedToggle.id = 'uprpp-sidebar-toggle-fixed';
+      fixedToggle.className = 'uprpp-sidebar-toggle-fixed';
+      fixedToggle.innerHTML = '<i class="fa fa-angle-left"></i>';
+      fixedToggle.title = '收起侧边栏';
+      fixedToggle.addEventListener('click', doToggle);
+      document.body.appendChild(fixedToggle);
+    }
+
+    // 同步固定按钮箭头
+    function syncFixedToggle() {
+      const isMin = document.body.classList.contains('menu-min') || sidebar.classList.contains('menu-min');
+      if (fixedToggle) {
+        fixedToggle.innerHTML = isMin ? '<i class="fa fa-angle-right"></i>' : '<i class="fa fa-angle-left"></i>';
+        fixedToggle.title = isMin ? '展开侧边栏' : '收起侧边栏';
+      }
+    }
 
     // 监听折叠状态，切换箭头
     const observer = new MutationObserver(() => {
@@ -1413,9 +1458,11 @@
         header.style.justifyContent = 'flex-end';
         header.style.padding = '';
       }
+      syncFixedToggle();
     });
     observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
     observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+    syncFixedToggle();
 
     const newMenus = document.createElement('ul');
     newMenus.id = 'uprpp-menus';
