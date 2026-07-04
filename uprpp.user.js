@@ -1500,10 +1500,8 @@
 
     menuData.forEach(item => buildItem(item, newMenus));
 
-    const navWrap = sidebar.querySelector('.nav-wrap');
-    const target = navWrap || sidebar;
-    target.insertBefore(header, target.firstChild);
-    target.insertBefore(newMenus, header.nextSibling);
+    sidebar.insertBefore(header, sidebar.firstChild);
+    sidebar.appendChild(newMenus);
   }
 
   // ============================================================
