@@ -754,12 +754,42 @@
       #menus { display: none !important; }
       .sidebar-collapse { display: none !important; }
 
-      .sidebar.menu-min .uprpp-sidebar-toggle { right: 8px !important; }
+      /* 侧边栏顶部 header */
+      .uprpp-sidebar-header {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 14px 14px 12px;
+        border-bottom: 1px solid var(--border);
+        transition: padding .2s;
+        z-index: 100 !important;
+        background: var(--surface) !important;
+      }
+      #uprpp-menus { margin-top: 50px !important; }
+      .uprpp-sidebar-toggle {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: var(--input-bg);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 15px;
+        transition: all .15s;
+      }
+      .uprpp-sidebar-toggle:hover { background: var(--border); color: var(--text); }
 
       /* 新菜单 */
       #uprpp-menus {
         list-style: none;
-        margin: 0;
+        margin: 50px 0 0 0;
         padding: 10px 12px 24px;
         overflow-y: auto;
         max-height: calc(100vh - 64px);
@@ -827,6 +857,7 @@
       .uprpp-nav-submenu .uprpp-nav-submenu { padding-left: 16px; }
 
       /* 折叠状态 */
+      .sidebar.menu-min .uprpp-sidebar-header { justify-content: center; padding: 14px 0 12px; }
       .sidebar.menu-min #uprpp-menus { padding: 10px 6px 24px; }
       .sidebar.menu-min .uprpp-nav-link { padding: 12px 0; justify-content: center; }
       .sidebar.menu-min .uprpp-nav-text,
@@ -1311,14 +1342,16 @@
   function rebuildSidebarCompletely() {
     const sidebar = document.getElementById('sidebar');
     const origMenus = document.getElementById('menus');
-    if (!sidebar || !origMenus) return;
+    if (!sidebar || !origMenus || document.getElementById('uprpp-menus')) return;
 
+    // 读取顶栏高度并同步 CSS 变量
     const navbar = document.querySelector('.navbar.navbar-default, .navbar-fixed-top');
     if (navbar) {
       const h = navbar.offsetHeight;
       document.documentElement.style.setProperty('--uprpp-navbar-height', h + 'px');
     }
 
+    // 记录原 active 状态
     const activeIds = new Set();
     origMenus.querySelectorAll('li.active').forEach(li => { if (li.id) activeIds.add(li.id); });
 
@@ -1336,9 +1369,19 @@
         const href = a?.getAttribute('href') || '#';
         const onclick = li.getAttribute('onclick') || a?.getAttribute('onclick') || '';
         const id = li.id;
+
+        // 单叶子子菜单提升：父节点直接变成跳转节点，不再展开
         if (children.length === 1 && children[0].children.length === 0) {
-          return { id: id || children[0].id, text, iconClass: iconClass || children[0].iconClass, children: [], href: children[0].href || href, onclick: children[0].onclick || onclick };
+          return {
+            id: id || children[0].id,
+            text,
+            iconClass: iconClass || children[0].iconClass,
+            children: [],
+            href: children[0].href || href,
+            onclick: children[0].onclick || onclick
+          };
         }
+
         return { id, text, iconClass, children, href, onclick };
       });
     }
@@ -1346,34 +1389,54 @@
     const menuData = parseMenu(origMenus);
     origMenus.remove();
 
-    const oldMenus = document.getElementById('uprpp-menus');
-    if (oldMenus) oldMenus.remove();
-
+    // Header + toggle
+    const header = document.createElement('div');
+    header.className = 'uprpp-sidebar-header';
+    header.style.cssText = 'position:absolute;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:flex-end;padding:14px 14px 12px;border-bottom:1px solid var(--border);background:var(--surface)';
     const toggle = document.createElement('div');
     toggle.className = 'uprpp-sidebar-toggle';
-    toggle.style.cssText = 'position:absolute;top:10px;right:10px;z-index:100;width:30px;height:30px;border-radius:8px;background:var(--surface);border:1px solid var(--border);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px';
     toggle.innerHTML = '<i class="fa fa-angle-left"></i>';
     toggle.title = '收起侧边栏';
-    toggle.addEventListener('click', () => {
-      const orig = document.getElementById('sidebar-collapse');
-      if (orig) orig.click();
-    });
-    sidebar.insertBefore(toggle, sidebar.firstChild);
+    const doToggle = () => {
+      const origToggle = document.getElementById('sidebar-collapse');
+      if (origToggle) origToggle.click();
+    };
+    toggle.addEventListener('click', doToggle);
+    header.appendChild(toggle);
 
-    new MutationObserver(() => {
+    // 监听折叠状态，切换箭头
+    const observer = new MutationObserver(() => {
       const isMin = document.body.classList.contains('menu-min') || sidebar.classList.contains('menu-min');
       toggle.innerHTML = isMin ? '<i class="fa fa-angle-right"></i>' : '<i class="fa fa-angle-left"></i>';
       toggle.title = isMin ? '展开侧边栏' : '收起侧边栏';
-    }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+      if (isMin) {
+        header.style.justifyContent = 'center';
+        header.style.padding = '12px 0';
+      } else {
+        header.style.justifyContent = 'flex-end';
+        header.style.padding = '';
+      }
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
 
     const newMenus = document.createElement('ul');
     newMenus.id = 'uprpp-menus';
+    newMenus.style.cssText = 'margin-top:50px;list-style:none;padding:10px 12px 24px;overflow-y:auto;max-height:calc(100vh - 64px)';
 
     function setActiveBranch(li) {
       document.querySelectorAll('#uprpp-menus .uprpp-nav-item').forEach(el => el.classList.remove('active'));
       let p = li;
       while (p && p.id !== 'uprpp-menus') {
         if (p.classList.contains('uprpp-nav-item')) p.classList.add('active');
+        p = p.parentElement;
+      }
+    }
+
+    function openActiveBranch(li) {
+      let p = li.parentElement;
+      while (p && p.id !== 'uprpp-menus') {
+        if (p.classList.contains('uprpp-nav-item')) p.classList.add('open');
         p = p.parentElement;
       }
     }
@@ -1413,6 +1476,7 @@
         sub.className = 'uprpp-nav-submenu';
         item.children.forEach(child => buildItem(child, sub));
         li.appendChild(sub);
+
         link.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -1420,15 +1484,24 @@
         });
         link.style.cursor = 'pointer';
       } else {
-        link.addEventListener('click', () => setActiveBranch(li));
+        link.addEventListener('click', () => {
+          setActiveBranch(li);
+          // 叶子节点靠 href 跳转，不再阻止默认行为
+        });
       }
 
-      if (item.id && activeIds.has(item.id)) li.classList.add('active');
+      if (item.id && activeIds.has(item.id)) {
+        li.classList.add('active');
+        // 不再默认展开 active 分支，保持侧边栏整洁
+      }
+
       container.appendChild(li);
     }
 
     menuData.forEach(item => buildItem(item, newMenus));
-    sidebar.insertBefore(newMenus, sidebar.firstChild);
+
+    sidebar.insertBefore(header, sidebar.firstChild);
+    sidebar.appendChild(newMenus);
   }
 
   // ============================================================
