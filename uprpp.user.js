@@ -1029,7 +1029,7 @@
       #uprpp-left .fc-view { height: 100% !important; }
       #uprpp-left .fc-toolbar { margin: 0 0 12px 0 !important; padding: 8px 8px 0 8px !important; }
       #uprpp-left .fc-toolbar .fc-center h2,
-      #uprpp-left .fc-toolbar h2 { display: inline-block !important; background: var(--input-bg) !important; border: 1px solid var(--border) !important; border-radius: var(--radius-sm) !important; padding: 4px 12px !important; font-size: 14px !important; color: var(--text) !important; }
+      #uprpp-left .fc-toolbar h2 { display: inline-block !important; background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; padding: 6px 14px !important; font-size: 14px !important; color: var(--text) !important; box-shadow: var(--shadow) !important; }
       .uprpp-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 20px; }
       .uprpp-card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
       .uprpp-card-header h4 { font-size: 16px; font-weight: 600; color: var(--text); margin: 0; }
@@ -1592,15 +1592,20 @@
     if (studyWidget) studyWidget.style.display = 'none';
 
     // FullCalendar 重新渲染
-    setTimeout(() => {
+    function resizeSchedule() {
       const fcEl = left.querySelector('.fc');
-      if (fcEl && window.jQuery && window.jQuery.fn.fullCalendar) {
-        try {
-          window.jQuery(fcEl).fullCalendar('option', 'height', 'parent');
-          window.jQuery(fcEl).fullCalendar('render');
-        } catch (e) {}
-      }
-    }, 200);
+      if (!fcEl || !window.jQuery || !window.jQuery.fn.fullCalendar) return;
+      try {
+        const cardBody = fcEl.closest('.uprpp-card-body');
+        const toolbar = fcEl.querySelector('.fc-toolbar');
+        if (!cardBody) return;
+        const h = cardBody.clientHeight - (toolbar ? toolbar.offsetHeight : 0) - 16;
+        window.jQuery(fcEl).fullCalendar('option', 'height', Math.max(200, h));
+        window.jQuery(fcEl).fullCalendar('render');
+      } catch (e) {}
+    }
+    setTimeout(resizeSchedule, 500);
+    window.addEventListener('load', resizeSchedule);
 
     console.log('[UPR++] 首页仪表板已重构');
   }
