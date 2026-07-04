@@ -756,12 +756,16 @@
 
       /* 侧边栏顶部 header */
       .uprpp-sidebar-header {
-        display: flex;
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
         align-items: center;
         justify-content: flex-end;
         padding: 14px 14px 12px;
         border-bottom: 1px solid var(--border);
         transition: padding .2s;
+        position: relative;
+        z-index: 10;
       }
       .uprpp-sidebar-toggle {
         width: 30px;
