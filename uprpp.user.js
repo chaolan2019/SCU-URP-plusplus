@@ -1458,10 +1458,9 @@
           li.classList.toggle('open');
         });
       } else {
-        if (item.onclick) li.setAttribute('onclick', item.onclick);
-        link.addEventListener('click', (e) => {
+        link.addEventListener('click', () => {
           setActiveBranch(li);
-          if (item.onclick) e.preventDefault();
+          // 叶子节点靠 href 跳转，不再阻止默认行为
         });
       }
 
