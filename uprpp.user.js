@@ -764,8 +764,10 @@
         padding: 14px 14px 12px;
         border-bottom: 1px solid var(--border);
         transition: padding .2s;
-        position: relative;
-        z-index: 10;
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 100 !important;
+        background: var(--surface) !important;
       }
       .uprpp-sidebar-toggle {
         width: 30px;
