@@ -859,7 +859,6 @@
       /* 折叠状态 */
       .sidebar.menu-min .uprpp-sidebar-header { justify-content: center; padding: 14px 0 12px; }
       .sidebar.menu-min #uprpp-menus { padding: 10px 6px 24px; }
-      .sidebar.menu-min #uprpp-menus { padding: 10px 6px 24px; }
       .sidebar.menu-min .uprpp-nav-link { padding: 12px 0; justify-content: center; }
       .sidebar.menu-min .uprpp-nav-text,
       .sidebar.menu-min .uprpp-nav-arrow {
@@ -1150,6 +1149,23 @@
     const aceNav = navbar?.querySelector('.ace-nav');
     if (!aceNav) return;
 
+    // 侧边栏收起按钮（放顶栏）
+    if (!document.getElementById('uprpp-nav-toggle')) {
+      const navToggle = document.createElement('div');
+      navToggle.id = 'uprpp-nav-toggle';
+      navToggle.style.cssText = 'position:absolute;left:14px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:8px;border:1px solid var(--border);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;z-index:10;background:var(--surface)';
+      navToggle.innerHTML = '<i class="fa fa-bars"></i>';
+      navToggle.title = '展开侧边栏';
+      navToggle.addEventListener('click', () => {
+        const orig = document.getElementById('sidebar-collapse');
+        if (orig) orig.click();
+        const isMin = document.body.classList.contains('menu-min');
+        navToggle.innerHTML = isMin ? '<i class="fa fa-bars"></i>' : '<i class="fa fa-angle-left"></i>';
+      });
+      navbar.style.position = 'relative';
+      navbar.appendChild(navToggle);
+    }
+
     function force(el, styles) {
       Object.entries(styles).forEach(([k, v]) => el.style.setProperty(k, v, 'important'));
     }
@@ -1390,27 +1406,6 @@
     const menuData = parseMenu(origMenus);
     origMenus.remove();
 
-    // Header + toggle
-    // Toggle 按钮：fixed 定位不依赖 sidebar 内部布局
-    const toggle = document.createElement('div');
-    toggle.className = 'uprpp-sidebar-toggle';
-    toggle.style.cssText = 'position:fixed!important;top:calc(var(--uprpp-navbar-height) + 10px)!important;left:220px!important;z-index:9999!important;width:30px;height:30px;border-radius:8px;background:var(--surface);border:1px solid var(--border);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;box-shadow:var(--shadow)';
-    toggle.innerHTML = '<i class="fa fa-angle-left"></i>';
-    toggle.title = '收起侧边栏';
-    toggle.addEventListener('click', () => {
-      const orig = document.getElementById('sidebar-collapse');
-      if (orig) orig.click();
-    });
-    sidebar.appendChild(toggle);
-
-    // 监听折叠状态调整箭头和位置
-    new MutationObserver(() => {
-      const isMin = sidebar.classList.contains('menu-min') || document.body.classList.contains('menu-min');
-      toggle.style.left = isMin ? '10px' : '220px';
-      toggle.innerHTML = isMin ? '<i class="fa fa-angle-right"></i>' : '<i class="fa fa-angle-left"></i>';
-      toggle.title = isMin ? '展开侧边栏' : '收起侧边栏';
-    }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
-
     const newMenus = document.createElement('ul');
     newMenus.id = 'uprpp-menus';
     newMenus.style.cssText = 'margin-top:50px;list-style:none;padding:10px 12px 24px;overflow-y:auto;max-height:calc(100vh - 64px)';
@@ -1649,11 +1644,9 @@
     const run = () => {
       setTimeout(() => {
         if (!document.getElementById('sidebar')) return;
-        // 重新计算顶栏高度
         const navbar = document.querySelector('.navbar.navbar-default, .navbar-fixed-top');
         if (navbar) {
-          const h = navbar.offsetHeight;
-          document.documentElement.style.setProperty('--uprpp-navbar-height', h + 'px');
+          document.documentElement.style.setProperty('--uprpp-navbar-height', navbar.offsetHeight + 'px');
         }
         rebuildSidebarCompletely();
         rebuildNavbar();
