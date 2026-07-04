@@ -1480,7 +1480,7 @@
 
       if (item.id && activeIds.has(item.id)) {
         li.classList.add('active');
-        openActiveBranch(li);
+        // 不再默认展开 active 分支，保持侧边栏整洁
       }
 
       container.appendChild(li);
