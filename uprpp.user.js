@@ -1020,6 +1020,8 @@
       .uprpp-stat-skeleton .label { background: var(--input-bg); color: transparent !important; border-radius: 4px; width: 80px; height: 20px; }
       .uprpp-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
       @media (max-width: 1100px) { .uprpp-main-grid { grid-template-columns: 1fr; } }
+      #uprpp-left .uprpp-card { box-shadow: none !important; border: none !important; background: transparent !important; }
+      #uprpp-left .fc { background: transparent !important; }
       #uprpp-left .fc-toolbar { margin: 0 0 12px 0 !important; padding: 8px 8px 0 8px !important; }
       #uprpp-left .fc-toolbar .fc-center h2,
       #uprpp-left .fc-toolbar h2 { display: inline-block !important; background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; padding: 6px 14px !important; font-size: 14px !important; color: var(--text) !important; box-shadow: var(--shadow) !important; }
