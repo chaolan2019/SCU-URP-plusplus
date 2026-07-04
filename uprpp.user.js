@@ -472,10 +472,11 @@
   // ============================================================
 
   function beautifyInternal() {
-    if (document.getElementById('uprpp-internal-style')) return;
-    const style = document.createElement('style');
-    style.id = 'uprpp-internal-style';
-    style.textContent = `
+    const styleExists = !!document.getElementById('uprpp-internal-style');
+    if (!styleExists) {
+      const style = document.createElement('style');
+      style.id = 'uprpp-internal-style';
+      style.textContent = `
       /* 全局 */
       html, body { background: var(--bg) !important; color: var(--text) !important; }
       a, a:link, a:visited { color: var(--primary) !important; }
@@ -1107,7 +1108,8 @@
       #uprpp-dashboard .btn-app:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; transform: translateY(-2px); box-shadow: 0 4px 12px var(--ring); }
       #uprpp-dashboard .btn-app > .ace-icon { color: inherit !important; display: block; margin: 0 auto 4px; font-size: 22px; }
     `;
-    document.head.appendChild(style);
+    if (!styleExists) document.head.appendChild(style);
+    }
 
     // 首页进行组件级重构
     const pageContent = document.querySelector('.page-content');
@@ -1126,7 +1128,7 @@
     // 等 dashboard 骨架屏建立后再淡入，避免原 UI 闪烁
     setTimeout(() => document.body.classList.add('uprpp-ready'), 600);
 
-    console.log('[UPR++] 正式页面样式已注入');
+    if (!styleExists) console.log('[UPR++] 正式页面样式已注入');
   }
 
   // ============================================================
