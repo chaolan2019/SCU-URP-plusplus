@@ -958,6 +958,17 @@
       .fc-button.fc-state-active { background: var(--primary) !important; color: #fff !important; }
       .fc-today { background: var(--input-bg) !important; }
 
+      /* 课表页面 #courseTable */
+      #courseTable { border-collapse: separate !important; border-spacing: 2px !important; }
+      #courseTable th { background: var(--input-bg) !important; color: var(--text-secondary) !important; font-weight: 500 !important; border: none !important; border-radius: var(--radius-sm) !important; padding: 10px 8px !important; text-align: center !important; font-size: 13px !important; }
+      #courseTable td { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: var(--radius-sm) !important; padding: 8px 6px !important; vertical-align: top !important; font-size: 12px !important; line-height: 1.5 !important; }
+      #courseTable td:first-child { background: var(--input-bg) !important; color: var(--text-secondary) !important; font-weight: 500 !important; text-align: center !important; font-size: 11px !important; }
+      #courseTable td:has(> br:first-child),
+      #courseTable td:empty { background: var(--bg) !important; border-color: transparent !important; }
+      /* 课程格子有内容时轻微高亮 */
+      #courseTable td:not(:empty):not(:first-child) { background: var(--input-bg) !important; border-color: var(--border) !important; }
+      #courseTable td:not(:empty):not(:first-child):hover { background: var(--border) !important; }
+
       /* 列表 / 通知 */
       .list-group-item { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text) !important; }
       .list-group-item:hover { background: var(--input-bg) !important; }
