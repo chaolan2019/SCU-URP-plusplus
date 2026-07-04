@@ -959,27 +959,28 @@
       .fc-today { background: var(--input-bg) !important; }
 
       /* 课表页面 #courseTable */
-      #courseTable { border-collapse: separate !important; border-spacing: 4px !important; background: transparent !important; }
+      #courseTable { border-collapse: separate !important; border-spacing: 3px !important; background: transparent !important; }
       #courseTable th {
         background: var(--input-bg) !important; color: var(--text-secondary) !important;
         font-weight: 500 !important; border: none !important; border-radius: var(--radius-sm) !important;
         padding: 10px 8px !important; text-align: center !important; font-size: 13px !important;
       }
       #courseTable td {
-        border: none !important; border-radius: var(--radius-sm) !important; overflow: hidden !important;
-        padding: 8px 10px !important; vertical-align: top !important;
+        border: none !important; border-radius: var(--radius-sm) !important;
+        padding: 4px !important; vertical-align: top !important;
         font-size: 13px !important; line-height: 1.6 !important;
-        color: var(--text) !important;
+        color: var(--text) !important; overflow: hidden !important;
       }
       #courseTable td:first-child {
         background: var(--input-bg) !important; color: var(--text-secondary) !important;
         font-weight: 500 !important; text-align: center !important; font-size: 11px !important;
       }
-      /* 保留原生课程颜色，只加圆角 */
-      #courseTable .class_div.box {
+      /* 课程卡片 */
+      #courseTable .uprpp-course-card {
+        background: inherit !important;
         border-radius: var(--radius) !important;
         padding: 8px 10px !important;
-        margin: 2px !important;
+        margin: 2px 0 !important;
       }
 
       /* 列表 / 通知 */
@@ -1161,6 +1162,18 @@
     setTimeout(() => document.body.classList.add('uprpp-ready'), 600);
 
     if (!styleExists) console.log('[UPR++] 正式页面样式已注入');
+
+    // 课表数据加载后包装圆角卡片
+    setTimeout(() => {
+      const ct = document.getElementById('courseTable');
+      if (!ct) return;
+      ct.querySelectorAll('td[id]').forEach(td => {
+        if (td.querySelector('.uprpp-course-card')) return;
+        const html = td.innerHTML.trim();
+        if (!html) return;
+        td.innerHTML = '<div class="uprpp-course-card">' + html + '</div>';
+      });
+    }, 800);
   }
 
   // ============================================================
