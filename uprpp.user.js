@@ -976,6 +976,11 @@
         font-weight: 500 !important; text-align: center !important; font-size: 11px !important;
       }
       /* 保留原生课程颜色，只加圆角 */
+      #courseTable .class_div.box {
+        border-radius: var(--radius) !important;
+        padding: 8px 10px !important;
+        margin: 2px !important;
+      }
 
       /* 列表 / 通知 */
       .list-group-item { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text) !important; }
