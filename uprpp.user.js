@@ -739,14 +739,13 @@
       .navbar-fixed-top,
       .navbar-fixed-bottom { left: 0 !important; right: 0 !important; }
       .sidebar {
-        top: 0 !important;
-        height: 100vh !important;
-        padding-top: var(--uprpp-navbar-height) !important;
-        box-sizing: border-box !important;
+        z-index: 1040 !important;
+        top: var(--uprpp-navbar-height) !important;
+        height: calc(100vh - var(--uprpp-navbar-height)) !important;
         background: var(--surface) !important;
         border-right: 1px solid var(--border) !important;
         box-shadow: var(--shadow) !important;
-        transition: width .25s ease, padding-top .25s ease;
+        transition: width .25s ease;
       }
       .sidebar:before { display: none !important; }
       .main-content { transition: margin-left .25s ease; }
@@ -758,13 +757,37 @@
 
       /* 侧边栏顶部 header */
       .uprpp-sidebar-header {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
         display: flex !important;
         align-items: center;
         justify-content: flex-end;
         padding: 14px 14px 12px;
         border-bottom: 1px solid var(--border);
+        transition: padding .2s;
+        z-index: 100 !important;
         background: var(--surface) !important;
       }
+      #uprpp-menus { margin-top: 50px !important; }
+      .uprpp-sidebar-toggle {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: var(--input-bg);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 15px;
+        transition: all .15s;
+      }
+      .uprpp-sidebar-toggle:hover { background: var(--border); color: var(--text); }
+
+      /* 新菜单 */
       #uprpp-menus {
         list-style: none;
         margin: 50px 0 0 0;
@@ -835,6 +858,7 @@
       .uprpp-nav-submenu .uprpp-nav-submenu { padding-left: 16px; }
 
       /* 折叠状态 */
+      .sidebar.menu-min .uprpp-sidebar-header { justify-content: center; padding: 14px 0 12px; }
       .sidebar.menu-min #uprpp-menus { padding: 10px 6px 24px; }
       .sidebar.menu-min .uprpp-nav-link { padding: 12px 0; justify-content: center; }
       .sidebar.menu-min .uprpp-nav-text,
@@ -1325,8 +1349,8 @@
     const navbar = document.querySelector('.navbar.navbar-default, .navbar-fixed-top');
     const nh = navbar ? navbar.offsetHeight : 45;
     document.documentElement.style.setProperty('--uprpp-navbar-height', nh + 'px', 'important');
-    sidebar.style.setProperty('padding-top', nh + 'px', 'important');
-    sidebar.style.setProperty('height', '100vh', 'important');
+    sidebar.style.setProperty('top', nh + 'px', 'important');
+    sidebar.style.setProperty('height', 'calc(100vh - ' + nh + 'px)', 'important');
 
     // 记录原 active 状态
     const activeIds = new Set();
@@ -1369,7 +1393,7 @@
     // Header + toggle
     const header = document.createElement('div');
     header.className = 'uprpp-sidebar-header';
-    header.style.cssText = 'display:flex;align-items:center;justify-content:flex-end;padding:14px 14px 12px;border-bottom:1px solid var(--border);background:var(--surface)';
+    header.style.cssText = 'position:absolute;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:flex-end;padding:14px 14px 12px;border-bottom:1px solid var(--border);background:var(--surface)';
     const toggle = document.createElement('div');
     toggle.className = 'uprpp-sidebar-toggle';
     toggle.innerHTML = '<i class="fa fa-angle-left"></i>';
@@ -1399,7 +1423,7 @@
 
     const newMenus = document.createElement('ul');
     newMenus.id = 'uprpp-menus';
-    newMenus.style.cssText = 'list-style:none;padding:10px 12px 24px;overflow-y:auto;max-height:calc(100vh - 64px)';
+    newMenus.style.cssText = 'margin-top:50px;list-style:none;padding:10px 12px 24px;overflow-y:auto;max-height:calc(100vh - 64px)';
 
     function setActiveBranch(li) {
       document.querySelectorAll('#uprpp-menus .uprpp-nav-item').forEach(el => el.classList.remove('active'));
@@ -1640,8 +1664,8 @@
         const navbar = document.querySelector('.navbar.navbar-default, .navbar-fixed-top');
         const nh = navbar ? navbar.offsetHeight : 45;
         document.documentElement.style.setProperty('--uprpp-navbar-height', nh + 'px', 'important');
-        sidebar.style.setProperty('padding-top', nh + 'px', 'important');
-        sidebar.style.setProperty('height', '100vh', 'important');
+        sidebar.style.setProperty('top', nh + 'px', 'important');
+        sidebar.style.setProperty('height', 'calc(100vh - ' + nh + 'px)', 'important');
         rebuildSidebarCompletely();
         rebuildNavbar();
       }, 100);
