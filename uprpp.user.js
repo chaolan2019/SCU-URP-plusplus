@@ -1489,13 +1489,9 @@
     menuData.forEach(item => buildItem(item, newMenus));
 
     const navWrap = sidebar.querySelector('.nav-wrap');
-    if (navWrap) {
-      navWrap.appendChild(header);
-      navWrap.appendChild(newMenus);
-    } else {
-      sidebar.appendChild(header);
-      sidebar.appendChild(newMenus);
-    }
+    const target = navWrap || sidebar;
+    target.insertBefore(header, target.firstChild);
+    target.insertBefore(newMenus, header.nextSibling);
   }
 
   // ============================================================
