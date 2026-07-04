@@ -1356,10 +1356,23 @@
         const iconEl = a?.querySelector('.menu-icon');
         const iconClass = iconEl ? Array.from(iconEl.classList).filter(c => c !== 'menu-icon').join(' ') : '';
         const submenu = li.querySelector(':scope > .submenu');
-        const children = submenu ? parseMenu(submenu) : [];
+        let children = submenu ? parseMenu(submenu) : [];
         const href = a?.getAttribute('href') || '#';
         const onclick = li.getAttribute('onclick') || a?.getAttribute('onclick') || '';
         const id = li.id;
+
+        // 单叶子子菜单提升：父节点直接变成跳转节点，不再展开
+        if (children.length === 1 && children[0].children.length === 0) {
+          return {
+            id: id || children[0].id,
+            text,
+            iconClass: iconClass || children[0].iconClass,
+            children: [],
+            href: children[0].href || href,
+            onclick: children[0].onclick || onclick
+          };
+        }
+
         return { id, text, iconClass, children, href, onclick };
       });
     }
