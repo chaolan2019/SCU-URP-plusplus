@@ -1347,7 +1347,7 @@
 
     // 读取顶栏高度并同步 CSS 变量（加兜底）
     const navbar = document.querySelector('.navbar.navbar-default, .navbar-fixed-top');
-    const nh = navbar ? navbar.offsetHeight : 45;
+    const nh = navbar ? (navbar.offsetHeight || 45) : 45;
     document.documentElement.style.setProperty('--uprpp-navbar-height', nh + 'px', 'important');
     sidebar.style.setProperty('top', nh + 'px', 'important');
     sidebar.style.setProperty('height', 'calc(100vh - ' + nh + 'px)', 'important');
@@ -1662,7 +1662,7 @@
         const sidebar = document.getElementById('sidebar');
         if (!sidebar) return;
         const navbar = document.querySelector('.navbar.navbar-default, .navbar-fixed-top');
-        const nh = navbar ? navbar.offsetHeight : 45;
+        const nh = navbar ? (navbar.offsetHeight || 45) : 45;
         document.documentElement.style.setProperty('--uprpp-navbar-height', nh + 'px', 'important');
         sidebar.style.setProperty('top', nh + 'px', 'important');
         sidebar.style.setProperty('height', 'calc(100vh - ' + nh + 'px)', 'important');
