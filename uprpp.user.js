@@ -1657,8 +1657,17 @@
   // 监听 PJAX/AJAX 路由变化，重新执行美化
   function watchRouteChanges() {
     const run = () => {
-      if (document.getElementById('uprpp-internal-style')) return;
-      init();
+      setTimeout(() => {
+        if (!document.getElementById('sidebar')) return;
+        // 重新计算顶栏高度
+        const navbar = document.querySelector('.navbar.navbar-default, .navbar-fixed-top');
+        if (navbar) {
+          const h = navbar.offsetHeight;
+          document.documentElement.style.setProperty('--uprpp-navbar-height', h + 'px');
+        }
+        rebuildSidebarCompletely();
+        rebuildNavbar();
+      }, 100);
     };
     window.addEventListener('popstate', run);
     window.addEventListener('hashchange', run);
