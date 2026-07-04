@@ -739,6 +739,7 @@
       .navbar-fixed-top,
       .navbar-fixed-bottom { left: 0 !important; right: 0 !important; }
       .sidebar {
+        z-index: 1040 !important;
         top: var(--uprpp-navbar-height) !important;
         height: calc(100vh - var(--uprpp-navbar-height)) !important;
         background: var(--surface) !important;
@@ -1149,23 +1150,6 @@
     const aceNav = navbar?.querySelector('.ace-nav');
     if (!aceNav) return;
 
-    // 侧边栏收起按钮（放顶栏）
-    if (!document.getElementById('uprpp-nav-toggle')) {
-      const navToggle = document.createElement('div');
-      navToggle.id = 'uprpp-nav-toggle';
-      navToggle.style.cssText = 'position:absolute;left:14px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:8px;border:1px solid var(--border);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;z-index:10;background:var(--surface)';
-      navToggle.innerHTML = '<i class="fa fa-bars"></i>';
-      navToggle.title = '展开侧边栏';
-      navToggle.addEventListener('click', () => {
-        const orig = document.getElementById('sidebar-collapse');
-        if (orig) orig.click();
-        const isMin = document.body.classList.contains('menu-min');
-        navToggle.innerHTML = isMin ? '<i class="fa fa-bars"></i>' : '<i class="fa fa-angle-left"></i>';
-      });
-      navbar.style.position = 'relative';
-      navbar.appendChild(navToggle);
-    }
-
     function force(el, styles) {
       Object.entries(styles).forEach(([k, v]) => el.style.setProperty(k, v, 'important'));
     }
@@ -1361,12 +1345,12 @@
     const origMenus = document.getElementById('menus');
     if (!sidebar || !origMenus || document.getElementById('uprpp-menus')) return;
 
-    // 读取顶栏高度并同步 CSS 变量
+    // 读取顶栏高度并同步 CSS 变量（加兜底）
     const navbar = document.querySelector('.navbar.navbar-default, .navbar-fixed-top');
-    if (navbar) {
-      const h = navbar.offsetHeight;
-      document.documentElement.style.setProperty('--uprpp-navbar-height', h + 'px');
-    }
+    const nh = navbar ? navbar.offsetHeight : 45;
+    document.documentElement.style.setProperty('--uprpp-navbar-height', nh + 'px');
+    sidebar.style.top = nh + 'px';
+    sidebar.style.height = 'calc(100vh - ' + nh + 'px)';
 
     // 记录原 active 状态
     const activeIds = new Set();
@@ -1405,6 +1389,37 @@
 
     const menuData = parseMenu(origMenus);
     origMenus.remove();
+
+    // Header + toggle
+    const header = document.createElement('div');
+    header.className = 'uprpp-sidebar-header';
+    header.style.cssText = 'position:absolute;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:flex-end;padding:14px 14px 12px;border-bottom:1px solid var(--border);background:var(--surface)';
+    const toggle = document.createElement('div');
+    toggle.className = 'uprpp-sidebar-toggle';
+    toggle.innerHTML = '<i class="fa fa-angle-left"></i>';
+    toggle.title = '收起侧边栏';
+    const doToggle = () => {
+      const origToggle = document.getElementById('sidebar-collapse');
+      if (origToggle) origToggle.click();
+    };
+    toggle.addEventListener('click', doToggle);
+    header.appendChild(toggle);
+
+    // 监听折叠状态，切换箭头
+    const observer = new MutationObserver(() => {
+      const isMin = document.body.classList.contains('menu-min') || sidebar.classList.contains('menu-min');
+      toggle.innerHTML = isMin ? '<i class="fa fa-angle-right"></i>' : '<i class="fa fa-angle-left"></i>';
+      toggle.title = isMin ? '展开侧边栏' : '收起侧边栏';
+      if (isMin) {
+        header.style.justifyContent = 'center';
+        header.style.padding = '12px 0';
+      } else {
+        header.style.justifyContent = 'flex-end';
+        header.style.padding = '';
+      }
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
 
     const newMenus = document.createElement('ul');
     newMenus.id = 'uprpp-menus';
@@ -1486,6 +1501,7 @@
 
     menuData.forEach(item => buildItem(item, newMenus));
 
+    sidebar.insertBefore(header, sidebar.firstChild);
     sidebar.appendChild(newMenus);
   }
 
@@ -1643,11 +1659,13 @@
   function watchRouteChanges() {
     const run = () => {
       setTimeout(() => {
-        if (!document.getElementById('sidebar')) return;
+        const sidebar = document.getElementById('sidebar');
+        if (!sidebar) return;
         const navbar = document.querySelector('.navbar.navbar-default, .navbar-fixed-top');
-        if (navbar) {
-          document.documentElement.style.setProperty('--uprpp-navbar-height', navbar.offsetHeight + 'px');
-        }
+        const nh = navbar ? navbar.offsetHeight : 45;
+        document.documentElement.style.setProperty('--uprpp-navbar-height', nh + 'px');
+        sidebar.style.top = nh + 'px';
+        sidebar.style.height = 'calc(100vh - ' + nh + 'px)';
         rebuildSidebarCompletely();
         rebuildNavbar();
       }, 100);
