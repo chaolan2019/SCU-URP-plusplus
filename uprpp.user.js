@@ -842,9 +842,9 @@
         list-style: none;
         margin: 0;
         padding: 3px 0 3px 20px;
-        display: none;
+        display: none !important;
       }
-      .uprpp-nav-item.open > .uprpp-nav-submenu { display: block; }
+      .uprpp-nav-item.open > .uprpp-nav-submenu { display: block !important; }
       .uprpp-nav-submenu .uprpp-nav-link { padding: 9px 13px; font-size: 14px; }
       .uprpp-nav-submenu .uprpp-nav-submenu { padding-left: 16px; }
 
@@ -1470,6 +1470,7 @@
           e.stopPropagation();
           li.classList.toggle('open');
         });
+        link.style.cursor = 'pointer';
       } else {
         link.addEventListener('click', () => {
           setActiveBranch(li);
@@ -1647,6 +1648,20 @@
     }
   }
 
+  // 监听 PJAX/AJAX 路由变化，重新执行美化
+  function watchRouteChanges() {
+    const run = () => {
+      if (document.getElementById('uprpp-internal-style')) return;
+      init();
+    };
+    window.addEventListener('popstate', run);
+    window.addEventListener('hashchange', run);
+    const origPush = history.pushState;
+    const origReplace = history.replaceState;
+    history.pushState = function (...args) { origPush.apply(this, args); setTimeout(run, 100); };
+    history.replaceState = function (...args) { origReplace.apply(this, args); setTimeout(run, 100); };
+  }
+
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.UPRPP = {
@@ -1665,8 +1680,9 @@
   };
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => { init(); watchRouteChanges(); });
   } else {
     init();
+    watchRouteChanges();
   }
 })();
