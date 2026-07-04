@@ -10,11 +10,18 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        unsafeWindow
-// @run-at       document-end
+// @run-at       document-start
 // ==/UserScript==
 
 (function () {
   'use strict';
+
+  // 最早阶段注入：先隐藏原 UI，重构完再淡入
+  GM_addStyle(`
+    html, body { background: #F4F6F9 !important; color: #0F172A !important; }
+    body { opacity: 0 !important; transition: opacity .25s ease; }
+    body.uprpp-ready { opacity: 1 !important; }
+  `);
 
   const THEME_KEY = 'uprpp_theme_v3';
   const ACCENT_KEY = 'uprpp_accent_v1';
@@ -469,11 +476,8 @@
     const style = document.createElement('style');
     style.id = 'uprpp-internal-style';
     style.textContent = `
-      /* 先隐藏原 UI，重构完成后再淡入 */
-      html, body { background: var(--bg) !important; color: var(--text) !important; }
-      body { opacity: 0 !important; transition: opacity .25s ease; }
-      body.uprpp-ready { opacity: 1 !important; }
       /* 全局 */
+      html, body { background: var(--bg) !important; color: var(--text) !important; }
       a, a:link, a:visited { color: var(--primary) !important; }
       a:hover, a:focus { color: var(--primary-hover) !important; }
       h1, h2, h3, h4, h5, h6, .page-header { color: var(--text) !important; border-color: var(--border) !important; }
