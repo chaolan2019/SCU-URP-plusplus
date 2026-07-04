@@ -1390,35 +1390,25 @@
     origMenus.remove();
 
     // Header + toggle
-    const header = document.createElement('div');
-    header.className = 'uprpp-sidebar-header';
-    header.style.cssText = 'position:absolute;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:flex-end;padding:14px 14px 12px;border-bottom:1px solid var(--border);background:var(--surface)';
+    // Toggle 按钮：fixed 定位不依赖 sidebar 内部布局
     const toggle = document.createElement('div');
     toggle.className = 'uprpp-sidebar-toggle';
+    toggle.style.cssText = 'position:fixed!important;top:calc(var(--uprpp-navbar-height) + 10px)!important;left:220px!important;z-index:9999!important;width:30px;height:30px;border-radius:8px;background:var(--surface);border:1px solid var(--border);color:var(--text-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;box-shadow:var(--shadow)';
     toggle.innerHTML = '<i class="fa fa-angle-left"></i>';
     toggle.title = '收起侧边栏';
-    const doToggle = () => {
-      const origToggle = document.getElementById('sidebar-collapse');
-      if (origToggle) origToggle.click();
-    };
-    toggle.addEventListener('click', doToggle);
-    header.appendChild(toggle);
+    toggle.addEventListener('click', () => {
+      const orig = document.getElementById('sidebar-collapse');
+      if (orig) orig.click();
+    });
+    sidebar.appendChild(toggle);
 
-    // 监听折叠状态，切换箭头
-    const observer = new MutationObserver(() => {
-      const isMin = document.body.classList.contains('menu-min') || sidebar.classList.contains('menu-min');
+    // 监听折叠状态调整箭头和位置
+    new MutationObserver(() => {
+      const isMin = sidebar.classList.contains('menu-min') || document.body.classList.contains('menu-min');
+      toggle.style.left = isMin ? '10px' : '220px';
       toggle.innerHTML = isMin ? '<i class="fa fa-angle-right"></i>' : '<i class="fa fa-angle-left"></i>';
       toggle.title = isMin ? '展开侧边栏' : '收起侧边栏';
-      if (isMin) {
-        header.style.justifyContent = 'center';
-        header.style.padding = '12px 0';
-      } else {
-        header.style.justifyContent = 'flex-end';
-        header.style.padding = '';
-      }
-    });
-    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-    observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+    }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
     const newMenus = document.createElement('ul');
     newMenus.id = 'uprpp-menus';
@@ -1500,7 +1490,6 @@
 
     menuData.forEach(item => buildItem(item, newMenus));
 
-    sidebar.insertBefore(header, sidebar.firstChild);
     sidebar.appendChild(newMenus);
   }
 
