@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         UPR++ 教务系统美化
 // @namespace    https://github.com/hanako/upr-plus
-// @version      0.3.5
+// @version      0.3.10
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -17,6 +17,7 @@
   'use strict';
 
   const THEME_KEY = 'uprpp_theme_v3';
+  const ACCENT_KEY = 'uprpp_accent_v1';
 
   const THEMES = {
     'default': {
@@ -24,9 +25,9 @@
       vars: {
         '--bg': '#F4F6F9', '--surface': '#FFFFFF',
         '--text': '#0F172A', '--text-secondary': '#64748B', '--text-muted': '#94A3B8',
-        '--border': '#E2E8F0', '--border-focus': '#1E3A5F',
-        '--input-bg': '#F8FAFC', '--primary': '#1E3A5F', '--primary-hover': '#162D4A',
-        '--ring': 'rgba(30,58,95,0.15)',
+        '--border': '#E2E8F0', '--border-focus': 'var(--uprpp-accent, #1E3A5F)',
+        '--input-bg': '#F8FAFC', '--primary': 'var(--uprpp-accent, #1E3A5F)', '--primary-hover': 'var(--uprpp-accent-hover, #162D4A)',
+        '--ring': 'var(--uprpp-accent-ring, rgba(30,58,95,0.15))',
         '--shadow': '0 2px 16px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03)',
         '--radius': '16px', '--radius-sm': '10px',
       },
@@ -39,7 +40,7 @@
         '--text': '#E2E8F0', '--text-secondary': '#94A3B8', '--text-muted': '#64748B',
         '--border': '#1E293B', '--border-focus': '#93A8C7',
         '--input-bg': '#1C2330', '--primary': '#93A8C7', '--primary-hover': '#AFC0D8',
-        '--ring': 'rgba(147,168,199,0.15)',
+        '--ring': 'rgba(147,168,199,0.25)',
         '--shadow': '0 2px 16px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.04)',
         '--radius': '16px', '--radius-sm': '10px',
       },
@@ -61,8 +62,52 @@
   };
 
   // ============================================================
+  // 颜色工具
+  // ============================================================
+
+  function hexToRgb(hex) {
+    const m = String(hex).replace('#', '').match(/^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+    if (!m) return { r: 30, g: 58, b: 95 };
+    return {
+      r: parseInt(m[1], 16),
+      g: parseInt(m[2], 16),
+      b: parseInt(m[3], 16),
+    };
+  }
+
+  function rgbToHex(r, g, b) {
+    return '#' + [r, g, b].map(x => {
+      const v = Math.max(0, Math.min(255, Math.round(x)));
+      return v.toString(16).padStart(2, '0');
+    }).join('');
+  }
+
+  function darken(hex, p) {
+    const { r, g, b } = hexToRgb(hex);
+    const f = 1 - p;
+    return rgbToHex(r * f, g * f, b * f);
+  }
+
+  function alpha(hex, a) {
+    const { r, g, b } = hexToRgb(hex);
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
+  // ============================================================
   // 主题管理
   // ============================================================
+
+  function applyAccent(hex) {
+    if (!hex) return;
+    const hover = darken(hex, 0.15);
+    const ring = alpha(hex, 0.15);
+    GM_setValue(ACCENT_KEY, hex);
+    document.documentElement.style.setProperty('--uprpp-accent', hex);
+    document.documentElement.style.setProperty('--uprpp-accent-hover', hover);
+    document.documentElement.style.setProperty('--uprpp-accent-ring', ring);
+  }
+
+  function getAccent() { return GM_getValue(ACCENT_KEY, ''); }
 
   function applyTheme(name) {
     const t = THEMES[name] || THEMES['default'];
@@ -76,6 +121,7 @@
     css += '}';
     el.textContent = css;
     document.body.style.fontFamily = t.font;
+    applyAccent(getAccent());
     console.log(`[UPR++] ${t.name}`);
   }
 
@@ -127,7 +173,7 @@
 
         /* 版本水印 */
         #uprpp-root::after{
-          content:'UPR++ v0.3.5';
+          content:'UPR++ v0.3.10';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -187,31 +233,55 @@
           display:block;font-size:13px;font-weight:500;
           color:var(--text);margin-bottom:8px;letter-spacing:.5px;
         }
-        .ui{
+        #uprpp-root .ui{
           display:block;width:100%;height:46px;padding:0 14px;
-          background:var(--input-bg);
-          border:1.5px solid var(--border);
+          background:var(--input-bg) !important;
+          border:1.5px solid var(--border) !important;
           border-radius:var(--radius-sm);
-          font-size:15px;color:var(--text);
+          font-size:15px;color:var(--text) !important;
           font-family:inherit;
           transition:border-color .2s,box-shadow .2s;
         }
-        .ui:focus{
-          border-color:var(--border-focus);
-          box-shadow:0 0 0 3px var(--ring);
+        #uprpp-root .ui:focus{
+          border-color:var(--border-focus) !important;
+          box-shadow:0 0 0 3px var(--ring) !important;
         }
-        .ui::placeholder{color:var(--text-muted)}
+        #uprpp-root .ui::placeholder{color:var(--text-muted)}
 
-        /* 验证码行 */
-        .ucr{display:flex;gap:10px;align-items:flex-end}
-        .ucr .ufg{flex:1;margin-bottom:0}
-        .uci{
-          height:46px;width:96px;
-          border-radius:var(--radius-sm);
-          background:var(--input-bg);
-          padding:3px;
-          cursor:pointer;
-          display:block;
+        /* 验证码行：图片放在输入框内部右侧，确保总长度与其他输入框一致 */
+        #uprpp-root .ucr{
+          width:100% !important;
+          margin-bottom:0 !important;
+        }
+        #uprpp-root .ufg-cap{
+          margin-bottom:0 !important;
+        }
+        #uprpp-root .ucap-input-wrap{
+          position:relative !important;
+          width:100% !important;
+        }
+        #uprpp-root .ucap-input-wrap .ui{
+          padding-right:148px !important;
+        }
+        #uprpp-root .uci-wrap{
+          position:absolute !important;
+          right:-2px !important;
+          top:50% !important;
+          transform:translateY(-50%) !important;
+          width:144px !important;
+          height:41px !important;
+          border-radius:var(--radius-sm) !important;
+          overflow:hidden !important;
+          background:var(--input-bg) !important;
+          cursor:pointer !important;
+          box-shadow:0 0 0 1px var(--border) !important;
+        }
+        #uprpp-root .uci{
+          display:block !important;
+          width:100% !important;
+          height:100% !important;
+          object-fit:cover !important;
+          transform:scale(1.16) !important;
         }
 
         /* === Button === */
@@ -282,11 +352,15 @@
             <input class="ui" id="uprpp-pass" type="password" placeholder="${t('请输入密码','Enter password')}" autocomplete="current-password">
           </div>
           <div class="ucr">
-            <div class="ufg">
+            <div class="ufg ufg-cap">
               <label class="ufl" for="uprpp-cap">${t('验证码','Captcha')}</label>
-              <input class="ui" id="uprpp-cap" type="text" placeholder="${t('请输入','Enter')}" maxlength="4" autocomplete="off">
+              <div class="ucap-input-wrap">
+                <input class="ui" id="uprpp-cap" type="text" placeholder="${t('请输入','Enter')}" maxlength="4" autocomplete="off">
+                <div class="uci-wrap" id="uprpp-capwrap" title="${t('点击刷新','Refresh')}">
+                  <img class="uci" id="uprpp-capimg" src="" alt="Captcha">
+                </div>
+              </div>
             </div>
-            <img class="uci" id="uprpp-capimg" src="" alt="Captcha" title="${t('点击刷新','Refresh')}">
           </div>
           <button class="ubtn" id="uprpp-submit">${t('登 录','Sign In')}</button>
         </div>
@@ -297,8 +371,8 @@
         </div>
 
         <div class="us" id="uprpp-dots">
-          <span data-theme="default" title="简约白" style="background:#1E3A5F"></span>
-          <span data-theme="dark" title="深邃暗" style="background:#93A8C7"></span>
+          <span data-theme="default" title="简约白" style="background:#F1F5F9"></span>
+          <span data-theme="dark" title="深邃暗" style="background:#0B0F17"></span>
           <span data-theme="scu-red" title="川大红" style="background:#B53434"></span>
         </div>
       </div>
@@ -323,13 +397,16 @@
 
     // 验证码
     const capImg = root.querySelector('#uprpp-capimg');
+    const capWrap = root.querySelector('#uprpp-capwrap');
     const origCapImg = document.querySelector('.form-signin img');
     if (capImg && origCapImg) {
       capImg.src = origCapImg.src;
-      capImg.addEventListener('click', () => {
+      const refreshCap = () => {
         const u = origCapImg.src.replace(/\?.*/, '') + '?' + Date.now();
         origCapImg.src = u; capImg.src = u;
-      });
+      };
+      if (capWrap) capWrap.addEventListener('click', refreshCap);
+      else capImg.addEventListener('click', refreshCap);
     }
 
     // Tab：账号登录显示表单；统一认证直接跳转
@@ -384,25 +461,1333 @@
   }
 
   // ============================================================
+  // 正式页面全局美化
+  // ============================================================
+
+  function beautifyInternal() {
+    if (document.getElementById('uprpp-internal-style')) return;
+    const style = document.createElement('style');
+    style.id = 'uprpp-internal-style';
+    style.textContent = `
+      /* 全局 */
+      html, body { background: var(--bg) !important; color: var(--text) !important; }
+      a, a:link, a:visited { color: var(--primary) !important; }
+      a:hover, a:focus { color: var(--primary-hover) !important; }
+      h1, h2, h3, h4, h5, h6, .page-header { color: var(--text) !important; border-color: var(--border) !important; }
+      hr { border-color: var(--border) !important; }
+      .text-muted, .muted, .help-block { color: var(--text-muted) !important; }
+
+      /* 顶栏 —— 基于真实 DOM */
+      .navbar.navbar-default,
+      .navbar.navbar-default.navbar-fixed-top,
+      .navbar-default {
+        background: var(--surface) !important;
+        border: none !important;
+        box-shadow: var(--shadow) !important;
+        min-height: 45px !important;
+      }
+      .navbar.navbar-default .navbar-brand,
+      .navbar-default .navbar-brand { color: var(--text) !important; text-shadow: none !important; }
+
+      /* 导航项 */
+      .ace-nav { margin: 0 !important; }
+      .ace-nav > li {
+        text-align: left !important;
+        vertical-align: middle !important;
+        background: transparent !important;
+        border: none !important;
+      }
+      .ace-nav > li > a {
+        background: transparent !important;
+        color: var(--text-secondary) !important;
+        border-radius: var(--radius-sm) !important;
+        padding: 7px 10px !important;
+        line-height: 1.4 !important;
+        height: auto !important;
+        display: inline-flex !important;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap !important;
+        transition: background .15s;
+      }
+      .ace-nav > li > a:hover,
+      .ace-nav > li.open > a {
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+        box-shadow: none !important;
+      }
+
+      /* 覆盖 ACE 颜色类 */
+      #navbar .ace-nav > li.green > a,
+      #navbar .ace-nav > li.grey > a,
+      #navbar .ace-nav > li.light-red > a,
+      #navbar .ace-nav > li.light-blue > a,
+      #navbar .ace-nav > li.green.open > a,
+      #navbar .ace-nav > li.grey.open > a,
+      #navbar .ace-nav > li.light-red.open > a,
+      #navbar .ace-nav > li.light-blue.open > a {
+        background: transparent !important;
+        color: var(--text-secondary) !important;
+      }
+      #navbar .ace-nav > li.green > a:hover,
+      #navbar .ace-nav > li.grey > a:hover,
+      #navbar .ace-nav > li.light-red > a:hover,
+      #navbar .ace-nav > li.light-blue > a:hover {
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+      }
+
+      /* 图标统一颜色 */
+      #navbar .ace-nav > li > a > .ace-icon,
+      #navbar .ace-nav > li > a > .glyphicon {
+        color: var(--text-secondary) !important;
+        font-size: 15px;
+        transition: color .15s;
+      }
+      #navbar .ace-nav > li > a:hover > .ace-icon,
+      #navbar .ace-nav > li > a:hover > .glyphicon,
+      #navbar .ace-nav > li.open > a > .ace-icon,
+      #navbar .ace-nav > li.open > a > .glyphicon { color: var(--text) !important; }
+
+      /* 强制所有顶栏项对齐 */
+      #navbar .ace-nav > li {
+        display: inline-block !important;
+        vertical-align: middle !important;
+        text-align: left !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      #navbar .ace-nav > li > a {
+        display: inline-flex !important;
+        align-items: center !important;
+        height: 36px !important;
+        padding: 0 4px !important;
+        flex-wrap: nowrap !important;
+        vertical-align: middle !important;
+      }
+      #navbar .ace-nav > li > a > .ace-icon,
+      #navbar .ace-nav > li > a > .glyphicon,
+      #navbar .ace-nav > li > a > .fa {
+        top: auto !important;
+        vertical-align: middle !important;
+        line-height: 1 !important;
+        margin-top: 0 !important;
+      }
+
+      /* 限制搜索容器宽度 */
+      #navbar #intellegenceUDiv {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 32px !important;
+        height: 36px !important;
+        vertical-align: middle !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      /* 搜索按钮向右微调，靠近客服 */
+      #navbar #intellegenceUDiv #clickdiv {
+        transform: translateX(42px) !important;
+      }
+      #intellegenceUDiv > .nav-search { position: absolute !important; right: 34px !important; top: 50% !important; transform: translateY(-50%) !important; }
+
+      /* 用户项：头像和文字一行 */
+      #navbar .ace-nav > li.light-blue > a {
+        display: inline-flex !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        gap: 6px !important;
+      }
+      #navbar .ace-nav > li.light-blue > a .user-info {
+        margin-top: -12px !important;
+      }
+      #navbar .ace-nav > li.light-blue > a .nav-user-photo {
+        margin-right: 6px;
+        vertical-align: middle !important;
+      }
+      #navbar .ace-nav > li.light-blue > a .user-info {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px;
+        max-width: none !important;
+        white-space: nowrap !important;
+        color: var(--text-secondary) !important;
+        line-height: 1 !important;
+        vertical-align: middle !important;
+      }
+      #navbar .ace-nav > li.light-blue > a .user-info * {
+        display: inline !important;
+        white-space: nowrap !important;
+        color: inherit !important;
+        vertical-align: middle !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      #navbar .ace-nav > li.light-blue > a .user-info small { color: var(--text-muted) !important; font-size: inherit !important; }
+
+      /* 头像：中间截取矩形再裁圆 */
+      #navbar .ace-nav .nav-user-photo {
+        width: 30px !important;
+        height: 30px !important;
+        border-radius: 50% !important;
+        object-fit: cover !important;
+        object-position: center center !important;
+        border: 2px solid var(--border) !important;
+        margin-right: 6px;
+        flex-shrink: 0;
+        vertical-align: middle !important;
+      }
+
+      /* 搜索按钮 #clickdiv */
+      #clickdiv {
+        background: transparent !important;
+        color: var(--text-secondary) !important;
+        position: relative !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: var(--radius-sm) !important;
+        line-height: 1 !important;
+        transition: background .15s;
+        z-index: 30 !important;
+      }
+      #clickdiv:hover { background: var(--input-bg) !important; color: var(--text) !important; }
+      #clickdiv #clicki,
+      #clickdiv .fa-search {
+        color: var(--text-secondary) !important;
+        margin-top: 0 !important;
+        transition: color .15s;
+      }
+      #clickdiv:hover #clicki,
+      #clickdiv:hover .fa-search { color: var(--text) !important; }
+
+      /* 搜索表单 —— 在按钮左侧紧邻展开，无背景卡片 */
+      #form-search.nav-search {
+        position: absolute !important;
+        right: 40px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        margin: 0 !important;
+        z-index: 10 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        transition: width .2s ease, opacity .2s ease;
+      }
+      #form-search.nav-search[style*="width: 0px"] {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #form-search.nav-search .form-search,
+      #form-search.nav-search .input-icon {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+      #form-search.nav-search .nav-search-input {
+        background: var(--input-bg) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text) !important;
+        border-radius: var(--radius-sm) !important;
+        height: 32px !important;
+        padding: 0 12px !important;
+        line-height: 32px !important;
+      }
+      #form-search.nav-search .nav-search-input:focus { border-color: var(--border-focus) !important; box-shadow: 0 0 0 3px var(--ring) !important; }
+      #form-search.nav-search .ace-icon.fa-search { color: var(--text-secondary) !important; }
+      #form-search.nav-search .nav-search-input:focus + .ace-icon.fa-search { color: var(--text) !important; }
+
+      /* 用户下拉菜单 */
+      .ace-nav > li.light-blue .dropdown-menu {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: var(--shadow) !important;
+        border-radius: var(--radius-sm) !important;
+      }
+      .ace-nav > li.light-blue .dropdown-menu > li > a {
+        color: var(--text-secondary) !important;
+        background: transparent !important;
+        border-radius: 0 !important;
+      }
+      .ace-nav > li.light-blue .dropdown-menu > li > a:hover {
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+      }
+      .ace-nav > li.light-blue .dropdown-menu .divider { background: var(--border) !important; }
+
+      /* 侧边栏 —— Hanako 风格完全重构 */
+      :root { --uprpp-navbar-height: 45px; }
+      .sidebar:not(.menu-min) { width: 260px !important; }
+      .sidebar.menu-min { width: 50px !important; }
+      .sidebar:not(.menu-min) ~ .main-content { margin-left: 260px !important; }
+      .sidebar.menu-min ~ .main-content { margin-left: 50px !important; }
+      .main-content { margin-top: var(--uprpp-navbar-height) !important; transition: margin-left .25s ease; }
+      .navbar.navbar-default.navbar-fixed-top,
+      .navbar-fixed-top,
+      .navbar-fixed-bottom { left: 0 !important; right: 0 !important; }
+      .sidebar {
+        top: var(--uprpp-navbar-height) !important;
+        height: calc(100vh - var(--uprpp-navbar-height)) !important;
+        background: var(--surface) !important;
+        border-right: 1px solid var(--border) !important;
+        box-shadow: var(--shadow) !important;
+        transition: width .25s ease;
+      }
+      .sidebar:before { display: none !important; }
+      .main-content { transition: margin-left .25s ease; }
+      .sidebar .nav-wrap { padding: 0 !important; height: 100% !important; }
+      .sidebar .nav-wrap > div { position: static !important; }
+      .sidebar .ace-scroll.nav-scroll { display: none !important; }
+      #menus { display: none !important; }
+      .sidebar-collapse { display: none !important; }
+
+      /* 侧边栏顶部 header */
+      .uprpp-sidebar-header {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 14px 14px 12px;
+        border-bottom: 1px solid var(--border);
+        transition: padding .2s;
+      }
+      .uprpp-sidebar-toggle {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: var(--input-bg);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 15px;
+        transition: all .15s;
+      }
+      .uprpp-sidebar-toggle:hover { background: var(--border); color: var(--text); }
+
+      /* 新菜单 */
+      #uprpp-menus {
+        list-style: none;
+        margin: 0;
+        padding: 10px 12px 24px;
+        overflow-y: auto;
+        max-height: calc(100vh - 64px);
+      }
+      #uprpp-menus::-webkit-scrollbar { width: 4px; }
+      #uprpp-menus::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+      .uprpp-nav-item { margin: 4px 0; }
+      .uprpp-nav-link {
+        display: flex;
+        align-items: center;
+        padding: 11px 13px;
+        border-radius: var(--radius-sm);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: background .15s, color .15s;
+        text-decoration: none;
+        position: relative;
+      }
+      .uprpp-nav-link:hover { background: var(--input-bg); color: var(--text); }
+      .uprpp-nav-item.active > .uprpp-nav-link,
+      .uprpp-nav-item.open.active > .uprpp-nav-link {
+        background: var(--input-bg);
+        color: var(--primary);
+        font-weight: 500;
+      }
+      .uprpp-nav-link > .fa {
+        width: 22px;
+        text-align: center;
+        margin-right: 11px;
+        font-size: 18px;
+        color: inherit;
+        flex-shrink: 0;
+        transition: margin .25s ease;
+      }
+      .uprpp-nav-text {
+        flex: 1;
+        font-size: 15px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        opacity: 1;
+        max-width: 200px;
+        transition: opacity .2s ease, max-width .25s ease;
+      }
+      .uprpp-nav-arrow {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-left: 8px;
+        opacity: 1;
+        max-width: 20px;
+        transition: transform .2s, opacity .2s ease, max-width .25s ease;
+        flex-shrink: 0;
+      }
+      .uprpp-nav-item.open > .uprpp-nav-link .uprpp-nav-arrow { transform: rotate(180deg); }
+
+      .uprpp-nav-submenu {
+        list-style: none;
+        margin: 0;
+        padding: 3px 0 3px 20px;
+        display: none;
+      }
+      .uprpp-nav-item.open > .uprpp-nav-submenu { display: block; }
+      .uprpp-nav-submenu .uprpp-nav-link { padding: 9px 13px; font-size: 14px; }
+      .uprpp-nav-submenu .uprpp-nav-submenu { padding-left: 16px; }
+
+      /* 折叠状态 */
+      .sidebar.menu-min .uprpp-sidebar-header { justify-content: center; padding: 14px 0 12px; }
+      .sidebar.menu-min #uprpp-menus { padding: 10px 6px 24px; }
+      .sidebar.menu-min .uprpp-nav-link { padding: 12px 0; justify-content: center; }
+      .sidebar.menu-min .uprpp-nav-text,
+      .sidebar.menu-min .uprpp-nav-arrow {
+        opacity: 0;
+        max-width: 0;
+        margin-left: 0;
+        overflow: hidden;
+        pointer-events: none;
+      }
+      .sidebar.menu-min .uprpp-nav-link > .fa { margin-right: 0; font-size: 18px; }
+      .sidebar.menu-min .uprpp-nav-submenu { display: none !important; }
+
+      /* 主内容区 */
+      .main-content, .page-content { background: var(--bg) !important; }
+      .breadcrumbs, .breadcrumb { background: transparent !important; border-color: var(--border) !important; }
+      .breadcrumb > li > a { color: var(--text-secondary) !important; }
+      .breadcrumb > li.active { color: var(--text-muted) !important; }
+
+      /* 卡片 / 面板 */
+      .widget-box { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; box-shadow: var(--shadow) !important; }
+      .widget-header { background: transparent !important; border-bottom: 1px solid var(--border) !important; color: var(--text) !important; }
+      .widget-body { background: var(--surface) !important; color: var(--text) !important; }
+      .well { background: var(--input-bg) !important; border-color: var(--border) !important; }
+
+      /* 个人信息 */
+      .profile-user-info { border-color: var(--border) !important; }
+      .profile-info-name { background: var(--input-bg) !important; color: var(--text-secondary) !important; border-color: var(--border) !important; }
+      .profile-info-value { border-color: var(--border) !important; color: var(--text) !important; }
+
+      /* 表格 */
+      .table, .table-bordered, .table-striped, .table-hover, .dataTable { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text) !important; }
+      .table > thead > tr > th, .table-bordered > thead > tr > th, .dataTable > thead > tr > th { background: var(--input-bg) !important; color: var(--text) !important; border-color: var(--border) !important; }
+      .table > tbody > tr > td, .table > tbody > tr > th, .table-bordered > tbody > tr > td, .dataTable > tbody > tr > td { border-color: var(--border) !important; color: var(--text) !important; }
+      .table-striped > tbody > tr:nth-of-type(odd), .dataTable > tbody > tr:nth-of-type(odd) { background: var(--bg) !important; }
+      .table-hover > tbody > tr:hover, .dataTable > tbody > tr:hover { background: var(--input-bg) !important; }
+
+      /* 按钮 */
+      .btn { border-radius: var(--radius-sm) !important; }
+      .btn-primary, .btn-info { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
+      .btn-primary:hover, .btn-info:hover { background: var(--primary-hover) !important; border-color: var(--primary-hover) !important; }
+      .btn-success { background: #22c55e !important; border-color: #22c55e !important; color: #fff !important; }
+      .btn-success:hover { background: #16a34a !important; border-color: #16a34a !important; }
+      .btn-warning { background: #f59e0b !important; border-color: #f59e0b !important; color: #fff !important; }
+      .btn-danger { background: #ef4444 !important; border-color: #ef4444 !important; color: #fff !important; }
+      .btn-default, .btn-white { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; }
+      .btn-default:hover, .btn-white:hover { background: var(--border) !important; }
+      .btn-app { background: var(--surface) !important; border: 1px solid var(--border) !important; color: var(--text) !important; border-radius: var(--radius-sm) !important; }
+      .btn-app:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
+
+      /* 表单 */
+      input, select, textarea, .form-control, .chosen-single, .chosen-choices { background: var(--input-bg) !important; border: 1px solid var(--border) !important; color: var(--text) !important; border-radius: var(--radius-sm) !important; }
+      input:focus, select:focus, textarea:focus, .form-control:focus, .chosen-container-active .chosen-single, .chosen-container-active .chosen-choices { border-color: var(--border-focus) !important; box-shadow: 0 0 0 3px var(--ring) !important; }
+      .chosen-drop { background: var(--surface) !important; border-color: var(--border) !important; box-shadow: var(--shadow) !important; }
+      .chosen-results li { color: var(--text) !important; }
+      .chosen-results li.highlighted { background: var(--primary) !important; color: #fff !important; }
+      label { color: var(--text-secondary) !important; }
+
+      /* 标签页 */
+      .nav-tabs { border-bottom: 1px solid var(--border) !important; }
+      .nav-tabs > li > a { color: var(--text-secondary) !important; background: transparent !important; border: none !important; }
+      .nav-tabs > li > a:hover { color: var(--text) !important; background: var(--input-bg) !important; }
+      .nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus { color: var(--primary) !important; background: var(--surface) !important; border: 1px solid var(--border) !important; border-bottom-color: var(--surface) !important; }
+      .tab-content { background: var(--surface) !important; border: 1px solid var(--border) !important; border-top: none !important; }
+
+      /* 分页 */
+      .pagination > li > a, .pagination > li > span { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text) !important; }
+      .pagination > li.active > a, .pagination > li.active > span, .pagination > li.active > a:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
+
+      /* 下拉菜单 */
+      .dropdown-menu { background: var(--surface) !important; border: 1px solid var(--border) !important; box-shadow: var(--shadow) !important; }
+      .dropdown-menu > li > a { color: var(--text) !important; }
+      .dropdown-menu > li > a:hover, .dropdown-menu > li > a:focus, .dropdown-menu > .active > a { background: var(--input-bg) !important; color: var(--text) !important; }
+      .dropdown-menu .divider { background: var(--border) !important; }
+
+      /* 弹窗 */
+      .modal-content { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; box-shadow: var(--shadow) !important; }
+      .modal-header { border-bottom: 1px solid var(--border) !important; }
+      .modal-header .close { color: var(--text-secondary) !important; }
+      .modal-title { color: var(--text) !important; }
+      .modal-footer { border-top: 1px solid var(--border) !important; }
+
+      /* 时间轴 */
+      .timeline-container { background: var(--surface) !important; border-color: var(--border) !important; }
+      .timeline-item { border-color: var(--border) !important; }
+      .timeline-item .timeline-indicator { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; }
+      .timeline-item h5 { color: var(--text) !important; }
+
+      /* FullCalendar 课表 */
+      .fc { background: var(--surface) !important; border-radius: var(--radius) !important; }
+      .fc th, .fc td { border-color: var(--border) !important; }
+      .fc-day-header { background: var(--input-bg) !important; color: var(--text-secondary) !important; }
+      .fc-time-grid-event, .fc-event { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; border-radius: var(--radius-sm) !important; }
+      .fc-button { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; }
+      .fc-button.fc-state-active { background: var(--primary) !important; color: #fff !important; }
+      .fc-today { background: var(--input-bg) !important; }
+
+      /* 列表 / 通知 */
+      .list-group-item { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text) !important; }
+      .list-group-item:hover { background: var(--input-bg) !important; }
+      .list-group-item.active { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
+      .alert, .alert-info { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; border-radius: var(--radius-sm) !important; }
+      .alert-success { background: rgba(34,197,94,0.1) !important; border-color: rgba(34,197,94,0.2) !important; color: #22c55e !important; }
+      .alert-warning { background: rgba(245,158,11,0.1) !important; border-color: rgba(245,158,11,0.2) !important; color: #f59e0b !important; }
+      .alert-danger { background: rgba(239,68,68,0.1) !important; border-color: rgba(239,68,68,0.2) !important; color: #ef4444 !important; }
+
+      /* 标签 / 徽章 */
+      .label-info, .badge-info { background: var(--primary) !important; }
+      .label-success, .badge-success { background: #22c55e !important; }
+      .label-warning, .badge-warning { background: #f59e0b !important; }
+      .label-danger, .badge-danger { background: #ef4444 !important; }
+      .badge, .label { border-radius: var(--radius-sm) !important; }
+
+      /* 杂项 */
+      .btn-scroll-up { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text-secondary) !important; box-shadow: var(--shadow) !important; }
+      .ui-jqgrid, .ui-jqgrid-view, .ui-jqgrid-bdiv, .ui-jqgrid-hdiv { background: var(--surface) !important; border-color: var(--border) !important; }
+      .ui-jqgrid .ui-jqgrid-htable th { background: var(--input-bg) !important; color: var(--text) !important; border-color: var(--border) !important; }
+      .ui-jqgrid tr.jqgrow td { color: var(--text) !important; border-color: var(--border) !important; }
+      .ui-jqgrid tr.ui-row-ltr:hover { background: var(--input-bg) !important; }
+
+      /* 首页重构仪表板 */
+      #uprpp-dashboard { padding: 24px; max-width: 1440px; margin: 0 auto; }
+      .uprpp-welcome { margin-bottom: 24px; }
+      .uprpp-welcome h2 { font-size: 26px; font-weight: 600; color: var(--text); margin: 0 0 6px; letter-spacing: 1px; }
+      .uprpp-welcome p { color: var(--text-secondary); margin: 0; font-size: 14px; }
+      .uprpp-stats-grid { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 24px; }
+      .uprpp-stat-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px 24px;
+        box-shadow: var(--shadow);
+        cursor: pointer;
+        text-decoration: none;
+        transition: transform .2s, box-shadow .2s;
+      }
+      .uprpp-stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px var(--ring); }
+      .uprpp-stat-card .value {
+        font-size: 34px;
+        font-weight: 700;
+        color: var(--primary);
+        line-height: 1;
+        flex-shrink: 0;
+      }
+      .uprpp-stat-card .value.uprpp-stat-value-text {
+        font-size: 30px;
+        font-weight: 600;
+      }
+      .uprpp-stat-card .label {
+        font-size: 16px;
+        color: var(--text-secondary) !important;
+        line-height: 1.4;
+        white-space: normal;
+        max-width: 150px;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+      }
+      .uprpp-stat-skeleton { cursor: default; pointer-events: none; }
+      .uprpp-stat-skeleton .value { background: var(--input-bg); color: transparent !important; border-radius: 4px; width: 48px; height: 34px; }
+      .uprpp-stat-skeleton .label { background: var(--input-bg); color: transparent !important; border-radius: 4px; width: 80px; height: 20px; }
+      .uprpp-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
+      @media (max-width: 1100px) { .uprpp-main-grid { grid-template-columns: 1fr; } }
+      .uprpp-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 20px; }
+      .uprpp-card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+      .uprpp-card-header h4 { font-size: 16px; font-weight: 600; color: var(--text); margin: 0; }
+      .uprpp-card-tools .widget-toolbar { padding: 0; line-height: 1; }
+      .uprpp-card-tools .widget-toolbar a { color: var(--text-secondary) !important; margin-left: 12px; font-size: 14px; }
+      .uprpp-card-tools .widget-toolbar a:hover { color: var(--primary) !important; }
+      .uprpp-card-body { padding: 16px 20px; }
+      #uprpp-dashboard .widget-box { background: transparent; border: none; border-radius: 0; box-shadow: none; margin-bottom: 0; }
+      #uprpp-dashboard .widget-header { display: none; }
+      #uprpp-dashboard .widget-body { background: transparent; border: none; padding: 0; }
+      #uprpp-dashboard .tabContent { counter-reset: uprpp-notice; }
+      #uprpp-dashboard .tabContent h3 {
+        position: relative;
+        margin: 0 0 10px !important;
+        padding-left: 34px;
+        height: auto !important;
+        min-height: 40px;
+        display: flex;
+        align-items: center;
+      }
+      #uprpp-dashboard .tabContent h3::before {
+        counter-increment: uprpp-notice;
+        content: counter(uprpp-notice);
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 6px var(--ring);
+      }
+      #uprpp-dashboard .tabContent h3 a {
+        color: var(--text) !important;
+        font-weight: 500;
+        font-size: 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: var(--radius-sm);
+        background: var(--input-bg);
+        transition: background .2s;
+      }
+      #uprpp-dashboard .tabContent h3 a:hover { background: var(--border); }
+      #uprpp-dashboard .tabContent h3 label { font-weight: inherit; color: inherit; margin: 0; }
+      #uprpp-dashboard .tabContent h3 a > span { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+      #uprpp-dashboard .tabContent h3 .hide_note { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 12px; }
+      #uprpp-dashboard .tabContent h3 .fa-clock-o { margin-right: 4px; color: var(--text-muted); }
+      #uprpp-dashboard .uprpp-card-body:has(.btn-app) { display: block !important; padding: 16px 14px; font-size: 0; }
+      #uprpp-dashboard .btn-app {
+        display: inline-flex !important;
+        width: 80px !important;
+        height: 80px !important;
+        margin: 0 12px 12px 0 !important;
+        border-radius: var(--radius-sm) !important;
+        background: var(--input-bg) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text) !important;
+        box-shadow: none !important;
+        padding: 8px 6px !important;
+        font-size: 12px !important;
+        line-height: 1.3 !important;
+        white-space: normal !important;
+        text-align: center;
+        transition: all .2s;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        word-break: keep-all !important;
+        vertical-align: top !important;
+      }
+      #uprpp-dashboard .btn-app:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; transform: translateY(-2px); box-shadow: 0 4px 12px var(--ring); }
+      #uprpp-dashboard .btn-app > .ace-icon { color: inherit !important; display: block; margin: 0 auto 4px; font-size: 22px; }
+    `;
+    document.head.appendChild(style);
+
+    // 首页进行组件级重构
+    const pageContent = document.querySelector('.page-content');
+    const hasWidgets = pageContent && pageContent.querySelectorAll('.widget-box').length >= 4;
+    if (hasWidgets) {
+      setTimeout(rebuildDashboard, 500);
+    }
+
+    // 完全重构侧边栏为 Hanako 风格
+    rebuildSidebarCompletely();
+
+    // 顶栏重建（JS 强制对齐）
+    rebuildNavbar();
+    window.addEventListener('load', rebuildNavbar);
+
+    console.log('[UPR++] 正式页面样式已注入');
+  }
+
+  // ============================================================
+  // 顶栏辅助函数
+  // ============================================================
+
+  // 旧函数已废弃
+  function setupNavbarSearchToggle() {
+    const clickDiv = document.getElementById('clickdiv');
+    const formSearch = document.getElementById('form-search');
+    const searchInput = document.getElementById('search-input');
+    if (!clickDiv || !formSearch) return;
+
+    // 阻止原 changeInfo，自己控制展开/折叠
+    clickDiv.removeAttribute('onclick');
+
+    // 把搜索按钮的父容器改为相对定位，限制宽度
+    const intelDiv = document.getElementById('intellegenceUDiv');
+    if (intelDiv) {
+      intelDiv.style.position = 'relative';
+      intelDiv.style.zIndex = '30';
+      intelDiv.style.display = 'inline-block';
+      intelDiv.style.width = '32px';
+      intelDiv.style.verticalAlign = 'middle';
+    }
+
+    const clicki = document.getElementById('clicki');
+    if (clicki) {
+      clicki.style.setProperty('color', 'var(--text-secondary)', 'important');
+      clicki.style.setProperty('margin-top', '0', 'important');
+    }
+
+    clickDiv.addEventListener('mouseenter', () => { clickDiv.style.setProperty('background-color', 'var(--input-bg)', 'important'); });
+    clickDiv.addEventListener('mouseleave', () => { clickDiv.style.setProperty('background-color', 'transparent', 'important'); });
+
+    // 把 clickDiv 提到 formSearch 之后，确保按钮在上方
+    if (formSearch.parentNode && formSearch.nextSibling !== clickDiv) {
+      formSearch.parentNode.insertBefore(clickDiv, formSearch.nextSibling);
+    }
+
+    // 把客服图标 a 内的 glyphicon 对齐
+    const serviceLink = document.querySelector('.ace-nav > li > a[href="/main/customerServiceCenter"]');
+    if (serviceLink) {
+      serviceLink.style.display = 'inline-flex';
+      serviceLink.style.alignItems = 'center';
+      serviceLink.style.justifyContent = 'center';
+      const icon = serviceLink.querySelector('.glyphicon');
+      if (icon) {
+        icon.style.top = 'auto';
+        icon.style.verticalAlign = 'middle';
+      }
+    }
+
+    clickDiv.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const isOpen = formSearch.dataset.open === '1';
+      if (isOpen) {
+        formSearch.style.width = '0px';
+        formSearch.style.opacity = '0';
+        formSearch.dataset.open = '0';
+      } else {
+        formSearch.style.width = '220px';
+        formSearch.style.opacity = '1';
+        formSearch.dataset.open = '1';
+        if (searchInput) setTimeout(() => searchInput.focus(), 50);
+      }
+    });
+
+    // 搜索框样式：在按钮左侧紧邻展开，无背景卡片
+    formSearch.style.setProperty('position', 'absolute', 'important');
+    // 只保留 JS 控制的 width/opacity/transition，位置样式交给 CSS
+    formSearch.style.width = '0px';
+    formSearch.style.opacity = '0';
+    formSearch.style.transition = 'width .2s ease, opacity .2s ease';
+
+    if (searchInput) {
+      searchInput.style.setProperty('background-color', 'var(--input-bg)', 'important');
+      searchInput.style.setProperty('border', '1px solid var(--border)', 'important');
+      searchInput.style.setProperty('color', 'var(--text)', 'important');
+      searchInput.style.setProperty('border-radius', '8px', 'important');
+      searchInput.style.setProperty('height', '32px', 'important');
+      searchInput.style.setProperty('padding', '0 12px', 'important');
+      searchInput.style.setProperty('line-height', '32px', 'important');
+      searchInput.style.setProperty('width', '100%', 'important');
+    }
+
+    // 删除搜索框内嵌图标
+    const innerIcon = formSearch.querySelector('.input-icon > .ace-icon.fa-search');
+    if (innerIcon) innerIcon.style.display = 'none';
+
+    // 点击外部收起
+    document.addEventListener('click', (e) => {
+      if (!clickDiv.contains(e.target) && !formSearch.contains(e.target) && formSearch.dataset.open === '1') {
+        formSearch.style.width = '0px';
+        formSearch.style.opacity = '0';
+        formSearch.dataset.open = '0';
+      }
+    });
+  }
+
+  function cleanupUserInfo() {
+    function setImportant(el, prop, value) {
+      el.style.setProperty(prop, value, 'important');
+    }
+
+    // 统一所有顶栏链接高度和垂直居中
+    document.querySelectorAll('.ace-nav > li > a').forEach(a => {
+      setImportant(a, 'display', 'inline-flex');
+      setImportant(a, 'align-items', 'center');
+      setImportant(a, 'height', '36px');
+      setImportant(a, 'padding', '0 10px');
+      setImportant(a, 'flex-wrap', 'nowrap');
+      setImportant(a, 'vertical-align', 'middle');
+    });
+
+    const userLink = document.querySelector('.ace-nav > li.light-blue > a');
+    if (userLink) {
+      setImportant(userLink, 'display', 'inline-flex');
+      setImportant(userLink, 'align-items', 'center');
+      setImportant(userLink, 'gap', '6px');
+    }
+
+    document.querySelectorAll('.ace-nav .user-info').forEach(el => {
+      setImportant(el, 'display', 'inline-flex');
+      setImportant(el, 'align-items', 'center');
+      setImportant(el, 'gap', '4px');
+      setImportant(el, 'max-width', 'none');
+      setImportant(el, 'white-space', 'nowrap');
+      setImportant(el, 'vertical-align', 'middle');
+      setImportant(el, 'line-height', '1');
+      Array.from(el.childNodes).forEach(node => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          node.textContent = node.textContent.replace(/\s+/g, '').trim();
+        }
+      });
+      Array.from(el.children).forEach(child => {
+        setImportant(child, 'display', 'inline');
+        setImportant(child, 'white-space', 'nowrap');
+        setImportant(child, 'line-height', '1');
+      });
+    });
+
+    document.querySelectorAll('.ace-nav .nav-user-photo').forEach(img => {
+      img.alt = (img.alt || '').replace(/\s+/g, '').trim();
+      setImportant(img, 'vertical-align', 'middle');
+      setImportant(img, 'display', 'inline-block');
+      setImportant(img, 'width', '30px');
+      setImportant(img, 'height', '30px');
+    });
+
+    // 所有顶栏 li 垂直居中对齐
+    document.querySelectorAll('.ace-nav > li').forEach(li => {
+      setImportant(li, 'vertical-align', 'middle');
+      setImportant(li, 'text-align', 'left');
+      setImportant(li, 'display', 'inline-block');
+    });
+  }
+
+  // ============================================================
+  // 顶栏重建（JS 强制对齐）
+  // ============================================================
+
+  let navbarClickBound = false;
+
+  function rebuildNavbar() {
+    const navbar = document.getElementById('navbar');
+    const aceNav = navbar?.querySelector('.ace-nav');
+    if (!aceNav) return;
+
+    function force(el, styles) {
+      Object.entries(styles).forEach(([k, v]) => el.style.setProperty(k, v, 'important'));
+    }
+
+    // 1. 统一所有 li 和 a 的容器样式；移除 ace-nav 中的空白文本节点消除 inline 间距
+    Array.from(aceNav.childNodes).forEach(node => {
+      if (node.nodeType === Node.TEXT_NODE && !node.textContent.trim()) {
+        node.remove();
+      }
+    });
+    aceNav.querySelectorAll(':scope > li').forEach(li => {
+      force(li, {
+        display: 'inline-flex',
+        'align-items': 'center',
+        'vertical-align': 'middle',
+        margin: '0',
+        padding: '0',
+        'text-align': 'left'
+      });
+    });
+
+    aceNav.querySelectorAll(':scope > li > a').forEach(a => {
+      force(a, {
+        display: 'inline-flex',
+        'align-items': 'center',
+        'justify-content': 'center',
+        height: '36px',
+        padding: '0 4px',
+        'flex-wrap': 'nowrap',
+        'vertical-align': 'middle',
+        'text-decoration': 'none'
+      });
+      a.style.lineHeight = '1';
+    });
+
+    // 2. 图标统一
+    aceNav.querySelectorAll(':scope > li > a > .ace-icon, :scope > li > a > .glyphicon, :scope > li > a > .fa').forEach(icon => {
+      force(icon, { top: 'auto', 'vertical-align': 'middle', 'line-height': '1', 'margin-top': '0' });
+    });
+
+    // 客服图标所在的 a 标签保持最小宽度
+    const serviceLink = aceNav.querySelector(':scope > li > a[href*="customerServiceCenter"]');
+    if (serviceLink) {
+      force(serviceLink, { width: '28px', 'justify-content': 'center' });
+      serviceLink.style.padding = '0 4px';
+    }
+
+    // 3. 搜索区域（事件只绑定一次）
+    const clickDiv = document.getElementById('clickdiv');
+    const formSearch = document.getElementById('form-search');
+    const searchInput = document.getElementById('search-input');
+    const intelDiv = document.getElementById('intellegenceUDiv');
+    if (intelDiv) {
+      intelDiv.style.setProperty('position', 'relative', 'important');
+      intelDiv.style.setProperty('z-index', '30', 'important');
+      intelDiv.style.setProperty('display', 'inline-flex', 'important');
+      intelDiv.style.setProperty('align-items', 'center', 'important');
+      intelDiv.style.setProperty('justify-content', 'center', 'important');
+      intelDiv.style.setProperty('width', '32px', 'important');
+      intelDiv.style.setProperty('height', '36px', 'important');
+      intelDiv.style.setProperty('vertical-align', 'middle', 'important');
+      intelDiv.style.setProperty('margin', '0', 'important');
+      intelDiv.style.setProperty('padding', '0', 'important');
+    }
+
+    if (clickDiv && formSearch) {
+      clickDiv.removeAttribute('onclick');
+      force(clickDiv, {
+        'background-color': 'transparent',
+        position: 'relative',
+        display: 'inline-flex',
+        'align-items': 'center',
+        'justify-content': 'center',
+        width: '32px',
+        height: '32px',
+        'border-radius': '8px',
+        'line-height': '1',
+        'z-index': '30'
+      });
+
+      const clicki = document.getElementById('clicki');
+      if (clicki) force(clicki, { color: 'var(--text-secondary)', 'margin-top': '0' });
+
+      if (!navbarClickBound) {
+        navbarClickBound = true;
+        clickDiv.addEventListener('mouseenter', () => clickDiv.style.setProperty('background-color', 'var(--input-bg)', 'important'));
+        clickDiv.addEventListener('mouseleave', () => clickDiv.style.setProperty('background-color', 'transparent', 'important'));
+
+        clickDiv.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const isOpen = formSearch.dataset.open === '1';
+          if (isOpen) {
+            formSearch.style.width = '0px';
+            formSearch.style.opacity = '0';
+            formSearch.dataset.open = '0';
+          } else {
+            formSearch.style.width = '180px';
+            formSearch.style.opacity = '1';
+            formSearch.dataset.open = '1';
+            if (searchInput) setTimeout(() => searchInput.focus(), 50);
+          }
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!clickDiv.contains(e.target) && !formSearch.contains(e.target) && formSearch.dataset.open === '1') {
+            formSearch.style.width = '0px';
+            formSearch.style.opacity = '0';
+            formSearch.dataset.open = '0';
+          }
+        });
+      }
+
+      // 定位：紧贴搜索按钮左侧，按钮本身 32px，搜索框 160px
+      force(formSearch, {
+        position: 'absolute',
+        right: '34px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        left: 'auto',
+        margin: '0',
+        'z-index': '10',
+        background: 'transparent',
+        border: 'none',
+        'box-shadow': 'none',
+        overflow: 'hidden',
+        padding: '0',
+        transition: 'width .2s ease, opacity .2s ease'
+      });
+      // 注意：不要在 force 里覆盖 width/opacity，否则会打断正在进行的 transition
+      const targetWidth = formSearch.dataset.open === '1' ? '160px' : '0px';
+      if (formSearch.style.width !== targetWidth) {
+        formSearch.style.width = targetWidth;
+        formSearch.style.opacity = formSearch.dataset.open === '1' ? '1' : '0';
+      }
+
+      if (searchInput) {
+        force(searchInput, {
+          'background-color': 'var(--input-bg)',
+          border: '1px solid var(--border)',
+          color: 'var(--text)',
+          'border-radius': '8px',
+          height: '32px',
+          padding: '0 12px',
+          'line-height': '32px',
+          width: '100%'
+        });
+      }
+
+      const innerIcon = formSearch.querySelector('.input-icon > .ace-icon.fa-search');
+      if (innerIcon) innerIcon.style.display = 'none';
+    }
+
+    // 4. 用户项强制对齐
+    const userLink = aceNav.querySelector(':scope > li.light-blue > a');
+    if (userLink) {
+      force(userLink, { display: 'inline-flex', 'align-items': 'center', gap: '6px' });
+      const info = userLink.querySelector('.user-info');
+      if (info) {
+        force(info, {
+          display: 'inline-flex',
+          'align-items': 'center',
+          gap: '4px',
+          'max-width': 'none',
+          'white-space': 'nowrap',
+          'vertical-align': 'middle',
+          'line-height': '1',
+          'margin-top': '-12px'
+        });
+        // 移除文本节点中的多余空白
+        Array.from(info.childNodes).forEach(node => {
+          if (node.nodeType === Node.TEXT_NODE) node.textContent = node.textContent.replace(/\s+/g, '').trim();
+        });
+        Array.from(info.children).forEach(child => {
+          force(child, { display: 'inline', 'white-space': 'nowrap', 'vertical-align': 'middle', 'line-height': '1', margin: '0', padding: '0' });
+          if (child.tagName === 'SMALL') child.style.setProperty('font-size', 'inherit', 'important');
+        });
+      }
+      const photo = userLink.querySelector('.nav-user-photo');
+      if (photo) {
+        photo.alt = (photo.alt || '').replace(/\s+/g, '').trim();
+        force(photo, { 'vertical-align': 'middle', display: 'inline-block', width: '30px', height: '30px' });
+      }
+    }
+  }
+
+  // ============================================================
+  // 侧边栏完全重构（Hanako 风格）
+  // ============================================================
+
+  function rebuildSidebarCompletely() {
+    const sidebar = document.getElementById('sidebar');
+    const origMenus = document.getElementById('menus');
+    if (!sidebar || !origMenus || document.getElementById('uprpp-menus')) return;
+
+    // 读取顶栏高度并同步 CSS 变量
+    const navbar = document.querySelector('.navbar.navbar-default, .navbar-fixed-top');
+    if (navbar) {
+      const h = navbar.offsetHeight;
+      document.documentElement.style.setProperty('--uprpp-navbar-height', h + 'px');
+    }
+
+    // 记录原 active 状态
+    const activeIds = new Set();
+    origMenus.querySelectorAll('li.active').forEach(li => { if (li.id) activeIds.add(li.id); });
+
+    function parseMenu(ul) {
+      return Array.from(ul.children).filter(li => li.tagName === 'LI').map(li => {
+        const a = li.querySelector(':scope > a');
+        const textEl = a?.querySelector('.menu-text');
+        const text = textEl
+          ? textEl.textContent.trim()
+          : (a ? Array.from(a.childNodes).filter(n => n.nodeType === Node.TEXT_NODE).map(n => n.textContent).join('').trim() : '');
+        const iconEl = a?.querySelector('.menu-icon');
+        const iconClass = iconEl ? Array.from(iconEl.classList).filter(c => c !== 'menu-icon').join(' ') : '';
+        const submenu = li.querySelector(':scope > .submenu');
+        const children = submenu ? parseMenu(submenu) : [];
+        const href = a?.getAttribute('href') || '#';
+        const onclick = li.getAttribute('onclick') || a?.getAttribute('onclick') || '';
+        const id = li.id;
+        return { id, text, iconClass, children, href, onclick };
+      });
+    }
+
+    const menuData = parseMenu(origMenus);
+    origMenus.remove();
+
+    // Header + toggle
+    const header = document.createElement('div');
+    header.className = 'uprpp-sidebar-header';
+    const toggle = document.createElement('div');
+    toggle.className = 'uprpp-sidebar-toggle';
+    toggle.innerHTML = '<i class="fa fa-angle-left"></i>';
+    toggle.title = '收起侧边栏';
+    toggle.addEventListener('click', () => {
+      const origToggle = document.getElementById('sidebar-collapse');
+      if (origToggle) origToggle.click();
+    });
+    header.appendChild(toggle);
+
+    // 监听折叠状态，切换箭头
+    const observer = new MutationObserver(() => {
+      const isMin = document.body.classList.contains('menu-min') || sidebar.classList.contains('menu-min');
+      toggle.innerHTML = isMin ? '<i class="fa fa-angle-right"></i>' : '<i class="fa fa-angle-left"></i>';
+      toggle.title = isMin ? '展开侧边栏' : '收起侧边栏';
+      if (isMin) {
+        header.style.justifyContent = 'center';
+        header.style.padding = '12px 0';
+      } else {
+        header.style.justifyContent = 'flex-end';
+        header.style.padding = '';
+      }
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+
+    const newMenus = document.createElement('ul');
+    newMenus.id = 'uprpp-menus';
+
+    function setActiveBranch(li) {
+      document.querySelectorAll('#uprpp-menus .uprpp-nav-item').forEach(el => el.classList.remove('active'));
+      let p = li;
+      while (p && p.id !== 'uprpp-menus') {
+        if (p.classList.contains('uprpp-nav-item')) p.classList.add('active');
+        p = p.parentElement;
+      }
+    }
+
+    function openActiveBranch(li) {
+      let p = li.parentElement;
+      while (p && p.id !== 'uprpp-menus') {
+        if (p.classList.contains('uprpp-nav-item')) p.classList.add('open');
+        p = p.parentElement;
+      }
+    }
+
+    function buildItem(item, container) {
+      const li = document.createElement('li');
+      li.className = 'uprpp-nav-item';
+      if (item.id) li.id = item.id;
+
+      const hasSub = item.children.length > 0;
+      const link = document.createElement(hasSub ? 'div' : 'a');
+      link.className = 'uprpp-nav-link';
+      if (!hasSub) link.href = item.href || '#';
+
+      if (item.iconClass) {
+        const icon = document.createElement('i');
+        item.iconClass.split(' ').forEach(c => { if (c) icon.classList.add(c); });
+        link.appendChild(icon);
+      }
+
+      const text = document.createElement('span');
+      text.className = 'uprpp-nav-text';
+      text.textContent = item.text;
+      text.title = item.text;
+      link.appendChild(text);
+
+      if (hasSub) {
+        const arrow = document.createElement('i');
+        arrow.className = 'uprpp-nav-arrow fa fa-angle-down';
+        link.appendChild(arrow);
+      }
+
+      li.appendChild(link);
+
+      if (hasSub) {
+        const sub = document.createElement('ul');
+        sub.className = 'uprpp-nav-submenu';
+        item.children.forEach(child => buildItem(child, sub));
+        li.appendChild(sub);
+
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          li.classList.toggle('open');
+        });
+      } else {
+        if (item.onclick) li.setAttribute('onclick', item.onclick);
+        link.addEventListener('click', (e) => {
+          setActiveBranch(li);
+          if (item.onclick) e.preventDefault();
+        });
+      }
+
+      if (item.id && activeIds.has(item.id)) {
+        li.classList.add('active');
+        openActiveBranch(li);
+      }
+
+      container.appendChild(li);
+    }
+
+    menuData.forEach(item => buildItem(item, newMenus));
+
+    const navWrap = sidebar.querySelector('.nav-wrap');
+    if (navWrap) {
+      navWrap.appendChild(header);
+      navWrap.appendChild(newMenus);
+    } else {
+      sidebar.appendChild(header);
+      sidebar.appendChild(newMenus);
+    }
+  }
+
+  // ============================================================
+  // 首页仪表板重构
+  // ============================================================
+
+  function rebuildDashboard() {
+    if (document.getElementById('uprpp-dashboard')) return;
+
+    const pageContent = document.querySelector('.page-content');
+    if (!pageContent) return;
+
+    const widgets = Array.from(pageContent.querySelectorAll('.widget-box'));
+    if (widgets.length < 6) return;
+
+    const studyWidget = widgets[4];
+    const infoboxes = studyWidget ? Array.from(studyWidget.querySelectorAll('.infobox')) : [];
+
+    const dashboard = document.createElement('div');
+    dashboard.id = 'uprpp-dashboard';
+    dashboard.innerHTML = `
+      <div class="uprpp-welcome">
+        <h2>欢迎回来</h2>
+        <p>四川大学教务管理系统 · 学生端</p>
+      </div>
+      <div class="uprpp-stats-grid" id="uprpp-stats"></div>
+      <div class="uprpp-main-grid">
+        <div class="uprpp-left" id="uprpp-left"></div>
+        <div class="uprpp-right" id="uprpp-right"></div>
+      </div>
+    `;
+
+    pageContent.appendChild(dashboard);
+
+    // 提取 modal 到 body，避免隐藏原始 row 后弹窗失效
+    const warningModal = pageContent.querySelector('#warningInfo');
+    if (warningModal) document.body.appendChild(warningModal);
+
+    // 隐藏原始 widget 所在的容器列
+    widgets.forEach(w => {
+      const col = w.closest('.widget-container-col, [class*="col-"]');
+      if (col) col.style.display = 'none';
+    });
+    // 兜底：隐藏 page-content 下直接的一级 row
+    pageContent.querySelectorAll(':scope > .row').forEach(row => {
+      row.style.display = 'none';
+    });
+
+    // 生成学业概览卡片（骨架屏 → 真实数据）
+    const statsGrid = dashboard.querySelector('#uprpp-stats');
+    const skeletonCount = Math.max(infoboxes.length, 5);
+    for (let i = 0; i < skeletonCount; i++) {
+      const sk = document.createElement('div');
+      sk.className = 'uprpp-stat-card uprpp-stat-skeleton';
+      sk.innerHTML = '<div class="value">-</div><div class="label">加载中</div>';
+      statsGrid.appendChild(sk);
+    }
+
+    function updateStats() {
+      const boxes = studyWidget ? Array.from(studyWidget.querySelectorAll('.infobox')) : [];
+      if (boxes.length === 0) return;
+      statsGrid.innerHTML = '';
+      boxes.forEach(box => {
+        const lines = box.innerText.trim().split(/\n+/).map(l => l.trim()).filter(l => l);
+        const value = lines[0] || '';
+        const label = lines.slice(1).join(' ').replace(/更多\.\.\./g, '').trim();
+        const isTextValue = /[\u4e00-\u9fa5]/.test(value) || value.length > 5;
+        const valueClass = isTextValue ? 'value uprpp-stat-value-text' : 'value';
+        const link = box.closest('a');
+        const card = document.createElement(link ? 'a' : 'div');
+        if (link) {
+          card.href = link.href || 'javascript:void(0)';
+          card.onclick = link.onclick;
+          card.style.textDecoration = 'none';
+        }
+        card.className = 'uprpp-stat-card';
+        card.innerHTML = `<div class="${valueClass}">${value}</div><div class="label">${label}</div>`;
+        statsGrid.appendChild(card);
+      });
+    }
+
+    updateStats();
+
+    // 监听学业信息数据异步加载
+    if (studyWidget) {
+      const statsObserver = new MutationObserver(() => updateStats());
+      statsObserver.observe(studyWidget, { childList: true, subtree: true });
+      setTimeout(() => statsObserver.disconnect(), 5000);
+    }
+
+    // 包装并移动 widget
+    const left = dashboard.querySelector('#uprpp-left');
+    const right = dashboard.querySelector('#uprpp-right');
+
+    wrapWidget(widgets[5], left, '我的日程安排');
+    wrapWidget(widgets[0], right, '通知公告');
+    wrapWidget(widgets[1], right, '我的待办任务');
+    wrapWidget(widgets[2], right, '可申请业务');
+    wrapWidget(widgets[3], right, '常用下载');
+
+    if (studyWidget) studyWidget.style.display = 'none';
+
+    // FullCalendar 重新渲染
+    setTimeout(() => {
+      const fcEl = left.querySelector('.fc');
+      if (fcEl && window.jQuery && window.jQuery.fn.fullCalendar) {
+        try { window.jQuery(fcEl).fullCalendar('render'); } catch (e) {}
+      }
+    }, 100);
+
+    console.log('[UPR++] 首页仪表板已重构');
+  }
+
+  function wrapWidget(widget, container, title) {
+    const header = widget.querySelector('.widget-header');
+    const toolbar = header ? header.querySelector('.widget-toolbar') : null;
+
+    const card = document.createElement('div');
+    card.className = 'uprpp-card';
+    card.innerHTML = `
+      <div class="uprpp-card-header">
+        <h4>${title}</h4>
+        <div class="uprpp-card-tools"></div>
+      </div>
+      <div class="uprpp-card-body"></div>
+    `;
+
+    if (toolbar) {
+      toolbar.style.display = 'inline-block';
+      card.querySelector('.uprpp-card-tools').appendChild(toolbar);
+    }
+    card.querySelector('.uprpp-card-body').appendChild(widget);
+    container.appendChild(card);
+  }
+
+  // ============================================================
   // 初始化
   // ============================================================
 
   function init() {
     if (!document.body) { setTimeout(init, 10); return; }
     applyTheme(getCurrent());
-    rebuild();
+
+    // 根据是否存在登录表单判断页面类型
+    const isLoginPage = !!document.getElementById('formContent') && !!document.querySelector('.form-signin');
+    if (isLoginPage) {
+      rebuild();
+    } else {
+      beautifyInternal();
+    }
   }
 
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.UPRPP = {
-    version: '0.3.5',
+    version: '0.3.10',
     showLogo(show) {
       const el = document.querySelector('#uprpp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
     },
     theme: {
       apply: (n) => { applyTheme(n); },
+      setAccent: applyAccent,
+      getAccent,
       getCurrent,
       list: () => Object.entries(THEMES).map(([k, v]) => ({ name: k, displayName: v.name, current: k === getCurrent() })),
     },
