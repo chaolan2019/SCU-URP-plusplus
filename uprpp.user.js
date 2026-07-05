@@ -1013,8 +1013,6 @@
       #courseTable .uprpp-course-card {
         border-radius: var(--radius) !important;
         overflow: hidden !important;
-        min-height: calc(100% + 6px) !important;
-        box-sizing: border-box !important;
       }
 
       /* 列表 / 通知 */
