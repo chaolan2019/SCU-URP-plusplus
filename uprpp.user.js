@@ -1001,18 +1001,18 @@
         border: none !important; border-radius: var(--radius-sm) !important;
         padding: 4px !important; vertical-align: top !important;
         font-size: 13px !important; line-height: 1.6 !important;
-        color: var(--text) !important; overflow: hidden !important;
+        color: var(--text) !important; overflow: visible !important;
       }
       #courseTable td:first-child {
         background: var(--input-bg) !important; color: var(--text-secondary) !important;
         font-weight: 500 !important; text-align: center !important; font-size: 11px !important;
       }
-      /* 课程卡片 */
+      /* 课程卡片色块 */
+      #courseTable .class_div.box_font,
+      #courseTable div[class*="div-kcb"],
       #courseTable .uprpp-course-card {
-        background: inherit !important;
         border-radius: var(--radius) !important;
-        padding: 8px 10px !important;
-        margin: 2px 0 !important;
+        overflow: hidden !important;
       }
 
       /* 列表 / 通知 */
@@ -1194,18 +1194,6 @@
     setTimeout(() => document.body.classList.add('uprpp-ready'), 600);
 
     if (!styleExists) console.log('[UPR++] 正式页面样式已注入');
-
-    // 课表数据加载后包装圆角卡片
-    setTimeout(() => {
-      const ct = document.getElementById('courseTable');
-      if (!ct) return;
-      ct.querySelectorAll('td[id]').forEach(td => {
-        if (td.querySelector('.uprpp-course-card')) return;
-        const html = td.innerHTML.trim();
-        if (!html) return;
-        td.innerHTML = '<div class="uprpp-course-card">' + html + '</div>';
-      });
-    }, 800);
   }
 
   // ============================================================
