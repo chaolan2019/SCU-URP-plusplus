@@ -1547,9 +1547,12 @@
       if (item.id) li.id = item.id;
 
       const hasSub = item.children.length > 0;
-      const link = document.createElement(hasSub ? 'div' : 'a');
+      const href = item.href || '#';
+      const hasRealHref = href !== '#' && !href.startsWith('javascript');
+      // 有真实 href 或有子菜单时都用 a 标签
+      const link = document.createElement('a');
       link.className = 'uprpp-nav-link';
-      if (!hasSub) link.href = item.href || '#';
+      link.href = hasRealHref ? href : 'javascript:void(0)';
 
       if (item.iconClass) {
         const icon = document.createElement('i');
@@ -1566,28 +1569,31 @@
       if (hasSub) {
         const arrow = document.createElement('i');
         arrow.className = 'uprpp-nav-arrow fa fa-angle-down';
+        arrow.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          li.classList.toggle('open');
+        });
         link.appendChild(arrow);
       }
 
       li.appendChild(link);
+
+      link.addEventListener('click', (e) => {
+        setActiveBranch(li);
+        if (!hasRealHref && hasSub) {
+          // 无真实 href 的父节点：点击 toggle
+          e.preventDefault();
+          li.classList.toggle('open');
+        }
+        // 有真实 href：不阻止默认行为，让 a 标签跳转
+      });
 
       if (hasSub) {
         const sub = document.createElement('ul');
         sub.className = 'uprpp-nav-submenu';
         item.children.forEach(child => buildItem(child, sub));
         li.appendChild(sub);
-
-        link.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          li.classList.toggle('open');
-        });
-        link.style.cursor = 'pointer';
-      } else {
-        link.addEventListener('click', () => {
-          setActiveBranch(li);
-          // 叶子节点靠 href 跳转，不再阻止默认行为
-        });
       }
 
       if (item.id && activeIds.has(item.id)) {
