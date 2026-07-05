@@ -998,7 +998,7 @@
         box-shadow: 0 0 0 3px var(--ring) !important;
         outline: none !important;
       }
-      select { cursor: pointer !important; }
+      select { cursor: pointer !important; width: auto !important; }
       textarea { resize: vertical !important; min-height: 80px !important; }
       .chosen-drop { background: var(--surface) !important; border-color: var(--border) !important; box-shadow: var(--shadow) !important; border-radius: var(--radius-sm) !important; position: absolute !important; width: auto !important; min-width: 100% !important; }
       .chosen-results li { color: var(--text) !important; padding: 8px 12px !important; word-break: break-all !important; white-space: normal !important; }
