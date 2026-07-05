@@ -884,6 +884,7 @@
 
       /* 主内容区 */
       .main-content, .page-content { background: var(--bg) !important; }
+      .breadcrumbs { display: none !important; }
 
       /* 卡片 / 面板 */
       .widget-box {
