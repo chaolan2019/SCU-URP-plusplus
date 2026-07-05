@@ -888,7 +888,8 @@
       ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
       /* 主内容区 */
-      .main-content, .page-content { background: var(--bg) !important; }
+      .main-content, .page-content { background: var(--bg) !important; padding-top: 0 !important; }
+      .main-content > .page-content { padding: 8px 16px !important; }
 
       /* 面包屑 */
       .breadcrumbs, .breadcrumb {
@@ -932,7 +933,8 @@
         border-radius: var(--radius-sm) !important;
         overflow: hidden !important;
         color: var(--text) !important;
-        border-collapse: collapse !important;
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
       }
       .table > thead > tr > th, .table-bordered > thead > tr > th, .dataTable > thead > tr > th {
         background: var(--input-bg) !important;
@@ -945,14 +947,16 @@
       }
       .table > tbody > tr > td, .table > tbody > tr > th,
       .table-bordered > tbody > tr > td, .dataTable > tbody > tr > td {
-        border-top: 1px solid var(--border) !important;
+        border-bottom: 1px solid var(--border) !important;
         color: var(--text) !important;
         padding: 10px 12px !important;
         font-size: 13px !important;
         vertical-align: middle !important;
       }
       .table-bordered > thead > tr > th,
-      .table-bordered > tbody > tr > td { border: 1px solid var(--border) !important; }
+      .table-bordered > tbody > tr > td { border-left: 1px solid var(--border) !important; }
+      .table-bordered > thead > tr > th:first-child,
+      .table-bordered > tbody > tr > td:first-child { border-left: none !important; }
       .table-striped > tbody > tr:nth-of-type(odd), .dataTable > tbody > tr:nth-of-type(odd) { background: var(--bg) !important; }
       .table-hover > tbody > tr:hover, .dataTable > tbody > tr:hover {
         background: var(--input-bg) !important;
