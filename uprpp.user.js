@@ -809,8 +809,11 @@
         text-decoration: none;
         position: relative;
       }
-      .uprpp-nav-link { cursor: default !important; }
+      .uprpp-nav-link { cursor: default !important; text-decoration: none !important; }
+      .uprpp-nav-link .uprpp-nav-text { cursor: pointer; }
+      .uprpp-nav-link .fa, .uprpp-nav-link .ace-icon { pointer-events: none !important; cursor: default !important; }
       .uprpp-nav-link:hover { background: var(--input-bg); color: var(--text); }
+      .uprpp-nav-link:hover .uprpp-nav-text { text-decoration: underline; }
       .uprpp-nav-item.active > .uprpp-nav-link,
       .uprpp-nav-item.open.active > .uprpp-nav-link {
         background: var(--input-bg);
