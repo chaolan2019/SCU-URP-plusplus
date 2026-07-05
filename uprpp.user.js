@@ -798,11 +798,10 @@
       #uprpp-menus::-webkit-scrollbar { width: 4px; }
       #uprpp-menus::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-      .uprpp-nav-item { margin: 4px 0; display: flex !important; align-items: center !important; }
+      .uprpp-nav-item { margin: 4px 0; }
       .uprpp-nav-link {
         display: flex;
         align-items: center;
-        flex: 1;
         padding: 11px 13px;
         border-radius: var(--radius-sm);
         color: var(--text-secondary);
@@ -840,13 +839,11 @@
       .uprpp-nav-arrow {
         font-size: 13px;
         color: var(--text-muted);
-        margin-left: 2px;
-        margin-right: 8px;
+        margin-left: 8px;
         opacity: 1;
         max-width: 20px;
         transition: transform .2s, opacity .2s ease, max-width .25s ease;
         flex-shrink: 0;
-        padding: 8px 4px;
       }
       .uprpp-nav-item.open > .uprpp-nav-link .uprpp-nav-arrow { transform: rotate(180deg); }
 
@@ -1548,10 +1545,9 @@
       if (item.id) li.id = item.id;
 
       const hasSub = item.children.length > 0;
-      const hasRealHref = item.href && item.href !== '#' && !item.href.startsWith('javascript');
-      const link = document.createElement(hasSub && !hasRealHref ? 'div' : 'a');
+      const link = document.createElement(hasSub ? 'div' : 'a');
       link.className = 'uprpp-nav-link';
-      if (link.tagName === 'A') link.href = item.href || '#';
+      if (!hasSub) link.href = item.href || '#';
 
       if (item.iconClass) {
         const icon = document.createElement('i');
@@ -1565,38 +1561,31 @@
       text.title = item.text;
       link.appendChild(text);
 
+      if (hasSub) {
+        const arrow = document.createElement('i');
+        arrow.className = 'uprpp-nav-arrow fa fa-angle-down';
+        link.appendChild(arrow);
+      }
+
       li.appendChild(link);
 
       if (hasSub) {
-        // 箭头单独放在 link 外面，点击不触发导航
-        const arrow = document.createElement('i');
-        arrow.className = 'uprpp-nav-arrow fa fa-angle-down';
-        arrow.style.cursor = 'pointer';
-        arrow.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          li.classList.toggle('open');
-        });
-        li.appendChild(arrow);
-
         const sub = document.createElement('ul');
         sub.className = 'uprpp-nav-submenu';
         item.children.forEach(child => buildItem(child, sub));
         li.appendChild(sub);
 
-        // 如果没有有效 href，点击整个 link 也 toggle
-        if (!hasRealHref) {
-          link.style.cursor = 'pointer';
-          link.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            li.classList.toggle('open');
-          });
-        } else {
-          link.addEventListener('click', () => setActiveBranch(li));
-        }
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          li.classList.toggle('open');
+        });
+        link.style.cursor = 'pointer';
       } else {
-        link.addEventListener('click', () => setActiveBranch(li));
+        link.addEventListener('click', () => {
+          setActiveBranch(li);
+          // 叶子节点靠 href 跳转，不再阻止默认行为
+        });
       }
 
       if (item.id && activeIds.has(item.id)) {
