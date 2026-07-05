@@ -994,7 +994,8 @@
         box-shadow: 0 0 0 3px var(--ring) !important;
         outline: none !important;
       }
-      select { cursor: pointer !important; width: auto !important; min-width: 70px !important; }
+      select { cursor: pointer !important; width: auto !important; min-width: 70px !important; overflow: visible !important; }
+      select option { padding: 4px 8px !important; }
       .btn.dropdown-toggle, .dropdown-toggle.btn { min-width: auto !important; white-space: nowrap !important; }
       textarea { resize: vertical !important; min-height: 80px !important; }
       .chosen-drop { background: var(--surface) !important; border-color: var(--border) !important; box-shadow: var(--shadow) !important; border-radius: var(--radius-sm) !important; position: absolute !important; width: auto !important; min-width: 100% !important; }
