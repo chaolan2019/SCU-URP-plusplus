@@ -1230,7 +1230,7 @@
           const h = td.style.height;
           if (!h || !h.includes('px')) return;
           const v = parseInt(h);
-          if (v > 0) td.style.height = (v - 2) + 'px';
+          if (v > 0) td.style.setProperty('height', (v - 2) + 'px', 'important');
         });
       };
       fix();
