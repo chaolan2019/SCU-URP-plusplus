@@ -1218,6 +1218,22 @@
       apply();
       new MutationObserver(() => requestAnimationFrame(apply)).observe(document.body, { childList: true, subtree: true });
     })();
+
+    // 课表背景卡片高度 -2px
+    (function courseTableHeight() {
+      const fix = () => {
+        const tbl = document.getElementById('courseTable');
+        if (!tbl) return;
+        tbl.querySelectorAll('td').forEach(td => {
+          const h = td.style.height;
+          if (!h || !h.includes('px')) return;
+          const v = parseInt(h);
+          if (v > 0) td.style.height = (v - 2) + 'px';
+        });
+      };
+      fix();
+      new MutationObserver(() => requestAnimationFrame(fix)).observe(document.body, { childList: true, subtree: true });
+    })();
   }
 
   // ============================================================
