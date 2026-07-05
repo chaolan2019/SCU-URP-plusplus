@@ -1007,10 +1007,11 @@
         background: var(--input-bg) !important; color: var(--text-secondary) !important;
         font-weight: 500 !important; text-align: center !important; font-size: 11px !important;
       }
-      /* 课程卡片圆角 */
+      /* 课程卡片圆角 + 不透明度 */
       #courseTable .class_div.box_font,
       #courseTable div[class*="div-kcb"] {
         border-radius: var(--radius) !important;
+        opacity: 0.88 !important;
       }
 
       /* 列表 / 通知 */
@@ -1193,7 +1194,7 @@
 
     if (!styleExists) console.log('[UPR++] 正式页面样式已注入');
 
-    // 课表透明度：MutationObserver + rAF 等一帧让 ACE 先设颜色
+    // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
       const apply = () => {
         const tbl = document.getElementById('courseTable');
@@ -1203,13 +1204,6 @@
           if (bg && bg.includes('rgba')) {
             const m = bg.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/);
             if (m) td.style.backgroundColor = 'rgba(' + m[1] + ',' + m[2] + ',' + m[3] + ',0.5)';
-          }
-        });
-        tbl.querySelectorAll('.class_div.box_font, [class*="div-kcb"]').forEach(el => {
-          const bg = el.style.backgroundColor;
-          if (bg && bg.includes('rgba')) {
-            const m = bg.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/);
-            if (m) el.style.backgroundColor = 'rgba(' + m[1] + ',' + m[2] + ',' + m[3] + ',0.8)';
           }
         });
       };
