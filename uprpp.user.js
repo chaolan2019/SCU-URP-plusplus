@@ -958,10 +958,12 @@
         background: var(--input-bg) !important;
         box-shadow: inset 0 0 0 1px var(--border-focus);
       }
-      .dataTables_info, .dataTables_length, .dataTables_filter, .dataTables_paginate {
+      .dataTables_info, .dataTables_length, .dataTables_filter, .dataTables_paginate,
+      .table-tools, .pagination-info, .page-stats {
         color: var(--text-secondary) !important;
         white-space: normal !important;
         overflow: visible !important;
+        max-width: none !important;
       }
 
       /* 按钮 */
@@ -1346,7 +1348,7 @@
     window.addEventListener('load', rebuildNavbar);
 
     // 等 dashboard 骨架屏建立后再淡入，避免原 UI 闪烁
-    setTimeout(() => document.body.classList.add('uprpp-ready'), 1500);
+    setTimeout(() => document.body.classList.add('uprpp-ready'), 200);
 
     if (!styleExists) console.log('[UPR++] 正式页面样式已注入');
 
