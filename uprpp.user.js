@@ -898,7 +898,7 @@
         padding: 8px 16px !important;
         margin-bottom: 16px !important;
       }
-      .breadcrumb > li + li::before { color: var(--text-muted) !important; content: '\203A' !important; }
+      .breadcrumb > li + li::before { color: var(--text-muted) !important; }
       .breadcrumb > li > a { color: var(--text-secondary) !important; }
       .breadcrumb > li > a:hover { color: var(--primary) !important; text-decoration: none !important; }
       .breadcrumb > li.active { color: var(--text) !important; font-weight: 500 !important; }
