@@ -1309,7 +1309,7 @@
     rebuildNavbar();
     window.addEventListener('load', rebuildNavbar);
 
-    setTimeout(() => document.body.classList.add('uprpp-ready'), 400);
+    setTimeout(() => document.body.classList.add('uprpp-ready'), 600);
 
     if (!styleExists) console.log('[UPR++] 正式页面样式已注入');
 
