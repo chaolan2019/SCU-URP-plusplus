@@ -994,11 +994,11 @@
       #courseTable { background: transparent !important; }
       #courseTable th {
         background: var(--input-bg) !important; color: var(--text-secondary) !important;
-        font-weight: 500 !important; border: 1px solid var(--border) !important;
+        font-weight: 500 !important; border: none !important;
         padding: 10px 8px !important; text-align: center !important; font-size: 13px !important;
       }
       #courseTable td {
-        border: 1px solid var(--border) !important;
+        border: none !important;
         padding: 4px !important; vertical-align: top !important;
         font-size: 13px !important; line-height: 1.6 !important;
         color: var(--text) !important;
