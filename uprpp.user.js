@@ -995,6 +995,20 @@
       /* 隐藏打印/导出按钮工具栏 */
       .page-content .tools,
       .widget-toolbar .btn-group { display: none !important; }
+
+      /* 标签：箭头矩形 → 圆角矩形 + 80% 不透明度 */
+      .label.arrowed-in,
+      .label.arrowed,
+      .label[class*="arrowed"] {
+        border-radius: var(--radius-sm) !important;
+        opacity: 0.8 !important;
+      }
+      .label.arrowed-in::before,
+      .label.arrowed-in::after,
+      .label.arrowed::before,
+      .label.arrowed::after {
+        display: none !important;
+      }
       #courseTable th {
         background: var(--input-bg) !important; color: var(--text-secondary) !important;
         font-weight: 500 !important; border: none !important;
