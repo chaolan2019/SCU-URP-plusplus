@@ -894,15 +894,9 @@
       /* 面包屑 */
       .breadcrumbs, .breadcrumb {
         background: var(--input-bg) !important;
-        border: none !important;
         border-radius: var(--radius-sm) !important;
-        padding: 8px 16px !important;
-        margin-bottom: 16px !important;
+        padding: 6px 16px !important;
       }
-      .breadcrumb > li + li::before { color: var(--text-muted) !important; }
-      .breadcrumb > li > a { color: var(--text-secondary) !important; }
-      .breadcrumb > li > a:hover { color: var(--primary) !important; text-decoration: none !important; }
-      .breadcrumb > li.active { color: var(--text) !important; font-weight: 500 !important; }
 
       /* 卡片 / 面板 */
       .widget-box {
@@ -998,7 +992,8 @@
         box-shadow: 0 0 0 3px var(--ring) !important;
         outline: none !important;
       }
-      select { cursor: pointer !important; width: auto !important; }
+      select { cursor: pointer !important; width: auto !important; min-width: 70px !important; }
+      .btn.dropdown-toggle, .dropdown-toggle.btn { min-width: auto !important; white-space: nowrap !important; }
       textarea { resize: vertical !important; min-height: 80px !important; }
       .chosen-drop { background: var(--surface) !important; border-color: var(--border) !important; box-shadow: var(--shadow) !important; border-radius: var(--radius-sm) !important; position: absolute !important; width: auto !important; min-width: 100% !important; }
       .chosen-results li { color: var(--text) !important; padding: 8px 12px !important; word-break: break-all !important; white-space: normal !important; }
