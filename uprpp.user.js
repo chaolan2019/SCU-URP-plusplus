@@ -805,11 +805,11 @@
         padding: 11px 13px;
         border-radius: var(--radius-sm);
         color: var(--text-secondary);
-        cursor: pointer;
         transition: background .15s, color .15s;
         text-decoration: none;
         position: relative;
       }
+      .uprpp-nav-link .uprpp-nav-text { cursor: pointer; }
       .uprpp-nav-link:hover { background: var(--input-bg); color: var(--text); }
       .uprpp-nav-item.active > .uprpp-nav-link,
       .uprpp-nav-item.open.active > .uprpp-nav-link {
@@ -1440,7 +1440,13 @@
   function rebuildSidebarCompletely() {
     const sidebar = document.getElementById('sidebar');
     const origMenus = document.getElementById('menus');
-    if (!sidebar || !origMenus || document.getElementById('uprpp-menus')) return;
+    if (!sidebar || !origMenus) return;
+
+    // 先清理旧的（可能从 PJAX 残留）
+    const oldMenus = document.getElementById('uprpp-menus');
+    const oldHeader = sidebar.querySelector('.uprpp-sidebar-header');
+    if (oldMenus) oldMenus.remove();
+    if (oldHeader) oldHeader.remove();
 
     // 读取顶栏高度并同步 CSS 变量（加兜底）
     const navbar = document.querySelector('.navbar.navbar-default, .navbar-fixed-top');
@@ -1465,7 +1471,7 @@
         const submenu = li.querySelector(':scope > .submenu');
         let children = submenu ? parseMenu(submenu) : [];
         // 过滤空壳子节点（无文字且无有效 href）
-        children = children.filter(c => c.text || (c.href && c.href !== '#'));
+        children = children.filter(c => c.text && (c.text.trim() || (c.href && c.href !== '#')));
         const href = a?.getAttribute('href') || '#';
         const onclick = li.getAttribute('onclick') || a?.getAttribute('onclick') || '';
         const id = li.id;
@@ -1585,8 +1591,10 @@
           // 无真实 href 的父节点：点击 toggle
           e.preventDefault();
           li.classList.toggle('open');
+        } else if (hasRealHref) {
+          // 有真实 href 且点击的不是箭头：跳转
+          return;
         }
-        // 有真实 href：不阻止默认行为，让 a 标签跳转
       });
 
       if (hasSub) {
