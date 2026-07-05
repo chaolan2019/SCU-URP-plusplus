@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         UPR++ 教务系统美化
 // @namespace    https://github.com/hanako/upr-plus
-// @version      0.3.12
+// @version      0.3.13
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -180,7 +180,7 @@
 
         /* 版本水印 */
         #uprpp-root::after{
-          content:'UPR++ v0.3.12';
+          content:'UPR++ v0.3.13';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -958,6 +958,36 @@
       .fc-button.fc-state-active { background: var(--primary) !important; color: #fff !important; }
       .fc-today { background: var(--input-bg) !important; }
 
+      /* FullCalendar 事件悬停弹窗 */
+      .popover, .qtip, .tooltip:not(.fc-tooltip),
+      div[class*="pop" i]:not([class*="uprpp"]) {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius) !important;
+        box-shadow: var(--shadow) !important;
+        color: var(--text) !important;
+        font-size: 13px !important;
+        line-height: 1.6 !important;
+      }
+      .popover .popover-title, .popover .popover-header,
+      .qtip .qtip-title, .tooltip .tooltip-title,
+      div[class*="pop" i] .title, div[class*="pop" i] h5 {
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+        border-bottom: 1px solid var(--border) !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        padding: 10px 14px !important;
+        border-radius: var(--radius) var(--radius) 0 0 !important;
+      }
+      .popover .popover-content, .qtip .qtip-content,
+      div[class*="pop" i] .content {
+        background: var(--surface) !important;
+        color: var(--text-secondary) !important;
+        padding: 10px 14px !important;
+      }
+      .popover .arrow, .qtip .qtip-arrow, .tooltip .tooltip-arrow { display: none !important; }
+
       /* 课表页面 #courseTable */
       #courseTable { border-collapse: separate !important; border-spacing: 3px !important; background: transparent !important; }
       #courseTable th {
@@ -1718,7 +1748,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.UPRPP = {
-    version: '0.3.12',
+    version: '0.3.13',
     showLogo(show) {
       const el = document.querySelector('#uprpp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
