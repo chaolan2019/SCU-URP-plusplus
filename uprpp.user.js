@@ -913,47 +913,24 @@
       /* 表格 */
       .table, .table-bordered, .table-striped, .table-hover, .dataTable {
         background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: var(--radius-sm) !important;
-        overflow: hidden !important;
+        border-color: var(--border) !important;
         color: var(--text) !important;
-        border-collapse: separate !important;
-        border-spacing: 0 !important;
       }
       .table > thead > tr > th, .table-bordered > thead > tr > th, .dataTable > thead > tr > th {
         background: var(--input-bg) !important;
         color: var(--text) !important;
-        border-bottom: 1px solid var(--border) !important;
-        padding: 10px 12px !important;
-        font-weight: 600 !important;
-        font-size: 13px !important;
-        white-space: nowrap !important;
+        border-color: var(--border) !important;
       }
       .table > tbody > tr > td, .table > tbody > tr > th,
       .table-bordered > tbody > tr > td, .dataTable > tbody > tr > td {
-        border-bottom: 1px solid var(--border) !important;
+        border-color: var(--border) !important;
         color: var(--text) !important;
-        padding: 10px 12px !important;
-        font-size: 13px !important;
-        vertical-align: middle !important;
       }
-      .table-bordered > thead > tr > th,
-      .table-bordered > tbody > tr > td { border-left: 1px solid var(--border) !important; }
-      .table-bordered > thead > tr > th:first-child,
-      .table-bordered > tbody > tr > td:first-child { border-left: none !important; }
       .table-striped > tbody > tr:nth-of-type(odd), .dataTable > tbody > tr:nth-of-type(odd) { background: var(--bg) !important; }
-      .table-hover > tbody > tr:hover, .dataTable > tbody > tr:hover {
-        background: var(--input-bg) !important;
-        box-shadow: inset 0 0 0 1px var(--border-focus);
-      }
+      .table-hover > tbody > tr:hover, .dataTable > tbody > tr:hover { background: var(--input-bg) !important; }
 
       /* 按钮 */
-      .btn {
-        border-radius: var(--radius-sm) !important;
-        font-size: 13px !important;
-        padding: 7px 16px !important;
-        transition: all .15s ease !important;
-      }
+      .btn { border-radius: var(--radius-sm) !important; transition: all .15s ease !important; }
       .btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
       .btn:active { transform: translateY(0); box-shadow: none; }
       .btn-primary, .btn-info { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
