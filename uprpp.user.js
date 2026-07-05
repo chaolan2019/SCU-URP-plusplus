@@ -991,29 +991,21 @@
       .fc-today { background: var(--input-bg) !important; }
 
       /* 课表页面 #courseTable */
-      #courseTable { border-collapse: separate !important; border-spacing: 3px !important; background: transparent !important; }
+      #courseTable { background: transparent !important; }
       #courseTable th {
         background: var(--input-bg) !important; color: var(--text-secondary) !important;
-        font-weight: 500 !important; border: none !important; border-radius: var(--radius-sm) !important;
+        font-weight: 500 !important; border: 1px solid var(--border) !important;
         padding: 10px 8px !important; text-align: center !important; font-size: 13px !important;
       }
       #courseTable td {
-        border: none !important; border-radius: var(--radius) !important;
+        border: 1px solid var(--border) !important;
         padding: 4px !important; vertical-align: top !important;
         font-size: 13px !important; line-height: 1.6 !important;
-        color: var(--text) !important; overflow: visible !important;
+        color: var(--text) !important;
       }
       #courseTable td:first-child {
         background: var(--input-bg) !important; color: var(--text-secondary) !important;
         font-weight: 500 !important; text-align: center !important; font-size: 11px !important;
-      }
-      /* 课程卡片色块 */
-      #courseTable .class_div.box_font,
-      #courseTable div[class*="div-kcb"],
-      #courseTable .uprpp-course-card {
-        border-radius: var(--radius) !important;
-        overflow: hidden !important;
-        transform: translateY(2px) !important;
       }
 
       /* 列表 / 通知 */
