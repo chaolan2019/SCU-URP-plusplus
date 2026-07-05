@@ -1494,19 +1494,6 @@
             onclick: children[0].onclick || onclick
           };
         }
-        // 同名子节点合并：父节点 href=# 且有同名叶子子节点，
-        // 用子节点的 href 作为父节点的跳转链接，并从子菜单中删除该同名子节点
-        if (href === '#' && children.length > 1) {
-          const sameNameChild = children.find(c => c.text === text && c.children.length === 0 && c.href !== '#');
-          if (sameNameChild) {
-            return { id: id || sameNameChild.id, text, iconClass: iconClass || sameNameChild.iconClass, children: children.filter(c => c !== sameNameChild), href: sameNameChild.href, onclick: sameNameChild.onclick || onclick };
-          }
-        }
-        // 同名单子节点提升：父节点 href=# 且只有一个同名子节点
-        if (href === '#' && children.length === 1 && children[0].text === text && children[0].href !== '#') {
-          return { id: id || children[0].id, text, iconClass: iconClass || children[0].iconClass, children: children[0].children, href: children[0].href, onclick: children[0].onclick || onclick };
-        }
-
         return { id, text, iconClass, children, href, onclick };
       });
     }
