@@ -1633,7 +1633,7 @@
     }
 
     const menuData = parseMenu(origMenus);
-    origMenus.remove();
+    origMenus.style.display = 'none';
 
     // Header + toggle
     const header = document.createElement('div');
