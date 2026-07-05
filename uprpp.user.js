@@ -956,37 +956,41 @@
       .fc-toolbar { margin-top: 8px !important; margin-bottom: 12px !important; padding: 0 8px !important; }
       .fc-button { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; }
       .fc-button.fc-state-active { background: var(--primary) !important; color: #fff !important; }
-      .fc-today { background: var(--input-bg) !important; }
-
       /* FullCalendar 事件悬停弹窗 */
-      .popover, .qtip, .tooltip:not(.fc-tooltip),
-      div[class*="pop" i]:not([class*="uprpp"]) {
+      #schedule-hover {
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
         border-radius: var(--radius) !important;
         box-shadow: var(--shadow) !important;
-        color: var(--text) !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+      }
+      #schedule-hover .promptedmessage-a,
+      #schedule-hover .promptedmessage {
+        background: var(--surface) !important;
+        border: none !important;
+        border-radius: var(--radius) !important;
+        box-shadow: none !important;
+      }
+      #schedule-hover .promptedmessage {
+        padding: 10px 14px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 6px !important;
         font-size: 13px !important;
         line-height: 1.6 !important;
-      }
-      .popover .popover-title, .popover .popover-header,
-      .qtip .qtip-title, .tooltip .tooltip-title,
-      div[class*="pop" i] .title, div[class*="pop" i] h5 {
-        background: var(--input-bg) !important;
-        color: var(--text) !important;
-        border-bottom: 1px solid var(--border) !important;
-        font-weight: 600 !important;
-        font-size: 14px !important;
-        padding: 10px 14px !important;
-        border-radius: var(--radius) var(--radius) 0 0 !important;
-      }
-      .popover .popover-content, .qtip .qtip-content,
-      div[class*="pop" i] .content {
-        background: var(--surface) !important;
         color: var(--text-secondary) !important;
-        padding: 10px 14px !important;
       }
-      .popover .arrow, .qtip .qtip-arrow, .tooltip .tooltip-arrow { display: none !important; }
+      #schedule-hover .promptedmessage span:first-child {
+        font-weight: 600 !important;
+        color: var(--primary) !important;
+        font-size: 14px !important;
+      }
+      #schedule-hover .promptedmessage .ace-icon {
+        color: var(--text-muted) !important;
+      }
+
+      .fc-today { background: var(--input-bg) !important; }
 
       /* 课表页面 #courseTable */
       #courseTable { border-collapse: separate !important; border-spacing: 3px !important; background: transparent !important; }
