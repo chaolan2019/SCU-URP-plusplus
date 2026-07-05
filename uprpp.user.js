@@ -1012,7 +1012,7 @@
       .label[class*="arrowed"] {
         vertical-align: middle !important;
         position: relative !important;
-        top: -2px !important;
+        top: -1px !important;
       }
       #courseTable th {
         background: var(--input-bg) !important; color: var(--text-secondary) !important;
