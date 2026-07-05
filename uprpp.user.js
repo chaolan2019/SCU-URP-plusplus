@@ -809,7 +809,7 @@
         text-decoration: none;
         position: relative;
       }
-      .uprpp-nav-link .uprpp-nav-text { cursor: pointer; }
+      .uprpp-nav-link { cursor: default !important; }
       .uprpp-nav-link:hover { background: var(--input-bg); color: var(--text); }
       .uprpp-nav-item.active > .uprpp-nav-link,
       .uprpp-nav-item.open.active > .uprpp-nav-link {
