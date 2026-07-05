@@ -1464,6 +1464,8 @@
         const iconClass = iconEl ? Array.from(iconEl.classList).filter(c => c !== 'menu-icon').join(' ') : '';
         const submenu = li.querySelector(':scope > .submenu');
         let children = submenu ? parseMenu(submenu) : [];
+        // 过滤空壳子节点（无文字且无有效 href）
+        children = children.filter(c => c.text || (c.href && c.href !== '#'));
         const href = a?.getAttribute('href') || '#';
         const onclick = li.getAttribute('onclick') || a?.getAttribute('onclick') || '';
         const id = li.id;
