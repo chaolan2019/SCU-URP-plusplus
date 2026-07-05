@@ -1011,6 +1011,8 @@
       }
       .label[class*="arrowed"] {
         vertical-align: middle !important;
+        position: relative !important;
+        top: -2px !important;
       }
       #courseTable th {
         background: var(--input-bg) !important; color: var(--text-secondary) !important;
