@@ -895,7 +895,9 @@
       .breadcrumbs, .breadcrumb {
         background: var(--input-bg) !important;
         border-radius: var(--radius-sm) !important;
-        padding: 6px 16px !important;
+        padding: 4px 16px !important;
+        margin-top: -4px !important;
+        margin-bottom: 8px !important;
       }
 
       /* 卡片 / 面板 */
