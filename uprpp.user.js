@@ -886,20 +886,22 @@
       ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
       /* 主内容区 */
-      .main-content, .page-content { background: var(--bg) !important; padding-top: 0 !important; }
-      .main-content > .page-content { padding: 8px 16px !important; }
+      .main-content, .page-content { background: var(--bg) !important; }
 
       /* 面包屑 */
       .breadcrumbs, .breadcrumb {
         background: var(--input-bg) !important;
         border-radius: var(--radius-sm) !important;
-        padding: 2px 12px !important;
-        margin: 0 0 6px 0 !important;
-        font-size: 12px !important;
-        position: sticky !important;
-        top: calc(var(--uprpp-navbar-height) - 2px) !important;
-        z-index: 5 !important;
+        padding: 6px 16px !important;
+        margin: 0 !important;
+        font-size: 13px !important;
       }
+      .breadcrumb > li { color: var(--text-secondary) !important; }
+      .breadcrumb > li > a { color: var(--text-secondary) !important; }
+      .breadcrumb > li > a:hover { color: var(--primary) !important; }
+      .breadcrumb > li.active { color: var(--text) !important; font-weight: 500 !important; }
+      .breadcrumb > li > .ace-icon { color: var(--primary) !important; margin-right: 4px !important; }
+      .breadcrumb > li + li::before { color: var(--text-muted) !important; padding: 0 6px !important; }
 
       /* 卡片 / 面板 */
       .widget-box {
@@ -1003,8 +1005,7 @@
         outline: none !important;
       }
       select { cursor: pointer !important; width: auto !important; min-width: 70px !important; overflow: visible !important; }
-      select[style*="width"] { width: auto !important; min-width: 100px !important; }
-      #pagination_pageSize_urppagebar { width: auto !important; min-width: 120px !important; }
+      select[style*="width"], select[id*="pagination"], select[id*="pageSize"] { width: auto !important; min-width: 120px !important; max-width: none !important; }
       select option { padding: 4px 8px !important; }
       .btn.dropdown-toggle, .dropdown-toggle.btn { min-width: auto !important; white-space: nowrap !important; }
       textarea { resize: vertical !important; min-height: 80px !important; }
