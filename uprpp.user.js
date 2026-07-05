@@ -1475,6 +1475,10 @@
         const href = a?.getAttribute('href') || '#';
         const onclick = li.getAttribute('onclick') || a?.getAttribute('onclick') || '';
         const id = li.id;
+        // 有真实 href 的节点：忽略子菜单，直接当叶子
+        if (href !== '#' && !href.startsWith('javascript')) {
+          return { id, text, iconClass, children: [], href, onclick };
+        }
 
         // 单叶子子菜单提升：父节点直接变成跳转节点，不再展开
         if (children.length === 1 && children[0].children.length === 0) {
