@@ -1195,7 +1195,7 @@
 
     if (!styleExists) console.log('[UPR++] 正式页面样式已注入');
 
-    // 课表透明度：MutationObserver 监听 childList + attributes
+    // 课表透明度：MutationObserver + rAF 等一帧让 ACE 先设颜色
     (function courseTableOpacity() {
       const apply = () => {
         const tbl = document.getElementById('courseTable');
@@ -1216,8 +1216,7 @@
         });
       };
       apply();
-      const observer = new MutationObserver(apply);
-      observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+      new MutationObserver(() => requestAnimationFrame(apply)).observe(document.body, { childList: true, subtree: true });
     })();
   }
 
