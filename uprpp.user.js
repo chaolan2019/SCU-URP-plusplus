@@ -992,6 +992,9 @@
 
       /* 课表页面 #courseTable */
       #courseTable { background: transparent !important; }
+      /* 隐藏打印/导出按钮工具栏 */
+      .page-content .tools,
+      .widget-toolbar .btn-group { display: none !important; }
       #courseTable th {
         background: var(--input-bg) !important; color: var(--text-secondary) !important;
         font-weight: 500 !important; border: none !important;
