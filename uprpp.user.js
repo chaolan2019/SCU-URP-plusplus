@@ -1009,6 +1009,9 @@
       .label.arrowed::after {
         display: none !important;
       }
+      .label[class*="arrowed"] {
+        vertical-align: middle !important;
+      }
       #courseTable th {
         background: var(--input-bg) !important; color: var(--text-secondary) !important;
         font-weight: 500 !important; border: none !important;
