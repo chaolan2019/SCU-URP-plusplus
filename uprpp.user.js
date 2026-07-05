@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         UPR++ 教务系统美化
 // @namespace    https://github.com/hanako/upr-plus
-// @version      0.3.13
+// @version      0.3.14
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -178,7 +178,7 @@
 
         /* 版本水印 */
         #uprpp-root::after{
-          content:'UPR++ v0.3.13';
+          content:'UPR++ v0.3.14';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -875,9 +875,6 @@
 
       /* 主内容区 */
       .main-content, .page-content { background: var(--bg) !important; }
-      .breadcrumbs, .breadcrumb { background: transparent !important; border-color: var(--border) !important; }
-      .breadcrumb > li > a { color: var(--text-secondary) !important; }
-      .breadcrumb > li.active { color: var(--text-muted) !important; }
 
       /* 卡片 / 面板 */
       .widget-box { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; box-shadow: var(--shadow) !important; }
@@ -928,12 +925,6 @@
       /* 分页 */
       .pagination > li > a, .pagination > li > span { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text) !important; }
       .pagination > li.active > a, .pagination > li.active > span, .pagination > li.active > a:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
-
-      /* 下拉菜单 */
-      .dropdown-menu { background: var(--surface) !important; border: 1px solid var(--border) !important; box-shadow: var(--shadow) !important; }
-      .dropdown-menu > li > a { color: var(--text) !important; }
-      .dropdown-menu > li > a:hover, .dropdown-menu > li > a:focus, .dropdown-menu > .active > a { background: var(--input-bg) !important; color: var(--text) !important; }
-      .dropdown-menu .divider { background: var(--border) !important; }
 
       /* 弹窗 */
       .modal-content { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; box-shadow: var(--shadow) !important; }
@@ -1797,7 +1788,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.UPRPP = {
-    version: '0.3.13',
+    version: '0.3.14',
     showLogo(show) {
       const el = document.querySelector('#uprpp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
