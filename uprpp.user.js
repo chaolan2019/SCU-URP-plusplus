@@ -893,9 +893,12 @@
       .breadcrumbs, .breadcrumb {
         background: var(--input-bg) !important;
         border-radius: var(--radius-sm) !important;
-        padding: 4px 16px !important;
-        margin-top: -4px !important;
-        margin-bottom: 8px !important;
+        padding: 2px 12px !important;
+        margin: 0 0 6px 0 !important;
+        font-size: 12px !important;
+        position: sticky !important;
+        top: calc(var(--uprpp-navbar-height) - 2px) !important;
+        z-index: 5 !important;
       }
 
       /* 卡片 / 面板 */
@@ -1000,6 +1003,8 @@
         outline: none !important;
       }
       select { cursor: pointer !important; width: auto !important; min-width: 70px !important; overflow: visible !important; }
+      select[style*="width"] { width: auto !important; min-width: 100px !important; }
+      #pagination_pageSize_urppagebar { width: auto !important; min-width: 120px !important; }
       select option { padding: 4px 8px !important; }
       .btn.dropdown-toggle, .dropdown-toggle.btn { min-width: auto !important; white-space: nowrap !important; }
       textarea { resize: vertical !important; min-height: 80px !important; }
