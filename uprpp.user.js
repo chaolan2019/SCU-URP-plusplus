@@ -1013,6 +1013,7 @@
       #courseTable .uprpp-course-card {
         border-radius: var(--radius) !important;
         overflow: hidden !important;
+        transform: translateY(2px) !important;
       }
 
       /* 列表 / 通知 */
@@ -1219,23 +1220,8 @@
       new MutationObserver(() => requestAnimationFrame(apply)).observe(document.body, { childList: true, subtree: true });
     })();
 
-    // 课表背景卡片高度 -2px
-    (function courseTableHeight() {
-      const fix = () => {
-        const tbl = document.getElementById('courseTable');
-        if (!tbl) return;
-        tbl.querySelectorAll('td').forEach(td => {
-          const bg = td.style.backgroundColor;
-          if (!bg) return;
-          const h = td.style.height;
-          if (!h || !h.includes('px')) return;
-          const v = parseInt(h);
-          if (v > 0) td.style.setProperty('height', (v - 2) + 'px', 'important');
-        });
-      };
-      fix();
-      new MutationObserver(() => requestAnimationFrame(fix)).observe(document.body, { childList: true, subtree: true });
-    })();
+    // 课表背景卡片高度对齐（CSS translateY 处理）
+  }
   }
 
   // ============================================================
