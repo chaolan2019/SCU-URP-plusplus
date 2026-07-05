@@ -1619,6 +1619,8 @@
     }
 
     menuData.forEach(item => buildItem(item, newMenus));
+    // 强制清除所有 open 状态，避免默认展开
+    newMenus.querySelectorAll('.uprpp-nav-item.open').forEach(li => li.classList.remove('open'));
 
     sidebar.insertBefore(header, sidebar.firstChild);
     sidebar.appendChild(newMenus);
