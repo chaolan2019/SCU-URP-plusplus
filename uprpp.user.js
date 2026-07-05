@@ -932,13 +932,12 @@
         border-radius: var(--radius-sm) !important;
         overflow: hidden !important;
         color: var(--text) !important;
-        border-collapse: separate !important;
-        border-spacing: 0 !important;
+        border-collapse: collapse !important;
       }
       .table > thead > tr > th, .table-bordered > thead > tr > th, .dataTable > thead > tr > th {
         background: var(--input-bg) !important;
         color: var(--text) !important;
-        border-bottom: 2px solid var(--border) !important;
+        border-bottom: 1px solid var(--border) !important;
         padding: 10px 12px !important;
         font-weight: 600 !important;
         font-size: 13px !important;
@@ -952,6 +951,8 @@
         font-size: 13px !important;
         vertical-align: middle !important;
       }
+      .table-bordered > thead > tr > th,
+      .table-bordered > tbody > tr > td { border: 1px solid var(--border) !important; }
       .table-striped > tbody > tr:nth-of-type(odd), .dataTable > tbody > tr:nth-of-type(odd) { background: var(--bg) !important; }
       .table-hover > tbody > tr:hover, .dataTable > tbody > tr:hover {
         background: var(--input-bg) !important;
@@ -995,8 +996,8 @@
       }
       select { cursor: pointer !important; }
       textarea { resize: vertical !important; min-height: 80px !important; }
-      .chosen-drop { background: var(--surface) !important; border-color: var(--border) !important; box-shadow: var(--shadow) !important; border-radius: var(--radius-sm) !important; }
-      .chosen-results li { color: var(--text) !important; padding: 8px 12px !important; }
+      .chosen-drop { background: var(--surface) !important; border-color: var(--border) !important; box-shadow: var(--shadow) !important; border-radius: var(--radius-sm) !important; position: absolute !important; width: auto !important; min-width: 100% !important; }
+      .chosen-results li { color: var(--text) !important; padding: 8px 12px !important; word-break: break-all !important; white-space: normal !important; }
       .chosen-results li.highlighted { background: var(--primary) !important; color: #fff !important; }
       label { color: var(--text-secondary) !important; font-weight: 500 !important; font-size: 13px !important; }
 
