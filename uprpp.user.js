@@ -1195,25 +1195,27 @@
 
     if (!styleExists) console.log('[UPR++] 正式页面样式已注入');
 
-    // 课表透明度调整：背景段落 50%，课程卡片 80%
+    // 课表透明度：背景段落 50%，课程卡片 60%
     setTimeout(() => {
       const tbl = document.getElementById('courseTable');
       if (!tbl) return;
-      // 背景色块（td 上的底色）→ 50%
       tbl.querySelectorAll('td').forEach(td => {
         const bg = td.style.backgroundColor;
         if (!bg || !bg.includes('rgba')) return;
         const m = bg.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/);
         if (m) td.style.backgroundColor = 'rgba(' + m[1] + ',' + m[2] + ',' + m[3] + ',0.5)';
       });
-      // 课程卡片 → 80%
-      tbl.querySelectorAll('.class_div.box_font, [class*="class_div"][class*="box"]').forEach(el => {
+      tbl.querySelectorAll('.class_div.box_font, [class*="class_div"][class*="box"], [class*="div-kcb"]').forEach(el => {
         const bg = el.style.backgroundColor;
-        if (!bg || !bg.includes('rgba')) return;
-        const m = bg.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/);
-        if (m) el.style.backgroundColor = 'rgba(' + m[1] + ',' + m[2] + ',' + m[3] + ',0.8)';
+        if (bg && bg.includes('rgba')) {
+          const m = bg.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/);
+          if (m) el.style.backgroundColor = 'rgba(' + m[1] + ',' + m[2] + ',' + m[3] + ',0.6)';
+        } else {
+          // 没有 inline background，用 CSS opacity 降透明度
+          el.style.opacity = '0.6';
+        }
       });
-    }, 1000);
+    }, 1500);
   }
 
   // ============================================================
