@@ -961,9 +961,7 @@
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
         border-radius: var(--radius) !important;
-        box-shadow: var(--shadow) !important;
-        padding: 0 !important;
-        overflow: hidden !important;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.12) !important;
       }
       #schedule-hover .promptedmessage-a,
       #schedule-hover .promptedmessage {
