@@ -1225,6 +1225,8 @@
         const tbl = document.getElementById('courseTable');
         if (!tbl) return;
         tbl.querySelectorAll('td').forEach(td => {
+          const bg = td.style.backgroundColor;
+          if (!bg) return;
           const h = td.style.height;
           if (!h || !h.includes('px')) return;
           const v = parseInt(h);
