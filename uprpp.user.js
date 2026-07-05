@@ -1007,6 +1007,11 @@
         background: var(--input-bg) !important; color: var(--text-secondary) !important;
         font-weight: 500 !important; text-align: center !important; font-size: 11px !important;
       }
+      /* 课程卡片圆角 */
+      #courseTable .class_div.box_font,
+      #courseTable div[class*="div-kcb"] {
+        border-radius: var(--radius) !important;
+      }
 
       /* 列表 / 通知 */
       .list-group-item { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text) !important; }
