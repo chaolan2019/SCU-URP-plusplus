@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         UPR++ 教务系统美化
 // @namespace    https://github.com/hanako/upr-plus
-// @version      0.3.13
+// @version      0.3.14
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -180,7 +180,7 @@
 
         /* 版本水印 */
         #uprpp-root::after{
-          content:'UPR++ v0.3.13';
+          content:'UPR++ v0.3.14';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -875,14 +875,6 @@
       .sidebar.menu-min .uprpp-nav-link > .fa { margin-right: 0; font-size: 18px; }
       .sidebar.menu-min .uprpp-nav-submenu { display: none !important; }
 
-      /* 全局过渡和滚动条 */
-      ::selection { background: var(--primary); color: #fff; }
-      html { scroll-behavior: smooth; }
-      ::-webkit-scrollbar { width: 6px; height: 6px; }
-      ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-      ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-
       /* 主内容区 */
       .main-content, .page-content { background: var(--bg) !important; }
       .breadcrumbs { display: none !important; }
@@ -902,16 +894,14 @@
       .profile-info-value { border-color: var(--border) !important; color: var(--text) !important; }
 
       /* 表格 */
-      .table, .table-bordered, .table-striped, .table-hover, .dataTable { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text) !important; border-radius: var(--radius-sm) !important; overflow: hidden !important; }
-      .table > thead > tr > th, .table-bordered > thead > tr > th, .dataTable > thead > tr > th { background: var(--input-bg) !important; color: var(--text) !important; border-color: var(--border) !important; border-bottom-width: 2px !important; font-weight: 600 !important; }
+      .table, .table-bordered, .table-striped, .table-hover, .dataTable { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text) !important; }
+      .table > thead > tr > th, .table-bordered > thead > tr > th, .dataTable > thead > tr > th { background: var(--input-bg) !important; color: var(--text) !important; border-color: var(--border) !important; }
       .table > tbody > tr > td, .table > tbody > tr > th, .table-bordered > tbody > tr > td, .dataTable > tbody > tr > td { border-color: var(--border) !important; color: var(--text) !important; }
       .table-striped > tbody > tr:nth-of-type(odd), .dataTable > tbody > tr:nth-of-type(odd) { background: var(--bg) !important; }
       .table-hover > tbody > tr:hover, .dataTable > tbody > tr:hover { background: var(--input-bg) !important; }
 
       /* 按钮 */
-      .btn { border-radius: var(--radius-sm) !important; transition: all .15s ease !important; }
-      .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-      .btn:active { transform: translateY(0); box-shadow: none; }
+      .btn { border-radius: var(--radius-sm) !important; }
       .btn-primary, .btn-info { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
       .btn-primary:hover, .btn-info:hover { background: var(--primary-hover) !important; border-color: var(--primary-hover) !important; }
       .btn-success { background: #22c55e !important; border-color: #22c55e !important; color: #fff !important; }
@@ -939,7 +929,7 @@
       .tab-content { background: var(--surface) !important; border: 1px solid var(--border) !important; border-top: none !important; }
 
       /* 分页 */
-      .pagination > li > a, .pagination > li > span { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text) !important; border-radius: var(--radius-sm) !important; }
+      .pagination > li > a, .pagination > li > span { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text) !important; }
       .pagination > li.active > a, .pagination > li.active > span, .pagination > li.active > a:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
 
       /* 下拉菜单 */
@@ -949,7 +939,7 @@
       .dropdown-menu .divider { background: var(--border) !important; }
 
       /* 弹窗 */
-      .modal-content { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; box-shadow: 0 10px 40px rgba(0,0,0,0.15) !important; }
+      .modal-content { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; box-shadow: var(--shadow) !important; }
       .modal-header { border-bottom: 1px solid var(--border) !important; }
       .modal-header .close { color: var(--text-secondary) !important; }
       .modal-title { color: var(--text) !important; }
@@ -1813,7 +1803,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.UPRPP = {
-    version: '0.3.13',
+    version: '0.3.14',
     showLogo(show) {
       const el = document.querySelector('#uprpp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
