@@ -1204,6 +1204,35 @@
         td.innerHTML = '<div class="uprpp-course-card">' + html + '</div>';
       });
     }, 800);
+
+    // 全局弹窗美化 Observer：动态创建的 popover/tooltip 自动套主题
+    (function observePopovers() {
+      const styled = new WeakSet();
+      new MutationObserver(mutations => {
+        mutations.forEach(m => m.addedNodes.forEach(node => {
+          if (node.nodeType !== 1 || styled.has(node)) return;
+          const s = getComputedStyle(node);
+          if (s.position === 'absolute' && s.display !== 'none' && node.offsetWidth > 40) {
+            styled.add(node);
+            node.style.setProperty('background', 'var(--surface)', 'important');
+            node.style.setProperty('border', '1px solid var(--border)', 'important');
+            node.style.setProperty('border-radius', 'var(--radius)', 'important');
+            node.style.setProperty('box-shadow', 'var(--shadow)', 'important');
+            node.style.setProperty('color', 'var(--text)', 'important');
+            node.style.setProperty('font-size', '13px', 'important');
+            node.style.setProperty('line-height', '1.6', 'important');
+            node.querySelectorAll('*').forEach(child => {
+              if (!styled.has(child)) {
+                styled.add(child);
+                child.style.setProperty('background', 'transparent', 'important');
+                child.style.setProperty('color', 'var(--text-secondary)', 'important');
+                child.style.setProperty('border-color', 'var(--border)', 'important');
+              }
+            });
+          }
+        }));
+      }).observe(document.body, { childList: true, subtree: true });
+    })();
   }
 
   // ============================================================
