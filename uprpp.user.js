@@ -998,7 +998,7 @@
         padding: 10px 8px !important; text-align: center !important; font-size: 13px !important;
       }
       #courseTable td {
-        border: none !important;
+        border: 0.5px solid var(--border) !important;
         padding: 4px !important; vertical-align: top !important;
         font-size: 13px !important; line-height: 1.6 !important;
         color: var(--text) !important;
