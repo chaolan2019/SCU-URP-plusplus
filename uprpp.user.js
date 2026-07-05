@@ -896,19 +896,14 @@
         box-shadow: var(--shadow) !important;
         overflow: hidden !important;
       }
-      .widget-header {
-        background: transparent !important;
-        border-bottom: 1px solid var(--border) !important;
-        color: var(--text) !important;
-        padding: 12px 16px !important;
-      }
-      .widget-body { background: var(--surface) !important; color: var(--text) !important; padding: 16px !important; }
+      .widget-header { background: transparent !important; border-bottom: 1px solid var(--border) !important; color: var(--text) !important; }
+      .widget-body { background: var(--surface) !important; color: var(--text) !important; }
       .well { background: var(--input-bg) !important; border-color: var(--border) !important; border-radius: var(--radius-sm) !important; }
 
       /* 个人信息 */
       .profile-user-info { border-color: var(--border) !important; border-radius: var(--radius-sm) !important; overflow: hidden !important; }
-      .profile-info-name { background: var(--input-bg) !important; color: var(--text-secondary) !important; border-color: var(--border) !important; padding: 10px 14px !important; }
-      .profile-info-value { border-color: var(--border) !important; color: var(--text) !important; padding: 10px 14px !important; }
+      .profile-info-name { background: var(--input-bg) !important; color: var(--text-secondary) !important; border-color: var(--border) !important; }
+      .profile-info-value { border-color: var(--border) !important; color: var(--text) !important; }
 
       /* 表格 */
       .table, .table-bordered, .table-striped, .table-hover, .dataTable {
@@ -950,8 +945,6 @@
         border: 1px solid var(--border) !important;
         color: var(--text) !important;
         border-radius: var(--radius-sm) !important;
-        padding: 8px 12px !important;
-        font-size: 13px !important;
       }
       input:focus, select:focus, textarea:focus, .form-control:focus,
       .chosen-container-active .chosen-single, .chosen-container-active .chosen-choices {
@@ -964,7 +957,7 @@
       .chosen-drop { background: var(--surface) !important; border-color: var(--border) !important; box-shadow: var(--shadow) !important; }
       .chosen-results li { color: var(--text) !important; padding: 8px 12px !important; }
       .chosen-results li.highlighted { background: var(--primary) !important; color: #fff !important; }
-      label { color: var(--text-secondary) !important; font-weight: 500 !important; font-size: 13px !important; }
+      label { color: var(--text-secondary) !important; }
 
       /* 标签页 */
       .nav-tabs { border-bottom: 1px solid var(--border) !important; }
@@ -987,8 +980,6 @@
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
         border-top: none !important;
-        border-radius: 0 0 var(--radius-sm) var(--radius-sm) !important;
-        padding: 16px !important;
       }
 
       /* 分页 */
@@ -1009,12 +1000,11 @@
         border-radius: var(--radius) !important;
         box-shadow: 0 10px 40px rgba(0,0,0,0.12) !important;
       }
-      .modal-header { border-bottom: 1px solid var(--border) !important; padding: 16px 20px !important; }
+      .modal-header { border-bottom: 1px solid var(--border) !important; }
       .modal-header .close { color: var(--text-secondary) !important; opacity: 1 !important; }
       .modal-header .close:hover { color: var(--text) !important; }
       .modal-title { color: var(--text) !important; font-weight: 600 !important; }
-      .modal-body { padding: 20px !important; }
-      .modal-footer { border-top: 1px solid var(--border) !important; padding: 16px 20px !important; }
+      .modal-footer { border-top: 1px solid var(--border) !important; }
 
       /* 时间轴 */
       .timeline-container { background: var(--surface) !important; border-color: var(--border) !important; }
