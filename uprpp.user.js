@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         UPR++ 教务系统美化
 // @namespace    https://github.com/hanako/upr-plus
-// @version      0.3.14
+// @version      0.3.13
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -180,7 +180,7 @@
 
         /* 版本水印 */
         #uprpp-root::after{
-          content:'UPR++ v0.3.14';
+          content:'UPR++ v0.3.13';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -875,59 +875,33 @@
       .sidebar.menu-min .uprpp-nav-link > .fa { margin-right: 0; font-size: 18px; }
       .sidebar.menu-min .uprpp-nav-submenu { display: none !important; }
 
-      /* 全局过渡和滚动条 */
-      ::selection { background: var(--primary); color: #fff; }
-      html { scroll-behavior: smooth; }
-      :focus-visible { outline: 2px solid var(--primary) !important; outline-offset: 2px; }
-      ::-webkit-scrollbar { width: 6px; height: 6px; }
-      ::-webkit-scrollbar-track { background: transparent; }
-      ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-      ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-
       /* 主内容区 */
       .main-content, .page-content { background: var(--bg) !important; }
       .breadcrumbs { display: none !important; }
+      .breadcrumbs, .breadcrumb { background: transparent !important; border-color: var(--border) !important; }
+      .breadcrumb > li > a { color: var(--text-secondary) !important; }
+      .breadcrumb > li.active { color: var(--text-muted) !important; }
 
       /* 卡片 / 面板 */
-      .widget-box {
-        background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: var(--radius) !important;
-        box-shadow: var(--shadow) !important;
-        overflow: hidden !important;
-      }
+      .widget-box { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; box-shadow: var(--shadow) !important; }
       .widget-header { background: transparent !important; border-bottom: 1px solid var(--border) !important; color: var(--text) !important; }
       .widget-body { background: var(--surface) !important; color: var(--text) !important; }
-      .well { background: var(--input-bg) !important; border-color: var(--border) !important; border-radius: var(--radius-sm) !important; }
+      .well { background: var(--input-bg) !important; border-color: var(--border) !important; }
 
       /* 个人信息 */
-      .profile-user-info { border-color: var(--border) !important; border-radius: var(--radius-sm) !important; overflow: hidden !important; }
+      .profile-user-info { border-color: var(--border) !important; }
       .profile-info-name { background: var(--input-bg) !important; color: var(--text-secondary) !important; border-color: var(--border) !important; }
       .profile-info-value { border-color: var(--border) !important; color: var(--text) !important; }
 
       /* 表格 */
-      .table, .table-bordered, .table-striped, .table-hover, .dataTable {
-        background: var(--surface) !important;
-        border-color: var(--border) !important;
-        color: var(--text) !important;
-      }
-      .table > thead > tr > th, .table-bordered > thead > tr > th, .dataTable > thead > tr > th {
-        background: var(--input-bg) !important;
-        color: var(--text) !important;
-        border-color: var(--border) !important;
-      }
-      .table > tbody > tr > td, .table > tbody > tr > th,
-      .table-bordered > tbody > tr > td, .dataTable > tbody > tr > td {
-        border-color: var(--border) !important;
-        color: var(--text) !important;
-      }
+      .table, .table-bordered, .table-striped, .table-hover, .dataTable { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text) !important; }
+      .table > thead > tr > th, .table-bordered > thead > tr > th, .dataTable > thead > tr > th { background: var(--input-bg) !important; color: var(--text) !important; border-color: var(--border) !important; }
+      .table > tbody > tr > td, .table > tbody > tr > th, .table-bordered > tbody > tr > td, .dataTable > tbody > tr > td { border-color: var(--border) !important; color: var(--text) !important; }
       .table-striped > tbody > tr:nth-of-type(odd), .dataTable > tbody > tr:nth-of-type(odd) { background: var(--bg) !important; }
       .table-hover > tbody > tr:hover, .dataTable > tbody > tr:hover { background: var(--input-bg) !important; }
 
       /* 按钮 */
-      .btn { border-radius: var(--radius-sm) !important; transition: all .15s ease !important; }
-      .btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-      .btn:active { transform: translateY(0); box-shadow: none; }
+      .btn { border-radius: var(--radius-sm) !important; }
       .btn-primary, .btn-info { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
       .btn-primary:hover, .btn-info:hover { background: var(--primary-hover) !important; border-color: var(--primary-hover) !important; }
       .btn-success { background: #22c55e !important; border-color: #22c55e !important; color: #fff !important; }
@@ -940,70 +914,35 @@
       .btn-app:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
 
       /* 表单 */
-      input, select, textarea, .form-control, .chosen-single, .chosen-choices {
-        background: var(--input-bg) !important;
-        border: 1px solid var(--border) !important;
-        color: var(--text) !important;
-        border-radius: var(--radius-sm) !important;
-      }
-      input:focus, select:focus, textarea:focus, .form-control:focus,
-      .chosen-container-active .chosen-single, .chosen-container-active .chosen-choices {
-        border-color: var(--border-focus) !important;
-        box-shadow: 0 0 0 3px var(--ring) !important;
-        outline: none !important;
-      }
-      select { cursor: pointer !important; }
-      textarea { resize: vertical !important; min-height: 80px !important; }
+      input, select, textarea, .form-control, .chosen-single, .chosen-choices { background: var(--input-bg) !important; border: 1px solid var(--border) !important; color: var(--text) !important; border-radius: var(--radius-sm) !important; }
+      input:focus, select:focus, textarea:focus, .form-control:focus, .chosen-container-active .chosen-single, .chosen-container-active .chosen-choices { border-color: var(--border-focus) !important; box-shadow: 0 0 0 3px var(--ring) !important; }
       .chosen-drop { background: var(--surface) !important; border-color: var(--border) !important; box-shadow: var(--shadow) !important; }
-      .chosen-results li { color: var(--text) !important; padding: 8px 12px !important; }
+      .chosen-results li { color: var(--text) !important; }
       .chosen-results li.highlighted { background: var(--primary) !important; color: #fff !important; }
       label { color: var(--text-secondary) !important; }
 
       /* 标签页 */
       .nav-tabs { border-bottom: 1px solid var(--border) !important; }
-      .nav-tabs > li > a {
-        color: var(--text-secondary) !important;
-        background: transparent !important;
-        border: none !important;
-        padding: 10px 16px !important;
-      }
-      .nav-tabs > li > a:hover { color: var(--text) !important; background: var(--input-bg) !important; border-radius: var(--radius-sm) var(--radius-sm) 0 0 !important; }
-      .nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus {
-        color: var(--primary) !important;
-        background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
-        border-bottom-color: var(--surface) !important;
-        border-radius: var(--radius-sm) var(--radius-sm) 0 0 !important;
-        font-weight: 500 !important;
-      }
-      .tab-content {
-        background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
-        border-top: none !important;
-      }
+      .nav-tabs > li > a { color: var(--text-secondary) !important; background: transparent !important; border: none !important; }
+      .nav-tabs > li > a:hover { color: var(--text) !important; background: var(--input-bg) !important; }
+      .nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus { color: var(--primary) !important; background: var(--surface) !important; border: 1px solid var(--border) !important; border-bottom-color: var(--surface) !important; }
+      .tab-content { background: var(--surface) !important; border: 1px solid var(--border) !important; border-top: none !important; }
 
       /* 分页 */
-      .pagination > li > a, .pagination > li > span {
-        background: var(--surface) !important;
-        border-color: var(--border) !important;
-        color: var(--text) !important;
-        border-radius: var(--radius-sm) !important;
-        margin: 0 2px !important;
-      }
-      .pagination > li > a:hover { background: var(--input-bg) !important; color: var(--primary) !important; }
+      .pagination > li > a, .pagination > li > span { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text) !important; }
       .pagination > li.active > a, .pagination > li.active > span, .pagination > li.active > a:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
 
+      /* 下拉菜单 */
+      .dropdown-menu { background: var(--surface) !important; border: 1px solid var(--border) !important; box-shadow: var(--shadow) !important; }
+      .dropdown-menu > li > a { color: var(--text) !important; }
+      .dropdown-menu > li > a:hover, .dropdown-menu > li > a:focus, .dropdown-menu > .active > a { background: var(--input-bg) !important; color: var(--text) !important; }
+      .dropdown-menu .divider { background: var(--border) !important; }
+
       /* 弹窗 */
-      .modal-content {
-        background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: var(--radius) !important;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.12) !important;
-      }
+      .modal-content { background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; box-shadow: var(--shadow) !important; }
       .modal-header { border-bottom: 1px solid var(--border) !important; }
-      .modal-header .close { color: var(--text-secondary) !important; opacity: 1 !important; }
-      .modal-header .close:hover { color: var(--text) !important; }
-      .modal-title { color: var(--text) !important; font-weight: 600 !important; }
+      .modal-header .close { color: var(--text-secondary) !important; }
+      .modal-title { color: var(--text) !important; }
       .modal-footer { border-top: 1px solid var(--border) !important; }
 
       /* 时间轴 */
@@ -1276,6 +1215,7 @@
     rebuildNavbar();
     window.addEventListener('load', rebuildNavbar);
 
+    // 等 dashboard 骨架屏建立后再淡入，避免原 UI 闪烁
     setTimeout(() => document.body.classList.add('uprpp-ready'), 600);
 
     if (!styleExists) console.log('[UPR++] 正式页面样式已注入');
@@ -1863,7 +1803,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.UPRPP = {
-    version: '0.3.14',
+    version: '0.3.13',
     showLogo(show) {
       const el = document.querySelector('#uprpp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
