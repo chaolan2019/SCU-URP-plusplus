@@ -1468,7 +1468,7 @@
         const onclick = li.getAttribute('onclick') || a?.getAttribute('onclick') || '';
         const id = li.id;
 
-        // 单叶子子菜单提升：父节点直接变成跳转节点，不再展开
+        // 单叶子子菜单提升：父节点直接变成跳转节点
         if (children.length === 1 && children[0].children.length === 0) {
           return {
             id: id || children[0].id,
@@ -1478,6 +1478,10 @@
             href: children[0].href || href,
             onclick: children[0].onclick || onclick
           };
+        }
+        // 同名子节点提升：如果子节点和父节点同名，提升子节点的子节点
+        if (children.length === 1 && children[0].text === text) {
+          return { id: id || children[0].id, text, iconClass: iconClass || children[0].iconClass, children: children[0].children, href: children[0].href || href, onclick: children[0].onclick || onclick };
         }
 
         return { id, text, iconClass, children, href, onclick };
