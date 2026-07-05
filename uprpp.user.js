@@ -19,8 +19,6 @@
   // 最早阶段注入：先隐藏原 UI，重构完再淡入
   GM_addStyle(`
     html, body { background: #F4F6F9 !important; color: #0F172A !important; }
-    body { opacity: 0 !important; transition: opacity .25s ease; }
-    body.uprpp-ready { opacity: 1 !important; }
   `);
 
   const THEME_KEY = 'uprpp_theme_v3';
@@ -1346,9 +1344,6 @@
     // 顶栏重建（JS 强制对齐）
     rebuildNavbar();
     window.addEventListener('load', rebuildNavbar);
-
-    // 等 dashboard 骨架屏建立后再淡入，避免原 UI 闪烁
-    setTimeout(() => document.body.classList.add('uprpp-ready'), 200);
 
     if (!styleExists) console.log('[UPR++] 正式页面样式已注入');
 
