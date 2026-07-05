@@ -998,7 +998,7 @@
         padding: 10px 8px !important; text-align: center !important; font-size: 13px !important;
       }
       #courseTable td {
-        border: none !important; border-radius: var(--radius-sm) !important;
+        border: none !important; border-radius: var(--radius) !important;
         padding: 4px !important; vertical-align: top !important;
         font-size: 13px !important; line-height: 1.6 !important;
         color: var(--text) !important; overflow: visible !important;
@@ -1194,6 +1194,18 @@
     setTimeout(() => document.body.classList.add('uprpp-ready'), 600);
 
     if (!styleExists) console.log('[UPR++] 正式页面样式已注入');
+
+    // 课表色块：alpha 改为 0.8
+    setTimeout(() => {
+      document.querySelectorAll('#courseTable [class*="class_div"][class*="box"]').forEach(el => {
+        const bg = el.style.backgroundColor;
+        if (!bg || !bg.includes('rgba')) return;
+        const m = bg.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/);
+        if (m) {
+          el.style.backgroundColor = 'rgba(' + m[1] + ',' + m[2] + ',' + m[3] + ',0.8)';
+        }
+      });
+    }, 1000);
   }
 
   // ============================================================
