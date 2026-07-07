@@ -994,6 +994,11 @@
         position: relative !important;
         box-sizing: border-box !important;
       }
+      .chosen-container-single {
+        width: auto !important;
+        min-width: 150px !important;
+        max-width: 100% !important;
+      }
       .chosen-drop {
         position: absolute !important;
         z-index: 1010 !important;
