@@ -981,7 +981,11 @@
         min-height: 34px !important;
         line-height: 1.4 !important;
       }
-      .chosen-container { vertical-align: middle !important; }
+      .chosen-container {
+        height: auto !important;
+        min-height: 34px !important;
+        vertical-align: middle !important;
+      }
       input:focus, select:focus, textarea:focus, .form-control:focus,
       .chosen-container-active .chosen-single, .chosen-container-active .chosen-choices {
         border-color: var(--border-focus) !important;
