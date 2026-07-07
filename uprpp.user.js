@@ -973,23 +973,22 @@
         border: 1px solid var(--border) !important;
         color: var(--text) !important;
         border-radius: var(--radius-sm) !important;
-        padding: 8px 12px !important;
+        padding: 0 0 !important;
         font-size: 13px !important;
       }
       .chosen-single, .chosen-choices {
         height: auto !important;
-        min-height: 34px !important;
+        min-height: 25px !important;
         line-height: 1.3 !important;
       }
       .chosen-single {
         display: flex !important;
         align-items: center !important;
-        padding: 5px 28px 5px 12px !important;
       }
-      .chosen-single span { margin-right: 0 !important; }
+      .chosen-single span { margin-right: 26px !important; }
       .chosen-container {
         height: auto !important;
-        min-height: 34px !important;
+        min-height: 25px !important;
         vertical-align: middle !important;
         position: relative !important;
         box-sizing: border-box !important;
