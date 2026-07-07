@@ -985,6 +985,13 @@
         height: auto !important;
         min-height: 34px !important;
         vertical-align: middle !important;
+        position: relative !important;
+        box-sizing: border-box !important;
+      }
+      .chosen-drop {
+        position: absolute !important;
+        z-index: 1010 !important;
+        box-sizing: border-box !important;
       }
       input:focus, select:focus, textarea:focus, .form-control:focus,
       .chosen-container-active .chosen-single, .chosen-container-active .chosen-choices {
@@ -1870,6 +1877,14 @@
   function init() {
     if (!document.body) { setTimeout(init, 10); return; }
     applyTheme(getCurrent());
+
+    // 阻止 Chosen 搜索框聚焦时自动滚动页面，避免下拉展开后整页/容器内容被抬高
+    document.addEventListener('focusin', (e) => {
+      const t = e.target;
+      if (t && t.matches && t.matches('.chosen-search input')) {
+        t.focus({ preventScroll: true });
+      }
+    }, true);
 
     // 根据是否存在登录表单判断页面类型
     const isLoginPage = !!document.getElementById('formContent') && !!document.querySelector('.form-signin');
