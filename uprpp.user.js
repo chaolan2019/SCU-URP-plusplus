@@ -907,6 +907,8 @@
 
       /* 个人信息 */
       .profile-user-info { border-color: var(--border) !important; border-radius: var(--radius-sm) !important; overflow: hidden !important; }
+      .profile-user-info:has(.chosen-container),
+      .widget-box:has(.chosen-container) { overflow: visible !important; }
       .profile-info-name { background: var(--input-bg) !important; color: var(--text-secondary) !important; border-color: var(--border) !important; padding: 10px 14px !important; }
       .profile-info-value { border-color: var(--border) !important; color: var(--text) !important; padding: 10px 14px !important; }
 
@@ -1888,12 +1890,23 @@
     if (!document.body) { setTimeout(init, 10); return; }
     applyTheme(getCurrent());
 
-    // 阻止 Chosen 搜索框聚焦时自动滚动页面，避免下拉展开后整页/容器内容被抬高
+    // 阻止 Chosen 搜索框聚焦时自动滚动页面/容器，避免下拉展开后内容被抬高
     document.addEventListener('focusin', (e) => {
       const t = e.target;
-      if (t && t.matches && t.matches('.chosen-search input')) {
-        t.focus({ preventScroll: true });
+      if (!t || !t.matches || !t.matches('.chosen-search input')) return;
+      const scrollers = [];
+      let p = t.parentElement;
+      while (p) {
+        const st = p.scrollTop;
+        const sl = p.scrollLeft;
+        if (st || sl || p.scrollHeight > p.clientHeight || p.scrollWidth > p.clientWidth) {
+          scrollers.push({ el: p, top: st, left: sl });
+        }
+        p = p.parentElement;
       }
+      requestAnimationFrame(() => {
+        scrollers.forEach(s => { s.el.scrollTop = s.top; s.el.scrollLeft = s.left; });
+      });
     }, true);
 
     // 根据是否存在登录表单判断页面类型
