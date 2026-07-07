@@ -979,8 +979,14 @@
       .chosen-single, .chosen-choices {
         height: auto !important;
         min-height: 34px !important;
-        line-height: 1.4 !important;
+        line-height: 1.3 !important;
       }
+      .chosen-single {
+        display: flex !important;
+        align-items: center !important;
+        padding: 5px 28px 5px 12px !important;
+      }
+      .chosen-single span { margin-right: 0 !important; }
       .chosen-container {
         height: auto !important;
         min-height: 34px !important;
