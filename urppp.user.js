@@ -959,8 +959,12 @@
       }
 
       /* 按钮 */
-      .btn {
+      .btn, .btn.btn-xs, .btn.btn-sm, .btn.btn-lg, .btn.btn-minier,
+      .btn-group .btn, .btn-group > .btn, .input-group .btn, .btn-toolbar .btn,
+      .btn-app {
         border-radius: 24px !important;
+      }
+      .btn, .btn.btn-xs, .btn.btn-sm, .btn.btn-lg {
         font-size: 13px !important;
         padding: 4px 12px !important;
         transition: all .15s ease !important;
