@@ -962,11 +962,11 @@
       .btn, .btn.btn-xs, .btn.btn-sm, .btn.btn-lg, .btn.btn-minier,
       .btn-group .btn, .btn-group > .btn, .input-group .btn, .btn-toolbar .btn,
       .btn-app {
-        border-radius: 24px !important;
+        border-radius: 16px !important;
       }
       .btn, .btn.btn-xs, .btn.btn-sm, .btn.btn-lg {
-        font-size: 13px !important;
-        padding: 4px 12px !important;
+        font-size: 12px !important;
+        padding: 3px 10px !important;
         transition: all .15s ease !important;
       }
       .btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
@@ -979,7 +979,7 @@
       .btn-danger { background: #ef4444 !important; border-color: #ef4444 !important; color: #fff !important; }
       .btn-default, .btn-white { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; }
       .btn-default:hover, .btn-white:hover { background: var(--border) !important; }
-      .btn-app { background: var(--surface) !important; border: 1px solid var(--border) !important; color: var(--text) !important; border-radius: 24px !important; }
+      .btn-app { background: var(--surface) !important; border: 1px solid var(--border) !important; color: var(--text) !important; border-radius: 16px !important; }
       .btn-app:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
 
       /* 表单 */
@@ -1314,7 +1314,7 @@
         width: 80px !important;
         height: 80px !important;
         margin: 0 12px 12px 0 !important;
-        border-radius: 24px !important;
+        border-radius: 16px !important;
         background: var(--input-bg) !important;
         border: 1px solid var(--border) !important;
         color: var(--text) !important;
