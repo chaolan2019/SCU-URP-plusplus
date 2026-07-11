@@ -893,6 +893,7 @@
       ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
       /* 主内容区 */
+      .main-container, .main-container::before { background: var(--bg) !important; }
       .main-content, .page-content { background: var(--bg) !important; }
       .breadcrumbs { display: none !important; }
 
