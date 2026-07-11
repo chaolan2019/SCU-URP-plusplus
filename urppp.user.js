@@ -923,15 +923,22 @@
       /* 表格 */
       .table, .table-bordered, .table-striped, .table-hover, .dataTable {
         background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
+        border: none !important;
+        border-radius: var(--radius-sm) !important;
+        overflow: hidden !important;
         color: var(--text) !important;
         border-collapse: separate !important;
         border-spacing: 0 !important;
+        box-shadow: inset 0 0 0 1px var(--border) !important;
+      }
+      .table > thead > tr > th, .table-bordered > thead > tr > th, .dataTable > thead > tr > th,
+      .table > tbody > tr:first-child > td, .table-bordered > tbody > tr:first-child > td,
+      .dataTable > tbody > tr:first-child > td {
+        border-top: 1px solid var(--border) !important;
       }
       .table > thead > tr > th, .table-bordered > thead > tr > th, .dataTable > thead > tr > th {
         background: var(--input-bg) !important;
         color: var(--text) !important;
-        border-top: 1px solid var(--border) !important;
         border-bottom: 1px solid var(--border) !important;
         padding: 10px 12px !important;
         font-weight: 600 !important;
