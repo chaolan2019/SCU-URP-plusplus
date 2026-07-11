@@ -971,13 +971,13 @@
       }
       .btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
       .btn:active { transform: translateY(0); box-shadow: none; }
-      .btn-primary, .btn-info { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
+      .btn-primary, .btn-info { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; border-radius: 16px !important; }
       .btn-primary:hover, .btn-info:hover { background: var(--primary-hover) !important; border-color: var(--primary-hover) !important; }
-      .btn-success { background: #22c55e !important; border-color: #22c55e !important; color: #fff !important; }
+      .btn-success { background: #22c55e !important; border-color: #22c55e !important; color: #fff !important; border-radius: 16px !important; }
       .btn-success:hover { background: #16a34a !important; border-color: #16a34a !important; }
-      .btn-warning { background: #f59e0b !important; border-color: #f59e0b !important; color: #fff !important; }
-      .btn-danger { background: #ef4444 !important; border-color: #ef4444 !important; color: #fff !important; }
-      .btn-default, .btn-white { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; }
+      .btn-warning { background: #f59e0b !important; border-color: #f59e0b !important; color: #fff !important; border-radius: 16px !important; }
+      .btn-danger { background: #ef4444 !important; border-color: #ef4444 !important; color: #fff !important; border-radius: 16px !important; }
+      .btn-default, .btn-white { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; border-radius: 16px !important; }
       .btn-default:hover, .btn-white:hover { background: var(--border) !important; }
       .btn-app { background: var(--surface) !important; border: 1px solid var(--border) !important; color: var(--text) !important; border-radius: 16px !important; }
       .btn-app:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
