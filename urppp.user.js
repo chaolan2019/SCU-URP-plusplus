@@ -924,8 +924,6 @@
       .table, .table-bordered, .table-striped, .table-hover, .dataTable {
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
-        border-radius: var(--radius-sm) !important;
-        overflow: hidden !important;
         color: var(--text) !important;
         border-collapse: separate !important;
         border-spacing: 0 !important;
