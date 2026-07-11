@@ -960,9 +960,9 @@
 
       /* 按钮 */
       .btn {
-        border-radius: var(--radius-sm) !important;
+        border-radius: var(--radius) !important;
         font-size: 13px !important;
-        padding: 7px 16px !important;
+        padding: 5px 14px !important;
         transition: all .15s ease !important;
       }
       .btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
@@ -975,7 +975,7 @@
       .btn-danger { background: #ef4444 !important; border-color: #ef4444 !important; color: #fff !important; }
       .btn-default, .btn-white { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; }
       .btn-default:hover, .btn-white:hover { background: var(--border) !important; }
-      .btn-app { background: var(--surface) !important; border: 1px solid var(--border) !important; color: var(--text) !important; border-radius: var(--radius-sm) !important; }
+      .btn-app { background: var(--surface) !important; border: 1px solid var(--border) !important; color: var(--text) !important; border-radius: var(--radius) !important; }
       .btn-app:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
 
       /* 表单 */
@@ -1310,7 +1310,7 @@
         width: 80px !important;
         height: 80px !important;
         margin: 0 12px 12px 0 !important;
-        border-radius: var(--radius-sm) !important;
+        border-radius: var(--radius) !important;
         background: var(--input-bg) !important;
         border: 1px solid var(--border) !important;
         color: var(--text) !important;
