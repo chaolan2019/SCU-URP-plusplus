@@ -858,13 +858,12 @@
         max-height: 0;
         opacity: 0;
         overflow: hidden;
-        transition: max-height .2s ease-in, opacity .15s ease-in, padding .2s ease-in;
+        transition: max-height .3s cubic-bezier(.4,0,.2,1), opacity .25s ease, padding .3s ease;
       }
       .urppp-nav-item.open > .urppp-nav-submenu {
         max-height: 800px;
         opacity: 1;
         padding: 3px 0 3px 20px;
-        transition: max-height .35s cubic-bezier(.4,0,.2,1), opacity .25s ease, padding .3s ease;
       }
       .urppp-nav-submenu .urppp-nav-link { padding: 9px 13px; font-size: 14px; }
       .urppp-nav-submenu .urppp-nav-submenu { padding-left: 16px; }
