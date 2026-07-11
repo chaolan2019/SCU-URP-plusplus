@@ -854,10 +854,17 @@
       .urppp-nav-submenu {
         list-style: none;
         margin: 0;
-        padding: 3px 0 3px 20px;
-        display: none !important;
+        padding: 0 0 0 20px;
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        transition: max-height .35s cubic-bezier(.4,0,.2,1), opacity .25s ease, padding .3s ease;
       }
-      .urppp-nav-item.open > .urppp-nav-submenu { display: block !important; }
+      .urppp-nav-item.open > .urppp-nav-submenu {
+        max-height: 800px;
+        opacity: 1;
+        padding: 3px 0 3px 20px;
+      }
       .urppp-nav-submenu .urppp-nav-link { padding: 9px 13px; font-size: 14px; }
       .urppp-nav-submenu .urppp-nav-submenu { padding-left: 16px; }
 
@@ -874,7 +881,7 @@
         pointer-events: none;
       }
       .sidebar.menu-min .urppp-nav-link > .fa { margin-right: 0; font-size: 18px; }
-      .sidebar.menu-min .urppp-nav-submenu { display: none !important; }
+      .sidebar.menu-min .urppp-nav-submenu { max-height: 0 !important; opacity: 0 !important; }
 
       /* 全局过渡和滚动条 */
       ::selection { background: var(--primary); color: #fff; }
