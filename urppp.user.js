@@ -1,6 +1,6 @@
-// ==UserScript==
-// @name         UPR++ 教务系统美化
-// @namespace    https://github.com/hanako/upr-plus
+﻿// ==UserScript==
+// @name         URP++ 教务系统美化
+// @namespace    https://github.com/hanako/urp-plus
 // @version      0.3.14
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
@@ -20,11 +20,11 @@
   GM_addStyle(`
     html, body { background: #F4F6F9 !important; color: #0F172A !important; }
     body { opacity: 0 !important; transition: opacity .25s ease; }
-    body.uprpp-ready { opacity: 1 !important; }
+    body.urppp-ready { opacity: 1 !important; }
   `);
 
-  const THEME_KEY = 'uprpp_theme_v3';
-  const ACCENT_KEY = 'uprpp_accent_v1';
+  const THEME_KEY = 'urppp_theme_v3';
+  const ACCENT_KEY = 'urppp_accent_v1';
 
   const THEMES = {
     'default': {
@@ -32,9 +32,9 @@
       vars: {
         '--bg': '#F4F6F9', '--surface': '#FFFFFF',
         '--text': '#0F172A', '--text-secondary': '#64748B', '--text-muted': '#94A3B8',
-        '--border': '#E2E8F0', '--border-focus': 'var(--uprpp-accent, #1E3A5F)',
-        '--input-bg': '#F8FAFC', '--primary': 'var(--uprpp-accent, #1E3A5F)', '--primary-hover': 'var(--uprpp-accent-hover, #162D4A)',
-        '--ring': 'var(--uprpp-accent-ring, rgba(30,58,95,0.15))',
+        '--border': '#E2E8F0', '--border-focus': 'var(--urppp-accent, #1E3A5F)',
+        '--input-bg': '#F8FAFC', '--primary': 'var(--urppp-accent, #1E3A5F)', '--primary-hover': 'var(--urppp-accent-hover, #162D4A)',
+        '--ring': 'var(--urppp-accent-ring, rgba(30,58,95,0.15))',
         '--shadow': '0 2px 16px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.03)',
         '--radius': '16px', '--radius-sm': '10px',
       },
@@ -109,9 +109,9 @@
     const hover = darken(hex, 0.15);
     const ring = alpha(hex, 0.15);
     GM_setValue(ACCENT_KEY, hex);
-    document.documentElement.style.setProperty('--uprpp-accent', hex);
-    document.documentElement.style.setProperty('--uprpp-accent-hover', hover);
-    document.documentElement.style.setProperty('--uprpp-accent-ring', ring);
+    document.documentElement.style.setProperty('--urppp-accent', hex);
+    document.documentElement.style.setProperty('--urppp-accent-hover', hover);
+    document.documentElement.style.setProperty('--urppp-accent-ring', ring);
   }
 
   function getAccent() { return GM_getValue(ACCENT_KEY, ''); }
@@ -119,8 +119,8 @@
   function applyTheme(name) {
     const t = THEMES[name] || THEMES['default'];
     GM_setValue(THEME_KEY, name);
-    const el = document.getElementById('uprpp-theme-vars') || (() => {
-      const e = document.createElement('style'); e.id = 'uprpp-theme-vars';
+    const el = document.getElementById('urppp-theme-vars') || (() => {
+      const e = document.createElement('style'); e.id = 'urppp-theme-vars';
       document.head.appendChild(e); return e;
     })();
     let css = ':root {';
@@ -129,7 +129,7 @@
     el.textContent = css;
     document.body.style.fontFamily = t.font;
     applyAccent(getAccent());
-    console.log(`[UPR++] ${t.name}`);
+    console.log(`[URP++] ${t.name}`);
   }
 
   function getCurrent() { return GM_getValue(THEME_KEY, 'default'); }
@@ -169,18 +169,18 @@
 
     // 注入新 UI
     formContent.insertAdjacentHTML('afterbegin', `
-    <div id="uprpp-root">
+    <div id="urppp-root">
       <style>
-        #uprpp-root,#uprpp-root *{box-sizing:border-box;}
-        #uprpp-root *{border:0;outline:0;}
+        #urppp-root,#urppp-root *{box-sizing:border-box;}
+        #urppp-root *{border:0;outline:0;}
 
         /* 全局背景同步主题 */
         html,body{background:var(--bg)!important;min-height:100vh}
         .wrapper{background:transparent!important}
 
         /* 版本水印 */
-        #uprpp-root::after{
-          content:'UPR++ v0.3.14';
+        #urppp-root::after{
+          content:'URP++ v0.3.14';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -240,7 +240,7 @@
           display:block;font-size:13px;font-weight:500;
           color:var(--text);margin-bottom:8px;letter-spacing:.5px;
         }
-        #uprpp-root .ui{
+        #urppp-root .ui{
           display:block;width:100%;height:46px;padding:0 14px;
           background:var(--input-bg) !important;
           border:1.5px solid var(--border) !important;
@@ -249,28 +249,28 @@
           font-family:inherit;
           transition:border-color .2s,box-shadow .2s;
         }
-        #uprpp-root .ui:focus{
+        #urppp-root .ui:focus{
           border-color:var(--border-focus) !important;
           box-shadow:0 0 0 3px var(--ring) !important;
         }
-        #uprpp-root .ui::placeholder{color:var(--text-muted)}
+        #urppp-root .ui::placeholder{color:var(--text-muted)}
 
         /* 验证码行：图片放在输入框内部右侧，确保总长度与其他输入框一致 */
-        #uprpp-root .ucr{
+        #urppp-root .ucr{
           width:100% !important;
           margin-bottom:0 !important;
         }
-        #uprpp-root .ufg-cap{
+        #urppp-root .ufg-cap{
           margin-bottom:0 !important;
         }
-        #uprpp-root .ucap-input-wrap{
+        #urppp-root .ucap-input-wrap{
           position:relative !important;
           width:100% !important;
         }
-        #uprpp-root .ucap-input-wrap .ui{
+        #urppp-root .ucap-input-wrap .ui{
           padding-right:148px !important;
         }
-        #uprpp-root .uci-wrap{
+        #urppp-root .uci-wrap{
           position:absolute !important;
           right:-2px !important;
           top:50% !important;
@@ -283,7 +283,7 @@
           cursor:pointer !important;
           box-shadow:0 0 0 1px var(--border) !important;
         }
-        #uprpp-root .uci{
+        #urppp-root .uci{
           display:block !important;
           width:100% !important;
           height:100% !important;
@@ -338,46 +338,46 @@
       </style>
 
       <div class="uc">
-        <div class="ub" id="uprpp-brand">
+        <div class="ub" id="urppp-brand">
           <div class="ub-logo">${originalSvg || ''}</div>
           <h1>${t('四川大学教务管理系统','SCU Academic System')}</h1>
           <p>${t('学生端 · 欢迎登录','Student Portal · Welcome')}</p>
         </div>
 
-        <div class="ut" id="uprpp-tabs">
+        <div class="ut" id="urppp-tabs">
           <button class="ac" data-mode="account">${t('账号登录','Account')}</button>
           <button data-mode="sso">${t('统一认证','SSO')}</button>
         </div>
 
-        <div class="ufb" id="uprpp-form">
+        <div class="ufb" id="urppp-form">
           <div class="ufg">
-            <label class="ufl" for="uprpp-user">${t('学号','Student ID')}</label>
-            <input class="ui" id="uprpp-user" type="text" placeholder="${t('请输入学号','Enter student ID')}" autocomplete="username">
+            <label class="ufl" for="urppp-user">${t('学号','Student ID')}</label>
+            <input class="ui" id="urppp-user" type="text" placeholder="${t('请输入学号','Enter student ID')}" autocomplete="username">
           </div>
           <div class="ufg">
-            <label class="ufl" for="uprpp-pass">${t('密码','Password')}</label>
-            <input class="ui" id="uprpp-pass" type="password" placeholder="${t('请输入密码','Enter password')}" autocomplete="current-password">
+            <label class="ufl" for="urppp-pass">${t('密码','Password')}</label>
+            <input class="ui" id="urppp-pass" type="password" placeholder="${t('请输入密码','Enter password')}" autocomplete="current-password">
           </div>
           <div class="ucr">
             <div class="ufg ufg-cap">
-              <label class="ufl" for="uprpp-cap">${t('验证码','Captcha')}</label>
+              <label class="ufl" for="urppp-cap">${t('验证码','Captcha')}</label>
               <div class="ucap-input-wrap">
-                <input class="ui" id="uprpp-cap" type="text" placeholder="${t('请输入','Enter')}" maxlength="4" autocomplete="off">
-                <div class="uci-wrap" id="uprpp-capwrap" title="${t('点击刷新','Refresh')}">
-                  <img class="uci" id="uprpp-capimg" src="" alt="Captcha">
+                <input class="ui" id="urppp-cap" type="text" placeholder="${t('请输入','Enter')}" maxlength="4" autocomplete="off">
+                <div class="uci-wrap" id="urppp-capwrap" title="${t('点击刷新','Refresh')}">
+                  <img class="uci" id="urppp-capimg" src="" alt="Captcha">
                 </div>
               </div>
             </div>
           </div>
-          <button class="ubtn" id="uprpp-submit">${t('登 录','Sign In')}</button>
+          <button class="ubtn" id="urppp-submit">${t('登 录','Sign In')}</button>
         </div>
 
         <div class="uft">
-          <a href="javascript:void(0)" id="uprpp-forgot">${t('忘记密码？','Forgot password?')}</a>
+          <a href="javascript:void(0)" id="urppp-forgot">${t('忘记密码？','Forgot password?')}</a>
           <a href="${isEn?'/login':'/loginEn'}">${isEn?'中文':'EN'}</a>
         </div>
 
-        <div class="us" id="uprpp-dots">
+        <div class="us" id="urppp-dots">
           <span data-theme="default" title="简约白" style="background:#F1F5F9"></span>
           <span data-theme="dark" title="深邃暗" style="background:#0B0F17"></span>
           <span data-theme="scu-red" title="川大红" style="background:#B53434"></span>
@@ -387,13 +387,13 @@
 
     // ---- 事件绑定 ----
 
-    const root = formContent.querySelector('#uprpp-root');
+    const root = formContent.querySelector('#urppp-root');
 
     // 输入同步
     [
-      ['#uprpp-user', '#input_username'],
-      ['#uprpp-pass', '#input_password'],
-      ['#uprpp-cap', '#input_checkcode'],
+      ['#urppp-user', '#input_username'],
+      ['#urppp-pass', '#input_password'],
+      ['#urppp-cap', '#input_checkcode'],
     ].forEach(([ns, os]) => {
       const ni = root.querySelector(ns), oi = document.querySelector(os);
       if (ni && oi) {
@@ -403,8 +403,8 @@
     });
 
     // 验证码
-    const capImg = root.querySelector('#uprpp-capimg');
-    const capWrap = root.querySelector('#uprpp-capwrap');
+    const capImg = root.querySelector('#urppp-capimg');
+    const capWrap = root.querySelector('#urppp-capwrap');
     const origCapImg = document.querySelector('.form-signin img');
     if (capImg && origCapImg) {
       capImg.src = origCapImg.src;
@@ -425,15 +425,15 @@
         }
         root.querySelectorAll('.ut button').forEach(b => b.classList.remove('ac'));
         btn.classList.add('ac');
-        const formEl = root.querySelector('#uprpp-form');
-        const ssoEl = root.querySelector('#uprpp-sso');
+        const formEl = root.querySelector('#urppp-form');
+        const ssoEl = root.querySelector('#urppp-sso');
         if (formEl) formEl.style.display = 'block';
         if (ssoEl) ssoEl.style.display = 'none';
       });
     });
 
     // 登录
-    const submitBtn = root.querySelector('#uprpp-submit');
+    const submitBtn = root.querySelector('#urppp-submit');
     submitBtn.addEventListener('click', () => {
       const origBtn = document.getElementById('loginButton');
       if (origBtn) origBtn.click();
@@ -444,7 +444,7 @@
     });
 
     // 忘记密码
-    root.querySelector('#uprpp-forgot').addEventListener('click', e => {
+    root.querySelector('#urppp-forgot').addEventListener('click', e => {
       e.preventDefault();
       const links = document.querySelectorAll('a');
       for (const a of links) {
@@ -453,7 +453,7 @@
     });
 
     // 主题
-    const dots = root.querySelector('#uprpp-dots');
+    const dots = root.querySelector('#urppp-dots');
     const ct = getCurrent();
     dots.querySelectorAll('span').forEach(d => {
       if (d.dataset.theme === ct) d.classList.add('ac');
@@ -464,7 +464,8 @@
       });
     });
 
-    console.log('[UPR++] 登录界面已重建');
+    console.log('[URP++] 登录界面已重建');
+    setTimeout(() => document.body.classList.add('urppp-ready'), 100);
   }
 
   // ============================================================
@@ -472,10 +473,10 @@
   // ============================================================
 
   function beautifyInternal() {
-    const styleExists = !!document.getElementById('uprpp-internal-style');
+    const styleExists = !!document.getElementById('urppp-internal-style');
     if (!styleExists) {
       const style = document.createElement('style');
-      style.id = 'uprpp-internal-style';
+      style.id = 'urppp-internal-style';
       style.textContent = `
       /* 全局 */
       html, body { background: var(--bg) !important; color: var(--text) !important; }
@@ -729,19 +730,19 @@
       .ace-nav > li.light-blue .dropdown-menu .divider { background: var(--border) !important; }
 
       /* 侧边栏 —— Hanako 风格完全重构 */
-      :root { --uprpp-navbar-height: 45px; }
+      :root { --urppp-navbar-height: 45px; }
       .sidebar:not(.menu-min) { width: 260px !important; }
       .sidebar.menu-min { width: 50px !important; }
       .sidebar:not(.menu-min) ~ .main-content { margin-left: 260px !important; }
       .sidebar.menu-min ~ .main-content { margin-left: 50px !important; }
-      .main-content { margin-top: var(--uprpp-navbar-height) !important; transition: margin-left .25s ease; }
+      .main-content { margin-top: var(--urppp-navbar-height) !important; transition: margin-left .25s ease; }
       .navbar.navbar-default.navbar-fixed-top,
       .navbar-fixed-top,
       .navbar-fixed-bottom { left: 0 !important; right: 0 !important; }
       .sidebar {
         z-index: 1040 !important;
-        top: var(--uprpp-navbar-height) !important;
-        height: calc(100vh - var(--uprpp-navbar-height)) !important;
+        top: var(--urppp-navbar-height) !important;
+        height: calc(100vh - var(--urppp-navbar-height)) !important;
         background: var(--surface) !important;
         border-right: 1px solid var(--border) !important;
         box-shadow: var(--shadow) !important;
@@ -756,7 +757,7 @@
       .sidebar-collapse { display: none !important; }
 
       /* 侧边栏顶部 header */
-      .uprpp-sidebar-header {
+      .urppp-sidebar-header {
         position: absolute !important;
         top: 0 !important;
         left: 0 !important;
@@ -770,8 +771,8 @@
         z-index: 100 !important;
         background: var(--surface) !important;
       }
-      #uprpp-menus { margin-top: 50px !important; }
-      .uprpp-sidebar-toggle {
+      #urppp-menus { margin-top: 50px !important; }
+      .urppp-sidebar-toggle {
         width: 30px;
         height: 30px;
         border-radius: 8px;
@@ -785,21 +786,21 @@
         font-size: 15px;
         transition: all .15s;
       }
-      .uprpp-sidebar-toggle:hover { background: var(--border); color: var(--text); }
+      .urppp-sidebar-toggle:hover { background: var(--border); color: var(--text); }
 
       /* 新菜单 */
-      #uprpp-menus {
+      #urppp-menus {
         list-style: none;
         margin: 50px 0 0 0;
         padding: 10px 12px 24px;
         overflow-y: auto;
         max-height: calc(100vh - 64px);
       }
-      #uprpp-menus::-webkit-scrollbar { width: 4px; }
-      #uprpp-menus::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+      #urppp-menus::-webkit-scrollbar { width: 4px; }
+      #urppp-menus::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-      .uprpp-nav-item { margin: 4px 0; }
-      .uprpp-nav-link {
+      .urppp-nav-item { margin: 4px 0; }
+      .urppp-nav-link {
         display: flex;
         align-items: center;
         padding: 11px 13px;
@@ -809,18 +810,18 @@
         text-decoration: none;
         position: relative;
       }
-      .uprpp-nav-link { cursor: default !important; text-decoration: none !important; }
-      .uprpp-nav-link .uprpp-nav-text { cursor: pointer; }
-      .uprpp-nav-link .fa, .uprpp-nav-link .ace-icon { pointer-events: none !important; cursor: default !important; }
-      .uprpp-nav-link:hover { background: var(--input-bg); color: var(--text); }
-      .uprpp-nav-link:hover .uprpp-nav-text { text-decoration: underline; }
-      .uprpp-nav-item.active > .uprpp-nav-link,
-      .uprpp-nav-item.open.active > .uprpp-nav-link {
+      .urppp-nav-link { cursor: default !important; text-decoration: none !important; }
+      .urppp-nav-link .urppp-nav-text { cursor: pointer; }
+      .urppp-nav-link .fa, .urppp-nav-link .ace-icon { pointer-events: none !important; cursor: default !important; }
+      .urppp-nav-link:hover { background: var(--input-bg); color: var(--text); }
+      .urppp-nav-link:hover .urppp-nav-text { text-decoration: underline; }
+      .urppp-nav-item.active > .urppp-nav-link,
+      .urppp-nav-item.open.active > .urppp-nav-link {
         background: var(--input-bg);
         color: var(--primary);
         font-weight: 500;
       }
-      .uprpp-nav-link > .fa {
+      .urppp-nav-link > .fa {
         width: 22px;
         text-align: center;
         margin-right: 11px;
@@ -829,7 +830,7 @@
         flex-shrink: 0;
         transition: margin .25s ease;
       }
-      .uprpp-nav-text {
+      .urppp-nav-text {
         flex: 1;
         font-size: 15px;
         white-space: nowrap;
@@ -839,7 +840,7 @@
         max-width: 200px;
         transition: opacity .2s ease, max-width .25s ease;
       }
-      .uprpp-nav-arrow {
+      .urppp-nav-arrow {
         font-size: 13px;
         color: var(--text-muted);
         margin-left: 8px;
@@ -848,32 +849,32 @@
         transition: transform .2s, opacity .2s ease, max-width .25s ease;
         flex-shrink: 0;
       }
-      .uprpp-nav-item.open > .uprpp-nav-link .uprpp-nav-arrow { transform: rotate(180deg); }
+      .urppp-nav-item.open > .urppp-nav-link .urppp-nav-arrow { transform: rotate(180deg); }
 
-      .uprpp-nav-submenu {
+      .urppp-nav-submenu {
         list-style: none;
         margin: 0;
         padding: 3px 0 3px 20px;
         display: none !important;
       }
-      .uprpp-nav-item.open > .uprpp-nav-submenu { display: block !important; }
-      .uprpp-nav-submenu .uprpp-nav-link { padding: 9px 13px; font-size: 14px; }
-      .uprpp-nav-submenu .uprpp-nav-submenu { padding-left: 16px; }
+      .urppp-nav-item.open > .urppp-nav-submenu { display: block !important; }
+      .urppp-nav-submenu .urppp-nav-link { padding: 9px 13px; font-size: 14px; }
+      .urppp-nav-submenu .urppp-nav-submenu { padding-left: 16px; }
 
       /* 折叠状态 */
-      .sidebar.menu-min .uprpp-sidebar-header { justify-content: center; padding: 14px 0 12px; }
-      .sidebar.menu-min #uprpp-menus { padding: 10px 6px 24px; }
-      .sidebar.menu-min .uprpp-nav-link { padding: 12px 0; justify-content: center; }
-      .sidebar.menu-min .uprpp-nav-text,
-      .sidebar.menu-min .uprpp-nav-arrow {
+      .sidebar.menu-min .urppp-sidebar-header { justify-content: center; padding: 14px 0 12px; }
+      .sidebar.menu-min #urppp-menus { padding: 10px 6px 24px; }
+      .sidebar.menu-min .urppp-nav-link { padding: 12px 0; justify-content: center; }
+      .sidebar.menu-min .urppp-nav-text,
+      .sidebar.menu-min .urppp-nav-arrow {
         opacity: 0;
         max-width: 0;
         margin-left: 0;
         overflow: hidden;
         pointer-events: none;
       }
-      .sidebar.menu-min .uprpp-nav-link > .fa { margin-right: 0; font-size: 18px; }
-      .sidebar.menu-min .uprpp-nav-submenu { display: none !important; }
+      .sidebar.menu-min .urppp-nav-link > .fa { margin-right: 0; font-size: 18px; }
+      .sidebar.menu-min .urppp-nav-submenu { display: none !important; }
 
       /* 全局过渡和滚动条 */
       ::selection { background: var(--primary); color: #fff; }
@@ -1187,12 +1188,12 @@
       .ui-jqgrid tr.ui-row-ltr:hover { background: var(--input-bg) !important; }
 
       /* 首页重构仪表板 */
-      #uprpp-dashboard { padding: 24px; max-width: 1440px; margin: 0 auto; }
-      .uprpp-welcome { margin-bottom: 24px; }
-      .uprpp-welcome h2 { font-size: 26px; font-weight: 600; color: var(--text); margin: 0 0 6px; letter-spacing: 1px; }
-      .uprpp-welcome p { color: var(--text-secondary); margin: 0; font-size: 14px; }
-      .uprpp-stats-grid { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 24px; }
-      .uprpp-stat-card {
+      #urppp-dashboard { padding: 24px; max-width: 1440px; margin: 0 auto; }
+      .urppp-welcome { margin-bottom: 24px; }
+      .urppp-welcome h2 { font-size: 26px; font-weight: 600; color: var(--text); margin: 0 0 6px; letter-spacing: 1px; }
+      .urppp-welcome p { color: var(--text-secondary); margin: 0; font-size: 14px; }
+      .urppp-stats-grid { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 24px; }
+      .urppp-stat-card {
         display: flex;
         align-items: center;
         gap: 14px;
@@ -1205,19 +1206,19 @@
         text-decoration: none;
         transition: transform .2s, box-shadow .2s;
       }
-      .uprpp-stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px var(--ring); }
-      .uprpp-stat-card .value {
+      .urppp-stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px var(--ring); }
+      .urppp-stat-card .value {
         font-size: 34px;
         font-weight: 700;
         color: var(--primary);
         line-height: 1;
         flex-shrink: 0;
       }
-      .uprpp-stat-card .value.uprpp-stat-value-text {
+      .urppp-stat-card .value.urppp-stat-value-text {
         font-size: 30px;
         font-weight: 600;
       }
-      .uprpp-stat-card .label {
+      .urppp-stat-card .label {
         font-size: 16px;
         color: var(--text-secondary) !important;
         line-height: 1.4;
@@ -1229,27 +1230,27 @@
         padding: 0 !important;
         box-shadow: none !important;
       }
-      .uprpp-stat-skeleton { cursor: default; pointer-events: none; }
-      .uprpp-stat-skeleton .value { background: var(--input-bg); color: transparent !important; border-radius: 4px; width: 48px; height: 34px; }
-      .uprpp-stat-skeleton .label { background: var(--input-bg); color: transparent !important; border-radius: 4px; width: 80px; height: 20px; }
-      .uprpp-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
-      @media (max-width: 1100px) { .uprpp-main-grid { grid-template-columns: 1fr; } }
-      #uprpp-left .uprpp-card { box-shadow: none !important; }
-      #uprpp-left .fc-toolbar { margin: 0 0 12px 0 !important; padding: 8px 8px 0 8px !important; }
-      #uprpp-left .fc-toolbar .fc-center h2,
-      #uprpp-left .fc-toolbar h2 { display: inline-block !important; background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; padding: 6px 14px !important; font-size: 14px !important; color: var(--text) !important; box-shadow: var(--shadow) !important; }
-      .uprpp-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 20px; }
-      .uprpp-card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-      .uprpp-card-header h4 { font-size: 16px; font-weight: 600; color: var(--text); margin: 0; }
-      .uprpp-card-tools .widget-toolbar { padding: 0; line-height: 1; }
-      .uprpp-card-tools .widget-toolbar a { color: var(--text-secondary) !important; margin-left: 12px; font-size: 14px; }
-      .uprpp-card-tools .widget-toolbar a:hover { color: var(--primary) !important; }
-      .uprpp-card-body { padding: 16px 20px; }
-      #uprpp-dashboard .widget-box { background: transparent; border: none; border-radius: 0; box-shadow: none; margin-bottom: 0; }
-      #uprpp-dashboard .widget-header { display: none; }
-      #uprpp-dashboard .widget-body { background: transparent; border: none; padding: 0; }
-      #uprpp-dashboard .tabContent { counter-reset: uprpp-notice; }
-      #uprpp-dashboard .tabContent h3 {
+      .urppp-stat-skeleton { cursor: default; pointer-events: none; }
+      .urppp-stat-skeleton .value { background: var(--input-bg); color: transparent !important; border-radius: 4px; width: 48px; height: 34px; }
+      .urppp-stat-skeleton .label { background: var(--input-bg); color: transparent !important; border-radius: 4px; width: 80px; height: 20px; }
+      .urppp-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
+      @media (max-width: 1100px) { .urppp-main-grid { grid-template-columns: 1fr; } }
+      #urppp-left .urppp-card { box-shadow: none !important; }
+      #urppp-left .fc-toolbar { margin: 0 0 12px 0 !important; padding: 8px 8px 0 8px !important; }
+      #urppp-left .fc-toolbar .fc-center h2,
+      #urppp-left .fc-toolbar h2 { display: inline-block !important; background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; padding: 6px 14px !important; font-size: 14px !important; color: var(--text) !important; box-shadow: var(--shadow) !important; }
+      .urppp-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 20px; }
+      .urppp-card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+      .urppp-card-header h4 { font-size: 16px; font-weight: 600; color: var(--text); margin: 0; }
+      .urppp-card-tools .widget-toolbar { padding: 0; line-height: 1; }
+      .urppp-card-tools .widget-toolbar a { color: var(--text-secondary) !important; margin-left: 12px; font-size: 14px; }
+      .urppp-card-tools .widget-toolbar a:hover { color: var(--primary) !important; }
+      .urppp-card-body { padding: 16px 20px; }
+      #urppp-dashboard .widget-box { background: transparent; border: none; border-radius: 0; box-shadow: none; margin-bottom: 0; }
+      #urppp-dashboard .widget-header { display: none; }
+      #urppp-dashboard .widget-body { background: transparent; border: none; padding: 0; }
+      #urppp-dashboard .tabContent { counter-reset: urppp-notice; }
+      #urppp-dashboard .tabContent h3 {
         position: relative;
         margin: 0 0 10px !important;
         padding-left: 34px;
@@ -1258,9 +1259,9 @@
         display: flex;
         align-items: center;
       }
-      #uprpp-dashboard .tabContent h3::before {
-        counter-increment: uprpp-notice;
-        content: counter(uprpp-notice);
+      #urppp-dashboard .tabContent h3::before {
+        counter-increment: urppp-notice;
+        content: counter(urppp-notice);
         position: absolute;
         left: 0;
         top: 50%;
@@ -1277,7 +1278,7 @@
         justify-content: center;
         box-shadow: 0 2px 6px var(--ring);
       }
-      #uprpp-dashboard .tabContent h3 a {
+      #urppp-dashboard .tabContent h3 a {
         color: var(--text) !important;
         font-weight: 500;
         font-size: 14px;
@@ -1290,13 +1291,13 @@
         background: var(--input-bg);
         transition: background .2s;
       }
-      #uprpp-dashboard .tabContent h3 a:hover { background: var(--border); }
-      #uprpp-dashboard .tabContent h3 label { font-weight: inherit; color: inherit; margin: 0; }
-      #uprpp-dashboard .tabContent h3 a > span { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-      #uprpp-dashboard .tabContent h3 .hide_note { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 12px; }
-      #uprpp-dashboard .tabContent h3 .fa-clock-o { margin-right: 4px; color: var(--text-muted); }
-      #uprpp-dashboard .uprpp-card-body:has(.btn-app) { display: block !important; padding: 16px 14px; font-size: 0; }
-      #uprpp-dashboard .btn-app {
+      #urppp-dashboard .tabContent h3 a:hover { background: var(--border); }
+      #urppp-dashboard .tabContent h3 label { font-weight: inherit; color: inherit; margin: 0; }
+      #urppp-dashboard .tabContent h3 a > span { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+      #urppp-dashboard .tabContent h3 .hide_note { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 12px; }
+      #urppp-dashboard .tabContent h3 .fa-clock-o { margin-right: 4px; color: var(--text-muted); }
+      #urppp-dashboard .urppp-card-body:has(.btn-app) { display: block !important; padding: 16px 14px; font-size: 0; }
+      #urppp-dashboard .btn-app {
         display: inline-flex !important;
         width: 80px !important;
         height: 80px !important;
@@ -1318,8 +1319,8 @@
         word-break: keep-all !important;
         vertical-align: top !important;
       }
-      #uprpp-dashboard .btn-app:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; transform: translateY(-2px); box-shadow: 0 4px 12px var(--ring); }
-      #uprpp-dashboard .btn-app > .ace-icon { color: inherit !important; display: block; margin: 0 auto 4px; font-size: 22px; }
+      #urppp-dashboard .btn-app:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; transform: translateY(-2px); box-shadow: 0 4px 12px var(--ring); }
+      #urppp-dashboard .btn-app > .ace-icon { color: inherit !important; display: block; margin: 0 auto 4px; font-size: 22px; }
     `;
     if (!styleExists) document.head.appendChild(style);
     }
@@ -1338,9 +1339,9 @@
     rebuildNavbar();
     window.addEventListener('load', rebuildNavbar);
 
-    setTimeout(() => document.body.classList.add('uprpp-ready'), 600);
+    setTimeout(() => document.body.classList.add('urppp-ready'), 600);
 
-    if (!styleExists) console.log('[UPR++] 正式页面样式已注入');
+    if (!styleExists) console.log('[URP++] 正式页面样式已注入');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -1569,15 +1570,15 @@
     if (!sidebar || !origMenus) return;
 
     // 先清理旧的（可能从 PJAX 残留）
-    const oldMenus = document.getElementById('uprpp-menus');
-    const oldHeader = sidebar.querySelector('.uprpp-sidebar-header');
+    const oldMenus = document.getElementById('urppp-menus');
+    const oldHeader = sidebar.querySelector('.urppp-sidebar-header');
     if (oldMenus) oldMenus.remove();
     if (oldHeader) oldHeader.remove();
 
     // 读取顶栏高度并同步 CSS 变量（加兜底）
     const navbar = document.querySelector('.navbar.navbar-default, .navbar-fixed-top');
     const nh = navbar ? (navbar.offsetHeight || 45) : 45;
-    document.documentElement.style.setProperty('--uprpp-navbar-height', nh + 'px', 'important');
+    document.documentElement.style.setProperty('--urppp-navbar-height', nh + 'px', 'important');
     sidebar.style.setProperty('top', nh + 'px', 'important');
     sidebar.style.setProperty('height', 'calc(100vh - ' + nh + 'px)', 'important');
 
@@ -1626,10 +1627,10 @@
 
     // Header + toggle
     const header = document.createElement('div');
-    header.className = 'uprpp-sidebar-header';
+    header.className = 'urppp-sidebar-header';
     header.style.cssText = 'position:absolute;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:flex-end;padding:14px 14px 12px;border-bottom:1px solid var(--border);background:var(--surface)';
     const toggle = document.createElement('div');
-    toggle.className = 'uprpp-sidebar-toggle';
+    toggle.className = 'urppp-sidebar-toggle';
     toggle.innerHTML = '<i class="fa fa-angle-left"></i>';
     toggle.title = '收起侧边栏';
     const doToggle = () => {
@@ -1656,29 +1657,29 @@
     observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
 
     const newMenus = document.createElement('ul');
-    newMenus.id = 'uprpp-menus';
+    newMenus.id = 'urppp-menus';
     newMenus.style.cssText = 'margin-top:50px;list-style:none;padding:10px 12px 24px;overflow-y:auto;max-height:calc(100vh - 64px)';
 
     function setActiveBranch(li) {
-      document.querySelectorAll('#uprpp-menus .uprpp-nav-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('#urppp-menus .urppp-nav-item').forEach(el => el.classList.remove('active'));
       let p = li;
-      while (p && p.id !== 'uprpp-menus') {
-        if (p.classList.contains('uprpp-nav-item')) p.classList.add('active');
+      while (p && p.id !== 'urppp-menus') {
+        if (p.classList.contains('urppp-nav-item')) p.classList.add('active');
         p = p.parentElement;
       }
     }
 
     function openActiveBranch(li) {
       let p = li.parentElement;
-      while (p && p.id !== 'uprpp-menus') {
-        if (p.classList.contains('uprpp-nav-item')) p.classList.add('open');
+      while (p && p.id !== 'urppp-menus') {
+        if (p.classList.contains('urppp-nav-item')) p.classList.add('open');
         p = p.parentElement;
       }
     }
 
     function buildItem(item, container) {
       const li = document.createElement('li');
-      li.className = 'uprpp-nav-item';
+      li.className = 'urppp-nav-item';
       if (item.id) li.id = item.id;
 
       const hasSub = item.children.length > 0;
@@ -1686,7 +1687,7 @@
       const hasRealHref = href !== '#' && !href.startsWith('javascript');
       // 有真实 href 或有子菜单时都用 a 标签
       const link = document.createElement('a');
-      link.className = 'uprpp-nav-link';
+      link.className = 'urppp-nav-link';
       link.href = hasRealHref ? href : 'javascript:void(0)';
 
       if (item.iconClass) {
@@ -1696,14 +1697,14 @@
       }
 
       const text = document.createElement('span');
-      text.className = 'uprpp-nav-text';
+      text.className = 'urppp-nav-text';
       text.textContent = item.text;
       text.title = item.text;
       link.appendChild(text);
 
       if (hasSub) {
         const arrow = document.createElement('i');
-        arrow.className = 'uprpp-nav-arrow fa fa-angle-down';
+        arrow.className = 'urppp-nav-arrow fa fa-angle-down';
         arrow.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -1728,7 +1729,7 @@
 
       if (hasSub) {
         const sub = document.createElement('ul');
-        sub.className = 'uprpp-nav-submenu';
+        sub.className = 'urppp-nav-submenu';
         item.children.forEach(child => buildItem(child, sub));
         li.appendChild(sub);
       }
@@ -1743,7 +1744,7 @@
 
     menuData.forEach(item => buildItem(item, newMenus));
     // 强制清除所有 open 状态，避免默认展开
-    newMenus.querySelectorAll('.uprpp-nav-item.open').forEach(li => li.classList.remove('open'));
+    newMenus.querySelectorAll('.urppp-nav-item.open').forEach(li => li.classList.remove('open'));
 
     sidebar.insertBefore(header, sidebar.firstChild);
     sidebar.appendChild(newMenus);
@@ -1754,7 +1755,7 @@
   // ============================================================
 
   function rebuildDashboard() {
-    if (document.getElementById('uprpp-dashboard')) return;
+    if (document.getElementById('urppp-dashboard')) return;
 
     const pageContent = document.querySelector('.page-content');
     if (!pageContent) return;
@@ -1766,16 +1767,16 @@
     const infoboxes = studyWidget ? Array.from(studyWidget.querySelectorAll('.infobox')) : [];
 
     const dashboard = document.createElement('div');
-    dashboard.id = 'uprpp-dashboard';
+    dashboard.id = 'urppp-dashboard';
     dashboard.innerHTML = `
-      <div class="uprpp-welcome">
+      <div class="urppp-welcome">
         <h2>欢迎回来</h2>
         <p>四川大学教务管理系统 · 学生端</p>
       </div>
-      <div class="uprpp-stats-grid" id="uprpp-stats"></div>
-      <div class="uprpp-main-grid">
-        <div class="uprpp-left" id="uprpp-left"></div>
-        <div class="uprpp-right" id="uprpp-right"></div>
+      <div class="urppp-stats-grid" id="urppp-stats"></div>
+      <div class="urppp-main-grid">
+        <div class="urppp-left" id="urppp-left"></div>
+        <div class="urppp-right" id="urppp-right"></div>
       </div>
     `;
 
@@ -1796,11 +1797,11 @@
     });
 
     // 生成学业概览卡片（骨架屏 → 真实数据）
-    const statsGrid = dashboard.querySelector('#uprpp-stats');
+    const statsGrid = dashboard.querySelector('#urppp-stats');
     const skeletonCount = Math.max(infoboxes.length, 5);
     for (let i = 0; i < skeletonCount; i++) {
       const sk = document.createElement('div');
-      sk.className = 'uprpp-stat-card uprpp-stat-skeleton';
+      sk.className = 'urppp-stat-card urppp-stat-skeleton';
       sk.innerHTML = '<div class="value">-</div><div class="label">加载中</div>';
       statsGrid.appendChild(sk);
     }
@@ -1814,7 +1815,7 @@
         const value = lines[0] || '';
         const label = lines.slice(1).join(' ').replace(/更多\.\.\./g, '').trim();
         const isTextValue = /[\u4e00-\u9fa5]/.test(value) || value.length > 5;
-        const valueClass = isTextValue ? 'value uprpp-stat-value-text' : 'value';
+        const valueClass = isTextValue ? 'value urppp-stat-value-text' : 'value';
         const link = box.closest('a');
         const card = document.createElement(link ? 'a' : 'div');
         if (link) {
@@ -1822,7 +1823,7 @@
           card.onclick = link.onclick;
           card.style.textDecoration = 'none';
         }
-        card.className = 'uprpp-stat-card';
+        card.className = 'urppp-stat-card';
         card.innerHTML = `<div class="${valueClass}">${value}</div><div class="label">${label}</div>`;
         statsGrid.appendChild(card);
       });
@@ -1838,8 +1839,8 @@
     }
 
     // 包装并移动 widget
-    const left = dashboard.querySelector('#uprpp-left');
-    const right = dashboard.querySelector('#uprpp-right');
+    const left = dashboard.querySelector('#urppp-left');
+    const right = dashboard.querySelector('#urppp-right');
 
     wrapWidget(widgets[5], left, '我的日程安排');
     wrapWidget(widgets[0], right, '通知公告');
@@ -1857,7 +1858,7 @@
       }
     }, 200);
 
-    console.log('[UPR++] 首页仪表板已重构');
+    console.log('[URP++] 首页仪表板已重构');
   }
 
   function wrapWidget(widget, container, title) {
@@ -1865,20 +1866,20 @@
     const toolbar = header ? header.querySelector('.widget-toolbar') : null;
 
     const card = document.createElement('div');
-    card.className = 'uprpp-card';
+    card.className = 'urppp-card';
     card.innerHTML = `
-      <div class="uprpp-card-header">
+      <div class="urppp-card-header">
         <h4>${title}</h4>
-        <div class="uprpp-card-tools"></div>
+        <div class="urppp-card-tools"></div>
       </div>
-      <div class="uprpp-card-body"></div>
+      <div class="urppp-card-body"></div>
     `;
 
     if (toolbar) {
       toolbar.style.display = 'inline-block';
-      card.querySelector('.uprpp-card-tools').appendChild(toolbar);
+      card.querySelector('.urppp-card-tools').appendChild(toolbar);
     }
-    card.querySelector('.uprpp-card-body').appendChild(widget);
+    card.querySelector('.urppp-card-body').appendChild(widget);
     container.appendChild(card);
   }
 
@@ -1926,7 +1927,7 @@
         if (!sidebar) return;
         const navbar = document.querySelector('.navbar.navbar-default, .navbar-fixed-top');
         const nh = navbar ? (navbar.offsetHeight || 45) : 45;
-        document.documentElement.style.setProperty('--uprpp-navbar-height', nh + 'px', 'important');
+        document.documentElement.style.setProperty('--urppp-navbar-height', nh + 'px', 'important');
         sidebar.style.setProperty('top', nh + 'px', 'important');
         sidebar.style.setProperty('height', 'calc(100vh - ' + nh + 'px)', 'important');
         rebuildSidebarCompletely();
@@ -1943,10 +1944,10 @@
 
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
-  global.UPRPP = {
+  global.urppp = {
     version: '0.3.14',
     showLogo(show) {
-      const el = document.querySelector('#uprpp-brand .ub-logo');
+      const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
     },
     theme: {
