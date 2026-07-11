@@ -1,0 +1,2357 @@
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta charset="utf-8"/>
+
+    <title>教学评估</title>
+    <link rel="shortcut icon" href="/img/icon/favicon.ico" type="image/x-icon"/>
+    <meta name="description" content="overview &amp; stats"/>
+
+    <link rel="stylesheet" href="/assets/css/bootstrap.min.css"/>
+
+
+
+
+    <link rel="stylesheet" href="/assets/font-awesome/4.1.0/css/font-awesome.min.css"/>
+    <link rel="stylesheet" href="/assets/iconfont/css/iconfont.css"/>
+    <!-- page specific plugin styles -->
+    <link rel="stylesheet" href="/assets/css/jquery-ui.min.css" type="text/css"/>
+    <link rel="stylesheet" href="/assets/css/chosen.css"/>
+    <link rel="stylesheet" href="/css/phone/phone.css" type="text/css"/>
+
+    <!-- text fonts -->
+    <link rel="stylesheet" href="/assets/css/fonts-woff2.css"/>
+
+    <!-- ace styles -->
+    <link rel="stylesheet" href="/assets/css/ace.min.css" id="main-ace-style"/>
+
+    <!--[if lte IE 9]>
+    <link rel="stylesheet" href="/assets/css/ace-part2.min.css"/>
+    <![endif]-->
+
+    <!--[if lte IE 9]>
+    <link rel="stylesheet" href="/assets/css/ace-ie.min.css"/>
+    <![endif]-->
+
+    <!-- ace settings handler -->
+    <script src="/assets/js/ace-extra.min.js"></script>
+
+    <!-- HTML5shiv and Respond.js for IE8 to support HTML5 elements and media queries -->
+    <!--[if lte IE 8]>
+    <script src="/assets/js/html5shiv.min.js"></script>
+    <script src="/assets/js/respond.min.js"></script>
+    <![endif]-->
+
+    <!--[if !IE]> -->
+    <script src="/js/jQuery/jquery-3.4.1.min.js"></script>
+	<script src="/js/jQuery/jquery-migrate-3.1.0.min.js"></script>
+    <!-- <![endif]-->
+
+    <!--[if IE]>
+    <script src="/js/jQuery/jquery-3.4.1.min.js"></script>
+	<script src="/js/jQuery/jquery-migrate-1.4.1.min.js"></script>
+    <![endif]-->
+
+    <script type="text/javascript">
+        if ('ontouchstart' in document.documentElement) document.write("<script src='/assets/js/jquery.mobile.custom.min.js'>" + "<" + "/script>");
+    </script>
+
+    <script type="text/javascript" src="/js/My97DatePicker/WdatePicker.js"></script>
+    
+    <script type="text/javascript" src="/assets/js/chosen.jquery.min.js"></script>
+
+    <!-- ace scripts -->
+    <script src="/assets/js/ace-elements.min.js"></script>
+    <script src="/assets/js/ace.min.js"></script>
+
+    <script type="text/javascript" src="/js/jQuery/jquery.cookie.js"></script>
+
+    <!-- commoncss -->
+    <link rel="stylesheet" href="/css/commons/commoncss.css" type="text/css"/>
+    <!-- commoncss -->
+
+    <!-- alert -->
+    <script type="text/javascript" src="/assets/js/jquery-ui.min.js"></script>
+    
+    <script type="text/javascript" src="/js/customjs/pagination.js"></script>
+    <script type="text/javascript" src="/js/customjs/urpalert.js"></script>
+    <script type="text/javascript" src="/assets/layer/layer.js"></script>
+
+    <script src="/assets/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <!-- alert -->
+
+    <!-- urp-ajax -->
+	<script type="text/javascript" src="/js/customjs/urpajax.js"></script>
+	<!-- urp-ajax -->
+    <script type="text/javascript">
+        $(function () {
+       		
+        	if(false) {
+	        	var showResetpass = $.cookie('showResetpass');
+        		if(false) {
+	        		window.location.href = "/forcereset";
+        		} else {
+        			if(showResetpass == null) {
+        				$.cookie('showResetpass', "0");
+	        			var bar = $.cookie('selectionBar');
+	        			$("#view-table .modal-dialog").css("width", "60%");
+						$('#view-table').modal({
+							remote : "/template/forcereset?modal=1",
+							backdrop: "static",
+							keyboard: false
+						}).on("hidden.bs.modal", function() {
+							$("#view-table .modal-dialog").css("width", "60%");
+							$("#view-table .modal-content").html('<div class="center">\
+				                <img src="/img/icon/pageloading.gif" style="width:28px;height:28px;">\
+				            </div>');
+							$(this).removeData("bs.modal");
+						});
+        			}
+        		}
+        	}
+			           
+        });
+        
+    </script>
+    <script type="text/javascript" src="/js/customjs/template/template.js"></script>
+
+    <style type="text/css">
+
+        @media screen and (max-width: 768px) {
+            .span_bbzx {
+                display: none!important;
+            }
+        }
+
+        @media only screen and (max-width: 479px) {
+            .navbar:not(.navbar-collapse) .navbar-header {
+                float: right !important;
+                display: block;
+            }
+        }
+
+        @media (max-width: 479px){
+            .navbar-fixed-top + .main-container {
+                padding-top: 45px;
+            }
+        }
+    </style>
+
+    
+
+<style type="text/css">
+	td {
+		white-space: nowrap;
+	}
+	
+	th {
+		white-space: nowrap;
+		text-align: center
+	}
+	
+	.label.arrowed,.label.arrowed-in {
+		position: relative;
+		z-index: 0;
+	}
+	
+	#billContainer {
+		width: 50%;
+		height: 100%;
+		background: #fff;
+		top: 0px;;
+		right: -100%;
+		box-shadow: #a9a9a9 0px 0px 10px;
+		-webkit-box-shadow: #a9a9a9 0px 0px 10px;
+		-moz-box-shadow: #a9a9a9 0px 0px 10px;
+		overflow: auto;
+		position: fixed;
+		z-index: 999;
+	}
+	
+	.div-title {
+		width: 100%;
+		position: relative;
+		border-bottom: #eeece8 solid 1px;
+	}
+	
+	.div-title h3 {
+		margin: 0;
+		padding: 0;
+		font-size: 16px;
+		line-height: 55px;
+		color: #999;
+		text-indent: 23px;
+		font-weight: normal;
+	}
+	
+	.div-title span {
+		margin: 0;
+		padding: 0;
+		text-align: center;
+		margin-right: 10px;
+		display: inline-block;
+		position: absolute;
+		right: 0px;
+		top: 15px;
+		width: 50px;
+		height: 25px;
+		border-left: #dbdbdb solid 1px;
+	}
+	
+	.container {
+		width: 1000px;
+	}
+	
+	.r-slider-button {
+		background: #2196f3;
+		border-radius: 100%;
+		text-align: center;
+	}
+	
+	.r-slider-line {
+		background: #ccc;
+	}
+	
+	.r-slider-fill {
+		background: #2196f3;
+	}
+	
+	.r-slider-number {
+		position: absolute;
+		background: #000;
+		color: #fff;
+		width: 28px;
+		left: calc(50% -   14px);
+		top: -16px;
+		font-size: 12px;
+		border-radius: 3px;
+	}
+	
+	.r-slider-text {
+		font-size: 10px;
+		text-align: center;
+	}
+	
+	.r-slider-pin {
+		background: #ccc;
+	}
+	
+	.r-slider-label {
+		font-size: 10px;
+		top: 16px;
+	}
+	
+	.margin-size {
+		margin-left: 5px;
+	}
+	
+	#code_scroll .jcpj {
+		display: none;
+	}
+</style>
+
+
+</head>
+<body class="no-skin">
+
+<!-- 查看详情专用 -->
+<div class="modal fade" id="view-table" tabindex="1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog" style="width:60%;">
+        <div class="modal-content">
+            <div class="center">
+                <span class="view-pre-loading"></span>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 查看详情专用 -->
+
+<div class="modal fade" id="myModal" tabindex="1" role="dialog"
+     aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"
+                        aria-hidden="true">×
+                </button>
+                <h4 class="modal-title" id="myModalLabel">
+                    调课后的周次
+                </h4>
+            </div>
+            <div class="modal-body">
+                开始周次:<input type="text" name="kszc" id="kszc" readonly="readonly"/><br/>
+                结束周次:<input type="text" name="jszc" id="jszc"/><br/>
+                选择周次模式:<input type="radio" name="zcms" value="1" style="width:20px"/> 全周 &nbsp;&nbsp;
+                <input type="radio" name="zcms" value="2" style="width:20px"/> 单周&nbsp;&nbsp;
+                <input type="radio" name="zcms" value="3" style="width:20px"/> 双周
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default">
+                    保存
+                </button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal">
+                    关闭
+                </button>
+            </div>
+        </div>
+        <!-- /.modal-content -->
+    </div>
+    <!-- /.modal-dialog -->
+</div>
+
+				
+<div id="navbar" class="navbar navbar-default  navbar-fixed-top hide">
+    <script type="text/javascript">
+        try {
+            ace.settings.check('navbar', 'fixed')
+        } catch (e) {
+        }
+    </script>
+
+    <div class="navbar-container" id="navbar-container">
+        <button type="button" class="navbar-toggle menu-toggler pull-left" id="menu-toggler">
+            <span class="sr-only">Toggle sidebar</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
+        <div class="navbar-header pull-left">
+            <a href="/" class="navbar-brand" id='0' onclick="toSelect(this);">
+                <small class="span_bbzx" style="font-weight:700;font-family:微软雅黑">
+                    
+                    四川大学教学管理与服务平台
+
+                </small>
+            </a>
+        </div>
+
+        <div class="navbar-buttons navbar-header pull-right" role="navigation">
+            <input type="hidden" id="xxbm" name="xxbm" value="100006">
+            <ul class="nav ace-nav">
+                <li class="green" style="text-align: center; vertical-align: top;">
+                    <div class="intellegenceUDiv" style="z-index:1" id="intellegenceUDiv"
+                         style="display:inline-block; left: 100%; position:absolute;height:100%;line-height:normal;">
+                        <div style="height:100%; width:32px; display:inline-block;
+									 position:absolute;line-height:100%;left:-32px;
+									 background-color:#777;cursor:pointer; " id="clickdiv"
+                             onclick="changeInfo()">
+                            <i class="fa fa-search white" style='margin-top: 50%;' id="clicki"></i>
+                        </div>
+                    </div>
+                    <div id="form-search" class="nav-search" style="width:0px;right:-20px;margin-top: 8px; margin-right:20px;background-color:rgba(0,0,0,0);z-index:-1">
+                        <form class="form-search">
+							<span class="input-icon">
+								<input type="text" placeholder="查找功能..." class="nav-search-input" id="search-input"
+                                       autocomplete="off">
+								<i class="ace-icon fa fa-search blue" ></i>
+							</span>
+                        </form>
+                    </div>
+                </li>
+                <!-- 通知   -->
+
+                
+				<li style="text-align: center;">
+					<a href="/main/customerServiceCenter">
+						<i class="ace-icon glyphicon glyphicon-headphones" style="top: 3px;"></i>
+					</a>
+				</li>
+                
+				
+                
+                <li class="green cdsj" style="text-align: center">
+                    <a href="#"
+                       onclick="javascript:window.open('http://jwc.scu.edu.cn/article/206/206_1.htm');">
+                        <i class="ace-icon fa fa-calendar"></i>学校校历
+                    </a>
+                </li>
+                <li class="grey cdsj" style="text-align: center">
+                    <a href="#"
+                       onclick="openWorkRestSchedule();return false;">
+                        <i class="ace-icon fa fa-clock-o"></i>作息时间表
+                    </a>
+                </li>
+                <!-- 展示当前的学期季度信息 -->
+                <li class="light-red" style="text-align: center">
+                    <a href="#">
+                        <i class="ace-icon fa fa-calendar"></i><span class='span_bbzx'>
+
+
+2025-2026 春  第18周   星期六</span>
+                    </a>
+                </li>
+                
+
+
+                
+                <li class="light-blue" style="text-align: center">
+                    <a data-toggle="dropdown" href="#" class="dropdown-toggle">
+                        <img class="nav-user-photo" src="/main/queryStudent/img" onerror="this.src='/assets/avatars/user.jpg'"
+                             alt="Jason's Photo"/>
+								<span class="user-info">
+									<small>欢迎您，</small>
+									
+
+
+刘冠博
+								</span>
+                        <i class="ace-icon fa fa-caret-down"></i>
+                    </a>
+                    <input type="hidden" id="userId" value="
+
+
+2025141440391
+">
+                    <ul class="user-menu dropdown-menu-right dropdown-menu dropdown-yellow dropdown-caret dropdown-close">
+                        <li>
+                            <a href="/" title="主页" onclick="toSelect(this);">
+                                <i class="ace-icon fa fa-home"></i>首页
+                            </a>
+                        </li>
+                        <li>
+							<a href="javascript:void(0);" title="在线反馈" 
+								onclick="location.href = '/main/systemQuestion/index';">
+							<i class="ace-icon fa fa-question-circle"></i> 在线反馈 </a>
+						</li>
+			        
+                    
+                        <li>
+                            <a href="javascript:changePassword('/student/rollManagement/personalInfoUpdate/updatePassword')">
+                                <i class="ace-icon fa fa-user"></i>
+                                修改密码
+                            </a>
+                        </li>
+                    
+                
+                        <li class="divider"></li>
+
+                        <li>
+                            <a id="logout" href="/logout" title="退出系统">
+                                <i class="ace-icon fa fa-power-off"></i>
+                                注销
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+    <!-- /.navbar-container -->
+</div>
+
+<div class="main-container" id="main-container">
+    <script type="text/javascript">
+        try {
+            ace.settings.check('main-container', 'fixed')
+        } catch (e) {
+        }
+    </script>
+
+    <style type="text/css">
+        .sidebar > .nav-search {
+            position: static;
+            background-color: #FAFAFA;
+            border-bottom: 1px solid #DDD;
+            text-align: center;
+            height: 35px;
+            padding-top: 0px;
+        }
+
+        .sidebar > .nav-search .nav-search-input {
+            width: 162px !important;
+            border-radius: 5px !important;
+            max-width: 162px !important;
+            opacity: 1 !important;
+            filter: alpha(opacity=100) !important;
+        }
+
+        #breadcrumbs li {
+            cursor: pointer;
+        }
+        hide {
+            display: none;
+        }
+    </style>
+    <div id="sidebar" class="sidebar responsive sidebar-fixed hide">
+        <script type="text/javascript">
+            try {
+                ace.settings.check('sidebar', 'fixed')
+            } catch (e) {
+            }
+        </script>
+
+        <ul class="nav nav-list" id="menus">
+        	
+			
+            
+            <li class="" id="1019000000" onclick="rootMenuClick(this);">
+                <a href="#" class="dropdown-toggle">
+                    <i class="menu-icon fa fa-tachometer"></i>
+                    <span class="menu-text"> 线上服务 </span>
+                    <b class="arrow fa fa-angle-down"></b>
+                </a>
+
+                <b class="arrow"></b>
+                
+                <ul class="submenu" onclick="stopHere();">
+                    
+                    <li class="" id="1001002000">
+                        <a href="#" class="dropdown-toggle">
+                            <i class="menu-icon fa fa-caret-right"></i>
+                            可申请业务
+                            <b class="arrow fa fa-angle-down"></b>
+                        </a>
+
+                        <b class="arrow"></b>
+
+                        
+                        <ul class="submenu">
+                            
+                            <li class="" id="1001002002" onclick="toSelect(this);">
+                                <a href="/student/exemptsExam/ExemptExamController/sqIndex">&nbsp;&nbsp;
+                                    推免申请
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1001002001" onclick="toSelect(this);">
+                                <a href="/student/application/index">&nbsp;&nbsp;
+                                    我要申请
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                        </ul>
+
+                        
+                    </li>
+                    
+                </ul>
+                
+            </li>
+            
+            <li class="" id="1001000000" onclick="rootMenuClick(this);">
+                <a href="#" class="dropdown-toggle">
+                    <i class="menu-icon fa fa-desktop"></i>
+                    <span class="menu-text"> 个人管理 </span>
+                    <b class="arrow fa fa-angle-down"></b>
+                </a>
+
+                <b class="arrow"></b>
+                
+                <ul class="submenu" onclick="stopHere();">
+                    
+                    <li class="" id="1001001000">
+                        <a href="#" class="dropdown-toggle">
+                            <i class="menu-icon fa fa-caret-right"></i>
+                            学籍管理
+                            <b class="arrow fa fa-angle-down"></b>
+                        </a>
+
+                        <b class="arrow"></b>
+
+                        
+                        <ul class="submenu">
+                            
+                            <li class="" id="1001001001" onclick="toSelect(this);">
+                                <a href="/student/rollManagement/rollInfo/index">&nbsp;&nbsp;
+                                    学生学籍信息
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1001001002" onclick="toSelect(this);">
+                                <a href="/student/rollManagement/personalInfoUpdate/index">&nbsp;&nbsp;
+                                    个人信息修改
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1001001003" onclick="toSelect(this);">
+                                <a href="/student/rollManagement/rollChanges/index">&nbsp;&nbsp;
+                                    学籍异动信息
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1001001004" onclick="toSelect(this);">
+                                <a href="/student/rollManagement/rewardsAndPenalties/index">&nbsp;&nbsp;
+                                    奖惩信息
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1001001005" onclick="toSelect(this);">
+                                <a href="/student/rollManagement/electronicRegistration/index">&nbsp;&nbsp;
+                                    电子注册
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1001001006" onclick="toSelect(this);">
+                                <a href="/student/rollManagement/minorProgramRegistration/index">&nbsp;&nbsp;
+                                    辅修方案注册
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1001001007" onclick="toSelect(this);">
+                                <a href="/student/rollManagement/myRollCard/index">&nbsp;&nbsp;
+                                    我的学籍卡片
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1001001008" onclick="toSelect(this);">
+                                <a href="/student/studentCertificatePrinting/index">&nbsp;&nbsp;
+                                    学生证明打印
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1001001009" onclick="toSelect(this);">
+                                <a href="/student/personalManagement/warningInfo/queryWarningInfo">&nbsp;&nbsp;
+                                    学业预警信息
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                        </ul>
+
+                        
+                    </li>
+                    
+                </ul>
+                
+            </li>
+            
+            <li class="" id="1002000000" onclick="rootMenuClick(this);">
+                <a href="#" class="dropdown-toggle">
+                    <i class="menu-icon fa fa-pencil-square-o"></i>
+                    <span class="menu-text"> 选课管理 </span>
+                    <b class="arrow fa fa-angle-down"></b>
+                </a>
+
+                <b class="arrow"></b>
+                
+                <ul class="submenu" onclick="stopHere();">
+                    
+                    <li class="" id="1002001000">
+                        <a href="#" class="dropdown-toggle">
+                            <i class="menu-icon fa fa-caret-right"></i>
+                            选课管理
+                            <b class="arrow fa fa-angle-down"></b>
+                        </a>
+
+                        <b class="arrow"></b>
+
+                        
+                        <ul class="submenu">
+                            
+                            <li class="" id="1002001001" onclick="toSelect(this);">
+                                <a href="/student/courseSelect/courseSelectNotice/index">&nbsp;&nbsp;
+                                    选课公告
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1002001002" onclick="toSelect(this);">
+                                <a href="/student/courseSelect/courseSelect/index">&nbsp;&nbsp;
+                                    选课
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1002001003" onclick="toSelect(this);">
+                                <a href="/student/courseSelect/courseSelectResult/index">&nbsp;&nbsp;
+                                    选课结果
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1002001004" onclick="toSelect(this);">
+                                <a href="/student/courseSelect/quitCourse/index">&nbsp;&nbsp;
+                                    退课
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1002001005" onclick="toSelect(this);">
+                                <a href="/student/courseSelect/courseSelectFailed/index">&nbsp;&nbsp;
+                                    选课失败信息
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                        </ul>
+
+                        
+                    </li>
+                    
+                    <li class="" id="1002002000">
+                        <a href="#" class="dropdown-toggle">
+                            <i class="menu-icon fa fa-caret-right"></i>
+                            本学期课表
+                            <b class="arrow fa fa-angle-down"></b>
+                        </a>
+
+                        <b class="arrow"></b>
+
+                        
+                        <ul class="submenu">
+                            
+                            <li class="" id="1002002001" onclick="toSelect(this);">
+                                <a href="/student/courseSelect/thisSemesterCurriculum/index">&nbsp;&nbsp;
+                                    本学期课表
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1002002002" onclick="toSelect(this);">
+                                <a href="/student/courseSelect/calendarSemesterCurriculum/index">&nbsp;&nbsp;
+                                    历年学期课表
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1002002003" onclick="toSelect(this);">
+                                <a href="/student/personalSenate/giveLessonInfo/thisSemesterSchedule/weekLySchedule">&nbsp;&nbsp;
+                                    本学期周课表
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                        </ul>
+
+                        
+                    </li>
+                    
+                    <li class="" id="1002003000">
+                        <a href="#" class="dropdown-toggle">
+                            <i class="menu-icon fa fa-caret-right"></i>
+                            教材
+                            <b class="arrow fa fa-angle-down"></b>
+                        </a>
+
+                        <b class="arrow"></b>
+
+                        
+                        <ul class="submenu">
+                            
+                            <li class="" id="1002003001" onclick="toSelect(this);">
+                                <a href="/student/courseSelect/books/dealBooks/index">&nbsp;&nbsp;
+                                    选定教材
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                        </ul>
+
+                        
+                    </li>
+                    
+                </ul>
+                
+            </li>
+            
+            <li class="" id="1003000000" onclick="rootMenuClick(this);">
+                <a href="#" class="dropdown-toggle">
+                    <i class="menu-icon fa fa-list-alt"></i>
+                    <span class="menu-text"> 教师课堂评价 </span>
+                    <b class="arrow fa fa-angle-down"></b>
+                </a>
+
+                <b class="arrow"></b>
+                
+                <ul class="submenu" onclick="stopHere();">
+                    
+                    <li class="" id="1003001000">
+                        <a href="#" class="dropdown-toggle">
+                            <i class="menu-icon fa fa-caret-right"></i>
+                            学生评教
+                            <b class="arrow fa fa-angle-down"></b>
+                        </a>
+
+                        <b class="arrow"></b>
+
+                        
+                        <ul class="submenu">
+                            
+                            <li class="" id="1003001001" onclick="toSelect(this);">
+                                <a href="/student/teachingEvaluation/evaluateNotice/evaluateNoticeIndex">&nbsp;&nbsp;
+                                    评估公告
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1003001002" onclick="toSelect(this);">
+                                <a href="/student/teachingEvaluation/newEvaluation/index">&nbsp;&nbsp;
+                                    教学评估
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                        </ul>
+
+                        
+                    </li>
+                    
+                </ul>
+                
+            </li>
+            
+            <li class="" id="1006000000" onclick="rootMenuClick(this);">
+                <a href="#" class="dropdown-toggle">
+                    <i class="menu-icon fa fa-calendar"></i>
+                    <span class="menu-text"> 教学资源 </span>
+                    <b class="arrow fa fa-angle-down"></b>
+                </a>
+
+                <b class="arrow"></b>
+                
+                <ul class="submenu" onclick="stopHere();">
+                    
+                    <li class="" id="1006001000">
+                        <a href="#" class="dropdown-toggle">
+                            <i class="menu-icon fa fa-caret-right"></i>
+                            教学资源
+                            <b class="arrow fa fa-angle-down"></b>
+                        </a>
+
+                        <b class="arrow"></b>
+
+                        
+                        <ul class="submenu">
+                            
+                            <li class="" id="1006001001" onclick="toSelect(this);">
+                                <a href="/student/teachingResources/classroomCurriculum/index">&nbsp;&nbsp;
+                                    教室课表
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1006001003" onclick="toSelect(this);">
+                                <a href="/student/teachingResources/classCurriculum/index">&nbsp;&nbsp;
+                                    班级课表
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1006001004" onclick="toSelect(this);">
+                                <a href="/student/teachingResources/courseCurriculum/index">&nbsp;&nbsp;
+                                    课程课表
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                        </ul>
+
+                        
+                    </li>
+                    
+                    <li class="" id="1006002000">
+                        <a href="#" class="dropdown-toggle">
+                            <i class="menu-icon fa fa-caret-right"></i>
+                            自习查询
+                            <b class="arrow fa fa-angle-down"></b>
+                        </a>
+
+                        <b class="arrow"></b>
+
+                        
+                        <ul class="submenu">
+                            
+                            <li class="" id="1006002001" onclick="toSelect(this);">
+                                <a href="/student/teachingResources/freeClassroom/index">&nbsp;&nbsp;
+                                    空闲教室查询
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1006002002" onclick="toSelect(this);">
+                                <a href="/student/teachingResources/classroomUseStatus/index">&nbsp;&nbsp;
+                                    教室使用状况查询
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                        </ul>
+
+                        
+                    </li>
+                    
+                </ul>
+                
+            </li>
+            
+            <li class="" id="1007000000" onclick="rootMenuClick(this);">
+                <a href="#" class="dropdown-toggle">
+                    <i class="menu-icon fa fa-picture-o"></i>
+                    <span class="menu-text"> 综合查询 </span>
+                    <b class="arrow fa fa-angle-down"></b>
+                </a>
+
+                <b class="arrow"></b>
+                
+                <ul class="submenu" onclick="stopHere();">
+                    
+                    <li class="" id="1007001000">
+                        <a href="#" class="dropdown-toggle">
+                            <i class="menu-icon fa fa-caret-right"></i>
+                            成绩查询
+                            <b class="arrow fa fa-angle-down"></b>
+                        </a>
+
+                        <b class="arrow"></b>
+
+                        
+                        <ul class="submenu">
+                            
+                            <li class="" id="1007001001" onclick="toSelect(this);">
+                                <a href="/student/integratedQuery/scoreQuery/allPassingScores/index">&nbsp;&nbsp;
+                                    全部及格成绩
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1007001002" onclick="toSelect(this);">
+                                <a href="/student/integratedQuery/scoreQuery/coursePropertyScores/index">&nbsp;&nbsp;
+                                    课程属性成绩
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1007001003" onclick="toSelect(this);">
+                                <a href="/student/integratedQuery/scoreQuery/schemeScores/index">&nbsp;&nbsp;
+                                    方案成绩
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1007001004" onclick="toSelect(this);">
+                                <a href="/student/integratedQuery/scoreQuery/unpassedScores/index">&nbsp;&nbsp;
+                                    不及格成绩
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1007001005" onclick="toSelect(this);">
+                                <a href="/student/integratedQuery/scoreQuery/thisTermScores/index">&nbsp;&nbsp;
+                                    本学期成绩
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1007001011" onclick="toSelect(this);">
+                                <a href="/student/integratedQuery/scoreQuery/allTermScores/index">&nbsp;&nbsp;
+                                    成绩查询
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1007001009" onclick="toSelect(this);">
+                                <a href="/student/personalManagement/personalApplication/curriculumReplacement/rules">&nbsp;&nbsp;
+                                    课程替代规则查看
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                        </ul>
+
+                        
+                    </li>
+                    
+                    <li class="" id="1007002000">
+                        <a href="#" class="dropdown-toggle">
+                            <i class="menu-icon fa fa-caret-right"></i>
+                            方案修读情况
+                            <b class="arrow fa fa-angle-down"></b>
+                        </a>
+
+                        <b class="arrow"></b>
+
+                        
+                        <ul class="submenu">
+                            
+                            <li class="" id="1007002002" onclick="toSelect(this);">
+                                <a href="/student/integratedQuery/planCompletion/index">&nbsp;&nbsp;
+                                    方案完成情况
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1007002001" onclick="toSelect(this);">
+                                <a href="/student/integratedQuery/instructionPlanQuery/detail/index">&nbsp;&nbsp;
+                                    指导性教学计划
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1007002003" onclick="toSelect(this);">
+                                <a href="/student/comprehensiveQuery/search/trainProgram/index">&nbsp;&nbsp;
+                                    培养方案查看
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                        </ul>
+
+                        
+                    </li>
+                    
+                    <li class="" id="1007004000">
+                        <a href="#" class="dropdown-toggle">
+                            <i class="menu-icon fa fa-caret-right"></i>
+                            教材
+                            <b class="arrow fa fa-angle-down"></b>
+                        </a>
+
+                        <b class="arrow"></b>
+
+                        
+                        <ul class="submenu">
+                            
+                            <li class="" id="1007004001" onclick="toSelect(this);">
+                                <a href="/student/integratedQuery/teachingMaterial/SelectionSearch/index">&nbsp;&nbsp;
+                                    教材选定查询
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                        </ul>
+
+                        
+                    </li>
+                    
+                </ul>
+                
+            </li>
+            
+            <li class="" id="1008000000" onclick="rootMenuClick(this);">
+                <a href="#" class="dropdown-toggle">
+                    <i class="menu-icon fa fa-tag"></i>
+                    <span class="menu-text"> 考务管理 </span>
+                    <b class="arrow fa fa-angle-down"></b>
+                </a>
+
+                <b class="arrow"></b>
+                
+                <ul class="submenu" onclick="stopHere();">
+                    
+                    <li class="" id="1008001000">
+                        <a href="#" class="dropdown-toggle">
+                            <i class="menu-icon fa fa-caret-right"></i>
+                            考务管理
+                            <b class="arrow fa fa-angle-down"></b>
+                        </a>
+
+                        <b class="arrow"></b>
+
+                        
+                        <ul class="submenu">
+                            
+                            <li class="" id="1008001001" onclick="toSelect(this);">
+                                <a href="/student/examinationManagement/examPlan/index">&nbsp;&nbsp;
+                                    考试安排
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1008001002" onclick="toSelect(this);">
+                                <a href="/student/examinationManagement/examSignUp/index">&nbsp;&nbsp;
+                                    考试报名
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1008001003" onclick="toSelect(this);">
+                                <a href="/student/examinationManagement/examGrade/index">&nbsp;&nbsp;
+                                    考试成绩
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                        </ul>
+
+                        
+                    </li>
+                    
+                </ul>
+                
+            </li>
+            
+            <li class="" id="1014000000" onclick="rootMenuClick(this);">
+                <a href="#" class="dropdown-toggle">
+                    <i class="menu-icon fa fa-file-o"></i>
+                    <span class="menu-text"> 可信证明 </span>
+                    <b class="arrow fa fa-angle-down"></b>
+                </a>
+
+                <b class="arrow"></b>
+                
+                <ul class="submenu" onclick="stopHere();">
+                    
+                    <li class="" id="1014001000">
+                        <a href="#" class="dropdown-toggle">
+                            <i class="menu-icon fa fa-caret-right"></i>
+                            可信证明生成
+                            <b class="arrow fa fa-angle-down"></b>
+                        </a>
+
+                        <b class="arrow"></b>
+
+                        
+                        <ul class="submenu">
+                            
+                            <li class="" id="1014001001" onclick="toSelect(this);">
+                                <a href="/student/integratedQuery/scoreQuery/credibleReportCard/index">&nbsp;&nbsp;
+                                    生成可信证明
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1014001002" onclick="toSelect(this);">
+                                <a href="/student/integratedQuery/scoreQuery/scoreCard/historyIndex">&nbsp;&nbsp;
+                                    历史生成查看
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                        </ul>
+
+                        
+                    </li>
+                    
+                </ul>
+                
+            </li>
+            
+            <li class="" id="1012000000" onclick="rootMenuClick(this);">
+                <a href="#" class="dropdown-toggle">
+                    <i class="menu-icon fa fa-file"></i>
+                    <span class="menu-text"> 结业管理 </span>
+                    <b class="arrow fa fa-angle-down"></b>
+                </a>
+
+                <b class="arrow"></b>
+                
+                <ul class="submenu" onclick="stopHere();">
+                    
+                    <li class="" id="1012001000">
+                        <a href="#" class="dropdown-toggle">
+                            <i class="menu-icon fa fa-caret-right"></i>
+                            结业生基础信息
+                            <b class="arrow fa fa-angle-down"></b>
+                        </a>
+
+                        <b class="arrow"></b>
+
+                        
+                        <ul class="submenu">
+                            
+                            <li class="" id="1012001001" onclick="toSelect(this);">
+                                <a href="/student/graduatesManagement/graduatesExamManagement/graduatesApply/initindex">&nbsp;&nbsp;
+                                    结业生报名
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1012001002" onclick="toSelect(this);">
+                                <a href="/student/graduatesManagement/graduatesExamManagement/billUpload/indexDownload">&nbsp;&nbsp;
+                                    缴费单下载
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                            <li class="" id="1012001003" onclick="toSelect(this);">
+                                <a href="/student/graduatesManagement/graduatesExamManagement/billUpload/index">&nbsp;&nbsp;
+                                    缴费链接及说明
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                        </ul>
+
+                        
+                    </li>
+                    
+                </ul>
+                
+            </li>
+            
+            <li class="" id="1021000000" onclick="rootMenuClick(this);">
+                <a href="#" class="dropdown-toggle">
+                    <i class="menu-icon fa fa-qrcode"></i>
+                    <span class="menu-text"> 考研学习 </span>
+                    <b class="arrow fa fa-angle-down"></b>
+                </a>
+
+                <b class="arrow"></b>
+                
+                <ul class="submenu" onclick="stopHere();">
+                    
+                    <li class="" id="1021001000">
+                        <a href="#" class="dropdown-toggle">
+                            <i class="menu-icon fa fa-caret-right"></i>
+                            考研学习
+                            <b class="arrow fa fa-angle-down"></b>
+                        </a>
+
+                        <b class="arrow"></b>
+
+                        
+                        <ul class="submenu">
+                            
+                            <li class="" id="1021001001" onclick="toSelect(this);">
+                                <a href="/all/postgraduate/postgraduateExamination/study/index">&nbsp;&nbsp;
+                                    考研学习
+                                </a>
+
+                                <b class="arrow"></b>
+                            </li>
+                            
+                        </ul>
+
+                        
+                    </li>
+                    
+                </ul>
+                
+            </li>
+            
+
+        </ul>
+        <!-- /.nav-list -->
+
+        <div class="sidebar-toggle sidebar-collapse" id="sidebar-collapse">
+            <i class="ace-icon fa fa-angle-double-left" data-icon1="ace-icon fa fa-angle-double-left"
+               data-icon2="ace-icon fa fa-angle-double-right"></i>
+        </div>
+
+        <script type="text/javascript">
+            try {
+                ace.settings.check('sidebar', 'collapsed')
+            } catch (e) {
+            }
+        </script>
+    </div>
+
+    <div class="main-content">
+        <div class="breadcrumbs hide" id="breadcrumbs">
+            <script type="text/javascript">
+                try {
+                    ace.settings.check('breadcrumbs', 'fixed')
+                } catch (e) {
+                }
+            </script>
+
+            <ul class="breadcrumb">
+                <li onclick="javascript:window.location.href='/'" style="cursor:pointer;">
+                    <i class="ace-icon fa fa-home home-icon"></i>
+                    首页
+                </li>
+                <li class="active" onclick="ckickTopMenu(this);return false;" id="firmenu">一级菜单</li>
+                <li class="active" onclick="ckickTopMenu(this);return false;" id="secmenu">二级菜单</li>
+                <li class="active" onclick="ckickTopMenu(this);return false;" id="lastmenu">三级菜单</li>
+            </ul>
+            <!-- /.breadcrumb -->
+        </div>
+
+        
+        <div class="page-content" id="page-content-template">
+            
+	
+	
+		<div class="tabbable">
+			<ul class="nav nav-tabs" id="myTab">
+				<li class="active">
+					<a data-toggle="tab" href="#home" onclick="clickTab('ktjs')">
+						
+                	课堂及时评教
+              
+						
+					</a>
+				</li>
+				
+					<li id="ktdiv">
+						<a data-toggle="tab" href="#home" onclick="clickTab('kt')">
+							
+	                	期末评教
+	              
+							
+						</a>
+					</li>
+				
+				
+				
+				
+			</ul>
+			<div class="tab-content">
+				<div id="home" class="tab-pane fade in active">
+					<div class="row">
+						<div class="col-sm-12 self-margin">
+							<h4 class="header smaller lighter grey" style="margin:0;">
+								<i class="glyphicon glyphicon-list"></i>
+								&nbsp;列表
+								<span class="right_top_oper"> </span>
+							</h4>
+							<div id="code_scroll" style="overflow: auto;max-height: calc(100vh - 260px);">
+								<table class="table table-bordered table-hover" id="codeTable">
+									<thead>
+										<tr>
+											<th>序号</th>
+											<th>操作</th>
+											<th>问卷名称</th>
+											<th id="bpr_colum">被评人</th>
+											<th id="pgnr_colum">评估内容</th>
+											<th id="kch_colum">评估课程号</th>
+											<th id="kxh_colum">评估课序号</th>
+											<th class="jcpj">教材编号</th>
+											<th class="jcpj">教材名称</th>
+											<th class="jcpj">ISBN</th>
+											<th class="jcpj">出版社</th>
+											<th class="jcpj">出版日期</th>
+											<th class="jcpj">开课院系</th>
+											<th class="jcpj">课程号</th>
+											<th class="jcpj">课程名</th>
+											<th>是否已评估</th>
+										</tr>										
+									</thead>
+									<tbody id="codetbody" style="overflow: auto;">
+									</tbody>
+								</table>
+							</div>
+							<div id="urppagebar" style="margin: 5px 0 0 0"></div>
+						</div>
+					</div>
+				</div>
+				<div id="jszhpjdf" class="tab-pane in">
+					<div class="row">
+						<div class="col-sm-12 self-margin">
+							<h4 class="header smaller lighter grey" style="margin:0;">
+								<i class="glyphicon glyphicon-list"></i>
+								教师综合评价打分结果
+								<span class="right_top_oper">
+									<button type="button" class="btn btn-xs btn-round btn-info pjdf" style="display: none;" onclick="giveScore();">
+										<i class="fa fa-pencil-square-o"></i>
+										教师综合评价打分
+									</button>
+								</span>
+							</h4>
+							<div id="jszhpjdf_scroll" style="overflow: auto;max-height: calc(100vh - 260px);">
+								<table class="table table-bordered table-hover" id="jszhpjdf_table">
+									<thead>
+										<tr>
+											<th>序号</th>
+											<th>教师号</th>
+											<th>教师名</th>
+											<th>教师院系</th>
+											<th>性别</th>
+											<th>所授课程</th>
+											<th>是否非常满意</th>
+											<th>评价分数</th>
+										</tr>
+									</thead>
+									<tbody id="jszhpjdf_tbody"></tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="widget-box" id="billContainer">
+			<div class="row" style="margin-right: 5px; margin-left: 5px;">
+				<div class="div-title" id="div_title_show"></div>
+				
+				
+				
+				<div class="row">
+					<div class="col-xs-12" id="left_div">
+						<div id="bill"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	
+<script src="/js/r-slider.js"></script>
+<script type="text/javascript">
+	var tabType = "ktjs";
+	var jxpgkg = "1"; //绩效评估开关
+	$(document).ready(function() {
+	    debugger;
+	    let isendperiod = true;
+	    if (isendperiod) {
+	        $("#myTab").find("li[class='active']").each(function() {
+	            $(this).removeAttr("class");
+	        });
+	        $("#ktdiv").addClass("active");
+	        tabType = "kt";
+	        clickTab('kt');
+	    }
+	
+	    $('.select').chosen({
+	        allow_single_deselect: true
+	    });
+	    
+	    $(window).off('resize.chosen').on('resize.chosen',
+	    function() {
+	        $('.select').each(function() {
+	            var $this = $(this);
+	            $this.next().css({
+	                'width': 150
+	            });
+	        });
+	    }).trigger('resize.chosen');
+	
+	    if (true) {
+	        if (false) {
+	            $("#myTab li:eq(1) a").click();
+	            $("button.pjdf").click();
+	        } else {
+	            let obj = $("#myTab li.active");
+	            if (obj.length == 0) {
+	                obj = $("#myTab li:eq(0)");
+	            }
+	            obj.find("a").click();
+	        }
+	    }
+	    urp.fixedheader("code_scroll", "450");
+	});
+	
+	$(function() {
+	    $("#billContainer").click(function() {
+	        return false;
+	    });
+	    $(document).click(function(e) {
+	        var id = $(e.target).attr("id");
+	        if (id == "td_div") {} else {
+	            $('#billContainer').animate({
+	                right: '-100%'
+	            });
+	        }
+	    });
+	});
+	
+	function clickTab(flag) {
+	    tabType = flag;
+	    $("#code_scroll .jcpj").hide();
+        $("#bpr_colum").hide();
+        $("#pgnr_colum").hide();
+        $("#kch_colum").hide();
+        $("#kxh_colum").hide();
+	    if (flag == "jszhpjdf") {
+	        queryDfjg();
+	    } else {
+	        if (flag == "bysdc") {
+	            $("#bpr_colum").hide();
+	            $("#pgnr_colum").hide();
+	            $("#kch_colum").hide();
+	            $("#kxh_colum").hide();
+	        }else if (flag == "jcpj") {
+	             $("#code_scroll .jcpj").show();
+	        } else {
+	            $("#bpr_colum").show();
+	            $("#pgnr_colum").show();
+	            $("#kch_colum").show();
+	            $("#kxh_colum").show();
+	        }
+	        queryPageList(1, "30_sl", true);
+	    }
+	}	
+	
+	var params = "";
+	function queryPageList(page, pageSizeVal, conditionChanged) {
+	    if (pageSizeVal == undefined) {
+	        pageSizeVal = "30_sl";
+	        page = "1";
+	    }
+	    /*if (conditionChanged) {
+	            params = $(document.queryInfo).serialize();
+	        }*/
+	
+	    var parr = (pageSizeVal + "").split("_");
+	    var pageSize = parseInt(parr[0]);
+	    var url = "/student/teachingAssessment/evaluation/queryAll";
+	    $.ajax({
+	        url: url,
+	        cache: false,
+	        type: "post",
+	        data: "pageNum=" + page + "&pageSize=" + pageSize + "&flag=" + tabType,
+	        dataType: "json",
+	        success: function(d) {
+	            var data = d.data;
+	            urp.pagebar("urppagebar", pageSizeVal, page, data["pageContext"].totalCount, queryPageList, "on", "code_scroll");
+	            var isScroll = (pageSizeVal + "").indexOf("_") != -1 && page != 1 ? true: false;
+	            if (data["records"] != null) {
+	                codesTable(data["records"], isScroll, page, pageSize);
+	            } else {
+	                codesTable(null, isScroll, page, pageSize);
+	            }
+	        },
+	        error: function(xhr) {
+	            urp.alert("错误代码[" + xhr.readyState + "-" + xhr.status + "]:获取数据失败！");
+	        }
+	    });
+	}
+	
+	//根据培养方案维护数据显示
+	function codesTable(data, isScroll, page, pageSize) {
+	    var tcont = "";
+	    if (data != null) {
+	        if (tabType == "ktjs") {
+	            $.each(data, function(i, v) {
+	                var tableId = "";
+	                if (isScroll) {
+	                    tableId = (page - 1) * pageSize + 1 + i;
+	                } else {
+	                    tableId = i + 1;
+	                }
+	
+	                tcont += "<tr>";
+	                tcont += "<td class='center'>" + tableId + "</td>";
+	                tcont += "<td>";
+	                /* if (v.SFPG == "1") {
+	                     tcont += "<td><button class='btn btn-info btn-round btn-xs'" +
+	                     "onclick='evaluationResult(\"" + v.KTID + "\");return false;'><i class='ace-icon fa fa-eye'></i>查看</button></td></td>";
+	                     } else if (v.SFKYDCPG == '1' || v.SFPG == "0"){
+	                     tcont += "<td><button class='btn btn-xs btn-round btn-purple'" +
+	                     "onclick='evaluation(\"" + v.KTID + "\");return false;'><i class='ace-icon fa fa-edit'></i>评估</button></td>";
+	                     } */
+	                var yxdcpg = v.YXDCPG;
+	                var pglxdm = v.PGLXDM;
+	                var jkkg = v.JKKG;
+	                var jkpgts = v.JKPGTS;
+	                var jksj = v.JKRQ;
+	
+	                if (pglxdm == "02") { //绩效评估
+	                    if (yxdcpg == "1") { //绩效评估允许多次评估
+	                        tcont += "<button class='btn btn-xs btn-round btn-purple' flag='jxpg'" + " onclick='evaluation(this,\"" + v.KTID + "\",\"01\",\"1\");return false;'><i class='ace-icon fa fa-edit'></i>评估</button>&nbsp;&nbsp;";
+	                        if (v.SFPG == "1") {
+	                            tcont += "<button class='btn btn-info btn-round btn-xs'" +
+	                            /*问卷编码，问卷名称，被评估人编号，被评估人姓名，评估内容号，评估内容*/
+	                            "onclick='evaluationResult(\"" + v.KTID + "\");return false;'><i class='ace-icon fa fa-eye'></i>查看</button>";
+	
+	                            //tcont += "<button class='btn btn-success btn-round btn-xs' title='修改评估结果'" + /*问卷编码，问卷名称，被评估人编号，被评估人姓名，评估内容号，评估内容*/
+	                            //        "onclick='editEvaluationResult(\"" + v.KTID + "\");return false;'><i class='ace-icon fa fa-pencil '></i>修改</button>&nbsp;&nbsp;";
+	                        }
+	                    } else { //绩效评估一次评估
+	                        if (v.SFPG == "1") {
+	                            if (jxpgkg == "1" && false) {
+	                                tcont += "<button class='btn btn-success btn-round btn-xs' title='修改评估结果'" +
+	                                /*问卷编码，问卷名称，被评估人编号，被评估人姓名，评估内容号，评估内容*/
+	                                "onclick='editEvaluationResult(\"" + v.KTID + "\");return false;'><i class='ace-icon fa fa-pencil '></i>修改</button>&nbsp;&nbsp;";
+	                            }
+	
+	                            tcont += "<button class='btn btn-info btn-round btn-xs'" +
+	                            /*问卷编码，问卷名称，被评估人编号，被评估人姓名，评估内容号，评估内容*/
+	                            "onclick='queryEvaluationResult(\"" + v.KTID + "\",\"" + v.PGID + "\");return false;'><i class='ace-icon fa fa-eye'></i>查看</button>";
+	                        } else {
+	                            tcont += "<button class='btn btn-xs btn-round btn-purple' " + "onclick='evaluation(this,\"" + v.KTID + "\",\"01\",\"0\",\"" + jkkg + "\",\"" + jkpgts + "\",\"" + jksj + "\");return false;'><i class='ace-icon fa fa-edit'></i>评估</button>";
+	                        }
+	                    }
+	                } else if (pglxdm == "01") { //过程评估
+	                    if (v.SFPG == "1") {
+	                        tcont += "<button class='btn btn-info btn-round btn-xs'" +
+	                        /*问卷编码，问卷名称，被评估人编号，被评估人姓名，评估内容号，评估内容*/
+	                        "onclick='evaluationResult(\"" + v.KTID + "\");return false;'><i class='ace-icon fa fa-eye'></i>查看</button>";
+	                    } else {
+	                        tcont += "<button class='btn btn-xs btn-round btn-purple'" + "onclick='evaluation2(\"" + v.KTID + "\",\"" + v.WJBM + "\",\"" + v.KCH + "\",\"" + v.KXH + "\");return false;'><i class='ace-icon fa fa-edit'></i>评估</button>&nbsp;&nbsp;";
+	                    }
+	
+	                } else { //投票评估
+	                    //暂时先不做任何处理
+	                }
+	
+	                /*   暂时注释
+	                     if(v.SFKYDCPG == '1'){//可以多次评估
+	                     tcont += "<button class='btn btn-xs btn-round btn-purple'" +
+	                     "onclick='evaluation2(\"" + v.KTID + "\",\"" + v.WJBM + "\",\"" + v.KCH + "\",\"" + v.KXH + "\");return false;'><i class='ace-icon fa fa-edit'></i>评估</button>&nbsp;&nbsp;";
+	                     if(v.SFPG == "1"){
+	                     tcont += "<button class='btn btn-info btn-round btn-xs'" + /!*问卷编码，问卷名称，被评估人编号，被评估人姓名，评估内容号，评估内容*!/
+	                     "onclick='evaluationResult(\"" + v.KTID + "\");return false;'><i class='ace-icon fa fa-eye'></i>查看</button>";
+	                     }
+	                     }else{
+	                     if (v.SFPG == "1") {
+	                     tcont += "<button class='btn btn-info btn-round btn-xs'" + /!*问卷编码，问卷名称，被评估人编号，被评估人姓名，评估内容号，评估内容*!/
+	                     "onclick='evaluationResult(\"" + v.KTID + "\");return false;'><i class='ace-icon fa fa-eye'></i>查看</button>";
+	                     }else{
+	                     tcont += "<button class='btn btn-xs btn-round btn-purple'" +
+	                     "onclick='evaluation(\"" + v.KTID + "\",\"" + "one" + "\");return false;'><i class='ace-icon fa fa-edit'></i>评估</button>";
+	                     }
+	                     }*/
+	                tcont += "</td>";
+	
+	                tcont += "<td>" + v.WJMC + "</td>";
+	                tcont += "<td>" + v.JSM + "</td>";
+	                tcont += "<td>" + v.KCM + "</td>";
+	                tcont += "<td>" + v.KCH + "</td>";
+	                tcont += "<td>" + v.KXH + "</td>";
+	                tcont += "<td>" + (v.SFPG == 1 ? "<span class='label label-success arrowed'>是</span>": "<span class='label label-light arrowed'>否</span>") + "</td>";
+	                //                    tcont += "<td>" + v.PGCS + "</td>";
+	                tcont += "</tr>";
+	            });
+	            //                    $("#jxpgtbody").html(tcont);
+	        } else if (tabType == "kt") {
+	            $.each(data, function(i, v) {
+	                var tableId = "";
+	                if (isScroll) {
+	                    tableId = (page - 1) * pageSize + 1 + i;
+	                } else {
+	                    tableId = i + 1;
+	                }
+	                tcont += "<tr>";
+	                tcont += "<td class='center'>" + tableId + "</td>";
+	                tcont += "<td>";
+	                var yxdcpg = v.YXDCPG;
+	                var pglxdm = v.PGLXDM;
+	                var jkkg = v.JKKG;
+	                var jkpgts = v.JKPGTS;
+	                var jksj = v.JKRQ;
+	
+	                if (pglxdm == "02") { //绩效评估
+	                    if (yxdcpg == "1") { //绩效评估允许多次评估
+	                        tcont += "<button class='btn btn-xs btn-round btn-purple' " + " onclick='evaluation(this,\"" + v.KTID + "\",\"01\",\"1\");return false;'><i class='ace-icon fa fa-edit'></i>评估</button>&nbsp;&nbsp;";
+	                        if (v.SFPG == "1") {
+	                            tcont += "<button class='btn btn-info btn-round btn-xs'" +
+	                            /*问卷编码，问卷名称，被评估人编号，被评估人姓名，评估内容号，评估内容*/
+	                            "onclick='evaluationResult(\"" + v.KTID + "\");return false;'><i class='ace-icon fa fa-eye'></i>查看</button>";
+	
+	                            //tcont += "<button class='btn btn-success btn-round btn-xs' title='修改评估结果'" + /*问卷编码，问卷名称，被评估人编号，被评估人姓名，评估内容号，评估内容*/
+	                            //        "onclick='editEvaluationResult(\"" + v.KTID + "\");return false;'><i class='ace-icon fa fa-pencil '></i>修改</button>&nbsp;&nbsp;";
+	                        }
+	                    } else { //绩效评估一次评估
+	                        if (v.SFPG == "1") {
+	                            if (jxpgkg == "1" && false) {
+	                                tcont += "<button class='btn btn-success btn-round btn-xs' title='修改评估结果'" +
+	                                /*问卷编码，问卷名称，被评估人编号，被评估人姓名，评估内容号，评估内容*/
+	                                "onclick='editEvaluationResult(\"" + v.KTID + "\");return false;'><i class='ace-icon fa fa-pencil '></i>修改</button>&nbsp;&nbsp;";
+	                            }
+	
+	                            tcont += "<button class='btn btn-info btn-round btn-xs'" +
+	                            /*问卷编码，问卷名称，被评估人编号，被评估人姓名，评估内容号，评估内容*/
+	                            "onclick='queryEvaluationResult(\"" + v.KTID + "\",\"" + v.PGID + "\");return false;'><i class='ace-icon fa fa-eye'></i>查看</button>";
+	                        } else {
+	                            tcont += "<button class='btn btn-xs btn-round btn-purple' flag='jxpg'" + "onclick='evaluation(this, \"" + v.KTID + "\",\"01\",\"0\",\"" + jkkg + "\",\"" + jkpgts + "\",\"" + jksj + "\");return false;'><i class='ace-icon fa fa-edit'></i>评估</button>";
+	                        }
+	                    }
+	                } else if (pglxdm == "01") { //过程评估
+	                    if (v.SFPG == "1") {
+	                        tcont += "<button class='btn btn-info btn-round btn-xs'" +
+	                        /*问卷编码，问卷名称，被评估人编号，被评估人姓名，评估内容号，评估内容*/
+	                        "onclick='evaluationResult(\"" + v.KTID + "\");return false;'><i class='ace-icon fa fa-eye'></i>查看</button>";
+	                    } else {
+	                        tcont += "<button class='btn btn-xs btn-round btn-purple'" + "onclick='evaluation2(\"" + v.KTID + "\",\"" + v.WJBM + "\",\"" + v.KCH + "\",\"" + v.KXH + "\");return false;'><i class='ace-icon fa fa-edit'></i>评估</button>&nbsp;&nbsp;";
+	                    }
+	
+	                } else { //投票评估
+	                    //暂时先不做任何处理
+	                }
+	
+	                tcont += "</td>";
+	                tcont += "<td>" + v.WJMC + "</td>";
+	                tcont += "<td>" + v.LSRXM + "</td>";
+	                tcont += "<td>" + v.KCM + "</td>";
+	                tcont += "<td>" + v.KCH + "</td>";
+	                tcont += "<td>" + v.KXH + "</td>";
+	                tcont += "<td>" + dealSf(v.SFPG) + "</td>";
+	                //                    tcont += "<td>" + v.PGCS + "</td>";
+	                tcont += "</tr>";
+	            });
+	        } else if (tabType == "jcpj") { //教材评估
+	            $.each(data, function(i, v) {
+	                var tableId = "";
+	                if (isScroll) {
+	                    tableId = (page - 1) * pageSize + 1 + i;
+	                } else {
+	                    tableId = i + 1;
+	                }
+	                tcont += "<tr>";
+	                tcont += "<td class='center'>" + tableId + "</td>";
+	                tcont += "<td>";
+	
+	                if (v.SFPG == "1") {
+	                    tcont += "<button class='btn btn-info btn-round btn-xs'" +
+	                    /*问卷编码，问卷名称，被评估人编号，被评估人姓名，评估内容号，评估内容*/
+	                    "onclick='queryEvaluationResult(\"" + v.KTID + "\",\"" + v.PGID + "\");return false;'><i class='ace-icon fa fa-eye'></i>查看</button>";
+	                } else {
+	                    tcont += "<button class='btn btn-xs btn-round btn-purple' onclick='evaluation(this,\"" + v.KTID + "\",\"05\",\"0\");return false;'><i class='ace-icon fa fa-edit'></i>评估</button>";
+	                }
+	                tcont += "</td>";
+	                tcont += "<td>" + v.WJMC + "</td>";
+	                tcont += "<td>" + (v.JCBH == null ? "": v.JCBH) + "</td>";
+	                tcont += "<td>" + (v.JCMC == null ? "": v.JCMC) + "</td>";
+	                tcont += "<td>" + (v.ISBN == null ? "": v.ISBN) + "</td>";
+	                tcont += "<td>" + (v.CBSMC == null ? "": v.CBSMC) + "</td>";
+	                tcont += "<td>" + (v.CBRQ == null ? "": v.CBRQ) + "</td>";
+	                tcont += "<td>" + (v.KKYX == null ? "": v.KKYX) + "</td>";
+	                tcont += "<td>" + (v.KCH == null ? "": v.KCH) + "</td>";
+	                tcont += "<td>" + (v.KCM == null ? "": v.KCM) + "</td>";
+	                tcont += "<td>" + dealSf(v.SFPG) + "</td>";
+	                //                    tcont += "<td>" + v.PGCS + "</td>";
+	                tcont += "</tr>";
+	            });
+	        } else { //毕业生调查
+	            $.each(data, function(i, v) {
+	                var tableId = "";
+	                if (isScroll) {
+	                    tableId = (page - 1) * pageSize + 1 + i;
+	                } else {
+	                    tableId = i + 1;
+	                }
+	                tcont += "<tr>";
+	                tcont += "<td class='center'>" + tableId + "</td>";
+	                tcont += "<td>";
+	
+	                if (v.SFPG == "1") {
+	                    tcont += "<button class='btn btn-info btn-round btn-xs'" +
+	                    /*问卷编码，问卷名称，被评估人编号，被评估人姓名，评估内容号，评估内容*/
+	                    "onclick='queryEvaluationResult(\"" + v.KTID + "\",\"" + v.PGID + "\");return false;'><i class='ace-icon fa fa-eye'></i>查看</button>";
+	                } else {
+	                    tcont += "<button class='btn btn-xs btn-round btn-purple' " + " onclick='evaluation(this,\"" + v.KTID + "\",\"09\",\"0\");return false;'><i class='ace-icon fa fa-edit'></i>评估</button>";
+	                }
+	                tcont += "</td>";
+	                tcont += "<td>" + v.WJMC + "</td>";
+	                tcont += "<td>" + dealSf(v.SFPG) + "</td>";
+	                //                    tcont += "<td>" + v.PGCS + "</td>";
+	                tcont += "</tr>";
+	            });
+	        }
+	
+	        if (isScroll) {
+	            $("#codetbody").append(tcont);
+	        } else {
+	            $("#codetbody").html(tcont);
+	        }
+	    }
+	    urp.trhighlight("codeTable"); //table表格id
+	    $("#codeTable").prepend($("#codetbody"));
+	}
+	
+	function dealSf(sfpg) {
+	    var result = "";
+	    if (sfpg == "1") {
+	        result = "<span class='label label-success arrowed' style='z-index:0;'>是</span>";
+	    } else {
+	        result = "<span class='label label-light arrowed' style='z-index:0;'>否</span>";
+	    }
+	    return result;
+	}
+	
+	function queryDfjg() {
+	    var index;
+	    $.ajax({
+	        url: "/student/teachingAssessment/evaluation/queryDfjg",
+	        async: false,
+	        type: "post",
+	        dataType: "json",
+	        beforeSend: function() {
+	            index = layer.load(0, {
+	                shade: [0.2, "#000"] //0.1透明度的白色背景
+	            });
+	        },
+	        success: function(d) {
+	            let cont = "";
+	            if (d && d.length > 0) {
+	                $(".pjdf").remove();
+	                $(d).each(data, function(i, df) {
+	                    cont += "<tr>";
+	                    cont += "<td>" + (i + 1) + "</td>";
+	                    cont += "<td>" + df[0] + "</td>";
+	                    cont += "<td>" + df[1] + "</td>";
+	                    cont += "<td>" + df[2] + "</td>";
+	                    cont += "<td>" + df[3] + "</td>";
+	                    cont += "<td>" + df[4] + "</td>";
+	                    cont += "<td>" + (df[5] == "1" ? "是": "否") + "</td>";
+	                    cont += "<td>" + df[6] + "</td>";
+	                    cont += "</tr>";
+	                });
+	            } else {
+	                $(".pjdf").show();
+	                cont += "<tr><td colspan='" + $("#jszhpjdf_table th").length + "' style='color: red; font-size: 18px;'>无评价打分数据！</td></tr>";
+	            }
+	            $("#jszhpjdf_tbody").html(cont.replace(/null/g, ""));
+	        },
+	        error: function(xhr) {
+	            layer.close(index);
+	            urp.alert("错误代码[" + xhr.readyState + "-" + xhr.status + "]:获取数据失败！");
+	        },
+	        complete: function() {
+	            layer.close(index);
+	        }
+	    });
+	}
+	
+	//评估方法
+	function evaluation(obj, id, wjlx, yxdcpg, jkkg, jkts, jkrq) {
+		if (checkIsEvaluation(wjlx)) {
+		    if(yxdcpg == "0") {//不允许多次评估
+			    if (checkIsTeachEvaluationed(id)) {
+			     	urp.alert("当前问卷您已经评估过，不能重复评估！");
+		            return;
+			    }else{
+				    if (jkkg == "1") {
+					    var jksj = dealDate(jkrq);
+		                if (jkts != "0" && jkts != null && jkts != "") { //为空的话，就认为没有截至时间限制
+		                    var curDate = new Date(getNowFormatDate());
+		                    if (!checkIsCanbePj(jksj, new Date(jksj), jkts, curDate)) {
+		                        urp.alert("当前时间不在结课时间和系统设置天数范围内进行，不能进行评估！");
+		                        return;
+		                    }
+		                }
+		            }
+			    }
+			    
+		    }    
+		    window.location.href = "/student/teachingEvaluation/newEvaluation/evaluation/" + id;
+		}
+	}
+	
+	function checkIsEvaluation(wjlx) {
+	    var ckresult = true;
+	    var index;
+	    $.ajax({
+	        url: "/student/teachingAssessment/baseInformation/questionsAdd/checkJxpgkg",
+	        async: false,
+	        type: "get",
+	        data: "wjlx=" + wjlx,
+	        dataType: "json",
+	        beforeSend: function() {
+	            index = layer.load(0, {
+	                shade: [0.2, "#000"] //0.1透明度的白色背景
+	            });
+	        },
+	        success: function(d) {
+	            if (d.data.result == "ok") {
+	                ckresult = true;
+	            }else{
+	                ckresult = false;
+	                urp.alert(d.data.result);
+	            }
+	        },
+	        error: function(xhr) {
+	            layer.close(index);
+	            urp.alert("错误代码[" + xhr.readyState + "-" + xhr.status + "]:获取数据失败！");
+	        },
+	        complete: function() {
+	            layer.close(index);
+	        }
+	    });
+	
+	    return ckresult;
+	}
+	
+	/**
+	     * 针对多次评估的情况
+	     */
+	function checkIsTeachEvaluationed(ktid) {
+	    var ckresult = false;
+	    var index;
+	    $.ajax({
+	        url: "/student/teachingAssessment/baseInformation/questionsAdd/checkIsTeachEvaluationed?ktid=" + ktid,
+	        async: false,
+	        type: "get",
+	        dataType: "json",
+	        beforeSend: function() {
+	            index = layer.load(0, {
+	                shade: [0.2, "#000"] //0.1透明度的白色背景
+	            });
+	        },
+	        success: function(d) {
+	            if (d.data.result == "yes") {
+	                ckresult = true;
+	                urp.alert(d.data.msg);
+	            }
+	        },
+	        error: function(xhr) {
+	            layer.close(index);
+	            urp.alert("错误代码[" + xhr.readyState + "-" + xhr.status + "]:获取数据失败！");
+	        },
+	        complete: function() {
+	            layer.close(index);
+	        }
+	    });
+	
+	    return ckresult;
+	}
+	
+	//过程评估
+	function evaluation2(id, wjbm, kch, kxh) {
+	    window.location.href = "/student/teachingEvaluation/newEvaluation/evaluation2?id=" + id + "&kch=" + kch + "&kxh=" + kxh + "&wjbm=" + wjbm;
+	}
+	
+	function evaluationResult(id) {
+	    window.location.href = "/student/teachingEvaluation/newEvaluation/lookList/" + id;
+	}
+	
+	function queryEvaluationResult(ktid, pgid) {
+	    var index;
+	    $.ajax({
+	        url: "/student/teachingAssessment/bbcx/pgjgwh/queryPgxq",
+	        cache: false,
+	        type: "post",
+	        data: "pgid=" + pgid + "&ktid=" + ktid,
+	        dataType: "json",
+	        success: function(d) {
+	            var data = d.data;
+	            var fjb = data.fjb;
+	            var map = data.map;
+	            var selectedAnswer = data.selectedAnswer;
+	            var xxgs = data.xxgs;
+	            var zgf = data.zgf;
+	            var wjmc = map.wjmc;
+	            initPgxq(fjb, map, selectedAnswer, parseInt(xxgs), zgf, wjmc);
+	            $("#billContainer").animate({
+	                right: '0%'
+	            }); //课表信息侧边滑出层
+	            initHk(selectedAnswer, parseInt(zgf));
+	
+	        },
+	        beforeSend: function() {
+	            index = layer.load(0, {
+	                shade: [0.2, "#000"] //0.1透明度的白色背景
+	            });
+	        },
+	        complete: function() {
+	            layer.close(index);
+	        },
+	        error: function(xhr) {
+	            urp.alert("错误代码[" + xhr.readyState + "-" + xhr.status + "]:获取数据失败！");
+	        }
+	    });
+	}
+	
+	function initPgxq(fjb, map, selectedAnswer, xxgs, zgf, wjmc) {
+	    var tempResult = "";
+	    tempResult += "<table class='table-box' width='100%' style='border: 1px solid #e6e6e6;'>";
+	    tempResult += "<tbody>";
+	
+	    var showInfoBody = map.showInfoBody;
+	    if (showInfoBody != null && showInfoBody.length > 0) {
+	        for (var i = 0; i < showInfoBody.length; i++) {
+	            var tempStinfo = showInfoBody[i];
+	
+	            tempResult += "<td>";
+	
+	            tempResult += (i + 1) + "." + tempStinfo.stmc;
+	            if (tempStinfo.stjflxdm == "01") {
+	                tempResult += "(分数题)";
+	            } else if (tempStinfo.stjflxdm == "02") {
+	                tempResult += "(单选比例题)";
+	            } else if (tempStinfo.stjflxdm == "03") {
+	                tempResult += "(单选题)";
+	            } else if (tempStinfo.stjflxdm == "04") {
+	                tempResult += "(多选题)";
+	            } else if (tempStinfo.stjflxdm == "05") {
+	                tempResult += "(主观评价)";
+	            }
+	
+	            tempResult += "</td>";
+	            tempResult += "</tr>";
+	
+	            tempResult += "<tr>";
+	            tempResult += "<td>";
+	            var stdaList = tempStinfo.daList;
+	
+	            if (stdaList != null && stdaList.length > 0) { //单选比例提，单选/多选题试题答案处理
+	                for (var k = 0; k < stdaList.length; k++) {
+	                    tempResult += "<div class='radio-bj' style='margin-left: 10px;width:120px;'>";
+	                    tempResult += "<label>";
+	
+	                    var tempAnswer = stdaList[k];
+	
+	                    if (tempStinfo.stjflxdm == "02" || tempStinfo.stjflxdm == "03") {
+	                        tempResult += "<input type='radio' name='" + tempStinfo.stbm + "' value='" + tempAnswer.id.dabm + "_" + tempAnswer.damc + "'";
+	                        tempResult += "style='opacity: 1;'";
+	                        var tpflg = "0";
+	
+	                        for (var m = 0; m < selectedAnswer.length; m++) {
+	
+	                            var tempselectedAnswer = selectedAnswer[m];
+	
+	                            if (tempStinfo.stbm == tempselectedAnswer.stbm && tempAnswer.id.dabm == tempselectedAnswer.da) {
+	                                tempResult += " checked ";
+	                                tpflg = "1";
+	                            } else if (tempStinfo.stbm == tempselectedAnswer.stbm && tempAnswer.id.dabm != tempselectedAnswer.da) {
+	                                tempResult += " disabled ";
+	                            }
+	                        }
+	                        //				    				tempResult += " <span class='lbl'></span> ";
+	                        //				    				tempResult += " <span style='margin-left: 2px;'>("+tempAnswer.id.dabm+") : "+tempAnswer.damc+"</span> ";
+	                        if (tpflg == "1") {
+	                            tempResult += " /><span class='lbl'></span> ";
+	                            tempResult += " <span style='margin-left: 2px;margin-top: 2px;'>(" + tempAnswer.id.dabm + ") : <label class='label label-warning arrowed' style='margin-bottom: 0px;height: 19px;'>" + tempAnswer.damc + "</label></span> ";
+	                        } else {
+	                            tempResult += " /><span class='lbl'></span> ";
+	                            tempResult += " <span style='margin-left: 2px;'>(" + tempAnswer.id.dabm + ") : " + tempAnswer.damc + "</span> ";
+	                        }
+	                        if (tempStinfo.stjflxdm == "03" && "1" == tempAnswer.sfxytxxxsm) { // 单选题
+	                            tempResult += " <br>  ";
+	                            tempResult += " <textarea id=\"" + tempStinfo.stbm + "_sfxytxxxsm\" name=\"" + tempStinfo.stbm + "_sfxytxxxsm\" placeholder=\"请填写详细说明\" style=\"width:200%\">" + tempStinfo.daxxsm + "</textarea> ";
+	                        }
+	                    } else if (tempStinfo.stjflxdm == "04") {
+	                        tempResult += "<input type='checkbox' name='" + tempStinfo.stbm + "' value='" + tempAnswer.id.dabm + "_" + tempAnswer.damc + "'";
+	                        tempResult += " style='opacity: 1;'";
+	
+	                        var tpflg = "0";
+	                        for (var m = 0; m < selectedAnswer.length; m++) {
+	
+	                            var tempselectedAnswer = selectedAnswer[m];
+	                            if (tempStinfo.stbm == tempselectedAnswer.stbm) {
+	                                var tempSelectedDa = tempselectedAnswer.selectdDa;
+	                                for (var n = 0; n < tempSelectedDa.length; n++) {
+	                                    if (tempAnswer.id.dabm == tempSelectedDa[n]) {
+	                                        tempResult += " checked ";
+	                                        tpflg = "1";
+	                                    }
+	                                }
+	                            }
+	                        }
+	
+	                        if (tpflg == "1") {
+	                            tempResult += " /><span class='lbl'></span> ";
+	                            tempResult += " <span style='margin-left: 2px;margin-top: 2px;'>(" + tempAnswer.id.dabm + ") : <label class='label label-warning arrowed' style='margin-bottom: 0px;height: 19px;'>" + tempAnswer.damc + "</label></span> ";
+	                        } else {
+	                            tempResult += " /><span class='lbl'></span> ";
+	                            tempResult += " <span style='margin-left: 2px;'>(" + tempAnswer.id.dabm + ") : " + tempAnswer.damc + "</span> ";
+	                        }
+	                    }
+	                    tempResult += " </label>";
+	                    tempResult += " </div> ";
+	                }
+	            } else { //分值题答案处理
+	                if (tempStinfo.stjflxdm == "01") {
+	                    var yxgs = "";
+	                    tempResult += "<div class='radio-bj' style='width:120px;'>";
+	                    if (tempStinfo.dffsdm == '01') {
+	                        for (var k = 0; k < selectedAnswer.length; k++) {
+	                            var tempselectedAnswer = selectedAnswer[k];
+	                            if (tempStinfo.stbm == tempselectedAnswer.stbm) {
+	                                yxgs = tempselectedAnswer.da;
+	                            }
+	                        }
+	
+	                        tempResult += "<p>";
+	                        for (var m = 1; m <= xxgs; m++) {
+	                            tempResult += "<i class='ace-icon glyphicon glyphicon-star bigger-130'";
+	                            if (m <= yxgs) {
+	                                tempResult += " style='color:orange;'>";
+	                            } else {
+	                                tempResult += " style='color:grey;'>";
+	                            }
+	                            tempResult += "</i>";
+	                        }
+	                        tempResult += "</p>";
+	                    } else if (tempStinfo.dffsdm == '02') {
+	                        tempResult += "<div id='" + tempStinfo.stbm + "' class='container' ";
+	                        tempResult += "style='margin:5px 0px 10px 0px;width:500px;'></div>";
+	                    } else if (tempStinfo.dffsdm == '03') {
+	                        tempResult += "<input name='" + tempStinfo.stbm + "' class='form-control value_element' onfocus='clearTitle(this)' disabled ";
+	
+	                        for (var k = 0; k < selectedAnswer.length; k++) {
+	                            var tempselectedAnswer = selectedAnswer[k];
+	                            if (tempStinfo.stbm == tempselectedAnswer.stbm) {
+	                                tempResult += " value='" + tempselectedAnswer.da + "'";
+	                            }
+	                        }
+	                        tempResult += "  />";
+	                    }
+	
+	                    tempResult += " </div>";
+	                } else if (tempStinfo.stjflxdm == "05") {
+	
+	                    tempResult += "<div class='radio-bj' style='width:120px;'>";
+	                    tempResult += "<textarea name='" + tempStinfo.stbm + "' cols='20' class='form-control value_element' disabled";
+	                    tempResult += " style='width:430%;height:60px;'>";
+	
+	                    for (var k = 0; k < selectedAnswer.length; k++) {
+	                        var tempselectedAnswer = selectedAnswer[k];
+	                        if (tempStinfo.stbm == tempselectedAnswer.stbm) {
+	                            tempResult += tempselectedAnswer.da;
+	                        }
+	                    }
+	                    tempResult += "</textarea>";
+	                    tempResult += "</div>";
+	                }
+	            }
+	            tempResult += "</td>";
+	            tempResult += "</tr>";
+	        }
+	    }
+	
+	    tempResult += "</tbody>";
+	    tempResult += "</table>";
+	
+	    if (fjb != null && fjb != undefined) {
+	        tempResult += "<div class='row'>";
+	        tempResult += "<div class='col-xs-12'><label style='margin-left:5px;margin-top:10px;'>评估附件</label><br>";
+	        tempResult += "<label style='margin-left:5px;'>";
+	        tempResult += "<a href='javascript:void(-1);' pgid='" + fjb.id.pgid + "' pgxvh='" + fjb.id.xuh + "' onclick='showPgfj(this);'>" + fjb.wjm + "." + fjb.hzm + "";
+	        tempResult += "</label>";
+	        tempResult += "</div";
+	        tempResult += "</div>";
+	    }
+	    tempResult += "</div>";
+	    $("#bill").html(tempResult);
+	    $("#div_title_show").html("<label style='font-size:16px;margin-left:2px;'><h3>问卷名称：" + wjmc + "</h3></label>");
+	}
+	
+	function initHk(selectedAnswer, zgf) {
+	    for (var i = 0; i < selectedAnswer.length; i++) {
+	        var temp = selectedAnswer[i];
+	        if (temp.stjflxdm == '01' && temp.dffsdm == '02') {
+	            var a11 = new slider({
+	                container: "#" + temp.stbm,
+	                start: 0,
+	                end: zgf,
+	                step: 1,
+	                value: parseInt(temp.da),
+	                showValue: true,
+	                pinStep: 5,
+	                labelStep: 5,
+	                changable: false,
+	            });
+	        }
+	    }
+	}
+	
+	function editEvaluationResult(ktid) {
+	    window.location.href = "/student/teachingEvaluation/newEvaluation/editEvaluationResult/" + ktid;
+	}
+	
+	function checkIsCanbePj(jksj, jksjDateStart, jkts, curDate) {
+	    var jkrqEnd = new Date(jksj);
+	    jkrqEnd.setDate(jkrqEnd.getDate() + parseInt(jkts));
+	    if (curDate >= jksjDateStart && curDate <= jkrqEnd) {
+	        return true;
+	    } else {
+	        return false;
+	    }
+	}
+	
+	function getNowFormatDate() {
+	    var date = new Date();
+	    var seperator1 = "/";
+	    var year = date.getFullYear();
+	    var month = date.getMonth() + 1;
+	    var strDate = date.getDate();
+	    if (month >= 1 && month <= 9) {
+	        month = "0" + month;
+	    }
+	    if (strDate >= 0 && strDate <= 9) {
+	        strDate = "0" + strDate;
+	    }
+	    var currentdate = year + seperator1 + month + seperator1 + strDate;
+	
+	    return currentdate;
+	}
+	
+	function dealDate(date) {
+	    var result = date.substring(0, 4) + "/" + date.substring(4, 6) + "/" + date.substring(6, 8);
+	    return result;
+	}
+	
+	$(function() {
+	    var schoolId = $("#schoolId").val();
+	    var infoOff = $("#infoOff").val();
+	    var infoTime = $("#infoTime").val();
+	    if (schoolId == "100006" && infoOff == "1" && Number(infoTime) > 0) {
+	        tsxx($("#infoContent").html(), "80%");
+	    }
+	});
+	function tsxx(val, width) {
+	    var infoTime = $("#infoTime").val();
+	    var mod = addslidersModel("right-menu", width, "right");
+	    $(".modal-content").html("<div id='tsDiv' style='border-bottom: 0; padding: 10px; word-break: break-all;'>" + val + "</div>");
+	    $(".modal-dialog").append("<div style='border: 3px solid #6fb3e0; background: #6fb3e0; position: absolute; bottom: 0; width: 100%;' class='center'>\
+					<button class='btn btn-round btn-xs no-border' disabled id='tsxxClose' onclick='$(\"#right-menu\").modal(\"hide\");'>\
+						<i class='fa fa-times'></i> 关闭（" + infoTime + "s）\
+					</button>\
+					</div>");
+	    var wHeight = $(window).height();
+	    // $(".modal-content").css("top", "30px");
+	    $(".modal-content").css("overflow", "auto");
+	    $(".modal-content").css("height", wHeight - 120);
+	    mod.modal({
+	        backdrop: 'static',
+	        keyboard: false
+	    }).on('hide.bs.modal',
+	    function() {
+	        $("body").removeClass('modal-open');
+	        $("body").css('padding-right', '0px');
+	        mod.remove();
+	        $('.modal-backdrop').remove();
+	        return false;
+	    });
+	
+	    tt = infoTime;
+	    timer = setInterval(function() {
+	        //console.log($("#tsxxClose").html());
+	        tt--;
+	        if (tt == 0) {
+	            $(mod).find("#tsxxClose").html("<i class='fa fa-times'></i> 关闭");
+	            $(mod).find("#tsxxClose").prop("disabled", false);
+	            clearInterval(timer);
+	        } else {
+	            $(mod).find("#tsxxClose").html("<i class='fa fa-times'></i> 关闭（" + tt + "s）");
+	        }
+	    },
+	    1000);
+	}
+	function downfile(tzid) {
+	    var fm = document.getElementById("frm");
+	    fm.action = "/student/courseSelect/courseSelectNotice/downloadFile/" + tzid;
+	    fm.submit();
+	}
+	
+	function showPgfj(obj) {
+	    var pgid = $(obj).attr("pgid");
+	    var pgxvh = $(obj).attr("pgxvh");
+	    var url = "/student/teachingAssessment/bbcx/pgjgwh/showImg/" + pgid + "/" + pgxvh;
+	    var win = window.open(url, '_blank');
+	    win.focus();
+	}
+	
+	function giveScore() {
+	    var url = "/student/teachingAssessment/evaluation/giveScore/page";
+	    var modal = urp.addModelHt("70%", "giveScore");
+	    modal.modal({
+	        remote: url
+	    }).on('hide.bs.modal',
+	    function() {
+	        modal.remove();
+	        $('.modal-backdrop').remove();
+	        return false;
+	    });
+	}	
+</script>
+
+        </div>
+        
+        <!-- /.page-content -->
+    </div>
+    <!-- /.main-content -->
+
+
+    <a href="#" id="btn-scroll-up" class="btn-scroll-up btn btn-sm btn-inverse">
+        <i class="ace-icon fa fa-angle-double-up icon-only bigger-110"></i>
+    </a>
+</div>
+
+
+<!-- /.main-container -->
+<script type="text/javascript">
+	$(function() {
+		let isMobile = urp.isMobile();
+		if(isMobile) {
+			$("#navbar,#breadcrumbs,#sidebar").addClass("hide");;
+		}else{
+			$("#navbar,#breadcrumbs,#sidebar").removeClass("hide");;
+		}
+		
+			if(isMobile) {
+				$(".cdsj").hide();
+			}
+		
+		
+	    var bar = $.cookie('selectionBar');
+	    if (bar && bar != 0) {
+	        if (true) {
+	            var barObj = document.getElementById(bar);
+	            var pts = $(barObj).parents("li");
+	            for (var i = pts.length - 1; i >= 0; i--) {
+	               	if (!$(pts[i]).hasClass("open")) {
+	               		$(pts[i]).addClass("open");
+	                	$(pts[i]).children("ul").addClass("nav-show").attr("style", "display: block;");
+	                }
+	            }
+	            barObj == null ? barObj = document.getElementById(bar) : barObj.className = "active";
+	            $(barObj).find("a").prepend("<i class='menu-icon fa fa-caret-right'></i>");
+	        }
+	
+	        var lastmenu = $("#" + bar).find("a").first().text();
+	        var secmenu = $("#" + bar).parent().parent().find("a").first().text();
+	        var firmenu = $("#" + bar).parent().parent().parent().parent().find("a").first().text();
+	
+	        $("#lastmenu").html(lastmenu.replace(/(^\s*)|(\s*$)/g, ""));
+	        $("#lastmenu").attr("menuid", bar);
+	        $("#secmenu").html(secmenu.replace(/(^\s*)|(\s*$)/g, ""));
+	        $("#secmenu").attr("menuid", $("#" + bar).parent().parent().attr("id"));
+	        $("#firmenu").html(firmenu.replace(/(^\s*)|(\s*$)/g, ""));
+	        $("#firmenu").attr("menuid", $("#" + bar).parent().parent().parent().parent().attr("id"));
+	    } else {
+	        $("#lastmenu").remove();
+	        $("#secmenu").remove();
+	        $("#firmenu").remove();
+	    }
+	});
+</script>
+
+
+
+</body>
+</html>
