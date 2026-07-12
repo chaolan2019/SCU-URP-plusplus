@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.15
+// @version      0.3.16
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -1233,8 +1233,8 @@
         box-sizing: border-box !important;
       }
 
-      /* 页面区块标题：与面包屑同风格的全宽条，左右边缘对齐 */
-      h4.header, h3.header, .header.smaller, .header.lighter {
+      /* 页面区块标题：全宽条，与内容左右对齐，下边距拉开 */
+      h4.header, h3.header, h5.header, .header.smaller, .header.lighter, .page-header {
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
         border-bottom: 1px solid var(--border) !important;
@@ -1244,15 +1244,30 @@
         font-size: 16px !important;
         font-weight: 600 !important;
         line-height: 1.4 !important;
-        margin: 0 0 16px !important;
+        margin: 8px 0 18px !important;
         padding: 12px 18px !important;
         min-height: 0 !important;
         width: 100% !important;
+        max-width: 100% !important;
         box-sizing: border-box !important;
         display: flex !important;
         align-items: center !important;
         gap: 12px !important;
         position: relative !important;
+        clear: both !important;
+        float: none !important;
+      }
+      /* 标题后的第一个内容块拉开间距 */
+      h4.header + *,
+      h3.header + *,
+      h5.header + *,
+      .header.smaller + *,
+      .page-header + * {
+        margin-top: 4px !important;
+      }
+      h4.header + .space, h4.header + .hr, h4.header + .space-6, h4.header + .space-10,
+      h3.header + .space, .header.smaller + .space {
+        display: none !important;
       }
       h4.header::before, h3.header::before, .header.smaller::before {
         content: '' !important;
@@ -1328,27 +1343,122 @@
         color: var(--text) !important;
       }
       /* 卡片 / 面板 */
-      .widget-box {
+      .widget-box,
+      .widget-box.transparent,
+      .panel,
+      .panel-default,
+      .panel-primary,
+      .panel-info,
+      .well,
+      .thumbnail,
+      .infobox,
+      .profile-user-info,
+      .profile-user-info-striped,
+      .dd,
+      fieldset {
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
         border-radius: var(--radius) !important;
+        box-shadow: none !important;
         overflow: hidden !important;
       }
-      .widget-header {
+      .widget-box {
+        margin-bottom: 18px !important;
+      }
+      .widget-header,
+      .panel-heading {
         background: transparent !important;
         border-bottom: 1px solid var(--border) !important;
         color: var(--text) !important;
         padding: 12px 16px !important;
+        border-radius: 0 !important;
       }
-      .widget-body { background: var(--surface) !important; color: var(--text) !important; padding: 16px !important; }
-      .well { background: var(--input-bg) !important; border-color: var(--border) !important; border-radius: var(--radius-sm) !important; }
+      .widget-body,
+      .panel-body {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        padding: 16px 18px !important;
+      }
+      .well {
+        background: var(--surface) !important;
+        border-color: var(--border) !important;
+        border-radius: var(--radius) !important;
+        padding: 16px 18px !important;
+        margin-bottom: 18px !important;
+        box-shadow: none !important;
+      }
+      .infobox {
+        border-radius: var(--radius) !important;
+        padding: 12px 14px !important;
+        min-width: 0 !important;
+        width: auto !important;
+        height: auto !important;
+        margin: 0 0 12px !important;
+      }
+      .infobox > .infobox-icon,
+      .infobox > .infobox-data {
+        border-radius: inherit !important;
+      }
 
-      /* 个人信息 */
-      .profile-user-info { border-color: var(--border) !important; border-radius: var(--radius-sm) !important; overflow: hidden !important; }
+      /* 个人信息 / 学籍信息 */
+      .profile-user-info,
+      .profile-user-info-striped {
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius) !important;
+        overflow: hidden !important;
+        margin-bottom: 16px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
       .profile-user-info:has(.chosen-container),
-      .widget-box:has(.chosen-container) { overflow: visible !important; }
-      .profile-info-name { background: var(--input-bg) !important; color: var(--text-secondary) !important; border-color: var(--border) !important; padding: 10px 14px !important; }
-      .profile-info-value { border-color: var(--border) !important; color: var(--text) !important; padding: 10px 14px !important; }
+      .widget-box:has(.chosen-container),
+      .panel:has(.chosen-container) { overflow: visible !important; }
+      .profile-info-row {
+        display: flex !important;
+        border-bottom: 1px solid var(--border) !important;
+      }
+      .profile-info-row:last-child { border-bottom: none !important; }
+      .profile-info-name {
+        background: var(--input-bg) !important;
+        color: var(--text-secondary) !important;
+        border-color: var(--border) !important;
+        border-right: 1px solid var(--border) !important;
+        padding: 12px 14px !important;
+        width: 140px !important;
+        min-width: 120px !important;
+        text-align: right !important;
+        font-weight: 500 !important;
+      }
+      .profile-info-value {
+        border-color: var(--border) !important;
+        color: var(--text) !important;
+        padding: 12px 14px !important;
+        flex: 1 !important;
+        background: var(--surface) !important;
+      }
+      /* 学籍页常见布局：列间距与对齐 */
+      .page-content .row + .row { margin-top: 8px !important; }
+      .page-content .widget-container-col,
+      .page-content .col-xs-12,
+      .page-content .col-sm-6,
+      .page-content .col-md-6,
+      .page-content .col-lg-6 {
+        margin-bottom: 8px !important;
+      }
+      legend {
+        color: var(--text) !important;
+        border-bottom: 1px solid var(--border) !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        padding-bottom: 8px !important;
+        margin-bottom: 14px !important;
+        width: 100% !important;
+      }
+      fieldset {
+        padding: 16px 18px !important;
+        margin-bottom: 18px !important;
+      }
 
       /* 表格：外框交给 wrapper，表格本身只负责内部网格 */
       .urppp-table-wrap {
@@ -1863,7 +1973,7 @@
 
     setTimeout(() => document.body.classList.add('urppp-ready'), 600);
 
-    console.log('[URP++] style applied v0.3.15');
+    console.log('[URP++] style applied v0.3.16');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -2473,7 +2583,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.15',
+    version: '0.3.16',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
