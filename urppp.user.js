@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.27
+// @version      0.3.28
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -1739,21 +1739,19 @@
       .btn-app { background: var(--surface) !important; border: 1px solid var(--border) !important; color: var(--text) !important; border-radius: 6px !important; }
       .btn-app:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
 
-      /* 表单：统一圆角与内边距，覆盖 ACE 直角输入 */
+      /* 表单：统一圆角；select 单独控制，避免小宽度分页下拉文字被 padding 截断 */
       input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]):not([type="image"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
-      select,
       textarea,
-      .form-control,
+      .form-control:not(select),
       .input-icon > input,
-      .input-group .form-control,
+      .input-group .form-control:not(select),
       .chosen-single,
       .chosen-choices,
       .ace-spinner .input-group,
       .tags,
       .bootstrap-tagsinput,
       .editable-input input,
-      .editable-input textarea,
-      .editable-input select {
+      .editable-input textarea {
         background: var(--input-bg) !important;
         border: 1px solid var(--border) !important;
         color: var(--text) !important;
@@ -1765,16 +1763,63 @@
         min-height: 32px !important;
         box-shadow: none !important;
         box-sizing: border-box !important;
-        -webkit-appearance: none !important;
-        appearance: none !important;
       }
-      select {
-        padding-right: 28px !important;
+      select,
+      select.form-control,
+      .editable-input select {
+        background-color: var(--input-bg) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text) !important;
+        border-radius: 8px !important;
+        padding: 4px 8px !important;
+        font-size: 13px !important;
+        line-height: 1.35 !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        max-width: 100% !important;
+        box-shadow: none !important;
+        box-sizing: border-box !important;
         cursor: pointer !important;
-        background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%), linear-gradient(135deg, var(--text-muted) 50%, transparent 50%) !important;
-        background-position: calc(100% - 14px) calc(50% - 2px), calc(100% - 9px) calc(50% - 2px) !important;
-        background-size: 5px 5px, 5px 5px !important;
-        background-repeat: no-repeat !important;
+        -webkit-appearance: menulist !important;
+        appearance: menulist !important;
+        text-overflow: ellipsis !important;
+      }
+      /* 分页/每页条数：极窄 select，给足文字空间 */
+      .urppagebreak select,
+      .urppagebreak #pagesize,
+      select#pagesize,
+      .pagination select,
+      .dataTables_length select,
+      .page-content select[style*="width: 50"],
+      .page-content select[style*="width:50"] {
+        width: auto !important;
+        min-width: 56px !important;
+        max-width: 80px !important;
+        padding: 2px 4px !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        font-size: 13px !important;
+        line-height: 1.2 !important;
+        border-radius: 6px !important;
+        -webkit-appearance: menulist !important;
+        appearance: menulist !important;
+        background-image: none !important;
+      }
+      .urppagebreak {
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        gap: 6px 8px !important;
+        white-space: nowrap !important;
+        box-sizing: border-box !important;
+      }
+      .urppagebreak input[type="text"],
+      .urppagebreak input.form-control {
+        padding: 2px 6px !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        width: auto !important;
+        min-width: 40px !important;
       }
       textarea {
         resize: vertical !important;
@@ -2391,7 +2436,7 @@
 
     setTimeout(() => document.body.classList.add('urppp-ready'), 600);
 
-    console.log('[URP++] style applied v0.3.27');
+    console.log('[URP++] style applied v0.3.28');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -3003,7 +3048,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.27',
+    version: '0.3.28',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
