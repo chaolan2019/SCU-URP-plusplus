@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.28
+// @version      0.3.29
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -1392,10 +1392,15 @@
       .main-content .page-content .tabbable {
         margin-left: 0 !important;
         margin-right: 0 !important;
+        margin-bottom: 16px !important;
+        background: transparent !important;
+        border: none !important;
       }
       .main-content .tabbable .tab-content,
       .tabbable > .tab-content {
-        padding: 18px 20px 20px !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
       }
       /* 滚动表格容器也吃一点内边距感 */
       .main-content #code_scroll,
@@ -1928,30 +1933,47 @@
         color: inherit !important;
       }
 
-      /* 标签页：整体一张卡片 + 顶栏分段，避免单 tab 凸起接缝 */
+      /* 标签页：顶栏做成与面包屑同风格的圆角条，内容区独立卡片感 */
       .tabbable {
-        margin-bottom: 0 !important;
-        background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: var(--radius) !important;
-        overflow: hidden !important;
-      }
-      .nav-tabs {
+        margin: 0 0 16px !important;
+        background: transparent !important;
         border: none !important;
+        border-radius: 0 !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+      }
+      .nav-tabs,
+      ul.nav-tabs,
+      .nav.nav-tabs {
+        border: 1px solid var(--border) !important;
         border-bottom: 1px solid var(--border) !important;
-        margin: 0 !important;
+        margin: 0 0 14px !important;
         padding: 8px 10px !important;
-        background: var(--input-bg) !important;
+        background: var(--surface) !important;
+        border-radius: 12px !important;
         display: flex !important;
         flex-wrap: wrap !important;
+        align-items: center !important;
         gap: 6px !important;
         float: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+        list-style: none !important;
+        min-height: 0 !important;
       }
-      .nav-tabs > li {
+      .nav-tabs > li,
+      .nav-tabs > li.tab-pane,
+      .nav.nav-tabs > li {
         float: none !important;
         margin: 0 !important;
+        background: transparent !important;
+        border: none !important;
       }
-      .nav-tabs > li > a {
+      .nav-tabs > li > a,
+      .nav-tabs > li > a:link,
+      .nav-tabs > li > a:visited {
         color: var(--text-secondary) !important;
         background: transparent !important;
         border: 1px solid transparent !important;
@@ -1964,33 +1986,51 @@
         box-shadow: none !important;
         position: static !important;
         top: auto !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        white-space: nowrap !important;
       }
       .nav-tabs > li > a:hover,
       .nav-tabs > li > a:focus {
         color: var(--text) !important;
-        background: var(--surface) !important;
+        background: var(--input-bg) !important;
         border: 1px solid var(--border) !important;
         border-radius: 8px !important;
       }
       .nav-tabs > li.active > a,
       .nav-tabs > li.active > a:hover,
-      .nav-tabs > li.active > a:focus {
+      .nav-tabs > li.active > a:focus,
+      .nav-tabs > li.active > a:active {
         color: var(--primary) !important;
-        background: var(--surface) !important;
+        background: var(--input-bg) !important;
         border: 1px solid var(--border) !important;
         border-radius: 8px !important;
         font-weight: 600 !important;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
+        box-shadow: none !important;
         z-index: auto !important;
       }
-      .tab-content {
-        background: var(--surface) !important;
+      .tab-content,
+      .tabbable > .tab-content {
+        background: transparent !important;
         border: none !important;
         border-radius: 0 !important;
-        padding: 14px 16px 16px !important;
+        padding: 0 !important;
+        margin: 0 !important;
         box-shadow: none !important;
       }
-      .tab-content > .tab-pane { padding: 0 !important; }
+      .tab-content > .tab-pane {
+        padding: 0 !important;
+        background: transparent !important;
+      }
+      /* 兼容不在 .tabbable 里的裸 nav-tabs */
+      .page-content > .nav-tabs,
+      .page-content > .row > [class*="col-"] > .nav-tabs,
+      .widget-body > .nav-tabs,
+      .self-margin > .nav-tabs {
+        margin-top: 0 !important;
+        margin-bottom: 14px !important;
+      }
       /* 分页 */
       .pagination > li > a, .pagination > li > span {
         background: var(--surface) !important;
@@ -2436,7 +2476,7 @@
 
     setTimeout(() => document.body.classList.add('urppp-ready'), 600);
 
-    console.log('[URP++] style applied v0.3.28');
+    console.log('[URP++] style applied v0.3.29');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -3048,7 +3088,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.28',
+    version: '0.3.29',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
