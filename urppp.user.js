@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.26
+// @version      0.3.27
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -708,6 +708,36 @@
         else if (/^(上午|下午|晚上|中午)$/.test(t)) cell.classList.add('urppp-wrs-period');
       });
     } catch (_) {}
+  }
+  // 学校校历：重定向到教务处新页面
+  const SCHOOL_CALENDAR_URL = 'https://jwc.scu.edu.cn/cdxl.htm';
+  function patchSchoolCalendarLink() {
+    const selectors = [
+      'a[onclick*="jwc.scu.edu.cn/article/206"]',
+      'a[href*="jwc.scu.edu.cn/article/206"]',
+      '.cdsj a',
+      '.ace-nav a'
+    ];
+    const seen = new Set();
+    selectors.forEach((sel) => {
+      document.querySelectorAll(sel).forEach((a) => {
+        if (seen.has(a)) return;
+        seen.add(a);
+        const text = (a.textContent || '').replace(/\s+/g, '');
+        const onclick = a.getAttribute('onclick') || '';
+        const href = a.getAttribute('href') || '';
+        const isCalendar =
+          text.includes('学校校历') ||
+          onclick.includes('article/206') ||
+          href.includes('article/206') ||
+          (onclick.includes('jwc.scu.edu.cn') && text.includes('校历'));
+        if (!isCalendar) return;
+        a.setAttribute('href', SCHOOL_CALENDAR_URL);
+        a.setAttribute('target', '_blank');
+        a.setAttribute('rel', 'noopener noreferrer');
+        a.setAttribute('onclick', `window.open('${SCHOOL_CALENDAR_URL}');return false;`);
+      });
+    });
   }
   // 表格外框 wrapper：圆角 + 完整四边线
   function wrapTables() {
@@ -2356,11 +2386,12 @@
 
     // 顶栏重建（JS 强制对齐）
     rebuildNavbar();
-    window.addEventListener('load', rebuildNavbar);
+    patchSchoolCalendarLink();
+    window.addEventListener('load', () => { rebuildNavbar(); patchSchoolCalendarLink(); });
 
     setTimeout(() => document.body.classList.add('urppp-ready'), 600);
 
-    console.log('[URP++] style applied v0.3.26');
+    console.log('[URP++] style applied v0.3.27');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -2951,6 +2982,7 @@
         sidebar.style.setProperty('height', 'calc(100vh - ' + nh + 'px)', 'important');
         rebuildSidebarCompletely();
         rebuildNavbar();
+        patchSchoolCalendarLink();
         wrapTables();
         document.querySelectorAll('.page-content, #page-content-template').forEach((el) => {
           el.style.setProperty('padding', '16px 64px 40px', 'important');
@@ -2971,7 +3003,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.26',
+    version: '0.3.27',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
