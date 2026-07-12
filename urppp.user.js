@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.24
+// @version      0.3.25
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -687,6 +687,28 @@
         header.style.removeProperty('left');
       }
       wrap.remove();
+    });
+  }
+  // 作息时间表弹窗：给单元格打语义 class，方便样式
+  function beautifyWorkRestSchedule() {
+    const modal = document.getElementById('work_rest_schedule_modal');
+    if (!modal) return;
+    const table = modal.querySelector('table');
+    if (!table) return;
+    table.classList.add('urppp-wrs-table');
+    table.querySelectorAll('tr').forEach((tr) => {
+      const cells = Array.from(tr.children).filter((c) => c.tagName === 'TD' || c.tagName === 'TH');
+      if (!cells.length) return;
+      // 跳过纯表头行
+      const texts = cells.map((c) => (c.textContent || '').trim());
+      cells.forEach((cell) => {
+        const t = (cell.textContent || '').trim();
+        if (/^\d{1,2}:\d{2}\s*[-–—~至到]\s*\d{1,2}:\d{2}$/.test(t) || /^\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}$/.test(t) || (t.includes(':') && t.includes('-'))) {
+          cell.classList.add('urppp-wrs-time');
+        } else if (/^(上午|下午|晚上|中午)$/.test(t)) {
+          cell.classList.add('urppp-wrs-period');
+        }
+      });
     });
   }
   // 表格外框 wrapper：圆角 + 完整四边线
@@ -1912,13 +1934,150 @@
         border: 1px solid var(--border) !important;
         border-radius: var(--radius) !important;
         box-shadow: 0 10px 40px rgba(0,0,0,0.12) !important;
+        overflow: hidden !important;
       }
-      .modal-header { border-bottom: 1px solid var(--border) !important; padding: 16px 20px !important; }
-      .modal-header .close { color: var(--text-secondary) !important; opacity: 1 !important; }
-      .modal-header .close:hover { color: var(--text) !important; }
-      .modal-title { color: var(--text) !important; font-weight: 600 !important; }
-      .modal-body { padding: 20px !important; }
-      .modal-footer { border-top: 1px solid var(--border) !important; padding: 16px 20px !important; }
+      .modal-header {
+        border-bottom: 1px solid var(--border) !important;
+        padding: 16px 20px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        background: var(--surface) !important;
+        min-height: 56px !important;
+      }
+      .modal-header .close,
+      .modal-header button.close {
+        position: static !important;
+        float: none !important;
+        order: 2 !important;
+        margin: 0 0 0 auto !important;
+        padding: 0 !important;
+        width: 32px !important;
+        height: 32px !important;
+        line-height: 30px !important;
+        text-align: center !important;
+        border-radius: 8px !important;
+        color: var(--text-secondary) !important;
+        opacity: 0.75 !important;
+        font-size: 22px !important;
+        font-weight: 500 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+      .modal-header .close:hover,
+      .modal-header button.close:hover {
+        opacity: 1 !important;
+        color: var(--text) !important;
+        background: var(--input-bg) !important;
+      }
+      .modal-title {
+        color: var(--text) !important;
+        font-weight: 600 !important;
+        font-size: 16px !important;
+        margin: 0 !important;
+        flex: 1 !important;
+        order: 1 !important;
+      }
+      .modal-body { padding: 20px !important; background: var(--surface) !important; color: var(--text) !important; }
+      .modal-footer { border-top: 1px solid var(--border) !important; padding: 16px 20px !important; background: var(--surface) !important; }
+
+      /* 作息时间表弹窗 */
+      #work_rest_schedule_modal .modal-dialog {
+        width: min(720px, 92vw) !important;
+        max-width: 720px !important;
+      }
+      #work_rest_schedule_modal .modal-content {
+        border-radius: 16px !important;
+        overflow: hidden !important;
+      }
+      #work_rest_schedule_modal .modal-header {
+        background: linear-gradient(180deg, var(--input-bg) 0%, var(--surface) 100%) !important;
+        padding: 18px 22px !important;
+      }
+      #work_rest_schedule_modal .modal-title {
+        font-size: 17px !important;
+        letter-spacing: 0.5px !important;
+      }
+      #work_rest_schedule_modal .modal-body {
+        padding: 18px 22px 22px !important;
+      }
+      #work_rest_schedule_modal .modal-body > .table,
+      #work_rest_schedule_modal table.table,
+      #work_rest_schedule_modal table.center {
+        width: 100% !important;
+        margin: 0 !important;
+        border: none !important;
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+        background: var(--surface) !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        box-shadow: inset 0 0 0 1px var(--border) !important;
+      }
+      #work_rest_schedule_modal table.table > thead > tr > th,
+      #work_rest_schedule_modal table.center > thead > tr > th,
+      #work_rest_schedule_modal table.table > tbody > tr > th,
+      #work_rest_schedule_modal table.center > tbody > tr > th,
+      #work_rest_schedule_modal table.table > tbody > tr > td,
+      #work_rest_schedule_modal table.center > tbody > tr > td {
+        border: none !important;
+        border-right: 1px solid var(--border) !important;
+        border-bottom: 1px solid var(--border) !important;
+        padding: 11px 12px !important;
+        font-size: 13px !important;
+        color: var(--text) !important;
+        vertical-align: middle !important;
+        text-align: center !important;
+        background: var(--surface) !important;
+      }
+      #work_rest_schedule_modal table.table > thead > tr > th:last-child,
+      #work_rest_schedule_modal table.center > thead > tr > th:last-child,
+      #work_rest_schedule_modal table.table > tbody > tr > td:last-child,
+      #work_rest_schedule_modal table.center > tbody > tr > td:last-child {
+        border-right: none !important;
+      }
+      #work_rest_schedule_modal table.table > tbody > tr:last-child > td,
+      #work_rest_schedule_modal table.center > tbody > tr:last-child > td,
+      #work_rest_schedule_modal table.table > tbody > tr:last-child > th,
+      #work_rest_schedule_modal table.center > tbody > tr:last-child > th {
+        border-bottom: none !important;
+      }
+      /* 表头 */
+      #work_rest_schedule_modal table > thead > tr > th,
+      #work_rest_schedule_modal table > tbody > tr:first-child > th,
+      #work_rest_schedule_modal table > tbody > tr:first-child > td {
+        background: var(--input-bg) !important;
+        color: var(--text-secondary) !important;
+        font-weight: 600 !important;
+        font-size: 12px !important;
+        letter-spacing: 0.3px !important;
+      }
+      /* 校区列：强调标签感 */
+      #work_rest_schedule_modal table td[rowspan],
+      #work_rest_schedule_modal table th[rowspan] {
+        background: var(--input-bg) !important;
+        font-weight: 600 !important;
+        color: var(--primary) !important;
+        font-size: 13px !important;
+        line-height: 1.5 !important;
+      }
+      /* 时间列：等宽数字 */
+      #work_rest_schedule_modal table td {
+        font-variant-numeric: tabular-nums !important;
+      }
+      #work_rest_schedule_modal table .urppp-wrs-period {
+        font-weight: 600 !important;
+        color: var(--text-secondary) !important;
+      }
+      #work_rest_schedule_modal table .urppp-wrs-time {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+        font-size: 12.5px !important;
+        letter-spacing: 0.2px !important;
+      }
+      #work_rest_schedule_modal table tbody tr:hover > td:not([rowspan]) {
+        background: var(--input-bg) !important;
+      }
 
       /* 时间轴 */
       .timeline-container { background: var(--surface) !important; border-color: var(--border) !important; }
@@ -2201,6 +2360,19 @@
       el.style.setProperty('box-sizing', 'border-box', 'important');
     });
     alignRollInfoLayout();
+    // 作息时间表弹窗打开后美化
+    if (!window.__urpppWrsObs) {
+      window.__urpppWrsObs = new MutationObserver(() => {
+        const modal = document.getElementById('work_rest_schedule_modal');
+        if (modal && (modal.classList.contains('in') || modal.style.display === 'block' || getComputedStyle(modal).display !== 'none')) {
+          beautifyWorkRestSchedule();
+        }
+      });
+      window.__urpppWrsObs.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+      document.addEventListener('shown.bs.modal', (e) => {
+        if (e.target && e.target.id === 'work_rest_schedule_modal') beautifyWorkRestSchedule();
+      }, true);
+    }
     beautifyBreadcrumbs();
     setTimeout(alignRollInfoLayout, 200);
     setTimeout(alignRollInfoLayout, 600);
@@ -2216,7 +2388,7 @@
 
     setTimeout(() => document.body.classList.add('urppp-ready'), 600);
 
-    console.log('[URP++] style applied v0.3.24');
+    console.log('[URP++] style applied v0.3.25');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -2827,7 +2999,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.24',
+    version: '0.3.25',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
