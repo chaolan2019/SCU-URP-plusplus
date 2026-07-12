@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.49
+// @version      0.3.50
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -1854,7 +1854,7 @@
       }
 
       /* 页面区块标题：全宽条，与内容左右对齐，下边距拉开 */
-      h4.header, h3.header, h5.header, .header.smaller, .header.lighter, .page-header {
+      h4.header, h3.header, h5.header, .header.smaller, .header.lighter, .page-header, h4.widget-title, h3.widget-title, .widget-title {
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
         border-bottom: 1px solid var(--border) !important;
@@ -1889,7 +1889,7 @@
       h3.header + .space, .header.smaller + .space {
         display: none !important;
       }
-      h4.header::before, h3.header::before, .header.smaller::before {
+      h4.header::before, h3.header::before, .header.smaller::before, h4.widget-title::before, .widget-title::before {
         content: '' !important;
         display: inline-block !important;
         width: 3px !important;
@@ -1898,7 +1898,7 @@
         background: var(--primary) !important;
         flex: 0 0 auto !important;
       }
-      h4.header::after, h3.header::after, .header.smaller::after {
+      h4.header::after, h3.header::after, .header.smaller::after, h4.widget-title::after, .widget-title::after {
         content: none !important;
         display: none !important;
       }
@@ -1908,7 +1908,11 @@
       h3.header > .glyphicon,
       h3.header > .fa,
       .header.smaller > .glyphicon,
-      .header.smaller > .fa {
+      .header.smaller > .fa,
+      h4.widget-title > .glyphicon,
+      h4.widget-title > .fa,
+      .widget-title > .glyphicon,
+      .widget-title > .fa {
         display: none !important;
       }
       h4.header .right_top_oper,
@@ -2007,17 +2011,118 @@
         margin-bottom: 18px !important;
         box-shadow: none !important;
       }
-      .infobox {
-        border-radius: var(--radius) !important;
-        padding: 12px 14px !important;
-        min-width: 0 !important;
-        width: auto !important;
-        height: auto !important;
-        margin: 0 0 12px !important;
+      /* 统计卡片 infobox：统一表面色，保证文字可读与网格对齐 */
+      .infobox-container {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 0 0 16px !important;
       }
-      .infobox > .infobox-icon,
+      .infobox {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+        padding: 14px 16px !important;
+        min-width: 0 !important;
+        width: calc(25% - 9px) !important;
+        max-width: 100% !important;
+        height: auto !important;
+        min-height: 92px !important;
+        margin: 0 !important;
+        float: none !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+        color: var(--text) !important;
+        position: relative !important;
+        overflow: hidden !important;
+      }
+      @media (max-width: 1200px) {
+        .infobox { width: calc(50% - 6px) !important; }
+      }
+      @media (max-width: 640px) {
+        .infobox { width: 100% !important; }
+      }
+      /* 去掉 ACE 彩色底/渐变，避免白字/深色字不可读 */
+      .infobox.infobox-dark,
+      .infobox.infobox-green,
+      .infobox.infobox-blue,
+      .infobox.infobox-pink,
+      .infobox.infobox-red,
+      .infobox.infobox-orange,
+      .infobox.infobox-purple,
+      .infobox.infobox-grey,
+      .infobox.infobox-black {
+        background: var(--surface) !important;
+        border-color: var(--border) !important;
+        color: var(--text) !important;
+      }
+      .infobox:before,
+      .infobox:after {
+        display: none !important;
+        content: none !important;
+        background: none !important;
+      }
+      .infobox > .infobox-icon {
+        display: none !important;
+      }
       .infobox > .infobox-data {
-        border-radius: inherit !important;
+        border: none !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        color: var(--text) !important;
+        display: block !important;
+        box-sizing: border-box !important;
+      }
+      .infobox .infobox-data-number,
+      .infobox .infobox-content {
+        color: var(--text) !important;
+        text-shadow: none !important;
+      }
+      .infobox .infobox-data-number {
+        font-size: 22px !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+        margin: 0 0 6px !important;
+        display: block !important;
+        color: var(--primary) !important;
+      }
+      .infobox .infobox-content {
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        line-height: 1.35 !important;
+        color: var(--text-secondary) !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+      }
+      .infobox .infobox-progress {
+        margin-top: 10px !important;
+        width: 100% !important;
+        height: 6px !important;
+        border-radius: 999px !important;
+        background: var(--input-bg) !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+      }
+      .infobox .infobox-progress .progress-bar,
+      .infobox .infobox-progress > div {
+        height: 100% !important;
+        border-radius: 999px !important;
+        background: var(--primary) !important;
+        box-shadow: none !important;
+      }
+      /* 百分比文案 */
+      .infobox .percent,
+      .infobox .infobox-data .percent {
+        color: var(--text-secondary) !important;
+        font-size: 12px !important;
       }
 
       /* 个人信息 / 学籍信息 */
@@ -3192,7 +3297,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.49');
+    console.log('[URP++] style applied v0.3.50');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -3805,7 +3910,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.49',
+    version: '0.3.50',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
