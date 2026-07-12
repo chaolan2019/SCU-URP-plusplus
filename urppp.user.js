@@ -1089,7 +1089,7 @@
         border: none !important;
         border-bottom: none !important;
         box-shadow: none !important;
-        padding: 16px 32px 12px !important;
+        padding: 16px 48px 12px !important;
         min-height: 0 !important;
         line-height: 1.4 !important;
         position: relative !important;
@@ -1105,7 +1105,7 @@
         left: auto !important;
         right: auto !important;
       }
-      .main-content { padding-top: 0 !important; margin-top: 0 !important; }
+      .main-content { padding-top: 0 !important; }
       body.breadcrumbs-fixed .main-content { padding-top: 0 !important; }
       .breadcrumb {
         background: var(--surface) !important;
@@ -1187,25 +1187,36 @@
         font-size: 16px !important;
       }
       .breadcrumb > li.hide-item { display: none !important; }
-      /* 内容区：加大左右留白，避免表格/卡片贴边 */
-      .page-content {
-        padding: 8px 32px 32px !important;
+      /* 内容区：明显加大左右留白，高优先级覆盖 ACE */
+      .main-content .page-content,
+      #page-content-template.page-content,
+      div.page-content {
+        padding: 12px 48px 40px !important;
+        box-sizing: border-box !important;
       }
-      .page-content > .row {
+      .main-content .page-content > .row,
+      #page-content-template > .row {
         margin-left: 0 !important;
         margin-right: 0 !important;
       }
-      .page-content > .row > [class*="col-"],
-      .page-content .self-margin {
+      .main-content .page-content > .row > [class*="col-"],
+      .main-content .page-content .self-margin,
+      #page-content-template .self-margin {
         padding-left: 0 !important;
         padding-right: 0 !important;
       }
-      .page-content .tabbable {
+      .main-content .page-content .tabbable {
         margin-left: 0 !important;
         margin-right: 0 !important;
       }
-      .tabbable .tab-content {
-        padding: 16px 18px 18px !important;
+      .main-content .tabbable .tab-content,
+      .tabbable > .tab-content {
+        padding: 18px 20px 20px !important;
+      }
+      /* 滚动表格容器也吃一点内边距感 */
+      .main-content #code_scroll,
+      .page-content [id$="_scroll"] {
+        box-sizing: border-box !important;
       }
 
       /* 页面区块标题：与面包屑同风格的全宽条，左右边缘对齐 */
@@ -1821,6 +1832,11 @@
 
     // 完全重构侧边栏为 Hanako 风格
     rebuildSidebarCompletely();
+    // 强制内容区内边距（ACE 偶发内联样式覆盖）
+    document.querySelectorAll('.page-content, #page-content-template').forEach((el) => {
+      el.style.setProperty('padding', '12px 48px 40px', 'important');
+      el.style.setProperty('box-sizing', 'border-box', 'important');
+    });
     beautifyBreadcrumbs();
     setTimeout(beautifyBreadcrumbs, 200);
     setTimeout(beautifyBreadcrumbs, 600);
@@ -2425,6 +2441,10 @@
         rebuildSidebarCompletely();
         rebuildNavbar();
         wrapTables();
+        document.querySelectorAll('.page-content, #page-content-template').forEach((el) => {
+          el.style.setProperty('padding', '12px 48px 40px', 'important');
+          el.style.setProperty('box-sizing', 'border-box', 'important');
+        });
         beautifyBreadcrumbs();
       }, 100);
     };
