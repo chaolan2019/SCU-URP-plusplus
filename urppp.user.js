@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.11
+// @version      0.4.12
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.11';
+          content:'URP++ v0.4.12';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1075,7 +1075,7 @@
       wrap.remove();
     });
   }
-  // 作息时间表：轻量美化（不改数据，标题强制整行居中）
+  // 作息时间表：轻量美化（不改数据；标题提出为整行居中横幅）
   function beautifyWorkRestSchedule() {
     try {
       const modal = document.getElementById('work_rest_schedule_modal');
@@ -1084,12 +1084,19 @@
         modal.style.setProperty('display', 'block', 'important');
       }
       const body = modal.querySelector('.modal-body') || modal;
-      // 处理弹窗内所有表格（有的标题在独立小表里）
       const tables = Array.from(body.querySelectorAll('table'));
       if (!tables.length) return;
 
+      const norm = (s) => (s || '').replace(/\s+/g, ' ').trim();
+      const esc = (s) => String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+      // 已处理过则跳过（避免重复插横幅）
+      if (body.dataset.urpppWrsDone === '1') {
+        // 仍允许刷新 class
+      }
+
       tables.forEach((table) => {
-        // 若被全局 wrap 误包，拆回
         const wrap = table.closest('.urppp-table-wrap');
         if (wrap && modal.contains(wrap) && wrap.parentElement) {
           wrap.parentElement.insertBefore(table, wrap);
@@ -1098,61 +1105,52 @@
 
         table.classList.add('urppp-wrs-table');
         table.style.setProperty('width', '100%', 'important');
-        table.style.removeProperty('border');
-        table.style.removeProperty('border-collapse');
 
-        const norm = (s) => (s || '').replace(/\s+/g, ' ').trim();
         const rows = Array.from(table.rows || []);
         if (!rows.length) return;
 
-        // 整表最大列数
-        let colCount = 1;
+        // 用“有时间的数据行”估算真实列数，避免被残缺标题行误导
+        let colCount = 0;
         rows.forEach((tr) => {
+          const rt = norm(tr.textContent);
+          if (!/\d{1,2}:\d{2}/.test(rt)) return;
           let n = 0;
           Array.from(tr.cells || []).forEach((c) => { n += (c.colSpan || 1); });
           if (n > colCount) colCount = n;
         });
-        // 至少 4 列（时段/节次/时间/大节）的常见结构，避免标题 colspan 过小
-        if (colCount < 2) colCount = 2;
+        if (colCount < 4) {
+          // 回退：所有行最大
+          rows.forEach((tr) => {
+            let n = 0;
+            Array.from(tr.cells || []).forEach((c) => { n += (c.colSpan || 1); });
+            if (n > colCount) colCount = n;
+          });
+        }
+        if (colCount < 1) colCount = 1;
 
-        rows.forEach((tr) => {
-          let cells = Array.from(tr.cells || []);
+        // 标题行：提出为表格上方/段前横幅，或改写成单格满宽
+        Array.from(table.rows || []).forEach((tr) => {
+          const cells = Array.from(tr.cells || []);
           if (!cells.length) return;
+          const rowText = norm(tr.textContent);
+          const hasTime = /\d{1,2}:\d{2}/.test(rowText);
+          const isTitleRow = !hasTime && (
+            /作息时间|学年/.test(rowText) ||
+            (/(望江|华西|江安)/.test(rowText) && /校区|时间|安排|作息/.test(rowText))
+          );
+
+          if (isTitleRow) {
+            const titleText = rowText;
+            // 直接重写整行：一个满宽单元格（最稳）
+            tr.className = 'urppp-wrs-title-row';
+            tr.innerHTML = '<td class="urppp-wrs-title" colspan="' + colCount + '" align="center">' + esc(titleText) + '</td>';
+            return;
+          }
 
           cells.forEach((cell) => {
             ['border', 'borderTop', 'borderRight', 'borderBottom', 'borderLeft', 'textAlign', 'verticalAlign', 'width']
               .forEach((k) => { try { cell.style[k] = ''; } catch (_) {} });
             cell.classList.remove('urppp-wrs-title', 'urppp-wrs-period', 'urppp-wrs-time', 'urppp-wrs-head');
-          });
-
-          const rowText = norm(tr.textContent);
-          const nonEmpty = cells.filter((c) => norm(c.textContent));
-          const onlyOneText = nonEmpty.length === 1;
-          const hasTime = /\d{1,2}:\d{2}/.test(rowText);
-          const isTitleRow =
-            !hasTime && (
-              /作息时间|学年/.test(rowText) ||
-              (/(望江|华西|江安)/.test(rowText) && /校区|时间|安排|作息/.test(rowText)) ||
-              (onlyOneText && nonEmpty[0] && (nonEmpty[0].colSpan || 1) >= 2)
-            );
-
-          if (isTitleRow) {
-            const keep = nonEmpty[0] || cells[0];
-            // 删掉同行其它单元格，避免标题只占左半边
-            cells.forEach((c) => { if (c !== keep) c.remove(); });
-            keep.colSpan = colCount;
-            keep.rowSpan = 1;
-            keep.classList.add('urppp-wrs-title');
-            keep.setAttribute('align', 'center');
-            keep.style.setProperty('text-align', 'center', 'important');
-            keep.style.setProperty('vertical-align', 'middle', 'important');
-            keep.style.setProperty('width', 'auto', 'important');
-            return;
-          }
-
-          // 重新取 cells（可能刚删过）
-          cells = Array.from(tr.cells || []);
-          cells.forEach((cell) => {
             const t = norm(cell.textContent);
             if (!t) return;
             if (/^(上午|下午|晚上|中午)$/.test(t) || ((cell.rowSpan || 1) > 1 && /上午|下午|晚上|中午/.test(t))) {
@@ -1169,6 +1167,14 @@
           });
         });
       });
+
+      // 弹窗标题也强制居中
+      const mt = modal.querySelector('.modal-title');
+      if (mt) {
+        mt.style.setProperty('text-align', 'center', 'important');
+        mt.style.setProperty('width', '100%', 'important');
+      }
+      body.dataset.urpppWrsDone = '1';
     } catch (_) {}
   }
 
@@ -4240,9 +4246,14 @@
         box-sizing: border-box !important;
         font-weight: 400 !important;
       }
-      #work_rest_schedule_modal table .urppp-wrs-title,
-      #work_rest_schedule_modal table th[colspan],
-      #work_rest_schedule_modal table td[colspan] {
+      #work_rest_schedule_modal table {
+        width: 100% !important;
+        table-layout: fixed !important;
+      }
+      #work_rest_schedule_modal table tr.urppp-wrs-title-row > td.urppp-wrs-title,
+      #work_rest_schedule_modal table .urppp-wrs-title {
+        display: table-cell !important;
+        width: 100% !important;
         text-align: center !important;
         vertical-align: middle !important;
         font-size: 15px !important;
@@ -4250,19 +4261,15 @@
         color: var(--text) !important;
         background: color-mix(in srgb, var(--primary) 8%, var(--surface)) !important;
         padding: 12px 14px !important;
+        border: 1px solid var(--border) !important;
       }
-      /* 标题行：单元格铺满整表，文字绝对居中 */
-      #work_rest_schedule_modal table tr:has(> .urppp-wrs-title) {
+      #work_rest_schedule_modal table tr.urppp-wrs-title-row {
         text-align: center !important;
       }
-      #work_rest_schedule_modal table tr:has(> .urppp-wrs-title) > th,
-      #work_rest_schedule_modal table tr:has(> .urppp-wrs-title) > td {
+      #work_rest_schedule_modal table th[colspan],
+      #work_rest_schedule_modal table td[colspan] {
         text-align: center !important;
         vertical-align: middle !important;
-      }
-      #work_rest_schedule_modal table {
-        width: 100% !important;
-        table-layout: fixed !important;
       }
       #work_rest_schedule_modal table .urppp-wrs-head,
       #work_rest_schedule_modal table thead th {
@@ -4627,7 +4634,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.11');
+    console.log('[URP++] style applied v0.4.12');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5245,7 +5252,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.11',
+    version: '0.4.12',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
