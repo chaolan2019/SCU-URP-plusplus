@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.16
+// @version      0.3.17
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -639,6 +639,38 @@
       ul.appendChild(li);
     });
   }
+  // 学籍/资料页：把「基本信息」这类标题从侧栏列提升到整行，与全宽内容左缘对齐
+  function hoistProfileSectionHeaders() {
+    const page = document.querySelector('.page-content') || document.getElementById('page-content-template');
+    if (!page) return;
+    page.querySelectorAll('h4.header, h3.header, h5.header, .header.smaller').forEach((header) => {
+      if (header.dataset.urpppHoisted === '1') return;
+      const col = header.closest('[class*="col-"]');
+      if (!col) return;
+      // 已在全宽列则跳过
+      if (/\bcol-(?:xs|sm|md|lg|xl)-12\b/.test(col.className) && !col.parentElement?.closest('[class*="col-"]:not([class*="-12"])')) {
+        return;
+      }
+      const row = col.parentElement;
+      if (!row || !row.classList.contains('row')) return;
+      // 同一行存在头像/图片列时才提升
+      const hasPhoto = !!row.querySelector('img, .profile-picture, .thumbnail');
+      if (!hasPhoto) return;
+      // 若标题不在该行第一个全宽位置，提到 row 之前并包一层全宽
+      if (header.parentElement !== row && header.previousElementSibling !== row) {
+        const wrap = document.createElement('div');
+        wrap.className = 'urppp-section-title-wrap';
+        wrap.style.cssText = 'width:100%;box-sizing:border-box;margin:0 0 12px;';
+        row.parentElement.insertBefore(wrap, row);
+        wrap.appendChild(header);
+        header.dataset.urpppHoisted = '1';
+        header.style.setProperty('width', '100%', 'important');
+        header.style.setProperty('max-width', '100%', 'important');
+        header.style.setProperty('margin-left', '0', 'important');
+        header.style.setProperty('margin-right', '0', 'important');
+      }
+    });
+  }
   // 表格外框 wrapper：圆角 + 完整四边线
   function wrapTables() {
     document.querySelectorAll('table.table, table.table-bordered, table.dataTable').forEach((table) => {
@@ -1219,6 +1251,22 @@
         padding-left: 0 !important;
         padding-right: 0 !important;
       }
+      /* 嵌套列保留轻 gutter，避免贴死；全宽列仍贴齐内容边缘 */
+      .page-content .row .row {
+        margin-left: -8px !important;
+        margin-right: -8px !important;
+      }
+      .page-content .row .row > [class*="col-"] {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+      }
+      .page-content .row .row > [class*="col-xs-12"],
+      .page-content .row .row > [class*="col-sm-12"],
+      .page-content .row .row > [class*="col-md-12"],
+      .page-content .row .row > [class*="col-lg-12"] {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
       .main-content .page-content .tabbable {
         margin-left: 0 !important;
         margin-right: 0 !important;
@@ -1436,6 +1484,37 @@
         padding: 12px 14px !important;
         flex: 1 !important;
         background: var(--surface) !important;
+      }
+      /* 学籍/个人头像圆角 */
+      .profile-picture,
+      .profile-picture img,
+      img.editable.img-responsive,
+      .page-content img.img-responsive,
+      .page-content .center img,
+      .page-content img[src*="photo" i],
+      .page-content img[src*="Photo"],
+      .page-content img[src*="avatar" i],
+      .page-content img[id*="avatar" i],
+      .page-content img[id*="photo" i],
+      .thumbnail > img,
+      .thumbnail a > img {
+        border-radius: 14px !important;
+        overflow: hidden !important;
+      }
+      .profile-picture {
+        display: inline-block !important;
+        border-radius: 14px !important;
+        overflow: hidden !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06) !important;
+        line-height: 0 !important;
+        background: var(--surface) !important;
+      }
+      .profile-picture img {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        border-radius: 14px !important;
       }
       /* 学籍页常见布局：列间距与对齐 */
       .page-content .row + .row { margin-top: 8px !important; }
@@ -1961,7 +2040,9 @@
       el.style.setProperty('padding', '16px 64px 40px', 'important');
       el.style.setProperty('box-sizing', 'border-box', 'important');
     });
+    hoistProfileSectionHeaders();
     beautifyBreadcrumbs();
+    setTimeout(hoistProfileSectionHeaders, 300);
     setTimeout(beautifyBreadcrumbs, 200);
     setTimeout(beautifyBreadcrumbs, 600);
     setTimeout(beautifyBreadcrumbs, 1500);
@@ -1973,7 +2054,7 @@
 
     setTimeout(() => document.body.classList.add('urppp-ready'), 600);
 
-    console.log('[URP++] style applied v0.3.16');
+    console.log('[URP++] style applied v0.3.17');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -2569,6 +2650,7 @@
           el.style.setProperty('padding', '16px 64px 40px', 'important');
           el.style.setProperty('box-sizing', 'border-box', 'important');
         });
+        hoistProfileSectionHeaders();
         beautifyBreadcrumbs();
       }, 100);
     };
@@ -2583,7 +2665,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.16',
+    version: '0.3.17',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
