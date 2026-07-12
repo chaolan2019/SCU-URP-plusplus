@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.0
+// @version      0.4.1
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.0';
+          content:'URP++ v0.4.1';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1075,21 +1075,40 @@
       wrap.remove();
     });
   }
-  // 作息时间表弹窗：给单元格打语义 class，方便样式
+  // 作息时间表弹窗：隔离全局表格样式 + 语义 class
   function beautifyWorkRestSchedule() {
     try {
       const modal = document.getElementById('work_rest_schedule_modal');
       if (!modal) return;
-      // 保险：显示态不要被盖掉
       if (modal.classList.contains('in') || modal.classList.contains('show')) {
         modal.style.setProperty('display', 'block', 'important');
       }
       const table = modal.querySelector('table');
       if (!table) return;
+
+      // 若被全局 wrapTables 误包，拆掉
+      const wrap = table.closest('.urppp-table-wrap');
+      if (wrap && wrap !== table.parentElement?.closest?.('.modal-body')) {
+        // 只拆 modal 内的 wrapper
+      }
+      if (wrap && modal.contains(wrap) && wrap.parentElement) {
+        wrap.parentElement.insertBefore(table, wrap);
+        wrap.remove();
+      }
+
       table.classList.add('urppp-wrs-table');
+      // 去掉可能被全局改乱的 inline border
+      table.style.removeProperty('border');
+      table.style.removeProperty('border-collapse');
       table.querySelectorAll('td, th').forEach((cell) => {
+        cell.style.removeProperty('border');
+        cell.style.removeProperty('border-top');
+        cell.style.removeProperty('border-right');
+        cell.style.removeProperty('border-bottom');
+        cell.style.removeProperty('border-left');
         const t = (cell.textContent || '').replace(/\s+/g, ' ').trim();
         if (!t) return;
+        cell.classList.remove('urppp-wrs-time', 'urppp-wrs-period');
         if (/\d{1,2}:\d{2}.+\d{1,2}:\d{2}/.test(t)) cell.classList.add('urppp-wrs-time');
         else if (/^(上午|下午|晚上|中午)$/.test(t)) cell.classList.add('urppp-wrs-period');
       });
@@ -1586,7 +1605,8 @@
     document.querySelectorAll('table.table, table.table-bordered, table.dataTable').forEach((table) => {
       if (!table || table.closest('.urppp-table-wrap')) return;
       if (table.id === 'courseTable') return;
-      if (table.closest('.modal, .modal-dialog, .modal-content, .modal-body')) return;
+      if (table.closest('.modal, .modal-dialog, .modal-content, .modal-body, #work_rest_schedule_modal')) return;
+      if (table.classList.contains('urppp-wrs-table')) return;
       const parent = table.parentElement;
       if (!parent) return;
       const parentOverflow = (parent.style && parent.style.overflow) || getComputedStyle(parent).overflow;
@@ -3406,7 +3426,11 @@
         background: var(--surface) !important;
         margin: 0 0 8px !important;
       }
-      .table, .table-bordered, .table-striped, .table-hover, .dataTable {
+      .table:not(.urppp-wrs-table),
+      .table-bordered:not(.urppp-wrs-table),
+      .table-striped:not(.urppp-wrs-table),
+      .table-hover:not(.urppp-wrs-table),
+      .dataTable {
         background: var(--surface) !important;
         border: none !important;
         border-radius: 0 !important;
@@ -3416,11 +3440,19 @@
         margin-bottom: 0 !important;
         width: 100% !important;
       }
-      /* 只画 right/bottom，top/left 由 wrapper 提供，避免与 Bootstrap thead border-top:0 冲突 */
-      .table > thead > tr > th, .table-bordered > thead > tr > th, .dataTable > thead > tr > th,
-      .table > tbody > tr > th, .table > tbody > tr > td,
-      .table-bordered > tbody > tr > td, .dataTable > tbody > tr > td,
-      .table > tfoot > tr > th, .table > tfoot > tr > td {
+      /* 只画 right/bottom，top/left 由 wrapper 提供；弹窗作息表排除 */
+      body:not(:has(#work_rest_schedule_modal)) .table > thead > tr > th,
+      .page-content .table > thead > tr > th, .page-content .table-bordered > thead > tr > th, .dataTable > thead > tr > th,
+      .page-content .table > tbody > tr > th, .page-content .table > tbody > tr > td,
+      .page-content .table-bordered > tbody > tr > td, .dataTable > tbody > tr > td,
+      .page-content .table > tfoot > tr > th, .page-content .table > tfoot > tr > td,
+      .urppp-table-wrap .table > thead > tr > th, .urppp-table-wrap .table-bordered > thead > tr > th,
+      .urppp-table-wrap .table > tbody > tr > th, .urppp-table-wrap .table > tbody > tr > td,
+      .urppp-table-wrap .table-bordered > tbody > tr > td,
+      .table:not(.urppp-wrs-table) > thead > tr > th, .table-bordered:not(.urppp-wrs-table) > thead > tr > th, .dataTable > thead > tr > th,
+      .table:not(.urppp-wrs-table) > tbody > tr > th, .table:not(.urppp-wrs-table) > tbody > tr > td,
+      .table-bordered:not(.urppp-wrs-table) > tbody > tr > td, .dataTable > tbody > tr > td,
+      .table:not(.urppp-wrs-table) > tfoot > tr > th, .table:not(.urppp-wrs-table) > tfoot > tr > td {
         border: none !important;
         border-right: 1px solid var(--border) !important;
         border-bottom: 1px solid var(--border) !important;
@@ -4064,85 +4096,127 @@
         opacity: 0.45 !important;
       }
 
-      /* 作息时间表弹窗：轻量美化，不改 Bootstrap 显示机制 */
+      /* 作息时间表：完整隔离全局 .table 规则，避免边框错位/双线 */
       #work_rest_schedule_modal.modal.fade.in,
       #work_rest_schedule_modal.modal.in {
         display: block !important;
       }
       #work_rest_schedule_modal .modal-dialog {
-        width: 720px !important;
-        max-width: 92vw !important;
+        width: 760px !important;
+        max-width: 94vw !important;
         margin: 40px auto !important;
       }
       #work_rest_schedule_modal .modal-content {
-        border-radius: 16px !important;
+        border-radius: 14px !important;
         border: 1px solid var(--border) !important;
         box-shadow: 0 16px 48px rgba(0,0,0,0.16) !important;
         background: var(--surface) !important;
+        overflow: hidden !important;
       }
       #work_rest_schedule_modal .modal-header {
-        background: var(--input-bg) !important;
+        background: var(--surface) !important;
         border-bottom: 1px solid var(--border) !important;
-        padding: 16px 20px !important;
+        padding: 14px 18px !important;
+        display: flex !important;
+        align-items: center !important;
       }
       #work_rest_schedule_modal .modal-title {
         font-size: 16px !important;
         font-weight: 600 !important;
         color: var(--text) !important;
+        line-height: 1.3 !important;
+        margin: 0 !important;
+      }
+      #work_rest_schedule_modal .modal-header .close {
+        margin: 0 0 0 auto !important;
+        opacity: 0.7 !important;
       }
       #work_rest_schedule_modal .modal-body {
-        padding: 16px 20px 20px !important;
+        padding: 14px 16px 16px !important;
         background: var(--surface) !important;
       }
-      #work_rest_schedule_modal table {
+      /* 不用 wrapper 圆角策略；用 collapse 全边框，rowspan 最稳 */
+      #work_rest_schedule_modal table,
+      #work_rest_schedule_modal table.table,
+      #work_rest_schedule_modal table.table-bordered,
+      #work_rest_schedule_modal .urppp-wrs-table {
         width: 100% !important;
         margin: 0 !important;
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
-        border-radius: 12px !important;
-        border-collapse: separate !important;
+        border-radius: 10px !important;
+        border-collapse: collapse !important;
         border-spacing: 0 !important;
+        box-shadow: none !important;
         overflow: hidden !important;
+        table-layout: fixed !important;
       }
+      /* 彻底覆盖全局 .table 只画 right/bottom 的规则 */
       #work_rest_schedule_modal table th,
-      #work_rest_schedule_modal table td {
-        border-color: var(--border) !important;
-        border-style: solid !important;
-        border-width: 0 1px 1px 0 !important;
-        padding: 10px 12px !important;
+      #work_rest_schedule_modal table td,
+      #work_rest_schedule_modal table.table > thead > tr > th,
+      #work_rest_schedule_modal table.table > tbody > tr > th,
+      #work_rest_schedule_modal table.table > tbody > tr > td,
+      #work_rest_schedule_modal table.table-bordered > thead > tr > th,
+      #work_rest_schedule_modal table.table-bordered > tbody > tr > td {
+        border: 1px solid var(--border) !important;
+        border-top: 1px solid var(--border) !important;
+        border-right: 1px solid var(--border) !important;
+        border-bottom: 1px solid var(--border) !important;
+        border-left: 1px solid var(--border) !important;
+        padding: 9px 10px !important;
         font-size: 13px !important;
+        line-height: 1.35 !important;
         color: var(--text) !important;
         text-align: center !important;
         vertical-align: middle !important;
         background: var(--surface) !important;
+        white-space: normal !important;
+        word-break: keep-all !important;
+        box-sizing: border-box !important;
       }
-      #work_rest_schedule_modal table tr > *:last-child {
-        border-right-width: 0 !important;
-      }
-      #work_rest_schedule_modal table tr:last-child > * {
-        border-bottom-width: 0 !important;
-      }
+      /* 表头 */
       #work_rest_schedule_modal table thead th,
       #work_rest_schedule_modal table tr:first-child th,
-      #work_rest_schedule_modal table tr:first-child td {
+      #work_rest_schedule_modal table tr:first-child td,
+      #work_rest_schedule_modal table.table > thead > tr > th {
         background: var(--input-bg) !important;
-        color: var(--text-secondary) !important;
+        color: var(--text) !important;
         font-weight: 600 !important;
       }
+      /* 时段列（上午/下午/晚上） */
       #work_rest_schedule_modal table td[rowspan],
-      #work_rest_schedule_modal table th[rowspan] {
-        background: var(--input-bg) !important;
-        color: var(--primary) !important;
-        font-weight: 600 !important;
-      }
+      #work_rest_schedule_modal table th[rowspan],
       #work_rest_schedule_modal table .urppp-wrs-period {
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
         font-weight: 600 !important;
-        color: var(--text-secondary) !important;
+        vertical-align: middle !important;
       }
+      /* 时间列等宽数字 */
       #work_rest_schedule_modal table .urppp-wrs-time {
         font-variant-numeric: tabular-nums !important;
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
         font-size: 12.5px !important;
+        color: var(--text) !important;
+        white-space: nowrap !important;
+      }
+      /* 学年标题行 */
+      #work_rest_schedule_modal table caption,
+      #work_rest_schedule_modal .modal-body > h4,
+      #work_rest_schedule_modal .modal-body > .center,
+      #work_rest_schedule_modal .modal-body > p,
+      #work_rest_schedule_modal .modal-body > div:first-child {
+        text-align: center !important;
+        color: var(--text) !important;
+      }
+      /* 取消全局 last-child 去边框，避免缺口 */
+      #work_rest_schedule_modal table tr > *:last-child,
+      #work_rest_schedule_modal table tr:last-child > *,
+      #work_rest_schedule_modal table.table > tbody > tr > td:last-child,
+      #work_rest_schedule_modal table.table > tbody > tr:last-child > td {
+        border-right: 1px solid var(--border) !important;
+        border-bottom: 1px solid var(--border) !important;
       }
       /* 时间轴 */
       .timeline-container { background: var(--surface) !important; border-color: var(--border) !important; }
@@ -4483,7 +4557,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.0');
+    console.log('[URP++] style applied v0.4.1');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5101,7 +5175,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.0',
+    version: '0.4.1',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
