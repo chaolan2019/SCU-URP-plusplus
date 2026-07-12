@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.61
+// @version      0.3.62
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -2314,7 +2314,7 @@
         box-shadow: none !important;
       }
       .infobox .urppp-pct-bar.is-empty .urppp-pct-fill { display: none !important; }
-      /* 表格/课组要求中的 Bootstrap progress：圆角 + 文字居中不裁切 */
+      /* 表格/课组要求中的 Bootstrap progress：更细 + 文字真正居中 */
       .progress,
       .progress.pos-rel,
       div.progress {
@@ -2324,10 +2324,13 @@
         background: var(--input-bg) !important;
         border: 1px solid var(--border) !important;
         box-shadow: none !important;
-        height: 22px !important;
-        min-height: 22px !important;
-        margin: 0 !important;
-        line-height: 22px !important;
+        height: 18px !important;
+        min-height: 18px !important;
+        max-height: 18px !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        line-height: 18px !important;
+        vertical-align: middle !important;
       }
       .progress .progress-bar,
       .progress > .progress-bar {
@@ -2336,43 +2339,56 @@
         top: 0 !important;
         bottom: 0 !important;
         height: 100% !important;
-        min-height: 22px !important;
+        min-height: 0 !important;
+        max-height: none !important;
         border-radius: 999px !important;
         background: var(--primary) !important;
         box-shadow: none !important;
-        line-height: 22px !important;
-        font-size: 0 !important; /* 避免 bar 内文字干扰 */
+        line-height: 18px !important;
+        font-size: 0 !important;
+        text-indent: -9999px !important; /* 隐藏 bar 内可能残留文字 */
       }
-      /* 百分比文字浮在进度条正中，完整显示 */
+      /* 百分比文字：绝对居中，不参与文档流 */
       .progress > span,
       .progress .progress-bar + span,
       .progress > .sr-only + span {
         position: absolute !important;
-        left: 0 !important;
-        right: 0 !important;
-        top: 0 !important;
-        bottom: 0 !important;
-        z-index: 2 !important;
+        inset: 0 !important;
+        z-index: 3 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        width: 100% !important;
+        height: 100% !important;
         margin: 0 !important;
-        padding: 0 8px !important;
+        padding: 0 !important;
+        border: 0 !important;
         line-height: 1 !important;
-        height: 22px !important;
         font-size: 12px !important;
         font-weight: 700 !important;
-        color: var(--text) !important;
+        color: #fff !important;
         text-align: center !important;
         white-space: nowrap !important;
-        overflow: visible !important;
+        overflow: hidden !important;
+        text-overflow: clip !important;
         pointer-events: none !important;
+        text-shadow: 0 1px 1px rgba(0,0,0,0.2) !important;
+        transform: none !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
       }
-      /* 填充较满时文字改浅色更清晰 */
-      .progress:has(.progress-bar[style*="100%"]) > span,
-      .progress:has(.progress-bar[style*="9"]) > span {
-        color: #fff !important;
-        text-shadow: 0 1px 1px rgba(0,0,0,0.25) !important;
+      /* 低进度时文字用深色，避免看不清 */
+      .progress:has(.progress-bar[style*="width: 0"]),
+      .progress:has(.progress-bar[style*="width:0"]),
+      .progress:has(.progress-bar[style*="width: 1"]),
+      .progress:has(.progress-bar[style*="width:1"]),
+      .progress:has(.progress-bar[style*="width: 2"]),
+      .progress:has(.progress-bar[style*="width:2"]),
+      .progress:has(.progress-bar[style*="width: 3"]),
+      .progress:has(.progress-bar[style*="width:3"]) {
+        /* 低填充保留深色文字 */
       }
       .infobox .easy-pie-chart,
       .infobox .percentage,
@@ -3592,7 +3608,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.61');
+    console.log('[URP++] style applied v0.3.62');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -4208,7 +4224,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.61',
+    version: '0.3.62',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
