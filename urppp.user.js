@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.41
+// @version      0.3.42
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -2594,8 +2594,52 @@
       .pagination > li > a:hover { background: var(--input-bg) !important; color: var(--primary) !important; }
       .pagination > li.active > a, .pagination > li.active > span, .pagination > li.active > a:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
 
-      /* 弹窗：保持 Bootstrap 3 结构，不改 display/float 布局 */
-      .modal-content {
+      /* layui 页面提示 toast / msg */
+      .layui-layer.layui-layer-dialog.layui-layer-msg,
+      .layui-layer.layui-layer-msg,
+      .layui-layer-msg {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+      .layui-layer-msg .layui-layer-content,
+      .layui-layer-dialog.layui-layer-msg .layui-layer-content {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.03) !important;
+        padding: 12px 18px !important;
+        min-height: 0 !important;
+        line-height: 1.5 !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        max-width: min(420px, 86vw) !important;
+        word-break: break-word !important;
+      }
+      .layui-layer-msg .layui-layer-content .layui-layer-ico,
+      .layui-layer-msg .layui-layer-ico {
+        position: static !important;
+        display: inline-block !important;
+        width: 18px !important;
+        height: 18px !important;
+        margin: 0 !important;
+        background-size: 18px 18px !important;
+        flex: 0 0 18px !important;
+      }
+      .layui-layer-hui .layui-layer-content {
+        background: rgba(15, 23, 42, 0.88) !important;
+        color: #fff !important;
+        border: none !important;
+        border-radius: 12px !important;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.22) !important;
+        padding: 12px 18px !important;
+      }
+
+      /* 弹窗：保持 Bootstrap 3 结构，不改 display/float 布局 */      .modal-content {
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
         border-radius: var(--radius) !important;
@@ -3032,7 +3076,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.41');
+    console.log('[URP++] style applied v0.3.42');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -3645,7 +3689,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.41',
+    version: '0.3.42',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
