@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.50
+// @version      0.3.51
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -1902,18 +1902,43 @@
         content: none !important;
         display: none !important;
       }
+      /* 旧 header 图标隐藏；widget-title 保留并做成主题小标 */
       h4.header > .glyphicon,
       h4.header > .fa,
       h4.header > .ace-icon,
       h3.header > .glyphicon,
       h3.header > .fa,
       .header.smaller > .glyphicon,
-      .header.smaller > .fa,
+      .header.smaller > .fa {
+        display: none !important;
+      }
       h4.widget-title > .glyphicon,
       h4.widget-title > .fa,
+      h4.widget-title > .ace-icon,
       .widget-title > .glyphicon,
-      .widget-title > .fa {
-        display: none !important;
+      .widget-title > .fa,
+      .widget-title > .ace-icon {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 28px !important;
+        height: 28px !important;
+        margin: 0 !important;
+        border-radius: 8px !important;
+        background: var(--input-bg) !important;
+        color: var(--primary) !important;
+        font-size: 14px !important;
+        line-height: 1 !important;
+        flex: 0 0 28px !important;
+      }
+      /* widget-title 内嵌 img 图标也保留 */
+      h4.widget-title > img,
+      .widget-title > img {
+        display: inline-block !important;
+        width: 18px !important;
+        height: 18px !important;
+        margin: 0 !important;
+        vertical-align: middle !important;
       }
       h4.header .right_top_oper,
       .header .right_top_oper {
@@ -2011,7 +2036,7 @@
         margin-bottom: 18px !important;
         box-shadow: none !important;
       }
-      /* 统计卡片 infobox：统一表面色，保证文字可读与网格对齐 */
+      /* 统计卡片 infobox：统一表面色与可读性；仅容器内才做网格 */
       .infobox-container {
         display: flex !important;
         flex-wrap: wrap !important;
@@ -2027,25 +2052,33 @@
         box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
         padding: 14px 16px !important;
         min-width: 0 !important;
-        width: calc(25% - 9px) !important;
+        width: auto !important;
         max-width: 100% !important;
         height: auto !important;
-        min-height: 92px !important;
-        margin: 0 !important;
-        float: none !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
+        min-height: 0 !important;
+        margin: 0 12px 12px 0 !important;
+        float: left !important;
+        display: block !important;
         box-sizing: border-box !important;
         color: var(--text) !important;
         position: relative !important;
         overflow: hidden !important;
       }
+      /* 只有明确的容器网格才强制 4 列，避免挤爆嵌套布局 */
+      .infobox-container > .infobox {
+        float: none !important;
+        margin: 0 !important;
+        width: calc(25% - 9px) !important;
+        min-height: 92px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+      }
       @media (max-width: 1200px) {
-        .infobox { width: calc(50% - 6px) !important; }
+        .infobox-container > .infobox { width: calc(50% - 6px) !important; }
       }
       @media (max-width: 640px) {
-        .infobox { width: 100% !important; }
+        .infobox-container > .infobox { width: 100% !important; }
       }
       /* 去掉 ACE 彩色底/渐变，避免白字/深色字不可读 */
       .infobox.infobox-dark,
@@ -2067,7 +2100,11 @@
         content: none !important;
         background: none !important;
       }
+      /* ACE 左侧色条图标区：改为小色点，避免占宽导致竖排 */
       .infobox > .infobox-icon {
+        display: none !important;
+      }
+      .infobox-container > .infobox > .infobox-icon {
         display: none !important;
       }
       .infobox > .infobox-data {
@@ -2124,7 +2161,21 @@
         color: var(--text-secondary) !important;
         font-size: 12px !important;
       }
-
+      .infobox-container::after,
+      .page-content .infobox:last-of-type::after {
+        content: '' !important;
+        display: table !important;
+        clear: both !important;
+      }
+      /* 课组要求等表格恢复正常横向表格布局 */
+      .page-content .profile-user-info,
+      .page-content .profile-user-info-striped {
+        display: block !important;
+        width: 100% !important;
+      }
+      .page-content .profile-info-row {
+        flex-direction: row !important;
+      }
       /* 个人信息 / 学籍信息 */
       .profile-user-info,
       .profile-user-info-striped {
@@ -3297,7 +3348,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.50');
+    console.log('[URP++] style applied v0.3.51');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -3910,7 +3961,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.50',
+    version: '0.3.51',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
