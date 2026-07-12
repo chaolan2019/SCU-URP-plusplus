@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.32
+// @version      0.3.33
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -16,12 +16,85 @@
 (function () {
   'use strict';
 
-  // 最早阶段注入：先隐藏原 UI，重构完再淡入
+  // 最早阶段注入：SVG loading 覆盖层，重构完再淡出
   GM_addStyle(`
     html, body { background: #F4F6F9 !important; color: #0F172A !important; }
-    body { opacity: 0 !important; transition: opacity .25s ease; }
     body.urppp-ready { opacity: 1 !important; }
+    #urppp-boot-loader {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 2147483646 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      flex-direction: column !important;
+      gap: 14px !important;
+      background: #F4F6F9 !important;
+      color: #0F172A !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif !important;
+      transition: opacity .28s ease, visibility .28s ease !important;
+    }
+    #urppp-boot-loader.urppp-boot-hide {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+    #urppp-boot-loader .urppp-boot-text {
+      font-size: 13px !important;
+      color: #64748B !important;
+      letter-spacing: 0.4px !important;
+    }
+    #urppp-boot-loader svg { width: 56px; height: 56px; display: block; }
+    #urppp-boot-loader .urppp-ring {
+      fill: none;
+      stroke: #CBD5E1;
+      stroke-width: 3.5;
+    }
+    #urppp-boot-loader .urppp-arc {
+      fill: none;
+      stroke: #1E3A5F;
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      stroke-dasharray: 70 120;
+      transform-origin: 28px 28px;
+      animation: urppp-spin 0.9s linear infinite;
+    }
+    @keyframes urppp-spin {
+      to { transform: rotate(360deg); }
+    }
+    /* 隐藏站点原生 loading 图 */
+    img[src*="pageloading"], .view-pre-loading, .pageloading {
+      display: none !important;
+    }
   `);
+
+  function ensureBootLoader() {
+    if (document.getElementById('urppp-boot-loader')) return;
+    const mount = () => {
+      if (document.getElementById('urppp-boot-loader')) return;
+      const host = document.documentElement || document.body;
+      if (!host) return;
+      const el = document.createElement('div');
+      el.id = 'urppp-boot-loader';
+      el.innerHTML = `
+        <svg viewBox="0 0 56 56" aria-hidden="true">
+          <circle class="urppp-ring" cx="28" cy="28" r="18"></circle>
+          <circle class="urppp-arc" cx="28" cy="28" r="18"></circle>
+        </svg>
+        <div class="urppp-boot-text">URP++ 加载中</div>
+      `;
+      host.appendChild(el);
+    };
+    if (document.body) mount();
+    else document.addEventListener('DOMContentLoaded', mount, { once: true });
+  }
+  function hideBootLoader() {
+    const el = document.getElementById('urppp-boot-loader');
+    if (!el) return;
+    el.classList.add('urppp-boot-hide');
+    setTimeout(() => { try { el.remove(); } catch (_) {} }, 320);
+  }
+  ensureBootLoader();
 
   const THEME_KEY = 'urppp_theme_v3';
   const ACCENT_KEY = 'urppp_accent_v1';
@@ -465,7 +538,7 @@
     });
 
     console.log('[URP++] 登录界面已重建');
-    setTimeout(() => document.body.classList.add('urppp-ready'), 100);
+    setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 100);
   }
 
   // ============================================================
@@ -1956,6 +2029,96 @@
       .chosen-results li.highlighted { background: var(--primary) !important; color: #fff !important; }
       label { color: var(--text-secondary) !important; font-weight: 500 !important; font-size: 13px !important; }
 
+      /* 查询表单：标签与输入框垂直居中对齐 */
+      .form-horizontal .form-group,
+      .form-group {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        margin-bottom: 12px !important;
+      }
+      .form-horizontal .control-label,
+      .form-group > label,
+      .form-group .control-label,
+      label.control-label {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        float: none !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        line-height: 1.3 !important;
+        margin: 0 !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        padding-right: 10px !important;
+        color: var(--text-secondary) !important;
+        font-weight: 500 !important;
+        white-space: nowrap !important;
+        box-sizing: border-box !important;
+      }
+      .form-horizontal .controls,
+      .form-group .controls,
+      .form-group > div[class*="col-"] {
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        float: none !important;
+        min-height: 32px !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        box-sizing: border-box !important;
+      }
+      /* 常见：标签在左输入在右的 col 布局 */
+      .form-group > [class*="col-"]:first-child:has(label),
+      .form-horizontal [class*="col-sm-"]:has(> label),
+      .form-horizontal [class*="col-md-"]:has(> label),
+      .form-horizontal [class*="col-xs-"]:has(> label) {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        min-height: 32px !important;
+      }
+      .form-group input,
+      .form-group select,
+      .form-group textarea,
+      .form-group .form-control,
+      .form-group .chosen-container,
+      .form-horizontal input,
+      .form-horizontal select,
+      .form-horizontal .form-control,
+      .form-horizontal .chosen-container {
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        vertical-align: middle !important;
+      }
+      .form-group .chosen-container,
+      .form-horizontal .chosen-container {
+        display: inline-block !important;
+      }
+      /* 查询条件区多列标签对齐 */
+      .widget-body .form-group,
+      .widget .form-group,
+      #left_layout .form-group,
+      .self-margin .form-group {
+        align-items: center !important;
+      }
+      /* 行内 label + input（非 bootstrap form-group） */
+      .page-content form label + input,
+      .page-content form label + select,
+      .page-content form label + .form-control,
+      .page-content form label + .chosen-container {
+        margin-left: 6px !important;
+        vertical-align: middle !important;
+      }
+      .page-content form label {
+        vertical-align: middle !important;
+        line-height: 32px !important;
+      }
+
       /* Alert 关闭叉：垂直居中对齐 */
       .alert {
         position: relative !important;
@@ -2608,9 +2771,9 @@
     patchSchoolCalendarLink();
     window.addEventListener('load', () => { rebuildNavbar(); patchSchoolCalendarLink(); });
 
-    setTimeout(() => document.body.classList.add('urppp-ready'), 600);
+    setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.32');
+    console.log('[URP++] style applied v0.3.33');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -3223,7 +3386,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.32',
+    version: '0.3.33',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
