@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.38
+// @version      0.3.39
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -115,8 +115,14 @@
       height: 0 !important;
       opacity: 0 !important;
     }
+    /* 默认不画转圈；仅在有 urppp-loading-active 时显示，避免遮罩忘了 hide 时残留 */
     [id^="div_page_loading"]::before,
     [id*="page_loading"]::before {
+      content: none !important;
+      display: none !important;
+    }
+    [id^="div_page_loading"].urppp-loading-active::before,
+    [id*="page_loading"].urppp-loading-active::before {
       content: '' !important;
       display: inline-block !important;
       width: 36px !important;
@@ -246,14 +252,94 @@
   function cleanupPageLoadingOverlays(scope) {
     const root = scope && scope.querySelectorAll ? scope : document;
     root.querySelectorAll('[id^="div_page_loading"], [id*="page_loading"]').forEach((el) => {
-      // 只移除我们误注入的 SVG，绝不改 display（显隐交给站点）
+      // 清误注入
       el.querySelectorAll('.urppp-inline-loader').forEach((n) => n.remove());
-      // 清掉我们曾写过的 display !important，让站点自己的 none/block 生效
       if (el.style && el.style.getPropertyPriority('display') === 'important') {
         el.style.removeProperty('display');
       }
+
+      // 判断附近表格是否已有数据行：有则强制隐藏卡住的遮罩
+      let host = el.parentElement;
+      let table = null;
+      for (let i = 0; i < 5 && host; i++) {
+        table = host.querySelector && host.querySelector('table tbody tr, table.table tbody tr, .dataTable tbody tr');
+        if (table) break;
+        host = host.parentElement;
+      }
+      // 也看全局表格：遮罩 id 常跟分页条在一起
+      if (!table) {
+        table = document.querySelector('.page-content table tbody tr, #page-content-template table tbody tr');
+      }
+      const hasDataRow = !!table;
+      const cs = window.getComputedStyle(el);
+      const visible = cs.display !== 'none' && cs.visibility !== 'hidden' && cs.opacity !== '0';
+
+      if (hasDataRow) {
+        // 数据已到：遮罩必须消失
+        el.classList.remove('urppp-loading-active');
+        el.style.display = 'none';
+      } else if (visible) {
+        // 尚无数据且遮罩可见：标记为加载中，显示 CSS 转圈
+        el.classList.add('urppp-loading-active');
+      } else {
+        el.classList.remove('urppp-loading-active');
+      }
     });
   }
+
+  // 拦截 jQuery show/hide 或 style 变更：分页加载时重新点亮/熄灭转圈
+  function bindPageLoadingWatch() {
+    if (window.__urpppPageLoadWatch) return;
+    window.__urpppPageLoadWatch = true;
+    const mark = (el, on) => {
+      if (!el || !el.id || !/page_loading/i.test(el.id)) return;
+      if (on) el.classList.add('urppp-loading-active');
+      else {
+        el.classList.remove('urppp-loading-active');
+        // 数据到位后兜底隐藏
+        setTimeout(() => cleanupPageLoadingOverlays(document), 50);
+      }
+    };
+    // 监听 style/class 变化
+    const obs = new MutationObserver((muts) => {
+      muts.forEach((m) => {
+        const el = m.target;
+        if (!el || !el.id || !/page_loading/i.test(el.id)) return;
+        const cs = window.getComputedStyle(el);
+        const visible = cs.display !== 'none' && cs.visibility !== 'hidden';
+        if (visible) {
+          el.classList.add('urppp-loading-active');
+          // 超时兜底：最长 8s 必关，防止永久残留
+          clearTimeout(el.__urpppLoadTimer);
+          el.__urpppLoadTimer = setTimeout(() => {
+            el.classList.remove('urppp-loading-active');
+            el.style.display = 'none';
+          }, 8000);
+        } else {
+          el.classList.remove('urppp-loading-active');
+          clearTimeout(el.__urpppLoadTimer);
+        }
+      });
+    });
+    const start = () => {
+      document.querySelectorAll('[id^="div_page_loading"], [id*="page_loading"]').forEach((el) => {
+        obs.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
+      });
+      // 新插入的遮罩
+      const bodyObs = new MutationObserver(() => {
+        document.querySelectorAll('[id^="div_page_loading"], [id*="page_loading"]').forEach((el) => {
+          if (el.dataset.urpppWatched === '1') return;
+          el.dataset.urpppWatched = '1';
+          obs.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
+        });
+        cleanupPageLoadingOverlays(document);
+      });
+      bodyObs.observe(document.documentElement, { childList: true, subtree: true });
+    };
+    if (document.body) start();
+    else document.addEventListener('DOMContentLoaded', start, { once: true });
+  }
+  bindPageLoadingWatch();
 
   function replaceNativeLoaders(root) {
     const scope = root && root.querySelectorAll ? root : document;
@@ -3048,7 +3134,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); cleanupPageLoadingOverlays(document); }, 600);
 
-    console.log('[URP++] style applied v0.3.38');
+    console.log('[URP++] style applied v0.3.39');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -3661,7 +3747,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.38',
+    version: '0.3.39',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
