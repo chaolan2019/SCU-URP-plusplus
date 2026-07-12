@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.79
+// @version      0.3.80
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -2828,7 +2828,7 @@
       #treeDemo.ztree > li {
         display: block !important;
         margin: 0 0 8px 0 !important;
-        padding: 4px 8px 3px !important;
+        padding: 3px 8px 2px !important;
         border: 1px solid var(--border) !important;
         border-radius: 10px !important;
         background: var(--surface) !important;
@@ -2862,7 +2862,7 @@
       .ztree.urppp-ztree > li > ul,
       #treeDemo.ztree > li > ul {
         margin: 0 !important;
-        padding: 1px 0 0 6px !important;
+        padding: 0 0 0 6px !important;
         border-left: none !important;
         border-top: 1px solid var(--border) !important;
       }
@@ -2870,17 +2870,17 @@
       #treeDemo.ztree > li > a {
         margin: 0 !important;
         padding: 0 4px !important;
-        line-height: 1.25 !important;
+        line-height: 1.2 !important;
       }
       .ztree.urppp-ztree > li > a .urppp-sub,
       #treeDemo.ztree > li > a .urppp-sub {
         margin: 0 !important;
         padding: 0 !important;
-        line-height: 1.15 !important;
+        line-height: 1.1 !important;
       }
       .ztree.urppp-ztree > li > span.button.switch,
       #treeDemo.ztree > li > span.button.switch {
-        margin-top: 2px !important;
+        margin-top: 1px !important;
         margin-bottom: 0 !important;
       }
       /* 展开钮：与首行文字垂直居中对齐 */
@@ -2910,7 +2910,7 @@
         min-width: 0 !important;
         height: auto !important;
         min-height: 0 !important;
-        padding: 1px 5px !important;
+        padding: 0 5px !important;
         margin: 0 !important;
         border: none !important;
         border-radius: 8px !important;
@@ -4407,7 +4407,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.79');
+    console.log('[URP++] style applied v0.3.80');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5025,7 +5025,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.79',
+    version: '0.3.80',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
