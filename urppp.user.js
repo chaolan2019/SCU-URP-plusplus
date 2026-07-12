@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.9
+// @version      0.4.10
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.9';
+          content:'URP++ v0.4.10';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1075,7 +1075,7 @@
       wrap.remove();
     });
   }
-  // 作息时间表：轻量美化（不改结构/不改数据，只保证干净居中）
+  // 作息时间表：轻量美化（不改数据，标题整行居中）
   function beautifyWorkRestSchedule() {
     try {
       const modal = document.getElementById('work_rest_schedule_modal');
@@ -1098,26 +1098,57 @@
       table.style.removeProperty('border');
       table.style.removeProperty('border-collapse');
 
-      Array.from(table.querySelectorAll('th, td')).forEach((cell) => {
-        ['border', 'borderTop', 'borderRight', 'borderBottom', 'borderLeft', 'textAlign', 'verticalAlign']
-          .forEach((k) => { try { cell.style[k] = ''; } catch (_) {} });
+      const norm = (s) => (s || '').replace(/\s+/g, ' ').trim();
+      const rows = Array.from(table.rows || []);
 
-        const t = (cell.textContent || '').replace(/\s+/g, ' ').trim();
-        cell.classList.remove('urppp-wrs-title', 'urppp-wrs-period', 'urppp-wrs-time', 'urppp-wrs-head');
-        if (!t) return;
-        if ((cell.colSpan || 1) >= 3 || /作息时间|学年/.test(t)) {
-          cell.classList.add('urppp-wrs-title');
-        } else if (/^(上午|下午|晚上|中午)$/.test(t) || ((cell.rowSpan || 1) > 1 && /上午|下午|晚上|中午/.test(t))) {
-          cell.classList.add('urppp-wrs-period');
-        } else if (/节次|望江|华西|江安|校区|时间|大节/.test(t) && !/\d{1,2}:\d{2}/.test(t)) {
-          const tr = cell.parentElement;
-          const rowText = ((tr && tr.textContent) || '').replace(/\s+/g, ' ');
-          if (/节次|校区|时间|大节/.test(rowText) && !/\d{1,2}:\d{2}/.test(rowText)) {
-            cell.classList.add('urppp-wrs-head');
-          }
-        } else if (/\d{1,2}:\d{2}/.test(t)) {
-          cell.classList.add('urppp-wrs-time');
+      // 估算整表列数（按各行 colSpan 求和取最大）
+      let colCount = 1;
+      rows.forEach((tr) => {
+        let n = 0;
+        Array.from(tr.cells || []).forEach((c) => { n += (c.colSpan || 1); });
+        if (n > colCount) colCount = n;
+      });
+
+      rows.forEach((tr) => {
+        const cells = Array.from(tr.cells || []);
+        cells.forEach((cell) => {
+          ['border', 'borderTop', 'borderRight', 'borderBottom', 'borderLeft', 'textAlign', 'verticalAlign', 'width']
+            .forEach((k) => { try { cell.style[k] = ''; } catch (_) {} });
+          cell.classList.remove('urppp-wrs-title', 'urppp-wrs-period', 'urppp-wrs-time', 'urppp-wrs-head');
+        });
+
+        const rowText = norm(tr.textContent);
+        const isTitleRow =
+          (/作息时间|学年/.test(rowText) && !/\d{1,2}:\d{2}/.test(rowText)) ||
+          (/(望江|华西|江安).*校区/.test(rowText) && /时间|安排|作息/.test(rowText) && !/\d{1,2}:\d{2}/.test(rowText));
+
+        if (isTitleRow && cells.length) {
+          // 保留第一个有字的单元格，拉满整行并居中
+          let keep = cells.find((c) => norm(c.textContent)) || cells[0];
+          cells.forEach((c) => { if (c !== keep) c.remove(); });
+          keep.colSpan = Math.max(colCount, keep.colSpan || 1);
+          keep.rowSpan = 1;
+          keep.classList.add('urppp-wrs-title');
+          keep.style.setProperty('text-align', 'center', 'important');
+          keep.style.setProperty('vertical-align', 'middle', 'important');
+          keep.style.setProperty('width', '100%', 'important');
+          return;
         }
+
+        cells.forEach((cell) => {
+          if (!cell.isConnected) return;
+          const t = norm(cell.textContent);
+          if (!t) return;
+          if (/^(上午|下午|晚上|中午)$/.test(t) || ((cell.rowSpan || 1) > 1 && /上午|下午|晚上|中午/.test(t))) {
+            cell.classList.add('urppp-wrs-period');
+          } else if (/节次|望江|华西|江安|校区|时间|大节/.test(t) && !/\d{1,2}:\d{2}/.test(t)) {
+            if (/节次|校区|时间|大节/.test(rowText) && !/\d{1,2}:\d{2}/.test(rowText)) {
+              cell.classList.add('urppp-wrs-head');
+            }
+          } else if (/\d{1,2}:\d{2}/.test(t)) {
+            cell.classList.add('urppp-wrs-time');
+          }
+        });
       });
     } catch (_) {}
   }
@@ -4194,11 +4225,19 @@
       #work_rest_schedule_modal table th[colspan],
       #work_rest_schedule_modal table td[colspan] {
         text-align: center !important;
+        vertical-align: middle !important;
         font-size: 15px !important;
         font-weight: 700 !important;
         color: var(--text) !important;
         background: color-mix(in srgb, var(--primary) 8%, var(--surface)) !important;
         padding: 12px 14px !important;
+        width: 100% !important;
+      }
+      #work_rest_schedule_modal table tr:has(> .urppp-wrs-title) > * {
+        text-align: center !important;
+      }
+      #work_rest_schedule_modal table tr:has(> .urppp-wrs-title) {
+        text-align: center !important;
       }
       #work_rest_schedule_modal table .urppp-wrs-head,
       #work_rest_schedule_modal table thead th {
@@ -4563,7 +4602,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.9');
+    console.log('[URP++] style applied v0.4.10');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5181,7 +5220,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.9',
+    version: '0.4.10',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
