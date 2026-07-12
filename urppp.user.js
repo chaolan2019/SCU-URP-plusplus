@@ -3149,14 +3149,13 @@
         border-color: rgba(220,38,38,0.22) !important;
       }
 
-      /* 主节点：卡片在 li 上，标题本身不再另套底 */
+      /* 主节点：卡片在 li 上；不缩 padding 挤压文字 */
       .ztree.urppp-ztree > li > a,
       #treeDemo.ztree > li > a {
         font-weight: 600 !important;
         background: transparent !important;
         border: none !important;
         border-radius: 6px !important;
-        padding: 2px 4px !important;
         cursor: pointer !important;
       }
       .ztree.urppp-ztree > li > a:hover,
@@ -3167,19 +3166,6 @@
       .ztree.urppp-ztree > li + li,
       #treeDemo.ztree > li + li {
         margin-top: 0 !important;
-      }
-      .ztree.urppp-ztree > li > span.button.switch,
-      #treeDemo.ztree > li > span.button.switch {
-        margin-top: 4px !important;
-        display: inline-block !important;
-        vertical-align: top !important;
-      }
-      /* 顶级 li 内 switch + a 同行 */
-      .ztree.urppp-ztree > li,
-      #treeDemo.ztree > li {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        align-items: flex-start !important;
       }
 
       /* 课组要求等表格恢复正常横向表格布局 */
