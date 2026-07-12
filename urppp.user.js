@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.74
+// @version      0.3.75
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -1435,37 +1435,73 @@
         }
       });
 
-      // 点击课组整行展开：用 zTree API，比模拟 click 更稳更快
+      // 点击课组整行：直接点原生 switch（与点按钮同路径，最跟手）
       if (!tree.dataset.urpppExpandClick) {
         tree.dataset.urpppExpandClick = '1';
         tree.addEventListener('click', (e) => {
+          // 原生 switch 自己处理，不要拦截
           if (e.target.closest && e.target.closest('span.button.switch')) return;
           const a = e.target && e.target.closest ? e.target.closest('li > a') : null;
-          if (!a || !tree.contains(a) || !a.classList.contains('urppp-expandable')) return;
+          if (!a || !tree.contains(a)) return;
           const li = a.parentElement;
           if (!li) return;
-
-          // 优先 zTree API
-          try {
-            const zTree = (window.jQuery || window.$)?.fn?.zTree?.getZTreeObj?.('treeDemo');
-            if (zTree) {
-              const node = zTree.getNodeByTId(li.id);
-              if (node && node.isParent) {
-                e.preventDefault();
-                e.stopPropagation();
-                tree.dataset.urpppUserExpanded = '1';
-                zTree.expandNode(node, !node.open, false, false, true);
-                return;
-              }
-            }
-          } catch (_) {}
-
           const sw = li.querySelector(':scope > span.button.switch');
           if (!sw || /_docu\b/.test(sw.className) || sw.classList.contains('urppp-switch-leaf')) return;
+          if (!a.classList.contains('urppp-expandable') && !/_open|_close/.test(sw.className)) return;
+
           e.preventDefault();
-          e.stopPropagation();
+          e.stopImmediatePropagation();
           tree.dataset.urpppUserExpanded = '1';
+
+          // 展开前后暂停观察，避免整树重扫拖慢动画
+          tree.dataset.urpppBusy = '1';
+          if (window.__urpppPlanTreeObs) {
+            try { window.__urpppPlanTreeObs.disconnect(); } catch (_) {}
+          }
           sw.click();
+
+          // 只美化刚展开的子节点
+          const paintKids = () => {
+            const kids = li.querySelectorAll(':scope > ul li > a');
+            kids.forEach((ka) => {
+              if (ka.dataset.urpppNodeDone === '1') return;
+              markStatus(ka);
+              const span = ka.querySelector('span.node_name') || ka;
+              if (!span) return;
+              if (span.querySelector('.urppp-score, .urppp-code, .urppp-sub, .urppp-title, .urppp-gname')) {
+                ka.dataset.urpppNodeDone = '1';
+                return;
+              }
+              let raw = span.dataset.urpppRaw;
+              if (!raw) {
+                raw = span.innerHTML;
+                if (!raw) return;
+                span.dataset.urpppRaw = raw;
+              }
+              span.innerHTML = formatNodeHtml(raw);
+              ka.dataset.urpppNodeDone = '1';
+              const ksw = ka.parentElement && ka.parentElement.querySelector(':scope > span.button.switch');
+              if (ksw) {
+                ksw.dataset.urpppSw = '1';
+                if (/_docu\b/.test(ksw.className)) {
+                  ksw.classList.add('urppp-switch-leaf');
+                  ksw.style.setProperty('display', 'none', 'important');
+                  ka.classList.remove('urppp-expandable');
+                } else {
+                  ka.classList.add('urppp-expandable');
+                }
+              }
+            });
+            requestAnimationFrame(() => {
+              tree.dataset.urpppBusy = '0';
+              const host = document.getElementById('tree_div') || tree;
+              if (window.__urpppPlanTreeObs && host) {
+                try { window.__urpppPlanTreeObs.observe(host, { childList: true, subtree: true }); } catch (_) {}
+              }
+            });
+          };
+          // zTree 同步改 DOM，微任务里处理即可
+          Promise.resolve().then(paintKids);
         }, true);
       }
     } finally {
@@ -2693,11 +2729,15 @@
       #tree_div,
       .urppp-plan-tree-shell #tree_div,
       .urppp-plan-tree-shell .widget-body {
-        padding: 2px 4px !important;
+        padding: 10px 12px !important;
         margin: 0 !important;
         border: none !important;
         background: transparent !important;
         box-shadow: none !important;
+      }
+      .urppp-plan-tree-shell,
+      #two .row > div[style*="border"] {
+        padding: 0 !important;
       }
 
       /* zTree 基础：展开钮与文字同一行 */
@@ -4200,10 +4240,11 @@
       let planTimer = 0;
       window.__urpppPlanTreeObs = new MutationObserver(() => {
         const t = document.getElementById('treeDemo');
-        if (t && t.dataset.urpppBusy === '1') return;
+        if (!t || t.dataset.urpppBusy === '1') return;
+        // 没有未处理节点就不动
+        if (!t.querySelector('li > a:not([data-urppp-node-done="1"])')) return;
         clearTimeout(planTimer);
-        // 展开只增量处理新节点；防抖拉长，避免连点卡顿
-        planTimer = setTimeout(() => beautifyPlanTree(), 180);
+        planTimer = setTimeout(() => beautifyPlanTree(), 220);
       });
       const treeHost = document.getElementById('tree_div') || document.getElementById('treeDemo');
       if (treeHost) {
@@ -4247,7 +4288,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.74');
+    console.log('[URP++] style applied v0.3.75');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -4865,7 +4906,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.74',
+    version: '0.3.75',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
