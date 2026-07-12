@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.3
+// @version      0.4.4
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.3';
+          content:'URP++ v0.4.4';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1181,13 +1181,12 @@
           if (/^(上午|下午|晚上|中午)$/.test(cell.text)) {
             period = cell.text;
             currentPeriod = cell.text;
-          } else if (/^第?\d{1,2}节/.test(cell.text) || /^\d{1,2}$/.test(cell.text)) {
-            section = cell.text.replace(/^第/, '第').replace(/节.*/, (m) => m);
-            if (/^\d{1,2}$/.test(cell.text)) section = '第' + cell.text.padStart(2, '0') + '节课';
-            else if (!/课$/.test(section) && /节$/.test(section)) section = section + '课';
-            else if (!/^第/.test(section) && /\d/.test(section)) {
-              const n = section.match(/\d{1,2}/);
-              if (n) section = '第' + n[0].padStart(2, '0') + '节课';
+          } else if (/第?\s*\d{1,2}\s*节/.test(cell.text) || /^\d{1,2}$/.test(cell.text)) {
+            if (/^\d{1,2}$/.test(cell.text)) {
+              section = '第' + cell.text.padStart(2, '0') + '节课';
+            } else {
+              const n = cell.text.match(/(\d{1,2})/);
+              section = n ? ('第' + n[1].padStart(2, '0') + '节课') : cell.text;
             }
           } else if (/\d{1,2}:\d{2}/.test(cell.text)) {
             times.push(cell.text.replace(/\s*[-~—–]\s*/g, ' - '));
@@ -4680,21 +4679,39 @@
         window.__urpppPlanTreeObs.observe(treeHost, { childList: true, subtree: true });
       }
     }
-    // 作息时间表：仅在弹窗真正显示后轻量标注，不做全量 MutationObserver
+    // 作息时间表：显示后提取重构；兼容 AJAX 晚到表格
     if (!window.__urpppWrsBound) {
       window.__urpppWrsBound = true;
+      const runWrs = () => {
+        beautifyWorkRestSchedule();
+        const modal = document.getElementById('work_rest_schedule_modal');
+        if (!modal || modal.dataset.urpppWrsObs === '1') return;
+        modal.dataset.urpppWrsObs = '1';
+        const body = modal.querySelector('.modal-body') || modal;
+        let t = 0;
+        const mo = new MutationObserver(() => {
+          clearTimeout(t);
+          t = setTimeout(() => {
+            const tb = body.querySelector('table:not([data-urppp-wrs-built="1"])');
+            if (tb) beautifyWorkRestSchedule();
+          }, 40);
+        });
+        mo.observe(body, { childList: true, subtree: true });
+      };
       document.addEventListener('shown.bs.modal', (e) => {
         if (e.target && (e.target.id === 'work_rest_schedule_modal' || e.target.querySelector?.('#work_rest_schedule_modal'))) {
-          setTimeout(beautifyWorkRestSchedule, 30);
+          setTimeout(runWrs, 20);
         }
       }, true);
       document.addEventListener('click', (e) => {
         const a = e.target && e.target.closest ? e.target.closest('a,button') : null;
         if (!a) return;
         const onclick = a.getAttribute('onclick') || '';
-        if (onclick.includes('openWorkRestSchedule')) {
-          setTimeout(beautifyWorkRestSchedule, 200);
-          setTimeout(beautifyWorkRestSchedule, 600);
+        const txt = (a.textContent || '').trim();
+        if (onclick.includes('openWorkRestSchedule') || txt.includes('作息时间表')) {
+          setTimeout(runWrs, 50);
+          setTimeout(runWrs, 250);
+          setTimeout(runWrs, 700);
         }
       }, true);
     }
@@ -4717,7 +4734,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.3');
+    console.log('[URP++] style applied v0.4.4');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5335,7 +5352,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.3',
+    version: '0.4.4',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
