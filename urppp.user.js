@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.46
+// @version      0.3.47
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -57,51 +57,52 @@
       color: #64748B !important;
       letter-spacing: 0.4px !important;
     }
-    /* 立方体旋转 loading */
+    /* 立方体旋转 loading：浅色、扁平 */
     .urppp-cube-scene {
       width: 48px;
       height: 48px;
-      perspective: 120px;
+      perspective: 220px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .urppp-cube {
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
       position: relative;
       transform-style: preserve-3d;
-      animation: urppp-cube-spin 1.15s linear infinite;
+      animation: urppp-cube-spin 1.35s linear infinite;
     }
     .urppp-cube-face {
       position: absolute;
       inset: 0;
-      border: 2px solid #1E3A5F;
-      background: rgba(30, 58, 95, 0.10);
-      border-radius: 3px;
+      border: 1.5px solid #94A3B8;
+      background: rgba(148, 163, 184, 0.08);
+      border-radius: 2px;
       box-sizing: border-box;
+      box-shadow: none;
     }
-    .urppp-cube-face.front  { transform: translateZ(14px); }
-    .urppp-cube-face.back   { transform: rotateY(180deg) translateZ(14px); }
-    .urppp-cube-face.right  { transform: rotateY(90deg) translateZ(14px); }
-    .urppp-cube-face.left   { transform: rotateY(-90deg) translateZ(14px); }
-    .urppp-cube-face.top    { transform: rotateX(90deg) translateZ(14px); }
-    .urppp-cube-face.bottom { transform: rotateX(-90deg) translateZ(14px); }
-    #urppp-boot-loader .urppp-cube-scene { width: 64px; height: 64px; perspective: 160px; }
-    #urppp-boot-loader .urppp-cube { width: 36px; height: 36px; }
+    .urppp-cube-face.front  { transform: translateZ(13px); background: rgba(148, 163, 184, 0.10); }
+    .urppp-cube-face.back   { transform: rotateY(180deg) translateZ(13px); background: rgba(148, 163, 184, 0.05); }
+    .urppp-cube-face.right  { transform: rotateY(90deg) translateZ(13px); background: rgba(148, 163, 184, 0.07); }
+    .urppp-cube-face.left   { transform: rotateY(-90deg) translateZ(13px); background: rgba(148, 163, 184, 0.07); }
+    .urppp-cube-face.top    { transform: rotateX(90deg) translateZ(13px); background: rgba(148, 163, 184, 0.12); }
+    .urppp-cube-face.bottom { transform: rotateX(-90deg) translateZ(13px); background: rgba(148, 163, 184, 0.04); }
+    #urppp-boot-loader .urppp-cube-scene { width: 64px; height: 64px; perspective: 280px; }
+    #urppp-boot-loader .urppp-cube { width: 34px; height: 34px; }
     #urppp-boot-loader .urppp-cube-face {
-      border-color: #1E3A5F;
-      background: rgba(30, 58, 95, 0.12);
+      border-color: #94A3B8;
+      border-width: 1.5px;
     }
-    #urppp-boot-loader .urppp-cube-face.front  { transform: translateZ(18px); }
-    #urppp-boot-loader .urppp-cube-face.back   { transform: rotateY(180deg) translateZ(18px); }
-    #urppp-boot-loader .urppp-cube-face.right  { transform: rotateY(90deg) translateZ(18px); }
-    #urppp-boot-loader .urppp-cube-face.left   { transform: rotateY(-90deg) translateZ(18px); }
-    #urppp-boot-loader .urppp-cube-face.top    { transform: rotateX(90deg) translateZ(18px); }
-    #urppp-boot-loader .urppp-cube-face.bottom { transform: rotateX(-90deg) translateZ(18px); }
+    #urppp-boot-loader .urppp-cube-face.front  { transform: translateZ(17px); background: rgba(148, 163, 184, 0.10); }
+    #urppp-boot-loader .urppp-cube-face.back   { transform: rotateY(180deg) translateZ(17px); background: rgba(148, 163, 184, 0.05); }
+    #urppp-boot-loader .urppp-cube-face.right  { transform: rotateY(90deg) translateZ(17px); background: rgba(148, 163, 184, 0.07); }
+    #urppp-boot-loader .urppp-cube-face.left   { transform: rotateY(-90deg) translateZ(17px); background: rgba(148, 163, 184, 0.07); }
+    #urppp-boot-loader .urppp-cube-face.top    { transform: rotateX(90deg) translateZ(17px); background: rgba(148, 163, 184, 0.12); }
+    #urppp-boot-loader .urppp-cube-face.bottom { transform: rotateX(-90deg) translateZ(17px); background: rgba(148, 163, 184, 0.04); }
     @keyframes urppp-cube-spin {
-      0%   { transform: rotateX(-20deg) rotateY(0deg); }
-      100% { transform: rotateX(-20deg) rotateY(360deg); }
+      0%   { transform: rotateX(-12deg) rotateY(0deg); }
+      100% { transform: rotateX(-12deg) rotateY(360deg); }
     }
     @keyframes urppp-spin {
       to { transform: rotate(360deg); }
@@ -168,22 +169,23 @@
     .urppp-inline-loader .urppp-cube-scene {
       width: 40px !important;
       height: 40px !important;
-      perspective: 110px !important;
+      perspective: 200px !important;
     }
     .urppp-inline-loader .urppp-cube {
-      width: 22px !important;
-      height: 22px !important;
+      width: 20px !important;
+      height: 20px !important;
     }
     .urppp-inline-loader .urppp-cube-face {
-      border-color: #1E3A5F !important;
-      background: rgba(30, 58, 95, 0.10) !important;
+      border-color: #94A3B8 !important;
+      border-width: 1.5px !important;
+      background: rgba(148, 163, 184, 0.08) !important;
     }
-    .urppp-inline-loader .urppp-cube-face.front  { transform: translateZ(11px) !important; }
-    .urppp-inline-loader .urppp-cube-face.back   { transform: rotateY(180deg) translateZ(11px) !important; }
-    .urppp-inline-loader .urppp-cube-face.right  { transform: rotateY(90deg) translateZ(11px) !important; }
-    .urppp-inline-loader .urppp-cube-face.left   { transform: rotateY(-90deg) translateZ(11px) !important; }
-    .urppp-inline-loader .urppp-cube-face.top    { transform: rotateX(90deg) translateZ(11px) !important; }
-    .urppp-inline-loader .urppp-cube-face.bottom { transform: rotateX(-90deg) translateZ(11px) !important; }
+    .urppp-inline-loader .urppp-cube-face.front  { transform: translateZ(10px) !important; background: rgba(148, 163, 184, 0.10) !important; }
+    .urppp-inline-loader .urppp-cube-face.back   { transform: rotateY(180deg) translateZ(10px) !important; background: rgba(148, 163, 184, 0.05) !important; }
+    .urppp-inline-loader .urppp-cube-face.right  { transform: rotateY(90deg) translateZ(10px) !important; background: rgba(148, 163, 184, 0.07) !important; }
+    .urppp-inline-loader .urppp-cube-face.left   { transform: rotateY(-90deg) translateZ(10px) !important; background: rgba(148, 163, 184, 0.07) !important; }
+    .urppp-inline-loader .urppp-cube-face.top    { transform: rotateX(90deg) translateZ(10px) !important; background: rgba(148, 163, 184, 0.12) !important; }
+    .urppp-inline-loader .urppp-cube-face.bottom { transform: rotateX(-90deg) translateZ(10px) !important; background: rgba(148, 163, 184, 0.04) !important; }
     .center:has(> img[src*="pageloading" i]),
     .center:has(> .urppp-inline-loader),
     .modal-content .center {
@@ -234,12 +236,12 @@
       position: absolute !important;
       left: 50% !important;
       top: 50% !important;
-      width: 22px !important;
-      height: 22px !important;
-      margin: -11px 0 0 -11px !important;
-      border: 2px solid #1E3A5F !important;
-      border-radius: 3px !important;
-      background: rgba(30, 58, 95, 0.10) !important;
+      width: 20px !important;
+      height: 20px !important;
+      margin: -10px 0 0 -10px !important;
+      border: 1.5px solid #94A3B8 !important;
+      border-radius: 2px !important;
+      background: rgba(148, 163, 184, 0.10) !important;
       box-sizing: border-box !important;
       animation: urppp-cube-spin 1.15s linear infinite !important;
       transform-style: preserve-3d !important;
@@ -3134,7 +3136,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.46');
+    console.log('[URP++] style applied v0.3.47');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -3747,7 +3749,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.46',
+    version: '0.3.47',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
