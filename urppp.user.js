@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.4
+// @version      0.4.5
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.4';
+          content:'URP++ v0.4.5';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1075,7 +1075,7 @@
       wrap.remove();
     });
   }
-  // 作息时间表：提取原表矩阵后整表重构
+  // 作息时间表：尽量做成干净表格；解析稳才重建，否则只样式原表
   function beautifyWorkRestSchedule() {
     try {
       const modal = document.getElementById('work_rest_schedule_modal');
@@ -1084,199 +1084,190 @@
         modal.style.setProperty('display', 'block', 'important');
       }
       const body = modal.querySelector('.modal-body') || modal;
-      const table = body.querySelector('table');
-      if (!table || table.dataset.urpppWrsBuilt === '1') return;
+      let table = body.querySelector('table');
+      if (!table) return;
+      if (table.dataset.urpppWrsBuilt === '1') return;
 
       // 拆误包 wrapper
       const wrap = table.closest('.urppp-table-wrap');
       if (wrap && modal.contains(wrap) && wrap.parentElement) {
         wrap.parentElement.insertBefore(table, wrap);
         wrap.remove();
+        table = body.querySelector('table') || table;
       }
 
-      // 1) 展开 rowspan/colspan 成完整矩阵
-      const rows = Array.from(table.rows || []);
-      if (!rows.length) return;
+      const esc = (s) => String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const norm = (s) => (s || '').replace(/\s+/g, ' ').trim();
+      const isPeriod = (t) => /^(上午|下午|晚上|中午)$/.test(t);
+      const isTime = (t) => /\d{1,2}\s*:\s*\d{2}/.test(t);
+      const isSection = (t) => /第?\s*\d{1,2}\s*节/.test(t) || /^\d{1,2}$/.test(t);
+      const fmtSection = (t) => {
+        const n = String(t).match(/(\d{1,2})/);
+        if (!n) return t;
+        return '第' + n[1].padStart(2, '0') + '节课';
+      };
+      const fmtTime = (t) => norm(t).replace(/\s*[-~—–至到]+\s*/g, ' - ').replace(/\s*:\s*/g, ':');
+
+      // 展开成矩阵（rowspan/colspan 填满）
+      const srcRows = Array.from(table.rows || []);
+      if (!srcRows.length) return;
       const matrix = [];
-      const occupy = {}; // key r,c
-      rows.forEach((tr, r) => {
+      const filled = {};
+      srcRows.forEach((tr, r) => {
         if (!matrix[r]) matrix[r] = [];
         let c = 0;
         Array.from(tr.cells || []).forEach((cell) => {
-          while (occupy[r + ',' + c]) c++;
+          while (filled[r + ',' + c]) c++;
           const rs = cell.rowSpan || 1;
           const cs = cell.colSpan || 1;
-          const text = (cell.textContent || '').replace(/\s+/g, ' ').trim();
-          const info = { text, rs, cs, origin: true };
+          const text = norm(cell.textContent);
           for (let i = 0; i < rs; i++) {
             for (let j = 0; j < cs; j++) {
-              const rr = r + i;
-              const cc = c + j;
+              const rr = r + i, cc = c + j;
               if (!matrix[rr]) matrix[rr] = [];
-              if (i === 0 && j === 0) matrix[rr][cc] = info;
-              else {
-                matrix[rr][cc] = { text, rs: 1, cs: 1, origin: false, skip: true };
-                occupy[rr + ',' + cc] = true;
-              }
-              occupy[rr + ',' + cc] = true;
+              matrix[rr][cc] = {
+                text,
+                master: i === 0 && j === 0,
+                rs: i === 0 && j === 0 ? rs : 1,
+                cs: i === 0 && j === 0 ? cs : 1,
+              };
+              filled[rr + ',' + cc] = true;
             }
           }
           c += cs;
         });
       });
-
-      const maxCols = matrix.reduce((m, row) => Math.max(m, (row || []).length), 0);
-      // 补齐
+      const colCount = matrix.reduce((m, row) => Math.max(m, row.length), 0);
       matrix.forEach((row) => {
-        for (let i = 0; i < maxCols; i++) {
-          if (!row[i]) row[i] = { text: '', rs: 1, cs: 1, origin: false, skip: true };
+        for (let i = 0; i < colCount; i++) {
+          if (!row[i]) row[i] = { text: '', master: false, rs: 1, cs: 1 };
         }
       });
 
-      // 2) 识别标题 / 表头 / 数据
+      // 找标题、表头
       let title = '作息时间表';
-      let headerRowIdx = -1;
-      const data = []; // {period, section, times:[]}
-
+      let headIdx = -1;
+      let colHeads = [];
       matrix.forEach((row, ri) => {
-        const texts = row.map((c) => c.text);
-        const joined = texts.filter(Boolean).join(' ');
-        if (/作息时间|学年/.test(joined) && ri <= 1) {
+        const texts = row.map((c) => c.text).filter(Boolean);
+        const joined = texts.join(' ');
+        if (ri <= 2 && /作息时间|学年/.test(joined)) {
           title = texts.find((t) => /作息时间|学年/.test(t)) || title;
-          return;
         }
-        if (headerRowIdx < 0 && /节次|望江|华西|江安/.test(joined)) {
-          headerRowIdx = ri;
-          return;
+        if (headIdx < 0 && /节次/.test(joined) && /(望江|华西|江安|校区)/.test(joined)) {
+          headIdx = ri;
+          // 表头：去掉时段/节次，保留校区列
+          colHeads = texts.filter((t) => t !== '节次' && !isPeriod(t) && !/时段/.test(t));
         }
-        // 数据行
-        const cells = row.filter((c) => c && c.origin !== false || (c && c.text));
-        // 用非 skip 的 origin 单元格更稳：从原始 tr 读
       });
+      if (!colHeads.length) colHeads = ['望江、华西校区', '江安校区'];
 
-      // 更稳：直接扫原始 rows，结合矩阵文本
-      let currentPeriod = '';
-      rows.forEach((tr, ri) => {
-        const tds = Array.from(tr.cells || []).map((td) => ({
-          text: (td.textContent || '').replace(/\s+/g, ' ').trim(),
-          rs: td.rowSpan || 1,
-          cs: td.colSpan || 1,
-          el: td,
-        }));
-        if (!tds.length) return;
-        const joined = tds.map((x) => x.text).join(' ');
-        if (/作息时间|学年/.test(joined) && tds.some((x) => x.cs >= 2 || /作息时间|学年/.test(x.text))) {
-          title = tds.map((x) => x.text).find((t) => /作息时间|学年/.test(t)) || title;
-          return;
+      // 数据行：从表头后开始
+      const startRow = headIdx >= 0 ? headIdx + 1 : 1;
+      const data = [];
+      for (let ri = startRow; ri < matrix.length; ri++) {
+        const row = matrix[ri];
+        const texts = row.map((c) => c.text);
+        // 跳过空行/重复标题
+        if (!texts.some(Boolean)) continue;
+        if (/作息时间|学年/.test(texts.join(' ')) && texts.some((t) => (row[texts.indexOf(t)] || {}).cs > 1 || /作息时间|学年/.test(t))) {
+          // 可能是合并标题
+          if (texts.some((t) => /作息时间|学年/.test(t) && !isTime(t))) continue;
         }
-        if (/节次/.test(joined) && /望江|华西|江安/.test(joined)) {
-          headerRowIdx = ri;
-          return;
-        }
-        // 解析数据：可能 [period?, section, time1, time2, ...]
         let period = '';
         let section = '';
         const times = [];
-        tds.forEach((cell) => {
-          if (/^(上午|下午|晚上|中午)$/.test(cell.text)) {
-            period = cell.text;
-            currentPeriod = cell.text;
-          } else if (/第?\s*\d{1,2}\s*节/.test(cell.text) || /^\d{1,2}$/.test(cell.text)) {
-            if (/^\d{1,2}$/.test(cell.text)) {
-              section = '第' + cell.text.padStart(2, '0') + '节课';
-            } else {
-              const n = cell.text.match(/(\d{1,2})/);
-              section = n ? ('第' + n[1].padStart(2, '0') + '节课') : cell.text;
-            }
-          } else if (/\d{1,2}:\d{2}/.test(cell.text)) {
-            times.push(cell.text.replace(/\s*[-~—–]\s*/g, ' - '));
-          }
+        texts.forEach((t) => {
+          if (!t) return;
+          if (isPeriod(t)) period = t;
+          else if (isSection(t)) section = fmtSection(t);
+          else if (isTime(t)) times.push(fmtTime(t));
         });
-        if (!period) period = currentPeriod;
-        if (section || times.length) {
-          data.push({ period, section, times });
-        }
-      });
-
-      if (!data.length) return;
-
-      // 3) 规范化表头列
-      // 默认两校区
-      let colHeads = ['望江、华西校区', '江安校区'];
-      if (headerRowIdx >= 0) {
-        const heads = Array.from(rows[headerRowIdx].cells || [])
-          .map((td) => (td.textContent || '').replace(/\s+/g, ' ').trim())
-          .filter((t) => t && t !== '节次' && !/上午|下午|晚上/.test(t));
-        if (heads.length) colHeads = heads;
+        // 至少要有节次或时间，才算数据
+        if (!section && !times.length) continue;
+        data.push({ period, section, times });
       }
-      // times 列数对齐
-      const timeCols = Math.max(colHeads.length, ...data.map((d) => d.times.length), 2);
-      while (colHeads.length < timeCols) colHeads.push('校区' + (colHeads.length + 1));
 
-      // 4) 按时段合并 rowspan
-      const periods = [];
+      // 继承时段（矩阵已填满 rowspan，一般每行都有；再兜底）
+      let lastPeriod = '';
       data.forEach((d) => {
-        const p = d.period || '';
-        if (!periods.length || periods[periods.length - 1].name !== p) {
-          periods.push({ name: p, rows: [d] });
-        } else {
-          periods[periods.length - 1].rows.push(d);
-        }
+        if (d.period) lastPeriod = d.period;
+        else d.period = lastPeriod;
       });
 
-      // 5) 重建表
+      // 校验：时间数量足够才重建，避免抽坏
+      const timeHits = data.reduce((n, d) => n + d.times.filter(Boolean).length, 0);
+      const canRebuild = data.length >= 6 && timeHits >= data.length; // 平均每行至少 1 个时间
+
+      const styleOnly = () => {
+        table.classList.add('urppp-wrs-table', 'urppp-wrs-native');
+        table.dataset.urpppWrsBuilt = 'style';
+        // 给原生表也打点 class，边框统一
+        Array.from(table.rows || []).forEach((tr, ri) => {
+          Array.from(tr.cells || []).forEach((cell) => {
+            const t = norm(cell.textContent);
+            cell.classList.remove('urppp-wrs-title', 'urppp-wrs-head', 'urppp-wrs-period', 'urppp-wrs-section', 'urppp-wrs-time');
+            if (/作息时间|学年/.test(t) && (cell.colSpan || 1) >= 2) cell.classList.add('urppp-wrs-title');
+            else if (ri <= (headIdx >= 0 ? headIdx : 1) && /节次|望江|华西|江安|校区/.test(t)) cell.classList.add('urppp-wrs-head');
+            else if (isPeriod(t) || ((cell.rowSpan || 1) > 1 && isPeriod(t))) cell.classList.add('urppp-wrs-period');
+            else if (isSection(t)) cell.classList.add('urppp-wrs-section');
+            else if (isTime(t)) cell.classList.add('urppp-wrs-time');
+          });
+        });
+      };
+
+      if (!canRebuild) {
+        styleOnly();
+        return;
+      }
+
+      // 列数：校区头与时间列对齐
+      const timeCols = Math.max(colHeads.length, ...data.map((d) => d.times.length));
+      const heads = colHeads.slice(0, timeCols);
+      while (heads.length < timeCols) {
+        // 不要造“校区3”，缺了就复制最后一个真实名或留空列名
+        heads.push(heads[heads.length - 1] || '');
+      }
+
+      // 按时段分组 rowspan
+      const groups = [];
+      data.forEach((d) => {
+        const name = d.period || '';
+        if (!groups.length || groups[groups.length - 1].name !== name) groups.push({ name, rows: [d] });
+        else groups[groups.length - 1].rows.push(d);
+      });
+
       const newTable = document.createElement('table');
       newTable.className = 'urppp-wrs-table';
       newTable.dataset.urpppWrsBuilt = '1';
-      const thead = document.createElement('thead');
-      const titleTr = document.createElement('tr');
-      titleTr.innerHTML = `<th class="urppp-wrs-title" colspan="${2 + timeCols}">${title}</th>`;
-      thead.appendChild(titleTr);
-      const headTr = document.createElement('tr');
-      headTr.innerHTML = `<th class="urppp-wrs-head urppp-wrs-head-period">时段</th><th class="urppp-wrs-head">节次</th>${
-        colHeads.map((h) => `<th class="urppp-wrs-head">${h}</th>`).join('')
-      }`;
-      thead.appendChild(headTr);
-      newTable.appendChild(thead);
-
-      const tbody = document.createElement('tbody');
-      periods.forEach((pg) => {
-        pg.rows.forEach((d, idx) => {
-          const tr = document.createElement('tr');
-          if (idx === 0 && pg.name) {
-            const ptd = document.createElement('td');
-            ptd.className = 'urppp-wrs-period';
-            ptd.rowSpan = pg.rows.length;
-            ptd.textContent = pg.name;
-            tr.appendChild(ptd);
-          } else if (!pg.name && idx === 0) {
-            // no period label
+      newTable.innerHTML = [
+        '<thead>',
+        `<tr><th class="urppp-wrs-title" colspan="${2 + timeCols}">${esc(title)}</th></tr>`,
+        '<tr>',
+        '<th class="urppp-wrs-head urppp-wrs-head-period">时段</th>',
+        '<th class="urppp-wrs-head urppp-wrs-head-section">节次</th>',
+        heads.map((h) => `<th class="urppp-wrs-head">${esc(h)}</th>`).join(''),
+        '</tr>',
+        '</thead>',
+        '<tbody>',
+        groups.map((g) => g.rows.map((d, idx) => {
+          const tds = [];
+          if (idx === 0) {
+            tds.push(`<td class="urppp-wrs-period" rowspan="${g.rows.length}">${esc(g.name || '')}</td>`);
           }
-          const std = document.createElement('td');
-          std.className = 'urppp-wrs-section';
-          std.textContent = d.section || '';
-          tr.appendChild(std);
+          tds.push(`<td class="urppp-wrs-section">${esc(d.section || '')}</td>`);
           for (let i = 0; i < timeCols; i++) {
-            const td = document.createElement('td');
-            td.className = 'urppp-wrs-time';
-            td.textContent = d.times[i] || '';
-            tr.appendChild(td);
+            tds.push(`<td class="urppp-wrs-time">${esc(d.times[i] || '')}</td>`);
           }
-          tbody.appendChild(tr);
-        });
-      });
-      newTable.appendChild(tbody);
+          return `<tr>${tds.join('')}</tr>`;
+        }).join('')).join(''),
+        '</tbody>',
+      ].join('');
 
-      // 替换原表（保留同级其他节点）
       table.replaceWith(newTable);
-      // 清理 body 里多余杂乱标题
-      body.querySelectorAll('h4,h3,p,div').forEach((el) => {
-        if (el.querySelector && el.querySelector('table, .urppp-wrs-table')) return;
-        const t = (el.textContent || '').trim();
-        if (/作息时间|学年/.test(t) && t.length < 40) el.remove();
-      });
     } catch (err) {
-      console.warn('[URP++] work rest rebuild failed', err);
+      console.warn('[URP++] work rest beautify failed', err);
     }
   }
   // 学校校历：重定向到教务处新页面
@@ -4261,12 +4252,12 @@
         opacity: 0.45 !important;
       }
 
-      /* 作息时间表：提取重构后的干净布局 */
+      /* 作息时间表：干净表格（重建表 + 原表样式兜底） */
       #work_rest_schedule_modal.modal.fade.in,
       #work_rest_schedule_modal.modal.in { display: block !important; }
       #work_rest_schedule_modal .modal-dialog {
-        width: 860px !important;
-        max-width: 95vw !important;
+        width: 880px !important;
+        max-width: 96vw !important;
         margin: 48px auto !important;
       }
       #work_rest_schedule_modal .modal-content {
@@ -4279,7 +4270,6 @@
       #work_rest_schedule_modal .modal-header {
         display: flex !important;
         align-items: center !important;
-        gap: 12px !important;
         min-height: 52px !important;
         padding: 14px 18px !important;
         background: var(--surface) !important;
@@ -4300,24 +4290,34 @@
         background: var(--bg) !important;
       }
 
+      #work_rest_schedule_modal table,
+      #work_rest_schedule_modal table.table,
+      #work_rest_schedule_modal table.table-bordered,
       #work_rest_schedule_modal table.urppp-wrs-table {
         width: 100% !important;
-        margin: 0 !important;
-        border-collapse: separate !important;
-        border-spacing: 0 !important;
+        margin: 0 auto !important;
         border: 1px solid var(--border) !important;
+        border-collapse: collapse !important;
+        border-spacing: 0 !important;
         border-radius: 12px !important;
         overflow: hidden !important;
         background: var(--surface) !important;
-        table-layout: fixed !important;
         box-shadow: none !important;
+        table-layout: auto !important;
       }
-      #work_rest_schedule_modal table.urppp-wrs-table th,
-      #work_rest_schedule_modal table.urppp-wrs-table td {
-        border: none !important;
-        border-right: 1px solid var(--border) !important;
-        border-bottom: 1px solid var(--border) !important;
-        padding: 11px 12px !important;
+
+      /* 覆盖全局 .table 残缺边框 */
+      #work_rest_schedule_modal table th,
+      #work_rest_schedule_modal table td,
+      #work_rest_schedule_modal table.table > thead > tr > th,
+      #work_rest_schedule_modal table.table > tbody > tr > th,
+      #work_rest_schedule_modal table.table > tbody > tr > td,
+      #work_rest_schedule_modal table.table-bordered > thead > tr > th,
+      #work_rest_schedule_modal table.table-bordered > tbody > tr > td,
+      #work_rest_schedule_modal table.table > tbody > tr > td:last-child,
+      #work_rest_schedule_modal table.table > tbody > tr:last-child > td {
+        border: 1px solid var(--border) !important;
+        padding: 10px 12px !important;
         text-align: center !important;
         vertical-align: middle !important;
         font-size: 13px !important;
@@ -4326,58 +4326,54 @@
         background: var(--surface) !important;
         white-space: nowrap !important;
         box-sizing: border-box !important;
+        font-weight: 400 !important;
       }
-      #work_rest_schedule_modal table.urppp-wrs-table tr > *:last-child {
-        border-right: none !important;
-      }
-      #work_rest_schedule_modal table.urppp-wrs-table tr:last-child > * {
-        border-bottom: none !important;
-      }
-      #work_rest_schedule_modal table.urppp-wrs-table .urppp-wrs-title {
+
+      #work_rest_schedule_modal table .urppp-wrs-title,
+      #work_rest_schedule_modal table tr:first-child th[colspan],
+      #work_rest_schedule_modal table tr:first-child td[colspan] {
         background: color-mix(in srgb, var(--primary) 10%, var(--surface)) !important;
         color: var(--text) !important;
         font-size: 15px !important;
         font-weight: 700 !important;
-        padding: 13px 14px !important;
-        border-right: none !important;
+        padding: 12px 14px !important;
       }
-      #work_rest_schedule_modal table.urppp-wrs-table .urppp-wrs-head {
+      #work_rest_schedule_modal table .urppp-wrs-head,
+      #work_rest_schedule_modal table thead th {
         background: var(--input-bg) !important;
         color: var(--text-secondary) !important;
         font-weight: 600 !important;
-        font-size: 13px !important;
       }
-      #work_rest_schedule_modal table.urppp-wrs-table .urppp-wrs-head-period,
-      #work_rest_schedule_modal table.urppp-wrs-table .urppp-wrs-period {
-        width: 72px !important;
+      #work_rest_schedule_modal table .urppp-wrs-period,
+      #work_rest_schedule_modal table td[rowspan],
+      #work_rest_schedule_modal table th[rowspan] {
         background: var(--input-bg) !important;
         color: var(--primary) !important;
         font-weight: 700 !important;
+        width: 72px !important;
       }
-      #work_rest_schedule_modal table.urppp-wrs-table .urppp-wrs-section {
-        width: 96px !important;
+      #work_rest_schedule_modal table .urppp-wrs-section {
         font-weight: 600 !important;
-        color: var(--text) !important;
-        background: var(--surface) !important;
+        min-width: 92px !important;
       }
-      #work_rest_schedule_modal table.urppp-wrs-table .urppp-wrs-time {
+      #work_rest_schedule_modal table .urppp-wrs-time {
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
         font-variant-numeric: tabular-nums !important;
         font-size: 13px !important;
         font-weight: 500 !important;
-        letter-spacing: 0.2px !important;
       }
-      #work_rest_schedule_modal table.urppp-wrs-table tbody tr:nth-child(even) .urppp-wrs-section,
-      #work_rest_schedule_modal table.urppp-wrs-table tbody tr:nth-child(even) .urppp-wrs-time {
-        background: color-mix(in srgb, var(--input-bg) 40%, var(--surface)) !important;
+      #work_rest_schedule_modal table tbody tr:nth-child(even) td:not(.urppp-wrs-period):not([rowspan]) {
+        background: color-mix(in srgb, var(--input-bg) 35%, var(--surface)) !important;
       }
       #work_rest_schedule_modal .modal-body > h4,
       #work_rest_schedule_modal .modal-body > .center,
       #work_rest_schedule_modal .modal-body > p {
-        display: none !important;
+        text-align: center !important;
+        color: var(--text) !important;
+        margin: 0 0 10px !important;
       }
 
-      /* 时间轴 */      /* 时间轴 */      /* 时间轴 */
+      /* 时间轴 */
       .timeline-container { background: var(--surface) !important; border-color: var(--border) !important; }
       .timeline-item { border-color: var(--border) !important; }
       .timeline-item .timeline-indicator { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; }
@@ -4734,7 +4730,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.4');
+    console.log('[URP++] style applied v0.4.5');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5352,7 +5348,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.4',
+    version: '0.4.5',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
