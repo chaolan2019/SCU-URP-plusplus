@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.47
+// @version      0.3.48
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -18,7 +18,7 @@
 
   // 最早阶段：最高优先级遮罩盖住未美化界面，完成后淡入
   GM_addStyle(`
-    html, body { background: #F4F6F9 !important; color: #0F172A !important; }
+    html, body { background: var(--bg, #F4F6F9) !important; color: var(--text, #0F172A) !important; }
     /* 未就绪时隐藏页面主体，避免 ACE 原样式闪现 */
     html:not(.urppp-ready) body {
       opacity: 0 !important;
@@ -41,10 +41,10 @@
       gap: 14px !important;
       margin: 0 !important;
       padding: 0 !important;
-      background: #F4F6F9 !important;
-      color: #0F172A !important;
+      background: var(--bg, #F4F6F9) !important;
+      color: var(--text, #0F172A) !important;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif !important;
-      transition: opacity .25s ease, visibility .25s ease !important;
+      transition: opacity .25s ease, visibility .25s ease, background-color .2s ease !important;
       pointer-events: all !important;
     }
     #urppp-boot-loader.urppp-boot-hide {
@@ -54,7 +54,7 @@
     }
     #urppp-boot-loader .urppp-boot-text {
       font-size: 13px !important;
-      color: #64748B !important;
+      color: var(--text-secondary, #64748B) !important;
       letter-spacing: 0.4px !important;
     }
     /* 立方体旋转 loading：浅色、扁平 */
@@ -76,30 +76,31 @@
     .urppp-cube-face {
       position: absolute;
       inset: 0;
-      border: 1.5px solid #94A3B8;
-      background: rgba(148, 163, 184, 0.08);
+      border: 1.5px solid var(--border, #E2E8F0);
+      background: var(--surface, #FFFFFF);
       border-radius: 2px;
       box-sizing: border-box;
       box-shadow: none;
+      opacity: 0.95;
     }
-    .urppp-cube-face.front  { transform: translateZ(13px); background: rgba(148, 163, 184, 0.10); }
-    .urppp-cube-face.back   { transform: rotateY(180deg) translateZ(13px); background: rgba(148, 163, 184, 0.05); }
-    .urppp-cube-face.right  { transform: rotateY(90deg) translateZ(13px); background: rgba(148, 163, 184, 0.07); }
-    .urppp-cube-face.left   { transform: rotateY(-90deg) translateZ(13px); background: rgba(148, 163, 184, 0.07); }
-    .urppp-cube-face.top    { transform: rotateX(90deg) translateZ(13px); background: rgba(148, 163, 184, 0.12); }
-    .urppp-cube-face.bottom { transform: rotateX(-90deg) translateZ(13px); background: rgba(148, 163, 184, 0.04); }
+    .urppp-cube-face.front  { transform: translateZ(13px); background: var(--input-bg, #F8FAFC); border-color: var(--text-muted, #94A3B8); }
+    .urppp-cube-face.back   { transform: rotateY(180deg) translateZ(13px); background: var(--surface, #FFFFFF); border-color: var(--border, #E2E8F0); }
+    .urppp-cube-face.right  { transform: rotateY(90deg) translateZ(13px); background: var(--input-bg, #F8FAFC); border-color: var(--border, #E2E8F0); }
+    .urppp-cube-face.left   { transform: rotateY(-90deg) translateZ(13px); background: var(--input-bg, #F8FAFC); border-color: var(--border, #E2E8F0); }
+    .urppp-cube-face.top    { transform: rotateX(90deg) translateZ(13px); background: var(--surface, #FFFFFF); border-color: var(--text-muted, #94A3B8); }
+    .urppp-cube-face.bottom { transform: rotateX(-90deg) translateZ(13px); background: var(--bg, #F4F6F9); border-color: var(--border, #E2E8F0); }
     #urppp-boot-loader .urppp-cube-scene { width: 64px; height: 64px; perspective: 280px; }
     #urppp-boot-loader .urppp-cube { width: 34px; height: 34px; }
     #urppp-boot-loader .urppp-cube-face {
-      border-color: #94A3B8;
       border-width: 1.5px;
+      border-color: var(--border, #E2E8F0);
     }
-    #urppp-boot-loader .urppp-cube-face.front  { transform: translateZ(17px); background: rgba(148, 163, 184, 0.10); }
-    #urppp-boot-loader .urppp-cube-face.back   { transform: rotateY(180deg) translateZ(17px); background: rgba(148, 163, 184, 0.05); }
-    #urppp-boot-loader .urppp-cube-face.right  { transform: rotateY(90deg) translateZ(17px); background: rgba(148, 163, 184, 0.07); }
-    #urppp-boot-loader .urppp-cube-face.left   { transform: rotateY(-90deg) translateZ(17px); background: rgba(148, 163, 184, 0.07); }
-    #urppp-boot-loader .urppp-cube-face.top    { transform: rotateX(90deg) translateZ(17px); background: rgba(148, 163, 184, 0.12); }
-    #urppp-boot-loader .urppp-cube-face.bottom { transform: rotateX(-90deg) translateZ(17px); background: rgba(148, 163, 184, 0.04); }
+    #urppp-boot-loader .urppp-cube-face.front  { transform: translateZ(17px); background: var(--input-bg, #F8FAFC); border-color: var(--text-muted, #94A3B8); }
+    #urppp-boot-loader .urppp-cube-face.back   { transform: rotateY(180deg) translateZ(17px); background: var(--surface, #FFFFFF); }
+    #urppp-boot-loader .urppp-cube-face.right  { transform: rotateY(90deg) translateZ(17px); background: var(--input-bg, #F8FAFC); }
+    #urppp-boot-loader .urppp-cube-face.left   { transform: rotateY(-90deg) translateZ(17px); background: var(--input-bg, #F8FAFC); }
+    #urppp-boot-loader .urppp-cube-face.top    { transform: rotateX(90deg) translateZ(17px); background: var(--surface, #FFFFFF); border-color: var(--text-muted, #94A3B8); }
+    #urppp-boot-loader .urppp-cube-face.bottom { transform: rotateX(-90deg) translateZ(17px); background: var(--bg, #F4F6F9); }
     @keyframes urppp-cube-spin {
       0%   { transform: rotateX(-12deg) rotateY(0deg); }
       100% { transform: rotateX(-12deg) rotateY(360deg); }
@@ -176,16 +177,16 @@
       height: 20px !important;
     }
     .urppp-inline-loader .urppp-cube-face {
-      border-color: #94A3B8 !important;
+      border-color: var(--border, #E2E8F0) !important;
       border-width: 1.5px !important;
-      background: rgba(148, 163, 184, 0.08) !important;
+      background: var(--surface, #FFFFFF) !important;
     }
-    .urppp-inline-loader .urppp-cube-face.front  { transform: translateZ(10px) !important; background: rgba(148, 163, 184, 0.10) !important; }
-    .urppp-inline-loader .urppp-cube-face.back   { transform: rotateY(180deg) translateZ(10px) !important; background: rgba(148, 163, 184, 0.05) !important; }
-    .urppp-inline-loader .urppp-cube-face.right  { transform: rotateY(90deg) translateZ(10px) !important; background: rgba(148, 163, 184, 0.07) !important; }
-    .urppp-inline-loader .urppp-cube-face.left   { transform: rotateY(-90deg) translateZ(10px) !important; background: rgba(148, 163, 184, 0.07) !important; }
-    .urppp-inline-loader .urppp-cube-face.top    { transform: rotateX(90deg) translateZ(10px) !important; background: rgba(148, 163, 184, 0.12) !important; }
-    .urppp-inline-loader .urppp-cube-face.bottom { transform: rotateX(-90deg) translateZ(10px) !important; background: rgba(148, 163, 184, 0.04) !important; }
+    .urppp-inline-loader .urppp-cube-face.front  { transform: translateZ(10px) !important; background: var(--input-bg, #F8FAFC) !important; border-color: var(--text-muted, #94A3B8) !important; }
+    .urppp-inline-loader .urppp-cube-face.back   { transform: rotateY(180deg) translateZ(10px) !important; background: var(--surface, #FFFFFF) !important; }
+    .urppp-inline-loader .urppp-cube-face.right  { transform: rotateY(90deg) translateZ(10px) !important; background: var(--input-bg, #F8FAFC) !important; }
+    .urppp-inline-loader .urppp-cube-face.left   { transform: rotateY(-90deg) translateZ(10px) !important; background: var(--input-bg, #F8FAFC) !important; }
+    .urppp-inline-loader .urppp-cube-face.top    { transform: rotateX(90deg) translateZ(10px) !important; background: var(--surface, #FFFFFF) !important; border-color: var(--text-muted, #94A3B8) !important; }
+    .urppp-inline-loader .urppp-cube-face.bottom { transform: rotateX(-90deg) translateZ(10px) !important; background: var(--bg, #F4F6F9) !important; }
     .center:has(> img[src*="pageloading" i]),
     .center:has(> .urppp-inline-loader),
     .modal-content .center {
@@ -239,9 +240,9 @@
       width: 20px !important;
       height: 20px !important;
       margin: -10px 0 0 -10px !important;
-      border: 1.5px solid #94A3B8 !important;
+      border: 1.5px solid var(--border, #E2E8F0) !important;
       border-radius: 2px !important;
-      background: rgba(148, 163, 184, 0.10) !important;
+      background: var(--input-bg, #F8FAFC) !important;
       box-sizing: border-box !important;
       animation: urppp-cube-spin 1.15s linear infinite !important;
       transform-style: preserve-3d !important;
@@ -500,18 +501,24 @@
     GM_setValue(THEME_KEY, name);
     const el = document.getElementById('urppp-theme-vars') || (() => {
       const e = document.createElement('style'); e.id = 'urppp-theme-vars';
-      document.head.appendChild(e); return e;
+      const host = document.head || document.documentElement;
+      host.appendChild(e); return e;
     })();
     let css = ':root {';
     for (const [k, v] of Object.entries(t.vars)) css += `${k}:${v};`;
     css += '}';
     el.textContent = css;
-    document.body.style.fontFamily = t.font;
+    if (document.body) document.body.style.fontFamily = t.font;
     applyAccent(getAccent());
-    console.log(`[URP++] ${t.name}`);
+    // 同步启动遮罩字体
+    const boot = document.getElementById('urppp-boot-loader');
+    if (boot) boot.style.fontFamily = t.font;
   }
 
   function getCurrent() { return GM_getValue(THEME_KEY, 'default'); }
+
+  // 尽早应用主题，让启动遮罩/立方体颜色跟主题一致
+  try { applyTheme(getCurrent()); } catch (_) {}
 
   // ============================================================
   // 登录页重建
@@ -3136,7 +3143,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.47');
+    console.log('[URP++] style applied v0.3.48');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -3749,7 +3756,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.47',
+    version: '0.3.48',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
