@@ -476,72 +476,126 @@
   function cleanMenuLabel(raw) {
     return String(raw || '')
       .replace(/[\u00a0\s]+/g, ' ')
-      .replace(/^[>\u25b8\u203a·•]+/, '')
+      .replace(/^[>\u25b8\u203a·•\u00bb]+/, '')
+      .replace(/^\s*[\u25b8>]\s*/, '')
       .trim();
   }
 
-  function getBreadcrumbTrail() {
-    const trail = [];
-    const pushUnique = (label) => {
-      const t = cleanMenuLabel(label);
-      if (!t) return;
-      if (/^(首页|一级菜单|二级菜单|三级菜单)$/.test(t)) return;
-      if (trail[trail.length - 1] === t) return;
-      trail.push(t);
-    };
+  function getMenuLiLabel(li) {
+    if (!li) return '';
+    const a = li.querySelector(':scope > a');
+    if (!a) return '';
+    const textEl = a.querySelector('.menu-text, .urppp-nav-text');
+    if (textEl) return cleanMenuLabel(textEl.textContent);
+    // 去掉图标后的纯文本
+    const clone = a.cloneNode(true);
+    clone.querySelectorAll('i, b, .badge, .arrow, .menu-icon, .urppp-nav-arrow').forEach(n => n.remove());
+    return cleanMenuLabel(clone.textContent);
+  }
 
-    // 1) cookie selectionBar + 原始 #menus（ACE 同源逻辑）
+  function walkMenuAncestors(li) {
+    const stack = [];
+    let node = li;
+    const root = document.getElementById('menus') || document.getElementById('urppp-menus');
+    while (node && node !== root) {
+      if (node.tagName === 'LI') {
+        const label = getMenuLiLabel(node);
+        if (label && !/^(首页|一级菜单|二级菜单|三级菜单)$/.test(label)) {
+          stack.unshift(label);
+        }
+      }
+      node = node.parentElement;
+    }
+    // 去重相邻
+    return stack.filter((t, i) => t && t !== stack[i - 1]);
+  }
+
+  function findMenuLiByPath() {
+    const path = location.pathname.replace(/\/+$/, '') || '/';
+    const search = location.search || '';
+    const candidates = [];
+    const roots = [document.getElementById('menus'), document.getElementById('urppp-menus')].filter(Boolean);
+    roots.forEach(root => {
+      root.querySelectorAll('a[href]').forEach(a => {
+        const href = a.getAttribute('href') || '';
+        if (!href || href === '#' || href.startsWith('javascript')) return;
+        try {
+          const u = new URL(href, location.origin);
+          const p = u.pathname.replace(/\/+$/, '') || '/';
+          if (p === '/' && path !== '/') return;
+          let score = 0;
+          if (path === p) score = 1000 + p.length;
+          else if (path.startsWith(p + '/')) score = 500 + p.length;
+          else if (path.includes(p) && p.length > 8) score = 200 + p.length;
+          if (score && search && u.search && search.indexOf(u.search.slice(1)) >= 0) score += 50;
+          if (score > 0) candidates.push({ score, li: a.closest('li') });
+        } catch (_) {}
+      });
+    });
+    candidates.sort((a, b) => b.score - a.score);
+    return candidates.length ? candidates[0].li : null;
+  }
+
+  function getBreadcrumbTrail() {
+    // 1) 当前 URL 匹配菜单（最稳）
+    const byPath = findMenuLiByPath();
+    if (byPath) {
+      const t = walkMenuAncestors(byPath);
+      if (t.length) return t;
+    }
+
+    // 2) cookie selectionBar + 原始 #menus
     let bar = '';
     try {
       const m = document.cookie.match(/(?:^|;\s*)selectionBar=([^;]+)/);
       if (m) bar = decodeURIComponent(m[1]);
     } catch (_) {}
-    const origMenus = document.getElementById('menus');
-    if (bar && bar !== '0' && origMenus) {
-      let node = document.getElementById(bar);
-      const stack = [];
-      while (node && node !== origMenus) {
-        if (node.tagName === 'LI') {
-          const a = node.querySelector(':scope > a');
-          const textEl = a && a.querySelector('.menu-text');
-          const text = textEl
-            ? textEl.textContent
-            : (a ? Array.from(a.childNodes).filter(n => n.nodeType === 3).map(n => n.textContent).join('') : '');
-          if (text) stack.unshift(text);
-        }
-        node = node.parentElement;
+    if (bar && bar !== '0') {
+      const node = document.getElementById(bar);
+      if (node) {
+        const t = walkMenuAncestors(node);
+        if (t.length) return t;
       }
-      stack.forEach(pushUnique);
-      if (trail.length) return trail;
     }
 
-    // 2) 当前 #urppp-menus 激活链
-    const actives = document.querySelectorAll('#urppp-menus .urppp-nav-item.active');
-    if (actives.length) {
-      const deepest = actives[actives.length - 1];
-      const stack = [];
-      let p = deepest;
-      while (p && p.id !== 'urppp-menus') {
-        if (p.classList && p.classList.contains('urppp-nav-item')) {
-          const t = p.querySelector(':scope > .urppp-nav-link .urppp-nav-text');
-          if (t) stack.unshift(t.textContent);
-        }
-        p = p.parentElement;
+    // 3) 原始 #menus / #urppp-menus 上的 .active
+    let activeLi = null;
+    const menuActives = Array.from(document.querySelectorAll('#menus li.active'));
+    if (menuActives.length) {
+      activeLi = menuActives[menuActives.length - 1];
+      for (let i = menuActives.length - 1; i >= 0; i--) {
+        if (!menuActives[i].querySelector('li.active')) { activeLi = menuActives[i]; break; }
       }
-      stack.forEach(pushUnique);
-      if (trail.length) return trail;
+    }
+    if (!activeLi) {
+      const urpActives = Array.from(document.querySelectorAll('#urppp-menus .urppp-nav-item.active'));
+      if (urpActives.length) {
+        activeLi = urpActives[urpActives.length - 1];
+        for (let i = urpActives.length - 1; i >= 0; i--) {
+          if (!urpActives[i].querySelector('.urppp-nav-item.active')) { activeLi = urpActives[i]; break; }
+        }
+      }
+    }
+    if (activeLi) {
+      const t = walkMenuAncestors(activeLi);
+      if (t.length) return t;
     }
 
-    // 3) 兜底：已有 DOM 文本
+    // 4) 已有 DOM（ACE 可能已填）
     const box = document.getElementById('breadcrumbs') || document.querySelector('.breadcrumbs');
     const ul = box && (box.querySelector('ul.breadcrumb') || box.querySelector('.breadcrumb'));
     if (ul) {
-      Array.from(ul.querySelectorAll('li')).forEach((li, idx) => {
-        if (idx === 0) return; // 跳过首页
-        pushUnique(li.textContent);
+      const trail = [];
+      Array.from(ul.children).forEach((li, idx) => {
+        if (idx === 0) return;
+        const t = cleanMenuLabel(li.textContent);
+        if (!t || /^(首页|一级菜单|二级菜单|三级菜单)$/.test(t)) return;
+        if (trail[trail.length - 1] === t) return;
+        trail.push(t);
       });
+      if (trail.length) return trail;
     }
-    return trail;
+    return [];
   }
 
   function beautifyBreadcrumbs() {
@@ -549,6 +603,7 @@
     if (!box) return;
     box.classList.remove('hide');
     box.style.removeProperty('display');
+    box.style.setProperty('display', 'flex', 'important');
 
     let ul = box.querySelector('ul.breadcrumb') || box.querySelector('.breadcrumb');
     if (!ul) {
@@ -558,6 +613,13 @@
     }
 
     const trail = getBreadcrumbTrail();
+    // trail 为空时不覆盖已有真实路径，避免和 ACE 竞态把内容清空
+    if (!trail.length) {
+      const existing = Array.from(ul.children).map(li => cleanMenuLabel(li.textContent)).filter(Boolean);
+      const hasReal = existing.some(t => t !== '首页' && !/^(一级菜单|二级菜单|三级菜单)$/.test(t));
+      if (hasReal) return;
+    }
+
     ul.innerHTML = '';
 
     const home = document.createElement('li');
@@ -1015,7 +1077,7 @@
       /* 主内容区 */
       .main-container, .main-container::before { background: var(--bg) !important; }
       .main-content, .page-content { background: var(--bg) !important; }
-      /* 面包屑 */
+      /* 面包屑：贴紧顶栏下沿，字号加大 */
       .breadcrumbs, #breadcrumbs {
         display: flex !important;
         align-items: center !important;
@@ -1023,17 +1085,23 @@
         border: none !important;
         border-bottom: none !important;
         box-shadow: none !important;
-        padding: 14px 20px 6px !important;
-        min-height: 0 !important;
-        line-height: 1.4 !important;
+        padding: 4px 20px 2px !important;
+        min-height: 36px !important;
+        line-height: 1.35 !important;
         position: relative !important;
         top: auto !important;
         left: auto !important;
         right: auto !important;
         z-index: 1 !important;
+        margin: 0 !important;
       }
-      .breadcrumbs.breadcrumbs-fixed { position: relative !important; }
-      .main-content { padding-top: 0 !important; }
+      .breadcrumbs.breadcrumbs-fixed {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        right: auto !important;
+      }
+      .main-content { padding-top: 0 !important; margin-top: 0 !important; }
       body.breadcrumbs-fixed .main-content { padding-top: 0 !important; }
       .breadcrumb {
         background: transparent !important;
@@ -1043,7 +1111,7 @@
         flex-wrap: wrap !important;
         align-items: center !important;
         gap: 0 !important;
-        font-size: 13px !important;
+        font-size: 15px !important;
         list-style: none !important;
       }
       .breadcrumb > li {
@@ -1053,36 +1121,42 @@
         float: none !important;
         padding: 0 !important;
         text-shadow: none !important;
+        font-size: 15px !important;
+        line-height: 1.35 !important;
       }
       .breadcrumb > li + li:before {
         content: '/' !important;
         color: var(--text-muted) !important;
-        padding: 0 10px !important;
+        padding: 0 12px !important;
         float: none !important;
         font-family: inherit !important;
-        font-size: 12px !important;
+        font-size: 14px !important;
+        font-weight: 400 !important;
       }
-      .breadcrumb > li > a {
-        color: var(--text-secondary) !important;
+      .breadcrumb > li > a,
+      .breadcrumb > li > span {
+        color: inherit !important;
         text-decoration: none !important;
         display: inline-flex !important;
         align-items: center !important;
         gap: 6px !important;
+        font-size: 15px !important;
       }
       .breadcrumb > li > a:hover { color: var(--primary) !important; }
       .breadcrumb > li.active,
       .breadcrumb > li:last-child {
         color: var(--text) !important;
-        font-weight: 500 !important;
+        font-weight: 600 !important;
+        font-size: 15px !important;
       }
       .breadcrumb .home-icon,
       .breadcrumb .fa-home {
         color: var(--primary) !important;
-        margin-right: 4px !important;
-        font-size: 14px !important;
+        margin-right: 6px !important;
+        font-size: 16px !important;
       }
       .breadcrumb > li.hide-item { display: none !important; }
-
+      .page-content { padding-top: 8px !important; }
       /* 卡片 / 面板 */
       .widget-box {
         background: var(--surface) !important;
@@ -1602,8 +1676,10 @@
     // 完全重构侧边栏为 Hanako 风格
     rebuildSidebarCompletely();
     beautifyBreadcrumbs();
-    setTimeout(beautifyBreadcrumbs, 300);
-    setTimeout(beautifyBreadcrumbs, 1000);
+    setTimeout(beautifyBreadcrumbs, 200);
+    setTimeout(beautifyBreadcrumbs, 600);
+    setTimeout(beautifyBreadcrumbs, 1500);
+    window.addEventListener('load', () => setTimeout(beautifyBreadcrumbs, 100));
 
     // 顶栏重建（JS 强制对齐）
     rebuildNavbar();
