@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.81
+// @version      0.3.82
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -1373,9 +1373,15 @@
         /(<span class="urppp-code">[^<]*<\/span>)\s*([^<]+?)(?=\s*(?:<span class="urppp-meta"|<span class="urppp-score"|$))/g,
         '$1<span class="urppp-title">$2</span>'
       );
+      // 课组名：图标后到 sub 前；去掉 &nbsp; 残留，避免双行撑高
       html = html.replace(
         /(<\/i>)(?:&nbsp;|\s)*([^<]+?)(?=<span class="urppp-sub")/g,
-        '$1<span class="urppp-gname">$2</span>'
+        '$1 <span class="urppp-gname">$2</span>'
+      );
+      // 若 gname 已存在仍残留纯文本，清掉
+      html = html.replace(
+        /(<\/i>)(?:&nbsp;|\s)+(?=<span class="urppp-gname")/g,
+        '$1 '
       );
       return html;
     };
@@ -2823,19 +2829,22 @@
       #treeDemo.ztree li + li {
         margin-top: 0 !important;
       }
-      /* 顶级课组卡片：标题+课程同框；去掉底部无用空白，不缩字体 */
+      /* 顶级课组卡片：正常字号；底部几乎不留空 */
       .ztree.urppp-ztree > li,
       #treeDemo.ztree > li {
         display: flex !important;
         flex-wrap: wrap !important;
         align-items: flex-start !important;
+        align-content: flex-start !important;
         margin: 0 0 8px 0 !important;
-        padding: 8px 10px 6px !important;
+        padding: 6px 10px 2px !important;
         border: 1px solid var(--border) !important;
         border-radius: 10px !important;
         background: var(--surface) !important;
         box-sizing: border-box !important;
         overflow: visible !important;
+        min-height: 0 !important;
+        height: auto !important;
       }
       .ztree.urppp-ztree > li:last-child,
       #treeDemo.ztree > li:last-child {
@@ -2844,14 +2853,29 @@
       .ztree.urppp-ztree > li > a,
       #treeDemo.ztree > li > a {
         display: block !important;
-        flex: 1 1 0 !important;
+        flex: 1 1 auto !important;
         width: calc(100% - 20px) !important;
         max-width: calc(100% - 20px) !important;
         margin: 0 !important;
-        padding: 2px 6px !important;
+        padding: 1px 6px 0 !important;
         line-height: 1.4 !important;
+        min-height: 0 !important;
+        height: auto !important;
       }
-      /* 课程列表贴着标题区底部，去掉容器下半截空档 */
+      /* 折叠态：空 ul 绝不能占位/留底 */
+      .ztree.urppp-ztree li > ul[style*="display: none"],
+      .ztree.urppp-ztree li > ul[style*="display:none"],
+      #treeDemo.ztree li > ul[style*="display: none"],
+      #treeDemo.ztree li > ul[style*="display:none"] {
+        display: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+      }
+      /* 展开态课程列表：紧贴标题，不垫高 */
       .ztree.urppp-ztree li > ul,
       #treeDemo.ztree li > ul {
         flex: 0 0 100% !important;
@@ -2864,21 +2888,43 @@
       }
       .ztree.urppp-ztree > li > ul,
       #treeDemo.ztree > li > ul {
-        margin: 4px 0 0 0 !important;
-        padding: 4px 0 0 4px !important;
+        margin: 2px 0 0 0 !important;
+        padding: 2px 0 0 4px !important;
         border-left: none !important;
         border-top: 1px solid var(--border) !important;
       }
       .ztree.urppp-ztree > li > a .urppp-sub,
       #treeDemo.ztree > li > a .urppp-sub {
         margin: 2px 0 0 0 !important;
-        padding: 0 !important;
+        padding: 0 0 0 0 !important;
         line-height: 1.35 !important;
       }
       .ztree.urppp-ztree > li > span.button.switch,
       #treeDemo.ztree > li > span.button.switch {
-        margin-top: 6px !important;
+        margin-top: 4px !important;
         margin-bottom: 0 !important;
+      }
+      /* 原生 ico 占位干掉 */
+      .ztree.urppp-ztree li span.button.ico_open,
+      .ztree.urppp-ztree li span.button.ico_close,
+      .ztree.urppp-ztree li span.button.ico_docu,
+      #treeDemo.ztree li span.button.ico_open,
+      #treeDemo.ztree li span.button.ico_close,
+      #treeDemo.ztree li span.button.ico_docu {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      /* 内联 17px 图标会把行撑高，统一压回 */
+      .ztree.urppp-ztree li a i.ace-icon,
+      .ztree.urppp-ztree li a i.fa,
+      #treeDemo.ztree li a i.ace-icon,
+      #treeDemo.ztree li a i.fa {
+        font-size: 14px !important;
+        line-height: 1.2 !important;
+        vertical-align: -1px !important;
       }
       /* 展开钮：与首行文字垂直居中对齐 */
       .ztree.urppp-ztree li > span.button.switch,
@@ -2907,7 +2953,7 @@
         min-width: 0 !important;
         height: auto !important;
         min-height: 0 !important;
-        padding: 3px 6px !important;
+        padding: 2px 6px !important;
         margin: 0 !important;
         border: none !important;
         border-radius: 8px !important;
@@ -4391,7 +4437,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.81');
+    console.log('[URP++] style applied v0.3.82');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5009,7 +5055,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.81',
+    version: '0.3.82',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
