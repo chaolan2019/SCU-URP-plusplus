@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.65
+// @version      0.3.66
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -1240,21 +1240,17 @@
       box.dataset.urpppPctDone = '1';
     });
   }
-  // 培养方案展示：zTree 课组树可读性增强（图例胶囊 + 节点卡片 + 统计 chips）
+  // 培养方案展示：zTree 安静可读版（弱装饰、强层级、统一间距）
   function beautifyPlanTree() {
     const tree = document.getElementById('treeDemo');
     if (!tree) return;
 
-    // 外层卡片
-    const wrap = tree.closest('.row') || tree.parentElement;
-    if (wrap && !wrap.classList.contains('urppp-plan-tree-shell')) {
-      const shell = tree.closest('div[style*="border"]') || tree.closest('.widget-body')?.parentElement;
-      if (shell) shell.classList.add('urppp-plan-tree-shell');
-    }
+    const shell = tree.closest('div[style*="border"]') || tree.closest('#tree_div')?.parentElement || tree.parentElement;
+    if (shell) shell.classList.add('urppp-plan-tree-shell');
     tree.classList.add('urppp-ztree');
 
-    // 标题区图例改为胶囊标签
-    const header = document.querySelector('#two h4.header, #two .header, h4.header');
+    // 标题：图例一行弱样式 + 操作按钮右对齐
+    const header = document.querySelector('#two h4.header, #two .header');
     if (header && !header.dataset.urpppLegendDone) {
       const font = header.querySelector('font');
       if (font) {
@@ -1273,74 +1269,51 @@
       header.dataset.urpppLegendDone = '1';
     }
 
-    // 节点文本：把括号统计拆成 chips，课程号/学分/成绩标签化
-    tree.querySelectorAll('a.level0, a.level1, a.level2, a.level3, a.curSelectedNode, a').forEach((a) => {
-      if (a.dataset.urpppNodeDone === '1') return;
+    tree.querySelectorAll('li > a').forEach((a) => {
       const span = a.querySelector('span.node_name') || a;
-      const raw = span.innerHTML;
-      if (!raw || raw.indexOf('最低修读学分') === -1 && raw.indexOf('[') === -1) {
-        // 仍可做状态 class
-      }
-
-      // 状态 class：根据图标
       const icon = a.querySelector('i.fa, i.ace-icon');
       const li = a.closest('li');
       if (li) {
         li.classList.remove('urppp-node-done', 'urppp-node-todo', 'urppp-node-pass', 'urppp-node-fail', 'urppp-node-pending');
         if (icon) {
-          if (icon.classList.contains('fa-check-square-o') || icon.classList.contains('green') && icon.classList.contains('fa-check-square-o')) {
-            li.classList.add('urppp-node-done');
-          } else if (icon.classList.contains('fa-smile-o')) {
-            li.classList.add('urppp-node-pass');
-          } else if (icon.classList.contains('fa-frown-o') || icon.classList.contains('red')) {
-            li.classList.add('urppp-node-fail');
-          } else if (icon.classList.contains('fa-meh-o') || icon.classList.contains('light-grey')) {
-            li.classList.add('urppp-node-pending');
-          } else if (icon.classList.contains('fa-kz') || icon.classList.contains('blue')) {
-            li.classList.add('urppp-node-todo');
-          }
+          if (icon.classList.contains('fa-check-square-o')) li.classList.add('urppp-node-done');
+          else if (icon.classList.contains('fa-smile-o')) li.classList.add('urppp-node-pass');
+          else if (icon.classList.contains('fa-frown-o')) li.classList.add('urppp-node-fail');
+          else if (icon.classList.contains('fa-meh-o')) li.classList.add('urppp-node-pending');
+          else if (icon.classList.contains('fa-kz')) li.classList.add('urppp-node-todo');
         }
       }
-
-      // 仅处理未 chip 化的节点
       if (a.dataset.urpppNodeDone === '1') return;
+
       let html = span.innerHTML;
       if (!html) return;
 
-      // 课组统计括号：(最低修读学分:2,通过学分:2.0,...)
+      // 课组统计：单行次要信息，不再拆成彩色 chips
       html = html.replace(/\((最低修读学分:[^)]+)\)/g, (_, body) => {
-        const chips = body.split(',').map((part) => {
-          const p = part.trim();
-          const m = p.match(/^([^:：]+)[:：]\s*(.+)$/);
-          if (!m) return `<span class="urppp-chip">${p}</span>`;
-          const key = m[1].trim();
-          const val = m[2].trim();
-          let kind = 'neutral';
-          if (key.includes('通过') || key.includes('已及格')) kind = 'ok';
-          else if (key.includes('未及格') || key.includes('未修读')) kind = Number(val) > 0 ? 'warn' : 'muted';
-          else if (key.includes('最低')) kind = 'primary';
-          return `<span class="urppp-chip ${kind}"><em>${key}</em><b>${val}</b></span>`;
-        }).join('');
-        return `<span class="urppp-chip-row">${chips}</span>`;
+        const parts = body.split(',').map((p) => p.trim()).filter(Boolean);
+        // 只保留关键 3 项，降低噪音
+        const keep = [];
+        parts.forEach((p) => {
+          if (/最低修读学分|通过学分|必修课未修读|已及格课程门数/.test(p)) keep.push(p);
+        });
+        const show = (keep.length ? keep : parts).join(' · ');
+        return `<span class="urppp-sub">${show}</span>`;
       });
 
-      // 课程节点：[课号]名称[学分,学期](必修,成绩)
+      // 课程：课号弱化、元信息弱化、成绩只做轻色
       html = html.replace(/\[(\d{6,})\]/g, '<span class="urppp-code">$1</span>');
       html = html.replace(/\[(\d+(?:\.\d+)?学分(?:,[^\]\[]*)?)\]/g, '<span class="urppp-meta">$1</span>');
       html = html.replace(/\((必修|任选|限选),([^)]+)\)/g, (_, type, score) => {
         const sc = String(score).trim();
         const num = parseFloat(sc);
         const pass = !Number.isNaN(num) ? num >= 60 : !/不及格|未通过/.test(sc);
-        return `<span class="urppp-score ${pass ? 'pass' : 'fail'}"><i>${type}</i>${sc}</span>`;
+        return `<span class="urppp-score ${pass ? 'pass' : 'fail'}">${type} ${sc}</span>`;
       });
 
-      if (html !== span.innerHTML) {
-        span.innerHTML = html;
-      }
+      if (html !== span.innerHTML) span.innerHTML = html;
       a.dataset.urpppNodeDone = '1';
     });
   }
-
   // 表格外框 wrapper：圆角 + 完整四边线
   function wrapTables() {
     document.querySelectorAll('table.table, table.table-bordered, table.dataTable').forEach((table) => {
@@ -2485,139 +2458,157 @@
         display: table !important;
         clear: both !important;
       }
-      /* ========== 培养方案展示：zTree 课组树 ========== */
+      /* ========== 培养方案展示：zTree 安静可读 ========== */
+      #two .header.urppp-plan-header,
       .urppp-plan-header {
         display: flex !important;
         flex-wrap: wrap !important;
         align-items: center !important;
-        gap: 10px 14px !important;
-        row-gap: 10px !important;
+        gap: 8px 12px !important;
+        margin: 0 0 14px !important;
+        padding: 0 0 12px !important;
+        border-bottom: 1px solid var(--border) !important;
+        line-height: 1.4 !important;
       }
       .urppp-plan-header > .glyphicon,
       .urppp-plan-header > .ace-icon {
-        color: var(--primary) !important;
+        color: var(--text-muted) !important;
+        margin-right: 2px !important;
       }
       .urppp-plan-legend {
         display: inline-flex !important;
         flex-wrap: wrap !important;
-        gap: 6px !important;
+        align-items: center !important;
+        gap: 10px 14px !important;
         margin: 0 !important;
-        vertical-align: middle !important;
+        color: var(--text-muted) !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
       }
       .urppp-plan-legend .urppp-lg {
         display: inline-flex !important;
         align-items: center !important;
         gap: 5px !important;
-        padding: 3px 10px !important;
-        border-radius: 999px !important;
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        color: var(--text-muted) !important;
         font-size: 12px !important;
-        font-weight: 600 !important;
-        line-height: 1.4 !important;
-        border: 1px solid var(--border) !important;
-        background: var(--input-bg) !important;
-        color: var(--text) !important;
+        font-weight: 500 !important;
         white-space: nowrap !important;
       }
       .urppp-plan-legend .urppp-lg i {
         font-size: 13px !important;
         margin: 0 !important;
+        width: auto !important;
+        height: auto !important;
+        background: none !important;
       }
-      .urppp-plan-legend .urppp-lg.done { color: #16a34a !important; border-color: rgba(22,163,74,0.28) !important; background: rgba(22,163,74,0.08) !important; }
-      .urppp-plan-legend .urppp-lg.todo { color: var(--primary) !important; border-color: var(--ring) !important; background: color-mix(in srgb, var(--primary) 10%, transparent) !important; }
-      .urppp-plan-legend .urppp-lg.pass { color: #16a34a !important; border-color: rgba(22,163,74,0.28) !important; background: rgba(22,163,74,0.08) !important; }
-      .urppp-plan-legend .urppp-lg.fail { color: #dc2626 !important; border-color: rgba(220,38,38,0.28) !important; background: rgba(220,38,38,0.08) !important; }
-      .urppp-plan-legend .urppp-lg.pending { color: var(--text-muted) !important; }
-
+      .urppp-plan-legend .urppp-lg.done i,
+      .urppp-plan-legend .urppp-lg.pass i { color: #16a34a !important; }
+      .urppp-plan-legend .urppp-lg.todo i { color: var(--primary) !important; }
+      .urppp-plan-legend .urppp-lg.fail i { color: #dc2626 !important; }
+      .urppp-plan-legend .urppp-lg.pending i { color: var(--text-muted) !important; }
       .urppp-plan-header .right_top_oper {
         margin-left: auto !important;
         display: inline-flex !important;
         gap: 8px !important;
       }
 
-      /* 树外壳 */
+      /* 树外壳：单卡片，内边距统一 */
       .urppp-plan-tree-shell,
-      #two .row > div[style*="border"],
-      #tree_div {
+      #two .row > div[style*="border"] {
         border: 1px solid var(--border) !important;
-        border-radius: 12px !important;
+        border-radius: 10px !important;
         background: var(--surface) !important;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+        box-shadow: none !important;
         overflow: hidden !important;
+        padding: 0 !important;
       }
-      #tree_div {
-        padding: 8px 10px 12px !important;
-        max-height: none !important;
+      #tree_div,
+      .urppp-plan-tree-shell #tree_div,
+      .urppp-plan-tree-shell .widget-body {
+        padding: 10px 12px !important;
+        margin: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
       }
 
-      /* zTree 基础 */
+      /* zTree 基础：紧凑行距、干净列表 */
       .ztree.urppp-ztree,
       #treeDemo.ztree {
-        padding: 4px 2px !important;
+        padding: 0 !important;
+        margin: 0 !important;
         background: transparent !important;
         color: var(--text) !important;
       }
       .ztree.urppp-ztree li,
       #treeDemo.ztree li {
         padding: 0 !important;
-        margin: 0 0 4px !important;
-        line-height: 1.45 !important;
+        margin: 0 !important;
+        line-height: 1.4 !important;
         list-style: none !important;
+      }
+      .ztree.urppp-ztree li + li,
+      #treeDemo.ztree li + li {
+        margin-top: 2px !important;
       }
       .ztree.urppp-ztree li ul,
       #treeDemo.ztree li ul {
-        margin: 4px 0 6px 12px !important;
+        margin: 2px 0 6px 8px !important;
         padding: 0 0 0 12px !important;
-        border-left: 2px solid var(--border) !important;
+        border-left: 1px solid var(--border) !important;
       }
       .ztree.urppp-ztree li a,
       #treeDemo.ztree li a {
         display: flex !important;
         flex-wrap: wrap !important;
-        align-items: center !important;
-        gap: 6px 8px !important;
+        align-items: baseline !important;
+        gap: 4px 8px !important;
         height: auto !important;
-        min-height: 34px !important;
-        padding: 8px 12px !important;
+        min-height: 0 !important;
+        padding: 7px 10px !important;
         margin: 0 !important;
-        border: 1px solid transparent !important;
-        border-radius: 10px !important;
+        border: none !important;
+        border-radius: 8px !important;
         background: transparent !important;
         color: var(--text) !important;
         text-decoration: none !important;
         white-space: normal !important;
-        transition: background .15s, border-color .15s, box-shadow .15s !important;
         width: auto !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
+        transition: background .12s !important;
       }
       .ztree.urppp-ztree li a:hover,
       #treeDemo.ztree li a:hover {
         background: var(--input-bg) !important;
-        border-color: var(--border) !important;
       }
       .ztree.urppp-ztree li a.curSelectedNode,
       #treeDemo.ztree li a.curSelectedNode {
-        background: color-mix(in srgb, var(--primary) 10%, var(--surface)) !important;
-        border-color: color-mix(in srgb, var(--primary) 35%, var(--border)) !important;
+        background: var(--input-bg) !important;
+        border: none !important;
         color: var(--text) !important;
         opacity: 1 !important;
         height: auto !important;
+        box-shadow: inset 2px 0 0 var(--primary) !important;
       }
 
-      /* 开关按钮 */
+      /* 展开按钮：更小更安静 */
       .ztree.urppp-ztree li span.button,
       #treeDemo.ztree li span.button {
-        width: 18px !important;
-        height: 18px !important;
-        margin-right: 4px !important;
+        width: 16px !important;
+        height: 16px !important;
+        margin: 0 6px 0 0 !important;
         vertical-align: middle !important;
       }
       .ztree.urppp-ztree li span.button.switch,
       #treeDemo.ztree li span.button.switch {
         background-image: none !important;
         position: relative !important;
-        border-radius: 6px !important;
-        background: var(--input-bg) !important;
+        border-radius: 4px !important;
+        background: transparent !important;
         border: 1px solid var(--border) !important;
       }
       .ztree.urppp-ztree li span.button.noline_open::before,
@@ -2633,9 +2624,9 @@
         content: '' !important;
         position: absolute !important;
         left: 50% !important; top: 50% !important;
-        width: 6px !important; height: 6px !important;
-        border-right: 2px solid var(--text-muted) !important;
-        border-bottom: 2px solid var(--text-muted) !important;
+        width: 5px !important; height: 5px !important;
+        border-right: 1.5px solid var(--text-muted) !important;
+        border-bottom: 1.5px solid var(--text-muted) !important;
         transform: translate(-50%, -65%) rotate(45deg) !important;
       }
       .ztree.urppp-ztree li span.button.noline_close::before,
@@ -2651,12 +2642,11 @@
         content: '' !important;
         position: absolute !important;
         left: 50% !important; top: 50% !important;
-        width: 6px !important; height: 6px !important;
-        border-right: 2px solid var(--text-muted) !important;
-        border-bottom: 2px solid var(--text-muted) !important;
+        width: 5px !important; height: 5px !important;
+        border-right: 1.5px solid var(--text-muted) !important;
+        border-bottom: 1.5px solid var(--text-muted) !important;
         transform: translate(-65%, -50%) rotate(-45deg) !important;
       }
-      /* 隐藏旧虚线图标 */
       .ztree.urppp-ztree li span.button.ico_open,
       .ztree.urppp-ztree li span.button.ico_close,
       .ztree.urppp-ztree li span.button.ico_docu,
@@ -2666,146 +2656,111 @@
         display: none !important;
       }
 
-      /* 节点内图标 */
+      /* 状态只体现在图标色，节点不再铺大色块 */
       .ztree.urppp-ztree li a i.ace-icon,
       .ztree.urppp-ztree li a i.fa,
       #treeDemo.ztree li a i.ace-icon,
       #treeDemo.ztree li a i.fa {
-        width: 22px !important;
-        height: 22px !important;
-        border-radius: 7px !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        font-size: 13px !important;
-        margin: 0 2px 0 0 !important;
-        background: var(--input-bg) !important;
-        flex: 0 0 22px !important;
+        width: auto !important;
+        height: auto !important;
+        border-radius: 0 !important;
+        display: inline !important;
+        font-size: 14px !important;
+        margin: 0 6px 0 0 !important;
+        background: none !important;
+        flex: none !important;
+        line-height: 1 !important;
       }
-      .ztree.urppp-ztree li.urppp-node-done > a,
-      #treeDemo.ztree li.urppp-node-done > a {
-        background: rgba(22,163,74,0.06) !important;
-        border-color: rgba(22,163,74,0.18) !important;
-      }
-      .ztree.urppp-ztree li.urppp-node-todo > a,
-      #treeDemo.ztree li.urppp-node-todo > a {
-        background: color-mix(in srgb, var(--primary) 6%, var(--surface)) !important;
-        border-color: color-mix(in srgb, var(--primary) 18%, var(--border)) !important;
-      }
+      .ztree.urppp-ztree li.urppp-node-done > a i,
+      #treeDemo.ztree li.urppp-node-done > a i,
       .ztree.urppp-ztree li.urppp-node-pass > a i,
-      #treeDemo.ztree li.urppp-node-pass > a i { color: #16a34a !important; background: rgba(22,163,74,0.12) !important; }
+      #treeDemo.ztree li.urppp-node-pass > a i { color: #16a34a !important; }
+      .ztree.urppp-ztree li.urppp-node-todo > a i,
+      #treeDemo.ztree li.urppp-node-todo > a i { color: var(--primary) !important; }
       .ztree.urppp-ztree li.urppp-node-fail > a i,
-      #treeDemo.ztree li.urppp-node-fail > a i { color: #dc2626 !important; background: rgba(220,38,38,0.12) !important; }
+      #treeDemo.ztree li.urppp-node-fail > a i { color: #dc2626 !important; }
       .ztree.urppp-ztree li.urppp-node-pending > a i,
       #treeDemo.ztree li.urppp-node-pending > a i { color: var(--text-muted) !important; }
-      .ztree.urppp-ztree li.urppp-node-done > a i,
-      #treeDemo.ztree li.urppp-node-done > a i { color: #16a34a !important; background: rgba(22,163,74,0.12) !important; }
-      .ztree.urppp-ztree li.urppp-node-todo > a i,
-      #treeDemo.ztree li.urppp-node-todo > a i { color: var(--primary) !important; background: color-mix(in srgb, var(--primary) 12%, transparent) !important; }
+      .ztree.urppp-ztree li.urppp-node-done > a,
+      .ztree.urppp-ztree li.urppp-node-todo > a,
+      #treeDemo.ztree li.urppp-node-done > a,
+      #treeDemo.ztree li.urppp-node-todo > a {
+        background: transparent !important;
+        border: none !important;
+      }
 
-      /* 文本与 chips */
+      /* 文本层级：标题正文 + 次要信息弱化 */
       .ztree.urppp-ztree li a span.node_name,
       #treeDemo.ztree li a span.node_name {
-        display: inline-flex !important;
-        flex-wrap: wrap !important;
-        align-items: center !important;
-        gap: 6px 8px !important;
+        display: inline !important;
         white-space: normal !important;
         line-height: 1.45 !important;
         font-size: 13.5px !important;
         color: var(--text) !important;
       }
-      .urppp-chip-row {
-        display: inline-flex !important;
-        flex-wrap: wrap !important;
-        gap: 4px !important;
-        margin-left: 2px !important;
-      }
-      .urppp-chip {
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 4px !important;
-        padding: 2px 8px !important;
-        border-radius: 999px !important;
-        font-size: 11.5px !important;
-        line-height: 1.4 !important;
-        border: 1px solid var(--border) !important;
-        background: var(--input-bg) !important;
-        color: var(--text) !important;
-        white-space: nowrap !important;
-      }
-      .urppp-chip em {
-        font-style: normal !important;
-        color: var(--text-muted) !important;
-        font-weight: 500 !important;
-      }
-      .urppp-chip b {
-        font-weight: 700 !important;
-        color: var(--text) !important;
-      }
-      .urppp-chip.primary { border-color: color-mix(in srgb, var(--primary) 30%, var(--border)) !important; background: color-mix(in srgb, var(--primary) 8%, transparent) !important; }
-      .urppp-chip.primary b { color: var(--primary) !important; }
-      .urppp-chip.ok { border-color: rgba(22,163,74,0.28) !important; background: rgba(22,163,74,0.08) !important; }
-      .urppp-chip.ok b { color: #16a34a !important; }
-      .urppp-chip.warn { border-color: rgba(234,179,8,0.35) !important; background: rgba(234,179,8,0.1) !important; }
-      .urppp-chip.warn b { color: #ca8a04 !important; }
-      .urppp-chip.muted { opacity: 0.85 !important; }
-
-      .urppp-code {
-        display: inline-block !important;
-        padding: 1px 7px !important;
-        border-radius: 6px !important;
-        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
-        font-size: 11.5px !important;
+      .ztree.urppp-ztree > li > a span.node_name,
+      #treeDemo.ztree > li > a span.node_name {
         font-weight: 600 !important;
+      }
+      .urppp-sub {
+        display: block !important;
+        width: 100% !important;
+        margin: 3px 0 0 20px !important;
+        padding: 0 !important;
+        font-size: 12px !important;
+        font-weight: 400 !important;
+        line-height: 1.4 !important;
         color: var(--text-muted) !important;
-        background: var(--input-bg) !important;
-        border: 1px solid var(--border) !important;
+      }
+      .urppp-code {
+        display: inline !important;
+        padding: 0 !important;
+        margin-right: 4px !important;
+        border: none !important;
+        background: none !important;
+        border-radius: 0 !important;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+        color: var(--text-muted) !important;
       }
       .urppp-meta {
-        display: inline-block !important;
-        padding: 1px 8px !important;
-        border-radius: 999px !important;
-        font-size: 11.5px !important;
+        display: inline !important;
+        padding: 0 !important;
+        margin-left: 4px !important;
+        border: none !important;
+        background: none !important;
+        border-radius: 0 !important;
+        font-size: 12px !important;
         color: var(--text-muted) !important;
-        background: var(--input-bg) !important;
-        border: 1px solid var(--border) !important;
       }
       .urppp-score {
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 5px !important;
-        padding: 2px 8px !important;
-        border-radius: 999px !important;
-        font-size: 11.5px !important;
-        font-weight: 700 !important;
-        border: 1px solid transparent !important;
-      }
-      .urppp-score i {
-        font-style: normal !important;
+        display: inline !important;
+        margin-left: 6px !important;
+        padding: 0 !important;
+        border: none !important;
+        background: none !important;
+        border-radius: 0 !important;
+        font-size: 12px !important;
         font-weight: 600 !important;
-        opacity: 0.85 !important;
       }
-      .urppp-score.pass {
-        color: #15803d !important;
-        background: rgba(22,163,74,0.1) !important;
-        border-color: rgba(22,163,74,0.25) !important;
-      }
-      .urppp-score.fail {
-        color: #b91c1c !important;
-        background: rgba(220,38,38,0.1) !important;
-        border-color: rgba(220,38,38,0.25) !important;
-      }
+      .urppp-score.pass { color: #15803d !important; }
+      .urppp-score.fail { color: #b91c1c !important; }
 
-      /* 课组根节点更醒目 */
+      /* 根节点仅字重区分，不铺底 */
       .ztree.urppp-ztree > li > a,
       #treeDemo.ztree > li > a {
         font-weight: 600 !important;
-        background: var(--input-bg) !important;
-        border-color: var(--border) !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 8px 10px !important;
+      }
+      .ztree.urppp-ztree > li + li,
+      #treeDemo.ztree > li + li {
+        margin-top: 4px !important;
       }
 
-      /* 课组要求等表格恢复正常横向表格布局 */
+      /* 课组要求等表格恢复正常横向表格布局 */      /* 课组要求等表格恢复正常横向表格布局 */
       .page-content .profile-user-info,
       .page-content .profile-user-info-striped {
         display: block !important;
@@ -4024,7 +3979,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.65');
+    console.log('[URP++] style applied v0.3.66');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -4643,7 +4598,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.65',
+    version: '0.3.66',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
