@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.82
+// @version      0.3.83
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -2829,15 +2829,16 @@
       #treeDemo.ztree li + li {
         margin-top: 0 !important;
       }
-      /* 顶级课组卡片：正常字号；底部几乎不留空 */
+      /* 顶级课组卡片：底部更贴；展开钮与标题首行对齐 */
       .ztree.urppp-ztree > li,
       #treeDemo.ztree > li {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        align-items: flex-start !important;
-        align-content: flex-start !important;
+        display: grid !important;
+        grid-template-columns: 16px 1fr !important;
+        column-gap: 6px !important;
+        row-gap: 0 !important;
+        align-items: start !important;
         margin: 0 0 8px 0 !important;
-        padding: 6px 10px 2px !important;
+        padding: 5px 10px 1px !important;
         border: 1px solid var(--border) !important;
         border-radius: 10px !important;
         background: var(--surface) !important;
@@ -2850,14 +2851,25 @@
       #treeDemo.ztree > li:last-child {
         margin-bottom: 0 !important;
       }
+      /* 展开钮：对齐标题第一行中心 */
+      .ztree.urppp-ztree > li > span.button.switch,
+      #treeDemo.ztree > li > span.button.switch {
+        grid-column: 1 !important;
+        grid-row: 1 !important;
+        align-self: start !important;
+        justify-self: center !important;
+        margin: 4px 0 0 0 !important;
+        flex: none !important;
+      }
       .ztree.urppp-ztree > li > a,
       #treeDemo.ztree > li > a {
+        grid-column: 2 !important;
+        grid-row: 1 !important;
         display: block !important;
-        flex: 1 1 auto !important;
-        width: calc(100% - 20px) !important;
-        max-width: calc(100% - 20px) !important;
+        width: auto !important;
+        max-width: 100% !important;
         margin: 0 !important;
-        padding: 1px 6px 0 !important;
+        padding: 0 !important;
         line-height: 1.4 !important;
         min-height: 0 !important;
         height: auto !important;
@@ -2888,21 +2900,18 @@
       }
       .ztree.urppp-ztree > li > ul,
       #treeDemo.ztree > li > ul {
+        grid-column: 1 / -1 !important;
+        grid-row: 2 !important;
         margin: 2px 0 0 0 !important;
-        padding: 2px 0 0 4px !important;
+        padding: 2px 0 0 22px !important;
         border-left: none !important;
         border-top: 1px solid var(--border) !important;
       }
       .ztree.urppp-ztree > li > a .urppp-sub,
       #treeDemo.ztree > li > a .urppp-sub {
-        margin: 2px 0 0 0 !important;
-        padding: 0 0 0 0 !important;
+        margin: 1px 0 0 0 !important;
+        padding: 0 !important;
         line-height: 1.35 !important;
-      }
-      .ztree.urppp-ztree > li > span.button.switch,
-      #treeDemo.ztree > li > span.button.switch {
-        margin-top: 4px !important;
-        margin-bottom: 0 !important;
       }
       /* 原生 ico 占位干掉 */
       .ztree.urppp-ztree li span.button.ico_open,
@@ -2917,20 +2926,29 @@
         margin: 0 !important;
         padding: 0 !important;
       }
-      /* 内联 17px 图标会把行撑高，统一压回 */
+      /* 状态图标与标题首行对齐 */
       .ztree.urppp-ztree li a i.ace-icon,
       .ztree.urppp-ztree li a i.fa,
       #treeDemo.ztree li a i.ace-icon,
       #treeDemo.ztree li a i.fa {
         font-size: 14px !important;
-        line-height: 1.2 !important;
-        vertical-align: -1px !important;
+        line-height: 1.4 !important;
+        vertical-align: baseline !important;
+        margin: 0 6px 0 0 !important;
       }
-      /* 展开钮：与首行文字垂直居中对齐 */
+      /* 展开钮：子节点用，顶级由 grid 对齐 */
       .ztree.urppp-ztree li > span.button.switch,
       #treeDemo.ztree li > span.button.switch {
-        flex: 0 0 12px !important;
-        margin: 3px 3px 0 0 !important;
+        flex: 0 0 14px !important;
+        width: 14px !important;
+        height: 14px !important;
+        margin: 3px 4px 0 0 !important;
+      }
+      .ztree.urppp-ztree > li > span.button.switch,
+      #treeDemo.ztree > li > span.button.switch {
+        width: 14px !important;
+        height: 14px !important;
+        margin: 4px 0 0 0 !important;
       }
       /* 叶子节点无子级：隐藏无效展开钮 */
       .ztree.urppp-ztree li > span.button.switch.urppp-switch-leaf,
@@ -4437,7 +4455,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.82');
+    console.log('[URP++] style applied v0.3.83');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5055,7 +5073,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.82',
+    version: '0.3.83',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
