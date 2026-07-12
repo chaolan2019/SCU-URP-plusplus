@@ -1,4 +1,4 @@
-﻿// ==UserScript==
+// ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
 // @version      0.3.14
@@ -472,6 +472,25 @@
   // 正式页面全局美化
   // ============================================================
 
+  // 表格外框 wrapper：圆角 + 完整四边线
+  function wrapTables() {
+    document.querySelectorAll('table.table, table.table-bordered, table.dataTable').forEach((table) => {
+      if (!table || table.closest('.urppp-table-wrap')) return;
+      if (table.id === 'courseTable') return;
+      const parent = table.parentElement;
+      if (!parent) return;
+      const parentOverflow = (parent.style && parent.style.overflow) || getComputedStyle(parent).overflow;
+      const isScrollBox = (parent.id && parent.id.endsWith('_scroll')) || parentOverflow === 'auto' || parentOverflow === 'scroll';
+      if (isScrollBox) {
+        parent.classList.add('urppp-table-wrap');
+        return;
+      }
+      const wrap = document.createElement('div');
+      wrap.className = 'urppp-table-wrap';
+      parent.insertBefore(wrap, table);
+      wrap.appendChild(table);
+    });
+  }
   function beautifyInternal() {
     const styleExists = !!document.getElementById('urppp-internal-style');
     if (!styleExists) {
@@ -920,43 +939,62 @@
       .profile-info-name { background: var(--input-bg) !important; color: var(--text-secondary) !important; border-color: var(--border) !important; padding: 10px 14px !important; }
       .profile-info-value { border-color: var(--border) !important; color: var(--text) !important; padding: 10px 14px !important; }
 
-      /* 表格 */
+      /* 表格：外框交给 wrapper，表格本身只负责内部网格 */
+      .urppp-table-wrap {
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-sm) !important;
+        overflow: auto !important;
+        background: var(--surface) !important;
+      }
       .table, .table-bordered, .table-striped, .table-hover, .dataTable {
         background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
         color: var(--text) !important;
         border-collapse: collapse !important;
+        margin-bottom: 0 !important;
+        width: 100% !important;
       }
+      /* 只画 right/bottom，top/left 由 wrapper 提供，避免与 Bootstrap thead border-top:0 冲突 */
       .table > thead > tr > th, .table-bordered > thead > tr > th, .dataTable > thead > tr > th,
-      .table > tbody > tr:first-child > td, .table-bordered > tbody > tr:first-child > td,
-      .dataTable > tbody > tr:first-child > td {
-        border-top: 1px solid var(--border) !important;
-      }
-      .table > thead > tr > th, .table-bordered > thead > tr > th, .dataTable > thead > tr > th {
-        background: var(--input-bg) !important;
-        color: var(--text) !important;
-        border-bottom: 1px solid var(--border) !important;
-        padding: 10px 12px !important;
-        font-weight: 600 !important;
-        font-size: 13px !important;
-        white-space: nowrap !important;
-      }
-      .table > tbody > tr > td, .table > tbody > tr > th,
-      .table-bordered > tbody > tr > td, .dataTable > tbody > tr > td {
+      .table > tbody > tr > th, .table > tbody > tr > td,
+      .table-bordered > tbody > tr > td, .dataTable > tbody > tr > td,
+      .table > tfoot > tr > th, .table > tfoot > tr > td {
+        border: none !important;
+        border-right: 1px solid var(--border) !important;
         border-bottom: 1px solid var(--border) !important;
         color: var(--text) !important;
         padding: 10px 12px !important;
         font-size: 13px !important;
         vertical-align: middle !important;
       }
-      .table-bordered > thead > tr > th,
-      .table-bordered > tbody > tr > td { border-left: 1px solid var(--border) !important; }
+      .table > thead > tr > th:last-child,
+      .table > tbody > tr > td:last-child,
+      .table > tbody > tr > th:last-child,
+      .table > tfoot > tr > th:last-child,
+      .table > tfoot > tr > td:last-child,
+      .table-bordered > thead > tr > th:last-child,
+      .table-bordered > tbody > tr > td:last-child {
+        border-right: none !important;
+      }
+      .table > tbody > tr:last-child > td,
+      .table > tbody > tr:last-child > th,
+      .table > tfoot > tr:last-child > td,
+      .table > tfoot > tr:last-child > th,
+      .table-bordered > tbody > tr:last-child > td {
+        border-bottom: none !important;
+      }
+      .table > thead > tr > th, .table-bordered > thead > tr > th, .dataTable > thead > tr > th {
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+        font-weight: 600 !important;
+        white-space: nowrap !important;
+      }
       .table-striped > tbody > tr:nth-of-type(odd), .dataTable > tbody > tr:nth-of-type(odd) { background: var(--bg) !important; }
       .table-hover > tbody > tr:hover, .dataTable > tbody > tr:hover {
         background: var(--input-bg) !important;
-        box-shadow: inset 0 0 0 1px var(--border-focus);
       }
-
       /* 按钮 */
       .btn, .btn.btn-xs, .btn.btn-sm, .btn.btn-lg, .btn.btn-minier,
       .btn-group .btn, .btn-group > .btn, .input-group .btn, .btn-toolbar .btn,
@@ -1336,6 +1374,16 @@
     if (!styleExists) document.head.appendChild(style);
     }
 
+    // 给表格包一层 wrapper：圆角 + 完整外框，绕过 Bootstrap thead border-top:0 和 overflow 裁剪
+    wrapTables();
+    if (!window.__urpppTableObs) {
+      let wrapTimer = 0;
+      window.__urpppTableObs = new MutationObserver(() => {
+        clearTimeout(wrapTimer);
+        wrapTimer = setTimeout(wrapTables, 50);
+      });
+      window.__urpppTableObs.observe(document.body, { childList: true, subtree: true });
+    }
     // 首页进行组件级重构
     const pageContent = document.querySelector('.page-content');
     const hasWidgets = pageContent && pageContent.querySelectorAll('.widget-box').length >= 4;
@@ -1943,6 +1991,7 @@
         sidebar.style.setProperty('height', 'calc(100vh - ' + nh + 'px)', 'important');
         rebuildSidebarCompletely();
         rebuildNavbar();
+        wrapTables();
       }, 100);
     };
     window.addEventListener('popstate', run);
