@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.34
+// @version      0.3.35
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -116,6 +116,70 @@
       align-items: center !important;
       justify-content: center !important;
     }
+    /* layui-layer 原生 loading（背景图 loading-0.gif） */
+    .layui-layer-loading,
+    .layui-layer-loading0,
+    .layui-layer-loading1,
+    .layui-layer-loading2,
+    .layui-layer-dialog.layui-layer-loading,
+    .layui-layer-content.layui-layer-loading0,
+    .layui-layer-content.layui-layer-loading1,
+    .layui-layer-content.layui-layer-loading2 {
+      background: transparent !important;
+      background-image: none !important;
+      background-color: transparent !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+    .layui-layer-dialog.layui-layer-loading,
+    .layui-layer.layui-layer-loading {
+      background: transparent !important;
+      background-image: none !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+    .layui-layer-loading .layui-layer-content,
+    .layui-layer-content.layui-layer-loading0,
+    .layui-layer-content.layui-layer-loading1,
+    .layui-layer-content.layui-layer-loading2 {
+      width: 72px !important;
+      height: 72px !important;
+      background: transparent !important;
+      background-image: none !important;
+      position: relative !important;
+    }
+    /* 未注入 SVG 时，用伪元素兜底转圈 */
+    .layui-layer-content.layui-layer-loading0:not(:has(.urppp-inline-loader))::before,
+    .layui-layer-content.layui-layer-loading1:not(:has(.urppp-inline-loader))::before,
+    .layui-layer-content.layui-layer-loading2:not(:has(.urppp-inline-loader))::before,
+    .layui-layer-loading .layui-layer-content:not(:has(.urppp-inline-loader))::before {
+      content: '' !important;
+      position: absolute !important;
+      left: 50% !important;
+      top: 50% !important;
+      width: 40px !important;
+      height: 40px !important;
+      margin: -20px 0 0 -20px !important;
+      border: 3.5px solid #CBD5E1 !important;
+      border-top-color: #1E3A5F !important;
+      border-radius: 50% !important;
+      box-sizing: border-box !important;
+      animation: urppp-spin 0.9s linear infinite !important;
+      background: none !important;
+    }
+    .layui-layer-loading .urppp-inline-loader,
+    .layui-layer-content .urppp-inline-loader {
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 0 !important;
+      padding: 0 !important;
+      gap: 0 !important;
+    }
+    .layui-layer-loading .urppp-inline-loader svg,
+    .layui-layer-content .urppp-inline-loader svg {
+      width: 40px !important;
+      height: 40px !important;
+    }
   `);
 
   const URPPP_LOADER_SVG = `
@@ -139,7 +203,7 @@
       if (img.dataset.urpppReplaced === '1') return;
       const src = (img.getAttribute('src') || img.src || '').toLowerCase();
       if (!src) return;
-      if (!(src.includes('pageloading') || src.includes('page-loading') || src.includes('loading.gif') || src.includes('/loading'))) return;
+      if (!(src.includes('pageloading') || src.includes('page-loading') || src.includes('loading.gif') || src.includes('/loading') || src.includes('loading-0') || src.includes('loading-1'))) return;
       img.dataset.urpppReplaced = '1';
       let text = '';
       const parent = img.parentElement;
@@ -147,7 +211,7 @@
         const t = (parent.textContent || '').replace(/\s+/g, ' ').trim();
         if (/加载/.test(t)) text = t.includes('正在加载') ? '正在加载中…' : '加载中…';
       }
-      const loader = makeInlineLoader(text || '正在加载中…');
+      const loader = makeInlineLoader(text || '');
       if (img.parentElement) img.parentElement.replaceChild(loader, img);
     });
     // 2) 纯文字 loading 容器
@@ -159,6 +223,35 @@
       el.style.setProperty('display', 'flex', 'important');
       el.style.setProperty('align-items', 'center', 'important');
       el.style.setProperty('justify-content', 'center', 'important');
+    });
+    // 3) layui-layer loading（class 背景图，不是 <img>）
+    scope.querySelectorAll(
+      '.layui-layer-content.layui-layer-loading0, .layui-layer-content.layui-layer-loading1, .layui-layer-content.layui-layer-loading2, .layui-layer-loading .layui-layer-content'
+    ).forEach((el) => {
+      if (el.dataset.urpppReplaced === '1') return;
+      if (el.querySelector('.urppp-inline-loader')) {
+        el.dataset.urpppReplaced = '1';
+        return;
+      }
+      el.dataset.urpppReplaced = '1';
+      el.style.setProperty('background', 'transparent', 'important');
+      el.style.setProperty('background-image', 'none', 'important');
+      el.style.setProperty('background-color', 'transparent', 'important');
+      // 清空可能的背景文字，注入 SVG
+      const keepText = (el.textContent || '').trim();
+      el.textContent = '';
+      const loader = makeInlineLoader(keepText && /加载/.test(keepText) ? keepText : '');
+      el.appendChild(loader);
+      el.style.setProperty('display', 'flex', 'important');
+      el.style.setProperty('align-items', 'center', 'important');
+      el.style.setProperty('justify-content', 'center', 'important');
+    });
+    // 4) 外层 dialog 去阴影底
+    scope.querySelectorAll('.layui-layer-dialog.layui-layer-loading, .layui-layer.layui-layer-loading').forEach((el) => {
+      el.style.setProperty('background', 'transparent', 'important');
+      el.style.setProperty('background-image', 'none', 'important');
+      el.style.setProperty('box-shadow', 'none', 'important');
+      el.style.setProperty('border', 'none', 'important');
     });
   }
 
@@ -2897,7 +2990,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.34');
+    console.log('[URP++] style applied v0.3.35');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -3510,7 +3603,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.34',
+    version: '0.3.35',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
