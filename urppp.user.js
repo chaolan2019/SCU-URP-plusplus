@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.14
+// @version      0.4.15
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.14';
+          content:'URP++ v0.4.15';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3326,6 +3326,11 @@
       .page-content .profile-info-row {
         flex-direction: row !important;
       }
+      .page-content .profile-user-info.self .profile-info-row,
+      .page-content .profile-user-info-striped.self .profile-info-row {
+        display: block !important;
+        flex-direction: unset !important;
+      }
       /* 个人信息 / 学籍信息 */
       .profile-user-info,
       .profile-user-info-striped {
@@ -3361,12 +3366,15 @@
       }
       .profile-user-info:has(.chosen-container),
       .widget-box:has(.chosen-container),
-      .panel:has(.chosen-container) { overflow: visible !important; }
+      .panel:has(.chosen-container),
+      .profile-user-info.self { overflow: visible !important; }
+
+      /* 默认：一行一对 name/value（学籍信息等） */
       .profile-info-row {
         display: flex !important;
-        align-items: center !important;
+        align-items: stretch !important;
         border-bottom: 1px solid var(--border) !important;
-        min-height: 44px !important;
+        min-height: 40px !important;
       }
       .profile-info-row:last-child { border-bottom: none !important; }
       .profile-info-name {
@@ -3374,10 +3382,10 @@
         color: var(--text-secondary) !important;
         border-color: var(--border) !important;
         border-right: 1px solid var(--border) !important;
-        padding: 0 14px !important;
+        padding: 0 12px !important;
         width: 140px !important;
         min-width: 120px !important;
-        min-height: 44px !important;
+        min-height: 40px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: flex-end !important;
@@ -3394,16 +3402,125 @@
         padding: 6px 12px !important;
         flex: 1 !important;
         min-width: 0 !important;
-        min-height: 44px !important;
+        min-height: 40px !important;
         display: flex !important;
         align-items: center !important;
-        flex-wrap: wrap !important;
+        flex-wrap: nowrap !important;
         gap: 8px !important;
         background: var(--surface) !important;
         box-sizing: border-box !important;
         float: none !important;
       }
-      /* 查询表单：标签与输入框垂直居中（profile-info 结构） */
+
+      /*
+       * 查询条件：ACE 把多组 name/value 塞进同一个 .profile-info-row
+       * 必须用多列 float/inline-block，不能整行 flex
+       */
+      .profile-user-info.self,
+      .profile-user-info-striped.self {
+        overflow: visible !important;
+      }
+      .profile-user-info.self .profile-info-row,
+      .profile-user-info-striped.self .profile-info-row,
+      .page-content .profile-user-info.self .profile-info-row {
+        display: block !important;
+        font-size: 0 !important; /* 清 inline-block 空隙 */
+        border-bottom: none !important;
+        min-height: 0 !important;
+        padding: 4px 0 !important;
+        overflow: visible !important;
+      }
+      .profile-user-info.self .profile-info-name,
+      .profile-user-info-striped.self .profile-info-name,
+      .page-content .profile-user-info.self .profile-info-name {
+        display: inline-block !important;
+        float: none !important;
+        vertical-align: middle !important;
+        width: 10.5% !important;
+        min-width: 84px !important;
+        max-width: 140px !important;
+        min-height: 40px !important;
+        margin: 0 0 8px 0 !important;
+        padding: 0 8px !important;
+        border-right: none !important;
+        background: transparent !important;
+        justify-content: flex-end !important;
+        text-align: right !important;
+        font-size: 13px !important;
+        line-height: 40px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      .profile-user-info.self .profile-info-value,
+      .profile-user-info-striped.self .profile-info-value,
+      .page-content .profile-user-info.self .profile-info-value {
+        display: inline-block !important;
+        float: none !important;
+        vertical-align: middle !important;
+        width: 22.5% !important;
+        min-width: 140px !important;
+        min-height: 40px !important;
+        margin: 0 0 8px 0 !important;
+        padding: 3px 8px !important;
+        flex: none !important;
+        background: transparent !important;
+        font-size: 13px !important;
+        line-height: 34px !important;
+      }
+      /* 标签+控件垂直居中 */
+      .profile-user-info.self .profile-info-value > input,
+      .profile-user-info.self .profile-info-value > select,
+      .profile-user-info.self .profile-info-value > .form-control,
+      .profile-user-info.self .profile-info-value > .chosen-container,
+      .profile-user-info.self .profile-info-value input,
+      .profile-user-info.self .profile-info-value select,
+      .profile-user-info.self .profile-info-value .chosen-container {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        vertical-align: middle !important;
+        box-sizing: border-box !important;
+      }
+      .profile-user-info.self .profile-info-value input[type="text"],
+      .profile-user-info.self .profile-info-value input:not([type]),
+      .profile-user-info.self .profile-info-value select,
+      .profile-user-info.self .profile-info-value .form-control,
+      .profile-user-info.self .value_element {
+        height: 34px !important;
+        min-height: 34px !important;
+        line-height: 1.35 !important;
+        padding: 4px 10px !important;
+      }
+      .profile-user-info.self .profile-info-value .chosen-container,
+      .profile-user-info.self .profile-info-value .chosen-container-single {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        top: 0 !important;
+      }
+      .profile-user-info.self .profile-info-value .chosen-single {
+        height: 34px !important;
+        min-height: 34px !important;
+        line-height: 32px !important;
+        padding: 0 30px 0 10px !important;
+        display: block !important;
+      }
+      .profile-user-info.self .profile-info-value .chosen-single span {
+        line-height: 32px !important;
+        margin-right: 24px !important;
+      }
+      .profile-user-info.self .profile-info-value .chosen-single div {
+        width: 26px !important;
+        height: 100% !important;
+        top: 0 !important;
+      }
+      .profile-user-info.self .profile-info-value .chosen-single div b {
+        background-position: 0 7px !important;
+      }
+
+      /* 通用 profile-info 控件高度（学籍等） */
       .profile-info-value > input,
       .profile-info-value > select,
       .profile-info-value > textarea,
@@ -3415,13 +3532,11 @@
         vertical-align: middle !important;
       }
       .profile-info-value .chosen-container {
-        display: inline-block !important;
-        top: 0 !important;
-        vertical-align: middle !important;
-      }
-      .profile-info-value .chosen-container {
+        display: block !important;
         width: 100% !important;
         max-width: 100% !important;
+        top: 0 !important;
+        vertical-align: middle !important;
       }
       .profile-info-value .chosen-container .chosen-single {
         height: 34px !important;
@@ -4769,7 +4884,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.14');
+    console.log('[URP++] style applied v0.4.15');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5387,7 +5502,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.14',
+    version: '0.4.15',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
