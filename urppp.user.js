@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.58
+// @version      0.3.59
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -1218,7 +1218,7 @@
       // 清旧注入，避免重复
       box.querySelectorAll('.urppp-pct-text, .urppp-pct-bar').forEach((el) => el.remove());
 
-      // 主文字容器：把进度放到其末尾（主文字下面）
+      // 主文字容器：进度放在主文字上面
       const data = box.querySelector('.infobox-data') || box;
 
       const textEl = document.createElement('div');
@@ -1234,9 +1234,9 @@
         bar.appendChild(fill);
       }
 
-      // 确保追加在主文字后
-      data.appendChild(textEl);
-      data.appendChild(bar);
+      // 插到最前：百分比 -> 进度条 -> 原主文字
+      data.insertBefore(bar, data.firstChild);
+      data.insertBefore(textEl, data.firstChild);
       box.dataset.urpppPctDone = '1';
     });
   }
@@ -2274,22 +2274,17 @@
         gap: 0 !important;
         width: 100% !important;
       }
-      .infobox .infobox-data-number,
-      .infobox .infobox-content,
-      .infobox .infobox-text {
-        order: 0 !important;
-      }
       .infobox .urppp-pct-text {
-        order: 10 !important;
+        order: 1 !important;
         display: block !important;
-        margin: 8px 0 6px !important;
+        margin: 0 0 6px !important;
         font-size: 16px !important;
         font-weight: 700 !important;
         line-height: 1.2 !important;
         color: var(--primary) !important;
       }
       .infobox .urppp-pct-bar {
-        order: 11 !important;
+        order: 2 !important;
         display: block !important;
         width: 100% !important;
         height: 8px !important;
@@ -2298,8 +2293,13 @@
         border: 1px solid var(--border) !important;
         box-sizing: border-box !important;
         overflow: hidden !important;
-        margin: 0 !important;
+        margin: 0 0 8px !important;
         padding: 0 !important;
+      }
+      .infobox .infobox-data-number,
+      .infobox .infobox-content,
+      .infobox .infobox-text {
+        order: 3 !important;
       }
       .infobox .urppp-pct-fill {
         display: block !important;
@@ -3532,7 +3532,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.58');
+    console.log('[URP++] style applied v0.3.59');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -4148,7 +4148,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.58',
+    version: '0.3.59',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
