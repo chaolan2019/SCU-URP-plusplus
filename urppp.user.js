@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.36
+// @version      0.3.38
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -89,15 +89,45 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif !important;
       box-sizing: border-box !important;
     }
-    /* 分页表格遮罩：尊重站点 display:none，绝不强制显示 */
+    /* 分页/表格遮罩：绝不注入 DOM；只在可见时用 CSS 转圈，站点 display:none 即可彻底消失 */
     [id^="div_page_loading"],
-    [id*="page_loading"] {
-      /* 不覆盖 display，只美化其内部 loader */
+    [id*="page_loading"],
+    [id$="_loading"],
+    div[id*="page_loading"] {
+      background: transparent !important;
+      background-image: none !important;
     }
+    [id^="div_page_loading"] img,
+    [id*="page_loading"] img {
+      display: none !important;
+      opacity: 0 !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+    /* 清掉我们误注入的节点视觉 */
     [id^="div_page_loading"] .urppp-inline-loader,
-    [id*="page_loading"] .urppp-inline-loader {
-      min-height: 0 !important;
-      padding: 0 !important;
+    [id*="page_loading"] .urppp-inline-loader,
+    [id^="div_page_loading"] svg,
+    [id*="page_loading"] svg {
+      display: none !important;
+      visibility: hidden !important;
+      width: 0 !important;
+      height: 0 !important;
+      opacity: 0 !important;
+    }
+    [id^="div_page_loading"]::before,
+    [id*="page_loading"]::before {
+      content: '' !important;
+      display: inline-block !important;
+      width: 36px !important;
+      height: 36px !important;
+      margin: 12px auto !important;
+      border: 3px solid #CBD5E1 !important;
+      border-top-color: #1E3A5F !important;
+      border-radius: 50% !important;
+      box-sizing: border-box !important;
+      animation: urppp-spin 0.9s linear infinite !important;
+      vertical-align: middle !important;
     }
     .urppp-inline-loader svg {
       width: 40px !important;
@@ -208,47 +238,47 @@
   }
 
   function isPageLoadingOverlay(el) {
-    if (!el) return false;
-    const id = el.id || '';
-    if (/^div_page_loading/i.test(id) || /page_loading/i.test(id)) return true;
-    if (el.classList && (el.classList.contains('page-loading') || el.classList.contains('page_loading'))) return true;
-    return false;
+    if (!el || !el.closest) return false;
+    const hit = el.closest('[id^="div_page_loading"], [id*="page_loading"], [id*="PageLoading"]');
+    return !!hit;
+  }
+
+  function cleanupPageLoadingOverlays(scope) {
+    const root = scope && scope.querySelectorAll ? scope : document;
+    root.querySelectorAll('[id^="div_page_loading"], [id*="page_loading"]').forEach((el) => {
+      // 只移除我们误注入的 SVG，绝不改 display（显隐交给站点）
+      el.querySelectorAll('.urppp-inline-loader').forEach((n) => n.remove());
+      // 清掉我们曾写过的 display !important，让站点自己的 none/block 生效
+      if (el.style && el.style.getPropertyPriority('display') === 'important') {
+        el.style.removeProperty('display');
+      }
+    });
   }
 
   function replaceNativeLoaders(root) {
     const scope = root && root.querySelectorAll ? root : document;
 
-    // 1) 只替换 loading gif 本身，绝不改父容器 display（分页遮罩靠 display:none 显隐）
+    // 0) 先清理分页遮罩上的误注入
+    cleanupPageLoadingOverlays(scope);
+
+    // 1) 替换 loading gif —— 跳过分页遮罩（遮罩只用 CSS 转圈）
     scope.querySelectorAll('img').forEach((img) => {
       if (img.dataset.urpppReplaced === '1') return;
+      if (isPageLoadingOverlay(img)) return;
       const src = (img.getAttribute('src') || img.src || '').toLowerCase();
       if (!src) return;
       if (!(src.includes('pageloading') || src.includes('page-loading') || src.includes('loading.gif') || src.includes('/loading') || src.includes('loading-0') || src.includes('loading-1'))) return;
       img.dataset.urpppReplaced = '1';
-      const parent = img.parentElement;
-      // 分页遮罩里的 gif：只替换节点，不碰 parent 样式
       const loader = makeInlineLoader('');
-      loader.style.setProperty('min-height', '0', 'important');
-      loader.style.setProperty('padding', '0', 'important');
-      if (parent) parent.replaceChild(loader, img);
+      loader.style.minHeight = '0';
+      loader.style.padding = '0';
+      if (img.parentElement) img.parentElement.replaceChild(loader, img);
     });
 
-    // 2) 纯 loading 容器：仅当它不是页面分页遮罩时才处理
+    // 2) 其它 loading 容器
     scope.querySelectorAll('.view-pre-loading, .pageloading, .pre-loading').forEach((el) => {
       if (el.dataset.urpppReplaced === '1') return;
-      if (isPageLoadingOverlay(el) || isPageLoadingOverlay(el.parentElement)) {
-        // 遮罩容器：只替换内部 gif，不改 display
-        const img = el.querySelector('img');
-        if (img && img.dataset.urpppReplaced !== '1') {
-          img.dataset.urpppReplaced = '1';
-          const loader = makeInlineLoader('');
-          loader.style.setProperty('min-height', '0', 'important');
-          loader.style.setProperty('padding', '0', 'important');
-          el.replaceChild(loader, img);
-        }
-        el.dataset.urpppReplaced = '1';
-        return;
-      }
+      if (isPageLoadingOverlay(el)) return;
       el.dataset.urpppReplaced = '1';
       if (!el.querySelector('.urppp-inline-loader')) {
         el.innerHTML = '';
@@ -256,7 +286,7 @@
       }
     });
 
-    // 3) layui-layer loading：只去背景图 + 注入 SVG，不强制永久显示
+    // 3) layui-layer loading
     scope.querySelectorAll(
       '.layui-layer-content.layui-layer-loading0, .layui-layer-content.layui-layer-loading1, .layui-layer-content.layui-layer-loading2, .layui-layer-loading .layui-layer-content'
     ).forEach((el) => {
@@ -266,38 +296,20 @@
       el.style.setProperty('background-image', 'none', 'important');
       el.style.setProperty('background-color', 'transparent', 'important');
       if (!el.querySelector('.urppp-inline-loader')) {
-        // 不清空整个节点结构，避免影响 layer 关闭逻辑
         const loader = makeInlineLoader('');
-        loader.style.setProperty('min-height', '0', 'important');
-        loader.style.setProperty('padding', '0', 'important');
+        loader.style.minHeight = '0';
+        loader.style.padding = '0';
         el.appendChild(loader);
       }
     });
 
-    // 4) layui dialog 外壳去底
     scope.querySelectorAll('.layui-layer-dialog.layui-layer-loading, .layui-layer.layui-layer-loading').forEach((el) => {
       el.style.setProperty('background', 'transparent', 'important');
       el.style.setProperty('background-image', 'none', 'important');
       el.style.setProperty('box-shadow', 'none', 'important');
       el.style.setProperty('border', 'none', 'important');
     });
-
-    // 5) 修正：如果分页遮罩被误加了 urppp-inline-loader / display:flex !important，恢复隐藏权
-    scope.querySelectorAll('[id^="div_page_loading"], [id*="page_loading"]').forEach((el) => {
-      // 去掉误加到遮罩本身的 loader class
-      if (el.classList.contains('urppp-inline-loader')) el.classList.remove('urppp-inline-loader');
-      // 清掉我们可能写过的 display !important，让站点自己的 display:none 生效
-      if (el.style.getPropertyPriority('display') === 'important') {
-        el.style.removeProperty('display');
-      }
-      // 若遮罩当前应隐藏（inline none 或 computed 倾向 hidden），保持不可见
-      const inlineDisp = (el.getAttribute('style') || '');
-      if (/display\s*:\s*none/i.test(inlineDisp)) {
-        el.style.setProperty('display', 'none', 'important');
-      }
-    });
   }
-
   function ensureBootLoader() {
     if (document.getElementById('urppp-boot-loader')) return;
     const mount = () => {
@@ -3021,6 +3033,9 @@
     setTimeout(patchAceTabNavbars, 600);
     setTimeout(alignRollInfoLayout, 1200);
     setTimeout(patchAceTabNavbars, 1200);
+    setTimeout(() => cleanupPageLoadingOverlays(document), 300);
+    setTimeout(() => cleanupPageLoadingOverlays(document), 1000);
+    setTimeout(() => cleanupPageLoadingOverlays(document), 2500);
     setTimeout(beautifyBreadcrumbs, 200);
     setTimeout(beautifyBreadcrumbs, 600);
     setTimeout(beautifyBreadcrumbs, 1500);
@@ -3031,9 +3046,9 @@
     patchSchoolCalendarLink();
     window.addEventListener('load', () => { rebuildNavbar(); patchSchoolCalendarLink(); });
 
-    setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
+    setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); cleanupPageLoadingOverlays(document); }, 600);
 
-    console.log('[URP++] style applied v0.3.36');
+    console.log('[URP++] style applied v0.3.38');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -3646,7 +3661,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.36',
+    version: '0.3.38',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
