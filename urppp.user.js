@@ -1089,7 +1089,7 @@
         border: none !important;
         border-bottom: none !important;
         box-shadow: none !important;
-        padding: 16px 24px 10px 28px !important;
+        padding: 16px 24px 12px !important;
         min-height: 0 !important;
         line-height: 1.4 !important;
         position: relative !important;
@@ -1112,15 +1112,17 @@
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
         margin: 0 !important;
-        padding: 8px 12px !important;
-        display: inline-flex !important;
+        padding: 10px 16px !important;
+        display: flex !important;
         flex-wrap: wrap !important;
         align-items: center !important;
         gap: 2px !important;
         font-size: 16px !important;
         list-style: none !important;
         box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+        width: 100% !important;
         max-width: 100% !important;
+        box-sizing: border-box !important;
       }
       .breadcrumb > li {
         color: var(--text-secondary) !important;
@@ -1185,35 +1187,61 @@
         font-size: 16px !important;
       }
       .breadcrumb > li.hide-item { display: none !important; }
-      .page-content { padding-top: 10px !important; }
+      /* 内容区左右与面包屑同边距（24px），标题条与路径条同宽对齐 */
+      .page-content {
+        padding: 4px 24px 24px !important;
+      }
+      .page-content > .row {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+      .page-content > .row > [class*="col-"],
+      .page-content .self-margin {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+      .page-content .tabbable {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+      }
+      /* tab 内左右不再二次缩进，避免标题比面包屑更窄 */
+      .tabbable .tab-content {
+        padding: 14px 16px 16px !important;
+      }
 
-      /* 页面区块标题（ACE h4.header）：去掉默认底线和图标的脏样式 */
+      /* 页面区块标题：与面包屑同风格的全宽条，左右边缘对齐 */
       h4.header, h3.header, .header.smaller, .header.lighter {
-        background: transparent !important;
-        border: none !important;
-        border-bottom: none !important;
-        box-shadow: none !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-bottom: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
         color: var(--text) !important;
         font-size: 16px !important;
         font-weight: 600 !important;
         line-height: 1.4 !important;
         margin: 0 0 14px !important;
-        padding: 0 0 12px !important;
+        padding: 12px 16px !important;
         min-height: 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
         display: flex !important;
         align-items: center !important;
-        gap: 10px !important;
+        gap: 12px !important;
         position: relative !important;
       }
-      h4.header::after, h3.header::after, .header.smaller::after {
+      h4.header::before, h3.header::before, .header.smaller::before {
         content: '' !important;
-        position: absolute !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        height: 1px !important;
-        background: var(--border) !important;
-        opacity: 0.9 !important;
+        display: inline-block !important;
+        width: 3px !important;
+        height: 16px !important;
+        border-radius: 2px !important;
+        background: var(--primary) !important;
+        flex: 0 0 auto !important;
+      }
+      h4.header::after, h3.header::after, .header.smaller::after {
+        content: none !important;
+        display: none !important;
       }
       h4.header > .glyphicon,
       h4.header > .fa,
@@ -1222,17 +1250,7 @@
       h3.header > .fa,
       .header.smaller > .glyphicon,
       .header.smaller > .fa {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        width: 28px !important;
-        height: 28px !important;
-        border-radius: 8px !important;
-        background: var(--input-bg) !important;
-        color: var(--primary) !important;
-        font-size: 13px !important;
-        margin: 0 !important;
-        flex: 0 0 auto !important;
+        display: none !important;
       }
       h4.header .right_top_oper,
       .header .right_top_oper {
@@ -1245,7 +1263,6 @@
       h4.header.grey, .header.lighter.grey, .header.smaller.lighter {
         color: var(--text) !important;
       }
-
       /* 卡片 / 面板 */      /* 卡片 / 面板 */
       .widget-box {
         background: var(--surface) !important;
@@ -1460,7 +1477,7 @@
         background: var(--surface) !important;
         border: none !important;
         border-radius: 0 !important;
-        padding: 16px !important;
+        padding: 14px 16px 16px !important;
         box-shadow: none !important;
       }
       .tab-content > .tab-pane { padding: 0 !important; }
