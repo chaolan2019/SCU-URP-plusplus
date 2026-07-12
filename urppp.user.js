@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.59
+// @version      0.3.60
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -2314,6 +2314,30 @@
         box-shadow: none !important;
       }
       .infobox .urppp-pct-bar.is-empty .urppp-pct-fill { display: none !important; }
+      /* 表格/课组要求中的 Bootstrap progress 圆角 */
+      .progress,
+      .progress.pos-rel,
+      div.progress {
+        border-radius: 999px !important;
+        overflow: hidden !important;
+        background: var(--input-bg) !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: none !important;
+        height: 14px !important;
+      }
+      .progress .progress-bar,
+      .progress > .progress-bar {
+        border-radius: 999px !important;
+        background: var(--primary) !important;
+        box-shadow: none !important;
+      }
+      .progress .progress-bar + span,
+      .progress > span {
+        line-height: 14px !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        color: var(--text) !important;
+      }
       .infobox .easy-pie-chart,
       .infobox .percentage,
       .infobox .infobox-progress,
@@ -3532,7 +3556,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.59');
+    console.log('[URP++] style applied v0.3.60');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -4148,7 +4172,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.59',
+    version: '0.3.60',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
