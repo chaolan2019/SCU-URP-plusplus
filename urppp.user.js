@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.13
+// @version      0.4.14
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.13';
+          content:'URP++ v0.4.14';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3419,19 +3419,24 @@
         top: 0 !important;
         vertical-align: middle !important;
       }
+      .profile-info-value .chosen-container {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
       .profile-info-value .chosen-container .chosen-single {
-        height: 32px !important;
-        min-height: 32px !important;
-        line-height: 30px !important;
-        display: flex !important;
-        align-items: center !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        line-height: 32px !important;
+        display: block !important;
+        padding: 0 30px 0 12px !important;
       }
       .profile-info-value select,
       .profile-info-value input[type="text"],
       .profile-info-value input[type="number"],
       .profile-info-value input:not([type]) {
-        height: 32px !important;
-        min-height: 32px !important;
+        width: 100% !important;
+        height: 34px !important;
+        min-height: 34px !important;
         line-height: 1.35 !important;
       }
       /* 学籍/个人头像：固定小尺寸 + 圆角（覆盖内联 width/height） */
@@ -3738,26 +3743,43 @@
         border-radius: 8px !important;
       }
       .chosen-single, .chosen-choices {
-        min-height: 32px !important;
-        line-height: 1.4 !important;
-        padding: 4px 12px !important;
+        min-height: 34px !important;
+        line-height: 32px !important;
+        padding: 0 30px 0 12px !important;
         border-radius: 8px !important;
+        box-sizing: border-box !important;
       }
       .chosen-single {
-        display: flex !important;
-        align-items: center !important;
+        display: block !important;
+        height: 34px !important;
+        position: relative !important;
       }
-      .chosen-single span { margin-right: 26px !important; }
+      .chosen-single span {
+        display: block !important;
+        margin-right: 26px !important;
+        line-height: 32px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+      }
+      .chosen-single div {
+        position: absolute !important;
+        top: 0 !important;
+        right: 0 !important;
+        width: 28px !important;
+        height: 100% !important;
+      }
       .chosen-container {
         height: auto !important;
-        min-height: 32px !important;
+        min-height: 34px !important;
         vertical-align: middle !important;
         position: relative !important;
         box-sizing: border-box !important;
+        font-size: 13px !important;
       }
       .chosen-container-single {
-        width: auto !important;
-        min-width: 150px !important;
+        width: 100% !important;
+        min-width: 0 !important;
         max-width: 100% !important;
       }
       .chosen-drop {
@@ -3779,30 +3801,34 @@
       .chosen-results li.highlighted { background: var(--primary) !important; color: #fff !important; }
       label { color: var(--text-secondary) !important; font-weight: 500 !important; font-size: 13px !important; }
 
-      /* 查询表单：col-sm-3 标签 + col-sm-9 控件 垂直居中 */
+      /* 查询表单：保留 Bootstrap 栅格，只做垂直居中与统一高度 */
       .form-horizontal .form-group,
       form .form-group,
       .form-group {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        align-items: center !important;
-        margin-left: 0 !important;
-        margin-right: 0 !important;
-        margin-bottom: 14px !important;
+        display: block !important;
+        margin-left: -12px !important;
+        margin-right: -12px !important;
+        margin-bottom: 12px !important;
       }
       .form-group:before,
       .form-group:after,
       .form-horizontal .form-group:before,
       .form-horizontal .form-group:after {
-        display: none !important;
-        content: none !important;
+        content: " " !important;
+        display: table !important;
+      }
+      .form-group:after,
+      .form-horizontal .form-group:after {
+        clear: both !important;
       }
       .form-group > [class*="col-"],
       .form-horizontal .form-group > [class*="col-"] {
-        float: none !important;
-        display: flex !important;
-        align-items: center !important;
-        min-height: 34px !important;
+        float: left !important;
+        display: block !important;
+        position: relative !important;
+        min-height: 1px !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
         padding-top: 0 !important;
         padding-bottom: 0 !important;
         box-sizing: border-box !important;
@@ -3810,76 +3836,109 @@
       .form-group > .col-sm-3,
       .form-group > .col-xs-3,
       .form-group > .col-md-3,
-      .form-group > .no-padding-right,
-      .form-group > [class*="col-"].no-padding-right {
-        justify-content: flex-end !important;
-        padding-right: 10px !important;
+      .form-horizontal .form-group > .col-sm-3,
+      .form-horizontal .form-group > .col-xs-3,
+      .form-horizontal .form-group > .col-md-3 {
+        width: 25% !important;
+        text-align: right !important;
       }
       .form-group > .col-sm-9,
       .form-group > .col-xs-9,
-      .form-group > .col-md-9 {
-        justify-content: flex-start !important;
-        flex-wrap: wrap !important;
-        gap: 8px !important;
+      .form-group > .col-md-9,
+      .form-horizontal .form-group > .col-sm-9,
+      .form-horizontal .form-group > .col-xs-9,
+      .form-horizontal .form-group > .col-md-9 {
+        width: 75% !important;
+        text-align: left !important;
       }
       .form-horizontal .control-label,
       .form-group .control-label,
       label.control-label,
       .form-group > [class*="col-"] > label {
         display: block !important;
-        width: 100% !important;
         float: none !important;
+        width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
-        padding-top: 0 !important;
-        padding-bottom: 0 !important;
-        height: auto !important;
-        min-height: 0 !important;
+        height: 34px !important;
         line-height: 34px !important;
         text-align: right !important;
         color: var(--text-secondary) !important;
         font-weight: 500 !important;
         font-size: 13px !important;
         white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
         box-sizing: border-box !important;
       }
-      .form-group input,
+      .form-group input:not([type="checkbox"]):not([type="radio"]),
       .form-group select,
-      .form-group textarea,
       .form-group .form-control,
-      .form-group .chosen-container,
-      .form-horizontal input,
+      .form-horizontal input:not([type="checkbox"]):not([type="radio"]),
       .form-horizontal select,
-      .form-horizontal .form-control,
-      .form-horizontal .chosen-container {
-        margin-top: 0 !important;
-        margin-bottom: 0 !important;
+      .form-horizontal .form-control {
+        display: inline-block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        margin: 0 !important;
         vertical-align: middle !important;
+        box-sizing: border-box !important;
+      }
+      .form-group textarea,
+      .form-horizontal textarea {
+        height: auto !important;
+        min-height: 80px !important;
       }
       .form-group .chosen-container,
       .form-horizontal .chosen-container {
-        display: inline-block !important;
-        vertical-align: middle !important;
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 !important;
         top: 0 !important;
+        vertical-align: middle !important;
       }
       .form-group .chosen-container .chosen-single,
-      .form-horizontal .chosen-container .chosen-single {
+      .form-horizontal .chosen-container .chosen-single,
+      .form-group .chosen-container-single .chosen-single,
+      .form-horizontal .chosen-container-single .chosen-single {
         height: 34px !important;
         min-height: 34px !important;
         line-height: 32px !important;
-        display: flex !important;
-        align-items: center !important;
+        padding: 0 30px 0 12px !important;
+        display: block !important;
+        box-sizing: border-box !important;
       }
-      .form-group select,
-      .form-horizontal select {
-        height: 34px !important;
-        min-height: 34px !important;
+      .form-group .chosen-container-single .chosen-single span,
+      .form-horizontal .chosen-container-single .chosen-single span {
+        display: block !important;
+        line-height: 32px !important;
+        margin-right: 26px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
       }
-      .form-group input.form-control,
-      .form-horizontal input.form-control {
-        height: 34px !important;
-        min-height: 34px !important;
-        line-height: 1.35 !important;
+      .form-group .chosen-container-single .chosen-single div,
+      .form-horizontal .chosen-container-single .chosen-single div {
+        top: 0 !important;
+        height: 100% !important;
+        width: 28px !important;
+      }
+      .form-group .chosen-container-single .chosen-single div b,
+      .form-horizontal .chosen-container-single .chosen-single div b {
+        background-position: 0 6px !important;
+      }
+      /* 查询区两列时更稳 */
+      .form-horizontal .col-sm-6 .form-group > .col-sm-3,
+      .form-horizontal .col-xs-6 .form-group > .col-sm-3 {
+        width: 33.333333% !important;
+      }
+      .form-horizontal .col-sm-6 .form-group > .col-sm-9,
+      .form-horizontal .col-xs-6 .form-group > .col-sm-9 {
+        width: 66.666667% !important;
       }
 
       /* Alert 关闭叉：垂直居中对齐 */
@@ -4710,7 +4769,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.13');
+    console.log('[URP++] style applied v0.4.14');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5328,7 +5387,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.13',
+    version: '0.4.14',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
