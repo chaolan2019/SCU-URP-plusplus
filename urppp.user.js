@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.17
+// @version      0.4.18
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.17';
+          content:'URP++ v0.4.18';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3428,16 +3428,17 @@
         position: relative !important;
       }
 
-      /* 查询条件：ACE .self 多组 name/value 同行 float 布局 */
+      /* 查询条件：ACE 原版是 3 组/行 float：name≈11.67% + value≈21.67% */
       .profile-user-info.self,
       .profile-user-info-striped.self,
-      .profile-user-info:has(> .profile-info-row > .profile-info-name:nth-of-type(2)),
+      .profile-user-info:has(> .profile-info-row > .profile-info-name ~ .profile-info-name),
       .profile-user-info:has(.value_element) {
         border: 1px solid var(--border) !important;
         border-radius: var(--radius) !important;
         background: var(--surface) !important;
-        padding: 8px 8px 2px !important;
+        padding: 10px 8px 2px !important;
         box-sizing: border-box !important;
+        overflow: visible !important;
       }
       .profile-user-info.self .profile-info-row,
       .profile-user-info-striped.self .profile-info-row,
@@ -3445,6 +3446,7 @@
       .page-content .profile-user-info.self .profile-info-row,
       .page-content .profile-user-info:has(.value_element) .profile-info-row {
         display: block !important;
+        width: 100% !important;
         border-bottom: none !important;
         padding: 0 !important;
         margin: 0 !important;
@@ -3458,12 +3460,13 @@
       .page-content .profile-user-info.self .profile-info-name,
       .page-content .profile-user-info:has(.value_element) .profile-info-name {
         float: left !important;
-        width: 10% !important;
-        min-width: 80px !important;
-        max-width: 120px !important;
+        display: block !important;
+        width: 11.66666667% !important;
+        min-width: 0 !important;
+        max-width: none !important;
         height: 40px !important;
         min-height: 40px !important;
-        margin: 0 0 10px 0 !important;
+        margin: 0 0 10px !important;
         padding: 0 8px 0 4px !important;
         background: transparent !important;
         border: none !important;
@@ -3473,6 +3476,7 @@
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
+        box-sizing: border-box !important;
       }
       .profile-user-info.self .profile-info-value,
       .profile-user-info-striped.self .profile-info-value,
@@ -3480,16 +3484,19 @@
       .page-content .profile-user-info.self .profile-info-value,
       .page-content .profile-user-info:has(.value_element) .profile-info-value {
         float: left !important;
-        width: 23% !important;
-        min-width: 140px !important;
-        margin: 0 0 10px 0 !important;
-        margin-left: 0 !important;
-        padding: 3px 8px !important;
-        min-height: 40px !important;
+        display: block !important;
+        width: 21.66666667% !important;
+        min-width: 0 !important;
+        max-width: none !important;
         height: 40px !important;
+        min-height: 40px !important;
+        margin: 0 0 10px !important;
+        margin-left: 0 !important; /* 覆盖默认 140px */
+        padding: 3px 8px !important;
         background: transparent !important;
         border: none !important;
         box-sizing: border-box !important;
+        flex: none !important;
       }
       .profile-user-info.self .profile-info-value > input,
       .profile-user-info.self .profile-info-value > select,
@@ -3502,6 +3509,7 @@
       .profile-user-info:has(.value_element) .profile-info-value > .chosen-container,
       .profile-user-info:has(.value_element) .value_element {
         display: block !important;
+        float: none !important;
         width: 100% !important;
         max-width: 100% !important;
         min-width: 0 !important;
@@ -3509,6 +3517,13 @@
         min-height: 34px !important;
         margin: 0 !important;
         box-sizing: border-box !important;
+      }
+      .profile-user-info.self input[style*="height"],
+      .profile-user-info.self select[style*="height"],
+      .profile-user-info:has(.value_element) input[style*="height"],
+      .profile-user-info:has(.value_element) select[style*="height"] {
+        height: 34px !important;
+        min-height: 34px !important;
       }
       .profile-user-info.self .chosen-container,
       .profile-user-info.self .chosen-container-single,
@@ -3519,6 +3534,7 @@
         max-width: 100% !important;
         top: 0 !important;
         height: 34px !important;
+        position: relative !important;
       }
       .profile-user-info.self .chosen-single,
       .profile-user-info:has(.value_element) .chosen-single {
@@ -3530,12 +3546,18 @@
       }
       .profile-user-info.self .chosen-single span,
       .profile-user-info:has(.value_element) .chosen-single span {
+        display: block !important;
         line-height: 32px !important;
         margin-right: 22px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
       }
       .profile-user-info.self .chosen-single div,
       .profile-user-info:has(.value_element) .chosen-single div {
+        position: absolute !important;
         top: 0 !important;
+        right: 0 !important;
         width: 26px !important;
         height: 100% !important;
       }
@@ -3543,7 +3565,11 @@
       .profile-user-info:has(.value_element) .chosen-single div b {
         background-position: 0 7px !important;
       }
-
+      /* 空标签占位（ACE 常用） */
+      .profile-user-info.self .profile-info-name:empty,
+      .profile-user-info:has(.value_element) .profile-info-name:empty {
+        visibility: hidden !important;
+      }
       /* 通用控件高度（学籍等单对结构） */
       .profile-info-value > input,
       .profile-info-value > select,
@@ -4908,7 +4934,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.17');
+    console.log('[URP++] style applied v0.4.18');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5526,7 +5552,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.17',
+    version: '0.4.18',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
