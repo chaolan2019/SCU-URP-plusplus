@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.53
+// @version      0.3.54
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -1175,8 +1175,9 @@
       }
     });
   }
-  // 培养方案等页：easy-pie 百分比改扁平进度条
+  // 培养方案等页：infobox 百分比/进度改扁平进度条
   function restyleInfoboxPercentages() {
+    // A) easy-pie / percentage
     document.querySelectorAll('.infobox .easy-pie-chart, .infobox .percentage').forEach((el) => {
       if (el.dataset.urpppPct === '1') return;
       let pct = parseFloat(el.getAttribute('data-percent') || '');
@@ -1187,7 +1188,6 @@
       pct = Math.max(0, Math.min(100, pct));
       el.dataset.urpppPct = '1';
       el.querySelectorAll('canvas').forEach((c) => { c.style.display = 'none'; });
-      // 确保 percent 文本存在
       let percentEl = el.querySelector('.percent');
       if (!percentEl) {
         percentEl = document.createElement('span');
@@ -1195,17 +1195,84 @@
         el.insertBefore(percentEl, el.firstChild);
       }
       percentEl.textContent = String(Math.round(pct));
-      // 进度条
       let bar = el.querySelector('.urppp-pct-bar');
       if (!bar) {
         bar = document.createElement('span');
         bar.className = 'urppp-pct-bar';
-        const fill = document.createElement('i');
-        bar.appendChild(fill);
+        bar.appendChild(document.createElement('i'));
         el.appendChild(bar);
       }
       const fill = bar.querySelector('i');
       if (fill) fill.style.width = pct + '%';
+    });
+
+    // B) ACE 真实结构：.infobox-progress（常见于及格率）
+    document.querySelectorAll('.infobox .infobox-progress').forEach((prog) => {
+      if (prog.dataset.urpppPct === '1') return;
+      const box = prog.closest('.infobox');
+      if (!box) return;
+
+      // 读百分比：data-percent / 文本 / 进度条 width
+      let pct = parseFloat(prog.getAttribute('data-percent') || box.getAttribute('data-percent') || '');
+      if (Number.isNaN(pct)) {
+        const txt = (box.textContent || '').match(/(\d+(?:\.\d+)?)\s*%/);
+        if (txt) pct = parseFloat(txt[1]);
+      }
+      if (Number.isNaN(pct)) {
+        const bar = prog.querySelector('.progress-bar, [style*="width"]');
+        if (bar) {
+          const w = bar.style.width || getComputedStyle(bar).width;
+          const m = String(w).match(/([\d.]+)%/);
+          if (m) pct = parseFloat(m[1]);
+        }
+      }
+      if (Number.isNaN(pct)) pct = 0;
+      pct = Math.max(0, Math.min(100, pct));
+      prog.dataset.urpppPct = '1';
+
+      // 重建结构：百分比文字 + 扁平条
+      const host = prog.parentElement || box;
+      // 若 data 区没有独立 percent，补一个
+      let data = box.querySelector('.infobox-data') || box;
+      let percentEl = data.querySelector('.urppp-pct-text');
+      if (!percentEl) {
+        percentEl = document.createElement('div');
+        percentEl.className = 'urppp-pct-text';
+        // 插到 progress 前
+        prog.parentElement.insertBefore(percentEl, prog);
+      }
+      percentEl.textContent = Math.round(pct) + '%';
+
+      // 用我们的条替换/覆盖 progress 内容
+      prog.classList.add('urppp-pct-bar');
+      prog.innerHTML = '';
+      const fill = document.createElement('i');
+      fill.style.width = pct + '%';
+      prog.appendChild(fill);
+    });
+
+    // C) 兜底：infobox 文本含 xx% 但没有 progress/easy-pie
+    document.querySelectorAll('.infobox').forEach((box) => {
+      if (box.dataset.urpppPctBox === '1') return;
+      if (box.querySelector('.urppp-pct-bar, .infobox-progress, .easy-pie-chart, .percentage')) {
+        box.dataset.urpppPctBox = '1';
+        return;
+      }
+      const m = (box.textContent || '').match(/(\d+(?:\.\d+)?)\s*%/);
+      if (!m) return;
+      const pct = Math.max(0, Math.min(100, parseFloat(m[1]) || 0));
+      box.dataset.urpppPctBox = '1';
+      const data = box.querySelector('.infobox-data') || box;
+      const percentEl = document.createElement('div');
+      percentEl.className = 'urppp-pct-text';
+      percentEl.textContent = Math.round(pct) + '%';
+      const bar = document.createElement('div');
+      bar.className = 'urppp-pct-bar';
+      const fill = document.createElement('i');
+      fill.style.width = pct + '%';
+      bar.appendChild(fill);
+      data.appendChild(percentEl);
+      data.appendChild(bar);
     });
   }
   // 表格外框 wrapper：圆角 + 完整四边线
@@ -2222,21 +2289,43 @@
         white-space: normal !important;
         word-break: break-word !important;
       }
-      .infobox .infobox-progress {
-        margin-top: 10px !important;
+      .infobox .infobox-progress,
+      .infobox .urppp-pct-bar {
+        display: block !important;
+        margin-top: 8px !important;
         width: 100% !important;
-        height: 6px !important;
+        height: 8px !important;
         border-radius: 999px !important;
         background: var(--input-bg) !important;
         overflow: hidden !important;
         padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        position: relative !important;
       }
       .infobox .infobox-progress .progress-bar,
-      .infobox .infobox-progress > div {
+      .infobox .infobox-progress > div,
+      .infobox .infobox-progress > i,
+      .infobox .urppp-pct-bar > i,
+      .infobox .urppp-pct-bar > span,
+      .infobox .urppp-pct-bar > div {
+        display: block !important;
         height: 100% !important;
         border-radius: 999px !important;
         background: var(--primary) !important;
         box-shadow: none !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+      }
+      .infobox .urppp-pct-text {
+        display: block !important;
+        margin: 2px 0 0 !important;
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+        color: var(--primary) !important;
       }
       /* 替换 ACE easy-pie 环形百分比为扁平进度条 */
       .infobox .easy-pie-chart,
@@ -2272,22 +2361,8 @@
       .infobox .percentage .percent:after {
         content: '%' !important;
       }
-      /* 我们注入的扁平进度条 */
-      .infobox .urppp-pct-bar {
-        display: block !important;
-        width: 100% !important;
-        height: 8px !important;
-        border-radius: 999px !important;
-        background: var(--input-bg) !important;
-        overflow: hidden !important;
-        margin: 0 !important;
-      }
       .infobox .urppp-pct-bar > i {
-        display: block !important;
-        height: 100% !important;
-        border-radius: 999px !important;
-        background: linear-gradient(90deg, var(--primary), color-mix(in srgb, var(--primary) 70%, #22c55e)) !important;
-        min-width: 0 !important;
+        background: var(--primary) !important;
       }
       .infobox-container::after,
       .page-content .infobox:last-of-type::after {
@@ -3479,7 +3554,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.53');
+    console.log('[URP++] style applied v0.3.54');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -4095,7 +4170,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.53',
+    version: '0.3.54',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
