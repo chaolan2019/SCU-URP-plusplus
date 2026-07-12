@@ -1089,7 +1089,7 @@
         border: none !important;
         border-bottom: none !important;
         box-shadow: none !important;
-        padding: 16px 24px 12px !important;
+        padding: 16px 32px 12px !important;
         min-height: 0 !important;
         line-height: 1.4 !important;
         position: relative !important;
@@ -1187,9 +1187,9 @@
         font-size: 16px !important;
       }
       .breadcrumb > li.hide-item { display: none !important; }
-      /* 内容区左右与面包屑同边距（24px），标题条与路径条同宽对齐 */
+      /* 内容区：加大左右留白，避免表格/卡片贴边 */
       .page-content {
-        padding: 4px 24px 24px !important;
+        padding: 8px 32px 32px !important;
       }
       .page-content > .row {
         margin-left: 0 !important;
@@ -1204,9 +1204,8 @@
         margin-left: 0 !important;
         margin-right: 0 !important;
       }
-      /* tab 内左右不再二次缩进，避免标题比面包屑更窄 */
       .tabbable .tab-content {
-        padding: 14px 16px 16px !important;
+        padding: 16px 18px 18px !important;
       }
 
       /* 页面区块标题：与面包屑同风格的全宽条，左右边缘对齐 */
@@ -1220,8 +1219,8 @@
         font-size: 16px !important;
         font-weight: 600 !important;
         line-height: 1.4 !important;
-        margin: 0 0 14px !important;
-        padding: 12px 16px !important;
+        margin: 0 0 16px !important;
+        padding: 12px 18px !important;
         min-height: 0 !important;
         width: 100% !important;
         box-sizing: border-box !important;
@@ -1332,6 +1331,7 @@
         border-radius: var(--radius-sm) !important;
         overflow: auto !important;
         background: var(--surface) !important;
+        margin: 0 0 8px !important;
       }
       .table, .table-bordered, .table-striped, .table-hover, .dataTable {
         background: var(--surface) !important;
