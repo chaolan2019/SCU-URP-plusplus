@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.39
+// @version      0.3.40
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -115,25 +115,11 @@
       height: 0 !important;
       opacity: 0 !important;
     }
-    /* 默认不画转圈；仅在有 urppp-loading-active 时显示，避免遮罩忘了 hide 时残留 */
+    /* 分页遮罩：不注入、不伪元素转圈，只藏原生 gif，避免卡住/卡死 */
     [id^="div_page_loading"]::before,
     [id*="page_loading"]::before {
       content: none !important;
       display: none !important;
-    }
-    [id^="div_page_loading"].urppp-loading-active::before,
-    [id*="page_loading"].urppp-loading-active::before {
-      content: '' !important;
-      display: inline-block !important;
-      width: 36px !important;
-      height: 36px !important;
-      margin: 12px auto !important;
-      border: 3px solid #CBD5E1 !important;
-      border-top-color: #1E3A5F !important;
-      border-radius: 50% !important;
-      box-sizing: border-box !important;
-      animation: urppp-spin 0.9s linear infinite !important;
-      vertical-align: middle !important;
     }
     .urppp-inline-loader svg {
       width: 40px !important;
@@ -245,156 +231,65 @@
 
   function isPageLoadingOverlay(el) {
     if (!el || !el.closest) return false;
-    const hit = el.closest('[id^="div_page_loading"], [id*="page_loading"], [id*="PageLoading"]');
-    return !!hit;
+    return !!el.closest('[id^="div_page_loading"], [id*="page_loading"], [id*="PageLoading"]');
   }
 
+  // 安全清理：只删我们注入的节点，绝不改 display / 不挂全局 observer
   function cleanupPageLoadingOverlays(scope) {
-    const root = scope && scope.querySelectorAll ? scope : document;
-    root.querySelectorAll('[id^="div_page_loading"], [id*="page_loading"]').forEach((el) => {
-      // 清误注入
-      el.querySelectorAll('.urppp-inline-loader').forEach((n) => n.remove());
-      if (el.style && el.style.getPropertyPriority('display') === 'important') {
-        el.style.removeProperty('display');
-      }
-
-      // 判断附近表格是否已有数据行：有则强制隐藏卡住的遮罩
-      let host = el.parentElement;
-      let table = null;
-      for (let i = 0; i < 5 && host; i++) {
-        table = host.querySelector && host.querySelector('table tbody tr, table.table tbody tr, .dataTable tbody tr');
-        if (table) break;
-        host = host.parentElement;
-      }
-      // 也看全局表格：遮罩 id 常跟分页条在一起
-      if (!table) {
-        table = document.querySelector('.page-content table tbody tr, #page-content-template table tbody tr');
-      }
-      const hasDataRow = !!table;
-      const cs = window.getComputedStyle(el);
-      const visible = cs.display !== 'none' && cs.visibility !== 'hidden' && cs.opacity !== '0';
-
-      if (hasDataRow) {
-        // 数据已到：遮罩必须消失
-        el.classList.remove('urppp-loading-active');
-        el.style.display = 'none';
-      } else if (visible) {
-        // 尚无数据且遮罩可见：标记为加载中，显示 CSS 转圈
-        el.classList.add('urppp-loading-active');
-      } else {
-        el.classList.remove('urppp-loading-active');
-      }
-    });
-  }
-
-  // 拦截 jQuery show/hide 或 style 变更：分页加载时重新点亮/熄灭转圈
-  function bindPageLoadingWatch() {
-    if (window.__urpppPageLoadWatch) return;
-    window.__urpppPageLoadWatch = true;
-    const mark = (el, on) => {
-      if (!el || !el.id || !/page_loading/i.test(el.id)) return;
-      if (on) el.classList.add('urppp-loading-active');
-      else {
-        el.classList.remove('urppp-loading-active');
-        // 数据到位后兜底隐藏
-        setTimeout(() => cleanupPageLoadingOverlays(document), 50);
-      }
-    };
-    // 监听 style/class 变化
-    const obs = new MutationObserver((muts) => {
-      muts.forEach((m) => {
-        const el = m.target;
-        if (!el || !el.id || !/page_loading/i.test(el.id)) return;
-        const cs = window.getComputedStyle(el);
-        const visible = cs.display !== 'none' && cs.visibility !== 'hidden';
-        if (visible) {
-          el.classList.add('urppp-loading-active');
-          // 超时兜底：最长 8s 必关，防止永久残留
-          clearTimeout(el.__urpppLoadTimer);
-          el.__urpppLoadTimer = setTimeout(() => {
-            el.classList.remove('urppp-loading-active');
-            el.style.display = 'none';
-          }, 8000);
-        } else {
-          el.classList.remove('urppp-loading-active');
-          clearTimeout(el.__urpppLoadTimer);
-        }
-      });
-    });
-    const start = () => {
-      document.querySelectorAll('[id^="div_page_loading"], [id*="page_loading"]').forEach((el) => {
-        obs.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
-      });
-      // 新插入的遮罩
-      const bodyObs = new MutationObserver(() => {
-        document.querySelectorAll('[id^="div_page_loading"], [id*="page_loading"]').forEach((el) => {
-          if (el.dataset.urpppWatched === '1') return;
-          el.dataset.urpppWatched = '1';
-          obs.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
+    try {
+      const root = scope && scope.querySelectorAll ? scope : document;
+      root.querySelectorAll('[id^="div_page_loading"], [id*="page_loading"]').forEach((el) => {
+        el.querySelectorAll('.urppp-inline-loader').forEach((n) => {
+          try { n.remove(); } catch (_) {}
         });
-        cleanupPageLoadingOverlays(document);
+        el.classList.remove('urppp-loading-active');
       });
-      bodyObs.observe(document.documentElement, { childList: true, subtree: true });
-    };
-    if (document.body) start();
-    else document.addEventListener('DOMContentLoaded', start, { once: true });
+    } catch (_) {}
   }
-  bindPageLoadingWatch();
 
   function replaceNativeLoaders(root) {
-    const scope = root && root.querySelectorAll ? root : document;
+    try {
+      const scope = root && root.querySelectorAll ? root : document;
 
-    // 0) 先清理分页遮罩上的误注入
-    cleanupPageLoadingOverlays(scope);
+      // 分页遮罩：只清误注入，不碰显隐
+      cleanupPageLoadingOverlays(scope);
 
-    // 1) 替换 loading gif —— 跳过分页遮罩（遮罩只用 CSS 转圈）
-    scope.querySelectorAll('img').forEach((img) => {
-      if (img.dataset.urpppReplaced === '1') return;
-      if (isPageLoadingOverlay(img)) return;
-      const src = (img.getAttribute('src') || img.src || '').toLowerCase();
-      if (!src) return;
-      if (!(src.includes('pageloading') || src.includes('page-loading') || src.includes('loading.gif') || src.includes('/loading') || src.includes('loading-0') || src.includes('loading-1'))) return;
-      img.dataset.urpppReplaced = '1';
-      const loader = makeInlineLoader('');
-      loader.style.minHeight = '0';
-      loader.style.padding = '0';
-      if (img.parentElement) img.parentElement.replaceChild(loader, img);
-    });
+      // 1) 替换普通 loading gif（跳过分页遮罩）
+      scope.querySelectorAll('img').forEach((img) => {
+        try {
+          if (!img || img.dataset.urpppReplaced === '1') return;
+          if (isPageLoadingOverlay(img)) return;
+          const src = (img.getAttribute('src') || img.src || '').toLowerCase();
+          if (!src) return;
+          if (!(src.includes('pageloading') || src.includes('page-loading') || src.includes('loading.gif') || src.includes('loading-0') || src.includes('loading-1'))) return;
+          // 避免匹配普通 /loading 路径过宽
+          if (src.includes('/loading') && !src.includes('pageloading') && !src.includes('loading.gif') && !src.includes('loading-0')) return;
+          img.dataset.urpppReplaced = '1';
+          const loader = makeInlineLoader('');
+          loader.style.minHeight = '0';
+          loader.style.padding = '0';
+          if (img.parentElement) img.parentElement.replaceChild(loader, img);
+        } catch (_) {}
+      });
 
-    // 2) 其它 loading 容器
-    scope.querySelectorAll('.view-pre-loading, .pageloading, .pre-loading').forEach((el) => {
-      if (el.dataset.urpppReplaced === '1') return;
-      if (isPageLoadingOverlay(el)) return;
-      el.dataset.urpppReplaced = '1';
-      if (!el.querySelector('.urppp-inline-loader')) {
-        el.innerHTML = '';
-        el.appendChild(makeInlineLoader('正在加载中…'));
-      }
-    });
-
-    // 3) layui-layer loading
-    scope.querySelectorAll(
-      '.layui-layer-content.layui-layer-loading0, .layui-layer-content.layui-layer-loading1, .layui-layer-content.layui-layer-loading2, .layui-layer-loading .layui-layer-content'
-    ).forEach((el) => {
-      if (el.dataset.urpppReplaced === '1') return;
-      el.dataset.urpppReplaced = '1';
-      el.style.setProperty('background', 'transparent', 'important');
-      el.style.setProperty('background-image', 'none', 'important');
-      el.style.setProperty('background-color', 'transparent', 'important');
-      if (!el.querySelector('.urppp-inline-loader')) {
-        const loader = makeInlineLoader('');
-        loader.style.minHeight = '0';
-        loader.style.padding = '0';
-        el.appendChild(loader);
-      }
-    });
-
-    scope.querySelectorAll('.layui-layer-dialog.layui-layer-loading, .layui-layer.layui-layer-loading').forEach((el) => {
-      el.style.setProperty('background', 'transparent', 'important');
-      el.style.setProperty('background-image', 'none', 'important');
-      el.style.setProperty('box-shadow', 'none', 'important');
-      el.style.setProperty('border', 'none', 'important');
-    });
+      // 2) layui-layer loading：只去背景 + 注入一次 SVG
+      scope.querySelectorAll(
+        '.layui-layer-content.layui-layer-loading0, .layui-layer-content.layui-layer-loading1, .layui-layer-content.layui-layer-loading2, .layui-layer-loading .layui-layer-content'
+      ).forEach((el) => {
+        try {
+          if (!el || el.dataset.urpppReplaced === '1') return;
+          el.dataset.urpppReplaced = '1';
+          el.style.setProperty('background', 'transparent', 'important');
+          el.style.setProperty('background-image', 'none', 'important');
+          if (!el.querySelector('.urppp-inline-loader')) {
+            const loader = makeInlineLoader('');
+            loader.style.minHeight = '0';
+            loader.style.padding = '0';
+            el.appendChild(loader);
+          }
+        } catch (_) {}
+      });
+    } catch (_) {}
   }
   function ensureBootLoader() {
     if (document.getElementById('urppp-boot-loader')) return;
@@ -424,16 +319,22 @@
   }
   ensureBootLoader();
 
-  // 持续替换页面/弹窗里动态插入的 loading gif
+  // 低频扫描替换 loading（只 childList，强节流，避免卡死页面）
   if (!window.__urpppLoaderObs) {
     window.__urpppLoaderObs = true;
-    const run = () => replaceNativeLoaders(document);
-    if (document.body) run();
-    document.addEventListener('DOMContentLoaded', run, { once: true });
+    let running = false;
+    const run = () => {
+      if (running) return;
+      running = true;
+      try { replaceNativeLoaders(document); } catch (_) {}
+      running = false;
+    };
+    if (document.body) setTimeout(run, 0);
+    document.addEventListener('DOMContentLoaded', () => setTimeout(run, 0), { once: true });
     const startObs = () => {
       const obs = new MutationObserver(() => {
         clearTimeout(window.__urpppLoaderTimer);
-        window.__urpppLoaderTimer = setTimeout(run, 40);
+        window.__urpppLoaderTimer = setTimeout(run, 200);
       });
       obs.observe(document.documentElement, { childList: true, subtree: true });
     };
@@ -3119,10 +3020,7 @@
     setTimeout(patchAceTabNavbars, 600);
     setTimeout(alignRollInfoLayout, 1200);
     setTimeout(patchAceTabNavbars, 1200);
-    setTimeout(() => cleanupPageLoadingOverlays(document), 300);
-    setTimeout(() => cleanupPageLoadingOverlays(document), 1000);
-    setTimeout(() => cleanupPageLoadingOverlays(document), 2500);
-    setTimeout(beautifyBreadcrumbs, 200);
+        setTimeout(beautifyBreadcrumbs, 200);
     setTimeout(beautifyBreadcrumbs, 600);
     setTimeout(beautifyBreadcrumbs, 1500);
     window.addEventListener('load', () => setTimeout(beautifyBreadcrumbs, 100));
@@ -3132,9 +3030,9 @@
     patchSchoolCalendarLink();
     window.addEventListener('load', () => { rebuildNavbar(); patchSchoolCalendarLink(); });
 
-    setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); cleanupPageLoadingOverlays(document); }, 600);
+    setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.39');
+    console.log('[URP++] style applied v0.3.40');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -3747,7 +3645,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.39',
+    version: '0.3.40',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
