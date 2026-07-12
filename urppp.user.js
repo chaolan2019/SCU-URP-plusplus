@@ -624,14 +624,18 @@
 
     const home = document.createElement('li');
     home.style.cursor = 'pointer';
-    home.innerHTML = '<i class="ace-icon fa fa-home home-icon"></i><span>首页</span>';
+    home.innerHTML = '<span class="urppp-bc-label"><i class="ace-icon fa fa-home home-icon"></i>首页</span>';
     home.addEventListener('click', () => { window.location.href = '/'; });
     ul.appendChild(home);
 
     trail.forEach((label, i) => {
       const li = document.createElement('li');
-      li.textContent = label;
-      if (i === trail.length - 1) li.classList.add('active');
+      const isLast = i === trail.length - 1;
+      if (isLast) li.classList.add('active');
+      const span = document.createElement('span');
+      span.className = 'urppp-bc-label';
+      span.textContent = label;
+      li.appendChild(span);
       ul.appendChild(li);
     });
   }
@@ -1077,7 +1081,7 @@
       /* 主内容区 */
       .main-container, .main-container::before { background: var(--bg) !important; }
       .main-content, .page-content { background: var(--bg) !important; }
-      /* 面包屑：贴紧顶栏下沿，字号加大 */
+      /* 面包屑：胶囊路径条，加大字号，与顶栏/侧栏留白 */
       .breadcrumbs, #breadcrumbs {
         display: flex !important;
         align-items: center !important;
@@ -1085,9 +1089,9 @@
         border: none !important;
         border-bottom: none !important;
         box-shadow: none !important;
-        padding: 4px 20px 2px !important;
-        min-height: 36px !important;
-        line-height: 1.35 !important;
+        padding: 16px 24px 10px 28px !important;
+        min-height: 0 !important;
+        line-height: 1.4 !important;
         position: relative !important;
         top: auto !important;
         left: auto !important;
@@ -1104,15 +1108,19 @@
       .main-content { padding-top: 0 !important; margin-top: 0 !important; }
       body.breadcrumbs-fixed .main-content { padding-top: 0 !important; }
       .breadcrumb {
-        background: transparent !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
         margin: 0 !important;
-        padding: 0 !important;
-        display: flex !important;
+        padding: 8px 12px !important;
+        display: inline-flex !important;
         flex-wrap: wrap !important;
         align-items: center !important;
-        gap: 0 !important;
-        font-size: 15px !important;
+        gap: 2px !important;
+        font-size: 16px !important;
         list-style: none !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+        max-width: 100% !important;
       }
       .breadcrumb > li {
         color: var(--text-secondary) !important;
@@ -1121,42 +1129,63 @@
         float: none !important;
         padding: 0 !important;
         text-shadow: none !important;
-        font-size: 15px !important;
+        font-size: 16px !important;
         line-height: 1.35 !important;
       }
       .breadcrumb > li + li:before {
-        content: '/' !important;
-        color: var(--text-muted) !important;
-        padding: 0 12px !important;
+        content: '' !important;
+        display: inline-block !important;
+        width: 6px !important;
+        height: 6px !important;
+        margin: 0 10px !important;
+        border-right: 1.5px solid var(--text-muted) !important;
+        border-top: 1.5px solid var(--text-muted) !important;
+        transform: rotate(45deg) !important;
+        opacity: 0.7 !important;
+        padding: 0 !important;
         float: none !important;
-        font-family: inherit !important;
-        font-size: 14px !important;
-        font-weight: 400 !important;
+        font-size: 0 !important;
       }
       .breadcrumb > li > a,
-      .breadcrumb > li > span {
+      .breadcrumb > li > span,
+      .breadcrumb > li .urppp-bc-label {
         color: inherit !important;
         text-decoration: none !important;
         display: inline-flex !important;
         align-items: center !important;
-        gap: 6px !important;
-        font-size: 15px !important;
+        gap: 7px !important;
+        font-size: 16px !important;
+        padding: 4px 10px !important;
+        border-radius: 8px !important;
+        transition: background .15s, color .15s !important;
       }
-      .breadcrumb > li > a:hover { color: var(--primary) !important; }
+      .breadcrumb > li > a:hover,
+      .breadcrumb > li:not(.active):not(:last-child) .urppp-bc-label:hover {
+        color: var(--primary) !important;
+        background: var(--input-bg) !important;
+      }
       .breadcrumb > li.active,
       .breadcrumb > li:last-child {
-        color: var(--text) !important;
+        color: var(--primary) !important;
         font-weight: 600 !important;
-        font-size: 15px !important;
+        font-size: 16px !important;
+      }
+      .breadcrumb > li.active > span,
+      .breadcrumb > li.active .urppp-bc-label,
+      .breadcrumb > li:last-child > span,
+      .breadcrumb > li:last-child .urppp-bc-label {
+        background: var(--ring) !important;
+        color: var(--primary) !important;
+        font-weight: 600 !important;
       }
       .breadcrumb .home-icon,
       .breadcrumb .fa-home {
         color: var(--primary) !important;
-        margin-right: 6px !important;
+        margin-right: 0 !important;
         font-size: 16px !important;
       }
       .breadcrumb > li.hide-item { display: none !important; }
-      .page-content { padding-top: 8px !important; }
+      .page-content { padding-top: 10px !important; }
       /* 卡片 / 面板 */
       .widget-box {
         background: var(--surface) !important;
