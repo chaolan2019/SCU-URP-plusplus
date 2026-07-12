@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.33
+// @version      0.3.34
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -62,11 +62,105 @@
     @keyframes urppp-spin {
       to { transform: rotate(360deg); }
     }
-    /* 隐藏站点原生 loading 图 */
-    img[src*="pageloading"], .view-pre-loading, .pageloading {
-      display: none !important;
+    /* 原生 loading 图：先藏起来，JS 会替换成 SVG */
+    img[src*="pageloading" i],
+    img[src*="page-loading" i],
+    img[src*="/loading" i],
+    img[src*="Loading.gif"],
+    .view-pre-loading,
+    .pageloading,
+    .pre-loading {
+      opacity: 0 !important;
+      width: 0 !important;
+      height: 0 !important;
+      position: absolute !important;
+      pointer-events: none !important;
+    }
+    .urppp-inline-loader {
+      display: inline-flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 10px !important;
+      padding: 12px !important;
+      min-height: 64px !important;
+      color: #64748B !important;
+      font-size: 13px !important;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif !important;
+    }
+    .urppp-inline-loader svg {
+      width: 40px !important;
+      height: 40px !important;
+      display: block !important;
+    }
+    .urppp-inline-loader .urppp-ring {
+      fill: none;
+      stroke: #CBD5E1;
+      stroke-width: 3.5;
+    }
+    .urppp-inline-loader .urppp-arc {
+      fill: none;
+      stroke: #1E3A5F;
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      stroke-dasharray: 52 100;
+      transform-origin: 20px 20px;
+      animation: urppp-spin 0.9s linear infinite;
+    }
+    .center:has(> img[src*="pageloading" i]),
+    .center:has(> .urppp-inline-loader),
+    .modal-content .center {
+      min-height: 80px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
     }
   `);
+
+  const URPPP_LOADER_SVG = `
+    <svg viewBox="0 0 40 40" aria-hidden="true">
+      <circle class="urppp-ring" cx="20" cy="20" r="14"></circle>
+      <circle class="urppp-arc" cx="20" cy="20" r="14"></circle>
+    </svg>
+  `;
+
+  function makeInlineLoader(text) {
+    const wrap = document.createElement('div');
+    wrap.className = 'urppp-inline-loader';
+    wrap.innerHTML = URPPP_LOADER_SVG + (text ? `<div>${text}</div>` : '');
+    return wrap;
+  }
+
+  function replaceNativeLoaders(root) {
+    const scope = root && root.querySelectorAll ? root : document;
+    // 1) 替换 loading gif
+    scope.querySelectorAll('img').forEach((img) => {
+      if (img.dataset.urpppReplaced === '1') return;
+      const src = (img.getAttribute('src') || img.src || '').toLowerCase();
+      if (!src) return;
+      if (!(src.includes('pageloading') || src.includes('page-loading') || src.includes('loading.gif') || src.includes('/loading'))) return;
+      img.dataset.urpppReplaced = '1';
+      let text = '';
+      const parent = img.parentElement;
+      if (parent) {
+        const t = (parent.textContent || '').replace(/\s+/g, ' ').trim();
+        if (/加载/.test(t)) text = t.includes('正在加载') ? '正在加载中…' : '加载中…';
+      }
+      const loader = makeInlineLoader(text || '正在加载中…');
+      if (img.parentElement) img.parentElement.replaceChild(loader, img);
+    });
+    // 2) 纯文字 loading 容器
+    scope.querySelectorAll('.view-pre-loading, .pageloading, .pre-loading').forEach((el) => {
+      if (el.dataset.urpppReplaced === '1') return;
+      el.dataset.urpppReplaced = '1';
+      el.innerHTML = '';
+      el.appendChild(makeInlineLoader('正在加载中…'));
+      el.style.setProperty('display', 'flex', 'important');
+      el.style.setProperty('align-items', 'center', 'important');
+      el.style.setProperty('justify-content', 'center', 'important');
+    });
+  }
 
   function ensureBootLoader() {
     if (document.getElementById('urppp-boot-loader')) return;
@@ -95,6 +189,23 @@
     setTimeout(() => { try { el.remove(); } catch (_) {} }, 320);
   }
   ensureBootLoader();
+
+  // 持续替换页面/弹窗里动态插入的 loading gif
+  if (!window.__urpppLoaderObs) {
+    window.__urpppLoaderObs = true;
+    const run = () => replaceNativeLoaders(document);
+    if (document.body) run();
+    document.addEventListener('DOMContentLoaded', run, { once: true });
+    const startObs = () => {
+      const obs = new MutationObserver(() => {
+        clearTimeout(window.__urpppLoaderTimer);
+        window.__urpppLoaderTimer = setTimeout(run, 40);
+      });
+      obs.observe(document.documentElement, { childList: true, subtree: true });
+    };
+    if (document.body) startObs();
+    else document.addEventListener('DOMContentLoaded', startObs, { once: true });
+  }
 
   const THEME_KEY = 'urppp_theme_v3';
   const ACCENT_KEY = 'urppp_accent_v1';
@@ -2029,58 +2140,69 @@
       .chosen-results li.highlighted { background: var(--primary) !important; color: #fff !important; }
       label { color: var(--text-secondary) !important; font-weight: 500 !important; font-size: 13px !important; }
 
-      /* 查询表单：标签与输入框垂直居中对齐 */
+      /* 查询表单：col-sm-3 标签 + col-sm-9 控件 垂直居中 */
       .form-horizontal .form-group,
+      form .form-group,
       .form-group {
         display: flex !important;
         flex-wrap: wrap !important;
         align-items: center !important;
         margin-left: 0 !important;
         margin-right: 0 !important;
-        margin-bottom: 12px !important;
+        margin-bottom: 14px !important;
       }
-      .form-horizontal .control-label,
-      .form-group > label,
-      .form-group .control-label,
-      label.control-label {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: flex-end !important;
+      .form-group:before,
+      .form-group:after,
+      .form-horizontal .form-group:before,
+      .form-horizontal .form-group:after {
+        display: none !important;
+        content: none !important;
+      }
+      .form-group > [class*="col-"],
+      .form-horizontal .form-group > [class*="col-"] {
         float: none !important;
-        height: 32px !important;
-        min-height: 32px !important;
-        line-height: 1.3 !important;
-        margin: 0 !important;
-        padding-top: 0 !important;
-        padding-bottom: 0 !important;
-        padding-right: 10px !important;
-        color: var(--text-secondary) !important;
-        font-weight: 500 !important;
-        white-space: nowrap !important;
-        box-sizing: border-box !important;
-      }
-      .form-horizontal .controls,
-      .form-group .controls,
-      .form-group > div[class*="col-"] {
         display: flex !important;
         align-items: center !important;
+        min-height: 34px !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        box-sizing: border-box !important;
+      }
+      .form-group > .col-sm-3,
+      .form-group > .col-xs-3,
+      .form-group > .col-md-3,
+      .form-group > .no-padding-right,
+      .form-group > [class*="col-"].no-padding-right {
+        justify-content: flex-end !important;
+        padding-right: 10px !important;
+      }
+      .form-group > .col-sm-9,
+      .form-group > .col-xs-9,
+      .form-group > .col-md-9 {
+        justify-content: flex-start !important;
         flex-wrap: wrap !important;
         gap: 8px !important;
+      }
+      .form-horizontal .control-label,
+      .form-group .control-label,
+      label.control-label,
+      .form-group > [class*="col-"] > label {
+        display: block !important;
+        width: 100% !important;
         float: none !important;
-        min-height: 32px !important;
+        margin: 0 !important;
+        padding: 0 !important;
         padding-top: 0 !important;
         padding-bottom: 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        line-height: 34px !important;
+        text-align: right !important;
+        color: var(--text-secondary) !important;
+        font-weight: 500 !important;
+        font-size: 13px !important;
+        white-space: nowrap !important;
         box-sizing: border-box !important;
-      }
-      /* 常见：标签在左输入在右的 col 布局 */
-      .form-group > [class*="col-"]:first-child:has(label),
-      .form-horizontal [class*="col-sm-"]:has(> label),
-      .form-horizontal [class*="col-md-"]:has(> label),
-      .form-horizontal [class*="col-xs-"]:has(> label) {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: flex-end !important;
-        min-height: 32px !important;
       }
       .form-group input,
       .form-group select,
@@ -2098,25 +2220,27 @@
       .form-group .chosen-container,
       .form-horizontal .chosen-container {
         display: inline-block !important;
+        vertical-align: middle !important;
+        top: 0 !important;
       }
-      /* 查询条件区多列标签对齐 */
-      .widget-body .form-group,
-      .widget .form-group,
-      #left_layout .form-group,
-      .self-margin .form-group {
+      .form-group .chosen-container .chosen-single,
+      .form-horizontal .chosen-container .chosen-single {
+        height: 34px !important;
+        min-height: 34px !important;
+        line-height: 32px !important;
+        display: flex !important;
         align-items: center !important;
       }
-      /* 行内 label + input（非 bootstrap form-group） */
-      .page-content form label + input,
-      .page-content form label + select,
-      .page-content form label + .form-control,
-      .page-content form label + .chosen-container {
-        margin-left: 6px !important;
-        vertical-align: middle !important;
+      .form-group select,
+      .form-horizontal select {
+        height: 34px !important;
+        min-height: 34px !important;
       }
-      .page-content form label {
-        vertical-align: middle !important;
-        line-height: 32px !important;
+      .form-group input.form-control,
+      .form-horizontal input.form-control {
+        height: 34px !important;
+        min-height: 34px !important;
+        line-height: 1.35 !important;
       }
 
       /* Alert 关闭叉：垂直居中对齐 */
@@ -2773,7 +2897,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.33');
+    console.log('[URP++] style applied v0.3.34');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -3386,7 +3510,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.33',
+    version: '0.3.34',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
