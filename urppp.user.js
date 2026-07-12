@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.66
+// @version      0.3.67
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -1269,6 +1269,17 @@
       header.dataset.urpppLegendDone = '1';
     }
 
+    // 叶子节点的展开钮（*_docu）无子节点，直接隐藏
+    tree.querySelectorAll('span.button.switch').forEach((sw) => {
+      if (/_docu\b/.test(sw.className)) {
+        sw.classList.add('urppp-switch-leaf');
+        sw.style.setProperty('display', 'none', 'important');
+      } else {
+        sw.classList.remove('urppp-switch-leaf');
+        sw.style.removeProperty('display');
+      }
+    });
+
     tree.querySelectorAll('li > a').forEach((a) => {
       const span = a.querySelector('span.node_name') || a;
       const icon = a.querySelector('i.fa, i.ace-icon');
@@ -2459,21 +2470,25 @@
         clear: both !important;
       }
       /* ========== 培养方案展示：zTree 安静可读 ========== */
+      /* 保留全局 h4.header 卡片高度，只补布局 */
       #two .header.urppp-plan-header,
       .urppp-plan-header {
         display: flex !important;
         flex-wrap: wrap !important;
         align-items: center !important;
         gap: 8px 12px !important;
-        margin: 0 0 14px !important;
-        padding: 0 0 12px !important;
-        border-bottom: 1px solid var(--border) !important;
+        min-height: 48px !important;
+        margin: 8px 0 18px !important;
+        padding: 12px 18px !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        background: var(--surface) !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
         line-height: 1.4 !important;
       }
       .urppp-plan-header > .glyphicon,
       .urppp-plan-header > .ace-icon {
-        color: var(--text-muted) !important;
-        margin-right: 2px !important;
+        display: none !important; /* 与全局 header 一致，左侧用主色竖条 */
       }
       .urppp-plan-legend {
         display: inline-flex !important;
@@ -2535,7 +2550,7 @@
         box-shadow: none !important;
       }
 
-      /* zTree 基础：紧凑行距、干净列表 */
+      /* zTree 基础：展开钮与文字同一行 */
       .ztree.urppp-ztree,
       #treeDemo.ztree {
         padding: 0 !important;
@@ -2545,6 +2560,9 @@
       }
       .ztree.urppp-ztree li,
       #treeDemo.ztree li {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: flex-start !important;
         padding: 0 !important;
         margin: 0 !important;
         line-height: 1.4 !important;
@@ -2554,18 +2572,41 @@
       #treeDemo.ztree li + li {
         margin-top: 2px !important;
       }
-      .ztree.urppp-ztree li ul,
-      #treeDemo.ztree li ul {
-        margin: 2px 0 6px 8px !important;
+      /* 子树单独占满下一行 */
+      .ztree.urppp-ztree li > ul,
+      #treeDemo.ztree li > ul {
+        flex: 0 0 100% !important;
+        width: 100% !important;
+        margin: 2px 0 6px 14px !important;
         padding: 0 0 0 12px !important;
         border-left: 1px solid var(--border) !important;
+        box-sizing: border-box !important;
+      }
+      /* 展开钮：与首行文字垂直居中对齐 */
+      .ztree.urppp-ztree li > span.button.switch,
+      #treeDemo.ztree li > span.button.switch {
+        flex: 0 0 16px !important;
+        margin: 9px 6px 0 0 !important;
+      }
+      /* 叶子节点无子级：隐藏无效展开钮 */
+      .ztree.urppp-ztree li > span.button.switch.urppp-switch-leaf,
+      .ztree.urppp-ztree li > span.button.switch[class*="_docu"],
+      #treeDemo.ztree li > span.button.switch.urppp-switch-leaf,
+      #treeDemo.ztree li > span.button.switch[class*="_docu"] {
+        display: none !important;
+      }
+      /* 叶子节点文字左缩进，与有展开钮的内容列对齐 */
+      .ztree.urppp-ztree li:has(> span.button.switch[class*="_docu"]) > a,
+      .ztree.urppp-ztree li:has(> span.button.switch.urppp-switch-leaf) > a,
+      #treeDemo.ztree li:has(> span.button.switch[class*="_docu"]) > a,
+      #treeDemo.ztree li:has(> span.button.switch.urppp-switch-leaf) > a {
+        padding-left: 22px !important;
       }
       .ztree.urppp-ztree li a,
       #treeDemo.ztree li a {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        align-items: baseline !important;
-        gap: 4px 8px !important;
+        display: block !important;
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
         height: auto !important;
         min-height: 0 !important;
         padding: 7px 10px !important;
@@ -2704,8 +2745,8 @@
       }
       .urppp-sub {
         display: block !important;
-        width: 100% !important;
-        margin: 3px 0 0 20px !important;
+        width: auto !important;
+        margin: 3px 0 0 0 !important;
         padding: 0 !important;
         font-size: 12px !important;
         font-weight: 400 !important;
@@ -3979,7 +4020,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.66');
+    console.log('[URP++] style applied v0.3.67');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -4598,7 +4639,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.66',
+    version: '0.3.67',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
