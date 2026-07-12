@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.29
+// @version      0.3.30
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -1389,18 +1389,27 @@
         margin-right: 0 !important;
         box-sizing: border-box !important;
       }
-      .main-content .page-content .tabbable {
+      .main-content .page-content .tabbable,
+      .page-content .tabbable {
         margin-left: 0 !important;
         margin-right: 0 !important;
         margin-bottom: 16px !important;
-        background: transparent !important;
-        border: none !important;
-      }
-      .main-content .tabbable .tab-content,
-      .tabbable > .tab-content {
         padding: 0 !important;
         background: transparent !important;
+        background-color: transparent !important;
         border: none !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      .main-content .tabbable .tab-content,
+      .tabbable > .tab-content,
+      .page-content .tab-content {
+        padding: 0 !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
       }
       /* 滚动表格容器也吃一点内边距感 */
       .main-content #code_scroll,
@@ -1933,24 +1942,33 @@
         color: inherit !important;
       }
 
-      /* 标签页：顶栏做成与面包屑同风格的圆角条，内容区独立卡片感 */
-      .tabbable {
+      /* 标签页：仅 nav-tabs 自身为圆角条；外层容器彻底透明，避免灰底色块 */
+      .tabbable,
+      .tabbable.tabs-left,
+      .tabbable.tabs-right,
+      .tabbable-custom,
+      .tabbable-line,
+      .widget-body > .tabbable,
+      .page-content .tabbable,
+      .self-margin > .tabbable {
         margin: 0 0 16px !important;
+        padding: 0 !important;
         background: transparent !important;
+        background-color: transparent !important;
         border: none !important;
         border-radius: 0 !important;
         overflow: visible !important;
         box-shadow: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
       }
-      .nav-tabs,
-      ul.nav-tabs,
+      /* ACE 有时给 tab 条外包一层带底色的条 */
+      .tabbable > .nav-tabs,
+      .page-content .nav-tabs,
+      .page-content ul.nav.nav-tabs,
+      ul.nav.nav-tabs,
       .nav.nav-tabs {
-        border: 1px solid var(--border) !important;
-        border-bottom: 1px solid var(--border) !important;
-        margin: 0 0 14px !important;
-        padding: 8px 10px !important;
-        background: var(--surface) !important;
-        border-radius: 12px !important;
         display: flex !important;
         flex-wrap: wrap !important;
         align-items: center !important;
@@ -1958,17 +1976,43 @@
         float: none !important;
         width: 100% !important;
         max-width: 100% !important;
+        min-width: 0 !important;
+        margin: 0 0 14px !important;
+        padding: 8px 10px !important;
         box-sizing: border-box !important;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
         list-style: none !important;
-        min-height: 0 !important;
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+        background-image: none !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+        position: relative !important;
+        left: 0 !important;
+        right: 0 !important;
+      }
+      /* 清掉可能套在 nav-tabs 外的灰底包装 */
+      .tabbable > .nav-tabs-wrap,
+      .nav-tabs-wrap,
+      .tabs-container,
+      .tab-bar,
+      .widget-header.header-large,
+      .tabbable > div:has(> .nav-tabs) {
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 0 14px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
       }
       .nav-tabs > li,
-      .nav-tabs > li.tab-pane,
       .nav.nav-tabs > li {
         float: none !important;
         margin: 0 !important;
+        padding: 0 !important;
         background: transparent !important;
+        background-color: transparent !important;
         border: none !important;
       }
       .nav-tabs > li > a,
@@ -1976,6 +2020,7 @@
       .nav-tabs > li > a:visited {
         color: var(--text-secondary) !important;
         background: transparent !important;
+        background-color: transparent !important;
         border: 1px solid transparent !important;
         border-radius: 8px !important;
         margin: 0 !important;
@@ -1995,6 +2040,7 @@
       .nav-tabs > li > a:focus {
         color: var(--text) !important;
         background: var(--input-bg) !important;
+        background-color: var(--input-bg) !important;
         border: 1px solid var(--border) !important;
         border-radius: 8px !important;
       }
@@ -2004,6 +2050,7 @@
       .nav-tabs > li.active > a:active {
         color: var(--primary) !important;
         background: var(--input-bg) !important;
+        background-color: var(--input-bg) !important;
         border: 1px solid var(--border) !important;
         border-radius: 8px !important;
         font-weight: 600 !important;
@@ -2011,25 +2058,32 @@
         z-index: auto !important;
       }
       .tab-content,
-      .tabbable > .tab-content {
+      .tabbable > .tab-content,
+      .page-content .tab-content {
         background: transparent !important;
+        background-color: transparent !important;
         border: none !important;
         border-radius: 0 !important;
         padding: 0 !important;
         margin: 0 !important;
         box-shadow: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
       }
       .tab-content > .tab-pane {
         padding: 0 !important;
         background: transparent !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
       }
-      /* 兼容不在 .tabbable 里的裸 nav-tabs */
-      .page-content > .nav-tabs,
-      .page-content > .row > [class*="col-"] > .nav-tabs,
-      .widget-body > .nav-tabs,
-      .self-margin > .nav-tabs {
-        margin-top: 0 !important;
-        margin-bottom: 14px !important;
+      /* 表格与 tab 条同宽：tab-pane 内表格容器不二次缩进 */
+      .tab-content .urppp-table-wrap,
+      .tab-content .table,
+      .tab-content .table-bordered {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
       }
       /* 分页 */
       .pagination > li > a, .pagination > li > span {
@@ -2476,7 +2530,7 @@
 
     setTimeout(() => document.body.classList.add('urppp-ready'), 600);
 
-    console.log('[URP++] style applied v0.3.29');
+    console.log('[URP++] style applied v0.3.30');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -3088,7 +3142,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.29',
+    version: '0.3.30',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
