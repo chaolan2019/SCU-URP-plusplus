@@ -1071,62 +1071,62 @@
       .chosen-results li.highlighted { background: var(--primary) !important; color: #fff !important; }
       label { color: var(--text-secondary) !important; font-weight: 500 !important; font-size: 13px !important; }
 
-      /* 标签页：下划线风格，避免卡片式圆角/直角混用 */
+      /* 标签页：卡片式，激活/未激活统一上圆角，避免直角圆角混用 */
       .tabbable { margin-bottom: 0 !important; }
       .nav-tabs {
         border: none !important;
         border-bottom: 1px solid var(--border) !important;
-        margin: 0 0 12px !important;
-        padding: 0 !important;
-        display: flex !important;
-        gap: 4px !important;
+        margin: 0 !important;
+        padding: 0 8px !important;
         background: transparent !important;
       }
       .nav-tabs > li {
-        float: none !important;
-        margin: 0 !important;
+        margin: 0 4px 0 0 !important;
+        float: left !important;
       }
       .nav-tabs > li > a {
         color: var(--text-secondary) !important;
-        background: transparent !important;
-        border: none !important;
-        border-bottom: 2px solid transparent !important;
-        border-radius: 0 !important;
-        margin: 0 !important;
-        padding: 10px 14px !important;
+        background: var(--input-bg) !important;
+        border: 1px solid var(--border) !important;
+        border-bottom-color: transparent !important;
+        border-radius: var(--radius-sm) var(--radius-sm) 0 0 !important;
+        margin: 0 0 -1px !important;
+        padding: 9px 16px !important;
         line-height: 1.4 !important;
         font-size: 13px !important;
         font-weight: 500 !important;
         box-shadow: none !important;
+        position: relative !important;
+        top: 1px !important;
       }
       .nav-tabs > li > a:hover,
       .nav-tabs > li > a:focus {
         color: var(--text) !important;
-        background: transparent !important;
-        border: none !important;
-        border-bottom: 2px solid var(--border) !important;
-        border-radius: 0 !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-bottom-color: transparent !important;
+        border-radius: var(--radius-sm) var(--radius-sm) 0 0 !important;
       }
       .nav-tabs > li.active > a,
       .nav-tabs > li.active > a:hover,
       .nav-tabs > li.active > a:focus {
         color: var(--primary) !important;
-        background: transparent !important;
-        border: none !important;
-        border-bottom: 2px solid var(--primary) !important;
-        border-radius: 0 !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-bottom-color: var(--surface) !important;
+        border-radius: var(--radius-sm) var(--radius-sm) 0 0 !important;
         font-weight: 600 !important;
         box-shadow: none !important;
+        z-index: 2 !important;
       }
       .tab-content {
-        background: transparent !important;
-        border: none !important;
-        border-radius: 0 !important;
-        padding: 0 !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 0 0 var(--radius-sm) var(--radius-sm) !important;
+        padding: 16px !important;
         box-shadow: none !important;
       }
       .tab-content > .tab-pane { padding: 0 !important; }
-
       /* 分页 */
       .pagination > li > a, .pagination > li > span {
         background: var(--surface) !important;
