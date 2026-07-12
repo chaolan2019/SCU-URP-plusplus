@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.48
+// @version      0.3.49
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -2036,7 +2036,9 @@
       .panel:has(.chosen-container) { overflow: visible !important; }
       .profile-info-row {
         display: flex !important;
+        align-items: center !important;
         border-bottom: 1px solid var(--border) !important;
+        min-height: 44px !important;
       }
       .profile-info-row:last-child { border-bottom: none !important; }
       .profile-info-name {
@@ -2044,18 +2046,65 @@
         color: var(--text-secondary) !important;
         border-color: var(--border) !important;
         border-right: 1px solid var(--border) !important;
-        padding: 12px 14px !important;
+        padding: 0 14px !important;
         width: 140px !important;
         min-width: 120px !important;
+        min-height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
         text-align: right !important;
         font-weight: 500 !important;
+        font-size: 13px !important;
+        line-height: 1.35 !important;
+        box-sizing: border-box !important;
+        float: none !important;
       }
       .profile-info-value {
         border-color: var(--border) !important;
         color: var(--text) !important;
-        padding: 12px 14px !important;
+        padding: 6px 12px !important;
         flex: 1 !important;
+        min-width: 0 !important;
+        min-height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
         background: var(--surface) !important;
+        box-sizing: border-box !important;
+        float: none !important;
+      }
+      /* 查询表单：标签与输入框垂直居中（profile-info 结构） */
+      .profile-info-value > input,
+      .profile-info-value > select,
+      .profile-info-value > textarea,
+      .profile-info-value > .form-control,
+      .profile-info-value > .chosen-container,
+      .profile-info-value input.form-control,
+      .profile-info-value select.form-control {
+        margin: 0 !important;
+        vertical-align: middle !important;
+      }
+      .profile-info-value .chosen-container {
+        display: inline-block !important;
+        top: 0 !important;
+        vertical-align: middle !important;
+      }
+      .profile-info-value .chosen-container .chosen-single {
+        height: 32px !important;
+        min-height: 32px !important;
+        line-height: 30px !important;
+        display: flex !important;
+        align-items: center !important;
+      }
+      .profile-info-value select,
+      .profile-info-value input[type="text"],
+      .profile-info-value input[type="number"],
+      .profile-info-value input:not([type]) {
+        height: 32px !important;
+        min-height: 32px !important;
+        line-height: 1.35 !important;
       }
       /* 学籍/个人头像：固定小尺寸 + 圆角（覆盖内联 width/height） */
       #avatar,
@@ -3143,7 +3192,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.48');
+    console.log('[URP++] style applied v0.3.49');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -3756,7 +3805,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.48',
+    version: '0.3.49',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
