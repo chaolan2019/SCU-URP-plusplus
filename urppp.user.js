@@ -1113,14 +1113,14 @@
         border-radius: 12px !important;
         margin: 0 !important;
         padding: 10px 16px !important;
-        display: flex !important;
+        display: inline-flex !important;
         flex-wrap: wrap !important;
         align-items: center !important;
         gap: 2px !important;
         font-size: 16px !important;
         list-style: none !important;
         box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
-        width: 100% !important;
+        width: auto !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
       }
@@ -1255,15 +1255,55 @@
       h4.header .right_top_oper,
       .header .right_top_oper {
         margin-left: auto !important;
+        margin-right: 0 !important;
         display: inline-flex !important;
         align-items: center !important;
+        justify-content: flex-end !important;
         gap: 8px !important;
         float: none !important;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        height: auto !important;
+        line-height: 1 !important;
+      }
+      h4.header > .btn,
+      h4.header > a.btn,
+      h3.header > .btn,
+      .header.smaller > .btn,
+      h4.header .right_top_oper > .btn,
+      h4.header .right_top_oper > a,
+      .header .right_top_oper > .btn,
+      .header .right_top_oper > a {
+        margin: 0 0 0 auto !important;
+        float: none !important;
+        position: static !important;
+        top: auto !important;
+        right: auto !important;
+        vertical-align: middle !important;
+        align-self: center !important;
+      }
+      /* 标题旁操作按钮略放大，保证垂直居中 */
+      h4.header .btn,
+      h3.header .btn,
+      .header.smaller .btn,
+      h4.header .right_top_oper .btn,
+      .header .right_top_oper .btn {
+        font-size: 12px !important;
+        padding: 5px 12px !important;
+        line-height: 1.35 !important;
+        height: auto !important;
+        min-height: 30px !important;
+        border-radius: 8px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 4px !important;
       }
       h4.header.grey, .header.lighter.grey, .header.smaller.lighter {
         color: var(--text) !important;
       }
-      /* 卡片 / 面板 */      /* 卡片 / 面板 */
+      /* 卡片 / 面板 */
       .widget-box {
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
@@ -1349,11 +1389,11 @@
         border-radius: 6px !important;
       }
       .btn, .btn.btn-xs, .btn.btn-sm, .btn.btn-lg, .btn.btn-minier {
-        font-size: 11px !important;
+        font-size: 12px !important;
         line-height: 1.35 !important;
-        padding: 2px 8px !important;
+        padding: 4px 12px !important;
         height: auto !important;
-        min-height: 0 !important;
+        min-height: 28px !important;
         transition: all .15s ease !important;
       }
       .btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
