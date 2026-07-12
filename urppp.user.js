@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.57
+// @version      0.3.58
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -1175,18 +1175,17 @@
       }
     });
   }
-  // 培养方案等页：百分比统一成「大号百分比 + 粗实心进度条」
+  // 培养方案等页：百分比放在主文字下方；粗细适中；0% 仅空轨道
   function restyleInfoboxPercentages() {
     const readPct = (box) => {
       let pct = NaN;
-      const candidates = [
+      const list = [
         box.getAttribute('data-percent'),
         box.querySelector('[data-percent]')?.getAttribute('data-percent'),
         box.querySelector('.percent')?.textContent,
         box.querySelector('.urppp-pct-text')?.textContent,
-        box.querySelector('.infobox-progress')?.getAttribute('data-percent'),
       ];
-      for (const c of candidates) {
+      for (const c of list) {
         if (c == null || c === '') continue;
         const n = parseFloat(String(c).replace(/[^\d.]/g, ''));
         if (!Number.isNaN(n)) { pct = n; break; }
@@ -1206,55 +1205,38 @@
       return Math.max(0, Math.min(100, pct));
     };
 
-    const ensureBar = (host, pct) => {
-      let textEl = host.querySelector(':scope > .urppp-pct-text');
-      if (!textEl) {
-        textEl = document.createElement('div');
-        textEl.className = 'urppp-pct-text';
-        host.appendChild(textEl);
-      }
-      textEl.textContent = Math.round(pct) + '%';
-
-      let bar = host.querySelector(':scope > .urppp-pct-bar');
-      if (!bar) {
-        bar = document.createElement('div');
-        bar.className = 'urppp-pct-bar';
-        host.appendChild(bar);
-      }
-      // 0%：只要空轨道，不要任何填充节点（避免突兀色块）
-      let fill = bar.querySelector('.urppp-pct-fill');
-      if (pct <= 0) {
-        if (fill) fill.remove();
-        bar.classList.add('is-empty');
-        return;
-      }
-      bar.classList.remove('is-empty');
-      if (!fill) {
-        fill = document.createElement('span');
-        fill.className = 'urppp-pct-fill';
-        bar.appendChild(fill);
-      }
-      fill.style.setProperty('width', pct + '%', 'important');
-      fill.style.setProperty('background', 'var(--primary)', 'important');
-      fill.style.setProperty('opacity', '1', 'important');
-      fill.style.setProperty('display', 'block', 'important');
-    };
-
     document.querySelectorAll('.infobox').forEach((box) => {
       const pct = readPct(box);
       if (pct == null) return;
 
-      // 清理 ACE 原生进度/环形
+      // 清 ACE 原生进度结构
       box.querySelectorAll('canvas').forEach((c) => c.remove());
       box.querySelectorAll('.easy-pie-chart, .percentage, .infobox-progress').forEach((el) => {
         if (el.classList.contains('urppp-pct-bar')) return;
         el.remove();
       });
+      // 清旧注入，避免重复
+      box.querySelectorAll('.urppp-pct-text, .urppp-pct-bar').forEach((el) => el.remove());
 
+      // 主文字容器：把进度放到其末尾（主文字下面）
       const data = box.querySelector('.infobox-data') || box;
-      // 去掉重复旧文本/条后重建
-      data.querySelectorAll(':scope > .urppp-pct-text, :scope > .urppp-pct-bar').forEach((el) => el.remove());
-      ensureBar(data, pct);
+
+      const textEl = document.createElement('div');
+      textEl.className = 'urppp-pct-text';
+      textEl.textContent = Math.round(pct) + '%';
+
+      const bar = document.createElement('div');
+      bar.className = 'urppp-pct-bar' + (pct <= 0 ? ' is-empty' : '');
+      if (pct > 0) {
+        const fill = document.createElement('span');
+        fill.className = 'urppp-pct-fill';
+        fill.style.width = pct + '%';
+        bar.appendChild(fill);
+      }
+
+      // 确保追加在主文字后
+      data.appendChild(textEl);
+      data.appendChild(bar);
       box.dataset.urpppPctDone = '1';
     });
   }
@@ -2161,20 +2143,21 @@
       /* 统计卡片 infobox：统一表面色与可读性；仅容器内才做网格 */
       /* infobox-container grid defined below */
 
+      /* 所有 infobox 统一尺寸（上下卡片一致） */
       .infobox {
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
         box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
-        padding: 16px 18px !important;
-        min-width: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        height: 120px !important;
-        min-height: 120px !important;
-        max-height: 120px !important;
-        margin: 0 !important;
-        float: none !important;
+        padding: 14px 16px !important;
+        width: 220px !important;
+        min-width: 220px !important;
+        max-width: 220px !important;
+        height: 112px !important;
+        min-height: 112px !important;
+        max-height: 112px !important;
+        margin: 0 12px 12px 0 !important;
+        float: left !important;
         display: flex !important;
         flex-direction: column !important;
         justify-content: center !important;
@@ -2183,16 +2166,17 @@
         position: relative !important;
         overflow: hidden !important;
       }
-      /* 覆盖 ACE 内联宽高，保证同排卡片完全一致 */
       .infobox[style] {
-        width: 100% !important;
-        height: 120px !important;
-        min-height: 120px !important;
-        max-height: 120px !important;
+        width: 220px !important;
+        min-width: 220px !important;
+        max-width: 220px !important;
+        height: 112px !important;
+        min-height: 112px !important;
+        max-height: 112px !important;
       }
       .infobox-container {
-        display: grid !important;
-        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
         gap: 12px !important;
         width: 100% !important;
         box-sizing: border-box !important;
@@ -2200,18 +2184,27 @@
       }
       .infobox-container > .infobox,
       .infobox-container > .infobox[style] {
-        width: 100% !important;
-        height: 120px !important;
-        min-height: 120px !important;
-        max-height: 120px !important;
-        margin: 0 !important;
         float: none !important;
+        margin: 0 !important;
+        width: 220px !important;
+        min-width: 220px !important;
+        max-width: 220px !important;
+        height: 112px !important;
+        min-height: 112px !important;
+        max-height: 112px !important;
+        flex: 0 0 220px !important;
       }
-      @media (max-width: 1200px) {
-        .infobox-container { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-      }
-      @media (max-width: 640px) {
-        .infobox-container { grid-template-columns: 1fr !important; }
+      /* 下方课组统计卡也统一成同样尺寸 */
+      .page-content .profile-user-info,
+      .page-content .profile-user-info-striped {
+        width: 220px !important;
+        min-width: 220px !important;
+        max-width: 220px !important;
+        min-height: 112px !important;
+        height: auto !important;
+        margin: 0 12px 12px 0 !important;
+        float: left !important;
+        box-sizing: border-box !important;
       }
       /* 去掉 ACE 彩色底/渐变，避免白字/深色字不可读 */
       .infobox.infobox-dark,
@@ -2272,19 +2265,34 @@
         white-space: normal !important;
         word-break: break-word !important;
       }
-      /* 扁平进度条：粗空轨道 + 实心主色填充；0% 仅空轨道 */
+      /* 进度条：主文字下方；适中粗细；0% 空轨道 */
+      .infobox .infobox-data {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: flex-start !important;
+        gap: 0 !important;
+        width: 100% !important;
+      }
+      .infobox .infobox-data-number,
+      .infobox .infobox-content,
+      .infobox .infobox-text {
+        order: 0 !important;
+      }
       .infobox .urppp-pct-text {
+        order: 10 !important;
         display: block !important;
-        margin: 0 0 10px !important;
-        font-size: 20px !important;
+        margin: 8px 0 6px !important;
+        font-size: 16px !important;
         font-weight: 700 !important;
-        line-height: 1.15 !important;
+        line-height: 1.2 !important;
         color: var(--primary) !important;
       }
       .infobox .urppp-pct-bar {
+        order: 11 !important;
         display: block !important;
         width: 100% !important;
-        height: 16px !important;
+        height: 8px !important;
         border-radius: 999px !important;
         background: var(--input-bg) !important;
         border: 1px solid var(--border) !important;
@@ -2292,7 +2300,6 @@
         overflow: hidden !important;
         margin: 0 !important;
         padding: 0 !important;
-        position: relative !important;
       }
       .infobox .urppp-pct-fill {
         display: block !important;
@@ -2301,22 +2308,18 @@
         background: var(--primary) !important;
         opacity: 1 !important;
         min-width: 0 !important;
-        max-width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
         border: none !important;
         box-shadow: none !important;
       }
-      .infobox .urppp-pct-bar.is-empty .urppp-pct-fill {
-        display: none !important;
-        width: 0 !important;
-      }
+      .infobox .urppp-pct-bar.is-empty .urppp-pct-fill { display: none !important; }
       .infobox .easy-pie-chart,
       .infobox .percentage,
-      .infobox .infobox-progress {
+      .infobox .infobox-progress,
+      .infobox canvas {
         display: none !important;
       }
-      .infobox canvas { display: none !important; }
       .infobox-container::after,
       .page-content .infobox:last-of-type::after {
         content: '' !important;
@@ -3529,7 +3532,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.57');
+    console.log('[URP++] style applied v0.3.58');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -4145,7 +4148,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.57',
+    version: '0.3.58',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
