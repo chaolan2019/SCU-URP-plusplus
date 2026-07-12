@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.19
+// @version      0.3.21
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -639,97 +639,135 @@
       ul.appendChild(li);
     });
   }
-  // 学籍/资料页：按像素对齐，标题左缘必须贴齐 .page-content 内容左缘
+  // 学籍页真实结构：col-xs-4/col-xs-8 的父级往往不是 .row，按 col 容器提升标题
   function hoistProfileSectionHeaders() {
     const page = document.querySelector('.page-content') || document.getElementById('page-content-template');
     if (!page) return;
 
-    const pageRect = page.getBoundingClientRect();
-    const pagePadL = parseFloat(getComputedStyle(page).paddingLeft) || 0;
-    const targetLeft = pageRect.left + pagePadL;
-
-    const findTopRow = (el) => {
-      let row = null;
+    const colRe = /\bcol-(?:xs|sm|md|lg|xl)-(\d+)\b/;
+    const getColSize = (el) => {
+      if (!el || !el.className) return 0;
+      const m = String(el.className).match(/col-(?:xs|sm|md|lg|xl)-(\d+)/);
+      return m ? parseInt(m[1], 10) : 0;
+    };
+    const closestCol = (el) => {
       let n = el;
       while (n && n !== page) {
-        if (n.classList && n.classList.contains('row')) row = n;
+        if (getColSize(n) > 0) return n;
         n = n.parentElement;
       }
-      return row;
+      return null;
     };
 
     page.querySelectorAll('h4.header, h3.header, h5.header, .header.smaller').forEach((header) => {
-      // 已在我们的全宽壳里
       if (header.parentElement && header.parentElement.classList.contains('urppp-section-title-wrap')) {
-        header.dataset.urpppHoisted = '1';
-        // 再校验一次壳本身是否贴齐
-        const wrap = header.parentElement;
-        const wr = wrap.getBoundingClientRect();
-        if (Math.abs(wr.left - targetLeft) <= 2) return;
-      }
-
-      const hr = header.getBoundingClientRect();
-      // 已贴齐内容左缘则不动
-      if (Math.abs(hr.left - targetLeft) <= 2 && header.offsetWidth >= page.clientWidth - pagePadL * 2 - 8) {
         header.dataset.urpppHoisted = '1';
         return;
       }
 
-      // 找 page 下最外层 row，插到它前面
-      const topRow = findTopRow(header);
-      if (!topRow || !topRow.parentElement) return;
+      const col = closestCol(header);
+      if (!col) return;
+      const size = getColSize(col);
+      // 全宽列里的标题一般已对齐，跳过
+      if (size >= 12) return;
 
-      // 若 topRow 自己就缩进了，继续往上找可对齐的父级
-      let anchor = topRow;
-      let parent = topRow.parentElement;
-      while (parent && parent !== page) {
-        const pr = parent.getBoundingClientRect();
-        if (Math.abs(pr.left - targetLeft) <= 2) break;
-        if (parent.classList && parent.classList.contains('row')) anchor = parent;
-        parent = parent.parentElement;
+      // 提升到「多列容器」之前：col 的父节点（真实 DOM 里常常是裸 div，不是 row）
+      const group = col.parentElement;
+      if (!group || group === page) return;
+
+      // 只处理同级存在多个 col 的布局（基本信息/学籍信息并排）
+      const siblingCols = Array.from(group.children).filter((c) => getColSize(c) > 0);
+      if (siblingCols.length < 2 && size >= 12) return;
+
+      // 若标题已在 group 之前的全宽壳，跳过
+      if (group.previousElementSibling && group.previousElementSibling.classList.contains('urppp-section-title-wrap')) {
+        // 可能是别的标题，继续
       }
 
-      let wrap = header.closest('.urppp-section-title-wrap');
-      if (!wrap) {
-        wrap = document.createElement('div');
-        wrap.className = 'urppp-section-title-wrap';
+      // 基本信息：提到 group 前；学籍信息也提到 group 前会叠在一起——
+      // 策略：只提升「每列的第一个 header」（列内 section 标题）
+      const headersInCol = col.querySelectorAll('h4.header, h3.header, h5.header, .header.smaller');
+      if (headersInCol[0] !== header) return;
+
+      // 若该列是左侧列（基本信息），提到 group 前全宽
+      // 若是右侧列（学籍信息），保持列内但拉满列宽——用户抱怨的是基本信息左缘
+      const isLeftCol = siblingCols[0] === col || size <= 4;
+      if (!isLeftCol) {
+        // 右列标题：至少保证 width 100% 无额外缩进
+        header.style.setProperty('width', '100%', 'important');
+        header.style.setProperty('margin-left', '0', 'important');
+        header.style.setProperty('margin-right', '0', 'important');
+        header.dataset.urpppHoisted = '1';
+        return;
       }
-      // 插到与 page 内容同级的位置
-      if (anchor.parentElement) {
-        anchor.parentElement.insertBefore(wrap, anchor);
-      }
+
+      let wrap = document.createElement('div');
+      wrap.className = 'urppp-section-title-wrap';
+      group.parentElement.insertBefore(wrap, group);
       wrap.appendChild(header);
-
-      wrap.style.cssText = [
-        'display:block',
-        'width:100%',
-        'max-width:100%',
-        'box-sizing:border-box',
-        'margin:0 0 14px 0',
-        'padding:0',
-        'position:relative',
-        'left:0',
-        'clear:both'
-      ].join(';');
-
       header.dataset.urpppHoisted = '1';
+
+      wrap.style.cssText = 'display:block;width:100%;max-width:100%;box-sizing:border-box;margin:0 0 14px 0;padding:0;clear:both;';
       header.style.setProperty('width', '100%', 'important');
       header.style.setProperty('max-width', '100%', 'important');
       header.style.setProperty('margin-left', '0', 'important');
       header.style.setProperty('margin-right', '0', 'important');
       header.style.setProperty('box-sizing', 'border-box', 'important');
-      header.style.setProperty('position', 'relative', 'important');
-      header.style.setProperty('left', '0', 'important');
+    });
 
-      // 像素级纠偏：若仍偏右，用负 margin 拉回
-      requestAnimationFrame(() => {
-        const wr = wrap.getBoundingClientRect();
-        const delta = wr.left - targetLeft;
-        if (Math.abs(delta) > 1) {
-          wrap.style.marginLeft = (-delta) + 'px';
-          wrap.style.width = 'calc(100% + ' + delta + 'px)';
-        }
-      });
+    // 顺手修：给裸 div 包着的 col-xs-* 补上 row 行为，避免 float 错位
+    page.querySelectorAll('.col-xs-4, .col-sm-4, .col-md-4').forEach((col) => {
+      const p = col.parentElement;
+      if (!p || p.classList.contains('row') || p.classList.contains('urppp-col-row')) return;
+      const cols = Array.from(p.children).filter((c) => getColSize(c) > 0);
+      if (cols.length >= 2) {
+        p.classList.add('urppp-col-row');
+        p.style.setProperty('display', 'flex', 'important');
+        p.style.setProperty('flex-wrap', 'wrap', 'important');
+        p.style.setProperty('gap', '16px', 'important');
+        p.style.setProperty('align-items', 'flex-start', 'important');
+        p.style.setProperty('width', '100%', 'important');
+        p.style.setProperty('box-sizing', 'border-box', 'important');
+        cols.forEach((c) => {
+          const s = getColSize(c);
+          c.style.setProperty('float', 'none', 'important');
+          c.style.setProperty('padding-left', '0', 'important');
+          c.style.setProperty('padding-right', '0', 'important');
+          c.style.setProperty('box-sizing', 'border-box', 'important');
+          if (s <= 4) {
+            c.style.setProperty('flex', '0 0 280px', 'important');
+            c.style.setProperty('width', '280px', 'important');
+            c.style.setProperty('max-width', '280px', 'important');
+          } else {
+            c.style.setProperty('flex', '1 1 0', 'important');
+            c.style.setProperty('width', 'auto', 'important');
+            c.style.setProperty('max-width', 'none', 'important');
+          }
+        });
+      }
+    });
+  }
+
+  // 学籍页硬对齐：直接清掉 Bootstrap 列 gutter，保证「基本信息」左缘贴 page-content
+  function hardAlignRollInfoLayout() {
+    const page = document.querySelector('.page-content') || document.getElementById('page-content-template');
+    if (!page) return;
+    page.querySelectorAll('[class*="col-xs-"], [class*="col-sm-"], [class*="col-md-"], [class*="col-lg-"]').forEach((col) => {
+      col.style.setProperty('padding-left', '0', 'important');
+      col.style.setProperty('padding-right', '0', 'important');
+      col.style.setProperty('box-sizing', 'border-box', 'important');
+    });
+    page.querySelectorAll('h4.header, h3.header, h5.header, .header.smaller').forEach((h) => {
+      h.style.setProperty('margin-left', '0', 'important');
+      h.style.setProperty('margin-right', '0', 'important');
+      h.style.setProperty('width', '100%', 'important');
+      h.style.setProperty('max-width', '100%', 'important');
+      h.style.setProperty('box-sizing', 'border-box', 'important');
+    });
+    // 清掉嵌套 row 的负 margin
+    page.querySelectorAll('.row').forEach((row) => {
+      row.style.setProperty('margin-left', '0', 'important');
+      row.style.setProperty('margin-right', '0', 'important');
     });
   }
   // 表格外框 wrapper：圆角 + 完整四边线
@@ -1307,8 +1345,25 @@
         margin-right: 0 !important;
       }
       .main-content .page-content > .row > [class*="col-"],
+      .main-content .page-content [class*="col-xs-"],
+      .main-content .page-content [class*="col-sm-"],
+      .main-content .page-content [class*="col-md-"],
+      .main-content .page-content [class*="col-lg-"],
       .main-content .page-content .self-margin,
       #page-content-template .self-margin {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+      #left_layout, .page-content .widget, .page-content form {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+      .urppp-col-row > [class*="col-"] {
         padding-left: 0 !important;
         padding-right: 0 !important;
       }
@@ -1547,48 +1602,29 @@
         flex: 1 !important;
         background: var(--surface) !important;
       }
-      /* 学籍/个人头像：缩小 + 圆角 */
-      .profile-picture,
+      /* 学籍/个人头像：固定小尺寸 + 圆角（覆盖内联 width/height） */
+      #avatar,
       .profile-picture img,
       img.editable.img-responsive,
-      .page-content .center > img,
-      .page-content .center img.img-responsive,
-      .page-content img.editable,
-      .page-content img[src*="photo" i],
-      .page-content img[src*="Photo"],
-      .page-content img[src*="avatar" i],
-      .page-content img[id*="avatar" i],
-      .page-content img[id*="photo" i],
-      .thumbnail > img,
-      .thumbnail a > img {
-        border-radius: 12px !important;
-        max-width: 100px !important;
-        width: 100px !important;
-        height: auto !important;
+      .page-content img#avatar {
+        width: 96px !important;
+        max-width: 96px !important;
+        height: 118px !important;
         object-fit: cover !important;
-      }
-      .profile-picture,
-      .page-content .center {
-        display: block !important;
-        width: 100px !important;
-        max-width: 100px !important;
-        margin-left: auto !important;
-        margin-right: auto !important;
-      }
-      .profile-picture {
         border-radius: 12px !important;
-        overflow: hidden !important;
         border: 1px solid var(--border) !important;
         box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+      }
+      .profile-picture {
+        display: block !important;
+        width: 96px !important;
+        max-width: 96px !important;
+        margin: 0 0 12px !important;
+        padding: 0 !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
         line-height: 0 !important;
         background: var(--surface) !important;
-      }
-      .profile-picture img {
-        display: block !important;
-        width: 100px !important;
-        max-width: 100px !important;
-        height: auto !important;
-        border-radius: 12px !important;
       }
       .urppp-section-title-wrap {
         width: 100% !important;
@@ -2130,10 +2166,11 @@
       el.style.setProperty('box-sizing', 'border-box', 'important');
     });
     hoistProfileSectionHeaders();
+    hardAlignRollInfoLayout();
     beautifyBreadcrumbs();
-    setTimeout(hoistProfileSectionHeaders, 200);
-    setTimeout(hoistProfileSectionHeaders, 600);
-    setTimeout(hoistProfileSectionHeaders, 1200);
+    setTimeout(() => { hoistProfileSectionHeaders(); hardAlignRollInfoLayout(); }, 200);
+    setTimeout(() => { hoistProfileSectionHeaders(); hardAlignRollInfoLayout(); }, 600);
+    setTimeout(() => { hoistProfileSectionHeaders(); hardAlignRollInfoLayout(); }, 1200);
     setTimeout(beautifyBreadcrumbs, 200);
     setTimeout(beautifyBreadcrumbs, 600);
     setTimeout(beautifyBreadcrumbs, 1500);
@@ -2145,7 +2182,7 @@
 
     setTimeout(() => document.body.classList.add('urppp-ready'), 600);
 
-    console.log('[URP++] style applied v0.3.19');
+    console.log('[URP++] style applied v0.3.21');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -2742,6 +2779,7 @@
           el.style.setProperty('box-sizing', 'border-box', 'important');
         });
         hoistProfileSectionHeaders();
+        hardAlignRollInfoLayout();
         beautifyBreadcrumbs();
       }, 100);
     };
@@ -2756,7 +2794,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.19',
+    version: '0.3.21',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
