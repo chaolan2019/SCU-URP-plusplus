@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.42
+// @version      0.3.43
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -16,49 +16,9 @@
 (function () {
   'use strict';
 
-  // 最早阶段注入：SVG loading 覆盖层，重构完再淡出
+  // 最早阶段注入：基础背景 + 内联 loading 样式（无全屏启动遮罩）
   GM_addStyle(`
     html, body { background: #F4F6F9 !important; color: #0F172A !important; }
-    body.urppp-ready { opacity: 1 !important; }
-    #urppp-boot-loader {
-      position: fixed !important;
-      inset: 0 !important;
-      z-index: 2147483646 !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      flex-direction: column !important;
-      gap: 14px !important;
-      background: #F4F6F9 !important;
-      color: #0F172A !important;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif !important;
-      transition: opacity .28s ease, visibility .28s ease !important;
-    }
-    #urppp-boot-loader.urppp-boot-hide {
-      opacity: 0 !important;
-      visibility: hidden !important;
-      pointer-events: none !important;
-    }
-    #urppp-boot-loader .urppp-boot-text {
-      font-size: 13px !important;
-      color: #64748B !important;
-      letter-spacing: 0.4px !important;
-    }
-    #urppp-boot-loader svg { width: 56px; height: 56px; display: block; }
-    #urppp-boot-loader .urppp-ring {
-      fill: none;
-      stroke: #CBD5E1;
-      stroke-width: 3.5;
-    }
-    #urppp-boot-loader .urppp-arc {
-      fill: none;
-      stroke: #1E3A5F;
-      stroke-width: 3.5;
-      stroke-linecap: round;
-      stroke-dasharray: 70 120;
-      transform-origin: 28px 28px;
-      animation: urppp-spin 0.9s linear infinite;
-    }
     @keyframes urppp-spin {
       to { transform: rotate(360deg); }
     }
@@ -291,33 +251,6 @@
       });
     } catch (_) {}
   }
-  function ensureBootLoader() {
-    if (document.getElementById('urppp-boot-loader')) return;
-    const mount = () => {
-      if (document.getElementById('urppp-boot-loader')) return;
-      const host = document.documentElement || document.body;
-      if (!host) return;
-      const el = document.createElement('div');
-      el.id = 'urppp-boot-loader';
-      el.innerHTML = `
-        <svg viewBox="0 0 56 56" aria-hidden="true">
-          <circle class="urppp-ring" cx="28" cy="28" r="18"></circle>
-          <circle class="urppp-arc" cx="28" cy="28" r="18"></circle>
-        </svg>
-        <div class="urppp-boot-text">URP++ 加载中</div>
-      `;
-      host.appendChild(el);
-    };
-    if (document.body) mount();
-    else document.addEventListener('DOMContentLoaded', mount, { once: true });
-  }
-  function hideBootLoader() {
-    const el = document.getElementById('urppp-boot-loader');
-    if (!el) return;
-    el.classList.add('urppp-boot-hide');
-    setTimeout(() => { try { el.remove(); } catch (_) {} }, 320);
-  }
-  ensureBootLoader();
 
   // 低频扫描替换 loading（只 childList，强节流，避免卡死页面）
   if (!window.__urpppLoaderObs) {
@@ -784,7 +717,7 @@
     });
 
     console.log('[URP++] 登录界面已重建');
-    setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 100);
+    setTimeout(() => document.body.classList.add('urppp-ready'), 100);
   }
 
   // ============================================================
@@ -3074,9 +3007,9 @@
     patchSchoolCalendarLink();
     window.addEventListener('load', () => { rebuildNavbar(); patchSchoolCalendarLink(); });
 
-    setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
+    setTimeout(() => { document.body.classList.add('urppp-ready'); const b=document.getElementById('urppp-boot-loader'); if(b) b.remove(); }, 600);
 
-    console.log('[URP++] style applied v0.3.42');
+    console.log('[URP++] style applied v0.3.43');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -3689,7 +3622,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.42',
+    version: '0.3.43',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
