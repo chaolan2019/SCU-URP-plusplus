@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.45
+// @version      0.3.46
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -57,20 +57,51 @@
       color: #64748B !important;
       letter-spacing: 0.4px !important;
     }
-    #urppp-boot-loader svg { width: 56px; height: 56px; display: block; }
-    #urppp-boot-loader .urppp-ring {
-      fill: none;
-      stroke: #CBD5E1;
-      stroke-width: 3.5;
+    /* 立方体旋转 loading */
+    .urppp-cube-scene {
+      width: 48px;
+      height: 48px;
+      perspective: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    #urppp-boot-loader .urppp-arc {
-      fill: none;
-      stroke: #1E3A5F;
-      stroke-width: 3.5;
-      stroke-linecap: round;
-      stroke-dasharray: 70 120;
-      transform-origin: 28px 28px;
-      animation: urppp-spin 0.9s linear infinite;
+    .urppp-cube {
+      width: 28px;
+      height: 28px;
+      position: relative;
+      transform-style: preserve-3d;
+      animation: urppp-cube-spin 1.15s linear infinite;
+    }
+    .urppp-cube-face {
+      position: absolute;
+      inset: 0;
+      border: 2px solid #1E3A5F;
+      background: rgba(30, 58, 95, 0.10);
+      border-radius: 3px;
+      box-sizing: border-box;
+    }
+    .urppp-cube-face.front  { transform: translateZ(14px); }
+    .urppp-cube-face.back   { transform: rotateY(180deg) translateZ(14px); }
+    .urppp-cube-face.right  { transform: rotateY(90deg) translateZ(14px); }
+    .urppp-cube-face.left   { transform: rotateY(-90deg) translateZ(14px); }
+    .urppp-cube-face.top    { transform: rotateX(90deg) translateZ(14px); }
+    .urppp-cube-face.bottom { transform: rotateX(-90deg) translateZ(14px); }
+    #urppp-boot-loader .urppp-cube-scene { width: 64px; height: 64px; perspective: 160px; }
+    #urppp-boot-loader .urppp-cube { width: 36px; height: 36px; }
+    #urppp-boot-loader .urppp-cube-face {
+      border-color: #1E3A5F;
+      background: rgba(30, 58, 95, 0.12);
+    }
+    #urppp-boot-loader .urppp-cube-face.front  { transform: translateZ(18px); }
+    #urppp-boot-loader .urppp-cube-face.back   { transform: rotateY(180deg) translateZ(18px); }
+    #urppp-boot-loader .urppp-cube-face.right  { transform: rotateY(90deg) translateZ(18px); }
+    #urppp-boot-loader .urppp-cube-face.left   { transform: rotateY(-90deg) translateZ(18px); }
+    #urppp-boot-loader .urppp-cube-face.top    { transform: rotateX(90deg) translateZ(18px); }
+    #urppp-boot-loader .urppp-cube-face.bottom { transform: rotateX(-90deg) translateZ(18px); }
+    @keyframes urppp-cube-spin {
+      0%   { transform: rotateX(-20deg) rotateY(0deg); }
+      100% { transform: rotateX(-20deg) rotateY(360deg); }
     }
     @keyframes urppp-spin {
       to { transform: rotate(360deg); }
@@ -134,25 +165,25 @@
       content: none !important;
       display: none !important;
     }
-    .urppp-inline-loader svg {
+    .urppp-inline-loader .urppp-cube-scene {
       width: 40px !important;
       height: 40px !important;
-      display: block !important;
+      perspective: 110px !important;
     }
-    .urppp-inline-loader .urppp-ring {
-      fill: none;
-      stroke: #CBD5E1;
-      stroke-width: 3.5;
+    .urppp-inline-loader .urppp-cube {
+      width: 22px !important;
+      height: 22px !important;
     }
-    .urppp-inline-loader .urppp-arc {
-      fill: none;
-      stroke: #1E3A5F;
-      stroke-width: 3.5;
-      stroke-linecap: round;
-      stroke-dasharray: 52 100;
-      transform-origin: 20px 20px;
-      animation: urppp-spin 0.9s linear infinite;
+    .urppp-inline-loader .urppp-cube-face {
+      border-color: #1E3A5F !important;
+      background: rgba(30, 58, 95, 0.10) !important;
     }
+    .urppp-inline-loader .urppp-cube-face.front  { transform: translateZ(11px) !important; }
+    .urppp-inline-loader .urppp-cube-face.back   { transform: rotateY(180deg) translateZ(11px) !important; }
+    .urppp-inline-loader .urppp-cube-face.right  { transform: rotateY(90deg) translateZ(11px) !important; }
+    .urppp-inline-loader .urppp-cube-face.left   { transform: rotateY(-90deg) translateZ(11px) !important; }
+    .urppp-inline-loader .urppp-cube-face.top    { transform: rotateX(90deg) translateZ(11px) !important; }
+    .urppp-inline-loader .urppp-cube-face.bottom { transform: rotateX(-90deg) translateZ(11px) !important; }
     .center:has(> img[src*="pageloading" i]),
     .center:has(> .urppp-inline-loader),
     .modal-content .center {
@@ -194,7 +225,7 @@
       background-image: none !important;
       position: relative !important;
     }
-    /* 未注入 SVG 时，用伪元素兜底转圈 */
+    /* 未注入时，伪元素兜底：旋转方块 */
     .layui-layer-content.layui-layer-loading0:not(:has(.urppp-inline-loader))::before,
     .layui-layer-content.layui-layer-loading1:not(:has(.urppp-inline-loader))::before,
     .layui-layer-content.layui-layer-loading2:not(:has(.urppp-inline-loader))::before,
@@ -203,15 +234,15 @@
       position: absolute !important;
       left: 50% !important;
       top: 50% !important;
-      width: 40px !important;
-      height: 40px !important;
-      margin: -20px 0 0 -20px !important;
-      border: 3.5px solid #CBD5E1 !important;
-      border-top-color: #1E3A5F !important;
-      border-radius: 50% !important;
+      width: 22px !important;
+      height: 22px !important;
+      margin: -11px 0 0 -11px !important;
+      border: 2px solid #1E3A5F !important;
+      border-radius: 3px !important;
+      background: rgba(30, 58, 95, 0.10) !important;
       box-sizing: border-box !important;
-      animation: urppp-spin 0.9s linear infinite !important;
-      background: none !important;
+      animation: urppp-cube-spin 1.15s linear infinite !important;
+      transform-style: preserve-3d !important;
     }
     .layui-layer-loading .urppp-inline-loader,
     .layui-layer-content .urppp-inline-loader {
@@ -221,24 +252,25 @@
       padding: 0 !important;
       gap: 0 !important;
     }
-    .layui-layer-loading .urppp-inline-loader svg,
-    .layui-layer-content .urppp-inline-loader svg {
-      width: 40px !important;
-      height: 40px !important;
-    }
   `);
 
-  const URPPP_LOADER_SVG = `
-    <svg viewBox="0 0 40 40" aria-hidden="true">
-      <circle class="urppp-ring" cx="20" cy="20" r="14"></circle>
-      <circle class="urppp-arc" cx="20" cy="20" r="14"></circle>
-    </svg>
+  const URPPP_LOADER_CUBE = `
+    <div class="urppp-cube-scene" aria-hidden="true">
+      <div class="urppp-cube">
+        <div class="urppp-cube-face front"></div>
+        <div class="urppp-cube-face back"></div>
+        <div class="urppp-cube-face right"></div>
+        <div class="urppp-cube-face left"></div>
+        <div class="urppp-cube-face top"></div>
+        <div class="urppp-cube-face bottom"></div>
+      </div>
+    </div>
   `;
 
   function makeInlineLoader(text) {
     const wrap = document.createElement('div');
     wrap.className = 'urppp-inline-loader';
-    wrap.innerHTML = URPPP_LOADER_SVG + (text ? `<div>${text}</div>` : '');
+    wrap.innerHTML = URPPP_LOADER_CUBE + (text ? `<div>${text}</div>` : '');
     return wrap;
   }
 
@@ -337,10 +369,16 @@
     el.id = 'urppp-boot-loader';
     el.setAttribute('aria-busy', 'true');
     el.innerHTML = `
-      <svg viewBox="0 0 56 56" aria-hidden="true">
-        <circle class="urppp-ring" cx="28" cy="28" r="18"></circle>
-        <circle class="urppp-arc" cx="28" cy="28" r="18"></circle>
-      </svg>
+      <div class="urppp-cube-scene" aria-hidden="true">
+        <div class="urppp-cube">
+          <div class="urppp-cube-face front"></div>
+          <div class="urppp-cube-face back"></div>
+          <div class="urppp-cube-face right"></div>
+          <div class="urppp-cube-face left"></div>
+          <div class="urppp-cube-face top"></div>
+          <div class="urppp-cube-face bottom"></div>
+        </div>
+      </div>
       <div class="urppp-boot-text">URP++ 加载中</div>
     `;
     const host = document.documentElement || document.body;
@@ -3096,7 +3134,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.45');
+    console.log('[URP++] style applied v0.3.46');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -3709,7 +3747,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.45',
+    version: '0.3.46',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
