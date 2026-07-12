@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.23
+// @version      0.3.24
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -1688,19 +1688,77 @@
       .btn-app { background: var(--surface) !important; border: 1px solid var(--border) !important; color: var(--text) !important; border-radius: 6px !important; }
       .btn-app:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
 
-      /* 表单 */
-      input, select, textarea, .form-control, .chosen-single, .chosen-choices {
+      /* 表单：统一圆角与内边距，覆盖 ACE 直角输入 */
+      input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]):not([type="image"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
+      select,
+      textarea,
+      .form-control,
+      .input-icon > input,
+      .input-group .form-control,
+      .chosen-single,
+      .chosen-choices,
+      .ace-spinner .input-group,
+      .tags,
+      .bootstrap-tagsinput,
+      .editable-input input,
+      .editable-input textarea,
+      .editable-input select {
         background: var(--input-bg) !important;
         border: 1px solid var(--border) !important;
         color: var(--text) !important;
-        border-radius: var(--radius-sm) !important;
-        padding: 0 0 !important;
+        border-radius: 8px !important;
+        padding: 6px 12px !important;
         font-size: 13px !important;
+        line-height: 1.4 !important;
+        height: auto !important;
+        min-height: 32px !important;
+        box-shadow: none !important;
+        box-sizing: border-box !important;
+        -webkit-appearance: none !important;
+        appearance: none !important;
+      }
+      select {
+        padding-right: 28px !important;
+        cursor: pointer !important;
+        background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%), linear-gradient(135deg, var(--text-muted) 50%, transparent 50%) !important;
+        background-position: calc(100% - 14px) calc(50% - 2px), calc(100% - 9px) calc(50% - 2px) !important;
+        background-size: 5px 5px, 5px 5px !important;
+        background-repeat: no-repeat !important;
+      }
+      textarea {
+        resize: vertical !important;
+        min-height: 80px !important;
+        padding: 10px 12px !important;
+      }
+      input[type="checkbox"], input[type="radio"] {
+        border-radius: 4px !important;
+        width: 15px !important;
+        height: 15px !important;
+        min-height: 0 !important;
+        padding: 0 !important;
+        accent-color: var(--primary) !important;
+      }
+      .input-group {
+        border-radius: 8px !important;
+      }
+      .input-group .form-control {
+        border-radius: 8px 0 0 8px !important;
+      }
+      .input-group .form-control:last-child,
+      .input-group-btn:last-child > .btn {
+        border-radius: 0 8px 8px 0 !important;
+      }
+      .input-group-addon {
+        background: var(--input-bg) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text-secondary) !important;
+        border-radius: 8px !important;
       }
       .chosen-single, .chosen-choices {
-        height: auto !important;
-        min-height: 25px !important;
-        line-height: 1.3 !important;
+        min-height: 32px !important;
+        line-height: 1.4 !important;
+        padding: 4px 12px !important;
+        border-radius: 8px !important;
       }
       .chosen-single {
         display: flex !important;
@@ -1709,7 +1767,7 @@
       .chosen-single span { margin-right: 26px !important; }
       .chosen-container {
         height: auto !important;
-        min-height: 25px !important;
+        min-height: 32px !important;
         vertical-align: middle !important;
         position: relative !important;
         box-sizing: border-box !important;
@@ -1723,6 +1781,10 @@
         position: absolute !important;
         z-index: 1010 !important;
         box-sizing: border-box !important;
+        border-radius: 8px !important;
+        background: var(--surface) !important;
+        border-color: var(--border) !important;
+        box-shadow: var(--shadow) !important;
       }
       input:focus, select:focus, textarea:focus, .form-control:focus,
       .chosen-container-active .chosen-single, .chosen-container-active .chosen-choices {
@@ -1730,12 +1792,45 @@
         box-shadow: 0 0 0 3px var(--ring) !important;
         outline: none !important;
       }
-      select { cursor: pointer !important; }
-      textarea { resize: vertical !important; min-height: 80px !important; }
-      .chosen-drop { background: var(--surface) !important; border-color: var(--border) !important; box-shadow: var(--shadow) !important; }
       .chosen-results li { color: var(--text) !important; padding: 8px 12px !important; }
       .chosen-results li.highlighted { background: var(--primary) !important; color: #fff !important; }
       label { color: var(--text-secondary) !important; font-weight: 500 !important; font-size: 13px !important; }
+
+      /* Alert 关闭叉：垂直居中对齐 */
+      .alert {
+        position: relative !important;
+        padding: 12px 40px 12px 16px !important;
+        border-radius: 10px !important;
+        display: block !important;
+        line-height: 1.5 !important;
+      }
+      .alert .close,
+      .alert button.close {
+        position: absolute !important;
+        top: 50% !important;
+        right: 12px !important;
+        transform: translateY(-50%) !important;
+        float: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 24px !important;
+        height: 24px !important;
+        line-height: 22px !important;
+        text-align: center !important;
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        color: inherit !important;
+        opacity: 0.55 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        cursor: pointer !important;
+      }
+      .alert .close:hover,
+      .alert button.close:hover {
+        opacity: 0.9 !important;
+        color: inherit !important;
+      }
 
       /* 标签页：整体一张卡片 + 顶栏分段，避免单 tab 凸起接缝 */
       .tabbable {
@@ -1924,7 +2019,7 @@
       .list-group-item { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text) !important; }
       .list-group-item:hover { background: var(--input-bg) !important; }
       .list-group-item.active { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
-      .alert, .alert-info { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; border-radius: var(--radius-sm) !important; }
+      .alert, .alert-info { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; border-radius: 10px !important; }
       .alert-success { background: rgba(34,197,94,0.1) !important; border-color: rgba(34,197,94,0.2) !important; color: #22c55e !important; }
       .alert-warning { background: rgba(245,158,11,0.1) !important; border-color: rgba(245,158,11,0.2) !important; color: #f59e0b !important; }
       .alert-danger { background: rgba(239,68,68,0.1) !important; border-color: rgba(239,68,68,0.2) !important; color: #ef4444 !important; }
@@ -2121,7 +2216,7 @@
 
     setTimeout(() => document.body.classList.add('urppp-ready'), 600);
 
-    console.log('[URP++] style applied v0.3.23');
+    console.log('[URP++] style applied v0.3.24');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -2732,7 +2827,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.23',
+    version: '0.3.24',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
