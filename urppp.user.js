@@ -1690,8 +1690,9 @@
       .ui-jqgrid tr.ui-row-ltr:hover { background: var(--input-bg) !important; }
 
       /* 首页重构仪表板 */
-      #urppp-dashboard { padding: 24px; max-width: 1440px; margin: 0 auto; }
-      .urppp-welcome { margin-bottom: 24px; }
+      /* 与面包屑/page-content 同宽同边，不再二次缩进 */
+      #urppp-dashboard { padding: 0 !important; max-width: none !important; width: 100% !important; margin: 0 !important; box-sizing: border-box !important; }
+      .urppp-welcome { margin: 4px 0 24px; }
       .urppp-welcome h2 { font-size: 26px; font-weight: 600; color: var(--text); margin: 0 0 6px; letter-spacing: 1px; }
       .urppp-welcome p { color: var(--text-secondary); margin: 0; font-size: 14px; }
       .urppp-stats-grid { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 24px; }
