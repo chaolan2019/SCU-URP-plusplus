@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.54
+// @version      0.3.55
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -1251,28 +1251,45 @@
       prog.appendChild(fill);
     });
 
-    // C) 兜底：infobox 文本含 xx% 但没有 progress/easy-pie
+    // C) 兜底：infobox 含百分比（含 0%）时补齐文字 + 空轨道
     document.querySelectorAll('.infobox').forEach((box) => {
       if (box.dataset.urpppPctBox === '1') return;
       if (box.querySelector('.urppp-pct-bar, .infobox-progress, .easy-pie-chart, .percentage')) {
+        // 已有条时，确保 0% 也有 fill 节点
+        const bar = box.querySelector('.urppp-pct-bar, .infobox-progress');
+        if (bar && !bar.querySelector('i, .progress-bar, div, span')) {
+          const fill = document.createElement('i');
+          fill.style.width = '0%';
+          bar.appendChild(fill);
+        }
         box.dataset.urpppPctBox = '1';
         return;
       }
+      let pct = NaN;
       const m = (box.textContent || '').match(/(\d+(?:\.\d+)?)\s*%/);
-      if (!m) return;
-      const pct = Math.max(0, Math.min(100, parseFloat(m[1]) || 0));
+      if (m) pct = parseFloat(m[1]);
+      if (Number.isNaN(pct)) {
+        const dp = box.getAttribute('data-percent') || box.querySelector('[data-percent]')?.getAttribute('data-percent');
+        if (dp != null) pct = parseFloat(dp);
+      }
+      if (Number.isNaN(pct)) return;
+      pct = Math.max(0, Math.min(100, pct));
       box.dataset.urpppPctBox = '1';
       const data = box.querySelector('.infobox-data') || box;
-      const percentEl = document.createElement('div');
-      percentEl.className = 'urppp-pct-text';
-      percentEl.textContent = Math.round(pct) + '%';
-      const bar = document.createElement('div');
-      bar.className = 'urppp-pct-bar';
-      const fill = document.createElement('i');
-      fill.style.width = pct + '%';
-      bar.appendChild(fill);
-      data.appendChild(percentEl);
-      data.appendChild(bar);
+      if (!data.querySelector('.urppp-pct-text')) {
+        const percentEl = document.createElement('div');
+        percentEl.className = 'urppp-pct-text';
+        percentEl.textContent = Math.round(pct) + '%';
+        data.appendChild(percentEl);
+      }
+      if (!data.querySelector('.urppp-pct-bar')) {
+        const bar = document.createElement('div');
+        bar.className = 'urppp-pct-bar';
+        const fill = document.createElement('i');
+        fill.style.width = pct + '%';
+        bar.appendChild(fill);
+        data.appendChild(bar);
+      }
     });
   }
   // 表格外框 wrapper：圆角 + 完整四边线
@@ -2294,14 +2311,15 @@
         display: block !important;
         margin-top: 8px !important;
         width: 100% !important;
-        height: 8px !important;
+        height: 12px !important;
         border-radius: 999px !important;
         background: var(--input-bg) !important;
         overflow: hidden !important;
         padding: 0 !important;
-        border: none !important;
+        border: 1px solid var(--border) !important;
         box-shadow: none !important;
         position: relative !important;
+        box-sizing: border-box !important;
       }
       .infobox .infobox-progress .progress-bar,
       .infobox .infobox-progress > div,
@@ -2315,11 +2333,20 @@
         background: var(--primary) !important;
         box-shadow: none !important;
         min-width: 0 !important;
+        width: 0;
         margin: 0 !important;
         padding: 0 !important;
         border: none !important;
       }
-      .infobox .urppp-pct-text {
+
+      /* 0% 也保留未填充轨道 */
+      .infobox .urppp-pct-bar:empty::after,
+      .infobox .infobox-progress:empty::after {
+        content: '' !important;
+        display: block !important;
+        width: 100% !important;
+        height: 100% !important;
+      }      .infobox .urppp-pct-text {
         display: block !important;
         margin: 2px 0 0 !important;
         font-size: 18px !important;
@@ -2389,6 +2416,28 @@
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
+      }
+      /* 培养方案完成情况：下方课组卡片统一尺寸节奏 */
+      .page-content .profile-user-info,
+      .page-content .profile-user-info-striped {
+        min-height: 108px !important;
+      }
+      .page-content .col-xs-6 > .profile-user-info,
+      .page-content .col-sm-6 > .profile-user-info,
+      .page-content .col-md-6 > .profile-user-info,
+      .page-content .col-xs-4 > .profile-user-info,
+      .page-content .col-sm-4 > .profile-user-info,
+      .page-content .col-xs-3 > .profile-user-info {
+        height: 100% !important;
+        min-height: 108px !important;
+      }
+      .page-content .row:has(> [class*="col-"] > .profile-user-info) {
+        display: flex !important;
+        flex-wrap: wrap !important;
+      }
+      .page-content .row:has(> [class*="col-"] > .profile-user-info) > [class*="col-"] {
+        display: flex !important;
+        flex-direction: column !important;
       }
       .profile-user-info:has(.chosen-container),
       .widget-box:has(.chosen-container),
@@ -3554,7 +3603,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.54');
+    console.log('[URP++] style applied v0.3.55');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -4170,7 +4219,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.54',
+    version: '0.3.55',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
