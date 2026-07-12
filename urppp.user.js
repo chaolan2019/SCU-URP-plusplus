@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.12
+// @version      0.4.13
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.12';
+          content:'URP++ v0.4.13';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3545,8 +3545,8 @@
       .btn-app {
         border-radius: 6px !important;
       }
-      .btn, .btn.btn-xs, .btn.btn-sm, .btn.btn-lg, .btn.btn-minier,
-      .btn.btn-round, .btn.btn-white, .btn.btn-info, .btn.btn-bold {
+      .btn:not(.btn-app), .btn.btn-xs:not(.btn-app), .btn.btn-sm:not(.btn-app), .btn.btn-lg:not(.btn-app), .btn.btn-minier:not(.btn-app),
+      .btn.btn-round:not(.btn-app), .btn.btn-white:not(.btn-app), .btn.btn-info:not(.btn-app), .btn.btn-bold:not(.btn-app) {
         font-size: 12px !important;
         line-height: 1 !important;
         padding: 0 12px !important;
@@ -3561,9 +3561,9 @@
         vertical-align: middle !important;
         transition: all .15s ease !important;
       }
-      .btn > .ace-icon,
-      .btn > .fa,
-      .btn > .glyphicon {
+      .btn:not(.btn-app) > .ace-icon,
+      .btn:not(.btn-app) > .fa,
+      .btn:not(.btn-app) > .glyphicon {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -3573,12 +3573,45 @@
         top: auto !important;
         vertical-align: middle !important;
       }
-      .btn.btn-xs {
+      .btn.btn-xs:not(.btn-app) {
         height: 26px !important;
         min-height: 26px !important;
         max-height: 26px !important;
         padding: 0 10px !important;
         font-size: 12px !important;
+      }
+      /* 首页/应用方块按钮：独立尺寸，不受 28px 限制 */
+      .btn.btn-app,
+      a.btn-app,
+      button.btn-app {
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        width: 90px !important;
+        min-width: 90px !important;
+        padding: 10px 8px !important;
+        line-height: 1.25 !important;
+        font-size: 12px !important;
+        display: inline-flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        white-space: normal !important;
+        text-align: center !important;
+        vertical-align: top !important;
+      }
+      .btn.btn-app > .ace-icon,
+      .btn.btn-app > .fa,
+      .btn.btn-app > .glyphicon,
+      a.btn-app > .ace-icon,
+      a.btn-app > .fa {
+        display: block !important;
+        margin: 0 0 2px !important;
+        font-size: 24px !important;
+        line-height: 1 !important;
+        width: auto !important;
+        height: auto !important;
       }
       .btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
       .btn:active { transform: translateY(0); box-shadow: none; }
@@ -4478,13 +4511,14 @@
       #urppp-dashboard .tabContent { counter-reset: urppp-notice; }
       #urppp-dashboard .tabContent h3 {
         position: relative;
-        margin: 0 0 10px !important;
-        padding-left: 34px;
+        margin: 0 0 6px !important;
+        padding-left: 32px !important;
         height: auto !important;
-        min-height: 40px;
-        display: flex;
-        align-items: center;
+        min-height: 0 !important;
+        display: flex !important;
+        align-items: center !important;
       }
+      #urppp-dashboard .tabContent h3:last-child { margin-bottom: 0 !important; }
       #urppp-dashboard .tabContent h3::before {
         counter-increment: urppp-notice;
         content: counter(urppp-notice);
@@ -4492,8 +4526,8 @@
         left: 0;
         top: 50%;
         transform: translateY(-50%);
-        width: 24px;
-        height: 24px;
+        width: 22px;
+        height: 22px;
         border-radius: 50%;
         background: var(--primary);
         color: #fff;
@@ -4506,47 +4540,89 @@
       }
       #urppp-dashboard .tabContent h3 a {
         color: var(--text) !important;
-        font-weight: 500;
-        font-size: 14px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        width: 100%;
-        padding: 10px 12px;
-        border-radius: var(--radius-sm);
-        background: var(--input-bg);
+        font-weight: 500 !important;
+        font-size: 13.5px !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+        padding: 8px 10px !important;
+        border-radius: var(--radius-sm) !important;
+        background: var(--input-bg) !important;
         transition: background .2s;
+        line-height: 1.35 !important;
+        min-height: 0 !important;
+        height: auto !important;
+        max-height: none !important;
       }
-      #urppp-dashboard .tabContent h3 a:hover { background: var(--border); }
-      #urppp-dashboard .tabContent h3 label { font-weight: inherit; color: inherit; margin: 0; }
-      #urppp-dashboard .tabContent h3 a > span { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-      #urppp-dashboard .tabContent h3 .hide_note { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-right: 12px; }
-      #urppp-dashboard .tabContent h3 .fa-clock-o { margin-right: 4px; color: var(--text-muted); }
-      #urppp-dashboard .urppp-card-body:has(.btn-app) { display: block !important; padding: 16px 14px; font-size: 0; }
-      #urppp-dashboard .btn-app {
+      #urppp-dashboard .tabContent h3 a:hover { background: var(--border) !important; }
+      #urppp-dashboard .tabContent h3 label { font-weight: inherit !important; color: inherit !important; margin: 0 !important; }
+      #urppp-dashboard .tabContent h3 a > span { display: flex !important; justify-content: space-between !important; align-items: center !important; width: 100% !important; }
+      #urppp-dashboard .tabContent h3 .hide_note { flex: 1 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; margin-right: 10px !important; }
+      #urppp-dashboard .tabContent h3 .fa-clock-o { margin-right: 4px !important; color: var(--text-muted) !important; }
+      /* 覆盖原站 .tabContent h3 a:link { line-height:34px } 造成的过大行距 */
+      #urppp-dashboard .tabContent h3 a:link,
+      #urppp-dashboard .tabContent h3 a:visited,
+      #urppp-dashboard .tabContent h3 a:hover,
+      #urppp-dashboard .tabContent h3 a:active {
+        line-height: 1.35 !important;
+        padding: 8px 10px !important;
+        height: auto !important;
+      }
+      #urppp-dashboard .urppp-card-body:has(.btn-app),
+      #urppp-dashboard .widget-main:has(.btn-app),
+      #urppp-dashboard #personalApplication {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 10px !important;
+        padding: 14px !important;
+        font-size: 13px !important;
+      }
+      #urppp-dashboard .btn-app,
+      #urppp-dashboard a.btn-app,
+      #urppp-dashboard button.btn-app {
         display: inline-flex !important;
-        width: 80px !important;
-        height: 80px !important;
-        margin: 0 12px 12px 0 !important;
-        border-radius: 8px !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 96px !important;
+        min-width: 96px !important;
+        height: 92px !important;
+        min-height: 92px !important;
+        max-height: none !important;
+        margin: 0 !important;
+        border-radius: 10px !important;
         background: var(--input-bg) !important;
         border: 1px solid var(--border) !important;
         color: var(--text) !important;
         box-shadow: none !important;
-        padding: 8px 6px !important;
+        padding: 10px 8px !important;
         font-size: 12px !important;
-        line-height: 1.3 !important;
+        line-height: 1.25 !important;
         white-space: normal !important;
-        text-align: center;
+        text-align: center !important;
         transition: all .2s;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important;
         word-break: keep-all !important;
         vertical-align: top !important;
       }
-      #urppp-dashboard .btn-app:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; transform: translateY(-2px); box-shadow: 0 4px 12px var(--ring); }
-      #urppp-dashboard .btn-app > .ace-icon { color: inherit !important; display: block; margin: 0 auto 4px; font-size: 22px; }
+      #urppp-dashboard .btn-app:hover {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        color: #fff !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px var(--ring);
+      }
+      #urppp-dashboard .btn-app > .ace-icon,
+      #urppp-dashboard .btn-app > .fa,
+      #urppp-dashboard .btn-app > .glyphicon {
+        color: inherit !important;
+        display: block !important;
+        margin: 0 0 6px !important;
+        font-size: 26px !important;
+        line-height: 1 !important;
+        width: auto !important;
+        height: auto !important;
+      }
     `;
     }
 
@@ -4634,7 +4710,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.12');
+    console.log('[URP++] style applied v0.4.13');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5252,7 +5328,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.12',
+    version: '0.4.13',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
