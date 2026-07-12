@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.68
+// @version      0.3.69
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -1324,6 +1324,34 @@
       if (html !== span.innerHTML) span.innerHTML = html;
       a.dataset.urpppNodeDone = '1';
     });
+
+    // 点击课组整行直接展开/收起（不必点小三角）
+    if (!tree.dataset.urpppExpandClick) {
+      tree.dataset.urpppExpandClick = '1';
+      tree.addEventListener('click', (e) => {
+        const a = e.target && e.target.closest ? e.target.closest('li > a') : null;
+        if (!a || !tree.contains(a)) return;
+        // 保留原生 switch 点击
+        if (e.target.closest && e.target.closest('span.button.switch')) return;
+        const li = a.parentElement;
+        if (!li) return;
+        const sw = li.querySelector(':scope > span.button.switch');
+        if (!sw) return;
+        if (/_docu\b/.test(sw.className) || sw.classList.contains('urppp-switch-leaf')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        sw.click();
+      }, true);
+    }
+    // 可展开节点加手型
+    tree.querySelectorAll('li > a').forEach((a) => {
+      const sw = a.parentElement && a.parentElement.querySelector(':scope > span.button.switch');
+      if (sw && !/_docu\b/.test(sw.className) && !sw.classList.contains('urppp-switch-leaf')) {
+        a.classList.add('urppp-expandable');
+      } else {
+        a.classList.remove('urppp-expandable');
+      }
+    });
   }
   // 表格外框 wrapper：圆角 + 完整四边线
   function wrapTables() {
@@ -2543,7 +2571,7 @@
       #tree_div,
       .urppp-plan-tree-shell #tree_div,
       .urppp-plan-tree-shell .widget-body {
-        padding: 8px 10px !important;
+        padding: 6px 8px !important;
         margin: 0 !important;
         border: none !important;
         background: transparent !important;
@@ -2570,23 +2598,23 @@
       }
       .ztree.urppp-ztree li + li,
       #treeDemo.ztree li + li {
-        margin-top: 1px !important;
+        margin-top: 0 !important;
       }
       /* 子树单独占满下一行 */
       .ztree.urppp-ztree li > ul,
       #treeDemo.ztree li > ul {
         flex: 0 0 100% !important;
         width: 100% !important;
-        margin: 1px 0 4px 12px !important;
-        padding: 0 0 0 10px !important;
+        margin: 0 0 2px 10px !important;
+        padding: 0 0 0 8px !important;
         border-left: 1px solid var(--border) !important;
         box-sizing: border-box !important;
       }
       /* 展开钮：与首行文字垂直居中对齐 */
       .ztree.urppp-ztree li > span.button.switch,
       #treeDemo.ztree li > span.button.switch {
-        flex: 0 0 16px !important;
-        margin: 7px 6px 0 0 !important;
+        flex: 0 0 14px !important;
+        margin: 5px 4px 0 0 !important;
       }
       /* 叶子节点无子级：隐藏无效展开钮 */
       .ztree.urppp-ztree li > span.button.switch.urppp-switch-leaf,
@@ -2600,7 +2628,7 @@
       .ztree.urppp-ztree li:has(> span.button.switch.urppp-switch-leaf) > a,
       #treeDemo.ztree li:has(> span.button.switch[class*="_docu"]) > a,
       #treeDemo.ztree li:has(> span.button.switch.urppp-switch-leaf) > a {
-        padding-left: 20px !important;
+        padding-left: 18px !important;
       }
       .ztree.urppp-ztree li a,
       #treeDemo.ztree li a {
@@ -2609,7 +2637,7 @@
         min-width: 0 !important;
         height: auto !important;
         min-height: 0 !important;
-        padding: 5px 8px !important;
+        padding: 3px 6px !important;
         margin: 0 !important;
         border: none !important;
         border-radius: 8px !important;
@@ -2639,10 +2667,14 @@
       /* 展开按钮：更小更安静 */
       .ztree.urppp-ztree li span.button,
       #treeDemo.ztree li span.button {
-        width: 16px !important;
-        height: 16px !important;
-        margin: 0 6px 0 0 !important;
+        width: 14px !important;
+        height: 14px !important;
+        margin: 0 4px 0 0 !important;
         vertical-align: middle !important;
+      }
+      .ztree.urppp-ztree li a.urppp-expandable,
+      #treeDemo.ztree li a.urppp-expandable {
+        cursor: pointer !important;
       }
       .ztree.urppp-ztree li span.button.switch,
       #treeDemo.ztree li span.button.switch {
@@ -2746,11 +2778,11 @@
       .urppp-sub {
         display: block !important;
         width: auto !important;
-        margin: 2px 0 0 0 !important;
+        margin: 1px 0 0 0 !important;
         padding: 0 !important;
-        font-size: 12px !important;
+        font-size: 11.5px !important;
         font-weight: 400 !important;
-        line-height: 1.35 !important;
+        line-height: 1.3 !important;
         color: var(--text-muted) !important;
       }
       .urppp-code {
@@ -2795,7 +2827,8 @@
         background: var(--input-bg) !important;
         border: 1px solid var(--border) !important;
         border-radius: 8px !important;
-        padding: 6px 10px !important;
+        padding: 4px 8px !important;
+        cursor: pointer !important;
       }
       .ztree.urppp-ztree > li > a:hover,
       #treeDemo.ztree > li > a:hover {
@@ -2804,15 +2837,15 @@
       }
       .ztree.urppp-ztree > li + li,
       #treeDemo.ztree > li + li {
-        margin-top: 6px !important;
+        margin-top: 4px !important;
       }
       /* 主节点展开钮与浅底对齐 */
       .ztree.urppp-ztree > li > span.button.switch,
       #treeDemo.ztree > li > span.button.switch {
-        margin-top: 10px !important;
+        margin-top: 7px !important;
       }
 
-      /* 课组要求等表格恢复正常横向表格布局 */      /* 课组要求等表格恢复正常横向表格布局 */
+      /* 课组要求等表格恢复正常横向表格布局 */
       .page-content .profile-user-info,
       .page-content .profile-user-info-striped {
         display: block !important;
@@ -4031,7 +4064,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.68');
+    console.log('[URP++] style applied v0.3.69');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -4650,7 +4683,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.68',
+    version: '0.3.69',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
