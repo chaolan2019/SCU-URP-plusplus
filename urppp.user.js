@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.18
+// @version      0.3.19
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -639,53 +639,97 @@
       ul.appendChild(li);
     });
   }
-  // 学籍/资料页：把「基本信息」等标题从非全宽列提到整行，与页面内容左缘对齐
+  // 学籍/资料页：按像素对齐，标题左缘必须贴齐 .page-content 内容左缘
   function hoistProfileSectionHeaders() {
     const page = document.querySelector('.page-content') || document.getElementById('page-content-template');
     if (!page) return;
 
-    const isPartialCol = (el) => {
-      if (!el || !el.classList) return false;
-      const cls = el.className || '';
-      if (!/\bcol-/.test(cls)) return false;
-      const matches = cls.match(/col-(?:xs|sm|md|lg|xl)-(\d+)/g);
-      if (!matches || !matches.length) return false;
-      // 任一断点小于 12 即视为侧栏列
-      return matches.some((m) => parseInt(m.split('-').pop(), 10) < 12);
+    const pageRect = page.getBoundingClientRect();
+    const pagePadL = parseFloat(getComputedStyle(page).paddingLeft) || 0;
+    const targetLeft = pageRect.left + pagePadL;
+
+    const findTopRow = (el) => {
+      let row = null;
+      let n = el;
+      while (n && n !== page) {
+        if (n.classList && n.classList.contains('row')) row = n;
+        n = n.parentElement;
+      }
+      return row;
     };
 
     page.querySelectorAll('h4.header, h3.header, h5.header, .header.smaller').forEach((header) => {
-      if (header.dataset.urpppHoisted === '1') return;
-      if (header.closest('.urppp-section-title-wrap')) {
+      // 已在我们的全宽壳里
+      if (header.parentElement && header.parentElement.classList.contains('urppp-section-title-wrap')) {
+        header.dataset.urpppHoisted = '1';
+        // 再校验一次壳本身是否贴齐
+        const wrap = header.parentElement;
+        const wr = wrap.getBoundingClientRect();
+        if (Math.abs(wr.left - targetLeft) <= 2) return;
+      }
+
+      const hr = header.getBoundingClientRect();
+      // 已贴齐内容左缘则不动
+      if (Math.abs(hr.left - targetLeft) <= 2 && header.offsetWidth >= page.clientWidth - pagePadL * 2 - 8) {
         header.dataset.urpppHoisted = '1';
         return;
       }
 
-      // 找到最近的非全宽列
-      let partialCol = null;
-      let node = header.parentElement;
-      while (node && node !== page) {
-        if (isPartialCol(node)) partialCol = node;
-        node = node.parentElement;
+      // 找 page 下最外层 row，插到它前面
+      const topRow = findTopRow(header);
+      if (!topRow || !topRow.parentElement) return;
+
+      // 若 topRow 自己就缩进了，继续往上找可对齐的父级
+      let anchor = topRow;
+      let parent = topRow.parentElement;
+      while (parent && parent !== page) {
+        const pr = parent.getBoundingClientRect();
+        if (Math.abs(pr.left - targetLeft) <= 2) break;
+        if (parent.classList && parent.classList.contains('row')) anchor = parent;
+        parent = parent.parentElement;
       }
-      if (!partialCol) return;
 
-      // 找到该列所在的 row
-      let row = partialCol.parentElement;
-      while (row && row !== page && !row.classList.contains('row')) row = row.parentElement;
-      if (!row || row === page || !row.parentElement) return;
-
-      const wrap = document.createElement('div');
-      wrap.className = 'urppp-section-title-wrap';
-      wrap.style.cssText = 'width:100%;max-width:100%;box-sizing:border-box;margin:0 0 14px;padding:0;';
-      row.parentElement.insertBefore(wrap, row);
+      let wrap = header.closest('.urppp-section-title-wrap');
+      if (!wrap) {
+        wrap = document.createElement('div');
+        wrap.className = 'urppp-section-title-wrap';
+      }
+      // 插到与 page 内容同级的位置
+      if (anchor.parentElement) {
+        anchor.parentElement.insertBefore(wrap, anchor);
+      }
       wrap.appendChild(header);
+
+      wrap.style.cssText = [
+        'display:block',
+        'width:100%',
+        'max-width:100%',
+        'box-sizing:border-box',
+        'margin:0 0 14px 0',
+        'padding:0',
+        'position:relative',
+        'left:0',
+        'clear:both'
+      ].join(';');
+
       header.dataset.urpppHoisted = '1';
       header.style.setProperty('width', '100%', 'important');
       header.style.setProperty('max-width', '100%', 'important');
       header.style.setProperty('margin-left', '0', 'important');
       header.style.setProperty('margin-right', '0', 'important');
       header.style.setProperty('box-sizing', 'border-box', 'important');
+      header.style.setProperty('position', 'relative', 'important');
+      header.style.setProperty('left', '0', 'important');
+
+      // 像素级纠偏：若仍偏右，用负 margin 拉回
+      requestAnimationFrame(() => {
+        const wr = wrap.getBoundingClientRect();
+        const delta = wr.left - targetLeft;
+        if (Math.abs(delta) > 1) {
+          wrap.style.marginLeft = (-delta) + 'px';
+          wrap.style.width = 'calc(100% + ' + delta + 'px)';
+        }
+      });
     });
   }
   // 表格外框 wrapper：圆角 + 完整四边线
@@ -1268,21 +1312,22 @@
         padding-left: 0 !important;
         padding-right: 0 !important;
       }
-      /* 嵌套列保留轻 gutter，避免贴死；全宽列仍贴齐内容边缘 */
+      /* 嵌套列：取消负 margin，避免标题/卡片相对 page-content 整体右偏 */
       .page-content .row .row {
-        margin-left: -8px !important;
-        margin-right: -8px !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
       }
       .page-content .row .row > [class*="col-"] {
-        padding-left: 8px !important;
-        padding-right: 8px !important;
-      }
-      .page-content .row .row > [class*="col-xs-12"],
-      .page-content .row .row > [class*="col-sm-12"],
-      .page-content .row .row > [class*="col-md-12"],
-      .page-content .row .row > [class*="col-lg-12"] {
         padding-left: 0 !important;
         padding-right: 0 !important;
+      }
+      /* 学籍双栏：头像列收窄，信息列吃满剩余 */
+      .page-content .row .row > [class*="col-"]:has(img),
+      .page-content .row .row > [class*="col-"]:has(.profile-picture) {
+        max-width: 160px !important;
+        flex: 0 0 160px !important;
+        width: 160px !important;
+        text-align: center !important;
       }
       .main-content .page-content .tabbable {
         margin-left: 0 !important;
@@ -1517,16 +1562,16 @@
       .thumbnail > img,
       .thumbnail a > img {
         border-radius: 12px !important;
-        max-width: 120px !important;
-        width: 120px !important;
+        max-width: 100px !important;
+        width: 100px !important;
         height: auto !important;
         object-fit: cover !important;
       }
       .profile-picture,
       .page-content .center {
         display: block !important;
-        width: 120px !important;
-        max-width: 120px !important;
+        width: 100px !important;
+        max-width: 100px !important;
         margin-left: auto !important;
         margin-right: auto !important;
       }
@@ -1540,8 +1585,8 @@
       }
       .profile-picture img {
         display: block !important;
-        width: 120px !important;
-        max-width: 120px !important;
+        width: 100px !important;
+        max-width: 100px !important;
         height: auto !important;
         border-radius: 12px !important;
       }
@@ -2100,7 +2145,7 @@
 
     setTimeout(() => document.body.classList.add('urppp-ready'), 600);
 
-    console.log('[URP++] style applied v0.3.18');
+    console.log('[URP++] style applied v0.3.19');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -2711,7 +2756,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.18',
+    version: '0.3.19',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
