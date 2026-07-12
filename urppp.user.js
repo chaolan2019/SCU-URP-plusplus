@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.80
+// @version      0.3.81
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -2823,12 +2823,14 @@
       #treeDemo.ztree li + li {
         margin-top: 0 !important;
       }
-      /* 顶级课组卡片：标题+课程都在同一圆角框内 */
+      /* 顶级课组卡片：标题+课程同框；去掉底部无用空白，不缩字体 */
       .ztree.urppp-ztree > li,
       #treeDemo.ztree > li {
-        display: block !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: flex-start !important;
         margin: 0 0 8px 0 !important;
-        padding: 3px 8px 2px !important;
+        padding: 8px 10px 6px !important;
         border: 1px solid var(--border) !important;
         border-radius: 10px !important;
         background: var(--surface) !important;
@@ -2841,14 +2843,15 @@
       }
       .ztree.urppp-ztree > li > a,
       #treeDemo.ztree > li > a {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        align-items: baseline !important;
-        gap: 2px 6px !important;
-        width: calc(100% - 18px) !important;
-        max-width: calc(100% - 18px) !important;
+        display: block !important;
+        flex: 1 1 0 !important;
+        width: calc(100% - 20px) !important;
+        max-width: calc(100% - 20px) !important;
+        margin: 0 !important;
+        padding: 2px 6px !important;
+        line-height: 1.4 !important;
       }
-      /* 子树在卡片内部展开：标题下空白尽量压掉 */
+      /* 课程列表贴着标题区底部，去掉容器下半截空档 */
       .ztree.urppp-ztree li > ul,
       #treeDemo.ztree li > ul {
         flex: 0 0 100% !important;
@@ -2861,26 +2864,20 @@
       }
       .ztree.urppp-ztree > li > ul,
       #treeDemo.ztree > li > ul {
-        margin: 0 !important;
-        padding: 0 0 0 6px !important;
+        margin: 4px 0 0 0 !important;
+        padding: 4px 0 0 4px !important;
         border-left: none !important;
         border-top: 1px solid var(--border) !important;
       }
-      .ztree.urppp-ztree > li > a,
-      #treeDemo.ztree > li > a {
-        margin: 0 !important;
-        padding: 0 4px !important;
-        line-height: 1.2 !important;
-      }
       .ztree.urppp-ztree > li > a .urppp-sub,
       #treeDemo.ztree > li > a .urppp-sub {
-        margin: 0 !important;
+        margin: 2px 0 0 0 !important;
         padding: 0 !important;
-        line-height: 1.1 !important;
+        line-height: 1.35 !important;
       }
       .ztree.urppp-ztree > li > span.button.switch,
       #treeDemo.ztree > li > span.button.switch {
-        margin-top: 1px !important;
+        margin-top: 6px !important;
         margin-bottom: 0 !important;
       }
       /* 展开钮：与首行文字垂直居中对齐 */
@@ -2910,7 +2907,7 @@
         min-width: 0 !important;
         height: auto !important;
         min-height: 0 !important;
-        padding: 0 5px !important;
+        padding: 3px 6px !important;
         margin: 0 !important;
         border: none !important;
         border-radius: 8px !important;
@@ -3035,30 +3032,31 @@
         border: none !important;
       }
 
-      /* 文本层级：标题正文 + 次要信息弱化 */
+      /* 文本层级：恢复正常字号，不拿缩小字体当压缩间距 */
       .ztree.urppp-ztree li a span.node_name,
       #treeDemo.ztree li a span.node_name {
         display: inline !important;
         white-space: normal !important;
-        line-height: 1.25 !important;
-        font-size: 12.5px !important;
+        line-height: 1.4 !important;
+        font-size: 13.5px !important;
         color: var(--text) !important;
       }
       .ztree.urppp-ztree > li > a span.node_name,
       #treeDemo.ztree > li > a span.node_name {
         font-weight: 600 !important;
+        font-size: 14px !important;
       }
       .urppp-sub {
         display: flex !important;
         flex-wrap: wrap !important;
         align-items: center !important;
-        gap: 2px 6px !important;
+        gap: 4px 8px !important;
         width: auto !important;
-        margin: 0 !important;
+        margin: 1px 0 0 0 !important;
         padding: 0 !important;
-        font-size: 11px !important;
+        font-size: 12px !important;
         font-weight: 400 !important;
-        line-height: 1.2 !important;
+        line-height: 1.35 !important;
         color: var(--text-muted) !important;
       }
       .urppp-kv {
@@ -3090,7 +3088,7 @@
         background: none !important;
         border-radius: 0 !important;
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
-        font-size: 11.5px !important;
+        font-size: 12px !important;
         font-weight: 500 !important;
         color: var(--text-muted) !important;
       }
@@ -3107,7 +3105,7 @@
         border: none !important;
         background: none !important;
         border-radius: 0 !important;
-        font-size: 11.5px !important;
+        font-size: 12px !important;
         color: var(--text-muted) !important;
       }
       .urppp-score {
@@ -3118,9 +3116,9 @@
         padding: 0 7px !important;
         border-radius: 999px !important;
         border: 1px solid transparent !important;
-        font-size: 12px !important;
+        font-size: 12.5px !important;
         font-weight: 600 !important;
-        line-height: 1.45 !important;
+        line-height: 1.4 !important;
         white-space: nowrap !important;
         vertical-align: baseline !important;
       }
@@ -4407,7 +4405,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.80');
+    console.log('[URP++] style applied v0.3.81');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5025,7 +5023,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.80',
+    version: '0.3.81',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
