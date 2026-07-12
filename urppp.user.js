@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.70
+// @version      0.3.71
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -1318,34 +1318,81 @@
           else if (icon.classList.contains('fa-kz')) li.classList.add('urppp-node-todo');
         }
       }
-      if (a.dataset.urpppNodeDone === '1') return;
 
-      let html = span.innerHTML;
-      if (!html) return;
+      // 始终从原始 HTML 重渲染，避免热更新后残留错误括号
+      if (!span.dataset.urpppRaw) {
+        if (!span.querySelector('.urppp-score, .urppp-code, .urppp-sub, .urppp-meta, .urppp-title')) {
+          span.dataset.urpppRaw = span.innerHTML;
+        }
+      }
+      // 修补旧版把右括号落在 span 外的节点
+      span.querySelectorAll('.urppp-score').forEach((s) => {
+        const next = s.nextSibling;
+        if (next && next.nodeType === 3 && /^\s*\)+\s*$/.test(next.textContent || '')) {
+          next.parentNode.removeChild(next);
+        }
+      });
 
-      // 课组统计：单行次要信息，不再拆成彩色 chips
+      let html = span.dataset.urpppRaw;
+      if (!html) {
+        // 无 raw 的旧节点：若已格式化则跳过正文，只保留状态 class
+        if (a.dataset.urpppNodeDone === '1') return;
+        html = span.innerHTML;
+        if (!html) return;
+        span.dataset.urpppRaw = html;
+      }
+
+      // 课组统计：关键字段数字高亮
       html = html.replace(/\((最低修读学分:[^)]+)\)/g, (_, body) => {
         const parts = body.split(',').map((p) => p.trim()).filter(Boolean);
-        // 只保留关键 3 项，降低噪音
         const keep = [];
         parts.forEach((p) => {
           if (/最低修读学分|通过学分|必修课未修读|已及格课程门数/.test(p)) keep.push(p);
         });
-        const show = (keep.length ? keep : parts).join(' · ');
-        return `<span class="urppp-sub">${show}</span>`;
+        const list = (keep.length ? keep : parts).map((p) => {
+          const m = p.match(/^([^:：]+)[:：]\s*(.+)$/);
+          if (!m) return p;
+          const key = m[1].trim();
+          const val = m[2].trim();
+          let cls = 'neutral';
+          if (/通过|已及格/.test(key)) cls = 'ok';
+          else if (/未修读|未及格/.test(key)) cls = Number(val) > 0 ? 'warn' : 'muted';
+          else if (/最低/.test(key)) cls = 'req';
+          return `<span class="urppp-kv ${cls}"><em>${key}</em><b>${val}</b></span>`;
+        }).join('');
+        return `<span class="urppp-sub">${list}</span>`;
       });
 
-      // 课程：课号弱化、元信息弱化、成绩只做轻色
+      // 课程：课号 / 课名 / 学分学期 / 成绩（支持 93.0(20260115) 嵌套括号）
       html = html.replace(/\[(\d{6,})\]/g, '<span class="urppp-code">$1</span>');
       html = html.replace(/\[(\d+(?:\.\d+)?学分(?:,[^\]\[]*)?)\]/g, '<span class="urppp-meta">$1</span>');
-      html = html.replace(/\((必修|任选|限选),([^)]+)\)/g, (_, type, score) => {
-        const sc = String(score).trim();
-        const num = parseFloat(sc);
-        const pass = !Number.isNaN(num) ? num >= 60 : !/不及格|未通过/.test(sc);
-        return `<span class="urppp-score ${pass ? 'pass' : 'fail'}">${type} ${sc}</span>`;
+      // 嵌套括号：(?:[^()]|\([^()]*\))* 才能吃掉 93.0(20260115)
+      html = html.replace(/\((必修|任选|限选),((?:[^()]|\([^()]*\))*)\)/g, (_, type, body) => {
+        const sc = String(body).trim();
+        const m = sc.match(/^(.+?)(?:\((\d{6,8})\))?$/);
+        const grade = (m ? m[1] : sc).trim();
+        const date = m && m[2] ? m[2] : '';
+        const num = parseFloat(grade);
+        let pass = false;
+        if (!Number.isNaN(num)) pass = num >= 60;
+        else if (/不及格|未通过|不通过/.test(grade)) pass = false;
+        else if (/^[A-D]/|优秀|良好|中等|及格|通过/.test(grade)) pass = true;
+        else pass = true;
+        const dateHtml = date ? `<i>${date}</i>` : '';
+        return `<span class="urppp-score ${pass ? 'pass' : 'fail'}"><b>${type}</b><em>${grade}</em>${dateHtml}</span>`;
       });
+      // 课名加粗（课号后、meta/score 前的纯文本）
+      html = html.replace(
+        /(<span class="urppp-code">[^<]*<\/span>)\s*([^<]+?)(?=\s*(?:<span class="urppp-meta"|<span class="urppp-score"|$))/g,
+        '$1<span class="urppp-title">$2</span>'
+      );
+      // 课组名：图标后到 sub 前的纯文本
+      html = html.replace(
+        /(<\/i>)(?:&nbsp;|\s)*([^<]+?)(?=<span class="urppp-sub")/g,
+        '$1<span class="urppp-gname">$2</span>'
+      );
 
-      if (html !== span.innerHTML) span.innerHTML = html;
+      span.innerHTML = html;
       a.dataset.urpppNodeDone = '1';
     });
 
@@ -2800,49 +2847,107 @@
         font-weight: 600 !important;
       }
       .urppp-sub {
-        display: block !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 4px 8px !important;
         width: auto !important;
-        margin: 0 !important;
+        margin: 1px 0 0 0 !important;
         padding: 0 !important;
         font-size: 11px !important;
         font-weight: 400 !important;
         line-height: 1.25 !important;
         color: var(--text-muted) !important;
       }
+      .urppp-kv {
+        display: inline-flex !important;
+        align-items: baseline !important;
+        gap: 3px !important;
+        white-space: nowrap !important;
+      }
+      .urppp-kv em {
+        font-style: normal !important;
+        color: var(--text-muted) !important;
+        font-weight: 400 !important;
+      }
+      .urppp-kv b {
+        font-weight: 700 !important;
+        color: var(--text) !important;
+        font-variant-numeric: tabular-nums !important;
+      }
+      .urppp-kv.req b { color: var(--primary) !important; }
+      .urppp-kv.ok b { color: #15803d !important; }
+      .urppp-kv.warn b { color: #ca8a04 !important; }
+      .urppp-kv.muted b { color: var(--text-muted) !important; font-weight: 600 !important; }
+
       .urppp-code {
         display: inline !important;
         padding: 0 !important;
-        margin-right: 4px !important;
+        margin-right: 6px !important;
         border: none !important;
         background: none !important;
         border-radius: 0 !important;
         font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
-        font-size: 12px !important;
+        font-size: 11.5px !important;
         font-weight: 500 !important;
         color: var(--text-muted) !important;
+      }
+      .urppp-title,
+      .urppp-gname {
+        display: inline !important;
+        font-weight: 600 !important;
+        color: var(--text) !important;
       }
       .urppp-meta {
         display: inline !important;
         padding: 0 !important;
-        margin-left: 4px !important;
+        margin-left: 6px !important;
         border: none !important;
         background: none !important;
         border-radius: 0 !important;
-        font-size: 12px !important;
+        font-size: 11.5px !important;
         color: var(--text-muted) !important;
       }
       .urppp-score {
-        display: inline !important;
-        margin-left: 6px !important;
-        padding: 0 !important;
-        border: none !important;
-        background: none !important;
-        border-radius: 0 !important;
+        display: inline-flex !important;
+        align-items: baseline !important;
+        gap: 5px !important;
+        margin-left: 8px !important;
+        padding: 0 7px !important;
+        border-radius: 999px !important;
+        border: 1px solid transparent !important;
         font-size: 12px !important;
         font-weight: 600 !important;
+        line-height: 1.45 !important;
+        white-space: nowrap !important;
+        vertical-align: baseline !important;
       }
-      .urppp-score.pass { color: #15803d !important; }
-      .urppp-score.fail { color: #b91c1c !important; }
+      .urppp-score b {
+        font-weight: 600 !important;
+        opacity: 0.9 !important;
+      }
+      .urppp-score em {
+        font-style: normal !important;
+        font-weight: 700 !important;
+        font-variant-numeric: tabular-nums !important;
+      }
+      .urppp-score i {
+        font-style: normal !important;
+        font-weight: 500 !important;
+        font-size: 11px !important;
+        opacity: 0.75 !important;
+        font-variant-numeric: tabular-nums !important;
+      }
+      .urppp-score.pass {
+        color: #15803d !important;
+        background: rgba(22,163,74,0.10) !important;
+        border-color: rgba(22,163,74,0.22) !important;
+      }
+      .urppp-score.fail {
+        color: #b91c1c !important;
+        background: rgba(220,38,38,0.10) !important;
+        border-color: rgba(220,38,38,0.22) !important;
+      }
 
       /* 主节点（课组）浅底 + 字重，子课程保持透明 */
       .ztree.urppp-ztree > li > a,
@@ -4088,7 +4193,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.70');
+    console.log('[URP++] style applied v0.3.71');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -4707,7 +4812,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.70',
+    version: '0.3.71',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
