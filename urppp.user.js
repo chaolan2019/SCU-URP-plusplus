@@ -1186,7 +1186,67 @@
       }
       .breadcrumb > li.hide-item { display: none !important; }
       .page-content { padding-top: 10px !important; }
-      /* 卡片 / 面板 */
+
+      /* 页面区块标题（ACE h4.header）：去掉默认底线和图标的脏样式 */
+      h4.header, h3.header, .header.smaller, .header.lighter {
+        background: transparent !important;
+        border: none !important;
+        border-bottom: none !important;
+        box-shadow: none !important;
+        color: var(--text) !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        line-height: 1.4 !important;
+        margin: 0 0 14px !important;
+        padding: 0 0 12px !important;
+        min-height: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        position: relative !important;
+      }
+      h4.header::after, h3.header::after, .header.smaller::after {
+        content: '' !important;
+        position: absolute !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        height: 1px !important;
+        background: var(--border) !important;
+        opacity: 0.9 !important;
+      }
+      h4.header > .glyphicon,
+      h4.header > .fa,
+      h4.header > .ace-icon,
+      h3.header > .glyphicon,
+      h3.header > .fa,
+      .header.smaller > .glyphicon,
+      .header.smaller > .fa {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 28px !important;
+        height: 28px !important;
+        border-radius: 8px !important;
+        background: var(--input-bg) !important;
+        color: var(--primary) !important;
+        font-size: 13px !important;
+        margin: 0 !important;
+        flex: 0 0 auto !important;
+      }
+      h4.header .right_top_oper,
+      .header .right_top_oper {
+        margin-left: auto !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        float: none !important;
+      }
+      h4.header.grey, .header.lighter.grey, .header.smaller.lighter {
+        color: var(--text) !important;
+      }
+
+      /* 卡片 / 面板 */      /* 卡片 / 面板 */
       .widget-box {
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
