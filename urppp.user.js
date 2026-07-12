@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.3.83
+// @version      0.4.0
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.3.14';
+          content:'URP++ v0.4.0';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -2357,10 +2357,11 @@
       h4.header .right_top_oper .btn,
       .header .right_top_oper .btn {
         font-size: 12px !important;
-        padding: 5px 12px !important;
-        line-height: 1.35 !important;
-        height: auto !important;
-        min-height: 30px !important;
+        padding: 0 12px !important;
+        line-height: 1 !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        max-height: 28px !important;
         border-radius: 8px !important;
         display: inline-flex !important;
         align-items: center !important;
@@ -3460,13 +3461,40 @@
       .btn-app {
         border-radius: 6px !important;
       }
-      .btn, .btn.btn-xs, .btn.btn-sm, .btn.btn-lg, .btn.btn-minier {
+      .btn, .btn.btn-xs, .btn.btn-sm, .btn.btn-lg, .btn.btn-minier,
+      .btn.btn-round, .btn.btn-white, .btn.btn-info, .btn.btn-bold {
         font-size: 12px !important;
-        line-height: 1.35 !important;
-        padding: 4px 12px !important;
-        height: auto !important;
+        line-height: 1 !important;
+        padding: 0 12px !important;
+        height: 28px !important;
         min-height: 28px !important;
+        max-height: 28px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 4px !important;
+        box-sizing: border-box !important;
+        vertical-align: middle !important;
         transition: all .15s ease !important;
+      }
+      .btn > .ace-icon,
+      .btn > .fa,
+      .btn > .glyphicon {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+        position: static !important;
+        top: auto !important;
+        vertical-align: middle !important;
+      }
+      .btn.btn-xs {
+        height: 26px !important;
+        min-height: 26px !important;
+        max-height: 26px !important;
+        padding: 0 10px !important;
+        font-size: 12px !important;
       }
       .btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
       .btn:active { transform: translateY(0); box-shadow: none; }
@@ -4455,7 +4483,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.3.83');
+    console.log('[URP++] style applied v0.4.0');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5073,7 +5101,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.3.83',
+    version: '0.4.0',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
