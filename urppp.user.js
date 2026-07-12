@@ -1071,30 +1071,61 @@
       .chosen-results li.highlighted { background: var(--primary) !important; color: #fff !important; }
       label { color: var(--text-secondary) !important; font-weight: 500 !important; font-size: 13px !important; }
 
-      /* 标签页 */
-      .nav-tabs { border-bottom: 1px solid var(--border) !important; }
+      /* 标签页：下划线风格，避免卡片式圆角/直角混用 */
+      .tabbable { margin-bottom: 0 !important; }
+      .nav-tabs {
+        border: none !important;
+        border-bottom: 1px solid var(--border) !important;
+        margin: 0 0 12px !important;
+        padding: 0 !important;
+        display: flex !important;
+        gap: 4px !important;
+        background: transparent !important;
+      }
+      .nav-tabs > li {
+        float: none !important;
+        margin: 0 !important;
+      }
       .nav-tabs > li > a {
         color: var(--text-secondary) !important;
         background: transparent !important;
         border: none !important;
-        padding: 10px 16px !important;
-      }
-      .nav-tabs > li > a:hover { color: var(--text) !important; background: var(--input-bg) !important; border-radius: var(--radius-sm) var(--radius-sm) 0 0 !important; }
-      .nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus {
-        color: var(--primary) !important;
-        background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
-        border-bottom-color: var(--surface) !important;
-        border-radius: var(--radius-sm) var(--radius-sm) 0 0 !important;
+        border-bottom: 2px solid transparent !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        padding: 10px 14px !important;
+        line-height: 1.4 !important;
+        font-size: 13px !important;
         font-weight: 500 !important;
+        box-shadow: none !important;
+      }
+      .nav-tabs > li > a:hover,
+      .nav-tabs > li > a:focus {
+        color: var(--text) !important;
+        background: transparent !important;
+        border: none !important;
+        border-bottom: 2px solid var(--border) !important;
+        border-radius: 0 !important;
+      }
+      .nav-tabs > li.active > a,
+      .nav-tabs > li.active > a:hover,
+      .nav-tabs > li.active > a:focus {
+        color: var(--primary) !important;
+        background: transparent !important;
+        border: none !important;
+        border-bottom: 2px solid var(--primary) !important;
+        border-radius: 0 !important;
+        font-weight: 600 !important;
+        box-shadow: none !important;
       }
       .tab-content {
-        background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
-        border-top: none !important;
-        border-radius: 0 0 var(--radius-sm) var(--radius-sm) !important;
-        padding: 16px !important;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
       }
+      .tab-content > .tab-pane { padding: 0 !important; }
 
       /* 分页 */
       .pagination > li > a, .pagination > li > span {
