@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.86
+// @version      0.4.87
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.86';
+          content:'URP++ v0.4.87';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -7156,7 +7156,7 @@
       #curriculumInfo-divcon2 .modal-body .row > p a:hover {
         text-decoration: underline !important;
       }
-      /* 默认所有 col-xs-6 / 详情块：右栏 50% */
+      /* 默认详情块：右栏固定半宽，不被内容挤扁 */
       #curriculumInfo-divcon2 .modal-body .row > .col-xs-6,
       #curriculumInfo-divcon2 .modal-body .row > #fajh,
       #curriculumInfo-divcon2 .modal-body .row > #xnxq,
@@ -7167,30 +7167,32 @@
         flex: 0 0 calc(50% - 7px) !important;
         width: calc(50% - 7px) !important;
         max-width: calc(50% - 7px) !important;
-        min-width: 0 !important;
+        min-width: calc(50% - 7px) !important;
         padding: 0 !important;
         margin: 0 0 12px !important;
         border: none !important;
         box-sizing: border-box !important;
       }
-      /* 含树的那一列固定在左 50% */
+      /* 左树：固定半宽，禁止被压缩变窄 */
       #curriculumInfo-divcon2 .modal-body .row > .col-xs-6:has(#treeDemo),
       #curriculumInfo-divcon2 .modal-body .row > .col-xs-6:has(.ztree) {
         flex: 0 0 calc(50% - 7px) !important;
         width: calc(50% - 7px) !important;
         max-width: calc(50% - 7px) !important;
-        order: 1 !important;
-        margin-bottom: 0 !important;
+        min-width: calc(50% - 7px) !important;
+        order: 0 !important;
+        margin: 0 !important;
       }
-      /* 详情块全部右栏，纵向堆叠：用 order + 满右栏宽度 */
+      /* 详情块：右栏对齐（换行后贴右） */
       #curriculumInfo-divcon2 .modal-body .row > #fajh,
       #curriculumInfo-divcon2 .modal-body .row > #xnxq,
       #curriculumInfo-divcon2 .modal-body .row > #kz,
       #curriculumInfo-divcon2 .modal-body .row > #kc,
       #curriculumInfo-divcon2 .modal-body .row > #kcfa {
-        order: 2 !important;
+        order: 1 !important;
+        margin-left: auto !important;
       }
-      /* 若存在我们之前注入的 wrapper，也兼容 50/50 */
+      /* 兼容历史 wrapper：左右强制 50/50，不允许收缩 */
       #curriculumInfo-divcon2 .urppp-drawer-body {
         display: flex !important;
         flex-direction: row !important;
@@ -7203,10 +7205,10 @@
       #curriculumInfo-divcon2 .urppp-drawer-left,
       #curriculumInfo-divcon2 .urppp-drawer-right {
         float: none !important;
-        flex: 1 1 50% !important;
-        width: 50% !important;
-        max-width: 50% !important;
-        min-width: 0 !important;
+        flex: 0 0 calc(50% - 7px) !important;
+        width: calc(50% - 7px) !important;
+        max-width: calc(50% - 7px) !important;
+        min-width: calc(50% - 7px) !important;
         margin: 0 !important;
         padding: 0 !important;
         border: none !important;
@@ -8128,7 +8130,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.86');
+    console.log('[URP++] style applied v0.4.87');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -8751,7 +8753,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.86',
+    version: '0.4.87',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
