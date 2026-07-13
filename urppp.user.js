@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.73
+// @version      0.4.74
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.73';
+          content:'URP++ v0.4.74';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -2323,7 +2323,7 @@
   // 评估公告 / 通知列表：
   // 真实结构多为 3 列 tr: 圆点 | 标题链接 | 日期（也可能单 td 多 span）
 
-  // 本学期周课表：收束周次滑条宽度 + 重算课程块对齐
+  // 本学期周课表：收束周次滑条；课程块改相对父 td 定位（不再用 divBuild 整页 offset）
   function fixWeekScheduleLayout() {
     try {
       const box = document.getElementById('soliderbox');
@@ -2331,7 +2331,6 @@
         box.style.setProperty('width', '100%', 'important');
         box.style.setProperty('max-width', '720px', 'important');
         box.style.setProperty('min-width', '0', 'important');
-        // 去掉站点 container 1000px/300% 干扰
         box.classList.remove('container');
         const row = box.closest('.profile-info-row');
         if (row) {
@@ -2347,44 +2346,59 @@
           val.style.setProperty('flex', '1 1 auto', 'important');
           val.style.setProperty('min-width', '0', 'important');
         }
-        // 触发滑条内部尺寸重算（若有）
-        try {
-          window.dispatchEvent(new Event('resize'));
-        } catch (_) { /* ignore */ }
       }
 
       const host = document.getElementById('mycoursetable');
-      const page = document.getElementById('page-content-template') || document.querySelector('.page-content');
-      if (host) {
-        host.style.setProperty('position', 'relative', 'important');
-        host.style.setProperty('width', '100%', 'important');
-      }
-      if (page) page.style.setProperty('position', 'relative', 'important');
+      if (!host) return;
+      host.style.setProperty('position', 'relative', 'important');
+      host.style.setProperty('width', '100%', 'important');
 
-      // 优先调用站点 divBuild 重算 absolute 课程块
-      const g = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
-      if (typeof g.divBuild === 'function') {
-        try { g.divBuild(); } catch (e) { console.warn('[URP++] divBuild failed', e); }
-      } else if (host && host.querySelector('div.class_div')) {
-        // 兜底：按父 td 定位
-        const pageTop = page ? page.getBoundingClientRect().top + (window.scrollY || 0) : 0;
-        const pageLeft = page ? page.getBoundingClientRect().left + (window.scrollX || 0) : 0;
-        host.querySelectorAll('div.class_div').forEach((div) => {
-          const td = div.parentElement;
-          if (!td || td.tagName !== 'TD') return;
-          const rect = td.getBoundingClientRect();
-          const siblings = Array.from(td.querySelectorAll(':scope > div.class_div'));
-          const idx = siblings.indexOf(div);
-          const half = siblings.length > 1;
-          const w = half ? rect.width / 2 : rect.width;
-          const top = rect.top + (window.scrollY || 0) - pageTop - 12;
-          const left = rect.left + (window.scrollX || 0) - pageLeft + (half && idx > 0 ? w : 0);
+      // 行高：取内容需要的最大单节高度，再统一
+      const bodyRows = host.querySelectorAll('#courseTableBody tr, table tbody tr');
+      let unitH = 0;
+      host.querySelectorAll('div.class_div').forEach((div) => {
+        const n = parseInt(div.getAttribute('classNum') || '1', 10) || 1;
+        // 临时 static 测内容高度
+        const prev = div.getAttribute('style') || '';
+        div.style.setProperty('position', 'static', 'important');
+        div.style.setProperty('height', 'auto', 'important');
+        div.style.setProperty('top', 'auto', 'important');
+        div.style.setProperty('left', 'auto', 'important');
+        const h = div.scrollHeight || div.offsetHeight || 0;
+        unitH = Math.max(unitH, Math.ceil(h / n));
+        // 先不还原，后面统一写
+        void prev;
+      });
+      if (unitH < 56) unitH = 72;
+      bodyRows.forEach((tr) => {
+        tr.style.setProperty('height', unitH + 'px', 'important');
+      });
+
+      // 每个 td 作为定位容器；课程块相对 td
+      host.querySelectorAll('td').forEach((td) => {
+        const blocks = Array.from(td.querySelectorAll(':scope > div.class_div'));
+        if (!blocks.length) return;
+        td.style.setProperty('position', 'relative', 'important');
+        td.style.setProperty('vertical-align', 'top', 'important');
+        td.style.setProperty('overflow', 'visible', 'important');
+
+        const half = blocks.length > 1;
+        const tdW = td.clientWidth || td.offsetWidth || 0;
+        blocks.forEach((div, idx) => {
+          const n = parseInt(div.getAttribute('classNum') || '1', 10) || 1;
+          const w = half ? Math.floor(tdW / 2) : tdW;
+          const left = half && idx > 0 ? w : 0;
           div.style.setProperty('position', 'absolute', 'important');
-          div.style.setProperty('top', top + 'px', 'important');
+          div.style.setProperty('top', '0', 'important');
           div.style.setProperty('left', left + 'px', 'important');
           div.style.setProperty('width', Math.max(0, w - 2) + 'px', 'important');
+          div.style.setProperty('height', (unitH * n) + 'px', 'important');
+          div.style.setProperty('margin', '0', 'important');
+          div.style.setProperty('box-sizing', 'border-box', 'important');
+          div.style.setProperty('z-index', '2', 'important');
+          div.style.setProperty('overflow', 'hidden', 'important');
         });
-      }
+      });
     } catch (err) {
       console.warn('[URP++] week schedule fix failed', err);
     }
@@ -2393,23 +2407,35 @@
   function scheduleWeekScheduleFix() {
     if (window.__urpppWeekSchedBound) return;
     window.__urpppWeekSchedBound = true;
-    const run = () => fixWeekScheduleLayout();
-    ;[0, 200, 600, 1200, 2500].forEach((ms) => setTimeout(run, ms));
+    let busy = false;
+    const run = () => {
+      if (busy) return;
+      if (!document.getElementById('soliderbox') && !document.getElementById('mycoursetable')) return;
+      busy = true;
+      try { fixWeekScheduleLayout(); } finally {
+        // 避免 mutation 自激
+        setTimeout(() => { busy = false; }, 50);
+      }
+    };
+    ;[100, 400, 1000, 2000].forEach((ms) => setTimeout(run, ms));
     window.addEventListener('resize', () => {
       clearTimeout(window.__urpppWeekSchedResize);
-      window.__urpppWeekSchedResize = setTimeout(run, 120);
+      window.__urpppWeekSchedResize = setTimeout(run, 150);
     });
-    // 课表 AJAX 填充后重算
-    const obs = new MutationObserver(() => {
-      if (!document.getElementById('mycoursetable') && !document.getElementById('soliderbox')) return;
+    const obs = new MutationObserver((muts) => {
+      // 忽略我们自己改 style 引发的抖动：只看子树增删
+      const meaningful = muts.some((m) => m.type === 'childList' && (m.addedNodes.length || m.removedNodes.length));
+      if (!meaningful) return;
       clearTimeout(window.__urpppWeekSchedMut);
-      window.__urpppWeekSchedMut = setTimeout(run, 180);
+      window.__urpppWeekSchedMut = setTimeout(run, 220);
     });
     const host = document.getElementById('mycoursetable') || document.getElementById('page-content-template') || document.body;
     if (host) obs.observe(host, { childList: true, subtree: true });
-    // 拖动周次后也会刷新课表
-    document.addEventListener('mouseup', () => {
-      if (document.getElementById('soliderbox')) setTimeout(run, 300);
+    document.addEventListener('mouseup', (e) => {
+      if (!document.getElementById('soliderbox')) return;
+      // 拖完滑条或点查询后，等 AJAX 回来再对齐
+      setTimeout(run, 400);
+      setTimeout(run, 900);
     }, true);
   }
   function beautifyNoticeTables() {
@@ -6778,11 +6804,7 @@
         background: var(--text) !important;
         color: #fff !important;
       }
-      /* 课表容器：给 absolute 课程块提供定位基准 */
-      #page-content-template,
-      .page-content#page-content-template {
-        position: relative !important;
-      }
+      /* 课表：td 作为定位容器，课程块相对单元格对齐 */
       #mycoursetable {
         position: relative !important;
         width: 100% !important;
@@ -6806,19 +6828,22 @@
         position: relative !important;
         vertical-align: top !important;
         box-sizing: border-box !important;
+        overflow: visible !important;
       }
-      /* 课程块：站点用 absolute 按 offset 对齐；限制不溢出 */
+      /* 课程块相对父 td，不再相对整页 */
       #mycoursetable div.class_div,
-      #courseTable div.class_div,
-      div.class_div {
+      #courseTable div.class_div {
+        position: absolute !important;
+        top: 0 !important;
         box-sizing: border-box !important;
         max-width: 100% !important;
         overflow: hidden !important;
         border-radius: 8px !important;
         z-index: 2 !important;
+        margin: 0 !important;
       }
       #mycoursetable div.class_div p,
-      div.class_div p {
+      #courseTable div.class_div p {
         margin: 2px 4px !important;
         line-height: 1.35 !important;
         word-break: break-word !important;
@@ -7369,7 +7394,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.73');
+    console.log('[URP++] style applied v0.4.74');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -7992,7 +8017,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.73',
+    version: '0.4.74',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
