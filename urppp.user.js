@@ -3606,7 +3606,6 @@
       }
     } catch (_) {}
     let styleEl = document.getElementById('urppp-internal-style');
-    const styleExists = !!styleEl;
     if (!styleEl) {
       styleEl = document.createElement('style');
       styleEl.id = 'urppp-internal-style';
