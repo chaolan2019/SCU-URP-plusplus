@@ -1826,6 +1826,16 @@
           return;
         }
         root.classList.add('urppp-query-form');
+        root.style.setProperty('background', 'var(--surface)', 'important');
+        root.style.setProperty('border', '1px solid var(--border)', 'important');
+        root.style.setProperty('border-radius', '12px', 'important');
+        root.style.setProperty('width', '100%', 'important');
+        root.style.setProperty('max-width', '100%', 'important');
+        root.style.setProperty('box-sizing', 'border-box', 'important');
+        root.style.setProperty('padding', '14px 16px', 'important');
+        root.style.setProperty('margin-bottom', '16px', 'important');
+        root.style.setProperty('float', 'none', 'important');
+        root.style.setProperty('display', 'block', 'important');
         root.querySelectorAll('.profile-info-row').forEach((row) => {
           if (row.dataset.urpppQueryDone === '1') {
             applyRowLayout(row);
