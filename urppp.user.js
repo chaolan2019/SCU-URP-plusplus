@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.45
+// @version      0.4.46
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.45';
+          content:'URP++ v0.4.46';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1076,8 +1076,73 @@
     });
   }
   // 查询条件：把 ACE 同行多对 name/value 包成 pair；按本行列数动态布局
+  // 查询区原生 select 统一升级为 Chosen（与「学年学期」一致）
+  function ensureQueryChosen() {
+    try {
+      const $ = window.jQuery || window.$;
+      if (!$ || !$.fn || typeof $.fn.chosen !== 'function') return;
+
+      const sels = document.querySelectorAll(
+        '.profile-user-info select, .urppp-query-form select, select.value_element, .profile-info-value > select'
+      );
+      sels.forEach((sel) => {
+        if (!sel || sel.multiple || sel.disabled) return;
+        if (sel.dataset.urpppChosen === '1') return;
+        const $sel = $(sel);
+        const already =
+          $sel.data('chosen') ||
+          sel.classList.contains('chzn-done') ||
+          (sel.nextElementSibling && sel.nextElementSibling.classList.contains('chosen-container'));
+        if (already) {
+          sel.dataset.urpppChosen = '1';
+          sel.style.setProperty('display', 'none', 'important');
+          return;
+        }
+        try {
+          if (!sel.classList.contains('select')) sel.classList.add('select');
+          $sel.chosen({
+            allow_single_deselect: true,
+            search_contains: true,
+            width: '100%',
+            no_results_text: '无匹配项'
+          });
+          sel.dataset.urpppChosen = '1';
+          sel.style.setProperty('display', 'none', 'important');
+          const cont = sel.nextElementSibling;
+          if (cont && cont.classList.contains('chosen-container')) {
+            cont.style.setProperty('width', '100%', 'important');
+            cont.style.setProperty('min-width', '0', 'important');
+          }
+        } catch (e) {
+          console.warn('[URP++] chosen init failed', e);
+        }
+      });
+
+      // 校区→教学楼→教室 会用 .html() 重写 option，需同步 Chosen
+      if (!window.__urpppChosenHtmlPatch) {
+        window.__urpppChosenHtmlPatch = true;
+        const oldHtml = $.fn.html;
+        $.fn.html = function () {
+          const ret = oldHtml.apply(this, arguments);
+          if (arguments.length) {
+            const nodes = this.filter('select').add(this.find('select'));
+            nodes.each(function () {
+              const $el = $(this);
+              if ($el.data('chosen') || $el.next('.chosen-container').length) {
+                try { $el.trigger('chosen:updated'); } catch (_) { /* ignore */ }
+              }
+            });
+          }
+          return ret;
+        };
+      }
+    } catch (err) {
+      console.warn('[URP++] ensureQueryChosen failed', err);
+    }
+  }
   function beautifyQueryForms() {
     try {
+      ensureQueryChosen();
       const applyRowLayout = (row) => {
         const pairs = Array.from(row.querySelectorAll(':scope > .urppp-query-pair'));
         const n = Math.max(pairs.length, 1);
@@ -1170,7 +1235,7 @@
                 sp.style.setProperty('margin-top', '0', 'important');
                 sp.style.setProperty('padding-top', '0', 'important');
               }
-              const ab = a.querySelector('div');
+              const ab = single.querySelector('div');
               if (ab) {
                 ab.style.setProperty('display', 'flex', 'important');
                 ab.style.setProperty('align-items', 'center', 'important');
@@ -1237,6 +1302,7 @@
           applyRowLayout(row);
         });
       });
+      ensureQueryChosen();
     } catch (err) {
       console.warn('[URP++] query form beautify failed', err);
     }
@@ -5473,6 +5539,7 @@
     restyleInfoboxPercentages();
     setTimeout(restyleInfoboxPercentages, 300);
     setTimeout(restyleInfoboxPercentages, 1000);
+    ensureQueryChosen();
     beautifyQueryForms();
     patchChosenDropdownAlign();
     setTimeout(beautifyQueryForms, 100);
@@ -5534,7 +5601,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.45');
+    console.log('[URP++] style applied v0.4.46');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -6155,7 +6222,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.45',
+    version: '0.4.46',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
