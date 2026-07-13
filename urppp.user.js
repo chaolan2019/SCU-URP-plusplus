@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.5
+// @version      0.5.6
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -479,9 +479,35 @@
     return rgbToHex(r * f, g * f, b * f);
   }
 
+  function lighten(hex, p) {
+    const { r, g, b } = hexToRgb(hex);
+    return rgbToHex(r + (255 - r) * p, g + (255 - g) * p, b + (255 - b) * p);
+  }
+
   function alpha(hex, a) {
     const { r, g, b } = hexToRgb(hex);
     return `rgba(${r},${g},${b},${a})`;
+  }
+
+  // 根据强调色生成浅色表面主题（背景/边框/输入底）
+  function buildAccentSurfaceTheme(hex) {
+    const h = hex.startsWith('#') ? hex : ('#' + hex);
+    return {
+      '--bg': lighten(h, 0.94),
+      '--surface': '#FFFFFF',
+      '--text': darken(h, 0.72),
+      '--text-secondary': alpha(darken(h, 0.35), 0.72),
+      '--text-muted': alpha(darken(h, 0.2), 0.55),
+      '--border': lighten(h, 0.82),
+      '--border-focus': 'var(--urppp-accent, ' + h + ')',
+      '--input-bg': lighten(h, 0.97),
+      '--primary': 'var(--urppp-accent, ' + h + ')',
+      '--primary-hover': 'var(--urppp-accent-hover, ' + darken(h, 0.15) + ')',
+      '--ring': 'var(--urppp-accent-ring, ' + alpha(h, 0.14) + ')',
+      '--shadow': '0 2px 16px ' + alpha(h, 0.06) + ', 0 0 0 1px ' + alpha(h, 0.04),
+      '--radius': '16px',
+      '--radius-sm': '10px',
+    };
   }
 
   // ============================================================
@@ -489,14 +515,16 @@
   // ============================================================
 
   function clearInlinePrimaryOverrides() {
-    // 内联 --primary 会永久压过 :root 主题变量，导致切主题后文字色卡住
+    // 清掉内联主题变量，避免压过 :root 主题切换
     const root = document.documentElement;
-    ;['--primary', '--primary-hover', '--border-focus', '--ring'].forEach((k) => {
-      root.style.removeProperty(k);
-    });
+    ;[
+      '--primary', '--primary-hover', '--border-focus', '--ring',
+      '--bg', '--surface', '--text', '--text-secondary', '--text-muted',
+      '--border', '--input-bg', '--shadow'
+    ].forEach((k) => root.style.removeProperty(k));
   }
 
-  function applyAccent(hex) {
+  function applyAccent(hex, opts) {
     if (!hex) return;
     const clean = String(hex).trim();
     const body = clean.replace(/^#/, '');
@@ -504,13 +532,33 @@
     const h = '#' + body.toUpperCase();
     const hover = darken(h, 0.15);
     const ring = alpha(h, 0.15);
+    const applySurface = !opts || opts.surface !== false;
     GM_setValue(ACCENT_KEY, h);
-    // 只写强调色变量；主题通过 var(--urppp-accent) 引用，全局按钮/边框/链接都会生效
     document.documentElement.style.setProperty('--urppp-accent', h);
     document.documentElement.style.setProperty('--urppp-accent-hover', hover);
     document.documentElement.style.setProperty('--urppp-accent-ring', ring);
-    // 确保没有内联 --primary 残留
-    clearInlinePrimaryOverrides();
+
+    // 自定义色：同步浅色背景/边框/文字，而不是只改主色
+    const themeName = getCurrent();
+    if (applySurface && themeName !== 'dark') {
+      // 切到 scu-red 作为自定义色承载主题（结构与浅色一致）
+      if (themeName !== 'scu-red' && themeName !== 'default') {
+        // keep
+      }
+      // 若当前是 default，也允许表面跟随自定义色，观感更完整
+      const surface = buildAccentSurfaceTheme(h);
+      Object.entries(surface).forEach(([k, v]) => {
+        document.documentElement.style.setProperty(k, v);
+      });
+      // 同时刷新 :root 样式表中的 scu-red 默认，避免后续 applyTheme 被旧值干扰
+      // 真正主题切换仍走 applyTheme
+    } else if (themeName === 'dark') {
+      // dark 不改背景，只保留 accent 变量
+      clearInlinePrimaryOverrides();
+      document.documentElement.style.setProperty('--urppp-accent', h);
+      document.documentElement.style.setProperty('--urppp-accent-hover', hover);
+      document.documentElement.style.setProperty('--urppp-accent-ring', ring);
+    }
     try { syncNavbarThemeUI(); } catch (_) {}
   }
 
@@ -556,44 +604,50 @@
   function applyTheme(name) {
     const t = THEMES[name] || THEMES['default'];
     GM_setValue(THEME_KEY, name);
-    // 先清内联主色覆盖，再写主题 :root
+    // 先清内联覆盖，再写主题 :root
     clearInlinePrimaryOverrides();
     const el = document.getElementById('urppp-theme-vars') || (() => {
       const e = document.createElement('style'); e.id = 'urppp-theme-vars';
       const host = document.head || document.documentElement;
       host.appendChild(e); return e;
     })();
-    let css = ':root {';
-    for (const [k, v] of Object.entries(t.vars)) css += `${k}:${v};`;
-    css += '}';
-    el.textContent = css;
-    if (document.body) document.body.style.fontFamily = t.font;
-    // default / scu-red 吃 accent；dark 保留自己的主色，但仍保留 accent 变量供需要处使用
+
     const acc = getAccent();
-    if (acc) {
+    let vars = Object.assign({}, t.vars);
+    // 有自定义色时：浅色主题整套表面（背景/边框/输入底）跟随自定义色
+    if (acc && (name === 'scu-red' || name === 'default')) {
+      vars = Object.assign(vars, buildAccentSurfaceTheme(acc));
       const hover = darken(acc, 0.15);
       const ring = alpha(acc, 0.15);
       document.documentElement.style.setProperty('--urppp-accent', acc);
       document.documentElement.style.setProperty('--urppp-accent-hover', hover);
       document.documentElement.style.setProperty('--urppp-accent-ring', ring);
+    } else if (acc) {
+      const hover = darken(acc, 0.15);
+      const ring = alpha(acc, 0.15);
+      document.documentElement.style.setProperty('--urppp-accent', acc);
+      document.documentElement.style.setProperty('--urppp-accent-hover', hover);
+      document.documentElement.style.setProperty('--urppp-accent-ring', ring);
+    } else if (name === 'scu-red') {
+      document.documentElement.style.setProperty('--urppp-accent', '#B53434');
+      document.documentElement.style.setProperty('--urppp-accent-hover', '#962929');
+      document.documentElement.style.setProperty('--urppp-accent-ring', 'rgba(181,52,52,0.12)');
+    } else if (name === 'default') {
+      document.documentElement.style.setProperty('--urppp-accent', '#1E3A5F');
+      document.documentElement.style.setProperty('--urppp-accent-hover', '#162D4A');
+      document.documentElement.style.setProperty('--urppp-accent-ring', 'rgba(30,58,95,0.15)');
     } else {
-      // 无自定义色时，给 accent 默认值，避免 var() 空引用
-      if (name === 'scu-red') {
-        document.documentElement.style.setProperty('--urppp-accent', '#B53434');
-        document.documentElement.style.setProperty('--urppp-accent-hover', '#962929');
-        document.documentElement.style.setProperty('--urppp-accent-ring', 'rgba(181,52,52,0.12)');
-      } else if (name === 'default') {
-        document.documentElement.style.setProperty('--urppp-accent', '#1E3A5F');
-        document.documentElement.style.setProperty('--urppp-accent-hover', '#162D4A');
-        document.documentElement.style.setProperty('--urppp-accent-ring', 'rgba(30,58,95,0.15)');
-      } else {
-        document.documentElement.style.removeProperty('--urppp-accent');
-        document.documentElement.style.removeProperty('--urppp-accent-hover');
-        document.documentElement.style.removeProperty('--urppp-accent-ring');
-      }
+      document.documentElement.style.removeProperty('--urppp-accent');
+      document.documentElement.style.removeProperty('--urppp-accent-hover');
+      document.documentElement.style.removeProperty('--urppp-accent-ring');
     }
+
+    let css = ':root {';
+    for (const [k, v] of Object.entries(vars)) css += `${k}:${v};`;
+    css += '}';
+    el.textContent = css;
+    if (document.body) document.body.style.fontFamily = t.font;
     try { syncNavbarThemeUI(); } catch (_) {}
-    // 同步启动遮罩字体
     const boot = document.getElementById('urppp-boot-loader');
     if (boot) boot.style.fontFamily = t.font;
   }
@@ -649,7 +703,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.5';
+          content:'URP++ v0.5.6';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -9181,7 +9235,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.5');
+    console.log('[URP++] style applied v0.5.6');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -9387,7 +9441,8 @@
       applyBtn.addEventListener('click', () => {
         const h = normalizeHex(hexInput.value) || colorInput.value;
         if (!h) return;
-        // 编辑第三个主题色：应用到强调色，并切到 scu-red 展示
+        // 先存 accent，再 applyTheme 重建整套背景/主色
+        GM_setValue(ACCENT_KEY, h);
         applyTheme('scu-red');
         applyAccent(h);
         syncNavbarThemeUI();
@@ -9396,8 +9451,13 @@
       saveBtn.addEventListener('click', () => {
         const h = normalizeHex(hexInput.value) || colorInput.value;
         if (!h) return;
-        applyAccent(h);
+        GM_setValue(ACCENT_KEY, h);
         saveAccentPreset(h);
+        // 当前浅色主题则立刻刷新整套表面
+        const cur = getCurrent();
+        if (cur === 'dark') applyTheme('scu-red');
+        else applyTheme(cur === 'default' ? 'default' : 'scu-red');
+        applyAccent(h);
         renderNavbarAccentPresets();
         syncNavbarThemeUI();
       });
@@ -10066,7 +10126,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.5',
+    version: '0.5.6',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
