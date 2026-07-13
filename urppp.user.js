@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.92
+// @version      0.4.93
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.92';
+          content:'URP++ v0.4.93';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3260,6 +3260,29 @@
       parent.insertBefore(wrap, table);
       wrap.appendChild(table);
     });
+  }
+
+  // 清理被错误强制显示的空白 modal（无 .in/.show 却 display:block）
+  function cleanupStuckModals() {
+    try {
+      document.querySelectorAll('.modal').forEach((m) => {
+        const open = m.classList.contains('in') || m.classList.contains('show');
+        if (open) return;
+        // 关闭态强制隐藏
+        m.style.setProperty('display', 'none', 'important');
+        m.setAttribute('aria-hidden', 'true');
+      });
+      if (!document.body.classList.contains('modal-open')) {
+        document.querySelectorAll('.modal-backdrop').forEach((b) => {
+          // 无打开 modal 时移除遮罩
+          if (!document.querySelector('.modal.in, .modal.show')) {
+            b.parentElement && b.parentElement.removeChild(b);
+          }
+        });
+        document.body.style.removeProperty('padding-right');
+        document.body.classList.remove('modal-open');
+      }
+    } catch (_) { /* ignore */ }
   }
   function beautifyInternal() {
     let styleEl = document.getElementById('urppp-internal-style');
@@ -7396,7 +7419,24 @@
         padding: 12px 18px !important;
       }
 
-      /* 弹窗：保持 Bootstrap 3 结构，不改 display/float 布局 */      .modal-content {
+      /* 弹窗：只美化外观，不强制 display（强制 .in{display:block} 会导致空白弹窗关不掉） */
+      .modal {
+        /* 关闭态交给 Bootstrap：默认 none；打开态由 .in / inline style 控制 */
+      }
+      .modal.fade:not(.in):not(.show) {
+        display: none !important;
+      }
+      /* 打开态：仅在确实带 in/show 时显示；不要写全局 .modal {display:block} */
+      .modal.fade.in,
+      .modal.in,
+      .modal.show,
+      .modal.fade.show {
+        display: block !important;
+      }
+      .modal-dialog {
+        z-index: 1051 !important;
+      }
+      .modal-content {
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
         border-radius: var(--radius) !important;
@@ -7425,13 +7465,19 @@
       }
       .modal-body { padding: 20px !important; background: var(--surface) !important; color: var(--text) !important; }
       .modal-footer { border-top: 1px solid var(--border) !important; padding: 16px 20px !important; background: var(--surface) !important; }
-      /* 确保 modal 显示不被覆盖 */
-      .modal.fade.in,
-      .modal.in {
-        display: block !important;
+      .modal-backdrop {
+        z-index: 1040 !important;
       }
-      .modal-backdrop.in {
+      .modal-backdrop.in,
+      .modal-backdrop.show {
         opacity: 0.45 !important;
+      }
+      /* 关闭后残留 backdrop 也强制可点穿（防御） */
+      body:not(.modal-open) > .modal-backdrop {
+        display: none !important;
+      }
+      body:not(.modal-open) > .modal.fade:not(.in):not(.show) {
+        display: none !important;
       }
 
 
@@ -8414,6 +8460,7 @@
     }
 
     // 给表格包一层 wrapper：圆角 + 完整外框，绕过 Bootstrap thead border-top:0 和 overflow 裁剪
+    cleanupStuckModals();
     wrapTables();
     beautifyNoticeTables();
     setTimeout(beautifyNoticeTables, 300);
@@ -8522,7 +8569,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.92');
+    console.log('[URP++] style applied v0.4.93');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -9168,7 +9215,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.92',
+    version: '0.4.93',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
