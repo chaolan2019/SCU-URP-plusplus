@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.87
+// @version      0.4.88
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.87';
+          content:'URP++ v0.4.88';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -7123,26 +7123,28 @@
         margin: 0 !important;
       }
       /*
-       * 纯 CSS 两栏：不搬 DOM
-       * 子节点顺序：p 工具条, 树 col, fajh, xnxq, kz, kc, kcfa
-       * 工具条 100%；树 50%；详情块 50% 并排到右侧（display:none 的不占位）
+      /*
+       * 纯 CSS 固定两栏（不搬 DOM，不卡打开）
+       * 左：方案树 | 右：详情卡纵向堆叠
        */
       #curriculumInfo-divcon2 .modal-body .row {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        align-items: flex-start !important;
-        gap: 0 14px !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+        grid-auto-rows: auto !important;
+        column-gap: 14px !important;
+        row-gap: 12px !important;
         margin: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
+        align-items: start !important;
         box-sizing: border-box !important;
       }
       #curriculumInfo-divcon2 .modal-body .row > p,
       #curriculumInfo-divcon2 .modal-body .row > .urppp-drawer-toolbar {
-        flex: 0 0 100% !important;
+        grid-column: 1 / -1 !important;
         width: 100% !important;
         max-width: 100% !important;
-        margin: 0 0 10px !important;
+        margin: 0 !important;
         padding: 0 !important;
         color: var(--text-secondary) !important;
         font-size: 13px !important;
@@ -7156,7 +7158,7 @@
       #curriculumInfo-divcon2 .modal-body .row > p a:hover {
         text-decoration: underline !important;
       }
-      /* 默认详情块：右栏固定半宽，不被内容挤扁 */
+      /* 所有 col / 详情块先清 float，默认进右栏 */
       #curriculumInfo-divcon2 .modal-body .row > .col-xs-6,
       #curriculumInfo-divcon2 .modal-body .row > #fajh,
       #curriculumInfo-divcon2 .modal-body .row > #xnxq,
@@ -7164,42 +7166,42 @@
       #curriculumInfo-divcon2 .modal-body .row > #kc,
       #curriculumInfo-divcon2 .modal-body .row > #kcfa {
         float: none !important;
-        flex: 0 0 calc(50% - 7px) !important;
-        width: calc(50% - 7px) !important;
-        max-width: calc(50% - 7px) !important;
-        min-width: calc(50% - 7px) !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
         padding: 0 !important;
-        margin: 0 0 12px !important;
+        margin: 0 !important;
         border: none !important;
         box-sizing: border-box !important;
+        grid-column: 2 !important;
       }
-      /* 左树：固定半宽，禁止被压缩变窄 */
+      /* 左栏：方案树，跨多行贴左 */
       #curriculumInfo-divcon2 .modal-body .row > .col-xs-6:has(#treeDemo),
       #curriculumInfo-divcon2 .modal-body .row > .col-xs-6:has(.ztree) {
-        flex: 0 0 calc(50% - 7px) !important;
-        width: calc(50% - 7px) !important;
-        max-width: calc(50% - 7px) !important;
-        min-width: calc(50% - 7px) !important;
-        order: 0 !important;
-        margin: 0 !important;
+        grid-column: 1 !important;
+        grid-row: 2 / span 30 !important;
+        align-self: stretch !important;
+        height: 100% !important;
+        min-height: 360px !important;
       }
-      /* 详情块：右栏对齐（换行后贴右） */
+      /* 右栏详情：明确第 2 列 */
       #curriculumInfo-divcon2 .modal-body .row > #fajh,
       #curriculumInfo-divcon2 .modal-body .row > #xnxq,
       #curriculumInfo-divcon2 .modal-body .row > #kz,
       #curriculumInfo-divcon2 .modal-body .row > #kc,
       #curriculumInfo-divcon2 .modal-body .row > #kcfa {
-        order: 1 !important;
-        margin-left: auto !important;
+        grid-column: 2 !important;
+        width: 100% !important;
+        max-width: 100% !important;
       }
-      /* 兼容历史 wrapper：左右强制 50/50，不允许收缩 */
+      /* 兼容旧 wrapper：若存在则也强制左右 50/50 */
       #curriculumInfo-divcon2 .urppp-drawer-body {
         display: flex !important;
         flex-direction: row !important;
         align-items: flex-start !important;
         gap: 14px !important;
         width: 100% !important;
-        flex: 0 0 100% !important;
+        grid-column: 1 / -1 !important;
         box-sizing: border-box !important;
       }
       #curriculumInfo-divcon2 .urppp-drawer-left,
@@ -7235,6 +7237,7 @@
         max-width: 100% !important;
         flex: none !important;
         margin: 0 !important;
+        grid-column: auto !important;
       }
       #curriculumInfo-divcon2 .modal-body .widget-box,
       #curriculumInfo-divcon2 #fajh .widget-box,
@@ -7429,20 +7432,32 @@
         white-space: normal !important;
       }
       @media (max-width: 1100px) {
+        #curriculumInfo-divcon2 .modal-body .row {
+          grid-template-columns: 1fr !important;
+        }
+        #curriculumInfo-divcon2 .modal-body .row > .col-xs-6:has(#treeDemo),
+        #curriculumInfo-divcon2 .modal-body .row > .col-xs-6:has(.ztree),
         #curriculumInfo-divcon2 .modal-body .row > .col-xs-6,
         #curriculumInfo-divcon2 .modal-body .row > #fajh,
         #curriculumInfo-divcon2 .modal-body .row > #xnxq,
         #curriculumInfo-divcon2 .modal-body .row > #kz,
         #curriculumInfo-divcon2 .modal-body .row > #kc,
-        #curriculumInfo-divcon2 .modal-body .row > #kcfa,
-        #curriculumInfo-divcon2 .urppp-drawer-left,
-        #curriculumInfo-divcon2 .urppp-drawer-right {
-          flex: 0 0 100% !important;
+        #curriculumInfo-divcon2 .modal-body .row > #kcfa {
+          grid-column: 1 !important;
+          grid-row: auto !important;
           width: 100% !important;
           max-width: 100% !important;
+          min-width: 0 !important;
         }
         #curriculumInfo-divcon2 .urppp-drawer-body {
           flex-direction: column !important;
+        }
+        #curriculumInfo-divcon2 .urppp-drawer-left,
+        #curriculumInfo-divcon2 .urppp-drawer-right {
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          flex: 1 1 auto !important;
         }
       }
 
@@ -8130,7 +8145,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.87');
+    console.log('[URP++] style applied v0.4.88');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -8753,7 +8768,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.87',
+    version: '0.4.88',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
