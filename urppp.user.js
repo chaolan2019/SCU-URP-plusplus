@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.34
+// @version      0.4.35
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.34';
+          content:'URP++ v0.4.35';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1214,114 +1214,72 @@
     }
   }
 
-  // Chosen 下拉：内联强制选项居中 + 搜索图标绑到 input 上居中
+  // Chosen 下拉对齐：禁止全量 MutationObserver（会 style 回写死循环卡死页面）
   function patchChosenDropdownAlign() {
     if (window.__urpppChosenAlignBound) return;
     window.__urpppChosenAlignBound = true;
-
-    const ensureSearchIcon = (search) => {
-      if (!search) return;
-      const input = search.querySelector('input');
-      if (!input) return;
-      // 输入框正常左起光标，右侧留图标位
-      input.style.setProperty('height', '34px', 'important');
-      input.style.setProperty('min-height', '34px', 'important');
-      input.style.setProperty('line-height', '34px', 'important');
-      input.style.setProperty('padding', '0 34px 0 10px', 'important');
-      input.style.setProperty('box-sizing', 'border-box', 'important');
-      input.style.setProperty('background-image', 'none', 'important');
-
-      // 容器相对定位；图标相对 input 居中
-      search.style.setProperty('position', 'relative', 'important');
-      search.style.setProperty('padding', '8px', 'important');
-
-      let icon = search.querySelector('.urppp-chosen-search-icon');
-      if (!icon) {
-        icon = document.createElement('i');
-        icon.className = 'fa fa-search urppp-chosen-search-icon';
-        search.appendChild(icon);
-      }
-      // 直接按 input 几何中心定位，彻底不猜 padding
-      const place = () => {
-        const sRect = search.getBoundingClientRect();
-        const iRect = input.getBoundingClientRect();
-        if (!sRect.width || !iRect.width) return;
-        const top = (iRect.top - sRect.top) + iRect.height / 2;
-        const right = sRect.right - iRect.right + 10;
-        icon.style.cssText = [
-          'position:absolute',
-          'top:' + top + 'px',
-          'right:' + right + 'px',
-          'transform:translateY(-50%)',
-          'width:14px',
-          'height:14px',
-          'line-height:14px',
-          'font-size:13px',
-          'color:var(--text-muted)',
-          'pointer-events:none',
-          'z-index:5',
-          'display:block',
-          'margin:0',
-          'padding:0'
-        ].join(';');
-      };
-      place();
-      requestAnimationFrame(place);
-    };
+    let busy = false;
 
     const apply = (root) => {
-      const scope = root || document;
-      scope.querySelectorAll('.chosen-results li').forEach((li) => {
-        li.style.setProperty('display', 'flex', 'important');
-        li.style.setProperty('align-items', 'center', 'important');
-        li.style.setProperty('justify-content', 'flex-start', 'important');
-        li.style.setProperty('height', '36px', 'important');
-        li.style.setProperty('min-height', '36px', 'important');
-        li.style.setProperty('max-height', '36px', 'important');
-        li.style.setProperty('line-height', 'normal', 'important');
-        li.style.setProperty('padding', '0 12px', 'important');
-        li.style.setProperty('margin', '0', 'important');
-        li.style.setProperty('box-sizing', 'border-box', 'important');
-      });
-      scope.querySelectorAll('.chosen-search').forEach(ensureSearchIcon);
+      if (busy) return;
+      busy = true;
+      try {
+        const scope = root && root.querySelectorAll ? root : document;
+        // 选项垂直居中
+        scope.querySelectorAll('.chosen-results li').forEach((li) => {
+          li.style.setProperty('display', 'flex', 'important');
+          li.style.setProperty('align-items', 'center', 'important');
+          li.style.setProperty('height', '36px', 'important');
+          li.style.setProperty('min-height', '36px', 'important');
+          li.style.setProperty('max-height', '36px', 'important');
+          li.style.setProperty('line-height', 'normal', 'important');
+          li.style.setProperty('padding', '0 12px', 'important');
+          li.style.setProperty('margin', '0', 'important');
+          li.style.setProperty('box-sizing', 'border-box', 'important');
+        });
+        // 搜索框：只设一次必要样式；图标交给 CSS（相对 input 同高盒子）
+        scope.querySelectorAll('.chosen-search').forEach((search) => {
+          const input = search.querySelector('input');
+          if (!input) return;
+          input.style.setProperty('height', '34px', 'important');
+          input.style.setProperty('min-height', '34px', 'important');
+          input.style.setProperty('line-height', '34px', 'important');
+          input.style.setProperty('padding', '0 34px 0 10px', 'important');
+          input.style.setProperty('box-sizing', 'border-box', 'important');
+          input.style.setProperty('background-image', 'none', 'important');
+          if (!search.querySelector('.urppp-chosen-search-icon')) {
+            const icon = document.createElement('i');
+            icon.className = 'fa fa-search urppp-chosen-search-icon';
+            icon.setAttribute('aria-hidden', 'true');
+            search.appendChild(icon);
+          }
+        });
+      } finally {
+        // 下一帧再放行，避免同步重入
+        setTimeout(() => { busy = false; }, 0);
+      }
     };
 
+    // 只在用户打开下拉时跑，不做 body 级 style 观察
     document.addEventListener('mousedown', (e) => {
       const c = e.target && e.target.closest ? e.target.closest('.chosen-container') : null;
       if (!c) return;
       setTimeout(() => apply(c), 0);
-      setTimeout(() => apply(c), 30);
-      setTimeout(() => apply(c), 120);
+      setTimeout(() => apply(c), 60);
     }, true);
 
-    document.addEventListener('keyup', (e) => {
-      const c = e.target && e.target.closest ? e.target.closest('.chosen-container') : null;
-      if (!c) return;
-      apply(c);
-    }, true);
-
-    const bindJQ = () => {
-      try {
-        const $ = window.jQuery || window.$;
-        if (!$ || !$.fn) return false;
+    try {
+      const $ = window.jQuery || window.$;
+      if ($ && $.fn) {
         $(document)
-          .off('chosen:showing_dropdown.urppp chosen:updated.urppp chosen:hiding_dropdown.urppp')
-          .on('chosen:showing_dropdown.urppp chosen:updated.urppp', () => {
-            setTimeout(() => apply(document), 0);
-            setTimeout(() => apply(document), 50);
+          .off('chosen:showing_dropdown.urppp chosen:updated.urppp')
+          .on('chosen:showing_dropdown.urppp chosen:updated.urppp', (e) => {
+            const host = e.target && e.target.parentElement ? e.target.parentElement : document;
+            setTimeout(() => apply(host), 0);
+            setTimeout(() => apply(host), 60);
           });
-        return true;
-      } catch (_) {
-        return false;
       }
-    };
-    if (!bindJQ()) setTimeout(bindJQ, 500);
-
-    const mo = new MutationObserver(() => {
-      const open = document.querySelector('.chosen-container-active, .chosen-with-drop');
-      if (open) apply(open);
-    });
-    mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+    } catch (_) {}
   }
 
   // 作息时间表：轻量美化（不改数据；标题提出为整行居中横幅）
@@ -4387,7 +4345,7 @@
         box-sizing: border-box !important;
         vertical-align: middle !important;
       }
-      /* 伪元素图标关掉，改用 JS 插入的 .urppp-chosen-search-icon */
+      /* 关掉伪元素图标 */
       .chosen-container .chosen-search:after,
       .chosen-container-single .chosen-search:after,
       .chosen-with-drop .chosen-search:after,
@@ -4397,16 +4355,33 @@
         content: none !important;
         display: none !important;
       }
+      /* 图标盒子与 input 同高同顶，内容垂直居中 */
+      .chosen-container .chosen-search,
+      .chosen-container-single .chosen-search,
+      .chosen-with-drop .chosen-search {
+        position: relative !important;
+        padding: 8px !important;
+        box-sizing: border-box !important;
+      }
       .urppp-chosen-search-icon {
         position: absolute !important;
+        top: 8px !important;          /* 与 search padding-top 对齐 */
+        right: 18px !important;
+        width: 14px !important;
+        height: 34px !important;      /* 与 input 高度一致 */
+        margin: 0 !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 13px !important;
+        line-height: 1 !important;
+        color: var(--text-muted) !important;
         pointer-events: none !important;
         z-index: 5 !important;
-        color: var(--text-muted) !important;
-        font-size: 13px !important;
-        line-height: 14px !important;
-        width: 14px !important;
-        height: 14px !important;
+        transform: none !important;
       }
+
       input:focus, select:focus, textarea:focus, .form-control:focus,
       .chosen-container-active .chosen-single, .chosen-container-active .chosen-choices {
         border-color: var(--border-focus) !important;
@@ -5389,7 +5364,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.34');
+    console.log('[URP++] style applied v0.4.35');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -6010,7 +5985,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.34',
+    version: '0.4.35',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
