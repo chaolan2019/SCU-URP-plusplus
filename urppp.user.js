@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.42
+// @version      0.5.43
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.42';
+          content:'URP++ v0.5.43';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -7438,21 +7438,74 @@
         color: #fff !important;
         box-shadow: 0 0 0 3px rgba(239,68,68,0.25) !important;
       }
-      .btn-default, .btn-white {
+      .btn-default, .btn-white,
+      .btn.btn-default, .btn.btn-white,
+      .btn.btn-white.btn-primary,
+      .btn.btn-white.btn-info,
+      .btn.btn-white.btn-success,
+      .btn.btn-white.btn-warning,
+      .btn.btn-white.btn-danger,
+      .btn.btn-white.btn-purple,
+      .btn-group > .btn.btn-white,
+      .btn-group > .btn.btn-default,
+      .dropdown-toggle.btn-white,
+      .btn.dropdown-toggle.btn-white {
         background: var(--input-bg) !important;
+        background-image: none !important;
+        background-color: var(--input-bg) !important;
         border-color: var(--border) !important;
         color: var(--text) !important;
         border-radius: 6px !important;
+        text-shadow: none !important;
       }
       .btn-default:hover, .btn-white:hover,
       .btn-default:focus, .btn-white:focus,
       .btn-default:active, .btn-white:active,
       .btn-default.active, .btn-white.active,
-      .btn-default:active:focus, .btn-white:active:focus {
-        background: color-mix(in srgb, var(--primary) 10%, var(--input-bg)) !important;
+      .btn-default:active:focus, .btn-white:active:focus,
+      .btn.btn-white.btn-primary:hover,
+      .btn.btn-white.btn-primary:focus,
+      .btn.btn-white.btn-primary:active,
+      .btn.btn-white.btn-info:hover,
+      .open > .dropdown-toggle.btn-white,
+      .open > .btn.btn-white.dropdown-toggle {
+        background: color-mix(in srgb, var(--primary) 12%, var(--input-bg)) !important;
+        background-image: none !important;
+        background-color: color-mix(in srgb, var(--primary) 12%, var(--input-bg)) !important;
         border-color: var(--primary) !important;
         color: var(--text) !important;
         box-shadow: 0 0 0 3px var(--ring) !important;
+        text-shadow: none !important;
+      }
+      /* 暗色：再压一层 ACE btn-white 硬编码白底 */
+      html.urppp-theme-dark .btn-white,
+      html.urppp-theme-dark .btn.btn-white,
+      html.urppp-theme-dark .btn.btn-white.btn-primary,
+      html.urppp-theme-dark .btn.btn-white.btn-info,
+      html.urppp-theme-dark .btn.btn-white.no-border,
+      html.urppp-theme-dark .btn-group > .btn.btn-white,
+      html.urppp-theme-dark a.btn.btn-white,
+      html.urppp-theme-dark button.btn.btn-white {
+        background: #1C2330 !important;
+        background-color: #1C2330 !important;
+        background-image: none !important;
+        border-color: #1E293B !important;
+        color: #E2E8F0 !important;
+      }
+      html.urppp-theme-dark .btn-white:hover,
+      html.urppp-theme-dark .btn.btn-white:hover,
+      html.urppp-theme-dark .btn.btn-white.btn-primary:hover,
+      html.urppp-theme-dark .open > .dropdown-toggle.btn-white {
+        background: #243044 !important;
+        background-color: #243044 !important;
+        border-color: #93A8C7 !important;
+        color: #F1F5F9 !important;
+      }
+      html.urppp-theme-dark .btn-white .ace-icon,
+      html.urppp-theme-dark .btn-white .fa,
+      html.urppp-theme-dark .btn-white .caret {
+        color: inherit !important;
+        border-top-color: currentColor !important;
       }
       .btn-link:active, .btn-link:focus, .btn-link.active {
         color: var(--primary-hover) !important;
@@ -10768,7 +10821,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.42');
+    console.log('[URP++] style applied v0.5.43');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11749,7 +11802,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.42',
+    version: '0.5.43',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
