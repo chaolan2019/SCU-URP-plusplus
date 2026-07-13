@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.0
+// @version      0.5.1
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.0';
+          content:'URP++ v0.5.1';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3672,9 +3672,17 @@
       :root { --urppp-navbar-height: 45px; }
       /* 内容左边距只跟随侧栏状态，不跟随汉堡按钮 */
       .sidebar:not(.menu-min) { width: 260px !important; }
-      .sidebar.menu-min { width: 50px !important; }
+      .sidebar.menu-min,
+      .sidebar.menu-min.display,
+      body.menu-min .sidebar,
+      body.menu-min .sidebar.display {
+        width: 50px !important;
+        min-width: 50px !important;
+        max-width: 50px !important;
+      }
       .sidebar:not(.menu-min) ~ .main-content { margin-left: 260px !important; }
-      .sidebar.menu-min ~ .main-content { margin-left: 50px !important; }
+      .sidebar.menu-min ~ .main-content,
+      body.menu-min .main-content { margin-left: 50px !important; }
       .main-content {
         margin-top: var(--urppp-navbar-height) !important;
         transition: margin-left .25s ease !important;
@@ -3683,18 +3691,35 @@
       @media (max-width: 991px) {
         .sidebar:not(.display) ~ .main-content,
         .sidebar.menu-min:not(.display) ~ .main-content,
-        .sidebar:not(.menu-min):not(.display) ~ .main-content {
+        .sidebar:not(.menu-min):not(.display) ~ .main-content,
+        body.menu-min .main-content {
           margin-left: 0 !important;
         }
         .sidebar.display ~ .main-content {
           margin-left: 0 !important; /* 覆盖层模式，不推内容 */
         }
-        .sidebar.display {
+        /* 小屏点开汉堡：完整宽度抽屉 */
+        .sidebar.display:not(.menu-min) {
           display: block !important;
           position: fixed !important;
           left: 0 !important;
           top: var(--urppp-navbar-height) !important;
           width: 260px !important;
+          min-width: 260px !important;
+          max-width: 260px !important;
+          z-index: 1045 !important;
+          height: calc(100vh - var(--urppp-navbar-height)) !important;
+        }
+        /* 小屏若处于 menu-min，保持 50px，不要被 .display 的 260 盖掉 */
+        .sidebar.display.menu-min,
+        body.menu-min .sidebar.display {
+          display: block !important;
+          position: fixed !important;
+          left: 0 !important;
+          top: var(--urppp-navbar-height) !important;
+          width: 50px !important;
+          min-width: 50px !important;
+          max-width: 50px !important;
           z-index: 1045 !important;
           height: calc(100vh - var(--urppp-navbar-height)) !important;
         }
@@ -3906,19 +3931,29 @@
       .urppp-nav-submenu .urppp-nav-submenu { padding-left: 16px; }
 
       /* 折叠状态 */
-      .sidebar.menu-min .urppp-sidebar-header { justify-content: center; padding: 14px 0 12px; }
-      .sidebar.menu-min #urppp-menus { padding: 10px 6px 24px; }
-      .sidebar.menu-min .urppp-nav-link { padding: 12px 0; justify-content: center; }
+      .sidebar.menu-min .urppp-sidebar-header,
+      body.menu-min .sidebar .urppp-sidebar-header { justify-content: center; padding: 14px 0 12px; }
+      .sidebar.menu-min #urppp-menus,
+      body.menu-min .sidebar #urppp-menus { padding: 10px 6px 24px; }
+      .sidebar.menu-min .urppp-nav-link,
+      body.menu-min .sidebar .urppp-nav-link { padding: 12px 0; justify-content: center; }
       .sidebar.menu-min .urppp-nav-text,
-      .sidebar.menu-min .urppp-nav-arrow {
-        opacity: 0;
-        max-width: 0;
-        margin-left: 0;
-        overflow: hidden;
-        pointer-events: none;
+      .sidebar.menu-min .urppp-nav-arrow,
+      body.menu-min .sidebar .urppp-nav-text,
+      body.menu-min .sidebar .urppp-nav-arrow {
+        opacity: 0 !important;
+        max-width: 0 !important;
+        width: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        overflow: hidden !important;
+        pointer-events: none !important;
+        display: none !important;
       }
-      .sidebar.menu-min .urppp-nav-link > .fa { margin-right: 0; font-size: 18px; }
-      .sidebar.menu-min .urppp-nav-submenu { max-height: 0 !important; opacity: 0 !important; }
+      .sidebar.menu-min .urppp-nav-link > .fa,
+      body.menu-min .sidebar .urppp-nav-link > .fa { margin-right: 0; font-size: 18px; }
+      .sidebar.menu-min .urppp-nav-submenu,
+      body.menu-min .sidebar .urppp-nav-submenu { max-height: 0 !important; opacity: 0 !important; display: none !important; }
 
       /* 全局过渡和滚动条 */
       ::selection { background: var(--primary); color: #fff; }
@@ -8864,7 +8899,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.0');
+    console.log('[URP++] style applied v0.5.1');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -9549,7 +9584,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.0',
+    version: '0.5.1',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
