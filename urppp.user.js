@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.47
+// @version      0.4.48
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.47';
+          content:'URP++ v0.4.48';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1179,20 +1179,15 @@
   function scheduleEnsureQueryChosen() {
     if (window.__urpppChosenScheduleBound) return;
     window.__urpppChosenScheduleBound = true;
-    const delays = [0, 100, 300, 600, 1200, 2000, 3500];
-    delays.forEach((ms) => {
-      setTimeout(() => {
-        ensureQueryChosen();
-        try { beautifyQueryForms(); } catch (_) { /* ignore */ }
-      }, ms);
-    });
-    // 页面可能晚加载 chosen
+    const delays = [0, 200, 600, 1500, 3000];
+    delays.forEach((ms) => setTimeout(() => { ensureQueryChosen(); }, ms));
     let tries = 0;
     const timer = setInterval(() => {
       tries += 1;
       const ok = ensureQueryChosen();
-      if (ok || tries > 20) clearInterval(timer);
-    }, 400);
+      // jQuery/chosen 就绪后多试几次，不必无限跑
+      if ((ok && tries > 3) || tries > 15) clearInterval(timer);
+    }, 500);
   }
   function beautifyQueryForms() {
     try {
@@ -4543,7 +4538,6 @@
         position: absolute !important;
         top: calc(100% + 6px) !important; /* 下移，避免挡住触发框 */
         left: 0 !important;
-        right: auto !important;
         z-index: 1010 !important;
         box-sizing: border-box !important;
         border-radius: 8px !important;
@@ -4551,12 +4545,11 @@
         border-color: var(--border) !important;
         box-shadow: var(--shadow) !important;
         margin-top: 0 !important;
+        /* 不要写 display:block，否则关闭态也会一直露出来 */
       }
       .chosen-container.chosen-with-drop .chosen-drop,
-      .chosen-container-active.chosen-with-drop .chosen-drop,
-      body .chosen-container .chosen-drop {
+      .chosen-container-active.chosen-with-drop .chosen-drop {
         top: calc(100% + 6px) !important;
-        display: block !important;
       }
       /* Chosen 下拉：压过 commoncss/phone.css 的 25px，真正垂直居中 */
       .chosen-container .chosen-results,
@@ -5676,7 +5669,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.47');
+    console.log('[URP++] style applied v0.4.48');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -6299,7 +6292,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.47',
+    version: '0.4.48',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
