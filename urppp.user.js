@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.30
+// @version      0.5.31
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.30';
+          content:'URP++ v0.5.31';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1913,13 +1913,8 @@
           const kids = Array.from(row.children).filter((el) =>
             el.classList && (el.classList.contains('profile-info-name') || el.classList.contains('profile-info-value'))
           );
-          const names = kids.filter((el) => el.classList.contains('profile-info-name'));
-          if (names.length < 2) {
-            row.dataset.urpppQueryDone = '1';
-            return;
-          }
-
-          const frag = document.createDocumentFragment();
+          // 查询卡内：1 对或多对都要包成 pair，否则单字段行会吃到 140px 灰底信息表样式
+          const nameValuePairs = [];
           for (let i = 0; i < kids.length; ) {
             const a = kids[i];
             const b = kids[i + 1];
@@ -1928,17 +1923,33 @@
               a.classList.contains('profile-info-name') &&
               b.classList.contains('profile-info-value')
             ) {
-              const pair = document.createElement('div');
-              pair.className = 'urppp-query-pair';
-              pair.appendChild(a);
-              pair.appendChild(b);
-              frag.appendChild(pair);
+              nameValuePairs.push([a, b]);
               i += 2;
-            } else if (a) {
-              frag.appendChild(a);
+            } else {
               i += 1;
-            } else break;
+            }
           }
+          if (!nameValuePairs.length) {
+            row.dataset.urpppQueryDone = '1';
+            return;
+          }
+
+          const frag = document.createDocumentFragment();
+          // 先放已识别的 pair
+          const used = new Set();
+          nameValuePairs.forEach(([a, b]) => {
+            const pair = document.createElement('div');
+            pair.className = 'urppp-query-pair';
+            pair.appendChild(a);
+            pair.appendChild(b);
+            used.add(a);
+            used.add(b);
+            frag.appendChild(pair);
+          });
+          // 其余节点（空 name 等）保持顺序追加
+          kids.forEach((el) => {
+            if (!used.has(el)) frag.appendChild(el);
+          });
           while (row.firstChild) row.removeChild(row.firstChild);
           row.appendChild(frag);
           row.dataset.urpppQueryDone = '1';
@@ -6033,6 +6044,20 @@
       .page-content .profile-user-info,
       .page-content form > .profile-user-info {
         display: block !important;
+      }
+      /* 查询卡内的行绝不走信息表 140px 灰底布局 */
+      .profile-user-info.urppp-query-form > .profile-info-row:not(.urppp-query-row),
+      .profile-user-info.self.urppp-query-form .profile-info-row:not(.urppp-query-row) {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        border-bottom: none !important;
+        min-height: 0 !important;
+        background: transparent !important;
+      }
+      .profile-user-info.urppp-query-form .profile-info-name,
+      .profile-user-info.urppp-query-form .profile-info-value {
+        background: transparent !important;
+        border: none !important;
       }
       .profile-info-row:not(.urppp-query-row):not(.urppp-dual-pair) {
         display: grid !important;
@@ -10263,7 +10288,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.30');
+    console.log('[URP++] style applied v0.5.31');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11244,7 +11269,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.30',
+    version: '0.5.31',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
