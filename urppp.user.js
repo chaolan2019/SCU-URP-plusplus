@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.2
+// @version      0.5.3
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -612,7 +612,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.2';
+          content:'URP++ v0.5.3';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3487,16 +3487,30 @@
         display: inline-flex !important;
         align-items: center !important;
         gap: 10px !important;
+        height: 45px !important;
+        line-height: 45px !important;
+        vertical-align: middle !important;
+      }
+      .navbar-header {
+        display: flex !important;
+        align-items: center !important;
+        min-height: 45px !important;
       }
       /* 顶栏主题色切换 */
       #urppp-nav-theme {
         display: inline-flex !important;
         align-items: center !important;
+        justify-content: center !important;
         gap: 8px !important;
         margin-left: 12px !important;
+        height: 100% !important;
+        min-height: 36px !important;
         vertical-align: middle !important;
         position: relative !important;
+        top: 0 !important;
+        transform: none !important;
         z-index: 20 !important;
+        line-height: 1 !important;
       }
       #urppp-nav-theme .urppp-nav-dot {
         width: 16px !important;
@@ -3507,10 +3521,16 @@
         cursor: pointer !important;
         padding: 0 !important;
         margin: 0 !important;
-        display: inline-block !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex: 0 0 16px !important;
         box-shadow: 0 0 0 0 transparent !important;
         transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease !important;
         background-clip: padding-box !important;
+        vertical-align: middle !important;
+        position: relative !important;
+        top: 0 !important;
       }
       #urppp-nav-theme .urppp-nav-dot:hover {
         transform: scale(1.08) !important;
@@ -3521,26 +3541,39 @@
         box-shadow: 0 0 0 3px var(--ring) !important;
       }
       #urppp-nav-theme .urppp-nav-edit {
-        width: 24px !important;
-        height: 24px !important;
-        border-radius: 8px !important;
-        border: 1px solid var(--border) !important;
-        background: var(--input-bg) !important;
+        width: 20px !important;
+        height: 20px !important;
+        border-radius: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        background-color: transparent !important;
         color: var(--text-secondary) !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
         cursor: pointer !important;
-        font-size: 12px !important;
+        font-size: 13px !important;
         line-height: 1 !important;
         padding: 0 !important;
         margin: 0 0 0 2px !important;
-        transition: all .15s ease !important;
+        box-shadow: none !important;
+        transition: color .15s ease, transform .15s ease !important;
+        vertical-align: middle !important;
+        position: relative !important;
+        top: 0 !important;
       }
       #urppp-nav-theme .urppp-nav-edit:hover {
-        border-color: var(--primary) !important;
+        border: none !important;
         color: var(--primary) !important;
-        background: color-mix(in srgb, var(--primary) 10%, var(--surface)) !important;
+        background: transparent !important;
+        background-color: transparent !important;
+        transform: scale(1.08) !important;
+      }
+      #urppp-nav-theme .urppp-nav-edit:active,
+      #urppp-nav-theme .urppp-nav-edit:focus {
+        background: transparent !important;
+        box-shadow: none !important;
+        outline: none !important;
       }
       #urppp-nav-theme-pop {
         position: absolute !important;
@@ -9111,7 +9144,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.2');
+    console.log('[URP++] style applied v0.5.3');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -9246,13 +9279,18 @@
         '</div>'
       ].join('');
 
-      // 插到 brand 后面（同一 header 内）
+      // 插到 brand 后面（同一 header 内），并垂直居中
       if (brand.parentElement) {
+        brand.parentElement.style.setProperty('display', 'flex', 'important');
+        brand.parentElement.style.setProperty('align-items', 'center', 'important');
         if (brand.nextSibling) brand.parentElement.insertBefore(wrap, brand.nextSibling);
         else brand.parentElement.appendChild(wrap);
       } else {
         brand.appendChild(wrap);
       }
+      wrap.style.setProperty('display', 'inline-flex', 'important');
+      wrap.style.setProperty('align-items', 'center', 'important');
+      wrap.style.setProperty('height', '36px', 'important');
 
       wrap.querySelectorAll('.urppp-nav-dot[data-theme]').forEach((dot) => {
         dot.addEventListener('click', () => {
@@ -9991,7 +10029,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.2',
+    version: '0.5.3',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
