@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.58
+// @version      0.4.59
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.58';
+          content:'URP++ v0.4.59';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -4445,15 +4445,8 @@
       .btn-app {
         border-radius: 6px !important;
       }
-      .btn:not(.btn-app):not(#urppagebar *):not(.urppagebreak *),
-      .btn.btn-xs:not(.btn-app):not(#urppagebar *):not(.urppagebreak *),
-      .btn.btn-sm:not(.btn-app):not(#urppagebar *):not(.urppagebreak *),
-      .btn.btn-lg:not(.btn-app):not(#urppagebar *):not(.urppagebreak *),
-      .btn.btn-minier:not(.btn-app):not(#urppagebar *):not(.urppagebreak *),
-      .btn.btn-round:not(.btn-app):not(#urppagebar *):not(.urppagebreak *),
-      .btn.btn-white:not(.btn-app):not(#urppagebar *):not(.urppagebreak *),
-      .btn.btn-info:not(.btn-app):not(#urppagebar *):not(.urppagebreak *),
-      .btn.btn-bold:not(.btn-app):not(#urppagebar *):not(.urppagebreak *) {
+      .btn:not(.btn-app), .btn.btn-xs:not(.btn-app), .btn.btn-sm:not(.btn-app), .btn.btn-lg:not(.btn-app), .btn.btn-minier:not(.btn-app),
+      .btn.btn-round:not(.btn-app), .btn.btn-white:not(.btn-app), .btn.btn-info:not(.btn-app), .btn.btn-bold:not(.btn-app) {
         font-size: 12px !important;
         line-height: 1 !important;
         padding: 0 12px !important;
@@ -4468,16 +4461,31 @@
         vertical-align: middle !important;
         transition: all .15s ease !important;
       }
-      /* 分页区按钮：不套全局 display，避免「确定」常显 */
-      #urppagebar .btn,
-      #urppagebar button,
-      #urppagebar a.btn,
-      .urppagebreak .btn,
-      .urppagebreak button {
+      /* 分页「确定」：用更高优先级盖过全局 .btn display:inline-flex */
+      #urppagebar .btn.urppp-page-confirm,
+      #urppagebar button.urppp-page-confirm,
+      #urppagebar a.btn.urppp-page-confirm,
+      #urppagebar input.urppp-page-confirm,
+      .urppagebreak .btn.urppp-page-confirm,
+      .urppagebreak button.urppp-page-confirm,
+      body #urppagebar .urppp-page-confirm {
+        display: none !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        max-height: 32px !important;
+        min-width: 52px !important;
+        padding: 0 12px !important;
         font-size: 13px !important;
-        line-height: 1 !important;
-        box-sizing: border-box !important;
-        vertical-align: middle !important;
+      }
+      #urppagebar .btn.urppp-page-confirm.urppp-page-confirm-show,
+      #urppagebar button.urppp-page-confirm.urppp-page-confirm-show,
+      #urppagebar a.btn.urppp-page-confirm.urppp-page-confirm-show,
+      #urppagebar input.urppp-page-confirm.urppp-page-confirm-show,
+      .urppagebreak .btn.urppp-page-confirm.urppp-page-confirm-show,
+      body #urppagebar .urppp-page-confirm.urppp-page-confirm-show {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
       }
       .btn:not(.btn-app) > .ace-icon,
       .btn:not(.btn-app) > .fa,
@@ -6475,7 +6483,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.58');
+    console.log('[URP++] style applied v0.4.59');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -7098,7 +7106,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.58',
+    version: '0.4.59',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
