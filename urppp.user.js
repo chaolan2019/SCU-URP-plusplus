@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.20
+// @version      0.5.21
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -368,6 +368,21 @@
   const ACCENT_PRESETS_KEY = 'urppp_accent_presets_v1';
   const DEFAULT_ACCENT_PRESETS = ['#1E3A5F', '#B53434', '#0F766E', '#7C3AED', '#C2410C', '#0369A1'];
 
+  // 轻量调度：合并重复 setTimeout，避免同函数多延迟风暴
+  const __urpppTimers = Object.create(null);
+  function scheduleOnce(key, fn, delay) {
+    if (__urpppTimers[key]) clearTimeout(__urpppTimers[key]);
+    __urpppTimers[key] = setTimeout(() => {
+      __urpppTimers[key] = 0;
+      try { fn(); } catch (err) { console.warn('[URP++]', key, err); }
+    }, delay);
+  }
+  function scheduleWave(key, fn, delays) {
+    (delays || [0]).forEach((ms, i) => {
+      setTimeout(() => { try { fn(); } catch (err) { console.warn('[URP++]', key, err); } }, ms);
+    });
+  }
+
   function ensureBootLoader() {
     if (document.getElementById('urppp-boot-loader')) return;
     const el = document.createElement('div');
@@ -546,14 +561,6 @@
     try { syncNavbarThemeUI(); } catch (_) {}
   }
 
-  function clearAccent() {
-    GM_setValue(ACCENT_KEY, '');
-    document.documentElement.style.removeProperty('--urppp-accent');
-    document.documentElement.style.removeProperty('--urppp-accent-hover');
-    document.documentElement.style.removeProperty('--urppp-accent-ring');
-    clearInlinePrimaryOverrides();
-  }
-
   function getAccent() { return GM_getValue(ACCENT_KEY, ''); }
 
   function getAccentPresets() {
@@ -690,7 +697,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.20';
+          content:'URP++ v0.5.21';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3061,36 +3068,12 @@
 
   function disarmNoticeTableHover(table) {
     if (!table) return;
-    // 摘掉 Bootstrap/ACE table-hover，从根上断掉 hover 改色
+    // 只摘 class + 钉背景；CSS 已覆盖 table-hover，避免 jQuery 全量 off 误伤
     table.classList.remove('table-hover', 'table-striped');
     table.classList.add('urppp-notice-nohover');
-    try {
-      const $ = (typeof unsafeWindow !== 'undefined' && unsafeWindow.jQuery) ? unsafeWindow.jQuery : (window.jQuery || null);
-      if ($ && $.fn) {
-        const $rows = $(table).find('> tbody > tr, tr');
-        $rows.off('mouseenter.urpppNotice mouseleave.urpppNotice mouseover mouseout mouseenter mouseleave');
-        // 常见 ACE 绑定在 document / table 上，再解一层
-        $(table).off('mouseenter mouseleave mouseover mouseout');
-        $rows.each(function () {
-          const el = this;
-          try {
-            if ($._data) {
-              const ev = $._data(el, 'events');
-              if (ev) {
-                ['mouseenter', 'mouseleave', 'mouseover', 'mouseout'].forEach((type) => {
-                  if (!ev[type]) return;
-                  // 去掉会改 background 的 handler 很难识别，直接 off 全部同名
-                  $(el).off(type);
-                });
-              }
-            }
-          } catch (_) {}
-        });
-      }
-    } catch (_) {}
-    Array.from(table.querySelectorAll('tr')).forEach((tr) => {
+    table.querySelectorAll('tr.urppp-notice-row').forEach((tr) => {
       tr.classList.remove('hover');
-      if (tr.classList.contains('urppp-notice-row')) pinNoticeRowSurface(tr);
+      pinNoticeRowSurface(tr);
     });
   }
 
@@ -9767,67 +9750,83 @@
     });
     wrapTables();
     beautifyNoticeTables();
-    setTimeout(beautifyNoticeTables, 300);
-    setTimeout(beautifyNoticeTables, 1000);
-    setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusinessDataTable(tb)) stripMistakenNoticeTable(tb); }), 500);
+    scheduleWave('notice', beautifyNoticeTables, [300, 1000]);
+    scheduleOnce('stripMistaken', () => {
+      document.querySelectorAll('table').forEach((tb) => {
+        if (isBusinessDataTable(tb)) stripMistakenNoticeTable(tb);
+      });
+    }, 500);
     scheduleWeekScheduleFix();
     fixWeekScheduleLayout();
     scheduleCurriculumDrawerBeautify();
     beautifyCurriculumDrawer();
+
+    // 表格 wrapper：只在 page-content 内观察，避免 body 级全量扫描
     if (!window.__urpppTableObs) {
       let wrapTimer = 0;
       window.__urpppTableObs = new MutationObserver(() => {
         clearTimeout(wrapTimer);
-        wrapTimer = setTimeout(wrapTables, 50);
+        wrapTimer = setTimeout(wrapTables, 80);
       });
-      window.__urpppTableObs.observe(document.body, { childList: true, subtree: true });
-    }
-    // 首页进行组件级重构
-    const pageContent = document.querySelector('.page-content');
-    const hasWidgets = pageContent && pageContent.querySelectorAll('.widget-box').length >= 4;
-    if (hasWidgets) {
-      setTimeout(rebuildDashboard, 500);
+      const tableHost = document.getElementById('page-content-template')
+        || document.querySelector('.page-content')
+        || document.body;
+      window.__urpppTableObs.observe(tableHost, { childList: true, subtree: true });
     }
 
-    // 完全重构侧边栏为 Hanako 风格
+    // 首页组件重构
+    const pageContent = document.querySelector('.page-content');
+    const hasWidgets = pageContent && pageContent.querySelectorAll('.widget-box').length >= 4;
+    if (hasWidgets) scheduleOnce('dashboard', rebuildDashboard, 500);
+
     rebuildSidebarCompletely();
     syncSidebarUnderNavbar();
-    // 强制内容区内边距（ACE 偶发内联样式覆盖）
     document.querySelectorAll('.page-content, #page-content-template').forEach((el) => {
       el.style.setProperty('padding', '16px 64px 40px', 'important');
       el.style.setProperty('box-sizing', 'border-box', 'important');
     });
+
+    // 首屏同步执行一轮；延迟波次合并，减少重复 DOM 遍历
     alignRollInfoLayout();
     fixSinglePairProfileForms();
     patchAceTabNavbars();
     restyleInfoboxPercentages();
-    setTimeout(restyleInfoboxPercentages, 300);
-    setTimeout(restyleInfoboxPercentages, 1000);
     beautifyFreeClassroomList();
-    setTimeout(beautifyFreeClassroomList, 300);
-    setTimeout(beautifyFreeClassroomList, 1000);
     scheduleBeautifyPagebar();
     beautifyPagebar();
     scheduleEnsureQueryChosen();
     ensureQueryChosen();
     beautifyQueryForms();
     patchChosenDropdownAlign();
-    setTimeout(beautifyQueryForms, 100);
-    setTimeout(beautifyQueryForms, 300);
-    setTimeout(beautifyQueryForms, 800);
-    setTimeout(beautifyQueryForms, 1500);
-    setTimeout(fixSinglePairProfileForms, 100);
-    setTimeout(fixSinglePairProfileForms, 400);
-    setTimeout(fixSinglePairProfileForms, 900);
     beautifyPlanTree();
-    setTimeout(() => beautifyPlanTree(), 400);
+    beautifyBreadcrumbs();
+    rebuildNavbar();
+    patchSchoolCalendarLink();
+    try { bindScheduleHoverNearCursor(); } catch (_) {}
+
+    scheduleWave('layout', () => {
+      alignRollInfoLayout();
+      fixSinglePairProfileForms();
+      patchAceTabNavbars();
+      beautifyBreadcrumbs();
+    }, [200, 700]);
+    scheduleWave('query', () => {
+      beautifyQueryForms();
+      patchChosenDropdownAlign();
+      ensureQueryChosen();
+    }, [300, 900]);
+    scheduleWave('misc', () => {
+      restyleInfoboxPercentages();
+      beautifyFreeClassroomList();
+      beautifyPlanTree();
+    }, [400, 1000]);
+
     if (!window.__urpppPlanTreeObs) {
       let planTimer = 0;
       window.__urpppPlanTreeObs = new MutationObserver(() => {
-        const t = document.getElementById('treeDemo');
-        if (!t || t.dataset.urpppBusy === '1') return;
-        // 没有未处理节点就不动
-        if (!t.querySelector('li > a:not([data-urppp-node-done="1"])')) return;
+        const tree = document.getElementById('treeDemo');
+        if (!tree || tree.dataset.urpppBusy === '1') return;
+        if (!tree.querySelector('li > a:not([data-urppp-node-done="1"])')) return;
         clearTimeout(planTimer);
         planTimer = setTimeout(() => beautifyPlanTree(), 220);
       });
@@ -9836,12 +9835,13 @@
         window.__urpppPlanTreeObs.observe(treeHost, { childList: true, subtree: true });
       }
     }
-    // 作息时间表：仅轻量样式，不改内容
+
+    // 作息时间表：仅轻量样式
     if (!window.__urpppWrsBound) {
       window.__urpppWrsBound = true;
       document.addEventListener('shown.bs.modal', (e) => {
         if (e.target && (e.target.id === 'work_rest_schedule_modal' || e.target.querySelector?.('#work_rest_schedule_modal'))) {
-          setTimeout(beautifyWorkRestSchedule, 30);
+          scheduleOnce('wrs', beautifyWorkRestSchedule, 30);
         }
       }, true);
       document.addEventListener('click', (e) => {
@@ -9850,39 +9850,36 @@
         const onclick = a.getAttribute('onclick') || '';
         const txt = (a.textContent || '').trim();
         if (onclick.includes('openWorkRestSchedule') || txt.includes('作息时间表')) {
-          setTimeout(beautifyWorkRestSchedule, 80);
-          setTimeout(beautifyWorkRestSchedule, 300);
+          scheduleOnce('wrs', beautifyWorkRestSchedule, 80);
         }
       }, true);
     }
-    beautifyBreadcrumbs();
-    setTimeout(alignRollInfoLayout, 200);
-    setTimeout(patchAceTabNavbars, 200);
-    setTimeout(alignRollInfoLayout, 600);
-    setTimeout(patchAceTabNavbars, 600);
-    setTimeout(alignRollInfoLayout, 1200);
-    setTimeout(patchAceTabNavbars, 1200);
-        setTimeout(beautifyBreadcrumbs, 200);
-    setTimeout(beautifyBreadcrumbs, 600);
-    setTimeout(beautifyBreadcrumbs, 1500);
-    window.addEventListener('load', () => setTimeout(beautifyBreadcrumbs, 100));
 
-    // 顶栏重建（JS 强制对齐）
-    rebuildNavbar();
-    patchSchoolCalendarLink();
-    window.addEventListener('load', () => { rebuildNavbar(); injectNavbarThemeSwitch(); patchSchoolCalendarLink(); });
+    if (!window.__urpppLoadBound) {
+      window.__urpppLoadBound = true;
+      window.addEventListener('load', () => {
+        rebuildNavbar();
+        injectNavbarThemeSwitch();
+        patchSchoolCalendarLink();
+        beautifyBreadcrumbs();
+      });
+    }
 
-    setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
+    scheduleOnce('ready', () => {
+      document.body.classList.add('urppp-ready');
+      hideBootLoader();
+    }, 600);
 
-    console.log('[URP++] style applied v0.5.20');
-    try { bindScheduleHoverNearCursor(); } catch (_) {}
+    console.log('[URP++] style applied v0.5.21');
 
-    // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
+    // 课表格子背景透明度：只观察 #courseTable，避免 body 级 Observer
     (function courseTableOpacity() {
+      if (window.__urpppCourseOpacityBound) return;
+      window.__urpppCourseOpacityBound = true;
       const apply = () => {
         const tbl = document.getElementById('courseTable');
         if (!tbl) return;
-        tbl.querySelectorAll('td').forEach(td => {
+        tbl.querySelectorAll('td').forEach((td) => {
           const bg = td.style.backgroundColor;
           if (bg && bg.includes('rgba')) {
             const m = bg.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/);
@@ -9891,10 +9888,28 @@
         });
       };
       apply();
-      new MutationObserver(() => requestAnimationFrame(apply)).observe(document.body, { childList: true, subtree: true });
+      const host = document.getElementById('mycoursetable') || document.getElementById('courseTable');
+      if (host) {
+        let tmr = 0;
+        new MutationObserver(() => {
+          clearTimeout(tmr);
+          tmr = setTimeout(apply, 60);
+        }).observe(host, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+      } else {
+        // 课表可能晚到：一次延迟补挂
+        setTimeout(() => {
+          const late = document.getElementById('mycoursetable') || document.getElementById('courseTable');
+          if (!late || late.__urpppOpacityObs) return;
+          late.__urpppOpacityObs = true;
+          apply();
+          let tmr = 0;
+          new MutationObserver(() => {
+            clearTimeout(tmr);
+            tmr = setTimeout(apply, 60);
+          }).observe(late, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+        }, 1200);
+      }
     })();
-
-    // 课表背景卡片高度对齐（CSS translateY 处理）
   }
 
   // ============================================================
@@ -10613,8 +10628,6 @@
     }, true);
   }
   // 首页通知：只用 CSS !important 压站点 inline white，禁止 Observer/jQuery 劫持（会卡死加载）
-  function pinHomeNoticeItems() { /* no-op: CSS handles it */ }
-  function bindHomeNoticeScrub() { /* no-op */ }
   function rebuildDashboard() {
     try { bindScheduleHoverNearCursor(); } catch (_) {}
     if (document.getElementById('urppp-dashboard')) return;
@@ -10817,12 +10830,13 @@
   }
   function watchRouteChanges() {
     const run = () => {
-      setTimeout(() => {
+      scheduleOnce('route', () => {
         const sidebar = document.getElementById('sidebar');
         if (!sidebar) return;
         syncSidebarUnderNavbar();
         rebuildSidebarCompletely();
         rebuildNavbar();
+        injectNavbarThemeSwitch();
         patchSchoolCalendarLink();
         wrapTables();
         document.querySelectorAll('.page-content, #page-content-template').forEach((el) => {
@@ -10832,30 +10846,34 @@
         alignRollInfoLayout();
         patchAceTabNavbars();
         restyleInfoboxPercentages();
-        setTimeout(restyleInfoboxPercentages, 300);
-        setTimeout(restyleInfoboxPercentages, 1000);
         scheduleEnsureQueryChosen();
         ensureQueryChosen();
         beautifyQueryForms();
         patchChosenDropdownAlign();
-        setTimeout(beautifyQueryForms, 300);
         beautifyPlanTree();
-        setTimeout(() => beautifyPlanTree(), 500);
         beautifyBreadcrumbs();
-      }, 100);
+        beautifyNoticeTables();
+        beautifyFreeClassroomList();
+        beautifyPagebar();
+        scheduleWave('route-late', () => {
+          beautifyQueryForms();
+          restyleInfoboxPercentages();
+          beautifyPlanTree();
+        }, [400]);
+      }, 120);
     };
     window.addEventListener('popstate', run);
     window.addEventListener('hashchange', run);
     const origPush = history.pushState;
     const origReplace = history.replaceState;
-    history.pushState = function (...args) { origPush.apply(this, args); setTimeout(run, 100); };
-    history.replaceState = function (...args) { origReplace.apply(this, args); setTimeout(run, 100); };
+    history.pushState = function (...args) { origPush.apply(this, args); run(); };
+    history.replaceState = function (...args) { origReplace.apply(this, args); run(); };
   }
 
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.20',
+    version: '0.5.21',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
