@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.26
+// @version      0.4.27
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.26';
+          content:'URP++ v0.4.27';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3721,14 +3721,15 @@
       .urppp-query-pair .chosen-single {
         height: 34px !important;
         min-height: 34px !important;
-        line-height: 32px !important;
+        line-height: 34px !important;
         padding: 0 28px 0 10px !important;
-        display: block !important;
+        display: flex !important;
+        align-items: center !important;
         box-sizing: border-box !important;
       }
       .urppp-query-pair .chosen-single span {
         display: block !important;
-        line-height: 32px !important;
+        line-height: 34px !important;
         margin-right: 22px !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
@@ -4183,14 +4184,91 @@
         border-color: var(--border) !important;
         box-shadow: var(--shadow) !important;
       }
+      /* 下拉搜索框：输入文字与搜索图标垂直居中 */
+      .chosen-search {
+        position: relative !important;
+        margin: 0 !important;
+        padding: 8px 8px 6px !important;
+        box-sizing: border-box !important;
+      }
+      .chosen-search input[type="text"],
+      .chosen-container .chosen-search input {
+        width: 100% !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        margin: 0 !important;
+        padding: 0 12px 0 32px !important;
+        line-height: 32px !important;
+        font-size: 13px !important;
+        border-radius: 8px !important;
+        border: 1px solid var(--border) !important;
+        background-color: var(--input-bg) !important;
+        color: var(--text) !important;
+        box-sizing: border-box !important;
+        background-repeat: no-repeat !important;
+        background-position: 10px center !important;
+        background-size: 14px 14px !important;
+      }
+      /* 有的主题用伪元素画搜索图标 */
+      .chosen-search:before {
+        content: "\f002" !important;
+        font-family: FontAwesome, "Font Awesome 5 Free", "Font Awesome 6 Free", sans-serif !important;
+        font-weight: 900 !important;
+        position: absolute !important;
+        left: 18px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        width: 14px !important;
+        height: 14px !important;
+        line-height: 14px !important;
+        font-size: 12px !important;
+        color: var(--text-muted) !important;
+        pointer-events: none !important;
+        z-index: 2 !important;
+        display: block !important;
+      }
+      /* 若已有背景图标，避免双图标：输入仍留左内边距 */
+      .chosen-container-single .chosen-search input {
+        background-position: 10px 50% !important;
+      }
       input:focus, select:focus, textarea:focus, .form-control:focus,
       .chosen-container-active .chosen-single, .chosen-container-active .chosen-choices {
         border-color: var(--border-focus) !important;
         box-shadow: 0 0 0 3px var(--ring) !important;
         outline: none !important;
       }
-      .chosen-results li { color: var(--text) !important; padding: 8px 12px !important; }
-      .chosen-results li.highlighted { background: var(--primary) !important; color: #fff !important; }
+      /* 选项列表：覆盖 commoncss line-height:25px，真正垂直居中 */
+      .chosen-results {
+        margin: 0 !important;
+        padding: 4px 0 !important;
+      }
+      .chosen-results li,
+      .chosen-results li.active-result,
+      .chosen-container .chosen-results li {
+        display: flex !important;
+        align-items: center !important;
+        min-height: 32px !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 6px 12px !important;
+        line-height: 1.35 !important;
+        font-size: 13px !important;
+        color: var(--text) !important;
+        box-sizing: border-box !important;
+        white-space: nowrap !important;
+      }
+      .chosen-results li.highlighted,
+      .chosen-results li.result-selected,
+      .chosen-results li.highlighted em,
+      .chosen-results li em {
+        background: var(--primary) !important;
+        color: #fff !important;
+      }
+      .chosen-results li.no-results {
+        display: block !important;
+        background: var(--input-bg) !important;
+        color: var(--text-muted) !important;
+      }
       label { color: var(--text-secondary) !important; font-weight: 500 !important; font-size: 13px !important; }
 
       /* 查询表单：保留 Bootstrap 栅格，只做垂直居中与统一高度 */
@@ -5166,7 +5244,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.26');
+    console.log('[URP++] style applied v0.4.27');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5786,7 +5864,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.26',
+    version: '0.4.27',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
