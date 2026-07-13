@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.88
+// @version      0.4.83
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.88';
+          content:'URP++ v0.4.83';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -2622,12 +2622,223 @@
     }, true);
   }
 
-  // 培养方案抽屉：纯 CSS 布局，打开时不搬 DOM（避免卡顿）
+  // 学籍页培养方案抽屉：强制左树 / 右详情，每次打开都归位，禁止交错
   function beautifyCurriculumDrawer() {
-    // no-op：布局与样式全部由 CSS 完成
+    try {
+      ;['curriculumInfo-divcon', 'curriculumInfo-divcon1'].forEach((id) => {
+        const p = document.getElementById(id);
+        if (!p) return;
+        const w = parseFloat(p.style.width || '0');
+        if (w >= 40) p.classList.add('urppp-curriculum-drawer');
+      });
+
+      const panel = document.getElementById('curriculumInfo-divcon2');
+      if (!panel) return;
+      const w = parseFloat(panel.style.width || getComputedStyle(panel).width || '0');
+      if (!w || w < 40) return;
+      panel.classList.add('urppp-curriculum-drawer');
+
+      const body = panel.querySelector('.modal-body');
+      if (!body) return;
+      // 真实结构：.modal-body > .col-xs-12 > .row
+      const host =
+        body.querySelector(':scope > .col-xs-12 > .row') ||
+        body.querySelector('.col-xs-12 > .row') ||
+        body.querySelector('.row');
+      if (!host) return;
+      host.classList.add('urppp-drawer-layout');
+
+      // 工具条
+      let toolbar = host.querySelector(':scope > .urppp-drawer-toolbar, :scope > p');
+      if (toolbar && toolbar.tagName === 'P') toolbar.classList.add('urppp-drawer-toolbar');
+
+      // 确保外壳
+      let bodyWrap = host.querySelector(':scope > .urppp-drawer-body');
+      let left = host.querySelector('.urppp-drawer-left');
+      let right = host.querySelector('.urppp-drawer-right');
+      if (!bodyWrap) {
+        bodyWrap = document.createElement('div');
+        bodyWrap.className = 'urppp-drawer-body';
+      }
+      if (!left) {
+        left = document.createElement('div');
+        left.className = 'urppp-drawer-left';
+      }
+      if (!right) {
+        right = document.createElement('div');
+        right.className = 'urppp-drawer-right';
+      }
+      if (!bodyWrap.contains(left)) bodyWrap.appendChild(left);
+      if (!bodyWrap.contains(right)) bodyWrap.appendChild(right);
+      if (bodyWrap.parentElement !== host) {
+        // 插到 toolbar 后
+        if (toolbar && toolbar.parentElement === host) host.insertBefore(bodyWrap, toolbar.nextSibling);
+        else host.appendChild(bodyWrap);
+      }
+      // toolbar 置顶
+      if (toolbar && host.firstElementChild !== toolbar) host.insertBefore(toolbar, host.firstElementChild);
+
+      // 找树列：含 #treeDemo / .ztree 的最近 col
+      const treeEl = host.querySelector('#treeDemo, .ztree') || panel.querySelector('#treeDemo, .ztree');
+      let treeCol = null;
+      if (treeEl) {
+        treeCol = treeEl.closest('.col-xs-6, .col-sm-6, .widget-box') || treeEl.parentElement;
+        // 若点到 widget-box，用外层 col
+        const col = treeEl.closest('.col-xs-6, .col-sm-6');
+        if (col) treeCol = col;
+      }
+
+      // 详情块按 id 强制收集（最稳）
+      const detailIds = ['fajh', 'xnxq', 'kz', 'kc', 'kcfa'];
+      const details = detailIds
+        .map((id) => document.getElementById(id))
+        .filter((el) => el && panel.contains(el));
+
+      // 左栏只保留树
+      if (treeCol && treeCol.parentElement !== left) left.appendChild(treeCol);
+      // 清掉左栏里误入的详情
+      Array.from(left.children).forEach((child) => {
+        if (detailIds.includes(child.id) || (child.id && detailIds.includes(child.id))) {
+          right.appendChild(child);
+        } else if (child !== treeCol && child.querySelector && !child.querySelector('#treeDemo, .ztree')) {
+          // 非树节点挪到右栏（避免脏节点）
+          if (child.classList && child.classList.contains('col-xs-6')) right.appendChild(child);
+        }
+      });
+
+      // 右栏按固定顺序放详情，全部 100% 宽一列
+      detailIds.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el || !panel.contains(el)) return;
+        if (el.parentElement !== right) right.appendChild(el);
+        el.style.setProperty('width', '100%', 'important');
+        el.style.setProperty('max-width', '100%', 'important');
+        el.style.setProperty('float', 'none', 'important');
+        el.style.setProperty('margin', '0', 'important');
+        el.style.setProperty('padding', '0', 'important');
+        el.style.setProperty('box-sizing', 'border-box', 'important');
+        if (el.style.display !== 'none') {
+          const cs = getComputedStyle(el);
+          if (cs.display !== 'none') el.style.setProperty('display', 'block', 'important');
+        }
+      });
+
+      // 首次打开：#fajh 常异步填充，先预留右栏占位，避免“只有树再闪出详情”
+      const fajh = document.getElementById('fajh');
+      if (fajh && panel.contains(fajh)) {
+        if (fajh.parentElement !== right) right.appendChild(fajh);
+        // 若还是空壳，放一个轻量骨架，等 fillFajh 覆盖
+        const empty = !fajh.innerHTML || !fajh.innerHTML.trim();
+        if (empty && !fajh.querySelector('.urppp-drawer-skeleton, .profile-user-info, .widget-box')) {
+          fajh.innerHTML = [
+            "<div class='widget-box transparent urppp-drawer-skeleton'>",
+            "  <div class='widget-header widget-header-small'>",
+            "    <h4 class='widget-title smaller grey'>方案计划信息</h4>",
+            "  </div>",
+            "</div>",
+            "<div class='self profile-user-info profile-user-info-striped urppp-drawer-skeleton-card'>",
+            "  <div class='profile-info-row'><div class='profile-info-name'>加载中</div><div class='profile-info-value'>正在获取方案信息…</div></div>",
+            "</div>"
+          ].join('');
+          fajh.style.setProperty('display', 'block', 'important');
+          fajh.dataset.urpppSkeleton = '1';
+        }
+        // 站点 fillFajh 写入后清 skeleton 标记
+        if (fajh.dataset.urpppSkeleton === '1' && fajh.querySelector('.profile-info-value') && /方案名称|计划名称|年级|院系/.test(fajh.textContent || '')) {
+          delete fajh.dataset.urpppSkeleton;
+          fajh.querySelectorAll('.urppp-drawer-skeleton, .urppp-drawer-skeleton-card').forEach((n) => n.remove());
+        }
+        if (fajh.innerHTML && fajh.innerHTML.trim() && fajh.style.display === 'none') {
+          // 有内容却被 none：首开闪烁场景，直接显示
+          if (fajh.dataset.urpppSkeleton === '1' || fajh.querySelector('.profile-user-info')) {
+            fajh.style.setProperty('display', 'block', 'important');
+          }
+        }
+      }
+      // 右栏始终占位，避免左树先独大再缩回去
+      right.style.setProperty('min-height', '240px', 'important');
+      left.style.setProperty('min-height', '240px', 'important');
+
+      // 树列样式
+      if (treeCol) {
+        treeCol.style.setProperty('width', '100%', 'important');
+        treeCol.style.setProperty('max-width', '100%', 'important');
+        treeCol.style.setProperty('float', 'none', 'important');
+        treeCol.style.setProperty('margin', '0', 'important');
+        treeCol.style.setProperty('padding', '0', 'important');
+        treeCol.style.setProperty('border', 'none', 'important');
+        treeCol.style.setProperty('box-sizing', 'border-box', 'important');
+      }
+      const treeBox = left.querySelector('.widget-box');
+      if (treeBox) {
+        treeBox.style.setProperty('width', '100%', 'important');
+        treeBox.style.setProperty('margin', '0', 'important');
+        treeBox.style.setProperty('border', '1px solid var(--border)', 'important');
+        treeBox.style.setProperty('border-radius', '12px', 'important');
+        treeBox.style.setProperty('overflow', 'hidden', 'important');
+        treeBox.style.setProperty('background', 'var(--surface)', 'important');
+      }
+
+      // 信息卡
+      panel.querySelectorAll('.profile-info-row').forEach((r) => {
+        r.classList.remove('urppp-query-row', 'urppp-dual-pair');
+        r.style.setProperty('display', 'grid', 'important');
+        r.style.setProperty('grid-template-columns', '112px minmax(0,1fr)', 'important');
+        r.style.setProperty('width', '100%', 'important');
+        Array.from(r.children).forEach((el) => {
+          if (!el.classList) return;
+          el.style.setProperty('float', 'none', 'important');
+          el.style.setProperty('margin-left', '0', 'important');
+          el.style.setProperty('width', 'auto', 'important');
+          el.style.setProperty('max-width', 'none', 'important');
+        });
+      });
+      panel.querySelectorAll('.profile-user-info, .profile-user-info-striped').forEach((card) => {
+        card.classList.remove('urppp-query-form');
+        card.style.setProperty('border-radius', '12px', 'important');
+        card.style.setProperty('overflow', 'hidden', 'important');
+        card.style.setProperty('width', '100%', 'important');
+        card.style.setProperty('max-width', '100%', 'important');
+        card.style.setProperty('display', 'block', 'important');
+        card.style.setProperty('box-sizing', 'border-box', 'important');
+      });
+    } catch (err) {
+      console.warn('[URP++] curriculum drawer beautify failed', err);
+    }
   }
   function scheduleCurriculumDrawerBeautify() {
-    // no-op：不再挂 click/MutationObserver
+    if (window.__urpppCurriculumDrawerBound) return;
+    window.__urpppCurriculumDrawerBound = true;
+    const run = () => beautifyCurriculumDrawer();
+    ;[0, 50, 150, 350, 800, 1600].forEach((ms) => setTimeout(run, ms));
+    const obs = new MutationObserver((muts) => {
+      // 面板宽度变化或 fajh 内容写入时立刻归位
+      const hot = muts.some((m) => {
+        if (m.type === 'childList') return true;
+        if (m.type === 'attributes' && m.target && (m.target.id === 'curriculumInfo-divcon2' || m.target.id === 'fajh')) return true;
+        return false;
+      });
+      if (!hot) return;
+      clearTimeout(window.__urpppCurriculumDrawerTimer);
+      window.__urpppCurriculumDrawerTimer = setTimeout(() => requestAnimationFrame(run), 16);
+    });
+    ['curriculumInfo-divcon', 'curriculumInfo-divcon1', 'curriculumInfo-divcon2'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) obs.observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+    });
+    // 点击“培养方案/与我相关”后尽快布局，减少首开只见树
+    document.addEventListener('click', (e) => {
+      const t = e.target && e.target.closest ? e.target.closest('a,button,span,div') : null;
+      const txt = ((t && t.textContent) || '').replace(/\s+/g, '');
+      if (/培养方案|与我相关|方案计划|自动化培养/.test(txt) || (t && t.closest && t.closest('#curriculumInfo-divcon2'))) {
+        setTimeout(run, 0);
+        setTimeout(run, 50);
+        setTimeout(run, 150);
+        setTimeout(run, 400);
+      } else {
+        setTimeout(run, 200);
+      }
+    }, true);
   }
   function beautifyNoticeTables() {
     try {
@@ -7122,105 +7333,66 @@
         padding: 0 !important;
         margin: 0 !important;
       }
-      /*
-      /*
-       * 纯 CSS 固定两栏（不搬 DOM，不卡打开）
-       * 左：方案树 | 右：详情卡纵向堆叠
-       */
-      #curriculumInfo-divcon2 .modal-body .row {
-        display: grid !important;
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
-        grid-auto-rows: auto !important;
-        column-gap: 14px !important;
-        row-gap: 12px !important;
+      #curriculumInfo-divcon2 .modal-body .row,
+      #curriculumInfo-divcon2 .modal-body .row.urppp-drawer-layout {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
         margin: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
-        align-items: start !important;
         box-sizing: border-box !important;
       }
       #curriculumInfo-divcon2 .modal-body .row > p,
-      #curriculumInfo-divcon2 .modal-body .row > .urppp-drawer-toolbar {
-        grid-column: 1 / -1 !important;
+      #curriculumInfo-divcon2 .urppp-drawer-toolbar {
         width: 100% !important;
-        max-width: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
         color: var(--text-secondary) !important;
         font-size: 13px !important;
-        box-sizing: border-box !important;
       }
-      #curriculumInfo-divcon2 .modal-body .row > p a {
+      #curriculumInfo-divcon2 .modal-body .row > p a,
+      #curriculumInfo-divcon2 .urppp-drawer-toolbar a {
         color: var(--primary) !important;
         text-decoration: none !important;
         font-weight: 500 !important;
       }
-      #curriculumInfo-divcon2 .modal-body .row > p a:hover {
+      #curriculumInfo-divcon2 .modal-body .row > p a:hover,
+      #curriculumInfo-divcon2 .urppp-drawer-toolbar a:hover {
         text-decoration: underline !important;
       }
-      /* 所有 col / 详情块先清 float，默认进右栏 */
-      #curriculumInfo-divcon2 .modal-body .row > .col-xs-6,
-      #curriculumInfo-divcon2 .modal-body .row > #fajh,
-      #curriculumInfo-divcon2 .modal-body .row > #xnxq,
-      #curriculumInfo-divcon2 .modal-body .row > #kz,
-      #curriculumInfo-divcon2 .modal-body .row > #kc,
-      #curriculumInfo-divcon2 .modal-body .row > #kcfa {
-        float: none !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        border: none !important;
-        box-sizing: border-box !important;
-        grid-column: 2 !important;
-      }
-      /* 左栏：方案树，跨多行贴左 */
-      #curriculumInfo-divcon2 .modal-body .row > .col-xs-6:has(#treeDemo),
-      #curriculumInfo-divcon2 .modal-body .row > .col-xs-6:has(.ztree) {
-        grid-column: 1 !important;
-        grid-row: 2 / span 30 !important;
-        align-self: stretch !important;
-        height: 100% !important;
-        min-height: 360px !important;
-      }
-      /* 右栏详情：明确第 2 列 */
-      #curriculumInfo-divcon2 .modal-body .row > #fajh,
-      #curriculumInfo-divcon2 .modal-body .row > #xnxq,
-      #curriculumInfo-divcon2 .modal-body .row > #kz,
-      #curriculumInfo-divcon2 .modal-body .row > #kc,
-      #curriculumInfo-divcon2 .modal-body .row > #kcfa {
-        grid-column: 2 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-      }
-      /* 兼容旧 wrapper：若存在则也强制左右 50/50 */
+      /* 固定左右两栏：左树 | 右详情（详情内部只纵向一列） */
       #curriculumInfo-divcon2 .urppp-drawer-body {
         display: flex !important;
         flex-direction: row !important;
         align-items: flex-start !important;
         gap: 14px !important;
         width: 100% !important;
-        grid-column: 1 / -1 !important;
+        min-height: 0 !important;
         box-sizing: border-box !important;
       }
       #curriculumInfo-divcon2 .urppp-drawer-left,
       #curriculumInfo-divcon2 .urppp-drawer-right {
         float: none !important;
-        flex: 0 0 calc(50% - 7px) !important;
-        width: calc(50% - 7px) !important;
-        max-width: calc(50% - 7px) !important;
-        min-width: calc(50% - 7px) !important;
-        margin: 0 !important;
+        flex: 1 1 0 !important;
+        width: 0 !important; /* 配合 flex:1 均分，避免内容撑破 */
+        max-width: none !important;
+        min-width: 0 !important;
         padding: 0 !important;
+        margin: 0 !important;
         border: none !important;
         box-sizing: border-box !important;
+      }
+      #curriculumInfo-divcon2 .urppp-drawer-left {
+        position: sticky !important;
+        top: 0 !important;
       }
       #curriculumInfo-divcon2 .urppp-drawer-right {
         display: flex !important;
         flex-direction: column !important;
         gap: 12px !important;
       }
+      /* 右栏子块绝不再 50% 并排 */
       #curriculumInfo-divcon2 .urppp-drawer-right > * {
         width: 100% !important;
         max-width: 100% !important;
@@ -7233,11 +7405,22 @@
       #curriculumInfo-divcon2 .urppp-drawer-right > #kz,
       #curriculumInfo-divcon2 .urppp-drawer-right > #kc,
       #curriculumInfo-divcon2 .urppp-drawer-right > #kcfa {
+        float: none !important;
         width: 100% !important;
         max-width: 100% !important;
-        flex: none !important;
+        min-width: 0 !important;
         margin: 0 !important;
-        grid-column: auto !important;
+        padding: 0 !important;
+        border: none !important;
+        box-sizing: border-box !important;
+      }
+      /* 兼容未包 wrapper 的旧结构：直接子级 col 不再并排交错 */
+      #curriculumInfo-divcon2 .modal-body .row:not(.urppp-drawer-layout) > .col-xs-6 {
+        float: none !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 0 12px !important;
+        padding: 0 !important;
       }
       #curriculumInfo-divcon2 .modal-body .widget-box,
       #curriculumInfo-divcon2 #fajh .widget-box,
@@ -7432,31 +7615,12 @@
         white-space: normal !important;
       }
       @media (max-width: 1100px) {
-        #curriculumInfo-divcon2 .modal-body .row {
-          grid-template-columns: 1fr !important;
-        }
-        #curriculumInfo-divcon2 .modal-body .row > .col-xs-6:has(#treeDemo),
-        #curriculumInfo-divcon2 .modal-body .row > .col-xs-6:has(.ztree),
-        #curriculumInfo-divcon2 .modal-body .row > .col-xs-6,
-        #curriculumInfo-divcon2 .modal-body .row > #fajh,
-        #curriculumInfo-divcon2 .modal-body .row > #xnxq,
-        #curriculumInfo-divcon2 .modal-body .row > #kz,
-        #curriculumInfo-divcon2 .modal-body .row > #kc,
-        #curriculumInfo-divcon2 .modal-body .row > #kcfa {
-          grid-column: 1 !important;
-          grid-row: auto !important;
-          width: 100% !important;
-          max-width: 100% !important;
-          min-width: 0 !important;
-        }
         #curriculumInfo-divcon2 .urppp-drawer-body {
           flex-direction: column !important;
         }
         #curriculumInfo-divcon2 .urppp-drawer-left,
         #curriculumInfo-divcon2 .urppp-drawer-right {
           width: 100% !important;
-          max-width: 100% !important;
-          min-width: 0 !important;
           flex: 1 1 auto !important;
         }
       }
@@ -8050,6 +8214,7 @@
     scheduleWeekScheduleFix();
     fixWeekScheduleLayout();
     scheduleCurriculumDrawerBeautify();
+    beautifyCurriculumDrawer();
     if (!window.__urpppTableObs) {
       let wrapTimer = 0;
       window.__urpppTableObs = new MutationObserver(() => {
@@ -8145,7 +8310,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.88');
+    console.log('[URP++] style applied v0.4.83');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -8768,7 +8933,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.88',
+    version: '0.4.83',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
