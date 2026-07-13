@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.50
+// @version      0.4.51
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.50';
+          content:'URP++ v0.4.51';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1190,28 +1190,58 @@
     }, 500);
   }
 
-  // 空闲教室：楼栋列表轻量标记（校区标题 / 楼栋项）
+  // 空闲教室：楼栋列表轻量标记（校区标题 / 楼栋项 / 当前高亮）
   function beautifyFreeClassroomList() {
     try {
-      const ul = document.getElementById('drag-ul');
-      if (!ul) return;
-      ul.classList.add('urppp-drag-ul');
-      Array.from(ul.children).forEach((li) => {
-        if (!li || li.tagName !== 'LI') return;
-        const txt = (li.textContent || '').replace(/\s+/g, ' ').trim();
-        const hasClick =
-          (li.getAttribute('onclick') || '').includes('goDetail') ||
-          li.classList.contains('ui-selectee') ||
-          li.classList.contains('jc-future') ||
-          !!li.querySelector('a');
-        // 校区标题通常纯文本、无 goDetail
-        if (!hasClick && /校区/.test(txt) && txt.length <= 12) {
-          li.classList.add('xq-section');
-          li.classList.remove('ui-selectee', 'jc-future');
-        } else if (hasClick) {
-          if (!li.classList.contains('jc-future')) li.classList.add('ui-selectee');
+      document.querySelectorAll('#drag-ul, ul#drag-ul').forEach((ul) => {
+        if (!ul) return;
+        const items = Array.from(ul.children).filter((n) => n.tagName === 'LI');
+        if (!items.length) {
+          ul.classList.add('urppp-empty');
+          ul.style.setProperty('display', 'none', 'important');
+          const host = ul.closest('#xq-section, .widget-main, .widget-body');
+          // 仅当容器里没有任何 li 时隐藏外框，避免误伤
+          if (host && !host.querySelector('li')) {
+            host.classList.add('urppp-empty');
+            host.style.setProperty('display', 'none', 'important');
+          }
+          return;
         }
+        ul.classList.remove('urppp-empty');
+        ul.classList.add('urppp-drag-ul');
+        ul.style.removeProperty('display');
+        ul.style.setProperty('height', 'auto', 'important');
+        ul.style.setProperty('min-height', '0', 'important');
+
+        items.forEach((li) => {
+          const txt = (li.textContent || '').replace(/\s+/g, ' ').trim();
+          const hasClick =
+            (li.getAttribute('onclick') || '').includes('goDetail') ||
+            li.classList.contains('ui-selectee') ||
+            li.classList.contains('jc-future') ||
+            !!li.querySelector('a');
+          if (!hasClick && /校区/.test(txt) && txt.length <= 12) {
+            li.classList.add('xq-section');
+            li.classList.remove('ui-selectee', 'jc-future', 'urppp-building-active');
+          } else if (hasClick && !li.classList.contains('jc-future')) {
+            li.classList.add('ui-selectee');
+          }
+        });
       });
+
+      if (!window.__urpppBuildingActiveBound) {
+        window.__urpppBuildingActiveBound = true;
+        document.addEventListener('click', (e) => {
+          const li = e.target && e.target.closest ? e.target.closest('#drag-ul > li') : null;
+          if (!li || li.classList.contains('xq-section') || li.classList.contains('jc-future')) return;
+          const ul = li.parentElement;
+          if (!ul) return;
+          ul.querySelectorAll('li.urppp-building-active, li.ui-selected').forEach((x) => {
+            x.classList.remove('urppp-building-active', 'ui-selected');
+          });
+          li.classList.add('urppp-building-active', 'ui-selected');
+        }, true);
+      }
     } catch (err) {
       console.warn('[URP++] free classroom list beautify failed', err);
     }
@@ -4581,7 +4611,7 @@
 
       /* ============================================================
        * 空闲教室查询：右侧楼栋列表 #drag-ul
-       * 一体式实心列表，单行显示，压过站点 float/120px 宽度
+       * 一体式实心列表；高度随内容；当前项实色高亮
        * ============================================================ */
       #xq-section,
       #xq-section:has(#drag-ul) {
@@ -4591,6 +4621,23 @@
         overflow: hidden !important;
         box-sizing: border-box !important;
         padding: 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        align-self: flex-start !important;
+      }
+      /* 空列表 / 空容器不占位 */
+      #drag-ul:empty,
+      #xq-section:empty,
+      #xq-section:not(:has(li)),
+      #drag-ul.urppp-empty {
+        display: none !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        overflow: hidden !important;
       }
       #drag-ul,
       #drag-ul.urppp-drag-ul,
@@ -4601,6 +4648,9 @@
         float: none !important;
         width: 100% !important;
         max-width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
         background: var(--surface) !important;
         border: none !important;
         box-sizing: border-box !important;
@@ -4629,6 +4679,7 @@
         line-height: 36px !important;
         border: none !important;
         border-bottom: 1px solid var(--border) !important;
+        border-left: 3px solid transparent !important;
         border-radius: 0 !important;
         background: var(--surface) !important;
         color: var(--text) !important;
@@ -4642,7 +4693,7 @@
         overflow: hidden !important;
         text-overflow: ellipsis !important;
         opacity: 1 !important;
-        transition: background .12s ease, color .12s ease !important;
+        transition: background .12s ease, color .12s ease, border-color .12s ease !important;
       }
       #drag-ul > li:last-child,
       #xq-section #drag-ul > li:last-child {
@@ -4662,20 +4713,34 @@
         font-weight: 600 !important;
         cursor: default !important;
         border-bottom: 1px solid var(--border) !important;
+        border-left-color: transparent !important;
       }
       #drag-ul > li.ui-selectee:hover,
       #drag-ul > li.border-common:hover,
       #drag-ul .border-common:hover,
-      #xq-section #drag-ul > li:hover {
+      #xq-section #drag-ul > li:not(.xq-section):not(.jc-future):hover {
         background: var(--input-bg) !important;
         color: var(--primary) !important;
+        border-left-color: var(--primary) !important;
       }
+      /* 当前选中：实色高亮，一眼能认 */
       #drag-ul > li.ui-selecting,
       #drag-ul > li.ui-selected,
-      #xq-section #drag-ul > li.ui-selected {
-        background: color-mix(in srgb, var(--primary) 14%, var(--surface)) !important;
-        color: var(--primary) !important;
+      #drag-ul > li.urppp-building-active,
+      #xq-section #drag-ul > li.ui-selected,
+      #xq-section #drag-ul > li.urppp-building-active,
+      body #drag-ul > li.ui-selected,
+      body #drag-ul > li.urppp-building-active {
+        background: var(--primary) !important;
+        color: #fff !important;
         font-weight: 600 !important;
+        border-left-color: var(--primary) !important;
+        border-bottom-color: transparent !important;
+      }
+      #drag-ul > li.ui-selected:hover,
+      #drag-ul > li.urppp-building-active:hover {
+        background: var(--primary) !important;
+        color: #fff !important;
       }
       /* 不可选：仍实心，弱化文字即可 */
       #drag-ul > li.jc-future,
@@ -4684,6 +4749,7 @@
         background: var(--surface) !important;
         cursor: default !important;
         opacity: 1 !important;
+        border-left-color: transparent !important;
       }
       #drag-ul > li.jc-future:hover,
       #xq-section #drag-ul > li.jc-future:hover {
@@ -4700,7 +4766,14 @@
         text-align: left !important;
         border: none !important;
         border-bottom: 1px solid var(--border) !important;
+        border-left: 3px solid transparent !important;
         background: var(--surface) !important;
+      }
+      body #drag-ul .border-common.ui-selected,
+      body #drag-ul .border-common.urppp-building-active {
+        background: var(--primary) !important;
+        color: #fff !important;
+        border-left-color: var(--primary) !important;
       }      /* Chosen 下拉：压过 commoncss/phone.css 的 25px，真正垂直居中 */
       .chosen-container .chosen-results,
       body .chosen-container .chosen-results {
@@ -5822,7 +5895,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.50');
+    console.log('[URP++] style applied v0.4.51');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -6445,7 +6518,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.50',
+    version: '0.4.51',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
