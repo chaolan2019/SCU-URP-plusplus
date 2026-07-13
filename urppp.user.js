@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.7
+// @version      0.5.8
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -623,6 +623,16 @@
     css += '}';
     el.textContent = css;
     if (document.body) document.body.style.fontFamily = t.font;
+    try {
+      const root = document.documentElement;
+      root.dataset.urpppTheme = name;
+      root.classList.remove('urppp-theme-default', 'urppp-theme-dark', 'urppp-theme-scu-red');
+      root.classList.add('urppp-theme-' + name);
+      if (document.body) {
+        document.body.dataset.urpppTheme = name;
+        document.body.classList.toggle('urppp-dark', name === 'dark');
+      }
+    } catch (_) {}
     try { syncNavbarThemeUI(); } catch (_) {}
     const boot = document.getElementById('urppp-boot-loader');
     if (boot) boot.style.fontFamily = t.font;
@@ -679,7 +689,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.7';
+          content:'URP++ v0.5.8';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -4959,10 +4969,11 @@
         font-size: 11px !important;
         font-weight: 700 !important;
         line-height: 1 !important;
-        color: #fff !important;
-        text-shadow: 0 1px 1px rgba(0,0,0,0.22) !important;
+        color: var(--text) !important;
+        text-shadow: 0 0 0 transparent !important;
         pointer-events: none !important;
         white-space: nowrap !important;
+        mix-blend-mode: difference !important;
       }
       .infobox .easy-pie-chart,
       .infobox .percentage,
@@ -6131,9 +6142,33 @@
         font-weight: 600 !important;
         white-space: nowrap !important;
       }
-      .table-striped > tbody > tr:nth-of-type(odd), .dataTable > tbody > tr:nth-of-type(odd) { background: var(--bg) !important; }
-      .table-hover > tbody > tr:hover, .dataTable > tbody > tr:hover {
+      .table > tbody > tr,
+      .table > tbody > tr > td,
+      .table > tbody > tr > th,
+      .table-bordered > tbody > tr,
+      .table-bordered > tbody > tr > td,
+      .dataTable > tbody > tr,
+      .dataTable > tbody > tr > td {
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+        color: var(--text) !important;
+      }
+      .table-striped > tbody > tr:nth-of-type(odd),
+      .table-striped > tbody > tr:nth-of-type(odd) > td,
+      .table-striped > tbody > tr:nth-of-type(odd) > th,
+      .dataTable > tbody > tr:nth-of-type(odd),
+      .dataTable > tbody > tr:nth-of-type(odd) > td,
+      .dataTable > tbody > tr:nth-of-type(odd) > th {
+        background: var(--bg) !important;
+        background-color: var(--bg) !important;
+      }
+      .table-hover > tbody > tr:hover,
+      .table-hover > tbody > tr:hover > td,
+      .table-hover > tbody > tr:hover > th,
+      .dataTable > tbody > tr:hover,
+      .dataTable > tbody > tr:hover > td {
         background: var(--input-bg) !important;
+        background-color: var(--input-bg) !important;
       }
 
       /* ============================================================
@@ -8612,6 +8647,16 @@
         vertical-align: top !important;
         box-sizing: border-box !important;
         overflow: visible !important;
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      #mycoursetable th,
+      #courseTable th {
+        background: var(--input-bg) !important;
+        background-color: var(--input-bg) !important;
+        color: var(--text) !important;
       }
       /* 课程块相对父 td：默认 left/top=0，避免站点先写大 offset 再纠正造成右闪 */
       #mycoursetable div.class_div,
@@ -8897,6 +8942,269 @@
       .label-warning, .badge-warning { background: #f59e0b !important; }
       .label-danger, .badge-danger { background: #ef4444 !important; }
       .badge, .label { border-radius: var(--radius-sm) !important; }
+      /* ============================================================
+       * 深邃暗：压过 ACE 白底 / 浅字 / 硬编码灰底
+       * ============================================================ */
+      html.urppp-theme-dark,
+      html.urppp-theme-dark body,
+      body.urppp-dark {
+        color-scheme: dark !important;
+      }
+      html.urppp-theme-dark .page-content,
+      html.urppp-theme-dark #page-content-template,
+      html.urppp-theme-dark .main-content,
+      body.urppp-dark .page-content,
+      body.urppp-dark .main-content {
+        background: var(--bg) !important;
+        color: var(--text) !important;
+      }
+      /* 表格：强制 td/th 吃主题色，盖掉 Bootstrap #fff */
+      html.urppp-theme-dark .table,
+      html.urppp-theme-dark .table-bordered,
+      html.urppp-theme-dark .table-striped,
+      html.urppp-theme-dark .dataTable,
+      html.urppp-theme-dark .urppp-table-wrap {
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      html.urppp-theme-dark .table > thead > tr > th,
+      html.urppp-theme-dark .table-bordered > thead > tr > th,
+      html.urppp-theme-dark .dataTable > thead > tr > th {
+        background: var(--input-bg) !important;
+        background-color: var(--input-bg) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      html.urppp-theme-dark .table > tbody > tr > td,
+      html.urppp-theme-dark .table > tbody > tr > th,
+      html.urppp-theme-dark .table-bordered > tbody > tr > td,
+      html.urppp-theme-dark .dataTable > tbody > tr > td,
+      html.urppp-theme-dark .table > tfoot > tr > td {
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      html.urppp-theme-dark .table-striped > tbody > tr:nth-of-type(odd) > td,
+      html.urppp-theme-dark .table-striped > tbody > tr:nth-of-type(odd) > th,
+      html.urppp-theme-dark .dataTable > tbody > tr:nth-of-type(odd) > td {
+        background: color-mix(in srgb, var(--bg) 70%, var(--surface)) !important;
+        background-color: color-mix(in srgb, var(--bg) 70%, var(--surface)) !important;
+        color: var(--text) !important;
+      }
+      html.urppp-theme-dark .table-hover > tbody > tr:hover > td,
+      html.urppp-theme-dark .dataTable > tbody > tr:hover > td {
+        background: var(--input-bg) !important;
+        background-color: var(--input-bg) !important;
+      }
+      /* 公告日期胶囊：暗色下更柔和 */
+      html.urppp-theme-dark .urppp-notice-time {
+        background: color-mix(in srgb, var(--primary) 16%, var(--input-bg)) !important;
+        border-color: color-mix(in srgb, var(--primary) 28%, var(--border)) !important;
+        color: var(--text-secondary) !important;
+      }
+      html.urppp-theme-dark table.urppp-notice-table > tbody > tr.urppp-notice-row,
+      html.urppp-theme-dark .urppp-notice-card {
+        background: var(--surface) !important;
+        border-color: var(--border) !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.25) !important;
+      }
+      /* 空闲教室楼栋列表 / 校区标题 */
+      html.urppp-theme-dark #drag-ul,
+      html.urppp-theme-dark #drag-ul.urppp-drag-ul,
+      html.urppp-theme-dark #xq-section #drag-ul {
+        background: var(--surface) !important;
+      }
+      html.urppp-theme-dark #drag-ul > li,
+      html.urppp-theme-dark #drag-ul > li.border-common,
+      html.urppp-theme-dark #drag-ul .border-common {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        border-bottom-color: var(--border) !important;
+      }
+      html.urppp-theme-dark #drag-ul > li.xq-section {
+        background: var(--input-bg) !important;
+        color: var(--text-secondary) !important;
+      }
+      html.urppp-theme-dark #drag-ul > li.ui-selected,
+      html.urppp-theme-dark #drag-ul > li.urppp-building-active {
+        background: var(--primary) !important;
+        color: #0B0F17 !important;
+      }
+      /* 节次 / 周次条 */
+      html.urppp-theme-dark #drag-ol > li,
+      html.urppp-theme-dark #drag-ol .border-common,
+      html.urppp-theme-dark #test-drag > li,
+      html.urppp-theme-dark #test-drag .ui-widget-content {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      /* Chosen 多选标签（教学楼等）：去掉白底浅字 */
+      html.urppp-theme-dark .chosen-container-multi .chosen-choices,
+      html.urppp-theme-dark .chosen-choices {
+        background: var(--input-bg) !important;
+        border-color: var(--border) !important;
+      }
+      html.urppp-theme-dark .chosen-container-multi .chosen-choices li.search-choice,
+      html.urppp-theme-dark .chosen-choices .search-choice,
+      html.urppp-theme-dark .search-choice {
+        background: color-mix(in srgb, var(--primary) 22%, var(--surface)) !important;
+        background-image: none !important;
+        border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--border)) !important;
+        color: var(--text) !important;
+        box-shadow: none !important;
+      }
+      html.urppp-theme-dark .chosen-container-multi .chosen-choices li.search-choice span,
+      html.urppp-theme-dark .search-choice span {
+        color: var(--text) !important;
+      }
+      html.urppp-theme-dark .chosen-container-multi .chosen-choices li.search-choice .search-choice-close {
+        opacity: 0.75 !important;
+      }
+      /* 标签 badge/label 在暗色下文字更清晰 */
+      html.urppp-theme-dark .label,
+      html.urppp-theme-dark .badge {
+        color: #fff !important;
+      }
+      html.urppp-theme-dark .label-info,
+      html.urppp-theme-dark .badge-info {
+        background: color-mix(in srgb, var(--primary) 70%, #1e293b) !important;
+        color: #e2e8f0 !important;
+      }
+      /* 周课表格子 */
+      html.urppp-theme-dark #mycoursetable,
+      html.urppp-theme-dark #mycoursetable > table,
+      html.urppp-theme-dark #courseTable {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+      }
+      html.urppp-theme-dark #mycoursetable td,
+      html.urppp-theme-dark #mycoursetable th,
+      html.urppp-theme-dark #courseTable td,
+      html.urppp-theme-dark #courseTable th {
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      html.urppp-theme-dark #mycoursetable th,
+      html.urppp-theme-dark #courseTable th {
+        background: var(--input-bg) !important;
+        background-color: var(--input-bg) !important;
+      }
+      html.urppp-theme-dark #mycoursetable div.class_div,
+      html.urppp-theme-dark #courseTable div.class_div {
+        color: #fff !important;
+        border: 1px solid rgba(255,255,255,0.08) !important;
+      }
+      html.urppp-theme-dark #mycoursetable div.class_div p,
+      html.urppp-theme-dark #courseTable div.class_div p {
+        color: inherit !important;
+      }
+      /* 进度条百分比：暗色下用亮字 + 阴影，避免白底条上几乎看不见 */
+      html.urppp-theme-dark .progress.pos-rel::after,
+      html.urppp-theme-dark .progress[data-percent]::after {
+        color: #F8FAFC !important;
+        mix-blend-mode: normal !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.65) !important;
+      }
+      html.urppp-theme-dark .progress,
+      html.urppp-theme-dark div.progress {
+        background: var(--input-bg) !important;
+        border-color: var(--border) !important;
+      }
+      /* 星期/节次下拉：站点写死 #efefef */
+      html.urppp-theme-dark #div-xqjc,
+      html.urppp-theme-dark .dropdown-self,
+      html.urppp-theme-dark .profile-info-value .dropdown > #div-xqjc {
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text) !important;
+        box-shadow: var(--shadow) !important;
+      }
+      html.urppp-theme-dark #div-xqjc table,
+      html.urppp-theme-dark #div-xqjc td,
+      html.urppp-theme-dark #div-xqjc th {
+        background: transparent !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      /* profile 信息行：name 列暗色区分 */
+      html.urppp-theme-dark .profile-info-name {
+        background: var(--input-bg) !important;
+        color: var(--text-secondary) !important;
+        border-color: var(--border) !important;
+      }
+      html.urppp-theme-dark .profile-info-value {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      html.urppp-theme-dark .profile-user-info,
+      html.urppp-theme-dark .profile-user-info-striped {
+        background: var(--surface) !important;
+        border-color: var(--border) !important;
+      }
+      /* widget / 卡片 */
+      html.urppp-theme-dark .widget-box,
+      html.urppp-theme-dark .widget-main,
+      html.urppp-theme-dark .widget-body {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      html.urppp-theme-dark .widget-header {
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      /* 输入/分页等残留白底 */
+      html.urppp-theme-dark input,
+      html.urppp-theme-dark textarea,
+      html.urppp-theme-dark select,
+      html.urppp-theme-dark .form-control {
+        background-color: var(--input-bg) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      html.urppp-theme-dark .pagination > li > a,
+      html.urppp-theme-dark .pagination > li > span,
+      html.urppp-theme-dark .urppp-page-chip {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      html.urppp-theme-dark .pagination > li.active > a,
+      html.urppp-theme-dark .pagination > li.active > span,
+      html.urppp-theme-dark .urppp-page-chip-active {
+        background: var(--primary) !important;
+        color: #0B0F17 !important;
+        border-color: var(--primary) !important;
+      }
+      /* modal */
+      html.urppp-theme-dark .modal-content,
+      html.urppp-theme-dark .modal-header,
+      html.urppp-theme-dark .modal-body,
+      html.urppp-theme-dark .modal-footer {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      /* zTree */
+      html.urppp-theme-dark .ztree li a,
+      html.urppp-theme-dark .urppp-ztree li a {
+        color: var(--text) !important;
+      }
+      html.urppp-theme-dark .ztree li a:hover,
+      html.urppp-theme-dark .ztree li a.curSelectedNode {
+        background: var(--input-bg) !important;
+        color: var(--primary) !important;
+      }
+
 
       /* 杂项 */
       .btn-scroll-up { background: var(--surface) !important; border-color: var(--border) !important; color: var(--text-secondary) !important; box-shadow: var(--shadow) !important; }
@@ -9211,7 +9519,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.7');
+    console.log('[URP++] style applied v0.5.8');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -10086,7 +10394,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.7',
+    version: '0.5.8',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
