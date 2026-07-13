@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.33
+// @version      0.5.34
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.33';
+          content:'URP++ v0.5.34';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1279,15 +1279,30 @@
         row.classList.remove('urppp-dual-pair');
       }
     });
-    // 卡片圆角内联兜底
+    // 学籍信息卡：唯一外壳；并去掉上方标题卡样式（防套娃）
     page.querySelectorAll('.profile-user-info.setLabelWidth, .profile-user-info-striped.setLabelWidth').forEach((card) => {
       card.classList.remove('urppp-query-form');
+      card.style.setProperty('background', 'var(--surface)', 'important');
       card.style.setProperty('border-radius', '12px', 'important');
       card.style.setProperty('overflow', 'hidden', 'important');
       card.style.setProperty('border', '1px solid var(--border)', 'important');
+      card.style.setProperty('box-shadow', 'none', 'important');
       card.style.setProperty('width', '100%', 'important');
       card.style.setProperty('max-width', '100%', 'important');
       card.style.setProperty('box-sizing', 'border-box', 'important');
+      card.style.setProperty('margin', '0 0 16px 0', 'important');
+      // 同列上方 h4.header 去卡壳
+      const col = card.closest('.col-xs-4, .col-xs-8, .col-sm-4, .col-sm-8, .col-md-4, .col-md-8');
+      if (col) {
+        col.querySelectorAll(':scope > h4.header, :scope > .header.smaller, :scope > .header').forEach((h) => {
+          h.style.setProperty('background', 'transparent', 'important');
+          h.style.setProperty('border', 'none', 'important');
+          h.style.setProperty('box-shadow', 'none', 'important');
+          h.style.setProperty('border-radius', '0', 'important');
+          h.style.setProperty('padding', '2px 2px 10px', 'important');
+          h.style.setProperty('margin', '0 0 8px 0', 'important');
+        });
+      }
     });
     // 还原此前可能写过的 flex/宽度内联，避免破坏 col-xs-4 / col-xs-8
     page.querySelectorAll('.urppp-col-row').forEach((el) => {
@@ -4714,6 +4729,38 @@
         margin-left: 0 !important;
         margin-right: 0 !important;
         box-sizing: border-box !important;
+      }
+      /*
+       * 学籍信息页：col 内 h4.header + setLabelWidth 信息卡
+       * 标题不做第二张圆角卡，只保留信息卡一张壳，避免套娃
+       */
+      .page-content .col-xs-4 > h4.header,
+      .page-content .col-xs-8 > h4.header,
+      .page-content .col-xs-4 > .header.smaller,
+      .page-content .col-xs-8 > .header.smaller,
+      .page-content .col-sm-4 > h4.header,
+      .page-content .col-sm-8 > h4.header,
+      .page-content .col-md-4 > h4.header,
+      .page-content .col-md-8 > h4.header {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 2px 2px 10px !important;
+        margin: 0 0 8px !important;
+        min-height: 0 !important;
+      }
+      /* 信息卡仍是唯一卡片 */
+      .page-content .profile-user-info.setLabelWidth,
+      .page-content .profile-user-info-striped.setLabelWidth {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        box-shadow: none !important;
+        overflow: hidden !important;
+        margin: 0 0 16px !important;
+        width: 100% !important;
+        max-width: 100% !important;
       }
       .main-content .page-content .tabbable,
       .page-content .tabbable {
@@ -10373,7 +10420,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.33');
+    console.log('[URP++] style applied v0.5.34');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11354,7 +11401,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.33',
+    version: '0.5.34',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
