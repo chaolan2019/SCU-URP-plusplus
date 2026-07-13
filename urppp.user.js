@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.55
+// @version      0.4.56
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.55';
+          content:'URP++ v0.4.56';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1214,21 +1214,37 @@
           el.style.setProperty('transform', 'none', 'important');
         });
         bar.querySelectorAll('input[type="text"], input.form-control').forEach((inp) => {
-          inp.style.setProperty('width', '42px', 'important');
-          inp.style.setProperty('height', '28px', 'important');
+          inp.style.setProperty('width', '48px', 'important');
+          inp.style.setProperty('height', '30px', 'important');
           inp.style.setProperty('margin', '0 6px', 'important');
           inp.style.setProperty('display', 'inline-block', 'important');
+          inp.style.setProperty('font-size', '13px', 'important');
+          inp.style.setProperty('padding', '2px 8px', 'important');
         });
         bar.querySelectorAll('button, .btn, input[type="button"], input[type="submit"], a.btn').forEach((btn) => {
           btn.style.setProperty('display', 'inline-flex', 'important');
           btn.style.setProperty('align-items', 'center', 'important');
           btn.style.setProperty('justify-content', 'center', 'important');
-          btn.style.setProperty('height', '28px', 'important');
-          btn.style.setProperty('min-width', '52px', 'important');
+          btn.style.setProperty('height', '30px', 'important');
+          btn.style.setProperty('min-width', '56px', 'important');
           btn.style.setProperty('margin', '0 10px 0 4px', 'important');
-          btn.style.setProperty('padding', '0 12px', 'important');
+          btn.style.setProperty('padding', '0 14px', 'important');
+          btn.style.setProperty('font-size', '13px', 'important');
           btn.style.setProperty('position', 'static', 'important');
           btn.style.setProperty('float', 'none', 'important');
+        });
+        // 页码链接 / 上一页下一页
+        bar.querySelectorAll('a:not(.btn)').forEach((a) => {
+          a.style.setProperty('display', 'inline-flex', 'important');
+          a.style.setProperty('align-items', 'center', 'important');
+          a.style.setProperty('justify-content', 'center', 'important');
+          a.style.setProperty('height', '30px', 'important');
+          a.style.setProperty('min-height', '30px', 'important');
+          a.style.setProperty('padding', '0 8px', 'important');
+          a.style.setProperty('margin', '0 2px', 'important');
+          a.style.setProperty('font-size', '13px', 'important');
+          a.style.setProperty('line-height', '30px', 'important');
+          a.style.setProperty('border-radius', '6px', 'important');
         });
       });
     } catch (err) {
@@ -4586,14 +4602,15 @@
         align-items: center !important;
         justify-content: center !important;
         flex: 0 0 auto !important;
-        height: 28px !important;
-        min-height: 28px !important;
-        max-height: 28px !important;
+        height: 30px !important;
+        min-height: 30px !important;
+        max-height: 30px !important;
         width: auto !important;
-        min-width: 52px !important;
+        min-width: 56px !important;
         margin: 0 10px 0 4px !important;
-        padding: 0 12px !important;
+        padding: 0 14px !important;
         line-height: 1 !important;
+        font-size: 13px !important;
         vertical-align: middle !important;
         position: static !important;
         float: none !important;
@@ -4602,6 +4619,46 @@
         transform: none !important;
         white-space: nowrap !important;
         z-index: auto !important;
+      }
+      /* 页码 / 上一页下一页：加大可点区域 */
+      #urppagebar a:not(.btn),
+      #urppagebar .paginate_button,
+      #urppagebar .pagination > li > a,
+      #urppagebar .pagination > li > span,
+      .urppagebreak a:not(.btn),
+      #currentNum_urppagebar,
+      #currentNum_urppagebar a,
+      span#currentNum_urppagebar,
+      #urppagebar [id^="currentNum"],
+      #urppagebar [id*="page_txt"],
+      #urppagebar [id*="Page_show"] {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-height: 30px !important;
+        height: 30px !important;
+        padding: 0 8px !important;
+        margin: 0 2px !important;
+        font-size: 13px !important;
+        line-height: 30px !important;
+        border-radius: 6px !important;
+        box-sizing: border-box !important;
+        white-space: nowrap !important;
+      }
+      #urppagebar a:not(.btn):hover {
+        background: var(--input-bg) !important;
+        color: var(--primary) !important;
+      }
+      /* 页码输入框也略放大 */
+      .urppagebreak input[type="text"],
+      #urppagebar input[type="text"],
+      #urppagebar input.form-control {
+        height: 30px !important;
+        min-height: 30px !important;
+        width: 48px !important;
+        min-width: 42px !important;
+        font-size: 13px !important;
+        padding: 2px 8px !important;
       }
       textarea {
         resize: vertical !important;
@@ -6315,7 +6372,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.55');
+    console.log('[URP++] style applied v0.4.56');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -6938,7 +6995,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.55',
+    version: '0.4.56',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
