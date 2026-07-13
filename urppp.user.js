@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.79
+// @version      0.4.80
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.79';
+          content:'URP++ v0.4.80';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -2643,12 +2643,20 @@
           closeBtn.style.setProperty('cursor', 'pointer', 'important');
         }
 
+        // 右栏详情块拉满：课组/课程/方案等 col-xs-6
+        panel.querySelectorAll('#fajh, #xnxq, #kz, #kc, #kcfa').forEach((col) => {
+          col.style.setProperty('width', '100%', 'important');
+          col.style.setProperty('max-width', '100%', 'important');
+          col.style.setProperty('float', 'none', 'important');
+          col.style.setProperty('box-sizing', 'border-box', 'important');
+        });
         // 方案信息卡：清 float 残留，走抽屉内 CSS grid
         panel.querySelectorAll('.profile-info-row').forEach((row) => {
           row.classList.remove('urppp-query-row', 'urppp-dual-pair');
           row.style.setProperty('display', 'grid', 'important');
           row.style.setProperty('grid-template-columns', '112px minmax(0,1fr)', 'important');
           row.style.setProperty('width', '100%', 'important');
+          row.style.setProperty('max-width', '100%', 'important');
           Array.from(row.children).forEach((el) => {
             if (!el.classList) return;
             el.style.setProperty('float', 'none', 'important');
@@ -2662,6 +2670,9 @@
           card.style.setProperty('border-radius', '12px', 'important');
           card.style.setProperty('overflow', 'hidden', 'important');
           card.style.setProperty('width', '100%', 'important');
+          card.style.setProperty('max-width', '100%', 'important');
+          card.style.setProperty('display', 'block', 'important');
+          card.style.setProperty('box-sizing', 'border-box', 'important');
         });
       });
     } catch (err) {
@@ -7178,13 +7189,17 @@
         margin: 0 !important;
       }
       #curriculumInfo-divcon2 .modal-body .row {
-        display: flex !important;
-        flex-wrap: wrap !important;
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
         gap: 14px !important;
         margin: 0 !important;
         width: 100% !important;
+        max-width: 100% !important;
+        align-items: start !important;
+        box-sizing: border-box !important;
       }
       #curriculumInfo-divcon2 .modal-body .row > p {
+        grid-column: 1 / -1 !important;
         width: 100% !important;
         margin: 0 0 4px !important;
         padding: 0 !important;
@@ -7199,26 +7214,51 @@
       #curriculumInfo-divcon2 .modal-body .row > p a:hover {
         text-decoration: underline !important;
       }
-      /* 左右栏 */
+      /*
+       * 左树右详情：所有详情块都在第 2 列并纵向堆叠，宽度 100% 拉满右栏
+       * 避免多个 col-xs-6 各自 50% 导致课组/课程信息卡右侧留白
+       */
       #curriculumInfo-divcon2 .modal-body .row > .col-xs-6 {
         float: none !important;
-        width: calc(50% - 7px) !important;
-        max-width: calc(50% - 7px) !important;
+        width: 100% !important;
+        max-width: 100% !important;
         min-width: 0 !important;
         padding: 0 !important;
         margin: 0 !important;
         border: none !important;
         box-sizing: border-box !important;
       }
+      #curriculumInfo-divcon2 .modal-body .row > .col-xs-6:has(#treeDemo),
+      #curriculumInfo-divcon2 .modal-body .row > .col-xs-6:has(.ztree) {
+        grid-column: 1 !important;
+        grid-row: 2 / span 40 !important;
+        align-self: stretch !important;
+      }
+      #curriculumInfo-divcon2 .modal-body .row > #fajh,
+      #curriculumInfo-divcon2 .modal-body .row > #xnxq,
+      #curriculumInfo-divcon2 .modal-body .row > #kz,
+      #curriculumInfo-divcon2 .modal-body .row > #kc,
+      #curriculumInfo-divcon2 .modal-body .row > #kcfa,
+      #curriculumInfo-divcon2 .modal-body .row > .col-xs-6:not(:has(#treeDemo)):not(:has(.ztree)) {
+        grid-column: 2 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+      }
       #curriculumInfo-divcon2 .modal-body .widget-box,
       #curriculumInfo-divcon2 #fajh .widget-box,
-      #curriculumInfo-divcon2 #xnxq .widget-box {
+      #curriculumInfo-divcon2 #xnxq .widget-box,
+      #curriculumInfo-divcon2 #kz .widget-box,
+      #curriculumInfo-divcon2 #kc .widget-box,
+      #curriculumInfo-divcon2 #kcfa .widget-box {
         margin: 0 0 12px !important;
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
         background: var(--surface) !important;
         box-shadow: none !important;
         overflow: hidden !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
       }
       #curriculumInfo-divcon2 .modal-body .widget-box.transparent,
       #curriculumInfo-divcon2 #fajh .widget-box.transparent {
@@ -7260,23 +7300,39 @@
         max-height: calc(100vh - 180px) !important;
         overflow: auto !important;
       }
-      /* 右侧方案计划信息卡 */
+      /* 右侧详情卡：方案计划 / 课组 / 课程 / 课程方案 — 全部拉满右栏 */
       #curriculumInfo-divcon2 #fajh,
-      #curriculumInfo-divcon2 #xnxq {
+      #curriculumInfo-divcon2 #xnxq,
+      #curriculumInfo-divcon2 #kz,
+      #curriculumInfo-divcon2 #kc,
+      #curriculumInfo-divcon2 #kcfa {
         min-width: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
       }
       #curriculumInfo-divcon2 #fajh .profile-user-info,
       #curriculumInfo-divcon2 #fajh .profile-user-info-striped,
       #curriculumInfo-divcon2 #xnxq .profile-user-info,
-      #curriculumInfo-divcon2 #xnxq .profile-user-info-striped {
+      #curriculumInfo-divcon2 #xnxq .profile-user-info-striped,
+      #curriculumInfo-divcon2 #kz .profile-user-info,
+      #curriculumInfo-divcon2 #kz .profile-user-info-striped,
+      #curriculumInfo-divcon2 #kc .profile-user-info,
+      #curriculumInfo-divcon2 #kc .profile-user-info-striped,
+      #curriculumInfo-divcon2 #kcfa .profile-user-info,
+      #curriculumInfo-divcon2 #kcfa .profile-user-info-striped,
+      #curriculumInfo-divcon2 .profile-user-info.self,
+      #curriculumInfo-divcon2 .profile-user-info-striped {
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
         overflow: hidden !important;
         background: var(--surface) !important;
-        margin: 0 !important;
+        margin: 0 0 12px !important;
         width: 100% !important;
         max-width: 100% !important;
+        min-width: 0 !important;
         box-sizing: border-box !important;
+        display: block !important;
       }
       #curriculumInfo-divcon2 .profile-info-row {
         display: grid !important;
@@ -7285,7 +7341,9 @@
         border-bottom: 1px solid var(--border) !important;
         min-height: 40px !important;
         width: 100% !important;
+        max-width: 100% !important;
         float: none !important;
+        box-sizing: border-box !important;
       }
       #curriculumInfo-divcon2 .profile-info-row:last-child {
         border-bottom: none !important;
@@ -7328,7 +7386,19 @@
         white-space: normal !important;
       }
       @media (max-width: 1100px) {
+        #curriculumInfo-divcon2 .modal-body .row {
+          grid-template-columns: 1fr !important;
+        }
+        #curriculumInfo-divcon2 .modal-body .row > .col-xs-6:has(#treeDemo),
+        #curriculumInfo-divcon2 .modal-body .row > .col-xs-6:has(.ztree),
+        #curriculumInfo-divcon2 .modal-body .row > #fajh,
+        #curriculumInfo-divcon2 .modal-body .row > #xnxq,
+        #curriculumInfo-divcon2 .modal-body .row > #kz,
+        #curriculumInfo-divcon2 .modal-body .row > #kc,
+        #curriculumInfo-divcon2 .modal-body .row > #kcfa,
         #curriculumInfo-divcon2 .modal-body .row > .col-xs-6 {
+          grid-column: 1 !important;
+          grid-row: auto !important;
           width: 100% !important;
           max-width: 100% !important;
         }
@@ -8019,7 +8089,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.79');
+    console.log('[URP++] style applied v0.4.80');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -8642,7 +8712,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.79',
+    version: '0.4.80',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
