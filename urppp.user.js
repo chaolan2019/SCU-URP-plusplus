@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.83
+// @version      0.4.89
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.83';
+          content:'URP++ v0.4.89';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1026,6 +1026,52 @@
     });
   }
   // 学籍页：不改 DOM 结构。仅清理列 gutter，让「基本信息」与上方全宽标题同左缘
+
+  // 个人信息修改等单对表单：若被误标查询表单，清掉并恢复横排
+  function fixSinglePairProfileForms() {
+    try {
+      document.querySelectorAll('.profile-user-info, .profile-user-info-striped').forEach((root) => {
+        if (root.classList.contains('setLabelWidth')) return;
+        const rows = Array.from(root.querySelectorAll(':scope > .profile-info-row, .profile-info-row'));
+        if (!rows.length) return;
+        const multi = rows.some((row) =>
+          Array.from(row.children).filter((el) => el.classList && el.classList.contains('profile-info-name')).length >= 2
+        );
+        if (multi) return;
+        // 单对信息表
+        root.classList.remove('urppp-query-form');
+        rows.forEach((row) => {
+          row.classList.remove('urppp-query-row', 'urppp-dual-pair');
+          delete row.dataset.urpppQueryDone;
+          delete row.dataset.urpppQueryCols;
+          // 拆 pair
+          const pairs = Array.from(row.querySelectorAll(':scope > .urppp-query-pair'));
+          if (pairs.length) {
+            const items = [];
+            pairs.forEach((p) => Array.from(p.children).forEach((c) => items.push(c)));
+            while (row.firstChild) row.removeChild(row.firstChild);
+            items.forEach((el) => row.appendChild(el));
+          }
+          row.style.setProperty('display', 'grid', 'important');
+          row.style.setProperty('grid-template-columns', '140px minmax(0,1fr)', 'important');
+          row.style.setProperty('align-items', 'stretch', 'important');
+          row.style.setProperty('width', '100%', 'important');
+          Array.from(row.children).forEach((el) => {
+            if (!el.classList) return;
+            el.style.setProperty('float', 'none', 'important');
+            el.style.setProperty('margin-left', '0', 'important');
+            el.style.setProperty('width', 'auto', 'important');
+            el.style.setProperty('max-width', 'none', 'important');
+            el.style.setProperty('display', 'flex', 'important');
+            el.style.setProperty('align-items', 'center', 'important');
+            el.style.setProperty('box-sizing', 'border-box', 'important');
+          });
+        });
+      });
+    } catch (err) {
+      console.warn('[URP++] single pair profile fix failed', err);
+    }
+  }
   function alignRollInfoLayout() {
     const page = document.querySelector('.page-content') || document.getElementById('page-content-template');
     if (!page) return;
@@ -1637,9 +1683,18 @@
         '.profile-user-info.self, .profile-user-info-striped.self, .profile-user-info:has(.value_element)'
       );
       roots.forEach((root) => {
-        // 学籍信息 setLabelWidth：只读/一行多对，走 ACE float，不当查询表单
+        // 学籍 setLabelWidth 不当查询表单
         if (root.classList.contains('setLabelWidth')) return;
-        // 没有可编辑控件的 .self 信息卡也不当查询表单
+        // 个人信息修改等：每行只有一对 name/value，不当查询表单
+        const multiPair = Array.from(root.querySelectorAll('.profile-info-row')).some((row) => {
+          return Array.from(row.children).filter((el) => el.classList && el.classList.contains('profile-info-name')).length >= 2;
+        });
+        const hasChosenQuery = !!root.querySelector('select.chosen, select.select, .chosen-container');
+        if (!multiPair && !hasChosenQuery) {
+          root.classList.remove('urppp-query-form');
+          return;
+        }
+        // 没有可编辑控件也不当查询表单
         if (!root.querySelector('select, input:not([type="hidden"]), .chosen-container, .value_element, textarea')) {
           return;
         }
@@ -4916,27 +4971,30 @@
         border-radius: var(--radius, 12px) !important;
       }
 
-      .profile-info-row:not(.urppp-query-row) {
-        display: block !important;
+      .profile-info-row:not(.urppp-query-row):not(.urppp-dual-pair) {
+        display: grid !important;
+        grid-template-columns: 140px minmax(0, 1fr) !important;
+        align-items: stretch !important;
         width: 100% !important;
         border-bottom: 1px solid var(--border) !important;
-        min-height: 0 !important;
+        min-height: 42px !important;
         position: relative !important;
+        box-sizing: border-box !important;
+        float: none !important;
       }
-      .profile-info-row:not(.urppp-query-row):before,
-      .profile-info-row:not(.urppp-query-row):after {
-        content: "" !important;
-        display: table !important;
-      }
-      .profile-info-row:not(.urppp-query-row):after {
-        clear: both !important;
+      .profile-info-row:not(.urppp-query-row):not(.urppp-dual-pair):before,
+      .profile-info-row:not(.urppp-query-row):not(.urppp-dual-pair):after {
+        content: none !important;
+        display: none !important;
       }
       .profile-info-row:last-child { border-bottom: none !important; }
 
+      .profile-info-row:not(.urppp-query-row):not(.urppp-dual-pair) > .profile-info-name,
       .profile-info-name {
-        float: left !important;
-        width: 140px !important;
-        min-width: 110px !important;
+        float: none !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
         margin: 0 !important;
         padding: 10px 12px !important;
         background: var(--input-bg) !important;
@@ -4948,28 +5006,44 @@
         font-size: 13px !important;
         line-height: 1.4 !important;
         box-sizing: border-box !important;
-        display: block !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        white-space: nowrap !important;
       }
-      /* 单对：value 用 margin-left 躲开左侧 name */
+      /* 单对：value 占右侧剩余宽度，禁止 margin-left 把布局打成竖排 */
+      .profile-info-row:not(.urppp-query-row):not(.urppp-dual-pair) > .profile-info-value,
       .profile-info-value {
-        margin-left: 140px !important;
-        min-height: 40px !important;
+        float: none !important;
+        margin: 0 !important;
+        margin-left: 0 !important;
+        min-height: 42px !important;
         padding: 6px 12px !important;
         background: var(--surface) !important;
         color: var(--text) !important;
         border: none !important;
         box-sizing: border-box !important;
-        display: block !important;
+        display: flex !important;
+        align-items: center !important;
         position: relative !important;
-        float: none !important;
+        width: auto !important;
+        max-width: none !important;
+        min-width: 0 !important;
+      }
+      .profile-info-value > span {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      .profile-info-value .form-control,
+      .profile-info-value input.form-control,
+      .profile-info-value textarea.form-control {
+        width: 100% !important;
+        max-width: 480px !important;
       }
       /* 学籍 setLabelWidth：单对时标签 150px */
-      .setLabelWidth .profile-info-name {
-        width: 150px !important;
-        min-width: 120px !important;
-      }
-      .setLabelWidth .profile-info-row:not(.urppp-dual-pair) > .profile-info-value {
-        margin-left: 150px !important;
+      .setLabelWidth .profile-info-row:not(.urppp-query-row):not(.urppp-dual-pair) {
+        grid-template-columns: 150px minmax(0, 1fr) !important;
       }
       /*
        * 学籍右侧「一行两对」：标记 .urppp-dual-pair 后用 4 列 grid
@@ -8238,6 +8312,7 @@
       el.style.setProperty('box-sizing', 'border-box', 'important');
     });
     alignRollInfoLayout();
+    fixSinglePairProfileForms();
     patchAceTabNavbars();
     restyleInfoboxPercentages();
     setTimeout(restyleInfoboxPercentages, 300);
@@ -8255,6 +8330,9 @@
     setTimeout(beautifyQueryForms, 300);
     setTimeout(beautifyQueryForms, 800);
     setTimeout(beautifyQueryForms, 1500);
+    setTimeout(fixSinglePairProfileForms, 100);
+    setTimeout(fixSinglePairProfileForms, 400);
+    setTimeout(fixSinglePairProfileForms, 900);
     beautifyPlanTree();
     setTimeout(() => beautifyPlanTree(), 400);
     if (!window.__urpppPlanTreeObs) {
@@ -8310,7 +8388,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.83');
+    console.log('[URP++] style applied v0.4.89');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -8933,7 +9011,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.83',
+    version: '0.4.89',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
