@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.93
+// @version      0.4.94
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.93';
+          content:'URP++ v0.4.94';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3268,13 +3268,11 @@
       document.querySelectorAll('.modal').forEach((m) => {
         const open = m.classList.contains('in') || m.classList.contains('show');
         if (open) return;
-        // 关闭态强制隐藏
         m.style.setProperty('display', 'none', 'important');
         m.setAttribute('aria-hidden', 'true');
       });
       if (!document.body.classList.contains('modal-open')) {
         document.querySelectorAll('.modal-backdrop').forEach((b) => {
-          // 无打开 modal 时移除遮罩
           if (!document.querySelector('.modal.in, .modal.show')) {
             b.parentElement && b.parentElement.removeChild(b);
           }
@@ -3282,6 +3280,24 @@
         document.body.style.removeProperty('padding-right');
         document.body.classList.remove('modal-open');
       }
+      // 右侧抽屉：收起态恢复站点 right:-42%，去掉我们可能写死的 right:0
+      ;['curriculumInfo-divcon', 'curriculumInfo-divcon1', 'curriculumInfo-divcon2'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const w = parseFloat(el.style.width || '0');
+        if (!w || w < 8) {
+          el.style.removeProperty('right');
+          // 若没有内联 right，补站点关闭值，确保滑出屏幕
+          if (!el.style.right) el.style.setProperty('right', '-42%');
+          el.style.setProperty('width', '0px');
+          el.style.setProperty('pointer-events', 'none', 'important');
+          el.style.setProperty('opacity', '0', 'important');
+          el.style.setProperty('box-shadow', 'none', 'important');
+        } else {
+          el.style.setProperty('pointer-events', 'auto', 'important');
+          el.style.removeProperty('opacity');
+        }
+      });
     } catch (_) { /* ignore */ }
   }
   function beautifyInternal() {
@@ -7485,11 +7501,14 @@
        * 学籍页右侧滑出面板：培养方案 / 课表信息抽屉
        * #curriculumInfo-divcon / #curriculumInfo-divcon1 / #curriculumInfo-divcon2
        * ============================================================ */
+      /*
+       * 右侧抽屉：不要写 right:0 !important
+       * 站点关闭态是 right:-42% / width:0，强制 right:0 会让空白抽屉常驻盖住页面
+       */
       #curriculumInfo-divcon,
       #curriculumInfo-divcon1,
       #curriculumInfo-divcon2 {
         top: 0 !important;
-        right: 0 !important;
         height: 100% !important;
         max-height: 100vh !important;
         background: var(--bg) !important;
@@ -7498,6 +7517,18 @@
         z-index: 1050 !important;
         overflow: hidden !important;
         box-sizing: border-box !important;
+      }
+      /* 收起态：彻底不可见、不可点 */
+      #curriculumInfo-divcon[style*="width: 0"],
+      #curriculumInfo-divcon[style*="width:0"],
+      #curriculumInfo-divcon1[style*="width: 0"],
+      #curriculumInfo-divcon1[style*="width:0"],
+      #curriculumInfo-divcon2[style*="width: 0"],
+      #curriculumInfo-divcon2[style*="width:0"] {
+        pointer-events: none !important;
+        box-shadow: none !important;
+        border-left: none !important;
+        opacity: 0 !important;
       }
       #curriculumInfo-divcon > .div-title,
       #curriculumInfo-divcon1 > .div-title,
@@ -8569,7 +8600,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.93');
+    console.log('[URP++] style applied v0.4.94');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -9215,7 +9246,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.93',
+    version: '0.4.94',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
