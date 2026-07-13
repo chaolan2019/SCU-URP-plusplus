@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.60
+// @version      0.4.61
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.60';
+          content:'URP++ v0.4.61';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1200,12 +1200,14 @@
         : document.querySelectorAll('#urppagebar, .urppagebreak');
       bars.forEach((bar) => {
         if (!bar) return;
+        bar.classList.add('urppp-pagebar');
         bar.style.setProperty('display', 'flex', 'important');
         bar.style.setProperty('align-items', 'center', 'important');
         bar.style.setProperty('flex-wrap', 'wrap', 'important');
-        bar.style.setProperty('gap', '4px 6px', 'important');
+        bar.style.setProperty('gap', '6px 8px', 'important');
         bar.style.setProperty('position', 'relative', 'important');
 
+        // 清定位，避免重叠；不碰 display
         bar.querySelectorAll('a, span, label, font, input, button, select').forEach((el) => {
           el.style.setProperty('position', 'static', 'important');
           el.style.setProperty('float', 'none', 'important');
@@ -1216,108 +1218,67 @@
         });
 
         const pageInputs = Array.from(bar.querySelectorAll('input[type="text"], input.form-control'));
-        const inputFocused = pageInputs.some((inp) => document.activeElement === inp);
-
         pageInputs.forEach((inp) => {
-          inp.style.setProperty('width', '44px', 'important');
-          inp.style.setProperty('height', '32px', 'important');
-          inp.style.setProperty('margin', '0 2px', 'important');
+          inp.classList.add('urppp-page-goto');
+          inp.style.setProperty('width', '48px', 'important');
+          inp.style.setProperty('height', '36px', 'important');
+          inp.style.setProperty('margin', '0 4px', 'important');
           inp.style.setProperty('display', 'inline-block', 'important');
-          inp.style.setProperty('font-size', '13px', 'important');
-          inp.style.setProperty('padding', '2px 6px', 'important');
+          inp.style.setProperty('font-size', '14px', 'important');
+          inp.style.setProperty('padding', '4px 8px', 'important');
+          inp.style.setProperty('box-sizing', 'border-box', 'important');
         });
 
-        const setConfirmVisible = (btn, show) => {
-          if (show) {
-            btn.classList.add('urppp-page-confirm-show');
-            btn.style.setProperty('display', 'inline-flex', 'important');
-            btn.style.setProperty('align-items', 'center', 'important');
-            btn.style.setProperty('justify-content', 'center', 'important');
-          } else {
-            btn.classList.remove('urppp-page-confirm-show');
-            btn.style.setProperty('display', 'none', 'important');
-          }
-        };
-
-        const candidates = Array.from(
-          bar.querySelectorAll('button, .btn, input[type="button"], input[type="submit"], a.btn')
-        );
-        candidates.forEach((btn) => {
+        // 只打标「确定」，显示/隐藏交给 CSS :has(input:focus)
+        Array.from(bar.querySelectorAll('button, .btn, input[type="button"], input[type="submit"], a.btn')).forEach((btn) => {
           const txt = ((btn.value || btn.textContent || '') + '').replace(/\s+/g, '');
-          // 紧挨跳转输入框后的按钮也算确定
-          const nearGoto =
-            pageInputs.some((inp) => {
-              let n = inp.nextElementSibling;
-              for (let i = 0; i < 3 && n; i++, n = n.nextElementSibling) {
-                if (n === btn) return true;
-              }
-              return false;
-            });
-          const isConfirm = txt.includes('确定') || txt.includes('確認') || txt.toLowerCase() === 'ok' || (nearGoto && txt.length <= 4);
-          if (!isConfirm) {
-            btn.style.setProperty('display', 'inline-flex', 'important');
-            btn.style.setProperty('align-items', 'center', 'important');
-            btn.style.setProperty('justify-content', 'center', 'important');
-            btn.style.setProperty('height', '32px', 'important');
-            btn.style.setProperty('min-width', '52px', 'important');
-            btn.style.setProperty('margin', '0 2px', 'important');
-            btn.style.setProperty('padding', '0 12px', 'important');
-            btn.style.setProperty('font-size', '13px', 'important');
+          const nearGoto = pageInputs.some((inp) => {
+            let n = inp.nextElementSibling;
+            for (let i = 0; i < 4 && n; i++, n = n.nextElementSibling) {
+              if (n === btn) return true;
+            }
+            return false;
+          });
+          const isConfirm =
+            txt.includes('确定') ||
+            txt.includes('確認') ||
+            txt.toLowerCase() === 'ok' ||
+            (nearGoto && (txt === '确定' || txt === '確定' || txt.length <= 2));
+          if (isConfirm) {
+            btn.classList.add('urppp-page-confirm');
+            // 清掉可能被旧逻辑写死的 display，交给 CSS
+            btn.style.removeProperty('display');
             return;
           }
-          btn.classList.add('urppp-page-confirm');
-          btn.style.setProperty('height', '32px', 'important');
-          btn.style.setProperty('min-width', '52px', 'important');
+          // 其它分页按钮真正加大
+          btn.classList.add('urppp-page-ctl');
+          btn.style.setProperty('display', 'inline-flex', 'important');
+          btn.style.setProperty('align-items', 'center', 'important');
+          btn.style.setProperty('justify-content', 'center', 'important');
+          btn.style.setProperty('height', '36px', 'important');
+          btn.style.setProperty('min-height', '36px', 'important');
+          btn.style.setProperty('min-width', '64px', 'important');
+          btn.style.setProperty('padding', '0 14px', 'important');
+          btn.style.setProperty('font-size', '14px', 'important');
+          btn.style.setProperty('line-height', '1', 'important');
           btn.style.setProperty('margin', '0 2px', 'important');
-          btn.style.setProperty('padding', '0 12px', 'important');
-          btn.style.setProperty('font-size', '13px', 'important');
-          // 仅当跳转框聚焦时显示；否则强制隐藏（压过全局 .btn）
-          setConfirmVisible(btn, inputFocused || bar.dataset.urpppConfirmOpen === '1');
         });
 
-        if (bar.dataset.urpppConfirmBound !== '1') {
-          bar.dataset.urpppConfirmBound = '1';
-          const showConfirm = () => {
-            bar.dataset.urpppConfirmOpen = '1';
-            bar.querySelectorAll('.urppp-page-confirm').forEach((btn) => setConfirmVisible(btn, true));
-          };
-          const hideConfirm = () => {
-            bar.dataset.urpppConfirmOpen = '0';
-            bar.querySelectorAll('.urppp-page-confirm').forEach((btn) => setConfirmVisible(btn, false));
-          };
-          pageInputs.forEach((inp) => {
-            inp.addEventListener('focus', showConfirm);
-            inp.addEventListener('click', showConfirm);
-            inp.addEventListener('blur', () => {
-              setTimeout(() => {
-                const active = document.activeElement;
-                if (active && active.classList && active.classList.contains('urppp-page-confirm')) return;
-                if (active && pageInputs.includes(active)) return;
-                hideConfirm();
-              }, 180);
-            });
-          });
-          bar.addEventListener('mousedown', (e) => {
-            const btn = e.target && e.target.closest ? e.target.closest('.urppp-page-confirm') : null;
-            if (!btn) return;
-            // 避免 blur 先藏导致点不到
-            bar.dataset.urpppConfirmOpen = '1';
-            setConfirmVisible(btn, true);
-          }, true);
-        }
-
+        // 页码 / 上一页下一页：真正加大可点面积
         bar.querySelectorAll('a:not(.btn):not(.urppp-page-confirm)').forEach((a) => {
+          a.classList.add('urppp-page-num');
           a.style.setProperty('display', 'inline-flex', 'important');
           a.style.setProperty('align-items', 'center', 'important');
           a.style.setProperty('justify-content', 'center', 'important');
-          a.style.setProperty('height', '32px', 'important');
-          a.style.setProperty('min-height', '32px', 'important');
-          a.style.setProperty('min-width', '36px', 'important');
-          a.style.setProperty('padding', '0 10px', 'important');
+          a.style.setProperty('height', '36px', 'important');
+          a.style.setProperty('min-height', '36px', 'important');
+          a.style.setProperty('min-width', '40px', 'important');
+          a.style.setProperty('padding', '0 12px', 'important');
           a.style.setProperty('margin', '0 2px', 'important');
-          a.style.setProperty('font-size', '13px', 'important');
-          a.style.setProperty('line-height', '32px', 'important');
-          a.style.setProperty('border-radius', '6px', 'important');
+          a.style.setProperty('font-size', '14px', 'important');
+          a.style.setProperty('font-weight', '600', 'important');
+          a.style.setProperty('line-height', '36px', 'important');
+          a.style.setProperty('border-radius', '8px', 'important');
           a.style.setProperty('border', '1px solid var(--border)', 'important');
           a.style.setProperty('background', 'var(--surface)', 'important');
           a.style.setProperty('box-sizing', 'border-box', 'important');
@@ -1331,19 +1292,16 @@
     if (window.__urpppPagebarBound) return;
     window.__urpppPagebarBound = true;
     const run = () => beautifyPagebar();
-    ;[0, 200, 600, 1200, 2500].forEach((ms) => setTimeout(run, ms));
-    const obs = new MutationObserver(() => {
+    ;[0, 300, 1000, 2500].forEach((ms) => setTimeout(run, ms));
+    const obs = new MutationObserver((muts) => {
+      // 仅子节点增删时重跑，避免 focus 时 style 抖动
+      const meaningful = muts.some((m) => m.type === 'childList' && (m.addedNodes.length || m.removedNodes.length));
+      if (!meaningful) return;
       clearTimeout(window.__urpppPagebarTimer);
-      window.__urpppPagebarTimer = setTimeout(run, 80);
+      window.__urpppPagebarTimer = setTimeout(run, 200);
     });
     const host = document.getElementById('urppagebar') || document.body;
-    if (host) obs.observe(host, { childList: true, subtree: true, characterData: true });
-    // 兼容 pagebar 写到其它容器
-    document.addEventListener('DOMNodeInserted', (e) => {
-      if (e.target && (e.target.id === 'urppagebar' || (e.target.querySelector && e.target.querySelector('#urppagebar')))) {
-        setTimeout(run, 30);
-      }
-    }, true);
+    if (host) obs.observe(host, { childList: true, subtree: true });
   }
   function beautifyFreeClassroomList() {
     try {
@@ -4629,21 +4587,21 @@
       }
       .urppagebreak,
       #urppagebar,
-      #urppagebar .urppagebreak {
+      #urppagebar .urppagebreak,
+      .urppp-pagebar {
         display: flex !important;
         align-items: center !important;
         flex-wrap: wrap !important;
-        gap: 4px 6px !important;
+        gap: 6px 8px !important;
         white-space: normal !important;
         box-sizing: border-box !important;
-        line-height: 30px !important;
-        margin-top: 8px !important;
+        line-height: 36px !important;
+        margin-top: 10px !important;
         position: relative !important;
         width: 100% !important;
         max-width: 100% !important;
         overflow: visible !important;
       }
-      /* 只清定位，不强制 display，避免「确定」常显 */
       #urppagebar a,
       #urppagebar span,
       #urppagebar label,
@@ -4666,23 +4624,6 @@
         transform: none !important;
         vertical-align: middle !important;
       }
-      /* 页码链接基础尺寸（详细样式见下方确认按钮块） */
-      #urppagebar a:not(.btn),
-      .urppagebreak a:not(.btn),
-      #urppagebar .paginate_button {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        min-height: 32px !important;
-        height: 32px !important;
-        padding: 0 10px !important;
-        margin: 0 2px !important;
-        font-size: 13px !important;
-        line-height: 32px !important;
-        border-radius: 6px !important;
-        box-sizing: border-box !important;
-        white-space: nowrap !important;
-      }
       #urppagebar span,
       #urppagebar label,
       #urppagebar font,
@@ -4691,93 +4632,116 @@
         display: inline !important;
         margin: 0 !important;
         padding: 0 !important;
-        line-height: 30px !important;
+        line-height: 36px !important;
         white-space: nowrap !important;
-        width: auto !important;
-        height: auto !important;
+        font-size: 13px !important;
       }
-      /* 跳转输入框：后面文字紧跟 */
+      /* 跳转输入框 */
       .urppagebreak input[type="text"],
       .urppagebreak input.form-control,
       #urppagebar input[type="text"],
-      #urppagebar input.form-control {
+      #urppagebar input.form-control,
+      #urppagebar input.urppp-page-goto {
         display: inline-block !important;
-        padding: 2px 6px !important;
-        height: 30px !important;
-        min-height: 30px !important;
-        width: 44px !important;
-        min-width: 40px !important;
-        max-width: 52px !important;
-        margin: 0 2px !important;
-        vertical-align: middle !important;
+        padding: 4px 8px !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        width: 48px !important;
+        min-width: 44px !important;
+        max-width: 60px !important;
+        margin: 0 4px !important;
+        font-size: 14px !important;
         box-sizing: border-box !important;
         flex: 0 0 auto !important;
-        font-size: 13px !important;
       }
-      /* 分页按钮尺寸；确定默认隐藏类 */
-      .urppagebreak .btn,
-      .urppagebreak button,
-      #urppagebar .btn,
-      #urppagebar button,
-      #urppagebar input[type="button"],
-      #urppagebar input[type="submit"],
-      #urppagebar a.btn,
-      #urppagebar .btn-xs,
-      #urppagebar .btn-sm {
-        height: 32px !important;
-        min-height: 32px !important;
-        max-height: 32px !important;
+      /* 页码 / 上一页 / 下一页：真正加大（不是只加背景） */
+      body #urppagebar a.urppp-page-num,
+      body #urppagebar a:not(.btn):not(.urppp-page-confirm),
+      body .urppagebreak a:not(.btn):not(.urppp-page-confirm),
+      body #urppagebar .paginate_button,
+      html body #urppagebar a:not(.btn) {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
         width: auto !important;
-        min-width: 52px !important;
-        margin: 0 2px !important;
+        min-width: 40px !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
         padding: 0 12px !important;
-        line-height: 1 !important;
-        font-size: 13px !important;
-        vertical-align: middle !important;
-        position: static !important;
-        float: none !important;
-        top: auto !important;
-        left: auto !important;
-        transform: none !important;
-        white-space: nowrap !important;
-        z-index: auto !important;
-      }
-      #urppagebar .urppp-page-confirm,
-      .urppagebreak .urppp-page-confirm {
-        display: none !important;
-      }
-      #urppagebar .urppp-page-confirm.urppp-page-confirm-show,
-      .urppagebreak .urppp-page-confirm.urppp-page-confirm-show {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-      }
-      /* 页码 / 上一页下一页：明显可点 */
-      #urppagebar a:not(.btn):not(.urppp-page-confirm),
-      .urppagebreak a:not(.btn):not(.urppp-page-confirm),
-      #urppagebar .paginate_button {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        min-width: 36px !important;
-        min-height: 32px !important;
-        height: 32px !important;
-        padding: 0 10px !important;
         margin: 0 2px !important;
-        font-size: 13px !important;
-        font-weight: 500 !important;
-        line-height: 32px !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        line-height: 36px !important;
         border: 1px solid var(--border) !important;
-        border-radius: 6px !important;
+        border-radius: 8px !important;
         background: var(--surface) !important;
         color: var(--text) !important;
         box-sizing: border-box !important;
         white-space: nowrap !important;
       }
-      #urppagebar a:not(.btn):hover {
+      body #urppagebar a.urppp-page-num:hover,
+      body #urppagebar a:not(.btn):hover {
         background: var(--input-bg) !important;
         border-color: var(--primary) !important;
         color: var(--primary) !important;
+      }
+      /* 分页普通按钮（非确定） */
+      body #urppagebar .btn.urppp-page-ctl,
+      body #urppagebar button.urppp-page-ctl,
+      body #urppagebar .btn:not(.urppp-page-confirm),
+      body #urppagebar button:not(.urppp-page-confirm),
+      body #urppagebar a.btn:not(.urppp-page-confirm) {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        min-width: 64px !important;
+        padding: 0 14px !important;
+        margin: 0 2px !important;
+        font-size: 14px !important;
+        line-height: 1 !important;
+        box-sizing: border-box !important;
+      }
+      /* 确定：默认隐藏；跳转框聚焦时显示（纯 CSS，不靠 JS 抢 display） */
+      body #urppagebar .urppp-page-confirm,
+      body #urppagebar .btn.urppp-page-confirm,
+      body #urppagebar button.urppp-page-confirm,
+      body #urppagebar a.btn.urppp-page-confirm,
+      body #urppagebar input.urppp-page-confirm,
+      body .urppagebreak .urppp-page-confirm,
+      html body #urppagebar .btn.urppp-page-confirm {
+        display: none !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        min-width: 56px !important;
+        padding: 0 14px !important;
+        margin: 0 4px !important;
+        font-size: 14px !important;
+        line-height: 1 !important;
+        box-sizing: border-box !important;
+      }
+      body #urppagebar:has(input:focus) .urppp-page-confirm,
+      body #urppagebar:has(input.urppp-page-goto:focus) .urppp-page-confirm,
+      body #urppagebar:has(.urppp-page-goto:focus) .btn.urppp-page-confirm,
+      body #urppagebar:has(input:focus) .btn.urppp-page-confirm,
+      body #urppagebar:has(input:focus) button.urppp-page-confirm,
+      body #urppagebar:has(input:focus) a.btn.urppp-page-confirm,
+      body .urppagebreak:has(input:focus) .urppp-page-confirm,
+      html body #urppagebar:has(input:focus) .btn.urppp-page-confirm {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      /* 鼠标按在确定上时也保持显示（:has 失焦前） */
+      body #urppagebar:has(.urppp-page-confirm:hover) .urppp-page-confirm,
+      body #urppagebar:has(.urppp-page-confirm:active) .urppp-page-confirm {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
       }
       textarea {
         resize: vertical !important;
@@ -6491,7 +6455,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.60');
+    console.log('[URP++] style applied v0.4.61');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -7114,7 +7078,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.60',
+    version: '0.4.61',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
