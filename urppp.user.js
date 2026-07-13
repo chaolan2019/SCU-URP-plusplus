@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.57
+// @version      0.4.58
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.57';
+          content:'URP++ v0.4.58';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1206,7 +1206,6 @@
         bar.style.setProperty('gap', '4px 6px', 'important');
         bar.style.setProperty('position', 'relative', 'important');
 
-        // 只清定位，不改 display（保留「确定」默认隐藏）
         bar.querySelectorAll('a, span, label, font, input, button, select').forEach((el) => {
           el.style.setProperty('position', 'static', 'important');
           el.style.setProperty('float', 'none', 'important');
@@ -1216,52 +1215,104 @@
           el.style.setProperty('transform', 'none', 'important');
         });
 
-        bar.querySelectorAll('input[type="text"], input.form-control').forEach((inp) => {
+        // 跳转输入框
+        const pageInputs = Array.from(bar.querySelectorAll('input[type="text"], input.form-control'));
+        pageInputs.forEach((inp) => {
           inp.style.setProperty('width', '44px', 'important');
-          inp.style.setProperty('height', '30px', 'important');
+          inp.style.setProperty('height', '32px', 'important');
           inp.style.setProperty('margin', '0 2px', 'important');
           inp.style.setProperty('display', 'inline-block', 'important');
           inp.style.setProperty('font-size', '13px', 'important');
           inp.style.setProperty('padding', '2px 6px', 'important');
         });
 
-        bar.querySelectorAll('button, .btn, input[type="button"], input[type="submit"], a.btn').forEach((btn) => {
-          const cs = window.getComputedStyle(btn);
-          const styleAttr = btn.getAttribute('style') || '';
-          const hidden =
-            btn.style.display === 'none' ||
-            styleAttr.includes('display: none') ||
-            styleAttr.includes('display:none') ||
-            cs.display === 'none' ||
-            cs.visibility === 'hidden';
-          btn.style.setProperty('height', '30px', 'important');
-          btn.style.setProperty('min-width', '48px', 'important');
-          btn.style.setProperty('margin', '0 2px', 'important');
-          btn.style.setProperty('padding', '0 10px', 'important');
-          btn.style.setProperty('font-size', '13px', 'important');
-          btn.style.setProperty('position', 'static', 'important');
-          btn.style.setProperty('float', 'none', 'important');
-          // 隐藏态不要强制 display
-          if (!hidden) {
+        // 识别「确定」：文案含确定 / 在跳转输入框附近
+        const candidates = Array.from(
+          bar.querySelectorAll('button, .btn, input[type="button"], input[type="submit"], a.btn')
+        );
+        candidates.forEach((btn) => {
+          const txt = ((btn.value || btn.textContent || '') + '').replace(/\s+/g, '');
+          const isConfirm = txt.includes('确定') || txt.includes('確認') || txt.toLowerCase() === 'ok';
+          if (isConfirm) {
+            btn.classList.add('urppp-page-confirm');
+            // 默认隐藏（用 class，盖过全局 .btn display）
+            btn.classList.remove('urppp-page-confirm-show');
+            btn.style.setProperty('display', 'none', 'important');
+            btn.style.setProperty('height', '32px', 'important');
+            btn.style.setProperty('min-width', '52px', 'important');
+            btn.style.setProperty('margin', '0 2px', 'important');
+            btn.style.setProperty('padding', '0 12px', 'important');
+            btn.style.setProperty('font-size', '13px', 'important');
+          } else {
+            // 其它分页按钮保持可见尺寸
             btn.style.setProperty('display', 'inline-flex', 'important');
             btn.style.setProperty('align-items', 'center', 'important');
             btn.style.setProperty('justify-content', 'center', 'important');
-          } else {
-            btn.style.removeProperty('display');
+            btn.style.setProperty('height', '32px', 'important');
+            btn.style.setProperty('min-width', '52px', 'important');
+            btn.style.setProperty('margin', '0 2px', 'important');
+            btn.style.setProperty('padding', '0 12px', 'important');
+            btn.style.setProperty('font-size', '13px', 'important');
           }
         });
 
-        bar.querySelectorAll('a:not(.btn)').forEach((a) => {
+        // 绑定：聚焦跳转框才显示确定
+        if (bar.dataset.urpppConfirmBound !== '1') {
+          bar.dataset.urpppConfirmBound = '1';
+          const showConfirm = () => {
+            bar.querySelectorAll('.urppp-page-confirm').forEach((btn) => {
+              btn.classList.add('urppp-page-confirm-show');
+              btn.style.setProperty('display', 'inline-flex', 'important');
+              btn.style.setProperty('align-items', 'center', 'important');
+              btn.style.setProperty('justify-content', 'center', 'important');
+            });
+          };
+          const hideConfirm = () => {
+            bar.querySelectorAll('.urppp-page-confirm').forEach((btn) => {
+              btn.classList.remove('urppp-page-confirm-show');
+              btn.style.setProperty('display', 'none', 'important');
+            });
+          };
+          pageInputs.forEach((inp) => {
+            inp.addEventListener('focus', showConfirm);
+            inp.addEventListener('click', showConfirm);
+            inp.addEventListener('blur', () => {
+              // 点到确定按钮时不要立刻藏
+              setTimeout(() => {
+                const active = document.activeElement;
+                if (active && (active.classList.contains('urppp-page-confirm') || bar.contains(active) && active.matches('button, .btn, a.btn, input[type="button"]'))) {
+                  return;
+                }
+                // 若焦点仍在输入框则保留
+                if (active && pageInputs.includes(active)) return;
+                hideConfirm();
+              }, 150);
+            });
+          });
+          bar.querySelectorAll('.urppp-page-confirm').forEach((btn) => {
+            btn.addEventListener('mousedown', (e) => {
+              // 避免 blur 抢先隐藏导致点不到
+              e.preventDefault();
+              showConfirm();
+            });
+          });
+        }
+
+        // 页码链接加大
+        bar.querySelectorAll('a:not(.btn):not(.urppp-page-confirm)').forEach((a) => {
           a.style.setProperty('display', 'inline-flex', 'important');
           a.style.setProperty('align-items', 'center', 'important');
           a.style.setProperty('justify-content', 'center', 'important');
-          a.style.setProperty('height', '30px', 'important');
-          a.style.setProperty('min-height', '30px', 'important');
-          a.style.setProperty('padding', '0 6px', 'important');
-          a.style.setProperty('margin', '0 1px', 'important');
+          a.style.setProperty('height', '32px', 'important');
+          a.style.setProperty('min-height', '32px', 'important');
+          a.style.setProperty('min-width', '36px', 'important');
+          a.style.setProperty('padding', '0 10px', 'important');
+          a.style.setProperty('margin', '0 2px', 'important');
           a.style.setProperty('font-size', '13px', 'important');
-          a.style.setProperty('line-height', '30px', 'important');
+          a.style.setProperty('line-height', '32px', 'important');
           a.style.setProperty('border-radius', '6px', 'important');
+          a.style.setProperty('border', '1px solid var(--border)', 'important');
+          a.style.setProperty('background', 'var(--surface)', 'important');
         });
       });
     } catch (err) {
@@ -4394,8 +4445,15 @@
       .btn-app {
         border-radius: 6px !important;
       }
-      .btn:not(.btn-app), .btn.btn-xs:not(.btn-app), .btn.btn-sm:not(.btn-app), .btn.btn-lg:not(.btn-app), .btn.btn-minier:not(.btn-app),
-      .btn.btn-round:not(.btn-app), .btn.btn-white:not(.btn-app), .btn.btn-info:not(.btn-app), .btn.btn-bold:not(.btn-app) {
+      .btn:not(.btn-app):not(#urppagebar *):not(.urppagebreak *),
+      .btn.btn-xs:not(.btn-app):not(#urppagebar *):not(.urppagebreak *),
+      .btn.btn-sm:not(.btn-app):not(#urppagebar *):not(.urppagebreak *),
+      .btn.btn-lg:not(.btn-app):not(#urppagebar *):not(.urppagebreak *),
+      .btn.btn-minier:not(.btn-app):not(#urppagebar *):not(.urppagebreak *),
+      .btn.btn-round:not(.btn-app):not(#urppagebar *):not(.urppagebreak *),
+      .btn.btn-white:not(.btn-app):not(#urppagebar *):not(.urppagebreak *),
+      .btn.btn-info:not(.btn-app):not(#urppagebar *):not(.urppagebreak *),
+      .btn.btn-bold:not(.btn-app):not(#urppagebar *):not(.urppagebreak *) {
         font-size: 12px !important;
         line-height: 1 !important;
         padding: 0 12px !important;
@@ -4409,6 +4467,17 @@
         box-sizing: border-box !important;
         vertical-align: middle !important;
         transition: all .15s ease !important;
+      }
+      /* 分页区按钮：不套全局 display，避免「确定」常显 */
+      #urppagebar .btn,
+      #urppagebar button,
+      #urppagebar a.btn,
+      .urppagebreak .btn,
+      .urppagebreak button {
+        font-size: 13px !important;
+        line-height: 1 !important;
+        box-sizing: border-box !important;
+        vertical-align: middle !important;
       }
       .btn:not(.btn-app) > .ace-icon,
       .btn:not(.btn-app) > .fa,
@@ -4581,25 +4650,22 @@
         transform: none !important;
         vertical-align: middle !important;
       }
+      /* 页码链接基础尺寸（详细样式见下方确认按钮块） */
       #urppagebar a:not(.btn),
       .urppagebreak a:not(.btn),
       #urppagebar .paginate_button {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
-        min-height: 30px !important;
-        height: 30px !important;
-        padding: 0 6px !important;
-        margin: 0 1px !important;
+        min-height: 32px !important;
+        height: 32px !important;
+        padding: 0 10px !important;
+        margin: 0 2px !important;
         font-size: 13px !important;
-        line-height: 30px !important;
+        line-height: 32px !important;
         border-radius: 6px !important;
         box-sizing: border-box !important;
         white-space: nowrap !important;
-      }
-      #urppagebar a:not(.btn):hover {
-        background: var(--input-bg) !important;
-        color: var(--primary) !important;
       }
       #urppagebar span,
       #urppagebar label,
@@ -4632,7 +4698,7 @@
         flex: 0 0 auto !important;
         font-size: 13px !important;
       }
-      /* 确定：不强制 display，保持站点「聚焦输入框才显示」 */
+      /* 分页按钮尺寸；确定默认隐藏类 */
       .urppagebreak .btn,
       .urppagebreak button,
       #urppagebar .btn,
@@ -4642,13 +4708,13 @@
       #urppagebar a.btn,
       #urppagebar .btn-xs,
       #urppagebar .btn-sm {
-        height: 30px !important;
-        min-height: 30px !important;
-        max-height: 30px !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        max-height: 32px !important;
         width: auto !important;
-        min-width: 48px !important;
+        min-width: 52px !important;
         margin: 0 2px !important;
-        padding: 0 10px !important;
+        padding: 0 12px !important;
         line-height: 1 !important;
         font-size: 13px !important;
         vertical-align: middle !important;
@@ -4660,13 +4726,42 @@
         white-space: nowrap !important;
         z-index: auto !important;
       }
-      #urppagebar .btn:not([style*="display: none"]):not([style*="display:none"]),
-      #urppagebar button:not([style*="display: none"]):not([style*="display:none"]),
-      #urppagebar input[type="button"]:not([style*="display: none"]):not([style*="display:none"]),
-      #urppagebar a.btn:not([style*="display: none"]):not([style*="display:none"]) {
+      #urppagebar .urppp-page-confirm,
+      .urppagebreak .urppp-page-confirm {
+        display: none !important;
+      }
+      #urppagebar .urppp-page-confirm.urppp-page-confirm-show,
+      .urppagebreak .urppp-page-confirm.urppp-page-confirm-show {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
+      }
+      /* 页码 / 上一页下一页：明显可点 */
+      #urppagebar a:not(.btn):not(.urppp-page-confirm),
+      .urppagebreak a:not(.btn):not(.urppp-page-confirm),
+      #urppagebar .paginate_button {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-width: 36px !important;
+        min-height: 32px !important;
+        height: 32px !important;
+        padding: 0 10px !important;
+        margin: 0 2px !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        line-height: 32px !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 6px !important;
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        box-sizing: border-box !important;
+        white-space: nowrap !important;
+      }
+      #urppagebar a:not(.btn):hover {
+        background: var(--input-bg) !important;
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
       }
       textarea {
         resize: vertical !important;
@@ -6380,7 +6475,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.57');
+    console.log('[URP++] style applied v0.4.58');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -7003,7 +7098,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.57',
+    version: '0.4.58',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
