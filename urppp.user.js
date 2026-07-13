@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.30
+// @version      0.4.31
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.30';
+          content:'URP++ v0.4.31';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1221,21 +1221,23 @@
     const apply = (root) => {
       const scope = root || document;
       scope.querySelectorAll('.chosen-results li').forEach((li) => {
-        li.style.setProperty('height', '34px', 'important');
-        li.style.setProperty('min-height', '34px', 'important');
-        li.style.setProperty('max-height', '34px', 'important');
-        li.style.setProperty('line-height', '34px', 'important');
+        li.style.setProperty('display', 'flex', 'important');
+        li.style.setProperty('align-items', 'center', 'important');
+        li.style.setProperty('height', '36px', 'important');
+        li.style.setProperty('min-height', '36px', 'important');
+        li.style.setProperty('max-height', '36px', 'important');
+        li.style.setProperty('line-height', 'normal', 'important');
         li.style.setProperty('padding', '0 12px', 'important');
-        li.style.setProperty('display', 'block', 'important');
         li.style.setProperty('box-sizing', 'border-box', 'important');
       });
       scope.querySelectorAll('.chosen-search input').forEach((input) => {
         input.style.setProperty('height', '34px', 'important');
         input.style.setProperty('min-height', '34px', 'important');
         input.style.setProperty('line-height', '34px', 'important');
-        input.style.setProperty('padding', '0 12px 0 34px', 'important');
+        // 图标在右：左 10px 起光标，右 30px 给图标
+        input.style.setProperty('padding', '0 30px 0 10px', 'important');
         input.style.setProperty('box-sizing', 'border-box', 'important');
-        input.style.setProperty('background-position', '12px 50%', 'important');
+        input.style.setProperty('background-position', 'right 10px center', 'important');
         input.style.setProperty('background-repeat', 'no-repeat', 'important');
         input.style.setProperty('background-size', '14px 14px', 'important');
       });
@@ -4247,20 +4249,20 @@
       .chosen-container-single .chosen-results li,
       .chosen-container-multi .chosen-results li,
       body .chosen-container .chosen-results li {
-        display: block !important;
-        height: 34px !important;
-        min-height: 34px !important;
-        max-height: 34px !important;
+        display: flex !important;
+        align-items: center !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
         margin: 0 !important;
         padding: 0 12px !important;
-        line-height: 34px !important;
+        line-height: normal !important;
         font-size: 13px !important;
         color: var(--text) !important;
         box-sizing: border-box !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
-        vertical-align: middle !important;
       }
       body .chosen-container .chosen-results li em,
       .chosen-container .chosen-results li em {
@@ -4273,8 +4275,11 @@
       .chosen-container .chosen-results li.result-selected {
         background: var(--primary) !important;
         color: #fff !important;
-        height: 34px !important;
-        line-height: 34px !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        line-height: normal !important;
+        display: flex !important;
+        align-items: center !important;
       }
       body .chosen-container .chosen-results li.highlighted em,
       body .chosen-container .chosen-results li.result-selected em {
@@ -4311,7 +4316,8 @@
         height: 34px !important;
         min-height: 34px !important;
         margin: 0 !important;
-        padding: 0 12px 0 34px !important;
+        /* 图标在右侧：左内边距正常，右内边距留给搜索图标 */
+        padding: 0 30px 0 10px !important;
         line-height: 34px !important;
         font-size: 13px !important;
         border-radius: 8px !important;
@@ -4321,7 +4327,7 @@
         box-sizing: border-box !important;
         vertical-align: middle !important;
         background-repeat: no-repeat !important;
-        background-position: 12px 50% !important;
+        background-position: right 10px center !important;
         background-size: 14px 14px !important;
       }
       .chosen-search:before {
@@ -5310,7 +5316,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.30');
+    console.log('[URP++] style applied v0.4.31');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5931,7 +5937,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.30',
+    version: '0.4.31',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
