@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.38
+// @version      0.5.39
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.38';
+          content:'URP++ v0.5.39';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -8910,6 +8910,10 @@
        * 右侧滑出面板：只改颜色/阴影/标题，不锁 top/right/width/height/overflow/display
        * 教室课表/培养方案都依赖 jQuery animate(right/width)
        */
+      /*
+       * 右侧滑出面板：只改颜色/阴影，绝不锁 right/width/opacity/display
+       * 站点关闭态是 right:-70% / width:0 等 inline，right:0!important 会导致空白抽屉常驻
+       */
       #curriculumInfo-divcon,
       #curriculumInfo-divcon1,
       #curriculumInfo-divcon2,
@@ -8920,17 +8924,9 @@
         box-shadow: -12px 0 40px rgba(15, 23, 42, 0.14) !important;
         z-index: 1050 !important;
         box-sizing: border-box !important;
-        position: fixed !important;
-        top: 45px !important;
-        right: 0 !important;
-        left: auto !important;
-        bottom: 0 !important;
-        max-width: min(860px, 92vw) !important;
-        margin: 0 !important;
         border-radius: 0 !important;
-        overflow: auto !important;
         float: none !important;
-        /* 不写 width!important，交给站点 animate 的 inline width */
+        /* 不写 position/top/right/bottom/width/height/overflow !important */
       }
 
       /* 培养方案查询页抽屉 #curriculumInfo-divcon：只美化，不重组 DOM */
@@ -10640,7 +10636,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.38');
+    console.log('[URP++] style applied v0.5.39');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11621,7 +11617,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.38',
+    version: '0.5.39',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
