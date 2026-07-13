@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.65
+// @version      0.4.66
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.65';
+          content:'URP++ v0.4.66';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1193,271 +1193,188 @@
   // 空闲教室：楼栋列表轻量标记（校区标题 / 楼栋项 / 当前高亮）
 
   // 分页条：urp.pagebar 注入后常带 absolute/float，强制流式防重叠
+  // 分页：基于 pagination.js 真实结构
+  // ul.pagination > li.paginate_button > span(padding:3px 7px)
+  // 当前页: li.active；确定: #btn_turnpageto_* (absolute, focus 才 display)
   function beautifyPagebar(root) {
     try {
       const bars = (root && root.querySelectorAll)
-        ? root.querySelectorAll('#urppagebar, .urppagebreak')
-        : document.querySelectorAll('#urppagebar, .urppagebreak');
+        ? root.querySelectorAll('#urppagebar')
+        : document.querySelectorAll('#urppagebar');
       bars.forEach((bar) => {
         if (!bar) return;
         bar.classList.add('urppp-pagebar');
-        bar.style.setProperty('display', 'flex', 'important');
-        bar.style.setProperty('align-items', 'center', 'important');
-        bar.style.setProperty('flex-wrap', 'wrap', 'important');
-        bar.style.setProperty('gap', '6px 8px', 'important');
-        bar.style.setProperty('position', 'relative', 'important');
 
-        // 清定位，避免重叠；不碰 display
-        bar.querySelectorAll('a, span, label, font, input, button, select').forEach((el) => {
-          el.style.setProperty('position', 'static', 'important');
-          el.style.setProperty('float', 'none', 'important');
-          el.style.setProperty('top', 'auto', 'important');
-          el.style.setProperty('left', 'auto', 'important');
-          el.style.setProperty('right', 'auto', 'important');
-          el.style.setProperty('transform', 'none', 'important');
+        // 容器
+        bar.style.setProperty('display', 'block', 'important');
+        bar.style.setProperty('width', '100%', 'important');
+        const wrap = bar.querySelector('.dataTables_paginate, [id^="sample-table-2_paginate_"]') || bar;
+        wrap.style.setProperty('display', 'flex', 'important');
+        wrap.style.setProperty('align-items', 'center', 'important');
+        wrap.style.setProperty('flex-wrap', 'wrap', 'important');
+        wrap.style.setProperty('gap', '8px', 'important');
+        wrap.style.setProperty('position', 'relative', 'important');
+
+        // ul.pagination
+        bar.querySelectorAll('ul.pagination').forEach((ul) => {
+          ul.classList.add('urppp-pagination');
+          ul.style.cssText = [
+            'display:inline-flex !important',
+            'align-items:center !important',
+            'flex-wrap:wrap !important',
+            'gap:4px !important',
+            'margin:0 !important',
+            'padding:0 !important',
+            'list-style:none !important',
+            'float:none !important',
+            'position:static !important'
+          ].join(';');
         });
 
-        const pageInputs = Array.from(bar.querySelectorAll('input[type="text"], input.form-control'));
-        pageInputs.forEach((inp) => {
-          inp.classList.add('urppp-page-goto');
-          inp.style.setProperty('width', '48px', 'important');
-          inp.style.setProperty('height', '36px', 'important');
-          inp.style.setProperty('margin', '0 4px', 'important');
-          inp.style.setProperty('display', 'inline-block', 'important');
-          inp.style.setProperty('font-size', '14px', 'important');
-          inp.style.setProperty('padding', '4px 8px', 'important');
-          inp.style.setProperty('box-sizing', 'border-box', 'important');
-        });
+        // 每个 li.paginate_button 是整颗按钮；内层 span 铺满且无边框
+        bar.querySelectorAll('ul.pagination > li').forEach((li) => {
+          const active = li.classList.contains('active');
+          const disabled = li.classList.contains('disabled');
+          const prev = li.classList.contains('previous') || /previous/i.test(li.getAttribute('name') || '');
+          const next = li.classList.contains('next') || /next/i.test(li.getAttribute('name') || '');
+          li.classList.add('urppp-page-li');
+          if (active) li.classList.add('urppp-page-li-active');
+          if (disabled) li.classList.add('urppp-page-li-disabled');
+          if (prev) li.classList.add('urppp-page-li-prev');
+          if (next) li.classList.add('urppp-page-li-next');
 
-        // 只打标「确定」，显示/隐藏交给 CSS :has(input:focus)
-        Array.from(bar.querySelectorAll('button, .btn, input[type="button"], input[type="submit"], a.btn')).forEach((btn) => {
-          const txt = ((btn.value || btn.textContent || '') + '').replace(/\s+/g, '');
-          const nearGoto = pageInputs.some((inp) => {
-            let n = inp.nextElementSibling;
-            for (let i = 0; i < 4 && n; i++, n = n.nextElementSibling) {
-              if (n === btn) return true;
-            }
-            return false;
-          });
-          const isConfirm =
-            txt.includes('确定') ||
-            txt.includes('確認') ||
-            txt.toLowerCase() === 'ok' ||
-            (nearGoto && (txt === '确定' || txt === '確定' || txt.length <= 2));
-          if (isConfirm) {
-            btn.classList.add('urppp-page-confirm');
-            // 清掉可能被旧逻辑写死的 display，交给 CSS
-            btn.style.removeProperty('display');
-            return;
-          }
-          // 其它分页按钮真正加大
-          btn.classList.add('urppp-page-ctl');
-          btn.style.setProperty('display', 'inline-flex', 'important');
-          btn.style.setProperty('align-items', 'center', 'important');
-          btn.style.setProperty('justify-content', 'center', 'important');
-          btn.style.setProperty('height', '36px', 'important');
-          btn.style.setProperty('min-height', '36px', 'important');
-          btn.style.setProperty('min-width', '64px', 'important');
-          btn.style.setProperty('padding', '0 14px', 'important');
-          btn.style.setProperty('font-size', '14px', 'important');
-          btn.style.setProperty('line-height', '1', 'important');
-          btn.style.setProperty('margin', '0 2px', 'important');
-        });
-
-        // 页码：只美化「最外层可点控件」一次，避免父子双层边框造成细条
-        // 仅真正当前页主题色
-        const nukeInner = (el) => {
-          if (!el) return;
-          el.querySelectorAll('*').forEach((child) => {
-            child.style.cssText = [
-              'display:inline !important',
-              'position:static !important',
-              'float:none !important',
-              'width:auto !important',
-              'min-width:0 !important',
-              'max-width:none !important',
-              'height:auto !important',
-              'min-height:0 !important',
-              'max-height:none !important',
-              'line-height:inherit !important',
-              'padding:0 !important',
-              'margin:0 !important',
-              'border:0 none !important',
-              'border-radius:0 !important',
-              'outline:none !important',
-              'background:transparent !important',
-              'background-image:none !important',
-              'box-shadow:none !important',
-              'color:inherit !important',
-              'font-size:inherit !important',
-              'font-weight:inherit !important',
-              'text-decoration:none !important',
-              'vertical-align:baseline !important',
-              'box-sizing:border-box !important'
-            ].join(';');
-            child.classList.remove('urppp-page-num', 'urppp-page-num-active', 'urppp-page-prevnext', 'urppp-page-ellipsis');
-          });
-        };
-
-        const clearChip = (el) => {
-          if (!el) return;
-          el.classList.remove('urppp-page-num', 'urppp-page-num-active', 'urppp-page-prevnext', 'urppp-page-ellipsis');
-        };
-
-        const isStatsContext = (el) => {
-          // 「转到 1 页 | 共16页 | 每页显示…」区域不当页码按钮
-          let p = el;
-          for (let i = 0; i < 5 && p && p !== bar; i++, p = p.parentElement) {
-            const tx = (p.textContent || '').replace(/\s+/g, '');
-            if (/转到|共\d+页|每页显示|当前显示|条记录/.test(tx) && !/上一页|下一页/.test(tx)) {
-              // 该分支若还包含页码链接区则继续向上看；若整段都是统计文案则命中
-              if (!p.querySelector || !p.querySelector('a')) return true;
-              // 元素自身若不是 a / 上一页下一页，且在统计文案节点内
-              if (el.tagName !== 'A' && !/上一页|下一页/.test((el.textContent || '').replace(/\s+/g, ''))) {
-                // 若父级文本很短且含共x页，判定统计
-                if (/共\d+页|每页显示|当前显示|转到/.test(tx) && tx.length < 80) return true;
-              }
-            }
-          }
-          return false;
-        };
-
-        const textOf = (el) => ((el && el.textContent) || '').replace(/\s+/g, '');
-
-        const classify = (el) => {
-          const raw = textOf(el);
-          const isPrevNext = /上一页|下一页/.test(raw) || raw === '<' || raw === '>';
-          const isEllipsis = raw === '…' || raw === '...' || raw === '···' || raw === '····';
-          const isNum = /^\d{1,4}$/.test(raw);
-          const isCurrent =
-            /currentNum|currpage|current_page|page_current/i.test(el.id || '') ||
-            /\b(active|selected|current)\b/i.test(' ' + ((el.className || '').toString()) + ' ');
-          return { raw, isPrevNext, isEllipsis, isNum, isCurrent };
-        };
-
-        const paintChip = (el, kind) => {
-          if (!el) return;
-          // 若祖先已经是 chip，不再套一层
-          if (el.parentElement && el.parentElement.closest && el.parentElement.closest('.urppp-page-num')) {
-            return;
-          }
-          el.classList.add('urppp-page-num');
-          el.classList.toggle('urppp-page-num-active', !!kind.active);
-          el.classList.toggle('urppp-page-prevnext', !!kind.prevnext);
-          el.classList.toggle('urppp-page-ellipsis', !!kind.ellipsis);
-
-          const minW = kind.prevnext ? '72px' : '40px';
-          const bg = kind.active ? 'var(--primary)' : 'var(--surface)';
-          const bd = kind.active ? 'var(--primary)' : 'var(--border)';
-          const fg = kind.active ? '#fff' : 'var(--text)';
-
-          el.style.cssText = [
+          li.style.cssText = [
             'display:inline-flex !important',
             'align-items:center !important',
             'justify-content:center !important',
-            'position:static !important',
             'float:none !important',
-            'top:auto !important',
-            'left:auto !important',
-            'right:auto !important',
-            'bottom:auto !important',
-            'transform:none !important',
+            'position:static !important',
+            'margin:0 !important',
+            'padding:0 !important',
+            'list-style:none !important',
+            'border:none !important',
+            'background:transparent !important',
+            'height:auto !important',
+            'min-height:0 !important'
+          ].join(';');
+
+          const span = li.querySelector(':scope > span, :scope > a') || li.firstElementChild;
+          if (!span) return;
+          span.classList.add('urppp-page-chip');
+          if (active) span.classList.add('urppp-page-chip-active');
+          if (disabled) span.classList.add('urppp-page-chip-disabled');
+          if (prev || next) span.classList.add('urppp-page-chip-nav');
+
+          const minW = (prev || next) ? '72px' : '40px';
+          const bg = active ? 'var(--primary)' : 'var(--surface)';
+          const bd = active ? 'var(--primary)' : 'var(--border)';
+          const fg = active ? '#fff' : (disabled ? 'var(--text-muted)' : 'var(--text)');
+          span.style.cssText = [
+            'display:inline-flex !important',
+            'align-items:center !important',
+            'justify-content:center !important',
+            'box-sizing:border-box !important',
+            'float:none !important',
+            'position:static !important',
             'width:auto !important',
             'min-width:' + minW + ' !important',
-            'max-width:none !important',
             'height:36px !important',
             'min-height:36px !important',
             'max-height:36px !important',
             'padding:0 12px !important',
-            'margin:0 2px !important',
+            'margin:0 !important',
+            'line-height:36px !important',
             'font-size:14px !important',
             'font-weight:600 !important',
-            'line-height:36px !important',
             'border-radius:8px !important',
             'border:1px solid ' + bd + ' !important',
             'background:' + bg + ' !important',
             'color:' + fg + ' !important',
-            'box-sizing:border-box !important',
-            'overflow:hidden !important',
-            'white-space:nowrap !important',
-            'vertical-align:middle !important',
-            'text-decoration:none !important',
             'box-shadow:none !important',
-            'outline:none !important',
-            'cursor:' + (kind.ellipsis ? 'default' : 'pointer') + ' !important'
+            'text-decoration:none !important',
+            'cursor:' + (disabled ? 'default' : 'pointer') + ' !important',
+            'white-space:nowrap !important',
+            'overflow:hidden !important'
           ].join(';');
-          nukeInner(el);
+        });
 
-          // 父级若只是包一层，去掉父级边框/背景，防止双层细条
-          const p = el.parentElement;
-          if (p && p !== bar && p.tagName !== 'DIV' && p.children.length === 1) {
-            p.style.setProperty('border', '0', 'important');
-            p.style.setProperty('background', 'transparent', 'important');
-            p.style.setProperty('padding', '0', 'important');
-            p.style.setProperty('margin', '0 2px', 'important');
-            p.style.setProperty('height', 'auto', 'important');
-            p.style.setProperty('min-height', '0', 'important');
-            p.style.setProperty('line-height', 'normal', 'important');
-            p.style.setProperty('box-shadow', 'none', 'important');
-            clearChip(p);
+        // 跳转区：取消 absolute 叠层，确定默认隐藏、focus 显示（交给站点 + CSS）
+        bar.querySelectorAll('[id^="btn_turnpageto_"]').forEach((btn) => {
+          btn.classList.add('urppp-page-confirm');
+          // 不要强制 display；站点 turnpagetoFocus/Blur 控制
+          // 但去掉 absolute，避免和文字重叠
+          btn.style.setProperty('position', 'static', 'important');
+          btn.style.setProperty('left', 'auto', 'important');
+          btn.style.setProperty('top', 'auto', 'important');
+          btn.style.setProperty('float', 'none', 'important');
+          btn.style.setProperty('height', '36px', 'important');
+          btn.style.setProperty('min-width', '56px', 'important');
+          btn.style.setProperty('padding', '0 12px', 'important');
+          btn.style.setProperty('margin', '0 4px', 'important');
+          btn.style.setProperty('font-size', '13px', 'important');
+          btn.style.setProperty('line-height', '1', 'important');
+          btn.style.setProperty('vertical-align', 'middle', 'important');
+        });
+
+        // 跳转输入框的 relative 包裹：改为 inline-flex，避免 42x26 裁切
+        bar.querySelectorAll('[id^="turnpageto_"]').forEach((inp) => {
+          inp.classList.add('urppp-page-goto');
+          inp.style.setProperty('position', 'static', 'important');
+          inp.style.setProperty('display', 'inline-block', 'important');
+          inp.style.setProperty('height', '36px', 'important');
+          inp.style.setProperty('width', '48px', 'important');
+          inp.style.setProperty('margin', '0 4px', 'important');
+          inp.style.setProperty('padding', '4px 8px', 'important');
+          inp.style.setProperty('font-size', '14px', 'important');
+          inp.style.setProperty('line-height', '1.2', 'important');
+          inp.style.setProperty('box-sizing', 'border-box', 'important');
+          inp.style.setProperty('vertical-align', 'middle', 'important');
+          const wrapSpan = inp.parentElement;
+          if (wrapSpan && wrapSpan.tagName === 'SPAN') {
+            wrapSpan.style.setProperty('position', 'static', 'important');
+            wrapSpan.style.setProperty('display', 'inline-flex', 'important');
+            wrapSpan.style.setProperty('align-items', 'center', 'important');
+            wrapSpan.style.setProperty('width', 'auto', 'important');
+            wrapSpan.style.setProperty('height', 'auto', 'important');
+            wrapSpan.style.setProperty('min-height', '0', 'important');
+            wrapSpan.style.setProperty('vertical-align', 'middle', 'important');
           }
-        };
-
-        // 收集候选：优先 a，其次 currentNum span
-        const candidates = [];
-        bar.querySelectorAll('a:not(.btn):not(.urppp-page-confirm)').forEach((a) => {
-          if (isStatsContext(a)) return;
-          const c = classify(a);
-          if (c.isPrevNext || c.isEllipsis || c.isNum || c.isCurrent || a.tagName === 'A') {
-            candidates.push({ el: a, c });
-          }
-        });
-        const cur =
-          bar.querySelector('[id*="currentNum"], [id*="CurrentNum"]') ||
-          null;
-        if (cur && !cur.closest('a') && !isStatsContext(cur)) {
-          candidates.push({ el: cur, c: { ...classify(cur), isCurrent: true } });
-        }
-
-        // 去重：若某 a 在另一个 candidate 内部，丢弃内层
-        const roots = candidates.filter(({ el }) => {
-          return !candidates.some(({ el: other }) => other !== el && other.contains(el));
         });
 
-        // 先清旧标记，避免残留 active
-        bar.querySelectorAll('.urppp-page-num, .urppp-page-num-active').forEach((el) => {
-          el.classList.remove('urppp-page-num-active');
+        // 统计文字区
+        bar.querySelectorAll('[id^="totalPage_show_"], [id^="span_page_txt_"]').forEach((el) => {
+          el.style.setProperty('display', 'inline', 'important');
+          el.style.setProperty('border', 'none', 'important');
+          el.style.setProperty('background', 'transparent', 'important');
+          el.style.setProperty('padding', '0', 'important');
+          el.style.setProperty('margin', '0', 'important');
+          el.style.setProperty('height', 'auto', 'important');
+          el.style.setProperty('line-height', '36px', 'important');
+          el.style.setProperty('font-size', '13px', 'important');
+          el.style.setProperty('color', 'var(--text-secondary, var(--text-muted))', 'important');
         });
-
-        roots.forEach(({ el, c }) => {
-          paintChip(el, {
-            active: !!c.isCurrent,
-            prevnext: !!c.isPrevNext,
-            ellipsis: !!c.isEllipsis
-          });
-        });
-
-        // 再扫一遍：chip 内层绝不保留边框
-        bar.querySelectorAll('.urppp-page-num').forEach((el) => nukeInner(el));
       });
     } catch (err) {
       console.warn('[URP++] pagebar beautify failed', err);
     }
   }
+
   function scheduleBeautifyPagebar() {
     if (window.__urpppPagebarBound) return;
     window.__urpppPagebarBound = true;
     const run = () => beautifyPagebar();
-    ;[0, 300, 1000, 2500].forEach((ms) => setTimeout(run, ms));
+    ;[0, 200, 800, 2000].forEach((ms) => setTimeout(run, ms));
     const obs = new MutationObserver((muts) => {
-      // 仅子节点增删时重跑，避免 focus 时 style 抖动
       const meaningful = muts.some((m) => m.type === 'childList' && (m.addedNodes.length || m.removedNodes.length));
       if (!meaningful) return;
       clearTimeout(window.__urpppPagebarTimer);
-      window.__urpppPagebarTimer = setTimeout(run, 200);
+      window.__urpppPagebarTimer = setTimeout(run, 120);
     });
-    const host = document.getElementById('urppagebar') || document.body;
-    if (host) obs.observe(host, { childList: true, subtree: true });
+    // 观察所有 #urppagebar 及 body（分页可能晚注入）
+    document.querySelectorAll('#urppagebar').forEach((host) => {
+      obs.observe(host, { childList: true, subtree: true });
+    });
+    obs.observe(document.body, { childList: true, subtree: false });
   }
   function beautifyFreeClassroomList() {
     try {
@@ -4567,6 +4484,26 @@
       .btn-app {
         border-radius: 6px !important;
       }
+      /* 分页「确定」：禁止全局 .btn 的 display:inline-flex 盖掉 display:none */
+      #urppagebar [id^="btn_turnpageto_"].btn,
+      #urppagebar input.btn[id^="btn_turnpageto_"],
+      body #urppagebar .btn[id^="btn_turnpageto_"] {
+        /* display 留给内联 style / 站点 JS；只定尺寸 */
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        min-width: 56px !important;
+        padding: 0 12px !important;
+        font-size: 13px !important;
+        line-height: 1 !important;
+        box-sizing: border-box !important;
+      }
+      #urppagebar [id^="btn_turnpageto_"][style*="display: none"],
+      #urppagebar [id^="btn_turnpageto_"][style*="display:none"],
+      body #urppagebar .btn[id^="btn_turnpageto_"][style*="display: none"],
+      body #urppagebar .btn[id^="btn_turnpageto_"][style*="display:none"] {
+        display: none !important;
+      }
       .btn:not(.btn-app), .btn.btn-xs:not(.btn-app), .btn.btn-sm:not(.btn-app), .btn.btn-lg:not(.btn-app), .btn.btn-minier:not(.btn-app),
       .btn.btn-round:not(.btn-app), .btn.btn-white:not(.btn-app), .btn.btn-info:not(.btn-app), .btn.btn-bold:not(.btn-app) {
         font-size: 12px !important;
@@ -4741,318 +4678,193 @@
         box-sizing: border-box !important;
         vertical-align: middle !important;
       }
-      .urppagebreak,
+      /* ============================================================
+       * 分页（pagination.js 真实结构）
+       * ul.pagination > li.paginate_button > span[padding:3px 7px]
+       * 当前页 li.active；确定 #btn_turnpageto_* focus 显示
+       * ============================================================ */
       #urppagebar,
-      #urppagebar .urppagebreak,
-      .urppp-pagebar {
+      #urppagebar.urppp-pagebar {
+        display: block !important;
+        width: 100% !important;
+        margin-top: 10px !important;
+        line-height: 36px !important;
+        box-sizing: border-box !important;
+      }
+      #urppagebar .dataTables_paginate,
+      #urppagebar [id^="sample-table-2_paginate_"] {
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        gap: 8px 10px !important;
+        position: relative !important;
+        width: 100% !important;
+      }
+      /* 清掉旧 pagination 全局小按钮样式在页码条上的影响 */
+      #urppagebar ul.pagination,
+      #urppagebar ul.urppp-pagination {
+        display: inline-flex !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        list-style: none !important;
+        float: none !important;
+        position: static !important;
+        border: none !important;
+        background: transparent !important;
+      }
+      #urppagebar ul.pagination > li,
+      #urppagebar .paginate_button,
+      #urppagebar .urppp-page-li {
+        display: inline-flex !important;
+        float: none !important;
+        position: static !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        list-style: none !important;
+      }
+      /* 真正的可点 chip = 内层 span（站点写死 padding:3px 7px，必须覆盖） */
+      #urppagebar ul.pagination > li > span,
+      #urppagebar ul.pagination > li > a,
+      #urppagebar .paginate_button > span,
+      #urppagebar .paginate_button > a,
+      #urppagebar .urppp-page-chip,
+      body #urppagebar .pagination > li > span,
+      body #urppagebar .pagination > li > a {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        float: none !important;
+        position: static !important;
+        box-sizing: border-box !important;
+        width: auto !important;
+        min-width: 40px !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        padding: 0 12px !important;
+        margin: 0 !important;
+        line-height: 36px !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+        border: 1px solid var(--border) !important;
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        box-shadow: none !important;
+        text-decoration: none !important;
+        white-space: nowrap !important;
+        cursor: pointer !important;
+      }
+      #urppagebar ul.pagination > li.previous > span,
+      #urppagebar ul.pagination > li.next > span,
+      #urppagebar .urppp-page-chip-nav {
+        min-width: 72px !important;
+      }
+      /* 当前页 */
+      #urppagebar ul.pagination > li.active > span,
+      #urppagebar ul.pagination > li.active > a,
+      #urppagebar .paginate_button.active > span,
+      #urppagebar .urppp-page-chip-active,
+      body #urppagebar .pagination > li.active > span,
+      body #urppagebar .pagination > li.active > a {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        color: #fff !important;
+        font-weight: 700 !important;
+      }
+      /* 禁用 */
+      #urppagebar ul.pagination > li.disabled > span,
+      #urppagebar .urppp-page-chip-disabled {
+        color: var(--text-muted) !important;
+        background: var(--input-bg) !important;
+        border-color: var(--border) !important;
+        cursor: default !important;
+        opacity: 0.75 !important;
+      }
+      #urppagebar ul.pagination > li > span:hover,
+      #urppagebar ul.pagination > li.pagebarhand > span:hover {
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+      }
+      #urppagebar ul.pagination > li.active > span:hover {
+        color: #fff !important;
+        border-color: var(--primary) !important;
+      }
+      /* 跳转输入 + 确定：流式排列，确定默认隐藏 */
+      #urppagebar [id^="turnpageto_"],
+      #urppagebar input.urppp-page-goto {
+        display: inline-block !important;
+        position: static !important;
+        height: 36px !important;
+        width: 48px !important;
+        margin: 0 4px !important;
+        padding: 4px 8px !important;
+        font-size: 14px !important;
+        line-height: 1.2 !important;
+        box-sizing: border-box !important;
+        vertical-align: middle !important;
+      }
+      #urppagebar [id^="btn_turnpageto_"],
+      #urppagebar .urppp-page-confirm {
+        position: static !important;
+        left: auto !important;
+        top: auto !important;
+        height: 36px !important;
+        min-width: 56px !important;
+        margin: 0 4px !important;
+        padding: 0 12px !important;
+        font-size: 13px !important;
+        line-height: 1 !important;
+        vertical-align: middle !important;
+        float: none !important;
+      }
+      /* 站点默认 display:none；focus 时 inline-block —— 不要用全局 .btn 盖掉 none */
+      #urppagebar [id^="btn_turnpageto_"][style*="display: none"],
+      #urppagebar [id^="btn_turnpageto_"][style*="display:none"] {
+        display: none !important;
+      }
+      #urppagebar [id^="btn_turnpageto_"][style*="inline-block"],
+      #urppagebar [id^="btn_turnpageto_"][style*="inline-flex"] {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      /* 每页条数 */
+      #urppagebar select[id^="pagination_pageSize_"],
+      #urppagebar select {
+        height: 36px !important;
+        min-height: 36px !important;
+        width: auto !important;
+        min-width: 64px !important;
+        max-width: none !important;
+        padding: 2px 8px !important;
+        font-size: 13px !important;
+        vertical-align: middle !important;
+        border-radius: 8px !important;
+      }
+      #urppagebar [id^="totalPage_show_"],
+      #urppagebar [id^="span_page_txt_"] {
+        display: inline !important;
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        height: auto !important;
+        line-height: 36px !important;
+        font-size: 13px !important;
+        color: var(--text-secondary, var(--text-muted)) !important;
+      }
+      /* 兼容旧 class 名（若残留） */
+      .urppagebreak {
         display: flex !important;
         align-items: center !important;
         flex-wrap: wrap !important;
         gap: 6px 8px !important;
-        white-space: normal !important;
-        box-sizing: border-box !important;
-        line-height: 36px !important;
-        margin-top: 10px !important;
-        position: relative !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        overflow: visible !important;
-      }
-      #urppagebar a,
-      #urppagebar span,
-      #urppagebar label,
-      #urppagebar font,
-      #urppagebar input,
-      #urppagebar button,
-      #urppagebar select,
-      .urppagebreak a,
-      .urppagebreak span,
-      .urppagebreak label,
-      .urppagebreak input,
-      .urppagebreak button,
-      .urppagebreak select {
-        position: static !important;
-        float: none !important;
-        top: auto !important;
-        left: auto !important;
-        right: auto !important;
-        bottom: auto !important;
-        transform: none !important;
-        vertical-align: middle !important;
-      }
-      #urppagebar span,
-      #urppagebar label,
-      #urppagebar font,
-      .urppagebreak span,
-      .urppagebreak label {
-        display: inline !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        line-height: 36px !important;
-        white-space: nowrap !important;
-        font-size: 13px !important;
-      }
-      /* 跳转输入框 */
-      .urppagebreak input[type="text"],
-      .urppagebreak input.form-control,
-      #urppagebar input[type="text"],
-      #urppagebar input.form-control,
-      #urppagebar input.urppp-page-goto {
-        display: inline-block !important;
-        padding: 4px 8px !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        width: 48px !important;
-        min-width: 44px !important;
-        max-width: 60px !important;
-        margin: 0 4px !important;
-        font-size: 14px !important;
-        box-sizing: border-box !important;
-        flex: 0 0 auto !important;
-      }
-      /* 页码 / 上一页 / 下一页：真正加大（不是只加背景） */
-      body #urppagebar a.urppp-page-num,
-      body #urppagebar a:not(.btn):not(.urppp-page-confirm),
-      body .urppagebreak a:not(.btn):not(.urppp-page-confirm),
-      body #urppagebar .paginate_button,
-      html body #urppagebar a:not(.btn) {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        width: auto !important;
-        min-width: 40px !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        max-height: 36px !important;
-        padding: 0 12px !important;
-        margin: 0 2px !important;
-        font-size: 14px !important;
-        font-weight: 600 !important;
-        line-height: 36px !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 8px !important;
-        background: var(--surface) !important;
-        color: var(--text) !important;
-        box-sizing: border-box !important;
-        white-space: nowrap !important;
-      }
-      body #urppagebar a.urppp-page-num:hover,
-      body #urppagebar a:not(.btn):hover {
-        background: var(--input-bg) !important;
-        border-color: var(--primary) !important;
-        color: var(--primary) !important;
-      }
-      body #urppagebar a.urppp-page-num:hover,
-      body #urppagebar a:not(.btn):hover {
-        background: var(--input-bg) !important;
-        border-color: var(--primary) !important;
-        color: var(--primary) !important;
-      }
-      /* 页码区：只有 .urppp-page-num 有边框；父/子包装层透明 */
-      body #urppagebar > span:not(.urppp-page-num),
-      body #urppagebar > font:not(.urppp-page-num),
-      body #urppagebar span:has(> a.urppp-page-num),
-      body #urppagebar font:has(> a.urppp-page-num),
-      body #urppagebar li:has(> a.urppp-page-num) {
-        border: 0 none !important;
-        background: transparent !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        height: auto !important;
-        min-height: 0 !important;
-        line-height: normal !important;
-        box-shadow: none !important;
-      }
-      body #urppagebar a.urppp-page-num,
-      body #urppagebar span.urppp-page-num,
-      body #urppagebar .urppp-page-num,
-      body #urppagebar a.urppp-page-prevnext,
-      body #urppagebar a.urppp-page-ellipsis,
-      html body #urppagebar a.urppp-page-num {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        max-height: 36px !important;
-        min-width: 40px !important;
-        padding: 0 12px !important;
-        margin: 0 2px !important;
-        font-size: 14px !important;
-        font-weight: 600 !important;
-        line-height: 36px !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 8px !important;
-        background: var(--surface) !important;
-        color: var(--text) !important;
-        box-sizing: border-box !important;
-        overflow: hidden !important;
-        text-decoration: none !important;
-        box-shadow: none !important;
-        vertical-align: middle !important;
-      }
-      body #urppagebar a.urppp-page-prevnext,
-      body #urppagebar .urppp-page-prevnext {
-        min-width: 72px !important;
-      }
-      body #urppagebar a.urppp-page-ellipsis,
-      body #urppagebar .urppp-page-ellipsis {
-        min-width: 40px !important;
-        cursor: default !important;
-      }
-      /* 内层全部裸文本，杜绝细条 */
-      body #urppagebar .urppp-page-num *,
-      body #urppagebar a.urppp-page-num *,
-      body #urppagebar a.urppp-page-prevnext *,
-      body #urppagebar a.urppp-page-ellipsis *,
-      html body #urppagebar .urppp-page-num * {
-        display: inline !important;
-        position: static !important;
-        float: none !important;
-        width: auto !important;
-        min-width: 0 !important;
-        max-width: none !important;
-        height: auto !important;
-        min-height: 0 !important;
-        max-height: none !important;
-        line-height: inherit !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        border: 0 none !important;
-        border-radius: 0 !important;
-        outline: none !important;
-        background: transparent !important;
-        background-image: none !important;
-        box-shadow: none !important;
-        color: inherit !important;
-        font-size: inherit !important;
-        font-weight: inherit !important;
-        text-decoration: none !important;
-        vertical-align: baseline !important;
-        box-sizing: border-box !important;
-      }
-      /* 非当前页码：强制中性，禁止被主题色刷满 */
-      body #urppagebar a.urppp-page-num:not(.urppp-page-num-active),
-      body #urppagebar .urppp-page-num:not(.urppp-page-num-active),
-      body #urppagebar a.urppp-page-prevnext,
-      body #urppagebar a.urppp-page-ellipsis,
-      html body #urppagebar a.urppp-page-num:not(.urppp-page-num-active) {
-        background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
-        color: var(--text) !important;
-      }
-      /* 当前页：仅 active / currentNum 实心主题色 */
-      body #urppagebar .urppp-page-num-active,
-      body #urppagebar span.urppp-page-num-active,
-      body #urppagebar a.urppp-page-num-active,
-      body #urppagebar [id*="currentNum"].urppp-page-num,
-      body #urppagebar span[id*="currentNum"],
-      html body #urppagebar .urppp-page-num.urppp-page-num-active {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        width: auto !important;
-        min-width: 40px !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        max-height: 36px !important;
-        padding: 0 12px !important;
-        margin: 0 2px !important;
-        font-size: 14px !important;
-        font-weight: 700 !important;
-        line-height: 36px !important;
-        border-radius: 8px !important;
-        border: 1px solid var(--primary) !important;
-        background: var(--primary) !important;
-        color: #fff !important;
-        box-sizing: border-box !important;
-        overflow: hidden !important;
-      }
-      body #urppagebar .urppp-page-num-active *,
-      body #urppagebar [id*="currentNum"] * {
-        display: inline !important;
-        width: auto !important;
-        height: auto !important;
-        min-width: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        border: none !important;
-        background: transparent !important;
-        color: inherit !important;
-        line-height: inherit !important;
-        font-size: inherit !important;
-      }
-      body #urppagebar a.urppp-page-num,
-      body #urppagebar span.urppp-page-num,
-      body #urppagebar .urppp-page-num {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        min-width: 40px !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        padding: 0 12px !important;
-        font-size: 14px !important;
-        line-height: 36px !important;
-        border-radius: 8px !important;
-        box-sizing: border-box !important;
-      }
-      /* 分页普通按钮（非确定） */
-      body #urppagebar .btn.urppp-page-ctl,
-      body #urppagebar button.urppp-page-ctl,
-      body #urppagebar .btn:not(.urppp-page-confirm),
-      body #urppagebar button:not(.urppp-page-confirm),
-      body #urppagebar a.btn:not(.urppp-page-confirm) {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        max-height: 36px !important;
-        min-width: 64px !important;
-        padding: 0 14px !important;
-        margin: 0 2px !important;
-        font-size: 14px !important;
-        line-height: 1 !important;
-        box-sizing: border-box !important;
-      }
-      /* 确定：默认隐藏；跳转框聚焦时显示（纯 CSS，不靠 JS 抢 display） */
-      body #urppagebar .urppp-page-confirm,
-      body #urppagebar .btn.urppp-page-confirm,
-      body #urppagebar button.urppp-page-confirm,
-      body #urppagebar a.btn.urppp-page-confirm,
-      body #urppagebar input.urppp-page-confirm,
-      body .urppagebreak .urppp-page-confirm,
-      html body #urppagebar .btn.urppp-page-confirm {
-        display: none !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        max-height: 36px !important;
-        min-width: 56px !important;
-        padding: 0 14px !important;
-        margin: 0 4px !important;
-        font-size: 14px !important;
-        line-height: 1 !important;
-        box-sizing: border-box !important;
-      }
-      body #urppagebar:has(input:focus) .urppp-page-confirm,
-      body #urppagebar:has(input.urppp-page-goto:focus) .urppp-page-confirm,
-      body #urppagebar:has(.urppp-page-goto:focus) .btn.urppp-page-confirm,
-      body #urppagebar:has(input:focus) .btn.urppp-page-confirm,
-      body #urppagebar:has(input:focus) button.urppp-page-confirm,
-      body #urppagebar:has(input:focus) a.btn.urppp-page-confirm,
-      body .urppagebreak:has(input:focus) .urppp-page-confirm,
-      html body #urppagebar:has(input:focus) .btn.urppp-page-confirm {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-      }
-      /* 鼠标按在确定上时也保持显示（:has 失焦前） */
-      body #urppagebar:has(.urppp-page-confirm:hover) .urppp-page-confirm,
-      body #urppagebar:has(.urppp-page-confirm:active) .urppp-page-confirm {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
       }
       textarea {
         resize: vertical !important;
@@ -6130,12 +5942,12 @@
         max-width: 100% !important;
         box-sizing: border-box !important;
       }
-      /* 分页 */
+      /* 分页（通用；#urppagebar 内由上方专用规则覆盖为 36px 整颗 chip） */
       .pagination > li > a, .pagination > li > span {
         background: var(--surface) !important;
         border-color: var(--border) !important;
         color: var(--text) !important;
-        border-radius: var(--radius-sm) !important;
+        border-radius: 8px !important;
         margin: 0 2px !important;
       }
       .pagination > li > a:hover { background: var(--input-bg) !important; color: var(--primary) !important; }
@@ -6766,7 +6578,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.65');
+    console.log('[URP++] style applied v0.4.66');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -7389,7 +7201,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.65',
+    version: '0.4.66',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
