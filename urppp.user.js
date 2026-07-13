@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.20
+// @version      0.4.21
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.20';
+          content:'URP++ v0.4.21';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1122,6 +1122,19 @@
           while (row.firstChild) row.removeChild(row.firstChild);
           row.appendChild(frag);
           row.classList.add('urppp-query-row');
+          // Chosen 生成后隐藏原生 select
+          row.querySelectorAll('.chosen-container').forEach((c) => {
+            const prev = c.previousElementSibling;
+            if (prev && prev.tagName === 'SELECT') {
+              prev.style.setProperty('display', 'none', 'important');
+              prev.classList.add('urppp-chosen-hidden');
+            }
+            const sel = c.parentElement && c.parentElement.querySelector('select');
+            if (sel) {
+              sel.style.setProperty('display', 'none', 'important');
+              sel.classList.add('urppp-chosen-hidden');
+            }
+          });
           row.dataset.urpppQueryDone = '1';
         });
       });
@@ -3382,11 +3395,14 @@
       .page-content .profile-user-info:has(.value_element) {
         overflow: visible !important;
       }
-      /* 查询条件保持 ACE float 多列，不要 flex/grid 覆盖 */
-      .page-content .profile-user-info.self .profile-info-row,
-      .page-content .profile-user-info:has(.value_element) .profile-info-row {
-        display: block !important;
-        flex-direction: unset !important;
+      /* 查询条件：pair 化后必须 flex 横排 */
+      .page-content .profile-user-info.self .profile-info-row.urppp-query-row,
+      .page-content .profile-user-info:has(.value_element) .profile-info-row.urppp-query-row,
+      .page-content .profile-info-row.urppp-query-row {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        flex-direction: row !important;
+        align-items: center !important;
       }
 
       /* 个人信息 / 学籍信息 */
@@ -3494,26 +3510,32 @@
         box-sizing: border-box !important;
         overflow: visible !important;
       }
+      .page-content .profile-info-row.urppp-query-row,
+      .profile-user-info.urppp-query-form .profile-info-row.urppp-query-row,
       .profile-info-row.urppp-query-row {
         display: flex !important;
         flex-wrap: wrap !important;
         align-items: center !important;
-        gap: 10px 14px !important;
+        gap: 12px 16px !important;
         border-bottom: none !important;
         min-height: 0 !important;
-        padding: 0 0 4px !important;
+        padding: 0 0 6px !important;
         margin: 0 !important;
         overflow: visible !important;
         flex-direction: row !important;
       }
+      .page-content .urppp-query-pair,
+      .profile-user-info.urppp-query-form .urppp-query-pair,
       .urppp-query-pair {
         display: flex !important;
         align-items: center !important;
         gap: 8px !important;
-        flex: 0 1 calc(33.333% - 10px) !important;
-        min-width: 250px !important;
-        max-width: 100% !important;
+        flex: 0 0 calc(33.333% - 12px) !important;
+        width: calc(33.333% - 12px) !important;
+        min-width: 240px !important;
+        max-width: calc(33.333% - 12px) !important;
         box-sizing: border-box !important;
+        float: none !important;
       }
       .urppp-query-pair .profile-info-name {
         float: none !important;
@@ -3609,14 +3631,43 @@
       .urppp-query-pair .chosen-single div b {
         background-position: 0 7px !important;
       }
-      @media (max-width: 1100px) {
+
+      /* Chosen 启用后隐藏原生 select，避免双层/撑破布局 */
+      .urppp-query-pair select.chosen,
+      .urppp-query-pair select.value_element.chosen,
+      .urppp-query-pair .chosen-container + select,
+      .urppp-query-pair select[style*="display: none"],
+      .profile-user-info.urppp-query-form select.chosen,
+      .profile-user-info.urppp-query-form .chosen-container + select {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+      }
+      .urppp-query-pair .chosen-container {
+        display: block !important;
+      }
+      @media (max-width: 1200px) {
+        .page-content .urppp-query-pair,
         .urppp-query-pair {
-          flex: 0 1 calc(50% - 10px) !important;
+          flex: 0 0 calc(50% - 12px) !important;
+          width: calc(50% - 12px) !important;
+          max-width: calc(50% - 12px) !important;
         }
       }
-      @media (max-width: 640px) {
+      @media (max-width: 700px) {
+        .page-content .urppp-query-pair,
         .urppp-query-pair {
-          flex: 0 1 100% !important;
+          flex: 0 0 100% !important;
+          width: 100% !important;
+          max-width: 100% !important;
           min-width: 0 !important;
         }
       }
@@ -4931,8 +4982,10 @@
     setTimeout(restyleInfoboxPercentages, 300);
     setTimeout(restyleInfoboxPercentages, 1000);
     beautifyQueryForms();
-    setTimeout(beautifyQueryForms, 200);
+    setTimeout(beautifyQueryForms, 100);
+    setTimeout(beautifyQueryForms, 300);
     setTimeout(beautifyQueryForms, 800);
+    setTimeout(beautifyQueryForms, 1500);
     beautifyPlanTree();
     setTimeout(() => beautifyPlanTree(), 400);
     if (!window.__urpppPlanTreeObs) {
@@ -4988,7 +5041,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.20');
+    console.log('[URP++] style applied v0.4.21');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5608,7 +5661,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.20',
+    version: '0.4.21',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
