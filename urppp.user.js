@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.14
+// @version      0.5.15
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.14';
+          content:'URP++ v0.5.15';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -8983,15 +8983,150 @@
       .timeline-item .timeline-indicator { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; }
       .timeline-item h5 { color: var(--text) !important; }
 
-      /* FullCalendar 课表 */
-      .fc { background: var(--surface) !important; border-radius: var(--radius) !important; }
-      .fc th, .fc td { border-color: var(--border) !important; }
-      .fc-day-header { background: var(--input-bg) !important; color: var(--text-secondary) !important; }
-      .fc-time-grid-event, .fc-event { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; border-radius: var(--radius-sm) !important; margin: 2px 4px !important; }
+      /* FullCalendar 课表 / 日程 */
+      .fc,
+      .fc-view-container,
+      .fc-view,
+      .fc-time-grid,
+      .fc-time-grid-container,
+      .fc-day-grid,
+      .fc-bg,
+      .fc-bgevent-skeleton,
+      .fc-highlight-skeleton,
+      .fc-content-skeleton,
+      .fc-scroller,
+      .fc-row,
+      .fc-widget-content,
+      .fc-widget-header {
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+        border-color: var(--border) !important;
+        color: var(--text) !important;
+      }
+      .fc {
+        border-radius: var(--radius) !important;
+        overflow: hidden !important;
+      }
+      /* 压过 fullcalendar 默认 #ddd / white 网格线 */
+      .fc th,
+      .fc td,
+      .fc-unthemed th,
+      .fc-unthemed td,
+      .fc-unthemed thead,
+      .fc-unthemed tbody,
+      .fc-unthemed .fc-divider,
+      .fc-unthemed .fc-row,
+      .fc-unthemed .fc-content,
+      .fc-unthemed .fc-popover,
+      .fc-unthemed .fc-list-view,
+      .fc-unthemed .fc-list-heading td,
+      .fc table,
+      .fc .fc-axis,
+      .fc .fc-divider,
+      .fc .fc-popover,
+      .fc .fc-row,
+      .fc hr {
+        border-color: var(--border) !important;
+      }
+      .fc-day-header,
+      .fc-axis,
+      .fc-time-grid .fc-axis,
+      .fc-time-grid-axis {
+        background: var(--input-bg) !important;
+        background-color: var(--input-bg) !important;
+        color: var(--text-secondary) !important;
+        border-color: var(--border) !important;
+      }
+      .fc-slats td,
+      .fc-slats tr,
+      .fc-time-grid .fc-slats td,
+      .fc-time-grid .fc-slats .fc-minor td {
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+        border-color: var(--border) !important;
+      }
+      .fc-time-grid .fc-slats .fc-minor td {
+        border-top-style: dotted !important;
+        border-top-color: color-mix(in srgb, var(--border) 70%, transparent) !important;
+      }
+      /* 左侧时间列与右侧内容之间的竖线 */
+      .fc-time-grid .fc-axis,
+      .fc-time-grid > .fc-bg table colgroup + tbody td:first-child,
+      .fc .fc-axis.fc-widget-content,
+      .fc .fc-axis.fc-time {
+        border-right: 1px solid var(--border) !important;
+      }
+      .fc-bg table,
+      .fc-bg td,
+      .fc-bg th {
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+        border-color: var(--border) !important;
+      }
+      .fc-time-grid-event,
+      .fc-event {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        color: #fff !important;
+        border-radius: var(--radius-sm) !important;
+        margin: 2px 4px !important;
+      }
       .fc-event-container { padding: 2px !important; }
       .fc-toolbar { margin-top: 8px !important; margin-bottom: 12px !important; padding: 0 8px !important; }
-      .fc-button { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; }
-      .fc-button.fc-state-active { background: var(--primary) !important; color: #fff !important; }
+      .fc-button {
+        background: var(--input-bg) !important;
+        border-color: var(--border) !important;
+        color: var(--text) !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+      }
+      .fc-button.fc-state-active,
+      .fc-button.fc-state-hover {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        color: #fff !important;
+      }
+      /* 暗色：彻底去掉默认白边 */
+      html.urppp-theme-dark .fc,
+      html.urppp-theme-dark .fc-view-container,
+      html.urppp-theme-dark .fc-time-grid,
+      html.urppp-theme-dark .fc-time-grid-container,
+      html.urppp-theme-dark .fc-bg,
+      html.urppp-theme-dark .fc-scroller,
+      html.urppp-theme-dark .fc-row,
+      html.urppp-theme-dark .fc-widget-content,
+      html.urppp-theme-dark .fc-widget-header,
+      html.urppp-theme-dark .fc-slats td,
+      html.urppp-theme-dark .fc-bg td {
+        background: #151A24 !important;
+        background-color: #151A24 !important;
+        border-color: #1E293B !important;
+      }
+      html.urppp-theme-dark .fc th,
+      html.urppp-theme-dark .fc td,
+      html.urppp-theme-dark .fc-unthemed th,
+      html.urppp-theme-dark .fc-unthemed td,
+      html.urppp-theme-dark .fc-unthemed .fc-divider,
+      html.urppp-theme-dark .fc-unthemed .fc-row,
+      html.urppp-theme-dark .fc .fc-axis,
+      html.urppp-theme-dark .fc .fc-divider,
+      html.urppp-theme-dark .fc hr {
+        border-color: #1E293B !important;
+      }
+      html.urppp-theme-dark .fc-day-header,
+      html.urppp-theme-dark .fc-axis,
+      html.urppp-theme-dark .fc-time-grid .fc-axis {
+        background: #1C2330 !important;
+        background-color: #1C2330 !important;
+        color: #94A3B8 !important;
+        border-color: #1E293B !important;
+      }
+      html.urppp-theme-dark .fc-time-grid .fc-slats .fc-minor td {
+        border-top-color: rgba(30, 41, 59, 0.7) !important;
+      }
+      html.urppp-theme-dark .fc-today {
+        background: rgba(147, 168, 199, 0.08) !important;
+      }
       /* FullCalendar 事件悬停弹窗 */
       #schedule-hover {
         background: var(--surface) !important;
@@ -9435,6 +9570,15 @@
       .urppp-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
       @media (max-width: 1100px) { .urppp-main-grid { grid-template-columns: 1fr; } }
       #urppp-left .urppp-card { box-shadow: none !important; }
+      #urppp-left .urppp-card-body,
+      #urppp-left .fc,
+      #urppp-left .fc-view-container {
+        background: var(--surface) !important;
+      }
+      #urppp-left .fc-view-container,
+      #urppp-left .fc-time-grid-container {
+        border: none !important;
+      }
       #urppp-left .fc-toolbar { margin: 0 0 12px 0 !important; padding: 8px 8px 0 8px !important; }
       #urppp-left .fc-toolbar .fc-center h2,
       #urppp-left .fc-toolbar h2 { display: inline-block !important; background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; padding: 6px 14px !important; font-size: 14px !important; color: var(--text) !important; box-shadow: var(--shadow) !important; }
@@ -9727,7 +9871,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.14');
+    console.log('[URP++] style applied v0.5.15');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -10606,7 +10750,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.14',
+    version: '0.5.15',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
