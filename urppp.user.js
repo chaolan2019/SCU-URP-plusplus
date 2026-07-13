@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.95
+// @version      0.4.96
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.95';
+          content:'URP++ v0.4.96';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3343,40 +3343,68 @@
   // 清理被错误强制显示的空白 modal（无 .in/.show 却 display:block）
   function cleanupStuckModals() {
     try {
-      document.querySelectorAll('.modal').forEach((m) => {
-        const open = m.classList.contains('in') || m.classList.contains('show');
-        if (open) return;
-        m.style.setProperty('display', 'none', 'important');
-        m.setAttribute('aria-hidden', 'true');
-      });
-      if (!document.body.classList.contains('modal-open')) {
+      // 绝对不要给 .modal 写 display:none !important —— Bootstrap 打不开
+      // 只清理：无打开 modal 时残留的 backdrop / body.modal-open
+      const anyOpen = !!document.querySelector('.modal.in, .modal.show');
+      if (!anyOpen) {
         document.querySelectorAll('.modal-backdrop').forEach((b) => {
-          if (!document.querySelector('.modal.in, .modal.show')) {
-            b.parentElement && b.parentElement.removeChild(b);
+          if (b.parentElement) b.parentElement.removeChild(b);
+        });
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('padding-right');
+        // 清掉我们以前可能写过的 display:!important
+        document.querySelectorAll('.modal').forEach((m) => {
+          if (m.style.getPropertyPriority('display') === 'important') {
+            m.style.removeProperty('display');
           }
         });
-        document.body.style.removeProperty('padding-right');
-        document.body.classList.remove('modal-open');
       }
-      // 右侧抽屉：收起态恢复站点 right:-42%，去掉我们可能写死的 right:0
+
+      // 右侧抽屉：收起态恢复站点 right:-42%
       ;['curriculumInfo-divcon', 'curriculumInfo-divcon1', 'curriculumInfo-divcon2'].forEach((id) => {
         const el = document.getElementById(id);
         if (!el) return;
         const w = parseFloat(el.style.width || '0');
         if (!w || w < 8) {
+          // 不要用 !important 锁死 display/opacity 以外的打开路径
           el.style.removeProperty('right');
-          // 若没有内联 right，补站点关闭值，确保滑出屏幕
-          if (!el.style.right) el.style.setProperty('right', '-42%');
-          el.style.setProperty('width', '0px');
-          el.style.setProperty('pointer-events', 'none', 'important');
-          el.style.setProperty('opacity', '0', 'important');
-          el.style.setProperty('box-shadow', 'none', 'important');
+          if (!String(el.getAttribute('style') || '').includes('right')) {
+            el.style.right = '-42%';
+          }
+          if (!w) el.style.width = '0px';
+          el.style.pointerEvents = 'none';
+          el.style.opacity = '0';
+          el.style.boxShadow = 'none';
         } else {
-          el.style.setProperty('pointer-events', 'auto', 'important');
-          el.style.removeProperty('opacity');
+          el.style.pointerEvents = '';
+          el.style.opacity = '';
+          el.style.boxShadow = '';
         }
       });
     } catch (_) { /* ignore */ }
+  }
+
+  // 打开 modal 前清掉我们残留的 display 锁定
+  function patchModalOpenPath() {
+    if (window.__urpppModalOpenPatched) return;
+    window.__urpppModalOpenPatched = true;
+    document.addEventListener('show.bs.modal', (e) => {
+      const m = e.target;
+      if (!m || !m.classList || !m.classList.contains('modal')) return;
+      m.style.removeProperty('display');
+      m.style.display = 'block';
+    }, true);
+    // jQuery Bootstrap 3 有时先 show 再加 in
+    document.addEventListener('click', (e) => {
+      const t = e.target && e.target.closest ? e.target.closest('[data-toggle="modal"], [data-target], [href^="#"]') : null;
+      if (!t) return;
+      const sel = t.getAttribute('data-target') || t.getAttribute('href') || '';
+      if (!sel || sel.charAt(0) !== '#') return;
+      const m = document.querySelector(sel);
+      if (m && m.classList.contains('modal')) {
+        if (m.style.getPropertyPriority('display') === 'important') m.style.removeProperty('display');
+      }
+    }, true);
   }
   function beautifyInternal() {
     let styleEl = document.getElementById('urppp-internal-style');
@@ -7513,20 +7541,7 @@
         padding: 12px 18px !important;
       }
 
-      /* 弹窗：只美化外观，不强制 display（强制 .in{display:block} 会导致空白弹窗关不掉） */
-      .modal {
-        /* 关闭态交给 Bootstrap：默认 none；打开态由 .in / inline style 控制 */
-      }
-      .modal.fade:not(.in):not(.show) {
-        display: none !important;
-      }
-      /* 打开态：仅在确实带 in/show 时显示；不要写全局 .modal {display:block} */
-      .modal.fade.in,
-      .modal.in,
-      .modal.show,
-      .modal.fade.show {
-        display: block !important;
-      }
+      /* 弹窗：只美化外观；display 完全交给 Bootstrap，避免关不掉/打不开 */
       .modal-dialog {
         z-index: 1051 !important;
       }
@@ -7565,13 +7580,6 @@
       .modal-backdrop.in,
       .modal-backdrop.show {
         opacity: 0.45 !important;
-      }
-      /* 关闭后残留 backdrop 也强制可点穿（防御） */
-      body:not(.modal-open) > .modal-backdrop {
-        display: none !important;
-      }
-      body:not(.modal-open) > .modal.fade:not(.in):not(.show) {
-        display: none !important;
       }
 
 
@@ -8570,6 +8578,7 @@
 
     // 给表格包一层 wrapper：圆角 + 完整外框，绕过 Bootstrap thead border-top:0 和 overflow 裁剪
     cleanupStuckModals();
+    patchModalOpenPath();
     wrapTables();
     beautifyNoticeTables();
     setTimeout(beautifyNoticeTables, 300);
@@ -8679,7 +8688,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.95');
+    console.log('[URP++] style applied v0.4.96');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -9325,7 +9334,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.95',
+    version: '0.4.96',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
