@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.68
+// @version      0.4.69
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.68';
+          content:'URP++ v0.4.69';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -4727,7 +4727,7 @@
 
       /* ============================================================
       /* ============================================================
-       * 评估公告 / 通知列表（圆点 + 标题链接 + 日期）
+       * 评估公告 / 通知列表：整行一体卡片（flex 行）
        * ============================================================ */
       table.urppp-notice-table,
       .page-content table.urppp-notice-table,
@@ -4740,90 +4740,105 @@
         border-radius: 0 !important;
         margin: 0 !important;
         width: 100% !important;
+        display: block !important;
       }
-      table.urppp-notice-table {
+      table.urppp-notice-table > tbody,
+      table.urppp-notice-table > thead,
+      table.urppp-notice-table > tfoot {
+        display: block !important;
         width: 100% !important;
-        border-collapse: separate !important;
-        border-spacing: 0 8px !important;
       }
       table.urppp-notice-table > tbody > tr.urppp-notice-row,
       table.urppp-notice-table > tbody > tr {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 0 0 10px !important;
+        padding: 14px 16px !important;
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+        position: relative !important;
       }
-      /* 用 outline 模拟圆角卡片（tr 不好画 radius） */
-      table.urppp-notice-table > tbody > tr.urppp-notice-row > td:first-child,
-      table.urppp-notice-table > tbody > tr > td:first-child {
-        border-left: 1px solid var(--border) !important;
-        border-top: 1px solid var(--border) !important;
-        border-bottom: 1px solid var(--border) !important;
-        border-top-left-radius: 12px !important;
-        border-bottom-left-radius: 12px !important;
-        background: var(--surface) !important;
+      table.urppp-notice-table > tbody > tr.urppp-notice-row:hover {
+        border-color: color-mix(in srgb, var(--primary) 35%, var(--border)) !important;
       }
-      table.urppp-notice-table > tbody > tr.urppp-notice-row > td:last-child,
-      table.urppp-notice-table > tbody > tr > td:last-child {
-        border-right: 1px solid var(--border) !important;
-        border-top: 1px solid var(--border) !important;
-        border-bottom: 1px solid var(--border) !important;
-        border-top-right-radius: 12px !important;
-        border-bottom-right-radius: 12px !important;
-        background: var(--surface) !important;
-      }
-      table.urppp-notice-table > tbody > tr.urppp-notice-row > td,
-      table.urppp-notice-table > tbody > tr > td {
-        border-top: 1px solid var(--border) !important;
-        border-bottom: 1px solid var(--border) !important;
-        border-left: none !important;
-        border-right: none !important;
-        background: var(--surface) !important;
+      /* 所有单元格透明，边框交给 tr */
+      table.urppp-notice-table > tbody > tr > td,
+      table.urppp-notice-table > tbody > tr.urppp-notice-row > td {
+        display: block !important;
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
         vertical-align: middle !important;
-        padding: 14px 16px !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
       }
-      /* 隐藏 bullet 列时，标题列充当首列圆角 */
-      table.urppp-notice-table > tbody > tr > td.urppp-notice-bullet-cell + td.urppp-notice-title-cell {
-        border-left: 1px solid var(--border) !important;
-        border-top-left-radius: 12px !important;
-        border-bottom-left-radius: 12px !important;
-        padding-left: 18px !important;
+      table.urppp-notice-table > tbody > tr > td.urppp-notice-bullet-cell {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        margin: 0 !important;
       }
       table.urppp-notice-table > tbody > tr > td.urppp-notice-title-cell {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        width: auto !important;
         position: relative !important;
       }
       table.urppp-notice-table > tbody > tr > td.urppp-notice-title-cell::before {
         content: '' !important;
-        display: inline-block !important;
+        display: block !important;
         width: 7px !important;
         height: 7px !important;
+        min-width: 7px !important;
         border-radius: 50% !important;
         background: var(--primary) !important;
-        margin-right: 10px !important;
-        vertical-align: middle !important;
-        flex-shrink: 0 !important;
+        margin: 0 !important;
+        flex: 0 0 auto !important;
       }
       table.urppp-notice-table .urppp-notice-link,
       table.urppp-notice-table a.urppp-notice-link,
-      table.urppp-notice-table td.urppp-notice-title-cell a {
+      table.urppp-notice-table td.urppp-notice-title-cell a,
+      table.urppp-notice-table td.urppp-notice-title-cell a:link,
+      table.urppp-notice-table td.urppp-notice-title-cell a:visited {
         color: var(--text) !important;
         text-decoration: none !important;
         font-size: 14px !important;
         font-weight: 500 !important;
         line-height: 1.5 !important;
-        border-bottom: none !important;
-        vertical-align: middle !important;
+        border: none !important;
+        background: transparent !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
       }
       table.urppp-notice-table .urppp-notice-link:hover,
       table.urppp-notice-table td.urppp-notice-title-cell a:hover {
         color: var(--primary) !important;
       }
       table.urppp-notice-table td.urppp-notice-date-cell {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        flex: 0 0 auto !important;
+        width: auto !important;
         white-space: nowrap !important;
         text-align: right !important;
-        width: 1% !important;
       }
       .urppp-notice-time {
-        display: inline-block !important;
+        display: inline-flex !important;
+        align-items: center !important;
         font-size: 12px !important;
         line-height: 1.4 !important;
         color: var(--text-muted) !important;
@@ -4885,7 +4900,6 @@
         align-items: center !important;
         margin: 0 !important;
       }
-      /* 去掉原站蓝色下划线链接在公告表的突兀感 */
       table.urppp-notice-table a,
       table.urppp-notice-table a:link,
       table.urppp-notice-table a:visited {
@@ -6998,7 +7012,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.68');
+    console.log('[URP++] style applied v0.4.69');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -7621,7 +7635,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.68',
+    version: '0.4.69',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
