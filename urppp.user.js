@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.42
+// @version      0.4.43
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.42';
+          content:'URP++ v0.4.43';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1169,6 +1169,23 @@
                 sp.style.setProperty('height', 'auto', 'important');
                 sp.style.setProperty('margin-top', '0', 'important');
                 sp.style.setProperty('padding-top', '0', 'important');
+              }
+              const ab = a.querySelector('div');
+              if (ab) {
+                ab.style.setProperty('display', 'flex', 'important');
+                ab.style.setProperty('align-items', 'center', 'important');
+                ab.style.setProperty('justify-content', 'center', 'important');
+                ab.style.setProperty('top', '0', 'important');
+                ab.style.setProperty('bottom', '0', 'important');
+                ab.style.setProperty('height', 'auto', 'important');
+                const bb = ab.querySelector('b');
+                if (bb) {
+                  bb.style.setProperty('margin', '0', 'important');
+                  bb.style.setProperty('background-position', 'center center', 'important');
+                  bb.style.setProperty('background-size', '12px 12px', 'important');
+                  bb.style.setProperty('width', '14px', 'important');
+                  bb.style.setProperty('height', '14px', 'important');
+                }
               }
             }
           });
@@ -4343,25 +4360,38 @@
         padding-bottom: 0 !important;
         box-sizing: border-box !important;
       }
-      .chosen-single div {
+      .chosen-single div,
+      .chosen-container-single .chosen-single div,
+      body .chosen-container-single .chosen-single div,
+      .urppp-query-pair .chosen-single div,
+      .self .chosen-single div {
         position: absolute !important;
         top: 0 !important;
+        bottom: 0 !important;
         right: 0 !important;
         width: 28px !important;
-        height: 100% !important;
+        height: auto !important;
+        margin: 0 !important;
+        padding: 0 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        box-sizing: border-box !important;
       }
+      /* 不用猜 sprite 偏移：把 b 变成居中盒子，背景图放中心 */
       .chosen-single div b,
       .chosen-container-single .chosen-single div b,
       body .chosen-container-single .chosen-single div b,
-      .urppp-query-pair .chosen-single div b {
+      .urppp-query-pair .chosen-single div b,
+      .self .chosen-single div b {
         display: block !important;
-        width: 12px !important;
-        height: 12px !important;
-        margin: 0 auto !important;
-        background-position: -1px 1px !important; /* 略上移回中线 */
+        width: 14px !important;
+        height: 14px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background-repeat: no-repeat !important;
+        background-position: center center !important;
+        background-size: 12px 12px !important;
       }
       .chosen-container {
         height: auto !important;
@@ -5501,7 +5531,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.42');
+    console.log('[URP++] style applied v0.4.43');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -6122,7 +6152,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.42',
+    version: '0.4.43',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
