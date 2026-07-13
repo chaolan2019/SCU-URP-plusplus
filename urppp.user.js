@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.98
+// @version      0.4.99
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.98';
+          content:'URP++ v0.4.99';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3675,6 +3675,33 @@
       .sidebar:not(.menu-min) ~ .main-content { margin-left: 260px !important; }
       .sidebar.menu-min ~ .main-content { margin-left: 50px !important; }
       .main-content { margin-top: var(--urppp-navbar-height) !important; transition: margin-left .25s ease; }
+      /* 小屏：侧栏收成汉堡时，内容必须回到左边，不能继续留 260px */
+      @media (max-width: 991px) {
+        .sidebar:not(.display),
+        .sidebar.responsive:not(.display) {
+          /* ACE 默认会藏侧栏；不要强制占位 */
+        }
+        .sidebar ~ .main-content,
+        .sidebar:not(.menu-min) ~ .main-content,
+        .sidebar.menu-min ~ .main-content,
+        .main-content {
+          margin-left: 0 !important;
+        }
+        /* 点开汉堡后侧栏覆盖层 */
+        .sidebar.display {
+          display: block !important;
+          position: fixed !important;
+          left: 0 !important;
+          top: var(--urppp-navbar-height) !important;
+          width: 260px !important;
+          z-index: 1045 !important;
+          height: calc(100vh - var(--urppp-navbar-height)) !important;
+        }
+        body.mob-safari .main-content,
+        .main-container .main-content {
+          margin-left: 0 !important;
+        }
+      }
       .navbar.navbar-default.navbar-fixed-top,
       .navbar-fixed-top,
       .navbar-fixed-bottom { left: 0 !important; right: 0 !important; }
@@ -3730,6 +3757,65 @@
         transition: all .15s;
       }
       .urppp-sidebar-toggle:hover { background: var(--border); color: var(--text); }
+
+      /* 小屏汉堡按钮：贴合主题，不再用 ACE 默认灰/蓝 */
+      #menu-toggler,
+      .navbar-toggle.menu-toggler,
+      button.navbar-toggle.menu-toggler,
+      .navbar .menu-toggler {
+        background: var(--input-bg) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 10px !important;
+        box-shadow: none !important;
+        padding: 8px 10px !important;
+        margin: 6px 8px !important;
+        min-width: 40px !important;
+        min-height: 36px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-direction: column !important;
+        gap: 4px !important;
+      }
+      #menu-toggler:hover,
+      .navbar-toggle.menu-toggler:hover,
+      button.navbar-toggle.menu-toggler:hover {
+        background: color-mix(in srgb, var(--primary) 12%, var(--surface)) !important;
+        border-color: var(--primary) !important;
+      }
+      #menu-toggler:focus,
+      .navbar-toggle.menu-toggler:focus,
+      #menu-toggler:active,
+      .navbar-toggle.menu-toggler:active {
+        outline: none !important;
+        background: color-mix(in srgb, var(--primary) 16%, var(--surface)) !important;
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 3px var(--ring) !important;
+      }
+      #menu-toggler .icon-bar,
+      .navbar-toggle.menu-toggler .icon-bar,
+      .menu-toggler .icon-bar {
+        display: block !important;
+        width: 18px !important;
+        height: 2px !important;
+        margin: 0 !important;
+        background: var(--text) !important;
+        border-radius: 2px !important;
+        opacity: 1 !important;
+        box-shadow: none !important;
+      }
+      #menu-toggler:hover .icon-bar,
+      .navbar-toggle.menu-toggler:hover .icon-bar {
+        background: var(--primary) !important;
+      }
+      /* ACE 有时用伪元素画三条线 */
+      #menu-toggler:before,
+      #menu-toggler:after,
+      .menu-toggler:before,
+      .menu-toggler:after {
+        background: var(--text) !important;
+        border-color: var(--text) !important;
+      }
 
       /* 新菜单 */
       #urppp-menus {
@@ -6038,17 +6124,105 @@
         width: auto !important;
         height: auto !important;
       }
-      .btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-      .btn:active { transform: translateY(0); box-shadow: none; }
-      .btn-primary, .btn-info { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; border-radius: 6px !important; }
-      .btn-primary:hover, .btn-info:hover { background: var(--primary-hover) !important; border-color: var(--primary-hover) !important; }
-      .btn-success { background: #22c55e !important; border-color: #22c55e !important; color: #fff !important; border-radius: 6px !important; }
-      .btn-success:hover { background: #16a34a !important; border-color: #16a34a !important; }
-      .btn-warning { background: #f59e0b !important; border-color: #f59e0b !important; color: #fff !important; border-radius: 6px !important; }
-      .btn-danger { background: #ef4444 !important; border-color: #ef4444 !important; color: #fff !important; border-radius: 6px !important; }
-      .btn-default, .btn-white { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; border-radius: 6px !important; }
-      .btn-default:hover, .btn-white:hover { background: var(--border) !important; }
-      /* btn-app 必须压过 .btn-info 实心蓝，否则可申请业务页仍是 ACE 蓝块 */
+            .btn:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+      .btn:active,
+      .btn.active,
+      .btn:focus,
+      .btn:focus-visible {
+        transform: translateY(0) !important;
+        outline: none !important;
+      }
+      .btn-primary, .btn-info {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        color: #fff !important;
+        border-radius: 6px !important;
+      }
+      .btn-primary:hover, .btn-info:hover,
+      .btn-primary:focus, .btn-info:focus,
+      .btn-primary:active, .btn-info:active,
+      .btn-primary.active, .btn-info.active,
+      .btn-primary:active:focus, .btn-info:active:focus,
+      .btn-primary:active:hover, .btn-info:active:hover,
+      .open > .dropdown-toggle.btn-primary,
+      .open > .dropdown-toggle.btn-info {
+        background: var(--primary-hover) !important;
+        border-color: var(--primary-hover) !important;
+        color: #fff !important;
+        box-shadow: 0 0 0 3px var(--ring) !important;
+      }
+      .btn-success {
+        background: #22c55e !important;
+        border-color: #22c55e !important;
+        color: #fff !important;
+        border-radius: 6px !important;
+      }
+      .btn-success:hover, .btn-success:focus, .btn-success:active, .btn-success.active,
+      .btn-success:active:focus, .btn-success:active:hover {
+        background: #16a34a !important;
+        border-color: #16a34a !important;
+        color: #fff !important;
+        box-shadow: 0 0 0 3px rgba(34,197,94,0.25) !important;
+      }
+      .btn-warning {
+        background: #f59e0b !important;
+        border-color: #f59e0b !important;
+        color: #fff !important;
+        border-radius: 6px !important;
+      }
+      .btn-warning:hover, .btn-warning:focus, .btn-warning:active, .btn-warning.active,
+      .btn-warning:active:focus, .btn-warning:active:hover {
+        background: #d97706 !important;
+        border-color: #d97706 !important;
+        color: #fff !important;
+        box-shadow: 0 0 0 3px rgba(245,158,11,0.25) !important;
+      }
+      .btn-danger {
+        background: #ef4444 !important;
+        border-color: #ef4444 !important;
+        color: #fff !important;
+        border-radius: 6px !important;
+      }
+      .btn-danger:hover, .btn-danger:focus, .btn-danger:active, .btn-danger.active,
+      .btn-danger:active:focus, .btn-danger:active:hover {
+        background: #dc2626 !important;
+        border-color: #dc2626 !important;
+        color: #fff !important;
+        box-shadow: 0 0 0 3px rgba(239,68,68,0.25) !important;
+      }
+      .btn-default, .btn-white {
+        background: var(--input-bg) !important;
+        border-color: var(--border) !important;
+        color: var(--text) !important;
+        border-radius: 6px !important;
+      }
+      .btn-default:hover, .btn-white:hover,
+      .btn-default:focus, .btn-white:focus,
+      .btn-default:active, .btn-white:active,
+      .btn-default.active, .btn-white.active,
+      .btn-default:active:focus, .btn-white:active:focus {
+        background: color-mix(in srgb, var(--primary) 10%, var(--input-bg)) !important;
+        border-color: var(--primary) !important;
+        color: var(--text) !important;
+        box-shadow: 0 0 0 3px var(--ring) !important;
+      }
+      .btn-link:active, .btn-link:focus, .btn-link.active {
+        color: var(--primary-hover) !important;
+      }
+      /* 紫色等站点自定义按钮：点击态也贴主题 */
+      .btn-purple, .btn.btn-purple {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        color: #fff !important;
+      }
+      .btn-purple:hover, .btn-purple:focus, .btn-purple:active, .btn-purple.active,
+      .btn.btn-purple:hover, .btn.btn-purple:focus, .btn.btn-purple:active {
+        background: var(--primary-hover) !important;
+        border-color: var(--primary-hover) !important;
+        color: #fff !important;
+        box-shadow: 0 0 0 3px var(--ring) !important;
+      }
+/* btn-app 必须压过 .btn-info 实心蓝，否则可申请业务页仍是 ACE 蓝块 */
       .btn-app,
       .btn.btn-app,
       a.btn-app,
@@ -8682,7 +8856,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.98');
+    console.log('[URP++] style applied v0.4.99');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -8906,6 +9080,25 @@
   // ============================================================
 
 
+
+  function syncMobileContentOffset() {
+    try {
+      const sidebar = document.getElementById('sidebar');
+      const main = document.querySelector('.main-content');
+      if (!main) return;
+      const narrow = window.matchMedia && window.matchMedia('(max-width: 991px)').matches;
+      if (narrow) {
+        main.style.setProperty('margin-left', '0', 'important');
+        document.querySelectorAll('.main-content').forEach((el) => {
+          el.style.setProperty('margin-left', '0', 'important');
+        });
+      } else if (sidebar) {
+        const min = sidebar.classList.contains('menu-min');
+        const ml = min ? '50px' : '260px';
+        main.style.setProperty('margin-left', ml, 'important');
+      }
+    } catch (_) { /* ignore */ }
+  }
   function syncSidebarUnderNavbar() {
     try {
       const sidebar = document.getElementById('sidebar');
@@ -8921,6 +9114,7 @@
       // 顶栏压过侧栏
       navbar.style.setProperty('z-index', '1100', 'important');
       sidebar.style.setProperty('z-index', '1030', 'important');
+      syncMobileContentOffset();
     } catch (_) { /* ignore */ }
   }
   function rebuildSidebarCompletely() {
@@ -9284,9 +9478,17 @@
     });
     window.addEventListener('load', () => {
       syncSidebarUnderNavbar();
+      syncMobileContentOffset();
       setTimeout(syncSidebarUnderNavbar, 100);
       setTimeout(syncSidebarUnderNavbar, 400);
     });
+    document.addEventListener('click', (e) => {
+      const t = e.target && e.target.closest ? e.target.closest('#menu-toggler, .menu-toggler, .navbar-toggle') : null;
+      if (!t) return;
+      setTimeout(syncMobileContentOffset, 0);
+      setTimeout(syncMobileContentOffset, 50);
+      setTimeout(syncMobileContentOffset, 200);
+    }, true);
   }
   function watchRouteChanges() {
     const run = () => {
@@ -9328,7 +9530,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.98',
+    version: '0.4.99',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
