@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.91
+// @version      0.4.92
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.91';
+          content:'URP++ v0.4.92';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3288,6 +3288,11 @@
         border: none !important;
         box-shadow: var(--shadow) !important;
         min-height: 45px !important;
+        z-index: 1100 !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
       }
       .navbar.navbar-default .navbar-brand,
       .navbar-default .navbar-brand { color: var(--text) !important; text-shadow: none !important; }
@@ -3534,12 +3539,16 @@
       .navbar-fixed-top,
       .navbar-fixed-bottom { left: 0 !important; right: 0 !important; }
       .sidebar {
-        z-index: 1040 !important;
+        z-index: 1030 !important; /* 低于顶栏，避免盖住 navbar 底边 */
         top: var(--urppp-navbar-height) !important;
         height: calc(100vh - var(--urppp-navbar-height)) !important;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
         background: var(--surface) !important;
         border-right: 1px solid var(--border) !important;
-        box-shadow: var(--shadow) !important;
+        border-top: none !important;
+        /* 阴影只向右，不向上侵入顶栏 */
+        box-shadow: 2px 0 10px rgba(15, 23, 42, 0.06) !important;
         transition: width .25s ease;
       }
       .sidebar:before { display: none !important; }
@@ -8430,6 +8439,7 @@
 
     // 完全重构侧边栏为 Hanako 风格
     rebuildSidebarCompletely();
+    syncSidebarUnderNavbar();
     // 强制内容区内边距（ACE 偶发内联样式覆盖）
     document.querySelectorAll('.page-content, #page-content-template').forEach((el) => {
       el.style.setProperty('padding', '16px 64px 40px', 'important');
@@ -8512,7 +8522,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.91');
+    console.log('[URP++] style applied v0.4.92');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -8735,6 +8745,24 @@
   // 侧边栏完全重构（Hanako 风格）
   // ============================================================
 
+
+  function syncSidebarUnderNavbar() {
+    try {
+      const sidebar = document.getElementById('sidebar');
+      const navbar = document.querySelector('#navbar, .navbar.navbar-default, .navbar-fixed-top');
+      if (!sidebar || !navbar) return;
+      // 用底边实测，避免 min-height 与真实高度不一致
+      const rect = navbar.getBoundingClientRect();
+      const nh = Math.max(45, Math.round(rect.height || navbar.offsetHeight || 45));
+      document.documentElement.style.setProperty('--urppp-navbar-height', nh + 'px');
+      sidebar.style.setProperty('top', nh + 'px', 'important');
+      sidebar.style.setProperty('height', 'calc(100vh - ' + nh + 'px)', 'important');
+      sidebar.style.setProperty('margin-top', '0', 'important');
+      // 顶栏压过侧栏
+      navbar.style.setProperty('z-index', '1100', 'important');
+      sidebar.style.setProperty('z-index', '1030', 'important');
+    } catch (_) { /* ignore */ }
+  }
   function rebuildSidebarCompletely() {
     const sidebar = document.getElementById('sidebar');
     const origMenus = document.getElementById('menus');
@@ -8746,12 +8774,8 @@
     if (oldMenus) oldMenus.remove();
     if (oldHeader) oldHeader.remove();
 
-    // 读取顶栏高度并同步 CSS 变量（加兜底）
-    const navbar = document.querySelector('.navbar.navbar-default, .navbar-fixed-top');
-    const nh = navbar ? (navbar.offsetHeight || 45) : 45;
-    document.documentElement.style.setProperty('--urppp-navbar-height', nh + 'px', 'important');
-    sidebar.style.setProperty('top', nh + 'px', 'important');
-    sidebar.style.setProperty('height', 'calc(100vh - ' + nh + 'px)', 'important');
+    // 读取顶栏高度并同步：侧栏顶边紧贴顶栏底边
+    syncSidebarUnderNavbar();
 
     // 记录原 active 状态
     const activeIds = new Set();
@@ -9091,16 +9115,25 @@
   }
 
   // 监听 PJAX/AJAX 路由变化，重新执行美化
+
+  if (!window.__urpppSidebarSyncBound) {
+    window.__urpppSidebarSyncBound = true;
+    window.addEventListener('resize', () => {
+      clearTimeout(window.__urpppSidebarSyncTimer);
+      window.__urpppSidebarSyncTimer = setTimeout(syncSidebarUnderNavbar, 50);
+    });
+    window.addEventListener('load', () => {
+      syncSidebarUnderNavbar();
+      setTimeout(syncSidebarUnderNavbar, 100);
+      setTimeout(syncSidebarUnderNavbar, 400);
+    });
+  }
   function watchRouteChanges() {
     const run = () => {
       setTimeout(() => {
         const sidebar = document.getElementById('sidebar');
         if (!sidebar) return;
-        const navbar = document.querySelector('.navbar.navbar-default, .navbar-fixed-top');
-        const nh = navbar ? (navbar.offsetHeight || 45) : 45;
-        document.documentElement.style.setProperty('--urppp-navbar-height', nh + 'px', 'important');
-        sidebar.style.setProperty('top', nh + 'px', 'important');
-        sidebar.style.setProperty('height', 'calc(100vh - ' + nh + 'px)', 'important');
+        syncSidebarUnderNavbar();
         rebuildSidebarCompletely();
         rebuildNavbar();
         patchSchoolCalendarLink();
@@ -9135,7 +9168,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.91',
+    version: '0.4.92',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
