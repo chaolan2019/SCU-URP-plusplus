@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.19
+// @version      0.5.20
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.19';
+          content:'URP++ v0.5.20';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -9111,37 +9111,42 @@
       html.urppp-theme-dark .fc-today {
         background: rgba(147, 168, 199, 0.08) !important;
       }
-      /* FullCalendar 事件悬停弹窗：贴近鼠标，不抢事件 */
-      #schedule-hover,
-      #schedule-hover.promptedmessage-a,
-      #promptedmessage-div.promptedmessage-a {
-        background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: var(--radius) !important;
-        box-shadow: 0 8px 28px rgba(0,0,0,0.16) !important;
+      /* FullCalendar 事件悬停弹窗：保留虚线框风格，仅主题色化 */
+      #schedule-hover {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
         pointer-events: none !important;
         z-index: 3000 !important;
-        max-width: min(360px, 70vw) !important;
       }
       #schedule-hover .promptedmessage-a,
-      #schedule-hover .promptedmessage,
-      #promptedmessage-div.promptedmessage-a,
-      #promptedmessage-div .promptedmessage {
+      #promptedmessage-div.promptedmessage-a {
         background: var(--surface) !important;
-        border: none !important;
-        border-radius: var(--radius) !important;
-        box-shadow: none !important;
-        outline: none !important;
+        border: 2px solid color-mix(in srgb, var(--primary) 45%, var(--border)) !important;
+        border-radius: 10px !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.14) !important;
+        padding: 6px !important;
         pointer-events: none !important;
+        position: static !important; /* 由外层 #schedule-hover 统一定位，避免双重 absolute 闪跳 */
+        top: auto !important;
+        left: auto !important;
       }
-      #schedule-hover .promptedmessage {
-        padding: 10px 14px !important;
+      #schedule-hover .promptedmessage,
+      #promptedmessage-div .promptedmessage {
+        background: color-mix(in srgb, var(--primary) 12%, var(--surface)) !important;
+        border: 1px solid var(--surface) !important;
+        outline: 2px dashed color-mix(in srgb, var(--primary) 40%, var(--border)) !important;
+        outline-offset: 0 !important;
+        border-radius: 8px !important;
+        box-shadow: none !important;
+        padding: 10px 12px !important;
         display: flex !important;
         flex-direction: column !important;
         gap: 6px !important;
         font-size: 13px !important;
         line-height: 1.6 !important;
         color: var(--text-secondary) !important;
+        pointer-events: none !important;
       }
       #schedule-hover .promptedmessage span:first-child {
         font-weight: 600 !important;
@@ -9869,7 +9874,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.19');
+    console.log('[URP++] style applied v0.5.20');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -10511,92 +10516,100 @@
   function bindScheduleHoverNearCursor() {
     if (window.__urpppScheduleHoverNear) return;
     window.__urpppScheduleHoverNear = true;
+
+    // 固定右下偏移，不做左右翻转，避免「闪一下从左跳到右」
+    const OFFSET_X = 12;
+    const OFFSET_Y = 16;
     let lastX = 0;
     let lastY = 0;
-    let pinTimer = 0;
+    let visible = false;
+    let raf = 0;
 
-    const OFFSET_X = 14;
-    const OFFSET_Y = 14;
+    const hoverEl = () => document.getElementById('schedule-hover');
 
-    const place = (el) => {
-      if (!el) return;
-      // 站点常把 display 设为 block 后写 top/left；我们在其后覆盖
-      const vw = window.innerWidth || document.documentElement.clientWidth || 1200;
-      const vh = window.innerHeight || document.documentElement.clientHeight || 800;
-      const rect = el.getBoundingClientRect();
+    const isShown = (el) => {
+      if (!el) return false;
+      // 站点用 display 控制显隐；不要读 getBoundingClientRect 宽高做翻转
+      if (el.style && el.style.display === 'none') return false;
+      const st = window.getComputedStyle(el);
+      return st.display !== 'none' && st.visibility !== 'hidden';
+    };
+
+    const place = () => {
+      const el = hoverEl();
+      if (!el || !isShown(el)) {
+        visible = false;
+        return;
+      }
+      visible = true;
+      const vw = window.innerWidth || 1200;
+      const vh = window.innerHeight || 800;
+      // 只 clamp，不翻边，位置连续
       let left = lastX + OFFSET_X;
       let top = lastY + OFFSET_Y;
-      // 右侧/底部不够时翻到另一侧
-      if (left + rect.width > vw - 8) left = Math.max(8, lastX - rect.width - OFFSET_X);
-      if (top + rect.height > vh - 8) top = Math.max(8, lastY - rect.height - OFFSET_Y);
+      // 用预估宽高 clamp，避免首次 width=0 再变大导致跳变
+      const estW = Math.min(320, el.offsetWidth || 280);
+      const estH = Math.min(220, el.offsetHeight || 160);
+      if (left + estW > vw - 8) left = vw - estW - 8;
+      if (top + estH > vh - 8) top = vh - estH - 8;
+      if (left < 8) left = 8;
+      if (top < 8) top = 8;
+
       el.style.setProperty('position', 'fixed', 'important');
-      el.style.setProperty('left', left + 'px', 'important');
-      el.style.setProperty('top', top + 'px', 'important');
+      el.style.setProperty('left', Math.round(left) + 'px', 'important');
+      el.style.setProperty('top', Math.round(top) + 'px', 'important');
       el.style.setProperty('right', 'auto', 'important');
       el.style.setProperty('bottom', 'auto', 'important');
       el.style.setProperty('margin', '0', 'important');
       el.style.setProperty('z-index', '3000', 'important');
       el.style.setProperty('pointer-events', 'none', 'important');
-      el.style.setProperty('display', 'block', 'important');
+      // 不要强制改 display，交给站点显隐
     };
 
-    const targets = () => {
-      const a = document.getElementById('schedule-hover');
-      const b = document.getElementById('promptedmessage-div');
-      const list = [];
-      if (a) list.push(a);
-      // promptedmessage-div 有时在 schedule-hover 内，有时独立 absolute
-      if (b && b !== a && !a?.contains(b)) list.push(b);
-      return list;
-    };
-
-    const pinVisible = () => {
-      targets().forEach((el) => {
-        const st = window.getComputedStyle(el);
-        if (st.display === 'none' || st.visibility === 'hidden' || Number(st.opacity) === 0) return;
-        place(el);
+    const schedulePlace = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        place();
       });
     };
 
     document.addEventListener('mousemove', (e) => {
       lastX = e.clientX;
       lastY = e.clientY;
-      // 仅当弹层可见时跟随，避免空跑
-      const a = document.getElementById('schedule-hover');
-      if (a && a.style && a.style.display && a.style.display !== 'none') {
-        place(a);
-      } else if (a) {
-        const st = window.getComputedStyle(a);
-        if (st.display !== 'none' && st.visibility !== 'hidden') place(a);
+      if (!visible) {
+        // 轻量探测，避免每帧 getComputedStyle
+        const el = hoverEl();
+        if (el && el.style && el.style.display && el.style.display !== 'none') visible = true;
       }
+      if (visible) schedulePlace();
     }, true);
 
-    // 站点写 top/left 后立刻纠正
-    const obs = new MutationObserver(() => {
-      clearTimeout(pinTimer);
-      pinTimer = setTimeout(pinVisible, 0);
-    });
-    const watch = (el) => {
-      if (!el || el.__urpppHoverObs) return;
-      el.__urpppHoverObs = true;
-      obs.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
-    };
-    const ensureWatch = () => {
-      targets().forEach(watch);
-    };
-    ensureWatch();
-    setTimeout(ensureWatch, 800);
-    setTimeout(ensureWatch, 2000);
-
-    // 事件块悬停时也钉一次
     document.addEventListener('mouseover', (e) => {
-      const ev = e.target && e.target.closest ? e.target.closest('.fc-event, .fc-time-grid-event, .fc-content') : null;
+      const ev = e.target && e.target.closest
+        ? e.target.closest('.fc-event, .fc-time-grid-event')
+        : null;
       if (!ev) return;
       lastX = e.clientX;
       lastY = e.clientY;
-      setTimeout(pinVisible, 0);
-      setTimeout(pinVisible, 30);
-      setTimeout(pinVisible, 80);
+      // 站点通常在 mouseover 后同步显示弹层
+      setTimeout(() => {
+        visible = true;
+        place();
+      }, 0);
+      setTimeout(place, 40);
+    }, true);
+
+    document.addEventListener('mouseout', (e) => {
+      const ev = e.target && e.target.closest
+        ? e.target.closest('.fc-event, .fc-time-grid-event')
+        : null;
+      if (!ev) return;
+      // 延后检查，避免移入子节点误判
+      setTimeout(() => {
+        const el = hoverEl();
+        if (!isShown(el)) visible = false;
+      }, 50);
     }, true);
   }
   // 首页通知：只用 CSS !important 压站点 inline white，禁止 Observer/jQuery 劫持（会卡死加载）
@@ -10842,7 +10855,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.19',
+    version: '0.5.20',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
