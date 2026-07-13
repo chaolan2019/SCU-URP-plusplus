@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.21
+// @version      0.5.20
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -546,6 +546,14 @@
     try { syncNavbarThemeUI(); } catch (_) {}
   }
 
+  function clearAccent() {
+    GM_setValue(ACCENT_KEY, '');
+    document.documentElement.style.removeProperty('--urppp-accent');
+    document.documentElement.style.removeProperty('--urppp-accent-hover');
+    document.documentElement.style.removeProperty('--urppp-accent-ring');
+    clearInlinePrimaryOverrides();
+  }
+
   function getAccent() { return GM_getValue(ACCENT_KEY, ''); }
 
   function getAccentPresets() {
@@ -682,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.21';
+          content:'URP++ v0.5.20';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3615,6 +3623,7 @@
       }
     } catch (_) {}
     let styleEl = document.getElementById('urppp-internal-style');
+    const styleExists = !!styleEl;
     if (!styleEl) {
       styleEl = document.createElement('style');
       styleEl.id = 'urppp-internal-style';
@@ -9865,7 +9874,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.21');
+    console.log('[URP++] style applied v0.5.20');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -10604,6 +10613,8 @@
     }, true);
   }
   // 首页通知：只用 CSS !important 压站点 inline white，禁止 Observer/jQuery 劫持（会卡死加载）
+  function pinHomeNoticeItems() { /* no-op: CSS handles it */ }
+  function bindHomeNoticeScrub() { /* no-op */ }
   function rebuildDashboard() {
     try { bindScheduleHoverNearCursor(); } catch (_) {}
     if (document.getElementById('urppp-dashboard')) return;
@@ -10844,7 +10855,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.21',
+    version: '0.5.20',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
