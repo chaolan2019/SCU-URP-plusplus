@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.84
+// @version      0.4.85
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.84';
+          content:'URP++ v0.4.85';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -2622,20 +2622,17 @@
     }, true);
   }
 
-  // 学籍页培养方案抽屉：轻量两栏归位（性能优先，避免拖慢弹窗打开）
-  function beautifyCurriculumDrawer(force) {
+  // 学籍页培养方案抽屉：极轻两栏归位（不拆 host、不阻塞打开动画）
+  function beautifyCurriculumDrawer() {
     try {
       const panel = document.getElementById('curriculumInfo-divcon2');
       if (!panel) return;
-      // 用 style.width 判断打开，避免 getComputedStyle
       const w = parseFloat(panel.style.width || '0');
-      if (!force && (!w || w < 40)) return;
+      if (!w || w < 40) {
+        if (w === 0) panel.dataset.urpppDrawerReady = '0';
+        return;
+      }
 
-      // 同一打开周期只做一次重结构；内容变化时做轻量刷新
-      const opened = w >= 40;
-      if (!opened) return;
-
-      const sig = String(Math.round(w)) + '|' + (panel.dataset.urpppDrawerReady || '0');
       const body = panel.querySelector('.modal-body');
       if (!body) return;
       const host =
@@ -2645,87 +2642,84 @@
       if (!host) return;
 
       let bodyWrap = host.querySelector(':scope > .urppp-drawer-body');
-      let left = host.querySelector('.urppp-drawer-left');
-      let right = host.querySelector('.urppp-drawer-right');
-      const needBuild = !bodyWrap || !left || !right || force;
+      let left = bodyWrap && bodyWrap.querySelector(':scope > .urppp-drawer-left');
+      let right = bodyWrap && bodyWrap.querySelector(':scope > .urppp-drawer-right');
 
-      if (needBuild) {
-        panel.classList.add('urppp-curriculum-drawer');
+      // 仅首次创建外壳；绝不 while 清空 host（那会卡）
+      if (!bodyWrap || !left || !right) {
         host.classList.add('urppp-drawer-layout');
+        panel.classList.add('urppp-curriculum-drawer');
 
-        const toolbar = host.querySelector(':scope > p, :scope > .urppp-drawer-toolbar');
-        if (toolbar && toolbar.tagName === 'P') toolbar.classList.add('urppp-drawer-toolbar');
+        const toolbar = host.querySelector(':scope > p');
+        if (toolbar) toolbar.classList.add('urppp-drawer-toolbar');
 
-        if (!bodyWrap) {
-          bodyWrap = document.createElement('div');
-          bodyWrap.className = 'urppp-drawer-body';
+        bodyWrap = document.createElement('div');
+        bodyWrap.className = 'urppp-drawer-body';
+        left = document.createElement('div');
+        left.className = 'urppp-drawer-left';
+        right = document.createElement('div');
+        right.className = 'urppp-drawer-right';
+        bodyWrap.appendChild(left);
+        bodyWrap.appendChild(right);
+
+        // 收集现有子节点再归位（只 move，不重建内容）
+        const kids = Array.from(host.children);
+        const treeEl = host.querySelector('#treeDemo, .ztree') || panel.querySelector('#treeDemo, .ztree');
+        const treeCol = treeEl ? treeEl.closest('.col-xs-6, .col-sm-6') : null;
+        const detailIds = ['fajh', 'xnxq', 'kz', 'kc', 'kcfa'];
+
+        kids.forEach((kid) => {
+          if (kid === toolbar) return;
+          if (treeCol && (kid === treeCol || kid.contains(treeCol))) {
+            if (treeCol.parentElement !== left) left.appendChild(treeCol);
+            return;
+          }
+          if (kid.id && detailIds.includes(kid.id)) {
+            right.appendChild(kid);
+            return;
+          }
+          if (kid.classList && kid.classList.contains('col-xs-6')) {
+            if (kid.querySelector && kid.querySelector('#treeDemo, .ztree')) {
+              if (kid.parentElement !== left) left.appendChild(kid);
+            } else {
+              right.appendChild(kid);
+            }
+          }
+        });
+        // 再按 id 兜底一次
+        if (treeCol && treeCol.parentElement !== left) left.appendChild(treeCol);
+        detailIds.forEach((id) => {
+          const el = document.getElementById(id);
+          if (el && panel.contains(el) && el.parentElement !== right) right.appendChild(el);
+        });
+
+        if (toolbar && toolbar.parentElement === host) {
+          host.insertBefore(bodyWrap, toolbar.nextSibling);
+        } else {
+          host.appendChild(bodyWrap);
         }
-        if (!left) {
-          left = document.createElement('div');
-          left.className = 'urppp-drawer-left';
-        }
-        if (!right) {
-          right = document.createElement('div');
-          right.className = 'urppp-drawer-right';
-        }
-        if (!bodyWrap.contains(left)) bodyWrap.appendChild(left);
-        if (!bodyWrap.contains(right)) bodyWrap.appendChild(right);
-
-        // 只在首次构建时搬节点，避免反复 append 造成卡顿
-        if (!host.contains(bodyWrap) || force || panel.dataset.urpppDrawerReady !== '1') {
-          const treeEl = panel.querySelector('#treeDemo') || panel.querySelector('.ztree');
-          const treeCol = treeEl ? (treeEl.closest('.col-xs-6, .col-sm-6') || treeEl.closest('.widget-box')?.parentElement || treeEl.parentElement) : null;
-          const detailIds = ['fajh', 'xnxq', 'kz', 'kc', 'kcfa'];
-
-          // 重建 host 子节点顺序：toolbar + bodyWrap
-          const keep = [];
-          if (toolbar) keep.push(toolbar);
-          keep.push(bodyWrap);
-          // 先收集详情/树
-          if (treeCol && treeCol.parentElement !== left) left.appendChild(treeCol);
-          detailIds.forEach((id) => {
-            const el = document.getElementById(id);
-            if (el && panel.contains(el) && el.parentElement !== right) right.appendChild(el);
-          });
-          // 清空 host 后按序挂回（比多次 insertBefore 更可控）
-          while (host.firstChild) host.removeChild(host.firstChild);
-          keep.forEach((n) => host.appendChild(n));
-
-          // 左栏只留树
-          Array.from(left.children).forEach((child) => {
-            if (detailIds.includes(child.id)) right.appendChild(child);
-          });
-          // 右栏顺序固定
-          detailIds.forEach((id) => {
-            const el = document.getElementById(id);
-            if (el && panel.contains(el)) right.appendChild(el);
-          });
-
-          panel.dataset.urpppDrawerReady = '1';
-        }
+        // toolbar 置顶
+        if (toolbar && host.firstElementChild !== toolbar) host.insertBefore(toolbar, host.firstElementChild);
+        panel.dataset.urpppDrawerReady = '1';
+      } else {
+        // 已构建：只把跑偏的详情节点挪回右栏（O(1)~O(5)）
+        const detailIds = ['fajh', 'xnxq', 'kz', 'kc', 'kcfa'];
+        detailIds.forEach((id) => {
+          const el = document.getElementById(id);
+          if (el && panel.contains(el) && el.parentElement !== right) right.appendChild(el);
+        });
+        const treeEl = panel.querySelector('#treeDemo');
+        const treeCol = treeEl && treeEl.closest('.col-xs-6, .col-sm-6');
+        if (treeCol && treeCol.parentElement !== left) left.appendChild(treeCol);
       }
 
-      // 轻量样式：只给关键容器写一次 class，具体靠 CSS
-      if (left) left.classList.add('urppp-drawer-left');
-      if (right) right.classList.add('urppp-drawer-right');
-      // 详情块宽度交给 CSS；避免对每个 profile-info-row 做 getComputedStyle/inline 风暴
-      // 仅在右栏还没标记时给卡片加 class
-      if (right && right.dataset.urpppCardsReady !== '1') {
-        right.querySelectorAll('.profile-user-info, .profile-user-info-striped').forEach((card) => {
-          card.classList.remove('urppp-query-form');
-          card.classList.add('urppp-drawer-card');
-        });
-        right.dataset.urpppCardsReady = '1';
-      } else if (right) {
-        // 新注入的卡片补 class
+      // 卡片 class：只补新增，不扫全量 style
+      if (right) {
         right.querySelectorAll('.profile-user-info:not(.urppp-drawer-card), .profile-user-info-striped:not(.urppp-drawer-card)').forEach((card) => {
           card.classList.remove('urppp-query-form');
           card.classList.add('urppp-drawer-card');
         });
       }
-
-      // 记录签名，避免无意义重复
-      panel.dataset.urpppDrawerSig = sig;
     } catch (err) {
       console.warn('[URP++] curriculum drawer beautify failed', err);
     }
@@ -2735,62 +2729,41 @@
     if (window.__urpppCurriculumDrawerBound) return;
     window.__urpppCurriculumDrawerBound = true;
 
-    let scheduled = false;
-    const run = (force) => {
-      if (scheduled && !force) return;
-      scheduled = true;
-      requestAnimationFrame(() => {
-        scheduled = false;
-        beautifyCurriculumDrawer(!!force);
-      });
+    let timer = 0;
+    const run = () => {
+      clearTimeout(timer);
+      // 等站点 width 动画启动后再动 DOM，避免和 jQuery animate 抢主线程
+      timer = setTimeout(() => {
+        requestAnimationFrame(() => beautifyCurriculumDrawer());
+      }, 120);
     };
 
-    // 不再启动时连跑 6 次；只在真正打开时处理
     const panel = document.getElementById('curriculumInfo-divcon2');
     if (panel) {
-      // 仅观察面板自身 style（width 动画）与直接子树有限变化
-      const obs = new MutationObserver((muts) => {
-        // 面板未打开则忽略
-        const w = parseFloat(panel.style.width || '0');
-        if (!w || w < 40) {
-          // 关闭后允许下次重新 build
-          if (w === 0) panel.dataset.urpppDrawerReady = '0';
+      let lastW = panel.style.width || '';
+      const obs = new MutationObserver(() => {
+        const w = panel.style.width || '';
+        if (w === lastW) return;
+        lastW = w;
+        const n = parseFloat(w || '0');
+        if (!n || n < 40) {
+          if (n === 0) panel.dataset.urpppDrawerReady = '0';
           return;
         }
-        // 过滤：自己改 class 不重复触发
-        const meaningful = muts.some((m) => {
-          if (m.type === 'attributes' && m.attributeName === 'style' && m.target === panel) return true;
-          if (m.type === 'childList' && m.target && panel.contains(m.target)) {
-            // 忽略我们 wrapper 内部纯样式无关的噪声：只要有新增节点
-            return m.addedNodes && m.addedNodes.length > 0;
-          }
-          return false;
-        });
-        if (!meaningful) return;
-        clearTimeout(window.__urpppCurriculumDrawerTimer);
-        window.__urpppCurriculumDrawerTimer = setTimeout(() => run(false), 80);
+        run();
       });
-      obs.observe(panel, {
-        attributes: true,
-        attributeFilter: ['style'],
-        childList: true,
-        subtree: true
-      });
+      // 只听面板自身 style，不听整棵子树（关键性能点）
+      obs.observe(panel, { attributes: true, attributeFilter: ['style'] });
     }
 
-    // 点击只在目标相关时触发 1~2 次，不再全页盲扫
     document.addEventListener('click', (e) => {
-      const t = e.target && e.target.closest ? e.target.closest('a,button,span,li,div') : null;
+      const t = e.target && e.target.closest ? e.target.closest('a,button') : null;
       if (!t) return;
       const txt = ((t.textContent || '') + '').replace(/\s+/g, '');
-      const hit =
-        /培养方案|与我相关|自动化培养/.test(txt) ||
-        (t.id && /curriculumInfo-divcon/.test(t.id)) ||
-        (t.closest && t.closest('#curriculumInfo-divcon2, #curriculumInfo-divcon1, #curriculumInfo-divcon'));
-      if (!hit) return;
-      // 等站点 animate width 启动后再布局
-      setTimeout(() => run(true), 30);
-      setTimeout(() => run(false), 220);
+      if (!/培养方案|与我相关|自动化培养/.test(txt)) return;
+      // 动画中后期再归位一次即可
+      setTimeout(run, 180);
+      setTimeout(run, 450);
     }, true);
   }
   function beautifyNoticeTables() {
@@ -7327,20 +7300,24 @@
       #curriculumInfo-divcon2 .urppp-drawer-left,
       #curriculumInfo-divcon2 .urppp-drawer-right {
         float: none !important;
-        flex: 1 1 0 !important;
-        width: 0 !important; /* 配合 flex:1 均分，避免内容撑破 */
-        max-width: none !important;
         min-width: 0 !important;
         padding: 0 !important;
         margin: 0 !important;
         border: none !important;
         box-sizing: border-box !important;
       }
+      /* 左树略宽，接近原 col-xs-6，避免树被压窄 */
       #curriculumInfo-divcon2 .urppp-drawer-left {
+        flex: 1 1 50% !important;
+        width: 50% !important;
+        max-width: 50% !important;
         position: sticky !important;
         top: 0 !important;
       }
       #curriculumInfo-divcon2 .urppp-drawer-right {
+        flex: 1 1 50% !important;
+        width: 50% !important;
+        max-width: 50% !important;
         display: flex !important;
         flex-direction: column !important;
         gap: 12px !important;
@@ -8262,7 +8239,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.84');
+    console.log('[URP++] style applied v0.4.85');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -8885,7 +8862,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.84',
+    version: '0.4.85',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
