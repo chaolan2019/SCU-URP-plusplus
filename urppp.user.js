@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.39
+// @version      0.5.40
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.39';
+          content:'URP++ v0.5.40';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1526,15 +1526,17 @@
         if (!bar) return;
         bar.classList.add('urppp-pagebar');
 
-        // 容器
+        // 容器：不要写 line-height:36，会把「共x条」撑成竖排碎字
         bar.style.setProperty('display', 'block', 'important');
         bar.style.setProperty('width', '100%', 'important');
+        bar.style.setProperty('line-height', '1.5', 'important');
         const wrap = bar.querySelector('.dataTables_paginate, [id^="sample-table-2_paginate_"]') || bar;
         wrap.style.setProperty('display', 'flex', 'important');
         wrap.style.setProperty('align-items', 'center', 'important');
         wrap.style.setProperty('flex-wrap', 'wrap', 'important');
         wrap.style.setProperty('gap', '8px', 'important');
         wrap.style.setProperty('position', 'relative', 'important');
+        wrap.style.setProperty('line-height', '1.5', 'important');
 
         // ul.pagination
         bar.querySelectorAll('ul.pagination').forEach((ul) => {
@@ -1628,8 +1630,8 @@
           btn.style.setProperty('left', 'auto', 'important');
           btn.style.setProperty('top', 'auto', 'important');
           btn.style.setProperty('float', 'none', 'important');
-          btn.style.setProperty('height', '36px', 'important');
-          btn.style.setProperty('min-width', '56px', 'important');
+          btn.style.setProperty('height', '32px', 'important');
+          btn.style.setProperty('min-width', '52px', 'important');
           btn.style.setProperty('padding', '0 12px', 'important');
           btn.style.setProperty('margin', '0 4px', 'important');
           btn.style.setProperty('font-size', '13px', 'important');
@@ -1642,7 +1644,7 @@
           inp.classList.add('urppp-page-goto');
           inp.style.setProperty('position', 'static', 'important');
           inp.style.setProperty('display', 'inline-block', 'important');
-          inp.style.setProperty('height', '36px', 'important');
+          inp.style.setProperty('height', '32px', 'important');
           inp.style.setProperty('width', '48px', 'important');
           inp.style.setProperty('margin', '0 4px', 'important');
           inp.style.setProperty('padding', '4px 8px', 'important');
@@ -1683,19 +1685,20 @@
   function scheduleBeautifyPagebar() {
     if (window.__urpppPagebarBound) return;
     window.__urpppPagebarBound = true;
-    const run = () => beautifyPagebar();
-    ;[0, 200, 800, 2000].forEach((ms) => setTimeout(run, ms));
-    const obs = new MutationObserver((muts) => {
-      const meaningful = muts.some((m) => m.type === 'childList' && (m.addedNodes.length || m.removedNodes.length));
-      if (!meaningful) return;
-      clearTimeout(window.__urpppPagebarTimer);
-      window.__urpppPagebarTimer = setTimeout(run, 120);
-    });
-    // 观察所有 #urppagebar 及 body（分页可能晚注入）
-    document.querySelectorAll('#urppagebar').forEach((host) => {
-      obs.observe(host, { childList: true, subtree: true });
-    });
-    obs.observe(document.body, { childList: true, subtree: false });
+    const run = () => {
+      beautifyPagebar();
+      // 分页条可能晚注入：补挂 observer
+      document.querySelectorAll('#urppagebar').forEach((host) => {
+        if (host.__urpppPagebarObs) return;
+        host.__urpppPagebarObs = true;
+        const obs = new MutationObserver(() => {
+          clearTimeout(window.__urpppPagebarTimer);
+          window.__urpppPagebarTimer = setTimeout(() => beautifyPagebar(host.parentElement || document), 150);
+        });
+        obs.observe(host, { childList: true, subtree: true });
+      });
+    };
+    ;[0, 300, 1000, 2500].forEach((ms) => setTimeout(run, ms));
   }
   function beautifyFreeClassroomList() {
     try {
@@ -7550,8 +7553,15 @@
         display: block !important;
         width: 100% !important;
         margin-top: 10px !important;
-        line-height: 36px !important;
+        line-height: 1.5 !important;
+        font-size: 13px !important;
+        color: var(--text-secondary) !important;
         box-sizing: border-box !important;
+      }
+      /* 「共 x 条」等纯文本：正常行高，禁止被 36px chip 行高带歪 */
+      #urppagebar,
+      #urppagebar .dataTables_paginate {
+        white-space: normal !important;
       }
       #urppagebar .dataTables_paginate,
       #urppagebar [id^="sample-table-2_paginate_"] {
@@ -7561,6 +7571,7 @@
         gap: 8px 10px !important;
         position: relative !important;
         width: 100% !important;
+        line-height: 1.5 !important;
       }
       /* 清掉旧 pagination 全局小按钮样式在页码条上的影响 */
       #urppagebar ul.pagination,
@@ -7626,6 +7637,33 @@
       #urppagebar ul.pagination > li.next > span,
       #urppagebar .urppp-page-chip-nav {
         min-width: 72px !important;
+      }
+      /* 分页条里的说明文字 / 每页条数：正常排版 */
+      #urppagebar > span,
+      #urppagebar .dataTables_paginate > span,
+      #urppagebar label,
+      #urppagebar font,
+      #urppagebar {
+        font-size: 13px !important;
+      }
+      #urppagebar select {
+        height: 32px !important;
+        min-height: 32px !important;
+        line-height: 1.3 !important;
+        vertical-align: middle !important;
+      }
+      #urppagebar [id^="turnpageto_"] {
+        height: 32px !important;
+        min-height: 32px !important;
+        line-height: 1.3 !important;
+        width: 48px !important;
+        vertical-align: middle !important;
+      }
+      #urppagebar [id^="btn_turnpageto_"] {
+        height: 32px !important;
+        min-height: 32px !important;
+        line-height: 1 !important;
+        vertical-align: middle !important;
       }
       /* 当前页 */
       #urppagebar ul.pagination > li.active > span,
@@ -10636,7 +10674,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.39');
+    console.log('[URP++] style applied v0.5.40');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11617,7 +11655,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.39',
+    version: '0.5.40',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
