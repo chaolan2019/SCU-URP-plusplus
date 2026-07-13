@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.51
+// @version      0.4.52
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.51';
+          content:'URP++ v0.4.52';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -4774,7 +4774,108 @@
         background: var(--primary) !important;
         color: #fff !important;
         border-left-color: var(--primary) !important;
-      }      /* Chosen 下拉：压过 commoncss/phone.css 的 25px，真正垂直居中 */
+      }
+
+      /* ============================================================
+       * 空闲教室：节次选择 #drag-ol（1-12）
+       * ============================================================ */
+      #drag-area,
+      #drag-section {
+        background: transparent !important;
+        border: none !important;
+        box-sizing: border-box !important;
+      }
+      #drag-ol,
+      ol#drag-ol {
+        list-style: none !important;
+        display: inline-flex !important;
+        flex-wrap: wrap !important;
+        align-items: stretch !important;
+        gap: 0 !important;
+        margin: 0 0 12px !important;
+        padding: 0 !important;
+        float: none !important;
+        width: auto !important;
+        max-width: 100% !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 10px !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+      }
+      /* 压过 today.css: #drag-ol .border-common {width:35/50px;height:30px;float:left;border:1px solid #aaa} */
+      #drag-ol > li,
+      #drag-ol > li.border-common,
+      #drag-ol .border-common,
+      ol#drag-ol > li.border-common,
+      body #drag-ol .border-common,
+      html body #drag-ol li.border-common {
+        float: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        list-style: none !important;
+        width: 40px !important;
+        min-width: 40px !important;
+        max-width: 48px !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        max-height: 34px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 34px !important;
+        text-align: center !important;
+        border: none !important;
+        border-right: 1px solid var(--border) !important;
+        border-radius: 0 !important;
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        box-sizing: border-box !important;
+        user-select: none !important;
+        transition: background .12s ease, color .12s ease !important;
+      }
+      #drag-ol > li:last-child,
+      #drag-ol > li.drag-border-right,
+      #drag-ol .border-common:last-child {
+        border-right: none !important;
+      }
+      /* 已过节次 */
+      #drag-ol > li.jc-back,
+      body #drag-ol li.jc-back {
+        background: var(--input-bg) !important;
+        color: var(--text-muted) !important;
+        font-weight: 500 !important;
+      }
+      /* 可选 / 未来 */
+      #drag-ol > li.jc-future,
+      #drag-ol > li.ui-selectee,
+      body #drag-ol li.jc-future {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        cursor: pointer !important;
+      }
+      #drag-ol > li.ui-selectee:hover,
+      #drag-ol > li.jc-future:hover,
+      #drag-ol > li.border-common:hover {
+        background: var(--input-bg) !important;
+        color: var(--primary) !important;
+      }
+      /* 框选中 / 选中 */
+      #drag-ol > li.ui-selecting,
+      #drag-ol > li.ui-selected,
+      #drag-ol > li.current-week,
+      body #drag-ol li.ui-selected,
+      body #drag-ol li.ui-selecting {
+        background: var(--primary) !important;
+        color: #fff !important;
+        font-weight: 700 !important;
+        border-right-color: color-mix(in srgb, var(--primary) 70%, #000) !important;
+      }
+
+      /* Chosen 下拉：压过 commoncss/phone.css 的 25px，真正垂直居中 */
       .chosen-container .chosen-results,
       body .chosen-container .chosen-results {
         margin: 0 !important;
@@ -5895,7 +5996,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.51');
+    console.log('[URP++] style applied v0.4.52');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -6518,7 +6619,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.51',
+    version: '0.4.52',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
