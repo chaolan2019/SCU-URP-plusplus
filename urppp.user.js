@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.53
+// @version      0.4.54
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.53';
+          content:'URP++ v0.4.54';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -4425,42 +4425,79 @@
         appearance: menulist !important;
         text-overflow: ellipsis !important;
       }
-      /* 分页/每页条数：极窄 select，给足文字空间 */
+      /* 分页/每页条数：不截断，不强制压扁 */
       .urppagebreak select,
       .urppagebreak #pagesize,
+      #urppagebar select,
       select#pagesize,
       .pagination select,
-      .dataTables_length select,
-      .page-content select[style*="width: 50"],
-      .page-content select[style*="width:50"] {
+      .dataTables_length select {
         width: auto !important;
-        min-width: 56px !important;
-        max-width: 80px !important;
-        padding: 2px 4px !important;
+        min-width: 0 !important;
+        max-width: none !important;
         height: 28px !important;
         min-height: 28px !important;
+        padding: 2px 6px !important;
         font-size: 13px !important;
         line-height: 1.2 !important;
         border-radius: 6px !important;
         -webkit-appearance: menulist !important;
         appearance: menulist !important;
         background-image: none !important;
+        box-sizing: border-box !important;
+        vertical-align: middle !important;
       }
-      .urppagebreak {
+      .urppagebreak,
+      #urppagebar,
+      #urppagebar .urppagebreak {
         display: flex !important;
         align-items: center !important;
         flex-wrap: wrap !important;
-        gap: 6px 8px !important;
-        white-space: nowrap !important;
+        gap: 6px 10px !important;
+        white-space: normal !important;
         box-sizing: border-box !important;
+        line-height: 28px !important;
+        margin-top: 8px !important;
       }
       .urppagebreak input[type="text"],
-      .urppagebreak input.form-control {
-        padding: 1px 5px !important;
+      .urppagebreak input.form-control,
+      #urppagebar input[type="text"],
+      #urppagebar input.form-control {
+        padding: 1px 6px !important;
         height: 28px !important;
         min-height: 28px !important;
-        width: auto !important;
+        width: 48px !important;
         min-width: 40px !important;
+        max-width: 64px !important;
+        margin: 0 4px !important;
+        vertical-align: middle !important;
+        box-sizing: border-box !important;
+      }
+      /* 确定按钮：与文字同行居中，不重叠 */
+      .urppagebreak .btn,
+      .urppagebreak button,
+      #urppagebar .btn,
+      #urppagebar button,
+      #urppagebar input[type="button"],
+      #urppagebar input[type="submit"] {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        max-height: 28px !important;
+        margin: 0 4px 0 2px !important;
+        padding: 0 12px !important;
+        line-height: 1 !important;
+        vertical-align: middle !important;
+        position: static !important;
+        float: none !important;
+        top: auto !important;
+        transform: none !important;
+        white-space: nowrap !important;
+      }
+      #urppagebar * {
+        vertical-align: middle !important;
       }
       textarea {
         resize: vertical !important;
@@ -4882,6 +4919,172 @@
         background: var(--primary) !important;
         color: #fff !important;
         font-weight: 700 !important;
+        border-right-color: color-mix(in srgb, var(--primary) 70%, #000) !important;
+      }
+      /* ============================================================
+       * 空闲教室 custom：星期/节次输入 + 垃圾桶、周次条 #test-drag
+       * ============================================================ */
+      /* 输入框 + 垃圾桶横排，垃圾桶在输入框后 */
+      .profile-info-value > .dropdown,
+      .profile-info-value .dropdown:has(#wSection),
+      .profile-info-value .dropdown:has(#clearzc) {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        position: relative !important;
+        float: none !important;
+      }
+      .profile-info-value .dropdown > #wSection,
+      .profile-info-value .dropdown > input#wSection,
+      .profile-info-value .dropdown > input.value_element {
+        flex: 1 1 auto !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        margin: 0 !important;
+        order: 1 !important;
+      }
+      .profile-info-value .dropdown > #clearzc,
+      .profile-info-value .dropdown > span#clearzc,
+      #clearzc.btn {
+        order: 2 !important;
+        flex: 0 0 auto !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 34px !important;
+        min-width: 34px !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        max-height: 34px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border-radius: 8px !important;
+        float: none !important;
+        position: static !important;
+        vertical-align: middle !important;
+      }
+      .profile-info-value .dropdown > #clearzc > i,
+      #clearzc .ace-icon,
+      #clearzc .fa {
+        margin: 0 !important;
+        line-height: 1 !important;
+      }
+      /* 下拉面板仍绝对定位，不参与 flex 占位 */
+      .profile-info-value .dropdown > .dropdown-menu,
+      .profile-info-value .dropdown > #div-xqjc,
+      .dropdown-menu.dropdown-self {
+        order: 3 !important;
+        position: absolute !important;
+        top: calc(100% + 4px) !important;
+        left: 0 !important;
+        z-index: 1050 !important;
+        min-width: 170px !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 8px !important;
+        box-shadow: var(--shadow) !important;
+        padding: 6px !important;
+        margin: 0 !important;
+      }
+
+      /* 周次条 #test-drag：与节次 #drag-ol 同风格 */
+      #drag-select-div {
+        overflow: visible !important;
+      }
+      #test-drag,
+      ol#test-drag {
+        list-style: none !important;
+        display: inline-flex !important;
+        flex-wrap: wrap !important;
+        align-items: stretch !important;
+        gap: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        float: none !important;
+        width: auto !important;
+        max-width: 100% !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 10px !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+      }
+      #test-drag > li,
+      #test-drag > li.ui-widget-content,
+      #test-drag li.ui-widget-content,
+      ol#test-drag > li,
+      body #test-drag li {
+        float: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        list-style: none !important;
+        width: 28px !important;
+        min-width: 28px !important;
+        max-width: 36px !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        max-height: 34px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 34px !important;
+        text-align: center !important;
+        border: none !important;
+        border-right: 1px solid var(--border) !important;
+        border-radius: 0 !important;
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        box-sizing: border-box !important;
+        user-select: none !important;
+        transition: background .12s ease, color .12s ease !important;
+      }
+      #test-drag > li:last-child,
+      #test-drag li:last-child {
+        border-right: none !important;
+      }
+      /* 已过周次 */
+      #test-drag > li.zc-back,
+      body #test-drag li.zc-back {
+        background: color-mix(in srgb, var(--text-muted) 14%, var(--surface)) !important;
+        color: var(--text-muted) !important;
+        font-weight: 500 !important;
+        opacity: 0.55 !important;
+        text-decoration: line-through !important;
+        cursor: default !important;
+      }
+      /* 可选周次 */
+      #test-drag > li.zc-future,
+      #test-drag > li.ui-selectee,
+      body #test-drag li.zc-future {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        opacity: 1 !important;
+        text-decoration: none !important;
+        cursor: pointer !important;
+      }
+      #test-drag > li.zc-future:hover,
+      #test-drag > li.ui-selectee:hover {
+        background: var(--input-bg) !important;
+        color: var(--primary) !important;
+      }
+      /* 选中周次 */
+      #test-drag > li.ui-selecting,
+      #test-drag > li.ui-selected,
+      body #test-drag li.ui-selected,
+      body #test-drag li.ui-selecting {
+        background: var(--primary) !important;
+        color: #fff !important;
+        font-weight: 700 !important;
+        opacity: 1 !important;
+        text-decoration: none !important;
         border-right-color: color-mix(in srgb, var(--primary) 70%, #000) !important;
       }
 
@@ -6006,7 +6209,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.53');
+    console.log('[URP++] style applied v0.4.54');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -6629,7 +6832,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.53',
+    version: '0.4.54',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
