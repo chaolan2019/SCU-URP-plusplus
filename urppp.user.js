@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.99
+// @version      0.5.0
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.99';
+          content:'URP++ v0.5.0';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3670,24 +3670,25 @@
 
       /* 侧边栏 —— Hanako 风格完全重构 */
       :root { --urppp-navbar-height: 45px; }
+      /* 内容左边距只跟随侧栏状态，不跟随汉堡按钮 */
       .sidebar:not(.menu-min) { width: 260px !important; }
       .sidebar.menu-min { width: 50px !important; }
       .sidebar:not(.menu-min) ~ .main-content { margin-left: 260px !important; }
       .sidebar.menu-min ~ .main-content { margin-left: 50px !important; }
-      .main-content { margin-top: var(--urppp-navbar-height) !important; transition: margin-left .25s ease; }
-      /* 小屏：侧栏收成汉堡时，内容必须回到左边，不能继续留 260px */
+      .main-content {
+        margin-top: var(--urppp-navbar-height) !important;
+        transition: margin-left .25s ease !important;
+      }
+      /* 小屏：侧栏默认隐藏为覆盖层，内容贴左；展开侧栏也不挤占内容 */
       @media (max-width: 991px) {
-        .sidebar:not(.display),
-        .sidebar.responsive:not(.display) {
-          /* ACE 默认会藏侧栏；不要强制占位 */
-        }
-        .sidebar ~ .main-content,
-        .sidebar:not(.menu-min) ~ .main-content,
-        .sidebar.menu-min ~ .main-content,
-        .main-content {
+        .sidebar:not(.display) ~ .main-content,
+        .sidebar.menu-min:not(.display) ~ .main-content,
+        .sidebar:not(.menu-min):not(.display) ~ .main-content {
           margin-left: 0 !important;
         }
-        /* 点开汉堡后侧栏覆盖层 */
+        .sidebar.display ~ .main-content {
+          margin-left: 0 !important; /* 覆盖层模式，不推内容 */
+        }
         .sidebar.display {
           display: block !important;
           position: fixed !important;
@@ -3696,10 +3697,6 @@
           width: 260px !important;
           z-index: 1045 !important;
           height: calc(100vh - var(--urppp-navbar-height)) !important;
-        }
-        body.mob-safari .main-content,
-        .main-container .main-content {
-          margin-left: 0 !important;
         }
       }
       .navbar.navbar-default.navbar-fixed-top,
@@ -3759,23 +3756,34 @@
       .urppp-sidebar-toggle:hover { background: var(--border); color: var(--text); }
 
       /* 小屏汉堡按钮：贴合主题，不再用 ACE 默认灰/蓝 */
-      #menu-toggler,
-      .navbar-toggle.menu-toggler,
-      button.navbar-toggle.menu-toggler,
-      .navbar .menu-toggler {
-        background: var(--input-bg) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 10px !important;
-        box-shadow: none !important;
-        padding: 8px 10px !important;
-        margin: 6px 8px !important;
-        min-width: 40px !important;
-        min-height: 36px !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        flex-direction: column !important;
-        gap: 4px !important;
+      /* 桌面隐藏汉堡；仅小屏显示（不要全局 display:flex 常驻） */
+      @media (min-width: 992px) {
+        #menu-toggler,
+        .navbar-toggle.menu-toggler,
+        button.navbar-toggle.menu-toggler,
+        .navbar .menu-toggler {
+          display: none !important;
+        }
+      }
+      @media (max-width: 991px) {
+        #menu-toggler,
+        .navbar-toggle.menu-toggler,
+        button.navbar-toggle.menu-toggler,
+        .navbar .menu-toggler {
+          background: var(--input-bg) !important;
+          border: 1px solid var(--border) !important;
+          border-radius: 10px !important;
+          box-shadow: none !important;
+          padding: 8px 10px !important;
+          margin: 6px 8px !important;
+          min-width: 40px !important;
+          min-height: 36px !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          flex-direction: column !important;
+          gap: 4px !important;
+        }
       }
       #menu-toggler:hover,
       .navbar-toggle.menu-toggler:hover,
@@ -8856,7 +8864,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.99');
+    console.log('[URP++] style applied v0.5.0');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -9084,19 +9092,18 @@
   function syncMobileContentOffset() {
     try {
       const sidebar = document.getElementById('sidebar');
-      const main = document.querySelector('.main-content');
-      if (!main) return;
+      const mains = document.querySelectorAll('.main-content');
+      if (!mains.length) return;
       const narrow = window.matchMedia && window.matchMedia('(max-width: 991px)').matches;
+      let ml = '260px';
       if (narrow) {
-        main.style.setProperty('margin-left', '0', 'important');
-        document.querySelectorAll('.main-content').forEach((el) => {
-          el.style.setProperty('margin-left', '0', 'important');
-        });
+        // 小屏侧栏是覆盖层，内容始终贴左
+        ml = '0px';
       } else if (sidebar) {
-        const min = sidebar.classList.contains('menu-min');
-        const ml = min ? '50px' : '260px';
-        main.style.setProperty('margin-left', ml, 'important');
+        // 桌面：只跟 menu-min / 展开走
+        ml = sidebar.classList.contains('menu-min') ? '50px' : '260px';
       }
+      mains.forEach((el) => el.style.setProperty('margin-left', ml, 'important'));
     } catch (_) { /* ignore */ }
   }
   function syncSidebarUnderNavbar() {
@@ -9483,12 +9490,24 @@
       setTimeout(syncSidebarUnderNavbar, 400);
     });
     document.addEventListener('click', (e) => {
-      const t = e.target && e.target.closest ? e.target.closest('#menu-toggler, .menu-toggler, .navbar-toggle') : null;
+      const t = e.target && e.target.closest
+        ? e.target.closest('#menu-toggler, .menu-toggler, .navbar-toggle, .urppp-sidebar-toggle, .sidebar-collapse, #sidebar-collapse')
+        : null;
       if (!t) return;
+      // 等 ACE / 我们自己的 class 切换完成后再同步
       setTimeout(syncMobileContentOffset, 0);
       setTimeout(syncMobileContentOffset, 50);
       setTimeout(syncMobileContentOffset, 200);
     }, true);
+    // 侧栏 class（menu-min / display）变化时同步内容边距
+    const side = document.getElementById('sidebar');
+    if (side && !side.__urpppMarginObs) {
+      side.__urpppMarginObs = new MutationObserver(() => {
+        clearTimeout(window.__urpppMarginObsTimer);
+        window.__urpppMarginObsTimer = setTimeout(syncMobileContentOffset, 30);
+      });
+      side.__urpppMarginObs.observe(side, { attributes: true, attributeFilter: ['class', 'style'] });
+    }
   }
   function watchRouteChanges() {
     const run = () => {
@@ -9530,7 +9549,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.99',
+    version: '0.5.0',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
