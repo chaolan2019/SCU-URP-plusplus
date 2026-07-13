@@ -9996,6 +9996,92 @@ fo-striped.setLabelWidth,
         max-width: 100% !important;
         box-sizing: border-box !important;
       }
+
+      /* ========== 学籍页最终形态（对齐左侧基本信息：标题无壳 + 表零内边距） ========== */
+      html body .page-content .col-xs-4 > h4.header,
+      html body .page-content .col-xs-8 > h4.header,
+      html body .page-content .col-sm-4 > h4.header,
+      html body .page-content .col-sm-8 > h4.header,
+      html body .page-content .col-md-4 > h4.header,
+      html body .page-content .col-md-8 > h4.header,
+      html body .page-content .col-xs-4 > h4.header.smaller.lighter.grey,
+      html body .page-content .col-xs-8 > h4.header.smaller.lighter.grey,
+      html body #page-content-template .col-xs-4 > h4.header,
+      html body #page-content-template .col-xs-8 > h4.header,
+      html body h4.header.urppp-section-label,
+      html body .page-content h4.header.urppp-section-label {
+        background: transparent !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        border: 0 none transparent !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 4px 2px 10px !important;
+        margin: 0 0 8px !important;
+        min-height: 0 !important;
+      }
+      html body .page-content .profile-user-info.setLabelWidth,
+      html body .page-content .profile-user-info-striped.setLabelWidth,
+      html body .page-content .self.profile-user-info.setLabelWidth,
+      html body .page-content .self.profile-user-info-striped.setLabelWidth,
+      html body .page-content .profile-user-info.setLabelWidth.urppp-query-form {
+        padding: 0 !important;
+        margin: 0 0 16px !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        box-shadow: none !important;
+        overflow: hidden !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      /* FullCalendar 事件悬停弹窗：保留虚线框风格，仅主题色化 */
+      #schedule-hover {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        pointer-events: none !important;
+        z-index: 3000 !important;
+      }
+      #schedule-hover .promptedmessage-a,
+      #promptedmessage-div.promptedmessage-a {
+        background: var(--surface) !important;
+        border: 2px solid color-mix(in srgb, var(--primary) 45%, var(--border)) !important;
+        border-radius: 10px !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.14) !important;
+        padding: 6px !important;
+        pointer-events: none !important;
+        position: static !important; /* 由外层 #schedule-hover 统一定位，避免双重 absolute 闪跳 */
+        top: auto !important;
+        left: auto !important;
+      }
+      #schedule-hover .promptedmessage,
+      #promptedmessage-div .promptedmessage {
+        background: color-mix(in srgb, var(--primary) 12%, var(--surface)) !important;
+        border: 1px solid var(--surface) !important;
+        outline: 2px dashed color-mix(in srgb, var(--primary) 40%, var(--border)) !important;
+        outline-offset: 0 !important;
+        border-radius: 8px !important;
+        box-shadow: none !important;
+        padding: 10px 12px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 6px !important;
+        font-size: 13px !important;
+        line-height: 1.6 !important;
+        color: var(--text-secondary) !important;
+        pointer-events: none !important;
+      }
+      #schedule-hover .promptedmessage span:first-child {
+        font-weight: 600 !important;
+        color: var(--primary) !important;
+        font-size: 14px !important;
+      }
+      #schedule-hover .promptedmessage .ace-icon {
+        color: var(--text-muted) !important;
+      }
+
       /* FullCalendar 事件悬停弹窗：保留虚线框风格，仅主题色化 */
       #schedule-hover {
         background: transparent !important;
