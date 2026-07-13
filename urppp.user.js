@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.54
+// @version      0.4.55
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.54';
+          content:'URP++ v0.4.55';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1191,6 +1191,69 @@
   }
 
   // 空闲教室：楼栋列表轻量标记（校区标题 / 楼栋项 / 当前高亮）
+
+  // 分页条：urp.pagebar 注入后常带 absolute/float，强制流式防重叠
+  function beautifyPagebar(root) {
+    try {
+      const bars = (root && root.querySelectorAll)
+        ? root.querySelectorAll('#urppagebar, .urppagebreak')
+        : document.querySelectorAll('#urppagebar, .urppagebreak');
+      bars.forEach((bar) => {
+        if (!bar) return;
+        bar.style.setProperty('display', 'flex', 'important');
+        bar.style.setProperty('align-items', 'center', 'important');
+        bar.style.setProperty('flex-wrap', 'wrap', 'important');
+        bar.style.setProperty('gap', '8px 12px', 'important');
+        bar.style.setProperty('position', 'relative', 'important');
+        bar.querySelectorAll('*').forEach((el) => {
+          el.style.setProperty('position', 'static', 'important');
+          el.style.setProperty('float', 'none', 'important');
+          el.style.setProperty('top', 'auto', 'important');
+          el.style.setProperty('left', 'auto', 'important');
+          el.style.setProperty('right', 'auto', 'important');
+          el.style.setProperty('transform', 'none', 'important');
+        });
+        bar.querySelectorAll('input[type="text"], input.form-control').forEach((inp) => {
+          inp.style.setProperty('width', '42px', 'important');
+          inp.style.setProperty('height', '28px', 'important');
+          inp.style.setProperty('margin', '0 6px', 'important');
+          inp.style.setProperty('display', 'inline-block', 'important');
+        });
+        bar.querySelectorAll('button, .btn, input[type="button"], input[type="submit"], a.btn').forEach((btn) => {
+          btn.style.setProperty('display', 'inline-flex', 'important');
+          btn.style.setProperty('align-items', 'center', 'important');
+          btn.style.setProperty('justify-content', 'center', 'important');
+          btn.style.setProperty('height', '28px', 'important');
+          btn.style.setProperty('min-width', '52px', 'important');
+          btn.style.setProperty('margin', '0 10px 0 4px', 'important');
+          btn.style.setProperty('padding', '0 12px', 'important');
+          btn.style.setProperty('position', 'static', 'important');
+          btn.style.setProperty('float', 'none', 'important');
+        });
+      });
+    } catch (err) {
+      console.warn('[URP++] pagebar beautify failed', err);
+    }
+  }
+
+  function scheduleBeautifyPagebar() {
+    if (window.__urpppPagebarBound) return;
+    window.__urpppPagebarBound = true;
+    const run = () => beautifyPagebar();
+    ;[0, 200, 600, 1200, 2500].forEach((ms) => setTimeout(run, ms));
+    const obs = new MutationObserver(() => {
+      clearTimeout(window.__urpppPagebarTimer);
+      window.__urpppPagebarTimer = setTimeout(run, 80);
+    });
+    const host = document.getElementById('urppagebar') || document.body;
+    if (host) obs.observe(host, { childList: true, subtree: true, characterData: true });
+    // 兼容 pagebar 写到其它容器
+    document.addEventListener('DOMNodeInserted', (e) => {
+      if (e.target && (e.target.id === 'urppagebar' || (e.target.querySelector && e.target.querySelector('#urppagebar')))) {
+        setTimeout(run, 30);
+      }
+    }, true);
+  }
   function beautifyFreeClassroomList() {
     try {
       document.querySelectorAll('#drag-ul, ul#drag-ul').forEach((ul) => {
@@ -4453,51 +4516,92 @@
         display: flex !important;
         align-items: center !important;
         flex-wrap: wrap !important;
-        gap: 6px 10px !important;
+        gap: 8px 12px !important;
         white-space: normal !important;
         box-sizing: border-box !important;
         line-height: 28px !important;
         margin-top: 8px !important;
+        position: relative !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+      }
+      /* 分页内部全部走文档流，禁止 absolute 叠字 */
+      #urppagebar *,
+      .urppagebreak * {
+        position: static !important;
+        float: none !important;
+        top: auto !important;
+        left: auto !important;
+        right: auto !important;
+        bottom: auto !important;
+        transform: none !important;
+        vertical-align: middle !important;
+      }
+      #urppagebar a,
+      #urppagebar span,
+      #urppagebar label,
+      #urppagebar font,
+      .urppagebreak a,
+      .urppagebreak span,
+      .urppagebreak label {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 28px !important;
+        white-space: nowrap !important;
+        width: auto !important;
+        height: auto !important;
+        max-width: none !important;
       }
       .urppagebreak input[type="text"],
       .urppagebreak input.form-control,
       #urppagebar input[type="text"],
       #urppagebar input.form-control {
+        display: inline-block !important;
         padding: 1px 6px !important;
         height: 28px !important;
         min-height: 28px !important;
-        width: 48px !important;
-        min-width: 40px !important;
-        max-width: 64px !important;
-        margin: 0 4px !important;
+        width: 42px !important;
+        min-width: 36px !important;
+        max-width: 56px !important;
+        margin: 0 6px !important;
         vertical-align: middle !important;
         box-sizing: border-box !important;
+        flex: 0 0 auto !important;
       }
-      /* 确定按钮：与文字同行居中，不重叠 */
+      /* 确定按钮：固定占位，与「共x条」拉开 */
       .urppagebreak .btn,
       .urppagebreak button,
       #urppagebar .btn,
       #urppagebar button,
       #urppagebar input[type="button"],
-      #urppagebar input[type="submit"] {
+      #urppagebar input[type="submit"],
+      #urppagebar a.btn,
+      #urppagebar .btn-xs,
+      #urppagebar .btn-sm {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
+        flex: 0 0 auto !important;
         height: 28px !important;
         min-height: 28px !important;
         max-height: 28px !important;
-        margin: 0 4px 0 2px !important;
+        width: auto !important;
+        min-width: 52px !important;
+        margin: 0 10px 0 4px !important;
         padding: 0 12px !important;
         line-height: 1 !important;
         vertical-align: middle !important;
         position: static !important;
         float: none !important;
         top: auto !important;
+        left: auto !important;
         transform: none !important;
         white-space: nowrap !important;
-      }
-      #urppagebar * {
-        vertical-align: middle !important;
+        z-index: auto !important;
       }
       textarea {
         resize: vertical !important;
@@ -5010,7 +5114,7 @@
         max-width: 100% !important;
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
-        border-radius: 10px !important;
+        border-radius: 8px !important;
         overflow: hidden !important;
         box-sizing: border-box !important;
       }
@@ -5024,22 +5128,22 @@
         align-items: center !important;
         justify-content: center !important;
         list-style: none !important;
-        width: 28px !important;
-        min-width: 28px !important;
-        max-width: 36px !important;
-        height: 34px !important;
-        min-height: 34px !important;
-        max-height: 34px !important;
+        width: 22px !important;
+        min-width: 22px !important;
+        max-width: 26px !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        max-height: 28px !important;
         margin: 0 !important;
         padding: 0 !important;
-        line-height: 34px !important;
+        line-height: 28px !important;
         text-align: center !important;
         border: none !important;
         border-right: 1px solid var(--border) !important;
         border-radius: 0 !important;
         background: var(--surface) !important;
         color: var(--text) !important;
-        font-size: 12px !important;
+        font-size: 11px !important;
         font-weight: 600 !important;
         cursor: pointer !important;
         box-sizing: border-box !important;
@@ -6146,6 +6250,8 @@
     beautifyFreeClassroomList();
     setTimeout(beautifyFreeClassroomList, 300);
     setTimeout(beautifyFreeClassroomList, 1000);
+    scheduleBeautifyPagebar();
+    beautifyPagebar();
     scheduleEnsureQueryChosen();
     ensureQueryChosen();
     beautifyQueryForms();
@@ -6209,7 +6315,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.54');
+    console.log('[URP++] style applied v0.4.55');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -6832,7 +6938,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.54',
+    version: '0.4.55',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
