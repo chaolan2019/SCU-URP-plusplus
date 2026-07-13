@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.40
+// @version      0.4.41
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.40';
+          content:'URP++ v0.4.41';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3888,9 +3888,16 @@
         right: 0 !important;
         width: 26px !important;
         height: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
       }
       .urppp-query-pair .chosen-single div b {
-        background-position: 0 7px !important;
+        display: block !important;
+        width: 12px !important;
+        height: 12px !important;
+        margin: 0 !important;
+        background-position: 0 2px !important;
       }
 
       /* Chosen 启用后隐藏原生 select，避免双层/撑破布局 */
@@ -4342,6 +4349,18 @@
         right: 0 !important;
         width: 28px !important;
         height: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      .chosen-single div b,
+      .chosen-container-single .chosen-single div b,
+      body .chosen-container-single .chosen-single div b {
+        display: block !important;
+        width: 12px !important;
+        height: 12px !important;
+        margin: 0 !important;
+        background-position: 0 2px !important; /* 微调 sprite 中心 */
       }
       .chosen-container {
         height: auto !important;
@@ -4635,7 +4654,7 @@
       }
       .form-group .chosen-container-single .chosen-single div b,
       .form-horizontal .chosen-container-single .chosen-single div b {
-        background-position: 0 6px !important;
+        background-position: 0 2px !important;
       }
       /* 查询区两列时更稳 */
       .form-horizontal .col-sm-6 .form-group > .col-sm-3,
@@ -5481,7 +5500,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.40');
+    console.log('[URP++] style applied v0.4.41');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -6102,7 +6121,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.40',
+    version: '0.4.41',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
