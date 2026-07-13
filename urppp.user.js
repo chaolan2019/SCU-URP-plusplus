@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.66
+// @version      0.4.67
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.66';
+          content:'URP++ v0.4.67';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -2319,12 +2319,116 @@
     }
   }
   // 表格外框 wrapper：圆角 + 完整四边线
+
+  // 评估公告等：表格公告行 → 卡片阅读布局；清理 soft hyphen
+  function beautifyNoticeTables() {
+    try {
+      const tables = document.querySelectorAll(
+        '.page-content table.table, #page-content-template table.table'
+      );
+      tables.forEach((table) => {
+        if (table.querySelector('thead')) return;
+        // 公告表：无 thead，且 td 内多个 span 字号分层
+        const sampleTd = table.querySelector('tbody > tr > td');
+        if (!sampleTd) return;
+        const spans = sampleTd.querySelectorAll(':scope > span');
+        if (spans.length < 2) return;
+        const styleBlob = Array.from(spans).map((s) => s.getAttribute('style') || '').join(' ');
+        if (!/font-size/i.test(styleBlob) && !(sampleTd.textContent || '').includes('教学评估')) return;
+
+        table.classList.add('urppp-notice-table');
+        table.style.setProperty('border', 'none', 'important');
+        table.style.setProperty('border-left', 'none', 'important');
+        table.style.setProperty('background', 'transparent', 'important');
+
+        table.querySelectorAll('tbody > tr').forEach((tr) => {
+          const td = tr.querySelector('td');
+          if (!td || td.dataset.urpppNoticeDone === '1') return;
+          const parts = Array.from(td.querySelectorAll(':scope > span'));
+          if (parts.length < 2) return;
+
+          const clean = (s) => (s || '')
+            .replace(/\u00AD/g, '')
+            .replace(/\u200B/g, '')
+            .replace(/\r\n/g, '\n')
+            .trim();
+
+          let titleEl = null;
+          let timeEl = null;
+          const bodyEls = [];
+          parts.forEach((sp) => {
+            const st = (sp.getAttribute('style') || '') + ' ' + (sp.style.cssText || '');
+            const txt = clean(sp.textContent);
+            if (!txt) return;
+            if (/font-size\s*:\s*18/i.test(st) || (!titleEl && /font-size\s*:\s*1[6-9]/i.test(st))) {
+              titleEl = sp; return;
+            }
+            if (/font-size\s*:\s*12/i.test(st) || /float\s*:\s*right/i.test(st) || /^\d{4}-\d{2}-\d{2}/.test(txt)) {
+              timeEl = sp; return;
+            }
+            bodyEls.push(sp);
+          });
+          if (!titleEl) titleEl = parts[0];
+          if (!timeEl) {
+            const last = parts[parts.length - 1];
+            if (last !== titleEl) timeEl = last;
+          }
+
+          const card = document.createElement('div');
+          card.className = 'urppp-notice-card';
+          if (titleEl) {
+            const h = document.createElement('div');
+            h.className = 'urppp-notice-title';
+            h.textContent = clean(titleEl.textContent);
+            card.appendChild(h);
+          }
+          const bodies = bodyEls.length
+            ? bodyEls
+            : parts.filter((sp) => sp !== titleEl && sp !== timeEl);
+          bodies.forEach((b) => {
+            const p = document.createElement('div');
+            p.className = 'urppp-notice-body';
+            p.textContent = clean(b.textContent);
+            if (p.textContent) card.appendChild(p);
+          });
+          if (timeEl) {
+            const meta = document.createElement('div');
+            meta.className = 'urppp-notice-meta';
+            const tEl = document.createElement('span');
+            tEl.className = 'urppp-notice-time';
+            tEl.textContent = clean(timeEl.textContent);
+            meta.appendChild(tEl);
+            card.appendChild(meta);
+          }
+          td.innerHTML = '';
+          td.appendChild(card);
+          td.dataset.urpppNoticeDone = '1';
+          td.style.setProperty('border', 'none', 'important');
+          td.style.setProperty('padding', '0 0 12px', 'important');
+          td.style.setProperty('background', 'transparent', 'important');
+        });
+
+        const wrap = table.closest('.urppp-table-wrap');
+        if (wrap) {
+          wrap.style.setProperty('border', 'none', 'important');
+          wrap.style.setProperty('background', 'transparent', 'important');
+          wrap.style.setProperty('box-shadow', 'none', 'important');
+          wrap.style.setProperty('overflow', 'visible', 'important');
+        }
+      });
+    } catch (err) {
+      console.warn('[URP++] notice table beautify failed', err);
+    }
+  }
   function wrapTables() {
     document.querySelectorAll('table.table, table.table-bordered, table.dataTable').forEach((table) => {
       if (!table || table.closest('.urppp-table-wrap')) return;
       if (table.id === 'courseTable') return;
       if (table.closest('.modal, .modal-dialog, .modal-content, .modal-body, #work_rest_schedule_modal')) return;
       if (table.classList.contains('urppp-wrs-table')) return;
+      if (table.classList.contains('urppp-notice-table') || table.classList.contains('no-border-top')) {
+        if (!table.querySelector('thead')) return;
+      }
       const parent = table.parentElement;
       if (!parent) return;
       const parentOverflow = (parent.style && parent.style.overflow) || getComputedStyle(parent).overflow;
@@ -4478,6 +4582,88 @@
       .table-hover > tbody > tr:hover, .dataTable > tbody > tr:hover {
         background: var(--input-bg) !important;
       }
+
+      /* ============================================================
+       * 评估公告 / 通知类列表：表格改卡片阅读样式
+       * ============================================================ */
+      .page-content table.table.no-border-top,
+      .page-content table.table.no-margin-bottom.no-border-top,
+      #page-content-template table.table.no-border-top,
+      .page-content table.table[style*="dashed"],
+      .page-content table.table[style*="border-left-style"],
+      table.urppp-notice-table {
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+      }
+      .page-content table.table.no-border-top > tbody > tr,
+      table.urppp-notice-table > tbody > tr {
+        background: transparent !important;
+        border: none !important;
+      }
+      .page-content table.table.no-border-top > tbody > tr > td,
+      table.urppp-notice-table > tbody > tr > td {
+        border: none !important;
+        background: transparent !important;
+        padding: 0 0 12px !important;
+        vertical-align: top !important;
+      }
+      .urppp-notice-card {
+        display: block !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        padding: 16px 18px 14px !important;
+        box-sizing: border-box !important;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+      }
+      .urppp-notice-title {
+        display: block !important;
+        font-size: 16px !important;
+        font-weight: 650 !important;
+        line-height: 1.45 !important;
+        color: var(--text) !important;
+        margin: 0 0 10px !important;
+        float: none !important;
+      }
+      .urppp-notice-body {
+        display: block !important;
+        font-size: 14px !important;
+        line-height: 1.75 !important;
+        color: var(--text) !important;
+        margin: 0 0 12px !important;
+        float: none !important;
+        white-space: pre-wrap !important;
+        word-break: break-word !important;
+      }
+      .urppp-notice-meta {
+        display: flex !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+        margin: 0 !important;
+        float: none !important;
+        clear: both !important;
+      }
+      .urppp-notice-time {
+        display: inline-block !important;
+        font-size: 12px !important;
+        color: var(--text-muted) !important;
+        background: var(--input-bg) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 999px !important;
+        padding: 4px 10px !important;
+        float: none !important;
+        margin: 0 !important;
+      }
+      .urppp-table-wrap:has(table.urppp-notice-table),
+      .urppp-table-wrap:has(table.no-border-top:not(thead)) {
+        border: none !important;
+        background: transparent !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+
       /* 按钮 */
       .btn, .btn.btn-xs, .btn.btn-sm, .btn.btn-lg, .btn.btn-minier,
       .btn-group .btn, .btn-group > .btn, .input-group .btn, .btn-toolbar .btn,
@@ -6483,6 +6669,9 @@
 
     // 给表格包一层 wrapper：圆角 + 完整外框，绕过 Bootstrap thead border-top:0 和 overflow 裁剪
     wrapTables();
+    beautifyNoticeTables();
+    setTimeout(beautifyNoticeTables, 300);
+    setTimeout(beautifyNoticeTables, 1000);
     if (!window.__urpppTableObs) {
       let wrapTimer = 0;
       window.__urpppTableObs = new MutationObserver(() => {
@@ -6578,7 +6767,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.66');
+    console.log('[URP++] style applied v0.4.67');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -7201,7 +7390,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.66',
+    version: '0.4.67',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
