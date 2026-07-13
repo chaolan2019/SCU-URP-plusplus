@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.71
+// @version      0.4.72
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.71';
+          content:'URP++ v0.4.72';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -2433,18 +2433,68 @@
             if (titleTd) {
               titleTd.classList.add('urppp-notice-title-cell');
               titleTd.style.setProperty('width', 'auto', 'important');
-              titleTd.style.setProperty('padding', '12px 12px 12px 0', 'important');
-              const a = titleTd.querySelector('a');
+              titleTd.style.setProperty('padding', '0', 'important');
+              titleTd.style.setProperty('pointer-events', 'auto', 'important');
+              // 链接可能不在 titleTd 内（误分类时），整行找
+              let a = titleTd.querySelector('a[href], a[onclick], a');
+              if (!a) a = tr.querySelector('a[href], a[onclick], a');
               if (a) {
+                // 若链接不在标题格，挪进标题格，避免点不到
+                if (!titleTd.contains(a)) {
+                  titleTd.innerHTML = '';
+                  titleTd.appendChild(a);
+                }
                 a.classList.add('urppp-notice-link');
-                a.textContent = clean(a.textContent);
+                // 只清文本节点，保留 href/onclick/target
+                const href = a.getAttribute('href');
+                const onclick = a.getAttribute('onclick');
+                const target = a.getAttribute('target');
+                const label = clean(a.textContent);
+                a.textContent = label;
+                if (href != null) a.setAttribute('href', href);
+                if (onclick != null) a.setAttribute('onclick', onclick);
+                if (target != null) a.setAttribute('target', target);
                 a.style.setProperty('color', 'var(--text)', 'important');
                 a.style.setProperty('text-decoration', 'none', 'important');
                 a.style.setProperty('font-size', '14px', 'important');
                 a.style.setProperty('font-weight', '500', 'important');
                 a.style.setProperty('line-height', '1.5', 'important');
+                a.style.setProperty('pointer-events', 'auto', 'important');
+                a.style.setProperty('cursor', 'pointer', 'important');
+                a.style.setProperty('position', 'relative', 'important');
+                a.style.setProperty('z-index', '2', 'important');
+                a.style.setProperty('display', 'inline', 'important');
+                // 整行可点：点卡片任意处触发链接
+                if (tr.dataset.urpppNoticeClickBound !== '1') {
+                  tr.dataset.urpppNoticeClickBound = '1';
+                  tr.style.setProperty('cursor', 'pointer', 'important');
+                  tr.addEventListener('click', (e) => {
+                    if (e.target && e.target.closest && e.target.closest('a,button,input,select,textarea,label')) return;
+                    // 优先原生跳转
+                    if (a.getAttribute('onclick')) {
+                      a.click();
+                      return;
+                    }
+                    const h = a.getAttribute('href');
+                    if (!h || h === '#' || h.indexOf('javascript:') === 0) {
+                      a.click();
+                      return;
+                    }
+                    if (a.target === '_blank') window.open(h, '_blank');
+                    else window.location.href = h;
+                  });
+                }
               } else {
-                titleTd.textContent = clean(titleTd.textContent);
+                // 无 a 时保留原 td 内容与事件，只做文本清理
+                const rawHtml = titleTd.innerHTML;
+                const onlyText = clean(titleTd.textContent);
+                if (onlyText && !titleTd.querySelector('button, input, select')) {
+                  // 若原本只有文字，保留文字；若有复杂结构不动
+                  if (!titleTd.querySelector('*') || titleTd.children.length === 0) {
+                    titleTd.textContent = onlyText;
+                  }
+                }
+                void rawHtml;
               }
             }
             if (dateTd) {
@@ -2509,10 +2559,30 @@
               const left = document.createElement('div');
               left.className = 'urppp-notice-main';
               if (a) {
-                const link = a.cloneNode(true);
+                // 移动原节点，保留事件与属性，避免 clone 丢监听
+                const link = a;
                 link.classList.add('urppp-notice-link');
-                link.textContent = clean(a.textContent);
+                const href = link.getAttribute('href');
+                const onclick = link.getAttribute('onclick');
+                const label = clean(link.textContent);
+                link.textContent = label;
+                if (href != null) link.setAttribute('href', href);
+                if (onclick != null) link.setAttribute('onclick', onclick);
+                link.style.setProperty('pointer-events', 'auto', 'important');
+                link.style.setProperty('cursor', 'pointer', 'important');
                 left.appendChild(link);
+                if (tr.dataset.urpppNoticeClickBound !== '1') {
+                  tr.dataset.urpppNoticeClickBound = '1';
+                  tr.style.setProperty('cursor', 'pointer', 'important');
+                  tr.addEventListener('click', (e) => {
+                    if (e.target && e.target.closest && e.target.closest('a,button,input,select')) return;
+                    if (link.getAttribute('onclick') || !link.getAttribute('href') || link.getAttribute('href') === '#') {
+                      link.click();
+                      return;
+                    }
+                    window.location.href = link.getAttribute('href');
+                  });
+                }
               } else {
                 const title = document.createElement('div');
                 title.className = 'urppp-notice-title';
@@ -4851,7 +4921,8 @@
       table.urppp-notice-table a.urppp-notice-link,
       table.urppp-notice-table td.urppp-notice-title-cell a,
       table.urppp-notice-table td.urppp-notice-title-cell a:link,
-      table.urppp-notice-table td.urppp-notice-title-cell a:visited {
+      table.urppp-notice-table td.urppp-notice-title-cell a:visited,
+      table.urppp-notice-table a {
         color: var(--text) !important;
         text-decoration: none !important;
         font-size: 14px !important;
@@ -4860,9 +4931,24 @@
         border: none !important;
         background: transparent !important;
         min-width: 0 !important;
+        max-width: 100% !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
         white-space: nowrap !important;
+        pointer-events: auto !important;
+        cursor: pointer !important;
+        position: relative !important;
+        z-index: 3 !important;
+        display: inline !important;
+      }
+      table.urppp-notice-table > tbody > tr.urppp-notice-row,
+      table.urppp-notice-table td.urppp-notice-title-cell {
+        pointer-events: auto !important;
+        cursor: pointer !important;
+      }
+      /* ::before 圆点不拦截点击 */
+      table.urppp-notice-table > tbody > tr > td.urppp-notice-title-cell::before {
+        pointer-events: none !important;
       }
       table.urppp-notice-table .urppp-notice-link:hover,
       table.urppp-notice-table td.urppp-notice-title-cell a:hover {
@@ -7065,7 +7151,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.71');
+    console.log('[URP++] style applied v0.4.72');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -7688,7 +7774,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.71',
+    version: '0.4.72',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
