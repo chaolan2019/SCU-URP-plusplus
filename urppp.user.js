@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.18
+// @version      0.5.19
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.18';
+          content:'URP++ v0.5.19';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -9111,19 +9111,28 @@
       html.urppp-theme-dark .fc-today {
         background: rgba(147, 168, 199, 0.08) !important;
       }
-      /* FullCalendar 事件悬停弹窗 */
-      #schedule-hover {
+      /* FullCalendar 事件悬停弹窗：贴近鼠标，不抢事件 */
+      #schedule-hover,
+      #schedule-hover.promptedmessage-a,
+      #promptedmessage-div.promptedmessage-a {
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
         border-radius: var(--radius) !important;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.12) !important;
+        box-shadow: 0 8px 28px rgba(0,0,0,0.16) !important;
+        pointer-events: none !important;
+        z-index: 3000 !important;
+        max-width: min(360px, 70vw) !important;
       }
       #schedule-hover .promptedmessage-a,
-      #schedule-hover .promptedmessage {
+      #schedule-hover .promptedmessage,
+      #promptedmessage-div.promptedmessage-a,
+      #promptedmessage-div .promptedmessage {
         background: var(--surface) !important;
         border: none !important;
         border-radius: var(--radius) !important;
         box-shadow: none !important;
+        outline: none !important;
+        pointer-events: none !important;
       }
       #schedule-hover .promptedmessage {
         padding: 10px 14px !important;
@@ -9860,7 +9869,8 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.18');
+    console.log('[URP++] style applied v0.5.19');
+    try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -10497,10 +10507,103 @@
   // ============================================================
 
 
+
+  function bindScheduleHoverNearCursor() {
+    if (window.__urpppScheduleHoverNear) return;
+    window.__urpppScheduleHoverNear = true;
+    let lastX = 0;
+    let lastY = 0;
+    let pinTimer = 0;
+
+    const OFFSET_X = 14;
+    const OFFSET_Y = 14;
+
+    const place = (el) => {
+      if (!el) return;
+      // 站点常把 display 设为 block 后写 top/left；我们在其后覆盖
+      const vw = window.innerWidth || document.documentElement.clientWidth || 1200;
+      const vh = window.innerHeight || document.documentElement.clientHeight || 800;
+      const rect = el.getBoundingClientRect();
+      let left = lastX + OFFSET_X;
+      let top = lastY + OFFSET_Y;
+      // 右侧/底部不够时翻到另一侧
+      if (left + rect.width > vw - 8) left = Math.max(8, lastX - rect.width - OFFSET_X);
+      if (top + rect.height > vh - 8) top = Math.max(8, lastY - rect.height - OFFSET_Y);
+      el.style.setProperty('position', 'fixed', 'important');
+      el.style.setProperty('left', left + 'px', 'important');
+      el.style.setProperty('top', top + 'px', 'important');
+      el.style.setProperty('right', 'auto', 'important');
+      el.style.setProperty('bottom', 'auto', 'important');
+      el.style.setProperty('margin', '0', 'important');
+      el.style.setProperty('z-index', '3000', 'important');
+      el.style.setProperty('pointer-events', 'none', 'important');
+      el.style.setProperty('display', 'block', 'important');
+    };
+
+    const targets = () => {
+      const a = document.getElementById('schedule-hover');
+      const b = document.getElementById('promptedmessage-div');
+      const list = [];
+      if (a) list.push(a);
+      // promptedmessage-div 有时在 schedule-hover 内，有时独立 absolute
+      if (b && b !== a && !a?.contains(b)) list.push(b);
+      return list;
+    };
+
+    const pinVisible = () => {
+      targets().forEach((el) => {
+        const st = window.getComputedStyle(el);
+        if (st.display === 'none' || st.visibility === 'hidden' || Number(st.opacity) === 0) return;
+        place(el);
+      });
+    };
+
+    document.addEventListener('mousemove', (e) => {
+      lastX = e.clientX;
+      lastY = e.clientY;
+      // 仅当弹层可见时跟随，避免空跑
+      const a = document.getElementById('schedule-hover');
+      if (a && a.style && a.style.display && a.style.display !== 'none') {
+        place(a);
+      } else if (a) {
+        const st = window.getComputedStyle(a);
+        if (st.display !== 'none' && st.visibility !== 'hidden') place(a);
+      }
+    }, true);
+
+    // 站点写 top/left 后立刻纠正
+    const obs = new MutationObserver(() => {
+      clearTimeout(pinTimer);
+      pinTimer = setTimeout(pinVisible, 0);
+    });
+    const watch = (el) => {
+      if (!el || el.__urpppHoverObs) return;
+      el.__urpppHoverObs = true;
+      obs.observe(el, { attributes: true, attributeFilter: ['style', 'class'] });
+    };
+    const ensureWatch = () => {
+      targets().forEach(watch);
+    };
+    ensureWatch();
+    setTimeout(ensureWatch, 800);
+    setTimeout(ensureWatch, 2000);
+
+    // 事件块悬停时也钉一次
+    document.addEventListener('mouseover', (e) => {
+      const ev = e.target && e.target.closest ? e.target.closest('.fc-event, .fc-time-grid-event, .fc-content') : null;
+      if (!ev) return;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      setTimeout(pinVisible, 0);
+      setTimeout(pinVisible, 30);
+      setTimeout(pinVisible, 80);
+    }, true);
+  }
   // 首页通知：只用 CSS !important 压站点 inline white，禁止 Observer/jQuery 劫持（会卡死加载）
   function pinHomeNoticeItems() { /* no-op: CSS handles it */ }
   function bindHomeNoticeScrub() { /* no-op */ }
   function rebuildDashboard() {
+    try { bindScheduleHoverNearCursor(); } catch (_) {}
     if (document.getElementById('urppp-dashboard')) return;
 
     const pageContent = document.querySelector('.page-content');
@@ -10739,7 +10842,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.18',
+    version: '0.5.19',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
