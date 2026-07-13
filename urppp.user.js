@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.69
+// @version      0.4.70
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.69';
+          content:'URP++ v0.4.70';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -2449,10 +2449,25 @@
             }
             if (dateTd) {
               dateTd.classList.add('urppp-notice-date-cell');
-              dateTd.style.setProperty('width', '1%', 'important');
-              dateTd.style.setProperty('white-space', 'nowrap', 'important');
-              dateTd.style.setProperty('text-align', 'right', 'important');
-              dateTd.style.setProperty('padding', '12px 0 12px 12px', 'important');
+              dateTd.style.cssText = [
+                'display:flex !important',
+                'align-items:center !important',
+                'justify-content:flex-end !important',
+                'flex:0 0 auto !important',
+                'width:auto !important',
+                'max-width:none !important',
+                'white-space:nowrap !important',
+                'text-align:right !important',
+                'padding:0 !important',
+                'margin:0 0 0 auto !important',
+                'border:none !important',
+                'background:transparent !important',
+                'float:none !important',
+                'position:static !important',
+                'right:auto !important',
+                'left:auto !important',
+                'top:auto !important'
+              ].join(';');
               const dateText = clean(dateTd.textContent);
               dateTd.innerHTML = '';
               const badge = document.createElement('span');
@@ -2460,6 +2475,21 @@
               badge.textContent = dateText;
               dateTd.appendChild(badge);
             }
+            // 标题列吃满剩余空间，日期贴卡内右侧
+            if (titleTd) {
+              titleTd.style.setProperty('flex', '1 1 auto', 'important');
+              titleTd.style.setProperty('min-width', '0', 'important');
+              titleTd.style.setProperty('margin', '0', 'important');
+              titleTd.style.setProperty('float', 'none', 'important');
+              titleTd.style.setProperty('position', 'static', 'important');
+            }
+            tr.style.setProperty('display', 'flex', 'important');
+            tr.style.setProperty('align-items', 'center', 'important');
+            tr.style.setProperty('justify-content', 'space-between', 'important');
+            tr.style.setProperty('gap', '16px', 'important');
+            tr.style.setProperty('max-width', '860px', 'important');
+            tr.style.setProperty('box-sizing', 'border-box', 'important');
+            tr.style.setProperty('overflow', 'hidden', 'important');
             tr.dataset.urpppNoticeDone = '1';
             return;
           }
@@ -4727,7 +4757,8 @@
 
       /* ============================================================
       /* ============================================================
-       * 评估公告 / 通知列表：整行一体卡片（flex 行）
+      /* ============================================================
+       * 评估公告 / 通知列表：紧凑卡片，日期在卡内右侧
        * ============================================================ */
       table.urppp-notice-table,
       .page-content table.urppp-notice-table,
@@ -4740,6 +4771,7 @@
         border-radius: 0 !important;
         margin: 0 !important;
         width: 100% !important;
+        max-width: 860px !important;
         display: block !important;
       }
       table.urppp-notice-table > tbody,
@@ -4747,26 +4779,29 @@
       table.urppp-notice-table > tfoot {
         display: block !important;
         width: 100% !important;
+        max-width: 100% !important;
       }
       table.urppp-notice-table > tbody > tr.urppp-notice-row,
       table.urppp-notice-table > tbody > tr {
         display: flex !important;
         align-items: center !important;
-        gap: 12px !important;
+        justify-content: space-between !important;
+        gap: 16px !important;
         width: 100% !important;
+        max-width: 100% !important;
         box-sizing: border-box !important;
         margin: 0 0 10px !important;
-        padding: 14px 16px !important;
+        padding: 12px 16px !important;
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
         position: relative !important;
+        overflow: hidden !important;
       }
       table.urppp-notice-table > tbody > tr.urppp-notice-row:hover {
         border-color: color-mix(in srgb, var(--primary) 35%, var(--border)) !important;
       }
-      /* 所有单元格透明，边框交给 tr */
       table.urppp-notice-table > tbody > tr > td,
       table.urppp-notice-table > tbody > tr.urppp-notice-row > td {
         display: block !important;
@@ -4777,6 +4812,8 @@
         vertical-align: middle !important;
         box-shadow: none !important;
         border-radius: 0 !important;
+        float: none !important;
+        position: static !important;
       }
       table.urppp-notice-table > tbody > tr > td.urppp-notice-bullet-cell {
         display: none !important;
@@ -4785,6 +4822,7 @@
         overflow: hidden !important;
         padding: 0 !important;
         margin: 0 !important;
+        flex: 0 0 0 !important;
       }
       table.urppp-notice-table > tbody > tr > td.urppp-notice-title-cell {
         display: flex !important;
@@ -4792,8 +4830,10 @@
         gap: 10px !important;
         flex: 1 1 auto !important;
         min-width: 0 !important;
+        max-width: none !important;
         width: auto !important;
-        position: relative !important;
+        position: static !important;
+        order: 1 !important;
       }
       table.urppp-notice-table > tbody > tr > td.urppp-notice-title-cell::before {
         content: '' !important;
@@ -4833,8 +4873,15 @@
         justify-content: flex-end !important;
         flex: 0 0 auto !important;
         width: auto !important;
+        max-width: none !important;
         white-space: nowrap !important;
         text-align: right !important;
+        order: 2 !important;
+        margin-left: auto !important;
+        float: none !important;
+        position: static !important;
+        right: auto !important;
+        left: auto !important;
       }
       .urppp-notice-time {
         display: inline-flex !important;
@@ -4847,6 +4894,8 @@
         border-radius: 999px !important;
         padding: 4px 10px !important;
         white-space: nowrap !important;
+        position: static !important;
+        float: none !important;
       }
       .urppp-notice-card {
         display: block !important;
@@ -4855,13 +4904,15 @@
         border-radius: 12px !important;
         padding: 16px 18px 14px !important;
         box-sizing: border-box !important;
+        max-width: 860px !important;
       }
       .urppp-notice-card-row {
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
         gap: 16px !important;
-        padding: 14px 16px !important;
+        padding: 12px 16px !important;
+        max-width: 860px !important;
       }
       .urppp-notice-card-row .urppp-notice-main {
         display: flex !important;
@@ -4899,6 +4950,7 @@
         justify-content: flex-end !important;
         align-items: center !important;
         margin: 0 !important;
+        flex: 0 0 auto !important;
       }
       table.urppp-notice-table a,
       table.urppp-notice-table a:link,
@@ -7012,7 +7064,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.69');
+    console.log('[URP++] style applied v0.4.70');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -7635,7 +7687,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.69',
+    version: '0.4.70',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
