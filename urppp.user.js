@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.64
+// @version      0.4.65
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.64';
+          content:'URP++ v0.4.65';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1264,7 +1264,8 @@
           btn.style.setProperty('margin', '0 2px', 'important');
         });
 
-        // 页码控件：整颗 chip；仅真正当前页用主题色，其它保持中性
+        // 页码：只美化「最外层可点控件」一次，避免父子双层边框造成细条
+        // 仅真正当前页主题色
         const nukeInner = (el) => {
           if (!el) return;
           el.querySelectorAll('*').forEach((child) => {
@@ -1281,98 +1282,74 @@
               'line-height:inherit !important',
               'padding:0 !important',
               'margin:0 !important',
-              'border:0 !important',
+              'border:0 none !important',
               'border-radius:0 !important',
+              'outline:none !important',
               'background:transparent !important',
+              'background-image:none !important',
               'box-shadow:none !important',
               'color:inherit !important',
               'font-size:inherit !important',
               'font-weight:inherit !important',
               'text-decoration:none !important',
-              'vertical-align:baseline !important'
+              'vertical-align:baseline !important',
+              'box-sizing:border-box !important'
             ].join(';');
+            child.classList.remove('urppp-page-num', 'urppp-page-num-active', 'urppp-page-prevnext', 'urppp-page-ellipsis');
           });
         };
 
-        const isStatsText = (el) => {
-          // 「共16页 / 当前显示…」里的数字不要做成按钮
+        const clearChip = (el) => {
+          if (!el) return;
+          el.classList.remove('urppp-page-num', 'urppp-page-num-active', 'urppp-page-prevnext', 'urppp-page-ellipsis');
+        };
+
+        const isStatsContext = (el) => {
+          // 「转到 1 页 | 共16页 | 每页显示…」区域不当页码按钮
           let p = el;
-          for (let i = 0; i < 4 && p; i++, p = p.parentElement) {
+          for (let i = 0; i < 5 && p && p !== bar; i++, p = p.parentElement) {
             const tx = (p.textContent || '').replace(/\s+/g, '');
-            if (/共\d+页|每页显示|当前显示|条记录|转到/.test(tx) && !/上一页|下一页/.test(tx)) {
-              // 若节点自身只是统计区里的数字/文字
-              const self = (el.textContent || '').replace(/\s+/g, '');
-              if (/^\d+$/.test(self) || /共|页|条|显示|转到|记录|每页/.test(self)) {
-                // 分页链接不会包在「共x页」长文案里
-                if (el.tagName !== 'A' && !/上一页|下一页/.test(self)) return true;
-              }
-            }
-          }
-          // 直接兄弟上下文：前/后文本含 共/页|
-          const parent = el.parentElement;
-          if (parent) {
-            const full = (parent.textContent || '').replace(/\s+/g, '');
-            if (/共\d+页/.test(full) && el.tagName !== 'A') {
-              const self = (el.textContent || '').replace(/\s+/g, '');
-              if (/^\d+$/.test(self)) return true;
-            }
-          }
-          return false;
-        };
-
-        const isReallyCurrent = (el) => {
-          if (!el) return false;
-          if (/currentNum|currpage|current_page|page_current/i.test(el.id || '')) return true;
-          // 严格 class：不要用 /current/ 模糊匹配（会误伤）
-          const cls = ' ' + (el.className || '').toString() + ' ';
-          if (/\b(active|selected|current)\b/i.test(cls)) return true;
-          // 站点常把当前页做成 span 而相邻是 a
-          if (el.tagName === 'SPAN' || el.tagName === 'FONT' || el.tagName === 'B') {
-            const t0 = (el.textContent || '').replace(/\s+/g, '');
-            if (/^\d{1,4}$/.test(t0) && !el.closest('a') && !isStatsText(el)) {
-              // 仅当同级存在其它页码链接时，才把这个独立数字 span 当当前页
-              const bar = el.closest('#urppagebar, .urppagebreak');
-              if (bar && bar.querySelector('a') && !el.closest('a')) {
-                // 若 id 暗示当前，或 class 含 currentNum
-                if (/current|curr|active/i.test(el.id + ' ' + (el.className || ''))) return true;
-                // 没有明确标记则不刷主题色（避免全红）
-                return false;
+            if (/转到|共\d+页|每页显示|当前显示|条记录/.test(tx) && !/上一页|下一页/.test(tx)) {
+              // 该分支若还包含页码链接区则继续向上看；若整段都是统计文案则命中
+              if (!p.querySelector || !p.querySelector('a')) return true;
+              // 元素自身若不是 a / 上一页下一页，且在统计文案节点内
+              if (el.tagName !== 'A' && !/上一页|下一页/.test((el.textContent || '').replace(/\s+/g, ''))) {
+                // 若父级文本很短且含共x页，判定统计
+                if (/共\d+页|每页显示|当前显示|转到/.test(tx) && tx.length < 80) return true;
               }
             }
           }
           return false;
         };
 
-        const stylePageChip = (el, forceActive) => {
-          if (!el || el.classList.contains('urppp-page-confirm')) return;
-          if (el.matches && el.matches('input, select, button, .btn, label')) return;
-          if (isStatsText(el)) {
-            el.classList.remove('urppp-page-num', 'urppp-page-num-active');
-            return;
-          }
-          const raw = (el.textContent || '').replace(/\s+/g, '');
-          if (!raw) return;
-          if (/^(转到|共\d*条?|每页显示|当前显示|记录|页|条)$/.test(raw)) return;
+        const textOf = (el) => ((el && el.textContent) || '').replace(/\s+/g, '');
 
+        const classify = (el) => {
+          const raw = textOf(el);
           const isPrevNext = /上一页|下一页/.test(raw) || raw === '<' || raw === '>';
-          const isEllipsis = raw === '…' || raw === '...' || raw === '····' || raw === '···';
+          const isEllipsis = raw === '…' || raw === '...' || raw === '···' || raw === '····';
           const isNum = /^\d{1,4}$/.test(raw);
-          const isCurrent = !!forceActive || isReallyCurrent(el);
+          const isCurrent =
+            /currentNum|currpage|current_page|page_current/i.test(el.id || '') ||
+            /\b(active|selected|current)\b/i.test(' ' + ((el.className || '').toString()) + ' ');
+          return { raw, isPrevNext, isEllipsis, isNum, isCurrent };
+        };
 
-          if (!(el.tagName === 'A' || isPrevNext || isEllipsis || isNum || isCurrent || /page|paginat/i.test((el.className || '').toString()) || /currentNum/i.test(el.id || ''))) {
+        const paintChip = (el, kind) => {
+          if (!el) return;
+          // 若祖先已经是 chip，不再套一层
+          if (el.parentElement && el.parentElement.closest && el.parentElement.closest('.urppp-page-num')) {
             return;
           }
-
           el.classList.add('urppp-page-num');
-          el.classList.toggle('urppp-page-num-active', isCurrent);
-          el.classList.toggle('urppp-page-prevnext', isPrevNext);
-          el.classList.toggle('urppp-page-ellipsis', isEllipsis);
+          el.classList.toggle('urppp-page-num-active', !!kind.active);
+          el.classList.toggle('urppp-page-prevnext', !!kind.prevnext);
+          el.classList.toggle('urppp-page-ellipsis', !!kind.ellipsis);
 
-          const minW = isPrevNext ? '72px' : '40px';
-          // 默认中性色；仅当前页主题色
-          const bg = isCurrent ? 'var(--primary)' : 'var(--surface)';
-          const bd = isCurrent ? 'var(--primary)' : 'var(--border)';
-          const fg = isCurrent ? '#fff' : 'var(--text)';
+          const minW = kind.prevnext ? '72px' : '40px';
+          const bg = kind.active ? 'var(--primary)' : 'var(--surface)';
+          const bd = kind.active ? 'var(--primary)' : 'var(--border)';
+          const fg = kind.active ? '#fff' : 'var(--text)';
 
           el.style.cssText = [
             'display:inline-flex !important',
@@ -1406,38 +1383,61 @@
             'vertical-align:middle !important',
             'text-decoration:none !important',
             'box-shadow:none !important',
-            'cursor:' + (isEllipsis ? 'default' : 'pointer') + ' !important'
+            'outline:none !important',
+            'cursor:' + (kind.ellipsis ? 'default' : 'pointer') + ' !important'
           ].join(';');
           nukeInner(el);
+
+          // 父级若只是包一层，去掉父级边框/背景，防止双层细条
+          const p = el.parentElement;
+          if (p && p !== bar && p.tagName !== 'DIV' && p.children.length === 1) {
+            p.style.setProperty('border', '0', 'important');
+            p.style.setProperty('background', 'transparent', 'important');
+            p.style.setProperty('padding', '0', 'important');
+            p.style.setProperty('margin', '0 2px', 'important');
+            p.style.setProperty('height', 'auto', 'important');
+            p.style.setProperty('min-height', '0', 'important');
+            p.style.setProperty('line-height', 'normal', 'important');
+            p.style.setProperty('box-shadow', 'none', 'important');
+            clearChip(p);
+          }
         };
 
-        // 先清掉误标
-        bar.querySelectorAll('.urppp-page-num-active').forEach((el) => {
-          if (!isReallyCurrent(el)) el.classList.remove('urppp-page-num-active');
-        });
-
+        // 收集候选：优先 a，其次 currentNum span
+        const candidates = [];
         bar.querySelectorAll('a:not(.btn):not(.urppp-page-confirm)').forEach((a) => {
-          stylePageChip(a, isReallyCurrent(a));
-        });
-
-        // 当前页：优先 id=currentNum*
-        let currentEl =
-          bar.querySelector('[id*="currentNum"], [id*="CurrentNum"]') ||
-          bar.querySelector('span.active, font.active, b.active, .active:not(a):not(.btn)');
-        if (currentEl && !currentEl.matches('input, select, button, .btn') && !isStatsText(currentEl)) {
-          stylePageChip(currentEl, true);
-        }
-
-        // 其它非 a 的 … / 上一页下一页（极少见）
-        bar.querySelectorAll('span, font').forEach((sp) => {
-          if (sp.closest('a')) return;
-          if (isStatsText(sp)) return;
-          const t0 = (sp.textContent || '').replace(/\s+/g, '');
-          if (/上一页|下一页/.test(t0) || t0 === '…' || t0 === '...') {
-            stylePageChip(sp, false);
+          if (isStatsContext(a)) return;
+          const c = classify(a);
+          if (c.isPrevNext || c.isEllipsis || c.isNum || c.isCurrent || a.tagName === 'A') {
+            candidates.push({ el: a, c });
           }
         });
+        const cur =
+          bar.querySelector('[id*="currentNum"], [id*="CurrentNum"]') ||
+          null;
+        if (cur && !cur.closest('a') && !isStatsContext(cur)) {
+          candidates.push({ el: cur, c: { ...classify(cur), isCurrent: true } });
+        }
 
+        // 去重：若某 a 在另一个 candidate 内部，丢弃内层
+        const roots = candidates.filter(({ el }) => {
+          return !candidates.some(({ el: other }) => other !== el && other.contains(el));
+        });
+
+        // 先清旧标记，避免残留 active
+        bar.querySelectorAll('.urppp-page-num, .urppp-page-num-active').forEach((el) => {
+          el.classList.remove('urppp-page-num-active');
+        });
+
+        roots.forEach(({ el, c }) => {
+          paintChip(el, {
+            active: !!c.isCurrent,
+            prevnext: !!c.isPrevNext,
+            ellipsis: !!c.isEllipsis
+          });
+        });
+
+        // 再扫一遍：chip 内层绝不保留边框
         bar.querySelectorAll('.urppp-page-num').forEach((el) => nukeInner(el));
       });
     } catch (err) {
@@ -4848,24 +4848,39 @@
         border-color: var(--primary) !important;
         color: var(--primary) !important;
       }
-      /* 上一页 / 下一页 / …：与数字同为整颗按钮，内层细条一律清掉 */
+      /* 页码区：只有 .urppp-page-num 有边框；父/子包装层透明 */
+      body #urppagebar > span:not(.urppp-page-num),
+      body #urppagebar > font:not(.urppp-page-num),
+      body #urppagebar span:has(> a.urppp-page-num),
+      body #urppagebar font:has(> a.urppp-page-num),
+      body #urppagebar li:has(> a.urppp-page-num) {
+        border: 0 none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        line-height: normal !important;
+        box-shadow: none !important;
+      }
+      body #urppagebar a.urppp-page-num,
+      body #urppagebar span.urppp-page-num,
+      body #urppagebar .urppp-page-num,
       body #urppagebar a.urppp-page-prevnext,
       body #urppagebar a.urppp-page-ellipsis,
-      body #urppagebar .urppp-page-prevnext,
-      body #urppagebar .urppp-page-ellipsis,
-      body #urppagebar a[onclick*="page"],
-      html body #urppagebar a {
+      html body #urppagebar a.urppp-page-num {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
         height: 36px !important;
         min-height: 36px !important;
         max-height: 36px !important;
-        line-height: 36px !important;
+        min-width: 40px !important;
         padding: 0 12px !important;
         margin: 0 2px !important;
         font-size: 14px !important;
         font-weight: 600 !important;
+        line-height: 36px !important;
         border: 1px solid var(--border) !important;
         border-radius: 8px !important;
         background: var(--surface) !important;
@@ -4876,25 +4891,21 @@
         box-shadow: none !important;
         vertical-align: middle !important;
       }
-      body #urppagebar a.urppp-page-prevnext {
+      body #urppagebar a.urppp-page-prevnext,
+      body #urppagebar .urppp-page-prevnext {
         min-width: 72px !important;
       }
-      body #urppagebar a.urppp-page-ellipsis {
+      body #urppagebar a.urppp-page-ellipsis,
+      body #urppagebar .urppp-page-ellipsis {
         min-width: 40px !important;
         cursor: default !important;
       }
-      /* 关键：干掉 a/span 内部造成「中间细条」的子节点样式 */
-      body #urppagebar a > *,
-      body #urppagebar a span,
-      body #urppagebar a font,
-      body #urppagebar a b,
-      body #urppagebar a i,
-      body #urppagebar .urppp-page-num > *,
-      body #urppagebar .urppp-page-num span,
-      body #urppagebar .urppp-page-num font,
-      body #urppagebar .urppp-page-prevnext > *,
-      body #urppagebar .urppp-page-ellipsis > *,
-      html body #urppagebar a * {
+      /* 内层全部裸文本，杜绝细条 */
+      body #urppagebar .urppp-page-num *,
+      body #urppagebar a.urppp-page-num *,
+      body #urppagebar a.urppp-page-prevnext *,
+      body #urppagebar a.urppp-page-ellipsis *,
+      html body #urppagebar .urppp-page-num * {
         display: inline !important;
         position: static !important;
         float: none !important;
@@ -4909,6 +4920,7 @@
         margin: 0 !important;
         border: 0 none !important;
         border-radius: 0 !important;
+        outline: none !important;
         background: transparent !important;
         background-image: none !important;
         box-shadow: none !important;
@@ -4919,7 +4931,6 @@
         vertical-align: baseline !important;
         box-sizing: border-box !important;
       }
-
       /* 非当前页码：强制中性，禁止被主题色刷满 */
       body #urppagebar a.urppp-page-num:not(.urppp-page-num-active),
       body #urppagebar .urppp-page-num:not(.urppp-page-num-active),
@@ -6755,7 +6766,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.64');
+    console.log('[URP++] style applied v0.4.65');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -7378,7 +7389,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.64',
+    version: '0.4.65',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
