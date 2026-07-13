@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.32
+// @version      0.4.33
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.32';
+          content:'URP++ v0.4.33';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1220,6 +1220,43 @@
     window.__urpppChosenAlignBound = true;
     const apply = (root) => {
       const scope = root || document;
+      // 动态注入最高优先级样式，彻底压过 commoncss
+      let st = document.getElementById('urppp-chosen-align-style');
+      if (!st) {
+        st = document.createElement('style');
+        st.id = 'urppp-chosen-align-style';
+        document.documentElement.appendChild(st);
+      }
+      st.textContent = `
+        .chosen-container .chosen-results li,
+        .chosen-with-drop .chosen-results li,
+        body .chosen-container .chosen-results li {
+          display: flex !important;
+          align-items: center !important;
+          height: 36px !important;
+          min-height: 36px !important;
+          max-height: 36px !important;
+          line-height: normal !important;
+          padding: 0 12px !important;
+          margin: 0 !important;
+          box-sizing: border-box !important;
+        }
+        .chosen-container .chosen-search input,
+        body .chosen-container .chosen-search input {
+          height: 34px !important;
+          min-height: 34px !important;
+          line-height: 34px !important;
+          padding: 0 34px 0 10px !important;
+          background-image: none !important;
+          box-sizing: border-box !important;
+        }
+        .chosen-container .chosen-search:after,
+        body .chosen-container .chosen-search:after {
+          top: 25px !important;
+          right: 18px !important;
+          transform: translateY(-50%) !important;
+        }
+      `;
       scope.querySelectorAll('.chosen-results li').forEach((li) => {
         li.style.setProperty('display', 'flex', 'important');
         li.style.setProperty('align-items', 'center', 'important');
@@ -1227,7 +1264,7 @@
         li.style.setProperty('height', '36px', 'important');
         li.style.setProperty('min-height', '36px', 'important');
         li.style.setProperty('max-height', '36px', 'important');
-        li.style.setProperty('line-height', '36px', 'important');
+        li.style.setProperty('line-height', 'normal', 'important');
         li.style.setProperty('padding', '0 12px', 'important');
         li.style.setProperty('margin', '0', 'important');
         li.style.setProperty('box-sizing', 'border-box', 'important');
@@ -4263,7 +4300,7 @@
         max-height: 36px !important;
         margin: 0 !important;
         padding: 0 12px !important;
-        line-height: 36px !important;
+        line-height: normal !important;
         font-size: 13px !important;
         color: var(--text) !important;
         box-sizing: border-box !important;
@@ -4286,7 +4323,7 @@
         height: 36px !important;
         min-height: 36px !important;
         max-height: 36px !important;
-        line-height: 36px !important;
+        line-height: normal !important;
         padding: 0 12px !important;
         background: var(--primary) !important;
         color: #fff !important;
@@ -4305,7 +4342,7 @@
         color: var(--text-muted) !important;
       }
 
-      /* 搜索框：光标左侧正常；右侧图标用 ::after 绝对居中，去掉 sprite 背景 */
+      /* 搜索框：图标相对输入框垂直居中，不是相对整块 padding 区域 */
       .chosen-container .chosen-search,
       .chosen-container-single .chosen-search,
       .chosen-with-drop .chosen-search,
@@ -4331,11 +4368,12 @@
         border-radius: 8px !important;
         border: 1px solid var(--border) !important;
         background-color: var(--input-bg) !important;
-        background-image: none !important; /* 去掉 chosen sprite，避免图标偏上 */
+        background-image: none !important;
         color: var(--text) !important;
         box-sizing: border-box !important;
         vertical-align: middle !important;
       }
+      /* 关键：top = padding-top(8) + inputHeight/2(17) = 25px */
       .chosen-container .chosen-search:after,
       .chosen-container-single .chosen-search:after,
       .chosen-with-drop .chosen-search:after,
@@ -4346,7 +4384,7 @@
         font-style: normal !important;
         position: absolute !important;
         right: 18px !important;
-        top: 50% !important;
+        top: 25px !important;
         left: auto !important;
         bottom: auto !important;
         transform: translateY(-50%) !important;
@@ -5350,7 +5388,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.32');
+    console.log('[URP++] style applied v0.4.33');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5971,7 +6009,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.32',
+    version: '0.4.33',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
