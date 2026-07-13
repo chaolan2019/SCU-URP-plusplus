@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.17
+// @version      0.5.18
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.17';
+          content:'URP++ v0.5.18';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -8983,14 +8983,13 @@
       .timeline-item .timeline-indicator { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; }
       .timeline-item h5 { color: var(--text) !important; }
 
-      /* FullCalendar：只改颜色/边框，绝不碰 overflow/height/position（会破坏滚动与 00:00 标签） */
+      /* FullCalendar：颜色 + 首行时间标签，禁止改 scroller overflow/height */
       .fc,
       #main-calendar .fc {
         background: var(--surface) !important;
         background-color: var(--surface) !important;
         border-color: var(--border) !important;
         color: var(--text) !important;
-        border-radius: var(--radius) !important;
       }
       .fc th,
       .fc td,
@@ -9012,25 +9011,36 @@
         color: var(--text-secondary) !important;
         border-color: var(--border) !important;
       }
+      /* 时间轴与格子同色，避免左侧出现一块突兀色条 */
       .fc-bg,
       .fc-bg table,
       .fc-bg td,
       .fc-bg th,
       .fc-slats td,
-      .fc-time-grid .fc-slats td {
+      .fc-time-grid .fc-slats td,
+      .fc-axis,
+      .fc-time-grid .fc-axis,
+      .fc .fc-axis.fc-widget-content,
+      .fc .fc-axis.fc-time {
         background: var(--surface) !important;
         background-color: var(--surface) !important;
+        color: var(--text-secondary) !important;
         border-color: var(--border) !important;
       }
       .fc-time-grid .fc-slats .fc-minor td {
         border-top-color: color-mix(in srgb, var(--border) 72%, transparent) !important;
       }
-      .fc-axis,
-      .fc-time-grid .fc-axis {
-        background: var(--input-bg) !important;
-        background-color: var(--input-bg) !important;
-        color: var(--text-secondary) !important;
-        border-color: var(--border) !important;
+      /*
+       * FullCalendar 默认把时间文字 margin-top 上移半格，贴顶时 00:00 会被 scroller 裁掉一半。
+       * 仅修正首行标签，不改滚动容器。
+       */
+      .fc-time-grid .fc-slats tr:first-child > .fc-axis span,
+      .fc-time-grid .fc-slats tr:first-child > td.fc-axis span,
+      #main-calendar .fc-time-grid .fc-slats tr:first-child .fc-axis span {
+        margin-top: 0 !important;
+        transform: none !important;
+        position: relative !important;
+        top: 2px !important;
       }
       .fc-time-grid-event,
       .fc-event {
@@ -9062,12 +9072,13 @@
       .fc-today {
         background: color-mix(in srgb, var(--primary) 10%, var(--surface)) !important;
       }
-      /* 暗色：网格线/背景，仍不碰滚动容器 overflow */
       html.urppp-theme-dark .fc,
       html.urppp-theme-dark #main-calendar .fc,
       html.urppp-theme-dark .fc-bg,
       html.urppp-theme-dark .fc-bg td,
-      html.urppp-theme-dark .fc-slats td {
+      html.urppp-theme-dark .fc-slats td,
+      html.urppp-theme-dark .fc-axis,
+      html.urppp-theme-dark .fc-time-grid .fc-axis {
         background: #151A24 !important;
         background-color: #151A24 !important;
       }
@@ -9083,11 +9094,14 @@
         border-color: #1E293B !important;
       }
       html.urppp-theme-dark .fc-day-header,
-      html.urppp-theme-dark .fc-widget-header,
-      html.urppp-theme-dark .fc-axis,
-      html.urppp-theme-dark .fc-time-grid .fc-axis {
+      html.urppp-theme-dark .fc-widget-header {
         background: #1C2330 !important;
         background-color: #1C2330 !important;
+        color: #94A3B8 !important;
+        border-color: #1E293B !important;
+      }
+      html.urppp-theme-dark .fc-axis,
+      html.urppp-theme-dark .fc-time-grid .fc-axis {
         color: #94A3B8 !important;
         border-color: #1E293B !important;
       }
@@ -9539,15 +9553,20 @@
       .urppp-stat-skeleton .label { background: var(--input-bg); color: transparent !important; border-radius: 4px; width: 80px; height: 20px; }
       .urppp-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
       @media (max-width: 1100px) { .urppp-main-grid { grid-template-columns: 1fr; } }
-      #urppp-left .urppp-card { box-shadow: none !important; }
-      #urppp-left .urppp-card-body,
-      #urppp-left .fc {
-        background: var(--surface) !important;
+      /* 日程卡：避免 overflow:hidden 裁掉时间轴首行；滚动仍由 FC 内部 scroller 负责 */
+      #urppp-left .urppp-card {
+        box-shadow: none !important;
+        overflow: visible !important;
       }
-      #urppp-left #main-calendar,
-      #urppp-left .fc {
-        /* 让 FC 自己管理高度与内部 scroller，不要外层锁 overflow */
-        min-height: 0 !important;
+      #urppp-left .urppp-card-body {
+        background: var(--surface) !important;
+        overflow: visible !important;
+        padding-top: 12px !important;
+        padding-bottom: 12px !important;
+      }
+      #urppp-left .fc,
+      #urppp-left #main-calendar {
+        background: var(--surface) !important;
       }
       #urppp-left .fc-toolbar { margin: 0 0 12px 0 !important; padding: 8px 8px 0 8px !important; }
       #urppp-left .fc-toolbar .fc-center h2,
@@ -9841,7 +9860,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.17');
+    console.log('[URP++] style applied v0.5.18');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -10720,7 +10739,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.17',
+    version: '0.5.18',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
