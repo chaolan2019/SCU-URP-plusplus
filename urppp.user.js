@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.29
+// @version      0.4.30
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.29';
+          content:'URP++ v0.4.30';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -5250,6 +5250,7 @@
     setTimeout(restyleInfoboxPercentages, 300);
     setTimeout(restyleInfoboxPercentages, 1000);
     beautifyQueryForms();
+    patchChosenDropdownAlign();
     setTimeout(beautifyQueryForms, 100);
     setTimeout(beautifyQueryForms, 300);
     setTimeout(beautifyQueryForms, 800);
@@ -5309,7 +5310,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.29');
+    console.log('[URP++] style applied v0.4.30');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5912,6 +5913,7 @@
         setTimeout(restyleInfoboxPercentages, 300);
         setTimeout(restyleInfoboxPercentages, 1000);
         beautifyQueryForms();
+        patchChosenDropdownAlign();
         setTimeout(beautifyQueryForms, 300);
         beautifyPlanTree();
         setTimeout(() => beautifyPlanTree(), 500);
@@ -5929,7 +5931,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.29',
+    version: '0.4.30',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
