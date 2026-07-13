@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.43
+// @version      0.6.0
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -546,14 +546,6 @@
     try { syncNavbarThemeUI(); } catch (_) {}
   }
 
-  function clearAccent() {
-    GM_setValue(ACCENT_KEY, '');
-    document.documentElement.style.removeProperty('--urppp-accent');
-    document.documentElement.style.removeProperty('--urppp-accent-hover');
-    document.documentElement.style.removeProperty('--urppp-accent-ring');
-    clearInlinePrimaryOverrides();
-  }
-
   function getAccent() { return GM_getValue(ACCENT_KEY, ''); }
 
   function getAccentPresets() {
@@ -690,7 +682,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.43';
+          content:'URP++ v0.6.0';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3837,7 +3829,6 @@
       }
     } catch (_) {}
     let styleEl = document.getElementById('urppp-internal-style');
-    const styleExists = !!styleEl;
     if (!styleEl) {
       styleEl = document.createElement('style');
       styleEl.id = 'urppp-internal-style';
@@ -9990,61 +9981,7 @@
         background: rgba(147, 168, 199, 0.08) !important;
       }
 
-      /* ========== 学籍双栏：标题去卡壳（class 标记，优先级拉满） ========== */
-      html body h4.header.urppp-section-label,
-      html body .header.urppp-section-label,
-      html body h4.header.smaller.lighter.grey.urppp-section-label,
-      html body .page-content h4.header.urppp-section-label,
-      html body #page-content-template h4.header.urppp-section-label {
-        background: transparent !important;
-        background-color: transparent !important;
-        background-image: none !important;
-        border: 0 none transparent !important;
-        box-shadow: none !important;
-        border-radius: 0 !important;
-        padding: 4px 2px 10px !important;
-        margin: 0 0 8px !important;
-        min-height: 0 !important;
-        width: 100% !important;
-        max-width: 100% !important;
-      }
-      html body .profile-user-info.setLabelWidth,
-      html body .profile-user-info-striped.setLabelWidth,
-      html body .self.profile-user-info.setLabelWidth {
-        padding: 0 !important;
-        margin: 0 0 16px !important;
-        background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 12px !important;
-        box-shadow: none !important;
-        overflow: hidden !important;
-      }
-
-      /* ========== 学籍页最终形态（对齐左侧基本信息：标题无壳 + 表零内边距） ========== */
-      html body .page-content .col-xs-4 > h4.header,
-      html body .page-content .col-xs-8 > h4.header,
-      html body .page-content .col-sm-4 > h4.header,
-      html body .page-content .col-sm-8 > h4.header,
-      html body .page-content .col-md-4 > h4.header,
-      html body .page-content .col-md-8 > h4.header,
-      html body .page-content .col-xs-4 > h4.header.smaller.lighter.grey,
-      html body .page-content .col-xs-8 > h4.header.smaller.lighter.grey,
-      html body #page-content-template .col-xs-4 > h4.header,
-      html body #page-content-template .col-xs-8 > h4.header,
-      html body h4.header.urppp-section-label,
-      html body .page-content h4.header.urppp-section-label {
-        background: transparent !important;
-        background-color: transparent !important;
-        background-image: none !important;
-        border: 0 none transparent !important;
-        box-shadow: none !important;
-        border-radius: 0 !important;
-        padding: 4px 2px 10px !important;
-        margin: 0 0 8px !important;
-        min-height: 0 !important;
-      }
-      html body .page-content .profile-user-info.setLabelWidth,
-      html body .page-content .profile-user-info-striped.setLabelWidth,
+fo-striped.setLabelWidth,
       html body .page-content .self.profile-user-info.setLabelWidth,
       html body .page-content .self.profile-user-info-striped.setLabelWidth,
       html body .page-content .profile-user-info.setLabelWidth.urppp-query-form {
@@ -10726,9 +10663,12 @@
       let wrapTimer = 0;
       window.__urpppTableObs = new MutationObserver(() => {
         clearTimeout(wrapTimer);
-        wrapTimer = setTimeout(wrapTables, 50);
+        wrapTimer = setTimeout(wrapTables, 80);
       });
-      window.__urpppTableObs.observe(document.body, { childList: true, subtree: true });
+      const tableHost = document.getElementById('page-content-template')
+        || document.querySelector('.page-content')
+        || document.body;
+      window.__urpppTableObs.observe(tableHost, { childList: true, subtree: true });
     }
     // 首页进行组件级重构
     const pageContent = document.querySelector('.page-content');
@@ -10821,15 +10761,17 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.43');
+    console.log('[URP++] style applied v0.6.0');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
+      if (window.__urpppCourseOpacityBound) return;
+      window.__urpppCourseOpacityBound = true;
       const apply = () => {
         const tbl = document.getElementById('courseTable');
         if (!tbl) return;
-        tbl.querySelectorAll('td').forEach(td => {
+        tbl.querySelectorAll('td').forEach((td) => {
           const bg = td.style.backgroundColor;
           if (bg && bg.includes('rgba')) {
             const m = bg.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/);
@@ -10838,7 +10780,18 @@
         });
       };
       apply();
-      new MutationObserver(() => requestAnimationFrame(apply)).observe(document.body, { childList: true, subtree: true });
+      const bind = (host) => {
+        if (!host || host.__urpppOpacityObs) return;
+        host.__urpppOpacityObs = true;
+        let tmr = 0;
+        new MutationObserver(() => {
+          clearTimeout(tmr);
+          tmr = setTimeout(apply, 60);
+        }).observe(host, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+      };
+      const host = document.getElementById('mycoursetable') || document.getElementById('courseTable');
+      if (host) bind(host);
+      else setTimeout(() => bind(document.getElementById('mycoursetable') || document.getElementById('courseTable')), 1200);
     })();
 
     // 课表背景卡片高度对齐（CSS translateY 处理）
@@ -11559,9 +11512,6 @@
       }, 50);
     }, true);
   }
-  // 首页通知：只用 CSS !important 压站点 inline white，禁止 Observer/jQuery 劫持（会卡死加载）
-  function pinHomeNoticeItems() { /* no-op: CSS handles it */ }
-  function bindHomeNoticeScrub() { /* no-op */ }
   function rebuildDashboard() {
     try { bindScheduleHoverNearCursor(); } catch (_) {}
     if (document.getElementById('urppp-dashboard')) return;
@@ -11802,7 +11752,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.43',
+    version: '0.6.0',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
