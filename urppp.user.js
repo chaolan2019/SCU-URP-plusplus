@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.48
+// @version      0.4.49
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.48';
+          content:'URP++ v0.4.49';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1188,6 +1188,33 @@
       // jQuery/chosen 就绪后多试几次，不必无限跑
       if ((ok && tries > 3) || tries > 15) clearInterval(timer);
     }, 500);
+  }
+
+  // 空闲教室：楼栋列表轻量标记（校区标题 / 楼栋项）
+  function beautifyFreeClassroomList() {
+    try {
+      const ul = document.getElementById('drag-ul');
+      if (!ul) return;
+      ul.classList.add('urppp-drag-ul');
+      Array.from(ul.children).forEach((li) => {
+        if (!li || li.tagName !== 'LI') return;
+        const txt = (li.textContent || '').replace(/\s+/g, ' ').trim();
+        const hasClick =
+          (li.getAttribute('onclick') || '').includes('goDetail') ||
+          li.classList.contains('ui-selectee') ||
+          li.classList.contains('jc-future') ||
+          !!li.querySelector('a');
+        // 校区标题通常纯文本、无 goDetail
+        if (!hasClick && /校区/.test(txt) && txt.length <= 12) {
+          li.classList.add('xq-section');
+          li.classList.remove('ui-selectee', 'jc-future');
+        } else if (hasClick) {
+          if (!li.classList.contains('jc-future')) li.classList.add('ui-selectee');
+        }
+      });
+    } catch (err) {
+      console.warn('[URP++] free classroom list beautify failed', err);
+    }
   }
   function beautifyQueryForms() {
     try {
@@ -4551,7 +4578,113 @@
       .chosen-container-active.chosen-with-drop .chosen-drop {
         top: calc(100% + 6px) !important;
       }
-      /* Chosen 下拉：压过 commoncss/phone.css 的 25px，真正垂直居中 */
+
+      /* ============================================================
+       * 空闲教室查询：右侧楼栋列表 #drag-ul
+       * ============================================================ */
+      #drag-ul {
+        list-style: none !important;
+        margin: 0 !important;
+        padding: 4px 0 8px !important;
+        max-height: none !important;
+      }
+      #drag-ul > li {
+        list-style: none !important;
+        margin: 0 0 10px !important;
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+      }
+      /* 校区标题：望江/华西/江安 */
+      #drag-ul > li.xq-section {
+        margin: 14px 0 8px !important;
+        padding: 0 4px 6px !important;
+        border-bottom: 1px solid var(--border) !important;
+        color: var(--text) !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.02em !important;
+        line-height: 1.4 !important;
+        background: transparent !important;
+      }
+      #drag-ul > li.xq-section:first-child {
+        margin-top: 0 !important;
+      }
+      /* 楼栋条目 */
+      #drag-ul > li.ui-selectee,
+      #drag-ul > li.jc-future,
+      #drag-ul > li.border-common {
+        display: flex !important;
+        align-items: center !important;
+        min-height: 36px !important;
+        margin: 0 0 6px !important;
+        padding: 8px 12px !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 8px !important;
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        line-height: 1.35 !important;
+        cursor: pointer !important;
+        box-shadow: none !important;
+        transition: background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease !important;
+        box-sizing: border-box !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+      }
+      #drag-ul > li.ui-selectee:hover,
+      #drag-ul > li.border-common:hover {
+        background: var(--input-bg) !important;
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+      }
+      #drag-ul > li.ui-selecting,
+      #drag-ul > li.ui-selected {
+        background: color-mix(in srgb, var(--primary) 12%, var(--surface)) !important;
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+        box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent) !important;
+      }
+      /* 不可选 / 未来态 */
+      #drag-ul > li.jc-future {
+        opacity: 0.55 !important;
+        cursor: default !important;
+        color: var(--text-muted) !important;
+        background: var(--input-bg) !important;
+      }
+      #drag-ul > li.jc-future:hover {
+        border-color: var(--border) !important;
+        color: var(--text-muted) !important;
+        background: var(--input-bg) !important;
+      }
+      /* 左侧列表容器（若存在） */
+      #drag-div,
+      #drag,
+      .drag-border-right,
+      #classroomInfo-divcon,
+      #curriculumInfo-divcon {
+        box-sizing: border-box !important;
+      }
+      /* 空闲教室页：常见双栏容器微调 */
+      #page-content-template:has(#drag-ul) .widget-box,
+      .page-content:has(#drag-ul) .widget-box {
+        border-radius: var(--radius) !important;
+        border: 1px solid var(--border) !important;
+        background: var(--surface) !important;
+        overflow: hidden !important;
+      }
+      #page-content-template:has(#drag-ul) .widget-header,
+      .page-content:has(#drag-ul) .widget-header {
+        background: var(--surface) !important;
+        border-bottom: 1px solid var(--border) !important;
+        color: var(--text) !important;
+      }
+      #page-content-template:has(#drag-ul) .widget-main,
+      .page-content:has(#drag-ul) .widget-main {
+        background: var(--surface) !important;
+        padding: 12px 14px !important;
+      }      /* Chosen 下拉：压过 commoncss/phone.css 的 25px，真正垂直居中 */
       .chosen-container .chosen-results,
       body .chosen-container .chosen-results {
         margin: 0 !important;
@@ -5606,6 +5739,9 @@
     restyleInfoboxPercentages();
     setTimeout(restyleInfoboxPercentages, 300);
     setTimeout(restyleInfoboxPercentages, 1000);
+    beautifyFreeClassroomList();
+    setTimeout(beautifyFreeClassroomList, 300);
+    setTimeout(beautifyFreeClassroomList, 1000);
     scheduleEnsureQueryChosen();
     ensureQueryChosen();
     beautifyQueryForms();
@@ -5669,7 +5805,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.48');
+    console.log('[URP++] style applied v0.4.49');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -6292,7 +6428,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.48',
+    version: '0.4.49',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
