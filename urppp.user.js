@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.31
+// @version      0.4.32
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.31';
+          content:'URP++ v0.4.32';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1223,23 +1223,23 @@
       scope.querySelectorAll('.chosen-results li').forEach((li) => {
         li.style.setProperty('display', 'flex', 'important');
         li.style.setProperty('align-items', 'center', 'important');
+        li.style.setProperty('justify-content', 'flex-start', 'important');
         li.style.setProperty('height', '36px', 'important');
         li.style.setProperty('min-height', '36px', 'important');
         li.style.setProperty('max-height', '36px', 'important');
-        li.style.setProperty('line-height', 'normal', 'important');
+        li.style.setProperty('line-height', '36px', 'important');
         li.style.setProperty('padding', '0 12px', 'important');
+        li.style.setProperty('margin', '0', 'important');
         li.style.setProperty('box-sizing', 'border-box', 'important');
       });
       scope.querySelectorAll('.chosen-search input').forEach((input) => {
         input.style.setProperty('height', '34px', 'important');
         input.style.setProperty('min-height', '34px', 'important');
         input.style.setProperty('line-height', '34px', 'important');
-        // 图标在右：左 10px 起光标，右 30px 给图标
-        input.style.setProperty('padding', '0 30px 0 10px', 'important');
+        input.style.setProperty('padding', '0 34px 0 10px', 'important');
         input.style.setProperty('box-sizing', 'border-box', 'important');
-        input.style.setProperty('background-position', 'right 10px center', 'important');
-        input.style.setProperty('background-repeat', 'no-repeat', 'important');
-        input.style.setProperty('background-size', '14px 14px', 'important');
+        // 去掉 sprite，改用 CSS ::after 居中图标
+        input.style.setProperty('background-image', 'none', 'important');
       });
     };
     document.addEventListener('mousedown', (e) => {
@@ -4243,20 +4243,27 @@
         border-color: var(--border) !important;
         box-shadow: var(--shadow) !important;
       }
-      /* 覆盖 commoncss: .chosen-container .chosen-results li {height/line-height:25px} */
+      /* Chosen 下拉：压过 commoncss/phone.css 的 25px，真正垂直居中 */
+      .chosen-container .chosen-results,
+      body .chosen-container .chosen-results {
+        margin: 0 !important;
+        padding: 4px 0 !important;
+      }
       .chosen-container .chosen-results li,
       .chosen-container .chosen-results li.active-result,
       .chosen-container-single .chosen-results li,
       .chosen-container-multi .chosen-results li,
-      body .chosen-container .chosen-results li {
+      body .chosen-container .chosen-results li,
+      body .chosen-with-drop .chosen-results li {
         display: flex !important;
         align-items: center !important;
+        justify-content: flex-start !important;
         height: 36px !important;
         min-height: 36px !important;
         max-height: 36px !important;
         margin: 0 !important;
         padding: 0 12px !important;
-        line-height: normal !important;
+        line-height: 36px !important;
         font-size: 13px !important;
         color: var(--text) !important;
         box-sizing: border-box !important;
@@ -4268,39 +4275,40 @@
       .chosen-container .chosen-results li em {
         font-style: normal !important;
         line-height: inherit !important;
+        vertical-align: baseline !important;
       }
       body .chosen-container .chosen-results li.highlighted,
       body .chosen-container .chosen-results li.result-selected,
       .chosen-container .chosen-results li.highlighted,
       .chosen-container .chosen-results li.result-selected {
-        background: var(--primary) !important;
-        color: #fff !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        line-height: normal !important;
         display: flex !important;
         align-items: center !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        line-height: 36px !important;
+        padding: 0 12px !important;
+        background: var(--primary) !important;
+        color: #fff !important;
       }
       body .chosen-container .chosen-results li.highlighted em,
       body .chosen-container .chosen-results li.result-selected em {
         background: transparent !important;
         color: #fff !important;
       }
-      .chosen-results {
-        margin: 0 !important;
-        padding: 4px 0 !important;
-      }
       .chosen-results li.no-results {
-        display: block !important;
+        display: flex !important;
+        align-items: center !important;
+        height: 36px !important;
+        line-height: 36px !important;
         background: var(--input-bg) !important;
         color: var(--text-muted) !important;
-        height: 34px !important;
-        line-height: 34px !important;
       }
 
-      /* 搜索框：覆盖 commoncss 默认，文字与图标同中线 */
+      /* 搜索框：光标左侧正常；右侧图标用 ::after 绝对居中，去掉 sprite 背景 */
       .chosen-container .chosen-search,
       .chosen-container-single .chosen-search,
+      .chosen-with-drop .chosen-search,
       .chosen-search {
         position: relative !important;
         margin: 0 !important;
@@ -4311,24 +4319,50 @@
       .chosen-container-single .chosen-search input[type="text"],
       .chosen-container .chosen-search input,
       .chosen-container-single .chosen-search input,
+      .chosen-with-drop .chosen-search input,
       body .chosen-container .chosen-search input {
         width: 100% !important;
         height: 34px !important;
         min-height: 34px !important;
         margin: 0 !important;
-        /* 图标在右侧：左内边距正常，右内边距留给搜索图标 */
-        padding: 0 30px 0 10px !important;
+        padding: 0 34px 0 10px !important;
         line-height: 34px !important;
         font-size: 13px !important;
         border-radius: 8px !important;
         border: 1px solid var(--border) !important;
         background-color: var(--input-bg) !important;
+        background-image: none !important; /* 去掉 chosen sprite，避免图标偏上 */
         color: var(--text) !important;
         box-sizing: border-box !important;
         vertical-align: middle !important;
-        background-repeat: no-repeat !important;
-        background-position: right 10px center !important;
-        background-size: 14px 14px !important;
+      }
+      .chosen-container .chosen-search:after,
+      .chosen-container-single .chosen-search:after,
+      .chosen-with-drop .chosen-search:after,
+      body .chosen-container .chosen-search:after {
+        content: "\f002" !important;
+        font-family: FontAwesome, "Font Awesome 5 Free", "Font Awesome 6 Free", sans-serif !important;
+        font-weight: 400 !important;
+        font-style: normal !important;
+        position: absolute !important;
+        right: 18px !important;
+        top: 50% !important;
+        left: auto !important;
+        bottom: auto !important;
+        transform: translateY(-50%) !important;
+        width: 14px !important;
+        height: 14px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        line-height: 14px !important;
+        font-size: 13px !important;
+        color: var(--text-muted) !important;
+        background: none !important;
+        border: 0 !important;
+        pointer-events: none !important;
+        z-index: 3 !important;
+        display: block !important;
+        text-align: center !important;
       }
       .chosen-search:before {
         content: none !important;
@@ -5316,7 +5350,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.31');
+    console.log('[URP++] style applied v0.4.32');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5937,7 +5971,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.31',
+    version: '0.4.32',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
