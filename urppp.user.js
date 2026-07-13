@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.72
+// @version      0.4.73
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.72';
+          content:'URP++ v0.4.73';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -2322,6 +2322,96 @@
 
   // 评估公告 / 通知列表：
   // 真实结构多为 3 列 tr: 圆点 | 标题链接 | 日期（也可能单 td 多 span）
+
+  // 本学期周课表：收束周次滑条宽度 + 重算课程块对齐
+  function fixWeekScheduleLayout() {
+    try {
+      const box = document.getElementById('soliderbox');
+      if (box) {
+        box.style.setProperty('width', '100%', 'important');
+        box.style.setProperty('max-width', '720px', 'important');
+        box.style.setProperty('min-width', '0', 'important');
+        // 去掉站点 container 1000px/300% 干扰
+        box.classList.remove('container');
+        const row = box.closest('.profile-info-row');
+        if (row) {
+          row.style.setProperty('display', 'flex', 'important');
+          row.style.setProperty('align-items', 'center', 'important');
+          row.style.setProperty('width', '100%', 'important');
+          row.style.setProperty('max-width', '100%', 'important');
+        }
+        const val = box.closest('.profile-info-value');
+        if (val) {
+          val.style.setProperty('width', 'auto', 'important');
+          val.style.setProperty('max-width', '100%', 'important');
+          val.style.setProperty('flex', '1 1 auto', 'important');
+          val.style.setProperty('min-width', '0', 'important');
+        }
+        // 触发滑条内部尺寸重算（若有）
+        try {
+          window.dispatchEvent(new Event('resize'));
+        } catch (_) { /* ignore */ }
+      }
+
+      const host = document.getElementById('mycoursetable');
+      const page = document.getElementById('page-content-template') || document.querySelector('.page-content');
+      if (host) {
+        host.style.setProperty('position', 'relative', 'important');
+        host.style.setProperty('width', '100%', 'important');
+      }
+      if (page) page.style.setProperty('position', 'relative', 'important');
+
+      // 优先调用站点 divBuild 重算 absolute 课程块
+      const g = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+      if (typeof g.divBuild === 'function') {
+        try { g.divBuild(); } catch (e) { console.warn('[URP++] divBuild failed', e); }
+      } else if (host && host.querySelector('div.class_div')) {
+        // 兜底：按父 td 定位
+        const pageTop = page ? page.getBoundingClientRect().top + (window.scrollY || 0) : 0;
+        const pageLeft = page ? page.getBoundingClientRect().left + (window.scrollX || 0) : 0;
+        host.querySelectorAll('div.class_div').forEach((div) => {
+          const td = div.parentElement;
+          if (!td || td.tagName !== 'TD') return;
+          const rect = td.getBoundingClientRect();
+          const siblings = Array.from(td.querySelectorAll(':scope > div.class_div'));
+          const idx = siblings.indexOf(div);
+          const half = siblings.length > 1;
+          const w = half ? rect.width / 2 : rect.width;
+          const top = rect.top + (window.scrollY || 0) - pageTop - 12;
+          const left = rect.left + (window.scrollX || 0) - pageLeft + (half && idx > 0 ? w : 0);
+          div.style.setProperty('position', 'absolute', 'important');
+          div.style.setProperty('top', top + 'px', 'important');
+          div.style.setProperty('left', left + 'px', 'important');
+          div.style.setProperty('width', Math.max(0, w - 2) + 'px', 'important');
+        });
+      }
+    } catch (err) {
+      console.warn('[URP++] week schedule fix failed', err);
+    }
+  }
+
+  function scheduleWeekScheduleFix() {
+    if (window.__urpppWeekSchedBound) return;
+    window.__urpppWeekSchedBound = true;
+    const run = () => fixWeekScheduleLayout();
+    ;[0, 200, 600, 1200, 2500].forEach((ms) => setTimeout(run, ms));
+    window.addEventListener('resize', () => {
+      clearTimeout(window.__urpppWeekSchedResize);
+      window.__urpppWeekSchedResize = setTimeout(run, 120);
+    });
+    // 课表 AJAX 填充后重算
+    const obs = new MutationObserver(() => {
+      if (!document.getElementById('mycoursetable') && !document.getElementById('soliderbox')) return;
+      clearTimeout(window.__urpppWeekSchedMut);
+      window.__urpppWeekSchedMut = setTimeout(run, 180);
+    });
+    const host = document.getElementById('mycoursetable') || document.getElementById('page-content-template') || document.body;
+    if (host) obs.observe(host, { childList: true, subtree: true });
+    // 拖动周次后也会刷新课表
+    document.addEventListener('mouseup', () => {
+      if (document.getElementById('soliderbox')) setTimeout(run, 300);
+    }, true);
+  }
   function beautifyNoticeTables() {
     try {
       const tables = document.querySelectorAll(
@@ -6607,6 +6697,132 @@
       }
 
       /* 作息时间表：干净利落 + 全居中（不改 DOM 结构） */
+
+      /* ============================================================
+       * 本学期周课表：周次滑条 + 课程块对齐
+       * ============================================================ */
+      /* 站点写死 #soliderbox.container {width:300%} 会把滑条拖到全宽外 */
+      #soliderbox.container,
+      #soliderbox,
+      .profile-info-value > #soliderbox,
+      .profile-info-row #soliderbox {
+        width: 100% !important;
+        max-width: 720px !important;
+        min-width: 0 !important;
+        margin: 8px 0 4px !important;
+        padding: 8px 12px 22px !important;
+        box-sizing: border-box !important;
+        float: none !important;
+        overflow: visible !important;
+      }
+      .profile-info-row:has(#soliderbox) {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 0 16px !important;
+        padding: 12px 16px !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        box-sizing: border-box !important;
+      }
+      .profile-info-row:has(#soliderbox) .profile-info-name {
+        float: none !important;
+        width: auto !important;
+        min-width: 72px !important;
+        flex: 0 0 auto !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        color: var(--text) !important;
+        font-weight: 600 !important;
+      }
+      .profile-info-row:has(#soliderbox) .profile-info-value {
+        float: none !important;
+        flex: 1 1 auto !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+        border: none !important;
+      }
+      /* r-slider 主题色 */
+      #soliderbox .r-slider-line {
+        background: var(--border) !important;
+        height: 6px !important;
+        border-radius: 999px !important;
+      }
+      #soliderbox .r-slider-fill {
+        background: var(--primary) !important;
+        height: 6px !important;
+        border-radius: 999px !important;
+      }
+      #soliderbox .r-slider-button {
+        background: var(--primary) !important;
+        border: 2px solid #fff !important;
+        box-shadow: 0 1px 4px rgba(15,23,42,0.2) !important;
+        width: 16px !important;
+        height: 16px !important;
+      }
+      #soliderbox .r-slider-label,
+      #soliderbox .r-slider-text {
+        color: var(--text-muted) !important;
+        font-size: 11px !important;
+      }
+      #soliderbox .r-slider-number {
+        background: var(--text) !important;
+        color: #fff !important;
+      }
+      /* 课表容器：给 absolute 课程块提供定位基准 */
+      #page-content-template,
+      .page-content#page-content-template {
+        position: relative !important;
+      }
+      #mycoursetable {
+        position: relative !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: auto !important;
+        box-sizing: border-box !important;
+      }
+      #mycoursetable > table,
+      #mycoursetable table#courseTable,
+      #courseTable {
+        width: 100% !important;
+        max-width: 100% !important;
+        table-layout: fixed !important;
+        border-collapse: collapse !important;
+        box-sizing: border-box !important;
+      }
+      #mycoursetable td,
+      #mycoursetable th,
+      #courseTable td,
+      #courseTable th {
+        position: relative !important;
+        vertical-align: top !important;
+        box-sizing: border-box !important;
+      }
+      /* 课程块：站点用 absolute 按 offset 对齐；限制不溢出 */
+      #mycoursetable div.class_div,
+      #courseTable div.class_div,
+      div.class_div {
+        box-sizing: border-box !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        border-radius: 8px !important;
+        z-index: 2 !important;
+      }
+      #mycoursetable div.class_div p,
+      div.class_div p {
+        margin: 2px 4px !important;
+        line-height: 1.35 !important;
+        word-break: break-word !important;
+      }
       #work_rest_schedule_modal.modal.fade.in,
       #work_rest_schedule_modal.modal.in {
         display: block !important;
@@ -7056,6 +7272,8 @@
     beautifyNoticeTables();
     setTimeout(beautifyNoticeTables, 300);
     setTimeout(beautifyNoticeTables, 1000);
+    scheduleWeekScheduleFix();
+    fixWeekScheduleLayout();
     if (!window.__urpppTableObs) {
       let wrapTimer = 0;
       window.__urpppTableObs = new MutationObserver(() => {
@@ -7151,7 +7369,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.72');
+    console.log('[URP++] style applied v0.4.73');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -7774,7 +7992,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.72',
+    version: '0.4.73',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
