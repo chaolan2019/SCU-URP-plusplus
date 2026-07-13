@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.32
+// @version      0.5.33
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.32';
+          content:'URP++ v0.5.33';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1890,7 +1890,7 @@
         // 学籍 setLabelWidth 不当查询表单
         if (root.classList.contains('setLabelWidth')) return;
         // 培养方案抽屉详情（学年学期/课组）不当查询表单
-        if (root.closest && root.closest('#curriculumInfo-divcon2, #fajh, #xnxq, #kz, #kc, #kcfa')) return;
+        if (root.closest && root.closest('#curriculumInfo-divcon, #curriculumInfo-divcon1, #curriculumInfo-divcon2, #fajh, #xnxq, #kz, #kc, #kcfa')) return;
         // 个人信息修改等：每行只有一对 name/value，不当查询表单
         const multiPair = Array.from(root.querySelectorAll('.profile-info-row')).some((row) => {
           return Array.from(row.children).filter((el) => el.classList && el.classList.contains('profile-info-name')).length >= 2;
@@ -2899,13 +2899,8 @@
   // 学籍页培养方案抽屉：强制左树 / 右详情，每次打开都归位，禁止交错
   function beautifyCurriculumDrawer() {
     try {
-      ;['curriculumInfo-divcon', 'curriculumInfo-divcon1'].forEach((id) => {
-        const p = document.getElementById(id);
-        if (!p) return;
-        const w = parseFloat(p.style.width || '0');
-        if (w >= 40) p.classList.add('urppp-curriculum-drawer');
-      });
-
+      // 仅学籍页 #curriculumInfo-divcon2 做左右栏重组。
+      // 培养方案查询页是 #curriculumInfo-divcon（无 2），结构不同，重组会毁掉主列表页。
       const panel = document.getElementById('curriculumInfo-divcon2');
       if (!panel) return;
       const w = parseFloat(panel.style.width || getComputedStyle(panel).width || '0');
@@ -3102,12 +3097,12 @@
       clearTimeout(window.__urpppCurriculumDrawerTimer);
       window.__urpppCurriculumDrawerTimer = setTimeout(() => requestAnimationFrame(run), 16);
     });
-    ['curriculumInfo-divcon', 'curriculumInfo-divcon1', 'curriculumInfo-divcon2'].forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) obs.observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
-    });
+    const el2 = document.getElementById('curriculumInfo-divcon2');
+    if (el2) obs.observe(el2, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
     // 点击“培养方案/与我相关”后尽快布局，减少首开只见树
     document.addEventListener('click', (e) => {
+      // 只在 divcon2 存在（学籍培养方案抽屉）时重组
+      if (!document.getElementById('curriculumInfo-divcon2')) return;
       const t = e.target && e.target.closest ? e.target.closest('a,button,span,div') : null;
       const txt = ((t && t.textContent) || '').replace(/\s+/g, '');
       if (/培养方案|与我相关|方案计划|自动化培养/.test(txt) || (t && t.closest && t.closest('#curriculumInfo-divcon2'))) {
@@ -3115,8 +3110,6 @@
         setTimeout(run, 50);
         setTimeout(run, 150);
         setTimeout(run, 400);
-      } else {
-        setTimeout(run, 200);
       }
     }, true);
   }
@@ -4863,8 +4856,8 @@
         color: var(--text) !important;
       }
       /* 卡片 / 面板 */
-      .widget-box,
-      .widget-box.transparent,
+      .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon),
+      .widget-box.transparent:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon),
       .panel,
       .panel-default,
       .panel-primary,
@@ -4882,7 +4875,7 @@
         box-shadow: none !important;
         overflow: hidden !important;
       }
-      .widget-box {
+      .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon) {
         margin-bottom: 18px !important;
       }
       .widget-header,
@@ -5808,9 +5801,9 @@
         width: 100% !important;
         max-width: 100% !important;
       }
-      /* widget 本体保证是唯一卡片壳 */
-      .page-content .widget-box,
-      #page-content-template .widget-box {
+      /* widget 本体保证是唯一卡片壳（排除右侧滑出抽屉，它们也带 widget-box class） */
+      .page-content .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon),
+      #page-content-template .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon) {
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
@@ -8760,6 +8753,57 @@
         box-shadow: -12px 0 40px rgba(15, 23, 42, 0.14) !important;
         z-index: 1050 !important;
         box-sizing: border-box !important;
+        position: fixed !important;
+        top: 45px !important;
+        right: 0 !important;
+        left: auto !important;
+        bottom: 0 !important;
+        max-width: min(860px, 92vw) !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        overflow: auto !important;
+        float: none !important;
+        /* 不写 width!important，交给站点 animate 的 inline width */
+      }
+
+      /* 培养方案查询页抽屉 #curriculumInfo-divcon：只美化，不重组 DOM */
+      #curriculumInfo-divcon .div-title,
+      #curriculumInfo-divcon > .row > .div-title {
+        background: var(--surface) !important;
+        border-bottom: 1px solid var(--border) !important;
+      }
+      #curriculumInfo-divcon .div-title h5,
+      #curriculumInfo-divcon .div-title a,
+      #curriculumInfo-divcon .div-title i {
+        color: var(--text-secondary) !important;
+      }
+      #curriculumInfo-divcon .col-xs-6 {
+        box-sizing: border-box !important;
+      }
+      #curriculumInfo-divcon #treeDemo.ztree,
+      #curriculumInfo-divcon .ztree {
+        color: var(--text) !important;
+      }
+      #curriculumInfo-divcon .profile-user-info,
+      #curriculumInfo-divcon .profile-user-info-striped {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      #curriculumInfo-divcon .profile-info-value,
+      #curriculumInfo-divcon .profile-info-value > span,
+      #curriculumInfo-divcon span.editable {
+        color: var(--text) !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+      }
+      #curriculumInfo-divcon .profile-info-name {
+        color: var(--text-secondary) !important;
+      }
+      #curriculumInfo-divcon h4.header {
+        margin-bottom: 10px !important;
       }
       #curriculumInfo-divcon > .div-title,
       #curriculumInfo-divcon1 > .div-title,
@@ -10329,7 +10373,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.32');
+    console.log('[URP++] style applied v0.5.33');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11310,7 +11354,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.32',
+    version: '0.5.33',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
