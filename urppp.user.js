@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.97
+// @version      0.4.98
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.97';
+          content:'URP++ v0.4.98';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3382,12 +3382,18 @@
     }, true);
     // 侧栏抽屉打开：站点 animate width，清理我们可能写过的锁
     document.addEventListener('click', (e) => {
-      const t = e.target && e.target.closest ? e.target.closest('a,button,td,span,div') : null;
+      const t = e.target && e.target.closest ? e.target.closest('a,button,td,span,div,i') : null;
       if (!t) return;
+      // 解锁所有侧栏/modal，避免历史 !important 残留
       ;['curriculumInfo-divcon', 'curriculumInfo-divcon1', 'curriculumInfo-divcon2', 'calssInfo-divcon', 'classroomInfo-divcon'].forEach((id) => {
         const el = document.getElementById(id);
-        if (el) unlock(el);
+        if (!el) return;
+        unlock(el);
+        // 清掉我们可能写过的 opacity/pointer-events 普通属性
+        if (el.style.opacity === '0') el.style.removeProperty('opacity');
+        if (el.style.pointerEvents === 'none') el.style.removeProperty('pointer-events');
       });
+      document.querySelectorAll('.modal').forEach((m) => unlock(m));
       const sel = t.getAttribute && (t.getAttribute('data-target') || t.getAttribute('href') || '');
       if (sel && sel.charAt(0) === '#') {
         const m = document.querySelector(sel);
@@ -7577,22 +7583,18 @@
        * #curriculumInfo-divcon / #curriculumInfo-divcon1 / #curriculumInfo-divcon2
        * ============================================================ */
       /*
-       * 右侧抽屉：只美化外观，不锁 right/width/opacity/display
-       * 开关完全交给站点 jQuery animate，否则会打不开或关不掉
+       * 右侧滑出面板：只改颜色/阴影/标题，不锁 top/right/width/height/overflow/display
+       * 教室课表/培养方案都依赖 jQuery animate(right/width)
        */
       #curriculumInfo-divcon,
       #curriculumInfo-divcon1,
       #curriculumInfo-divcon2,
       #calssInfo-divcon,
       #classroomInfo-divcon {
-        top: 0 !important;
-        height: 100% !important;
-        max-height: 100vh !important;
         background: var(--bg) !important;
         border-left: 1px solid var(--border) !important;
         box-shadow: -12px 0 40px rgba(15, 23, 42, 0.14) !important;
         z-index: 1050 !important;
-        overflow: hidden !important;
         box-sizing: border-box !important;
       }
       #curriculumInfo-divcon > .div-title,
@@ -8558,6 +8560,19 @@
     // 给表格包一层 wrapper：圆角 + 完整外框，绕过 Bootstrap thead border-top:0 和 overflow 裁剪
     cleanupStuckModals();
     patchModalOpenPath();
+    // 启动时清掉侧栏/modal 上可能残留的锁定样式
+    ;['curriculumInfo-divcon','curriculumInfo-divcon1','curriculumInfo-divcon2','calssInfo-divcon','classroomInfo-divcon'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el || !el.style) return;
+      ['display','opacity','pointer-events','visibility'].forEach((p) => {
+        if (el.style.getPropertyPriority(p) === 'important') el.style.removeProperty(p);
+      });
+      if (el.style.opacity === '0') el.style.removeProperty('opacity');
+      if (el.style.pointerEvents === 'none') el.style.removeProperty('pointer-events');
+    });
+    document.querySelectorAll('.modal').forEach((m) => {
+      if (m.style && m.style.getPropertyPriority('display') === 'important') m.style.removeProperty('display');
+    });
     wrapTables();
     beautifyNoticeTables();
     setTimeout(beautifyNoticeTables, 300);
@@ -8667,7 +8682,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.97');
+    console.log('[URP++] style applied v0.4.98');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -9313,7 +9328,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.97',
+    version: '0.4.98',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
