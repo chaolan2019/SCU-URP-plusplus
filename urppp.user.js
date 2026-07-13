@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.34
+// @version      0.5.35
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.34';
+          content:'URP++ v0.5.35';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1291,16 +1291,22 @@
       card.style.setProperty('max-width', '100%', 'important');
       card.style.setProperty('box-sizing', 'border-box', 'important');
       card.style.setProperty('margin', '0 0 16px 0', 'important');
-      // 同列上方 h4.header 去卡壳
+      // 同列上方 h4.header 去卡壳（inline !important 压过全局卡片标题）
       const col = card.closest('.col-xs-4, .col-xs-8, .col-sm-4, .col-sm-8, .col-md-4, .col-md-8');
       if (col) {
-        col.querySelectorAll(':scope > h4.header, :scope > .header.smaller, :scope > .header').forEach((h) => {
+        col.querySelectorAll('h4.header, .header.smaller, .header').forEach((h) => {
+          // 只处理本列内、位于信息卡之前的标题
+          if (card.compareDocumentPosition(h) & Node.DOCUMENT_POSITION_FOLLOWING) return;
           h.style.setProperty('background', 'transparent', 'important');
+          h.style.setProperty('background-color', 'transparent', 'important');
+          h.style.setProperty('background-image', 'none', 'important');
           h.style.setProperty('border', 'none', 'important');
+          h.style.setProperty('border-width', '0', 'important');
           h.style.setProperty('box-shadow', 'none', 'important');
           h.style.setProperty('border-radius', '0', 'important');
-          h.style.setProperty('padding', '2px 2px 10px', 'important');
+          h.style.setProperty('padding', '4px 2px 10px', 'important');
           h.style.setProperty('margin', '0 0 8px 0', 'important');
+          h.style.setProperty('min-height', '0', 'important');
         });
       }
     });
@@ -1324,6 +1330,13 @@
     page.querySelectorAll('.col-xs-8, .col-sm-8, .col-md-8').forEach((col) => {
       col.style.setProperty('padding-left', '0', 'important');
       col.style.setProperty('padding-right', '0', 'important');
+    });
+    // 学籍双栏：凡列内有 setLabelWidth，标题一律去卡壳
+    page.querySelectorAll('.col-xs-4, .col-xs-8, .col-sm-4, .col-sm-8, .col-md-4, .col-md-8').forEach((col) => {
+      if (!col.querySelector('.setLabelWidth')) return;
+      col.querySelectorAll(':scope > h4.header, :scope > .header, :scope > .header.smaller').forEach((h) => {
+        h.style.cssText += ';background:transparent!important;background-color:transparent!important;border:none!important;box-shadow:none!important;border-radius:0!important;padding:4px 2px 10px!important;margin:0 0 8px 0!important;min-height:0!important;';
+      });
     });
     // 若之前 hoist 过标题，刷新后会恢复；运行时若还挂在 wrap 里则放回原列顶部
     page.querySelectorAll('.urppp-section-title-wrap').forEach((wrap) => {
@@ -4901,6 +4914,51 @@
       }
       h4.header.grey, .header.lighter.grey, .header.smaller.lighter {
         color: var(--text) !important;
+      }
+
+      /*
+       * 学籍双栏标题去卡壳（必须写在全局 h4.header 卡片规则之后，才能压过）
+       * 结构：.col-xs-8 > h4.header + div > .setLabelWidth
+       */
+      html body .page-content .col-xs-4 > h4.header,
+      html body .page-content .col-xs-8 > h4.header,
+      html body .page-content .col-sm-4 > h4.header,
+      html body .page-content .col-sm-8 > h4.header,
+      html body .page-content .col-md-4 > h4.header,
+      html body .page-content .col-md-8 > h4.header,
+      html body .page-content .col-xs-4 > h4.header.smaller,
+      html body .page-content .col-xs-8 > h4.header.smaller,
+      html body .page-content .col-xs-4 > h4.header.smaller.lighter.grey,
+      html body .page-content .col-xs-8 > h4.header.smaller.lighter.grey,
+      html body .page-content .col-xs-4 > .header.smaller,
+      html body .page-content .col-xs-8 > .header.smaller,
+      html body #page-content-template .col-xs-4 > h4.header,
+      html body #page-content-template .col-xs-8 > h4.header {
+        background: transparent !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        border: none !important;
+        border-width: 0 !important;
+        border-color: transparent !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 4px 2px 10px !important;
+        margin: 0 0 8px !important;
+        min-height: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      html body .page-content .col-xs-4 > h4.header::before,
+      html body .page-content .col-xs-8 > h4.header::before,
+      html body .page-content .col-xs-4 > h4.header.smaller.lighter.grey::before,
+      html body .page-content .col-xs-8 > h4.header.smaller.lighter.grey::before {
+        /* 保留主色小竖条，但不做卡片 */
+        content: '' !important;
+        display: inline-block !important;
+        width: 3px !important;
+        height: 16px !important;
+        border-radius: 2px !important;
+        background: var(--primary) !important;
       }
       /* 卡片 / 面板 */
       .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon),
@@ -10420,7 +10478,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.34');
+    console.log('[URP++] style applied v0.5.35');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11401,7 +11459,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.34',
+    version: '0.5.35',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
