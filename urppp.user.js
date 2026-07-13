@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.28
+// @version      0.4.29
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.28';
+          content:'URP++ v0.4.29';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1212,6 +1212,63 @@
     } catch (err) {
       console.warn('[URP++] query form beautify failed', err);
     }
+  }
+
+  // Chosen 下拉打开时，用内联样式压过 commoncss 的 25px 行高
+  function patchChosenDropdownAlign() {
+    if (window.__urpppChosenAlignBound) return;
+    window.__urpppChosenAlignBound = true;
+    const apply = (root) => {
+      const scope = root || document;
+      scope.querySelectorAll('.chosen-results li').forEach((li) => {
+        li.style.setProperty('height', '34px', 'important');
+        li.style.setProperty('min-height', '34px', 'important');
+        li.style.setProperty('max-height', '34px', 'important');
+        li.style.setProperty('line-height', '34px', 'important');
+        li.style.setProperty('padding', '0 12px', 'important');
+        li.style.setProperty('display', 'block', 'important');
+        li.style.setProperty('box-sizing', 'border-box', 'important');
+      });
+      scope.querySelectorAll('.chosen-search input').forEach((input) => {
+        input.style.setProperty('height', '34px', 'important');
+        input.style.setProperty('min-height', '34px', 'important');
+        input.style.setProperty('line-height', '34px', 'important');
+        input.style.setProperty('padding', '0 12px 0 34px', 'important');
+        input.style.setProperty('box-sizing', 'border-box', 'important');
+        input.style.setProperty('background-position', '12px 50%', 'important');
+        input.style.setProperty('background-repeat', 'no-repeat', 'important');
+        input.style.setProperty('background-size', '14px 14px', 'important');
+      });
+    };
+    document.addEventListener('mousedown', (e) => {
+      const c = e.target && e.target.closest ? e.target.closest('.chosen-container') : null;
+      if (!c) return;
+      setTimeout(() => apply(c), 0);
+      setTimeout(() => apply(c), 50);
+    }, true);
+    // jQuery chosen events if available
+    const bindJQ = () => {
+      try {
+        const $ = window.jQuery || window.$;
+        if (!$ || !$.fn) return false;
+        $(document)
+          .off('chosen:showing_dropdown.urppp chosen:updated.urppp')
+          .on('chosen:showing_dropdown.urppp chosen:updated.urppp', (e) => {
+            const c = e.target && e.target.parentElement ? e.target.parentElement.querySelector('.chosen-container') : null;
+            const root = (e.currentTarget && e.currentTarget.closest) ? null : null;
+            apply(document);
+            setTimeout(() => apply(document), 0);
+          });
+        return true;
+      } catch (_) { return false; }
+    };
+    if (!bindJQ()) setTimeout(bindJQ, 500);
+    // also observe open drops
+    const mo = new MutationObserver(() => {
+      const open = document.querySelector('.chosen-container-active .chosen-drop, .chosen-with-drop .chosen-drop');
+      if (open) apply(open.parentElement || document);
+    });
+    mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
   }
 
   // 作息时间表：轻量美化（不改数据；标题提出为整行居中横幅）
@@ -4184,16 +4241,72 @@
         border-color: var(--border) !important;
         box-shadow: var(--shadow) !important;
       }
-      /* 下拉搜索框：固定高度，文字/图标几何居中（别再靠上） */
+      /* 覆盖 commoncss: .chosen-container .chosen-results li {height/line-height:25px} */
+      .chosen-container .chosen-results li,
+      .chosen-container .chosen-results li.active-result,
+      .chosen-container-single .chosen-results li,
+      .chosen-container-multi .chosen-results li,
+      body .chosen-container .chosen-results li {
+        display: block !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        max-height: 34px !important;
+        margin: 0 !important;
+        padding: 0 12px !important;
+        line-height: 34px !important;
+        font-size: 13px !important;
+        color: var(--text) !important;
+        box-sizing: border-box !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        vertical-align: middle !important;
+      }
+      body .chosen-container .chosen-results li em,
+      .chosen-container .chosen-results li em {
+        font-style: normal !important;
+        line-height: inherit !important;
+      }
+      body .chosen-container .chosen-results li.highlighted,
+      body .chosen-container .chosen-results li.result-selected,
+      .chosen-container .chosen-results li.highlighted,
+      .chosen-container .chosen-results li.result-selected {
+        background: var(--primary) !important;
+        color: #fff !important;
+        height: 34px !important;
+        line-height: 34px !important;
+      }
+      body .chosen-container .chosen-results li.highlighted em,
+      body .chosen-container .chosen-results li.result-selected em {
+        background: transparent !important;
+        color: #fff !important;
+      }
+      .chosen-results {
+        margin: 0 !important;
+        padding: 4px 0 !important;
+      }
+      .chosen-results li.no-results {
+        display: block !important;
+        background: var(--input-bg) !important;
+        color: var(--text-muted) !important;
+        height: 34px !important;
+        line-height: 34px !important;
+      }
+
+      /* 搜索框：覆盖 commoncss 默认，文字与图标同中线 */
+      .chosen-container .chosen-search,
+      .chosen-container-single .chosen-search,
       .chosen-search {
         position: relative !important;
         margin: 0 !important;
         padding: 8px !important;
         box-sizing: border-box !important;
       }
-      .chosen-search input[type="text"],
+      .chosen-container .chosen-search input[type="text"],
+      .chosen-container-single .chosen-search input[type="text"],
       .chosen-container .chosen-search input,
-      .chosen-container-single .chosen-search input {
+      .chosen-container-single .chosen-search input,
+      body .chosen-container .chosen-search input {
         width: 100% !important;
         height: 34px !important;
         min-height: 34px !important;
@@ -4211,7 +4324,6 @@
         background-position: 12px 50% !important;
         background-size: 14px 14px !important;
       }
-      /* 不用额外伪元素图标，避免和 Chosen 自带图标叠两层且偏移 */
       .chosen-search:before {
         content: none !important;
         display: none !important;
@@ -4221,47 +4333,6 @@
         border-color: var(--border-focus) !important;
         box-shadow: 0 0 0 3px var(--ring) !important;
         outline: none !important;
-      }
-      /* 选项：固定行高=高度，避免 flex+小 line-height 视觉上浮 */
-      .chosen-results {
-        margin: 0 !important;
-        padding: 4px 0 !important;
-      }
-      .chosen-results li,
-      .chosen-results li.active-result,
-      .chosen-container .chosen-results li {
-        display: block !important;
-        height: 34px !important;
-        min-height: 34px !important;
-        max-height: 34px !important;
-        margin: 0 !important;
-        padding: 0 12px !important;
-        line-height: 34px !important;
-        font-size: 13px !important;
-        color: var(--text) !important;
-        box-sizing: border-box !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        vertical-align: middle !important;
-      }
-      .chosen-results li em {
-        font-style: normal !important;
-      }
-      .chosen-results li.highlighted,
-      .chosen-results li.result-selected {
-        background: var(--primary) !important;
-        color: #fff !important;
-      }
-      .chosen-results li.highlighted em,
-      .chosen-results li.result-selected em {
-        background: transparent !important;
-        color: #fff !important;
-      }
-      .chosen-results li.no-results {
-        display: block !important;
-        background: var(--input-bg) !important;
-        color: var(--text-muted) !important;
       }
       label { color: var(--text-secondary) !important; font-weight: 500 !important; font-size: 13px !important; }
 
@@ -5238,7 +5309,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.28');
+    console.log('[URP++] style applied v0.4.29');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5858,7 +5929,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.28',
+    version: '0.4.29',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
