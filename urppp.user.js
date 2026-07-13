@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.78
+// @version      0.4.79
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.78';
+          content:'URP++ v0.4.79';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -2620,6 +2620,69 @@
       setTimeout(run, 200);
       setTimeout(run, 500);
     }, true);
+  }
+
+  // 学籍页右侧培养方案等滑出面板轻量美化
+  function beautifyCurriculumDrawer() {
+    try {
+      ['curriculumInfo-divcon', 'curriculumInfo-divcon1', 'curriculumInfo-divcon2'].forEach((id) => {
+        const panel = document.getElementById(id);
+        if (!panel) return;
+        const w = parseFloat(panel.style.width || getComputedStyle(panel).width || '0');
+        if (!w || w < 40) return; // 收起态不处理
+        panel.classList.add('urppp-curriculum-drawer');
+
+        // 标题关闭钮
+        const title = panel.querySelector(':scope > .div-title');
+        if (title && !title.querySelector('.urppp-drawer-close') && !title.querySelector('span')) {
+          // 站点可能用 span 关闭；没有则不造
+        }
+        const closeBtn = title && title.querySelector('span');
+        if (closeBtn) {
+          closeBtn.setAttribute('title', '关闭');
+          closeBtn.style.setProperty('cursor', 'pointer', 'important');
+        }
+
+        // 方案信息卡：清 float 残留，走抽屉内 CSS grid
+        panel.querySelectorAll('.profile-info-row').forEach((row) => {
+          row.classList.remove('urppp-query-row', 'urppp-dual-pair');
+          row.style.setProperty('display', 'grid', 'important');
+          row.style.setProperty('grid-template-columns', '112px minmax(0,1fr)', 'important');
+          row.style.setProperty('width', '100%', 'important');
+          Array.from(row.children).forEach((el) => {
+            if (!el.classList) return;
+            el.style.setProperty('float', 'none', 'important');
+            el.style.setProperty('margin-left', '0', 'important');
+            el.style.setProperty('width', 'auto', 'important');
+            el.style.setProperty('max-width', 'none', 'important');
+          });
+        });
+        panel.querySelectorAll('.profile-user-info, .profile-user-info-striped').forEach((card) => {
+          card.classList.remove('urppp-query-form');
+          card.style.setProperty('border-radius', '12px', 'important');
+          card.style.setProperty('overflow', 'hidden', 'important');
+          card.style.setProperty('width', '100%', 'important');
+        });
+      });
+    } catch (err) {
+      console.warn('[URP++] curriculum drawer beautify failed', err);
+    }
+  }
+
+  function scheduleCurriculumDrawerBeautify() {
+    if (window.__urpppCurriculumDrawerBound) return;
+    window.__urpppCurriculumDrawerBound = true;
+    const run = () => beautifyCurriculumDrawer();
+    ;[0, 300, 800, 1600].forEach((ms) => setTimeout(run, ms));
+    const obs = new MutationObserver(() => {
+      clearTimeout(window.__urpppCurriculumDrawerTimer);
+      window.__urpppCurriculumDrawerTimer = setTimeout(run, 120);
+    });
+    ['curriculumInfo-divcon', 'curriculumInfo-divcon1', 'curriculumInfo-divcon2'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) obs.observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+    });
+    document.addEventListener('click', () => setTimeout(run, 200), true);
   }
   function beautifyNoticeTables() {
     try {
@@ -7008,6 +7071,269 @@
         opacity: 0.45 !important;
       }
 
+
+      /* ============================================================
+       * 学籍页右侧滑出面板：培养方案 / 课表信息抽屉
+       * #curriculumInfo-divcon / #curriculumInfo-divcon1 / #curriculumInfo-divcon2
+       * ============================================================ */
+      #curriculumInfo-divcon,
+      #curriculumInfo-divcon1,
+      #curriculumInfo-divcon2 {
+        top: 0 !important;
+        right: 0 !important;
+        height: 100% !important;
+        max-height: 100vh !important;
+        background: var(--bg) !important;
+        border-left: 1px solid var(--border) !important;
+        box-shadow: -12px 0 40px rgba(15, 23, 42, 0.14) !important;
+        z-index: 1050 !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+      }
+      #curriculumInfo-divcon > .div-title,
+      #curriculumInfo-divcon1 > .div-title,
+      #curriculumInfo-divcon2 > .div-title {
+        width: 100% !important;
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 3 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        min-height: 56px !important;
+        padding: 0 16px 0 20px !important;
+        margin: 0 !important;
+        background: var(--surface) !important;
+        border-bottom: 1px solid var(--border) !important;
+        box-sizing: border-box !important;
+      }
+      #curriculumInfo-divcon > .div-title h3,
+      #curriculumInfo-divcon1 > .div-title h3,
+      #curriculumInfo-divcon2 > .div-title h3 {
+        margin: 0 !important;
+        padding: 0 !important;
+        text-indent: 0 !important;
+        font-size: 16px !important;
+        font-weight: 650 !important;
+        line-height: 1.3 !important;
+        color: var(--text) !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+      }
+      #curriculumInfo-divcon > .div-title h3::before,
+      #curriculumInfo-divcon1 > .div-title h3::before,
+      #curriculumInfo-divcon2 > .div-title h3::before {
+        content: '' !important;
+        display: inline-block !important;
+        width: 3px !important;
+        height: 16px !important;
+        border-radius: 2px !important;
+        background: var(--primary) !important;
+        flex: 0 0 auto !important;
+      }
+      #curriculumInfo-divcon > .div-title span,
+      #curriculumInfo-divcon1 > .div-title span,
+      #curriculumInfo-divcon2 > .div-title span {
+        position: static !important;
+        right: auto !important;
+        top: auto !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 32px !important;
+        height: 32px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 8px !important;
+        background: var(--input-bg) !important;
+        color: var(--text-secondary) !important;
+        cursor: pointer !important;
+        line-height: 1 !important;
+        text-indent: 0 !important;
+      }
+      #curriculumInfo-divcon > .div-title span:hover,
+      #curriculumInfo-divcon1 > .div-title span:hover,
+      #curriculumInfo-divcon2 > .div-title span:hover {
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+        background: color-mix(in srgb, var(--primary) 8%, var(--surface)) !important;
+      }
+      #curriculumInfo-divcon > .modal-body,
+      #curriculumInfo-divcon1 > .modal-body,
+      #curriculumInfo-divcon2 > .modal-body,
+      #curriculumInfo-divcon2 .modal-body.no-padding {
+        height: calc(100% - 56px) !important;
+        max-height: calc(100vh - 56px) !important;
+        overflow: auto !important;
+        padding: 16px !important;
+        background: var(--bg) !important;
+        box-sizing: border-box !important;
+      }
+      #curriculumInfo-divcon2 .modal-body.no-padding > .col-xs-12 {
+        width: 100% !important;
+        float: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      #curriculumInfo-divcon2 .modal-body .row {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 14px !important;
+        margin: 0 !important;
+        width: 100% !important;
+      }
+      #curriculumInfo-divcon2 .modal-body .row > p {
+        width: 100% !important;
+        margin: 0 0 4px !important;
+        padding: 0 !important;
+        color: var(--text-secondary) !important;
+        font-size: 13px !important;
+      }
+      #curriculumInfo-divcon2 .modal-body .row > p a {
+        color: var(--primary) !important;
+        text-decoration: none !important;
+        font-weight: 500 !important;
+      }
+      #curriculumInfo-divcon2 .modal-body .row > p a:hover {
+        text-decoration: underline !important;
+      }
+      /* 左右栏 */
+      #curriculumInfo-divcon2 .modal-body .row > .col-xs-6 {
+        float: none !important;
+        width: calc(50% - 7px) !important;
+        max-width: calc(50% - 7px) !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        box-sizing: border-box !important;
+      }
+      #curriculumInfo-divcon2 .modal-body .widget-box,
+      #curriculumInfo-divcon2 #fajh .widget-box,
+      #curriculumInfo-divcon2 #xnxq .widget-box {
+        margin: 0 0 12px !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        background: var(--surface) !important;
+        box-shadow: none !important;
+        overflow: hidden !important;
+      }
+      #curriculumInfo-divcon2 .modal-body .widget-box.transparent,
+      #curriculumInfo-divcon2 #fajh .widget-box.transparent {
+        border: none !important;
+        background: transparent !important;
+        overflow: visible !important;
+        margin-bottom: 8px !important;
+      }
+      #curriculumInfo-divcon2 .widget-header,
+      #curriculumInfo-divcon2 .widget-header-small {
+        background: var(--surface) !important;
+        border-bottom: 1px solid var(--border) !important;
+        padding: 10px 14px !important;
+        min-height: 0 !important;
+      }
+      #curriculumInfo-divcon2 .widget-box.transparent .widget-header,
+      #curriculumInfo-divcon2 #fajh .widget-box.transparent .widget-header {
+        border: none !important;
+        padding: 0 0 8px !important;
+        background: transparent !important;
+      }
+      #curriculumInfo-divcon2 .widget-title,
+      #curriculumInfo-divcon2 h4.widget-title {
+        margin: 0 !important;
+        padding: 0 !important;
+        color: var(--text) !important;
+        font-size: 14px !important;
+        font-weight: 650 !important;
+        line-height: 1.35 !important;
+      }
+      #curriculumInfo-divcon2 .widget-body {
+        background: var(--surface) !important;
+        padding: 8px 10px 12px !important;
+      }
+      #curriculumInfo-divcon2 #treeDemo.ztree,
+      #curriculumInfo-divcon2 .ztree {
+        padding: 4px 2px !important;
+        background: transparent !important;
+        max-height: calc(100vh - 180px) !important;
+        overflow: auto !important;
+      }
+      /* 右侧方案计划信息卡 */
+      #curriculumInfo-divcon2 #fajh,
+      #curriculumInfo-divcon2 #xnxq {
+        min-width: 0 !important;
+      }
+      #curriculumInfo-divcon2 #fajh .profile-user-info,
+      #curriculumInfo-divcon2 #fajh .profile-user-info-striped,
+      #curriculumInfo-divcon2 #xnxq .profile-user-info,
+      #curriculumInfo-divcon2 #xnxq .profile-user-info-striped {
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        background: var(--surface) !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      #curriculumInfo-divcon2 .profile-info-row {
+        display: grid !important;
+        grid-template-columns: 112px minmax(0, 1fr) !important;
+        align-items: stretch !important;
+        border-bottom: 1px solid var(--border) !important;
+        min-height: 40px !important;
+        width: 100% !important;
+        float: none !important;
+      }
+      #curriculumInfo-divcon2 .profile-info-row:last-child {
+        border-bottom: none !important;
+      }
+      #curriculumInfo-divcon2 .profile-info-row::before,
+      #curriculumInfo-divcon2 .profile-info-row::after {
+        content: none !important;
+        display: none !important;
+      }
+      #curriculumInfo-divcon2 .profile-info-name {
+        float: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        width: auto !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 8px 12px !important;
+        background: var(--input-bg) !important;
+        border-right: 1px solid var(--border) !important;
+        color: var(--text-secondary) !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        white-space: nowrap !important;
+      }
+      #curriculumInfo-divcon2 .profile-info-value {
+        float: none !important;
+        display: flex !important;
+        align-items: center !important;
+        margin: 0 !important;
+        margin-left: 0 !important;
+        width: auto !important;
+        min-width: 0 !important;
+        padding: 8px 12px !important;
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        font-size: 13px !important;
+        line-height: 1.45 !important;
+        word-break: break-word !important;
+        white-space: normal !important;
+      }
+      @media (max-width: 1100px) {
+        #curriculumInfo-divcon2 .modal-body .row > .col-xs-6 {
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+      }
+
       /* 作息时间表：干净利落 + 全居中（不改 DOM 结构） */
 
       /* ============================================================
@@ -7596,6 +7922,8 @@
     setTimeout(beautifyNoticeTables, 1000);
     scheduleWeekScheduleFix();
     fixWeekScheduleLayout();
+    scheduleCurriculumDrawerBeautify();
+    beautifyCurriculumDrawer();
     if (!window.__urpppTableObs) {
       let wrapTimer = 0;
       window.__urpppTableObs = new MutationObserver(() => {
@@ -7691,7 +8019,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.78');
+    console.log('[URP++] style applied v0.4.79');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -8314,7 +8642,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.78',
+    version: '0.4.79',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
