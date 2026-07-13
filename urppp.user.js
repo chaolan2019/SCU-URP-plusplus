@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.39
+// @version      0.4.40
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.39';
+          content:'URP++ v0.4.40';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1159,6 +1159,17 @@
             if (single) {
               single.style.setProperty('width', '100%', 'important');
               single.style.setProperty('max-width', 'none', 'important');
+              single.style.setProperty('display', 'flex', 'important');
+              single.style.setProperty('align-items', 'center', 'important');
+              single.style.setProperty('height', '34px', 'important');
+              single.style.setProperty('line-height', 'normal', 'important');
+              const sp = single.querySelector(':scope > span, span');
+              if (sp) {
+                sp.style.setProperty('line-height', 'normal', 'important');
+                sp.style.setProperty('height', 'auto', 'important');
+                sp.style.setProperty('margin-top', '0', 'important');
+                sp.style.setProperty('padding-top', '0', 'important');
+              }
             }
           });
         });
@@ -1233,6 +1244,20 @@
           document.documentElement.appendChild(st);
         }
         st.textContent = [
+          '.self div.profile-info-value a.chosen-single > span,',
+          'body .self div.profile-info-value a.chosen-single > span {',
+          '  line-height: normal !important;',
+          '  height: auto !important;',
+          '  margin-top: 0 !important;',
+          '  padding-top: 0 !important;',
+          '}',
+          '.self div.profile-info-value a.chosen-single,',
+          'body .self div.profile-info-value a.chosen-single {',
+          '  display: flex !important;',
+          '  align-items: center !important;',
+          '  height: 34px !important;',
+          '  line-height: normal !important;',
+          '}',
           'body .chosen-container .chosen-results li,',
           'body .chosen-with-drop .chosen-results li,',
           'html body .chosen-container .chosen-results li.active-result {',
@@ -1271,6 +1296,25 @@
           ].join(';');
         });
         // 搜索框：只设一次必要样式；图标交给 CSS（相对 input 同高盒子）
+        // 关闭态/打开态：强制 chosen-single > span 的 line-height 为 normal
+        scope.querySelectorAll('a.chosen-single').forEach((a) => {
+          a.style.setProperty('display', 'flex', 'important');
+          a.style.setProperty('align-items', 'center', 'important');
+          a.style.setProperty('height', '34px', 'important');
+          a.style.setProperty('min-height', '34px', 'important');
+          a.style.setProperty('line-height', 'normal', 'important');
+          a.style.setProperty('padding-top', '0', 'important');
+          a.style.setProperty('padding-bottom', '0', 'important');
+          const sp = a.querySelector(':scope > span');
+          if (sp) {
+            sp.style.setProperty('line-height', 'normal', 'important');
+            sp.style.setProperty('height', 'auto', 'important');
+            sp.style.setProperty('margin-top', '0', 'important');
+            sp.style.setProperty('margin-bottom', '0', 'important');
+            sp.style.setProperty('padding-top', '0', 'important');
+            sp.style.setProperty('padding-bottom', '0', 'important');
+          }
+        });
         scope.querySelectorAll('.chosen-search').forEach((search) => {
           const input = search.querySelector('input');
           if (!input) return;
@@ -4258,26 +4302,31 @@
         text-overflow: ellipsis !important;
         white-space: nowrap !important;
       }
-      /* 直接覆盖 commoncss: .profile-info-value a.chosen-single > span {line-height:25px} */
-      .profile-info-value a.chosen-single > span,
-      .profile-info-value .chosen-single > span,
-      .urppp-query-pair a.chosen-single > span,
-      .urppp-query-pair .chosen-single > span,
-      body .profile-info-value a.chosen-single > span,
-      body .chosen-container a.chosen-single > span,
-      body .chosen-container .chosen-single > span {
+      /*
+       * commoncss 原文：
+       * .self div.profile-info-value a.chosen-single > span { line-height: 25px !important; }
+       * 必须用同等或更高 specificity 才能压过
+       */
+      .self div.profile-info-value a.chosen-single > span,
+      .self .profile-info-value a.chosen-single > span,
+      .profile-user-info.self div.profile-info-value a.chosen-single > span,
+      .profile-user-info.self .profile-info-value a.chosen-single > span,
+      .urppp-query-form .urppp-query-pair .profile-info-value a.chosen-single > span,
+      .urppp-query-pair .profile-info-value a.chosen-single > span,
+      body .self div.profile-info-value a.chosen-single > span,
+      html body .self div.profile-info-value a.chosen-single > span {
         line-height: normal !important;
         height: auto !important;
-        margin-top: 0 !important;
-        margin-bottom: 0 !important;
-        padding-top: 0 !important;
-        padding-bottom: 0 !important;
+        margin: 0 26px 0 0 !important;
+        padding: 0 !important;
         vertical-align: middle !important;
+        display: block !important;
       }
-      .profile-info-value a.chosen-single,
+      .self div.profile-info-value a.chosen-single,
+      .profile-user-info.self .profile-info-value a.chosen-single,
       .urppp-query-pair a.chosen-single,
-      body .chosen-container a.chosen-single,
-      body .profile-info-value a.chosen-single {
+      body .self div.profile-info-value a.chosen-single,
+      html body .chosen-container a.chosen-single {
         display: flex !important;
         align-items: center !important;
         height: 34px !important;
@@ -4285,6 +4334,7 @@
         line-height: normal !important;
         padding-top: 0 !important;
         padding-bottom: 0 !important;
+        box-sizing: border-box !important;
       }
       .chosen-single div {
         position: absolute !important;
@@ -5431,7 +5481,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.39');
+    console.log('[URP++] style applied v0.4.40');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -6052,7 +6102,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.39',
+    version: '0.4.40',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
