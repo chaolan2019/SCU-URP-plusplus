@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.21
+// @version      0.5.22
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.21';
+          content:'URP++ v0.5.22';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3346,7 +3346,10 @@
                 a.style.setProperty('cursor', 'pointer', 'important');
                 a.style.setProperty('position', 'relative', 'important');
                 a.style.setProperty('z-index', '2', 'important');
-                a.style.setProperty('display', 'inline', 'important');
+                a.style.setProperty('display', 'block', 'important');
+                a.style.setProperty('white-space', 'nowrap', 'important');
+                a.style.setProperty('overflow', 'hidden', 'important');
+                a.style.setProperty('text-overflow', 'ellipsis', 'important');
                 // 整行可点：点卡片任意处触发链接
                 if (tr.dataset.urpppNoticeClickBound !== '1') {
                   tr.dataset.urpppNoticeClickBound = '1';
@@ -6411,8 +6414,9 @@
         gap: 10px !important;
         flex: 1 1 auto !important;
         min-width: 0 !important;
-        max-width: none !important;
+        max-width: 100% !important;
         width: auto !important;
+        overflow: hidden !important;
         position: static !important;
         order: 1 !important;
       }
@@ -6432,6 +6436,8 @@
       table.urppp-notice-table td.urppp-notice-title-cell a,
       table.urppp-notice-table td.urppp-notice-title-cell a:link,
       table.urppp-notice-table td.urppp-notice-title-cell a:visited,
+      table.urppp-notice-table td.urppp-notice-title-cell a:hover,
+      table.urppp-notice-table td.urppp-notice-title-cell a:focus,
       table.urppp-notice-table a {
         color: var(--text) !important;
         text-decoration: none !important;
@@ -6440,8 +6446,10 @@
         line-height: 1.5 !important;
         border: none !important;
         background: transparent !important;
+        flex: 1 1 auto !important;
         min-width: 0 !important;
         max-width: 100% !important;
+        width: 100% !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
         white-space: nowrap !important;
@@ -6449,7 +6457,16 @@
         cursor: pointer !important;
         position: relative !important;
         z-index: 3 !important;
-        display: inline !important;
+        /* inline 无法稳定 ellipsis；block 才能单行截断 */
+        display: block !important;
+      }
+      table.urppp-notice-table > tbody > tr.urppp-notice-row:hover .urppp-notice-link,
+      table.urppp-notice-table > tbody > tr.urppp-notice-row:hover td.urppp-notice-title-cell a,
+      table.urppp-notice-table > tbody > tr.hover .urppp-notice-link {
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: block !important;
       }
       table.urppp-notice-table > tbody > tr.urppp-notice-row,
       table.urppp-notice-table td.urppp-notice-title-cell {
@@ -9893,7 +9910,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.21');
+    console.log('[URP++] style applied v0.5.22');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -10874,7 +10891,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.21',
+    version: '0.5.22',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
