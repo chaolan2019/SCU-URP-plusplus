@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.31
+// @version      0.5.32
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.31';
+          content:'URP++ v0.5.32';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1889,6 +1889,8 @@
       roots.forEach((root) => {
         // 学籍 setLabelWidth 不当查询表单
         if (root.classList.contains('setLabelWidth')) return;
+        // 培养方案抽屉详情（学年学期/课组）不当查询表单
+        if (root.closest && root.closest('#curriculumInfo-divcon2, #fajh, #xnxq, #kz, #kc, #kcfa')) return;
         // 个人信息修改等：每行只有一对 name/value，不当查询表单
         const multiPair = Array.from(root.querySelectorAll('.profile-info-row')).some((row) => {
           return Array.from(row.children).filter((el) => el.classList && el.classList.contains('profile-info-name')).length >= 2;
@@ -3067,6 +3069,12 @@
       });
       panel.querySelectorAll('.profile-user-info, .profile-user-info-striped').forEach((card) => {
         card.classList.remove('urppp-query-form');
+        try { ensureProfileCardShell(card); } catch (_) {}
+        card.querySelectorAll('.profile-info-value, .profile-info-value span, span.editable').forEach((el) => {
+          el.style.setProperty('color', 'var(--text)', 'important');
+          el.style.setProperty('opacity', '1', 'important');
+          el.style.setProperty('visibility', 'visible', 'important');
+        });
         card.style.setProperty('border-radius', '12px', 'important');
         card.style.setProperty('overflow', 'hidden', 'important');
         card.style.setProperty('width', '100%', 'important');
@@ -6119,12 +6127,45 @@
         max-width: none !important;
         min-width: 0 !important;
       }
-      .profile-info-value > span {
+      .profile-info-value > span,
+      .profile-info-value > span.editable,
+      .profile-info-value span.editable,
+      span.editable {
         display: block !important;
         width: 100% !important;
         max-width: 100% !important;
         min-width: 0 !important;
         box-sizing: border-box !important;
+        color: var(--text) !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+      }
+      /* 培养方案抽屉：方案/学期/课组详情文字必须可读 */
+      #curriculumInfo-divcon2 .profile-info-value,
+      #curriculumInfo-divcon2 .profile-info-value > span,
+      #curriculumInfo-divcon2 span.editable,
+      #fajh .profile-info-value,
+      #fajh .profile-info-value > span,
+      #xnxq .profile-info-value,
+      #xnxq .profile-info-value > span,
+      #xnxq span.editable,
+      #kz .profile-info-value,
+      #kz .profile-info-value > span,
+      #kz span.editable,
+      #kc .profile-info-value,
+      #kcfa .profile-info-value {
+        color: var(--text) !important;
+        background: transparent !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+      }
+      #curriculumInfo-divcon2 .profile-info-name,
+      #fajh .profile-info-name,
+      #xnxq .profile-info-name,
+      #kz .profile-info-name {
+        color: var(--text-secondary) !important;
+        opacity: 1 !important;
+        visibility: visible !important;
       }
       .profile-info-value .form-control,
       .profile-info-value input.form-control,
@@ -10288,7 +10329,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.31');
+    console.log('[URP++] style applied v0.5.32');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11269,7 +11310,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.31',
+    version: '0.5.32',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
