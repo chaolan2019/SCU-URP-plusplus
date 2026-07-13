@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.96
+// @version      0.4.97
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.96';
+          content:'URP++ v0.4.97';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3343,66 +3343,55 @@
   // 清理被错误强制显示的空白 modal（无 .in/.show 却 display:block）
   function cleanupStuckModals() {
     try {
-      // 绝对不要给 .modal 写 display:none !important —— Bootstrap 打不开
-      // 只清理：无打开 modal 时残留的 backdrop / body.modal-open
-      const anyOpen = !!document.querySelector('.modal.in, .modal.show');
-      if (!anyOpen) {
-        document.querySelectorAll('.modal-backdrop').forEach((b) => {
-          if (b.parentElement) b.parentElement.removeChild(b);
-        });
-        document.body.classList.remove('modal-open');
-        document.body.style.removeProperty('padding-right');
-        // 清掉我们以前可能写过的 display:!important
-        document.querySelectorAll('.modal').forEach((m) => {
-          if (m.style.getPropertyPriority('display') === 'important') {
-            m.style.removeProperty('display');
-          }
-        });
-      }
-
-      // 右侧抽屉：收起态恢复站点 right:-42%
-      ;['curriculumInfo-divcon', 'curriculumInfo-divcon1', 'curriculumInfo-divcon2'].forEach((id) => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        const w = parseFloat(el.style.width || '0');
-        if (!w || w < 8) {
-          // 不要用 !important 锁死 display/opacity 以外的打开路径
-          el.style.removeProperty('right');
-          if (!String(el.getAttribute('style') || '').includes('right')) {
-            el.style.right = '-42%';
-          }
-          if (!w) el.style.width = '0px';
-          el.style.pointerEvents = 'none';
-          el.style.opacity = '0';
-          el.style.boxShadow = 'none';
-        } else {
-          el.style.pointerEvents = '';
-          el.style.opacity = '';
-          el.style.boxShadow = '';
+      // 只做一次、且尽量克制：
+      // 1) 清掉我们曾写在 .modal 上的 display:!important
+      // 2) 无打开 modal 时清残留 backdrop
+      // 不要改抽屉 width/right，否则会把正在打开的侧栏打回 0
+      document.querySelectorAll('.modal').forEach((m) => {
+        if (m.style && m.style.getPropertyPriority('display') === 'important') {
+          m.style.removeProperty('display');
         }
       });
+      const anyOpen = !!document.querySelector('.modal.in, .modal.show');
+      if (!anyOpen) {
+        document.querySelectorAll('body > .modal-backdrop').forEach((b) => {
+          if (b.parentElement) b.parentElement.removeChild(b);
+        });
+        if (document.body.classList.contains('modal-open') && !document.querySelector('.modal.in, .modal.show')) {
+          document.body.classList.remove('modal-open');
+          document.body.style.removeProperty('padding-right');
+        }
+      }
     } catch (_) { /* ignore */ }
   }
-
-  // 打开 modal 前清掉我们残留的 display 锁定
   function patchModalOpenPath() {
     if (window.__urpppModalOpenPatched) return;
     window.__urpppModalOpenPatched = true;
+    const unlock = (el) => {
+      if (!el || !el.style) return;
+      if (el.style.getPropertyPriority('display') === 'important') el.style.removeProperty('display');
+      if (el.style.getPropertyPriority('opacity') === 'important') el.style.removeProperty('opacity');
+      if (el.style.getPropertyPriority('pointer-events') === 'important') el.style.removeProperty('pointer-events');
+      if (el.style.getPropertyPriority('visibility') === 'important') el.style.removeProperty('visibility');
+    };
     document.addEventListener('show.bs.modal', (e) => {
       const m = e.target;
       if (!m || !m.classList || !m.classList.contains('modal')) return;
-      m.style.removeProperty('display');
-      m.style.display = 'block';
+      unlock(m);
+      // 让 Bootstrap 自己设 display，不要抢写
     }, true);
-    // jQuery Bootstrap 3 有时先 show 再加 in
+    // 侧栏抽屉打开：站点 animate width，清理我们可能写过的锁
     document.addEventListener('click', (e) => {
-      const t = e.target && e.target.closest ? e.target.closest('[data-toggle="modal"], [data-target], [href^="#"]') : null;
+      const t = e.target && e.target.closest ? e.target.closest('a,button,td,span,div') : null;
       if (!t) return;
-      const sel = t.getAttribute('data-target') || t.getAttribute('href') || '';
-      if (!sel || sel.charAt(0) !== '#') return;
-      const m = document.querySelector(sel);
-      if (m && m.classList.contains('modal')) {
-        if (m.style.getPropertyPriority('display') === 'important') m.style.removeProperty('display');
+      ;['curriculumInfo-divcon', 'curriculumInfo-divcon1', 'curriculumInfo-divcon2', 'calssInfo-divcon', 'classroomInfo-divcon'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) unlock(el);
+      });
+      const sel = t.getAttribute && (t.getAttribute('data-target') || t.getAttribute('href') || '');
+      if (sel && sel.charAt(0) === '#') {
+        const m = document.querySelector(sel);
+        if (m) unlock(m);
       }
     }, true);
   }
@@ -7588,12 +7577,14 @@
        * #curriculumInfo-divcon / #curriculumInfo-divcon1 / #curriculumInfo-divcon2
        * ============================================================ */
       /*
-       * 右侧抽屉：不要写 right:0 !important
-       * 站点关闭态是 right:-42% / width:0，强制 right:0 会让空白抽屉常驻盖住页面
+       * 右侧抽屉：只美化外观，不锁 right/width/opacity/display
+       * 开关完全交给站点 jQuery animate，否则会打不开或关不掉
        */
       #curriculumInfo-divcon,
       #curriculumInfo-divcon1,
-      #curriculumInfo-divcon2 {
+      #curriculumInfo-divcon2,
+      #calssInfo-divcon,
+      #classroomInfo-divcon {
         top: 0 !important;
         height: 100% !important;
         max-height: 100vh !important;
@@ -7603,18 +7594,6 @@
         z-index: 1050 !important;
         overflow: hidden !important;
         box-sizing: border-box !important;
-      }
-      /* 收起态：彻底不可见、不可点 */
-      #curriculumInfo-divcon[style*="width: 0"],
-      #curriculumInfo-divcon[style*="width:0"],
-      #curriculumInfo-divcon1[style*="width: 0"],
-      #curriculumInfo-divcon1[style*="width:0"],
-      #curriculumInfo-divcon2[style*="width: 0"],
-      #curriculumInfo-divcon2[style*="width:0"] {
-        pointer-events: none !important;
-        box-shadow: none !important;
-        border-left: none !important;
-        opacity: 0 !important;
       }
       #curriculumInfo-divcon > .div-title,
       #curriculumInfo-divcon1 > .div-title,
@@ -8688,7 +8667,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.96');
+    console.log('[URP++] style applied v0.4.97');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -9334,7 +9313,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.96',
+    version: '0.4.97',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
