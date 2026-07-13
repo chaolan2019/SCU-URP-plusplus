@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.11
+// @version      0.5.12
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -634,6 +634,7 @@
       }
     } catch (_) {}
     try { syncNavbarThemeUI(); } catch (_) {}
+    try { scrubNoticeInlineBg(); } catch (_) {}
     const boot = document.getElementById('urppp-boot-loader');
     if (boot) boot.style.fontFamily = t.font;
   }
@@ -689,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.11';
+          content:'URP++ v0.5.12';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3023,49 +3024,127 @@
   }
   // 撤销误套在业务表上的公告样式（如空闲教室）
 
+  function noticeSurfaceColor() {
+    // 直接读计算后的主题 surface，避免 var() 在内联里偶发不生效
+    try {
+      const v = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim();
+      return v || (getCurrent() === 'dark' ? '#151A24' : '#FFFFFF');
+    } catch (_) {
+      return getCurrent() === 'dark' ? '#151A24' : '#FFFFFF';
+    }
+  }
+
+  function pinNoticeRowSurface(tr) {
+    if (!tr || !tr.classList || !tr.classList.contains('urppp-notice-row')) return;
+    const surface = noticeSurfaceColor();
+    tr.classList.remove('hover');
+    // 用具体色 + important 钉死，压过 ACE jQuery 写回的 #fff
+    tr.style.setProperty('background', surface, 'important');
+    tr.style.setProperty('background-color', surface, 'important');
+    tr.querySelectorAll('td, th').forEach((cell) => {
+      cell.classList.remove('hover');
+      cell.style.setProperty('background', 'transparent', 'important');
+      cell.style.setProperty('background-color', 'transparent', 'important');
+    });
+  }
+
   function scrubNoticeInlineBg(root) {
     try {
       const scope = root || document;
-      scope.querySelectorAll('table.urppp-notice-table tr, table.urppp-notice-table td, table.urppp-notice-table th').forEach((el) => {
-        if (!el || !el.style) return;
-        // ACE/jQuery hover 会写回 #fff；清掉后交给 CSS 主题色
-        const bg = (el.style.backgroundColor || el.style.background || '').toLowerCase();
-        if (!bg) return;
-        if (/rgb\(\s*255\s*,\s*255\s*,\s*255\s*\)|#fff|#ffffff|white/.test(bg) || bg.includes('f5f5f5') || bg.includes('f9f9f9')) {
-          el.style.removeProperty('background');
-          el.style.removeProperty('background-color');
-        }
-      });
+      if (scope.matches && scope.matches('tr.urppp-notice-row')) {
+        pinNoticeRowSurface(scope);
+        return;
+      }
+      scope.querySelectorAll('table.urppp-notice-table tr.urppp-notice-row').forEach(pinNoticeRowSurface);
     } catch (_) {}
+  }
+
+  function disarmNoticeTableHover(table) {
+    if (!table) return;
+    // 摘掉 Bootstrap/ACE table-hover，从根上断掉 hover 改色
+    table.classList.remove('table-hover', 'table-striped');
+    table.classList.add('urppp-notice-nohover');
+    try {
+      const $ = (typeof unsafeWindow !== 'undefined' && unsafeWindow.jQuery) ? unsafeWindow.jQuery : (window.jQuery || null);
+      if ($ && $.fn) {
+        const $rows = $(table).find('> tbody > tr, tr');
+        $rows.off('mouseenter.urpppNotice mouseleave.urpppNotice mouseover mouseout mouseenter mouseleave');
+        // 常见 ACE 绑定在 document / table 上，再解一层
+        $(table).off('mouseenter mouseleave mouseover mouseout');
+        $rows.each(function () {
+          const el = this;
+          try {
+            if ($._data) {
+              const ev = $._data(el, 'events');
+              if (ev) {
+                ['mouseenter', 'mouseleave', 'mouseover', 'mouseout'].forEach((type) => {
+                  if (!ev[type]) return;
+                  // 去掉会改 background 的 handler 很难识别，直接 off 全部同名
+                  $(el).off(type);
+                });
+              }
+            }
+          } catch (_) {}
+        });
+      }
+    } catch (_) {}
+    Array.from(table.querySelectorAll('tr')).forEach((tr) => {
+      tr.classList.remove('hover');
+      if (tr.classList.contains('urppp-notice-row')) pinNoticeRowSurface(tr);
+    });
   }
 
   function bindNoticeHoverScrub() {
     if (window.__urpppNoticeHoverScrub) return;
     window.__urpppNoticeHoverScrub = true;
-    const wipe = (e) => {
-      const tr = e.target && e.target.closest ? e.target.closest('table.urppp-notice-table tr') : null;
+
+    const rePin = (e) => {
+      const tr = e.target && e.target.closest ? e.target.closest('table.urppp-notice-table tr.urppp-notice-row') : null;
       if (!tr) return;
-      // 下一帧清，等 ACE mouseleave 写完再抹
-      requestAnimationFrame(() => {
-        scrubNoticeInlineBg(tr);
-        tr.classList.remove('hover');
-        tr.querySelectorAll('td,th').forEach((cell) => {
-          if (!cell.style) return;
-          cell.style.removeProperty('background');
-          cell.style.removeProperty('background-color');
-        });
-        tr.style.removeProperty('background');
-        tr.style.removeProperty('background-color');
-      });
+      // ACE 常在 leave 后一帧写回白底，多拍几次
+      pinNoticeRowSurface(tr);
+      requestAnimationFrame(() => pinNoticeRowSurface(tr));
+      setTimeout(() => pinNoticeRowSurface(tr), 0);
+      setTimeout(() => pinNoticeRowSurface(tr), 16);
+      setTimeout(() => pinNoticeRowSurface(tr), 50);
+      setTimeout(() => pinNoticeRowSurface(tr), 120);
     };
-    document.addEventListener('mouseout', wipe, true);
-    document.addEventListener('mouseleave', wipe, true);
-    // 保险：悬停过程中若被写成白，也立刻清
-    document.addEventListener('mouseover', (e) => {
-      const tr = e.target && e.target.closest ? e.target.closest('table.urppp-notice-table tr') : null;
+    document.addEventListener('mouseout', rePin, true);
+    document.addEventListener('mouseleave', rePin, true);
+    document.addEventListener('mouseover', rePin, true);
+    document.addEventListener('mousemove', (e) => {
+      // 低频：只在公告表内移动时纠偏
+      const tr = e.target && e.target.closest ? e.target.closest('table.urppp-notice-table tr.urppp-notice-row') : null;
       if (!tr) return;
-      scrubNoticeInlineBg(tr);
+      if (tr.__urpppPinMove && Date.now() - tr.__urpppPinMove < 80) return;
+      tr.__urpppPinMove = Date.now();
+      const bg = (tr.style.backgroundColor || getComputedStyle(tr).backgroundColor || '').toLowerCase();
+      if (/rgb\(\s*255\s*,\s*255\s*,\s*255\s*\)|#fff|white|rgb\(\s*245|rgb\(\s*249|f5f5f5|f9f9f9/.test(bg)) {
+        pinNoticeRowSurface(tr);
+      }
     }, true);
+
+    // 属性观察：谁写 style 都立刻钉回
+    if (!window.__urpppNoticeStyleObs) {
+      window.__urpppNoticeStyleObs = new MutationObserver((muts) => {
+        muts.forEach((m) => {
+          const el = m.target;
+          if (!el || el.nodeType !== 1) return;
+          const tr = el.closest ? el.closest('tr.urppp-notice-row') : null;
+          if (!tr) return;
+          // 避免自己 pin 触发死循环：短防抖
+          if (tr.__urpppPinning) return;
+          tr.__urpppPinning = true;
+          pinNoticeRowSurface(tr);
+          requestAnimationFrame(() => { tr.__urpppPinning = false; });
+        });
+      });
+      window.__urpppNoticeStyleObs.observe(document.documentElement, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['style', 'class'],
+      });
+    }
   }
   function stripMistakenNoticeTable(table) {
     if (!table) return;
@@ -3185,6 +3264,7 @@
         if (isBusinessDataTable(table)) return;
         table.classList.add('urppp-notice-table');
         table.dataset.urpppNoticeScan = '1';
+        disarmNoticeTableHover(table);
         table.style.setProperty('border', 'none', 'important');
         table.style.setProperty('border-left', 'none', 'important');
         table.style.setProperty('background', 'transparent', 'important');
@@ -3242,6 +3322,7 @@
             }
 
             tr.classList.add('urppp-notice-row');
+            pinNoticeRowSurface(tr);
             tds.forEach((td) => {
               td.style.setProperty('border', 'none', 'important');
               td.style.setProperty('background', 'transparent', 'important');
@@ -6230,22 +6311,40 @@
         background: var(--input-bg) !important;
         background-color: var(--input-bg) !important;
       }
-      /* 公告卡片：不受 table-hover / ACE hover 类影响 */
-      table.urppp-notice-table.table-hover > tbody > tr,
-      table.urppp-notice-table.table-hover > tbody > tr:hover,
-      table.urppp-notice-table.table-hover > tbody > tr.hover,
-      table.urppp-notice-table > tbody > tr.urppp-notice-row,
-      table.urppp-notice-table > tbody > tr.urppp-notice-row:hover,
-      table.urppp-notice-table > tbody > tr.urppp-notice-row.hover {
+      /* 公告卡片：彻底切断 table-hover / ACE hover 白底 */
+      table.urppp-notice-table,
+      table.urppp-notice-table.table,
+      table.urppp-notice-table.table-hover,
+      table.urppp-notice-table.table-striped {
+        background: transparent !important;
+        background-color: transparent !important;
+      }
+      html body table.urppp-notice-table > tbody > tr,
+      html body table.urppp-notice-table > tbody > tr.urppp-notice-row,
+      html body table.urppp-notice-table.table-hover > tbody > tr,
+      html body table.urppp-notice-table.table-hover > tbody > tr:hover,
+      html body table.urppp-notice-table.table-hover > tbody > tr.hover,
+      html body table.urppp-notice-table.table-striped > tbody > tr,
+      html body table.urppp-notice-table.table-striped > tbody > tr:nth-of-type(odd),
+      html body table.urppp-notice-table.table-striped > tbody > tr:nth-of-type(even),
+      html body table.urppp-notice-table > tbody > tr.urppp-notice-row:hover,
+      html body table.urppp-notice-table > tbody > tr.urppp-notice-row.hover,
+      html body table.urppp-notice-table > tbody > tr.urppp-notice-row:nth-of-type(odd),
+      html body table.urppp-notice-table > tbody > tr.urppp-notice-row:nth-of-type(even) {
         background: var(--surface) !important;
         background-color: var(--surface) !important;
       }
-      table.urppp-notice-table.table-hover > tbody > tr > td,
-      table.urppp-notice-table.table-hover > tbody > tr:hover > td,
-      table.urppp-notice-table.table-hover > tbody > tr.hover > td,
-      table.urppp-notice-table > tbody > tr.urppp-notice-row > td,
-      table.urppp-notice-table > tbody > tr.urppp-notice-row:hover > td,
-      table.urppp-notice-table > tbody > tr.urppp-notice-row.hover > td {
+      html body table.urppp-notice-table > tbody > tr > td,
+      html body table.urppp-notice-table > tbody > tr > th,
+      html body table.urppp-notice-table.table-hover > tbody > tr > td,
+      html body table.urppp-notice-table.table-hover > tbody > tr:hover > td,
+      html body table.urppp-notice-table.table-hover > tbody > tr.hover > td,
+      html body table.urppp-notice-table.table-striped > tbody > tr > td,
+      html body table.urppp-notice-table.table-striped > tbody > tr:nth-of-type(odd) > td,
+      html body table.urppp-notice-table.table-striped > tbody > tr:nth-of-type(even) > td,
+      html body table.urppp-notice-table > tbody > tr.urppp-notice-row > td,
+      html body table.urppp-notice-table > tbody > tr.urppp-notice-row:hover > td,
+      html body table.urppp-notice-table > tbody > tr.urppp-notice-row.hover > td {
         background: transparent !important;
         background-color: transparent !important;
       }
@@ -9098,11 +9197,14 @@
       html.urppp-theme-dark table.urppp-notice-table.table-hover > tbody > tr,
       html.urppp-theme-dark table.urppp-notice-table.table-hover > tbody > tr:hover,
       html.urppp-theme-dark table.urppp-notice-table.table-hover > tbody > tr.hover,
+      html.urppp-theme-dark table.urppp-notice-table.table-striped > tbody > tr,
+      html.urppp-theme-dark table.urppp-notice-table.table-striped > tbody > tr:nth-of-type(odd),
+      html.urppp-theme-dark table.urppp-notice-table.table-striped > tbody > tr:nth-of-type(even),
       html.urppp-theme-dark table.urppp-notice-table > tbody > tr.urppp-notice-row:hover,
       html.urppp-theme-dark table.urppp-notice-table > tbody > tr.urppp-notice-row.hover,
       html.urppp-theme-dark .urppp-notice-card {
-        background: var(--surface) !important;
-        background-color: var(--surface) !important;
+        background: #151A24 !important;
+        background-color: #151A24 !important;
         border-color: var(--border) !important;
         box-shadow: 0 1px 2px rgba(0,0,0,0.25) !important;
       }
@@ -9631,7 +9733,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.11');
+    console.log('[URP++] style applied v0.5.12');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -10506,7 +10608,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.11',
+    version: '0.5.12',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
