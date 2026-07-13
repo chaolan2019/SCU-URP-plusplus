@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.59
+// @version      0.4.60
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.59';
+          content:'URP++ v0.4.60';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1215,8 +1215,9 @@
           el.style.setProperty('transform', 'none', 'important');
         });
 
-        // 跳转输入框
         const pageInputs = Array.from(bar.querySelectorAll('input[type="text"], input.form-control'));
+        const inputFocused = pageInputs.some((inp) => document.activeElement === inp);
+
         pageInputs.forEach((inp) => {
           inp.style.setProperty('width', '44px', 'important');
           inp.style.setProperty('height', '32px', 'important');
@@ -1226,25 +1227,34 @@
           inp.style.setProperty('padding', '2px 6px', 'important');
         });
 
-        // 识别「确定」：文案含确定 / 在跳转输入框附近
+        const setConfirmVisible = (btn, show) => {
+          if (show) {
+            btn.classList.add('urppp-page-confirm-show');
+            btn.style.setProperty('display', 'inline-flex', 'important');
+            btn.style.setProperty('align-items', 'center', 'important');
+            btn.style.setProperty('justify-content', 'center', 'important');
+          } else {
+            btn.classList.remove('urppp-page-confirm-show');
+            btn.style.setProperty('display', 'none', 'important');
+          }
+        };
+
         const candidates = Array.from(
           bar.querySelectorAll('button, .btn, input[type="button"], input[type="submit"], a.btn')
         );
         candidates.forEach((btn) => {
           const txt = ((btn.value || btn.textContent || '') + '').replace(/\s+/g, '');
-          const isConfirm = txt.includes('确定') || txt.includes('確認') || txt.toLowerCase() === 'ok';
-          if (isConfirm) {
-            btn.classList.add('urppp-page-confirm');
-            // 默认隐藏（用 class，盖过全局 .btn display）
-            btn.classList.remove('urppp-page-confirm-show');
-            btn.style.setProperty('display', 'none', 'important');
-            btn.style.setProperty('height', '32px', 'important');
-            btn.style.setProperty('min-width', '52px', 'important');
-            btn.style.setProperty('margin', '0 2px', 'important');
-            btn.style.setProperty('padding', '0 12px', 'important');
-            btn.style.setProperty('font-size', '13px', 'important');
-          } else {
-            // 其它分页按钮保持可见尺寸
+          // 紧挨跳转输入框后的按钮也算确定
+          const nearGoto =
+            pageInputs.some((inp) => {
+              let n = inp.nextElementSibling;
+              for (let i = 0; i < 3 && n; i++, n = n.nextElementSibling) {
+                if (n === btn) return true;
+              }
+              return false;
+            });
+          const isConfirm = txt.includes('确定') || txt.includes('確認') || txt.toLowerCase() === 'ok' || (nearGoto && txt.length <= 4);
+          if (!isConfirm) {
             btn.style.setProperty('display', 'inline-flex', 'important');
             btn.style.setProperty('align-items', 'center', 'important');
             btn.style.setProperty('justify-content', 'center', 'important');
@@ -1253,52 +1263,49 @@
             btn.style.setProperty('margin', '0 2px', 'important');
             btn.style.setProperty('padding', '0 12px', 'important');
             btn.style.setProperty('font-size', '13px', 'important');
+            return;
           }
+          btn.classList.add('urppp-page-confirm');
+          btn.style.setProperty('height', '32px', 'important');
+          btn.style.setProperty('min-width', '52px', 'important');
+          btn.style.setProperty('margin', '0 2px', 'important');
+          btn.style.setProperty('padding', '0 12px', 'important');
+          btn.style.setProperty('font-size', '13px', 'important');
+          // 仅当跳转框聚焦时显示；否则强制隐藏（压过全局 .btn）
+          setConfirmVisible(btn, inputFocused || bar.dataset.urpppConfirmOpen === '1');
         });
 
-        // 绑定：聚焦跳转框才显示确定
         if (bar.dataset.urpppConfirmBound !== '1') {
           bar.dataset.urpppConfirmBound = '1';
           const showConfirm = () => {
-            bar.querySelectorAll('.urppp-page-confirm').forEach((btn) => {
-              btn.classList.add('urppp-page-confirm-show');
-              btn.style.setProperty('display', 'inline-flex', 'important');
-              btn.style.setProperty('align-items', 'center', 'important');
-              btn.style.setProperty('justify-content', 'center', 'important');
-            });
+            bar.dataset.urpppConfirmOpen = '1';
+            bar.querySelectorAll('.urppp-page-confirm').forEach((btn) => setConfirmVisible(btn, true));
           };
           const hideConfirm = () => {
-            bar.querySelectorAll('.urppp-page-confirm').forEach((btn) => {
-              btn.classList.remove('urppp-page-confirm-show');
-              btn.style.setProperty('display', 'none', 'important');
-            });
+            bar.dataset.urpppConfirmOpen = '0';
+            bar.querySelectorAll('.urppp-page-confirm').forEach((btn) => setConfirmVisible(btn, false));
           };
           pageInputs.forEach((inp) => {
             inp.addEventListener('focus', showConfirm);
             inp.addEventListener('click', showConfirm);
             inp.addEventListener('blur', () => {
-              // 点到确定按钮时不要立刻藏
               setTimeout(() => {
                 const active = document.activeElement;
-                if (active && (active.classList.contains('urppp-page-confirm') || bar.contains(active) && active.matches('button, .btn, a.btn, input[type="button"]'))) {
-                  return;
-                }
-                // 若焦点仍在输入框则保留
+                if (active && active.classList && active.classList.contains('urppp-page-confirm')) return;
                 if (active && pageInputs.includes(active)) return;
                 hideConfirm();
-              }, 150);
+              }, 180);
             });
           });
-          bar.querySelectorAll('.urppp-page-confirm').forEach((btn) => {
-            btn.addEventListener('mousedown', (e) => {
-              // 避免 blur 抢先隐藏导致点不到
-              e.preventDefault();
-              showConfirm();
-            });
-          });
+          bar.addEventListener('mousedown', (e) => {
+            const btn = e.target && e.target.closest ? e.target.closest('.urppp-page-confirm') : null;
+            if (!btn) return;
+            // 避免 blur 先藏导致点不到
+            bar.dataset.urpppConfirmOpen = '1';
+            setConfirmVisible(btn, true);
+          }, true);
         }
 
-        // 页码链接加大
         bar.querySelectorAll('a:not(.btn):not(.urppp-page-confirm)').forEach((a) => {
           a.style.setProperty('display', 'inline-flex', 'important');
           a.style.setProperty('align-items', 'center', 'important');
@@ -1313,6 +1320,7 @@
           a.style.setProperty('border-radius', '6px', 'important');
           a.style.setProperty('border', '1px solid var(--border)', 'important');
           a.style.setProperty('background', 'var(--surface)', 'important');
+          a.style.setProperty('box-sizing', 'border-box', 'important');
         });
       });
     } catch (err) {
@@ -6483,7 +6491,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.59');
+    console.log('[URP++] style applied v0.4.60');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -7106,7 +7114,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.59',
+    version: '0.4.60',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
