@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.29
+// @version      0.5.30
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.29';
+          content:'URP++ v0.5.30';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1754,11 +1754,22 @@
       document.querySelectorAll('.page-content .profile-user-info, #page-content-template .profile-user-info').forEach((el) => {
         ensureProfileCardShell(el);
       });
+      // 同一查询卡内，所有行共用「最密一行」的列数，避免第二行只有 1 项时被拉满整行
+      const getFormQueryCols = (row) => {
+        const form = row.closest('.profile-user-info, .urppp-query-form') || row.parentElement;
+        if (!form) return Math.min(Math.max(row.querySelectorAll(':scope > .urppp-query-pair').length, 1), 4);
+        let maxPairs = 0;
+        form.querySelectorAll(':scope > .profile-info-row, .profile-info-row').forEach((r) => {
+          const c = r.querySelectorAll(':scope > .urppp-query-pair').length;
+          if (c > maxPairs) maxPairs = c;
+        });
+        // 至少 1；查询卡常见 4 列，单字段行也占第一格宽度
+        return Math.min(Math.max(maxPairs, 1), 4);
+      };
       const applyRowLayout = (row) => {
         const pairs = Array.from(row.querySelectorAll(':scope > .urppp-query-pair'));
         const n = Math.max(pairs.length, 1);
-        // 4 个就 4 列，3 个 3 列，2 个 2 列；超过 4 按 4 列换行
-        const cols = Math.min(n, 4);
+        const cols = getFormQueryCols(row);
         row.classList.add('urppp-query-row');
         row.style.setProperty('display', 'grid', 'important');
         row.style.setProperty('grid-template-columns', 'repeat(' + cols + ', minmax(0, 1fr))', 'important');
@@ -1769,6 +1780,10 @@
         row.style.setProperty('max-width', '100%', 'important');
         row.style.setProperty('box-sizing', 'border-box', 'important');
         row.dataset.urpppQueryCols = String(cols);
+        // 字段只占前 n 格，其余留空，与上行同宽对齐
+        pairs.forEach((pair, i) => {
+          pair.style.setProperty('grid-column', String(i + 1), 'important');
+        });
 
         pairs.forEach((pair) => {
           pair.style.setProperty('display', 'flex', 'important');
@@ -6239,7 +6254,12 @@
       }
       /* 按本行 pair 数动态列数，避免 4 字段硬套 3 列留下空洞 */
       .profile-info-row.urppp-query-row[data-urppp-query-cols="1"] {
+        /* 真·单字段整表才满宽；多行查询卡会写成 4，不会误伤 */
         grid-template-columns: minmax(0, 1fr) !important;
+      }
+      .profile-info-row.urppp-query-row > .urppp-query-pair {
+        min-width: 0 !important;
+        max-width: 100% !important;
       }
       .profile-info-row.urppp-query-row[data-urppp-query-cols="2"] {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -10243,7 +10263,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.29');
+    console.log('[URP++] style applied v0.5.30');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11224,7 +11244,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.29',
+    version: '0.5.30',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
