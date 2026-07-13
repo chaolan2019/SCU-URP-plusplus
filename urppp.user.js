@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.15
+// @version      0.5.16
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.15';
+          content:'URP++ v0.5.16';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -9005,7 +9005,33 @@
       }
       .fc {
         border-radius: var(--radius) !important;
-        overflow: hidden !important;
+        /* 不要 overflow:hidden：FullCalendar 时间标签会向上偏移半格，会被裁掉 00:00 */
+        overflow: visible !important;
+      }
+      .fc-view-container,
+      .fc-time-grid-container,
+      .fc-scroller {
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+      }
+      /* 时间轴文字完整显示 */
+      .fc-time-grid .fc-axis,
+      .fc-time-grid .fc-axis span,
+      .fc .fc-axis.fc-time,
+      .fc .fc-axis.fc-widget-content {
+        overflow: visible !important;
+        white-space: nowrap !important;
+        vertical-align: top !important;
+        line-height: 1.2 !important;
+        padding-top: 0 !important;
+      }
+      .fc-time-grid .fc-slats table {
+        /* 给首行时间标签留出向上偏移空间，避免贴顶被裁 */
+        margin-top: 0 !important;
+      }
+      .fc-time-grid > .fc-bg {
+        /* bg 层不裁切 */
+        overflow: visible !important;
       }
       /* 压过 fullcalendar 默认 #ddd / white 网格线 */
       .fc th,
@@ -9569,7 +9595,14 @@
       .urppp-stat-skeleton .label { background: var(--input-bg); color: transparent !important; border-radius: 4px; width: 80px; height: 20px; }
       .urppp-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
       @media (max-width: 1100px) { .urppp-main-grid { grid-template-columns: 1fr; } }
-      #urppp-left .urppp-card { box-shadow: none !important; }
+      #urppp-left .urppp-card {
+        box-shadow: none !important;
+        overflow: visible !important;
+      }
+      #urppp-left .urppp-card-body {
+        overflow: visible !important;
+        padding-top: 12px !important;
+      }
       #urppp-left .urppp-card-body,
       #urppp-left .fc,
       #urppp-left .fc-view-container {
@@ -9578,6 +9611,16 @@
       #urppp-left .fc-view-container,
       #urppp-left .fc-time-grid-container {
         border: none !important;
+        overflow: visible !important;
+      }
+      /* 首行 00:00 标签：给一点顶边距，避免被卡片圆角/header 裁切 */
+      #urppp-left .fc-time-grid .fc-axis.fc-widget-content,
+      #urppp-left .fc-time-grid .fc-slats td.fc-axis {
+        padding-right: 6px !important;
+      }
+      #urppp-left .fc-time-grid .fc-slats tr:first-child td {
+        /* 保证第一格高度不被压扁 */
+        height: auto !important;
       }
       #urppp-left .fc-toolbar { margin: 0 0 12px 0 !important; padding: 8px 8px 0 8px !important; }
       #urppp-left .fc-toolbar .fc-center h2,
@@ -9871,7 +9914,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.15');
+    console.log('[URP++] style applied v0.5.16');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -10750,7 +10793,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.15',
+    version: '0.5.16',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
