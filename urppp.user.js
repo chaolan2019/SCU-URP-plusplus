@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.40
+// @version      0.5.41
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.40';
+          content:'URP++ v0.5.41';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1672,7 +1672,7 @@
           el.style.setProperty('padding', '0', 'important');
           el.style.setProperty('margin', '0', 'important');
           el.style.setProperty('height', 'auto', 'important');
-          el.style.setProperty('line-height', '36px', 'important');
+          el.style.setProperty('line-height', '1.5', 'important');
           el.style.setProperty('font-size', '13px', 'important');
           el.style.setProperty('color', 'var(--text-secondary, var(--text-muted))', 'important');
         });
@@ -3749,7 +3749,8 @@
       const parentOverflow = (parent.style && parent.style.overflow) || getComputedStyle(parent).overflow;
       const isScrollBox = (parent.id && parent.id.endsWith('_scroll')) || parentOverflow === 'auto' || parentOverflow === 'scroll';
       if (isScrollBox) {
-        parent.classList.add('urppp-table-wrap');
+        // 滚动分页容器：只做标记，不要用 table-wrap 的 overflow/margin 干扰 fixedheader
+        parent.classList.add('urppp-scroll-table-host');
         return;
       }
       const wrap = document.createElement('div');
@@ -4862,10 +4863,43 @@
         width: 100% !important;
         box-sizing: border-box !important;
       }
-      /* 滚动表格容器也吃一点内边距感 */
+      /*
+       * 站点滚动分页容器（kctd_scroll 等）：
+       * urp.fixedheader + pageSize 带 _sl 时滚到底加载下一页。
+       * 必须保留 overflow:auto / max-height，禁止被 .widget-box 改成 overflow:visible。
+       */
       .main-content #code_scroll,
-      .page-content [id$="_scroll"] {
+      .page-content [id$="_scroll"],
+      #kctd_scroll,
+      #page_scroll,
+      div[id$="_scroll"].widget-box,
+      div[id$="_scroll"].widget-content {
         box-sizing: border-box !important;
+        overflow: auto !important;
+        /* max-height 交给站点 inline / fixedheader，不要覆盖 */
+        width: 100% !important;
+        max-width: 100% !important;
+        position: relative !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        background: var(--surface) !important;
+      }
+      /* scroll 容器内表格：不要再套一层 overflow:auto 双滚动 */
+      [id$="_scroll"].urppp-table-wrap,
+      [id$="_scroll"] .urppp-table-wrap {
+        overflow: visible !important;
+        border: none !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+      }
+      /* 分页条在滚动区外：始终在表格容器下方 */
+      #urppagebar,
+      #urppagebar.urppp-pagebar {
+        position: relative !important;
+        clear: both !important;
+        margin-top: 12px !important;
+        z-index: 2 !important;
       }
 
       /* 页面区块标题：全宽条，与内容左右对齐，下边距拉开 */
@@ -5026,8 +5060,8 @@
         background: var(--primary) !important;
       }
       /* 卡片 / 面板 */
-      .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon),
-      .widget-box.transparent:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon),
+      .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not([id$="_scroll"]),
+      .widget-box.transparent:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not([id$="_scroll"]),
       .panel,
       .panel-default,
       .panel-primary,
@@ -5045,7 +5079,7 @@
         box-shadow: none !important;
         overflow: hidden !important;
       }
-      .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon) {
+      .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not([id$="_scroll"]) {
         margin-bottom: 18px !important;
       }
       .widget-header,
@@ -5972,8 +6006,8 @@
         max-width: 100% !important;
       }
       /* widget 本体保证是唯一卡片壳（排除右侧滑出抽屉，它们也带 widget-box class） */
-      .page-content .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon),
-      #page-content-template .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon) {
+      .page-content .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not([id$="_scroll"]),
+      #page-content-template .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not([id$="_scroll"]) {
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
@@ -10674,7 +10708,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.40');
+    console.log('[URP++] style applied v0.5.41');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11655,7 +11689,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.40',
+    version: '0.5.41',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
