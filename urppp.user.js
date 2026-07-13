@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.4
+// @version      0.5.5
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -649,7 +649,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.4';
+          content:'URP++ v0.5.5';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -9181,7 +9181,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.4');
+    console.log('[URP++] style applied v0.5.5');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -9299,7 +9299,7 @@
       wrap.innerHTML = [
         '<button type="button" class="urppp-nav-dot" data-theme="default" title="简约白" style="background:#F1F5F9"></button>',
         '<button type="button" class="urppp-nav-dot" data-theme="dark" title="深邃暗" style="background:#0B0F17"></button>',
-        '<button type="button" class="urppp-nav-dot" data-theme="scu-red" title="川大红/自定义" style="background:#B53434"></button>',
+        '<button type="button" class="urppp-nav-dot" data-theme="scu-red" title="自定义" style="background:#B53434"></button>',
         '<button type="button" class="urppp-nav-edit" id="urppp-nav-theme-edit" title="编辑主题色">✎</button>',
         '<div id="urppp-nav-theme-pop" role="dialog" aria-label="编辑主题色">',
         '  <div class="urppp-pop-title">自定义主题色</div>',
@@ -10066,7 +10066,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.4',
+    version: '0.5.5',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
