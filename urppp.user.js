@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.28
+// @version      0.5.29
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.28';
+          content:'URP++ v0.5.29';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1700,7 +1700,7 @@
     root.style.setProperty('float', 'none', 'important');
     root.style.setProperty('display', 'block', 'important');
     root.style.setProperty('clear', 'both', 'important');
-    // 父级 form 也拉满，避免个人信息页半宽
+    // 父级 form / tab-pane 拉满（空闲教室 tab 内独立卡）
     const form = root.parentElement && root.parentElement.tagName === 'FORM' ? root.parentElement : null;
     if (form) {
       form.style.setProperty('width', '100%', 'important');
@@ -1709,6 +1709,12 @@
       form.style.setProperty('float', 'none', 'important');
       form.style.setProperty('box-sizing', 'border-box', 'important');
       form.style.setProperty('margin', '0', 'important');
+    }
+    const pane = root.closest && root.closest('.tab-pane, .tab-content');
+    if (pane) {
+      pane.style.setProperty('width', '100%', 'important');
+      pane.style.setProperty('max-width', '100%', 'important');
+      pane.style.setProperty('box-sizing', 'border-box', 'important');
     }
     if (inWidget) {
       root.style.setProperty('background', 'transparent', 'important');
@@ -5877,6 +5883,78 @@
       .page-content .profile-user-info.self:has(.chosen-container) {
         overflow: visible !important;
         padding: 14px 16px !important;
+      }
+
+      /*
+       * Tab 内独立查询卡（空闲教室 custom.htm）:
+       *   .tabbable > .tab-content > .tab-pane > form > .profile-user-info.self
+       * 与规则页 self-margin 下查询卡同形态：全宽 / surface / 12px 圆角
+       */
+      .page-content .tab-content,
+      .page-content .tabbable > .tab-content,
+      .page-content .tab-pane,
+      .page-content .tab-pane.active,
+      .page-content .tab-pane > form {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        float: none !important;
+      }
+      .page-content .tab-pane > form,
+      .page-content .tab-content form:has(> .profile-user-info) {
+        display: block !important;
+        margin: 0 !important;
+      }
+      .page-content .tab-pane > form > .profile-user-info,
+      .page-content .tab-pane > form > .profile-user-info.self,
+      .page-content .tab-pane > form > .profile-user-info-striped,
+      .page-content .tab-pane .profile-user-info.self,
+      .page-content .tab-content .profile-user-info.self,
+      .page-content .tab-content .profile-user-info.urppp-query-form,
+      #faq-tab-1 .profile-user-info,
+      #faq-tab-4 .profile-user-info,
+      [id^="faq-tab-"] > form > .profile-user-info {
+        display: block !important;
+        float: none !important;
+        clear: both !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        box-shadow: none !important;
+        margin: 0 0 14px !important;
+        padding: 14px 16px !important;
+        overflow: visible !important;
+      }
+      /* 查询按钮区：跟卡对齐，不飘 */
+      .page-content .tab-pane > form > .center,
+      .page-content .tab-pane form .center:has(#queryFreeClassRoom),
+      .page-content .tab-pane form .center:has(.btn) {
+        width: 100% !important;
+        text-align: center !important;
+        margin: 0 0 14px !important;
+      }
+      /* 结果表区域：全宽卡，与上方查询卡统一 */
+      .page-content .tab-pane .self-margin,
+      .page-content .tab-pane .col-xs-12.self-margin,
+      .page-content .tab-pane form .row,
+      .page-content .tab-pane form .row > .col-xs-12 {
+        width: 100% !important;
+        max-width: 100% !important;
+        float: none !important;
+        box-sizing: border-box !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+      }
+      .page-content .tab-pane .urppp-table-wrap,
+      .page-content .tab-pane form .urppp-table-wrap,
+      .page-content .tab-pane #sample-table-2,
+      .page-content .tab-pane form .table {
+        width: 100% !important;
+        max-width: 100% !important;
       }
       /* 标题与下方独立卡间距统一（同 header 下边距节奏） */
       .page-content h4.header + form,
@@ -10165,7 +10243,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.28');
+    console.log('[URP++] style applied v0.5.29');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11146,7 +11224,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.28',
+    version: '0.5.29',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
