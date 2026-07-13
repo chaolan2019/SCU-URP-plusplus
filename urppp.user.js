@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.19
+// @version      0.4.20
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.19';
+          content:'URP++ v0.4.20';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1075,6 +1075,61 @@
       wrap.remove();
     });
   }
+  // 查询条件：把 ACE 同行多对 name/value 包成 pair，稳定横排
+  function beautifyQueryForms() {
+    try {
+      const roots = document.querySelectorAll(
+        '.profile-user-info.self, .profile-user-info-striped.self, .profile-user-info:has(.value_element)'
+      );
+      roots.forEach((root) => {
+        root.classList.add('urppp-query-form');
+        root.querySelectorAll('.profile-info-row').forEach((row) => {
+          if (row.dataset.urpppQueryDone === '1') return;
+          const kids = Array.from(row.children).filter((el) =>
+            el.classList && (el.classList.contains('profile-info-name') || el.classList.contains('profile-info-value'))
+          );
+          // 少于两对就不处理（学籍等单对结构）
+          const names = kids.filter((el) => el.classList.contains('profile-info-name'));
+          if (names.length < 2) {
+            row.dataset.urpppQueryDone = '1';
+            return;
+          }
+
+          const frag = document.createDocumentFragment();
+          for (let i = 0; i < kids.length; ) {
+            const a = kids[i];
+            const b = kids[i + 1];
+            if (
+              a && b &&
+              a.classList.contains('profile-info-name') &&
+              b.classList.contains('profile-info-value')
+            ) {
+              const pair = document.createElement('div');
+              pair.className = 'urppp-query-pair';
+              pair.appendChild(a);
+              pair.appendChild(b);
+              frag.appendChild(pair);
+              i += 2;
+            } else if (a) {
+              // 异常节点原样保留
+              frag.appendChild(a);
+              i += 1;
+            } else {
+              break;
+            }
+          }
+          // 清掉 row 里残留，再塞回 pair
+          while (row.firstChild) row.removeChild(row.firstChild);
+          row.appendChild(frag);
+          row.classList.add('urppp-query-row');
+          row.dataset.urpppQueryDone = '1';
+        });
+      });
+    } catch (err) {
+      console.warn('[URP++] query form beautify failed', err);
+    }
+  }
+
   // 作息时间表：轻量美化（不改数据；标题提出为整行居中横幅）
   function beautifyWorkRestSchedule() {
     try {
@@ -3428,10 +3483,10 @@
         position: relative !important;
       }
 
-      /* 查询条件：对齐 commoncss 固定宽三列（标签90 + 输入150） */
-      .profile-user-info.self,
-      .profile-user-info-striped.self,
-      .profile-user-info:has(.value_element) {
+      /* 查询条件：JS 包成 pair 后用 flex 横排（彻底摆脱 float 打架） */
+      .profile-user-info.urppp-query-form,
+      .profile-user-info.self.urppp-query-form,
+      .profile-user-info-striped.self.urppp-query-form {
         border: 1px solid var(--border) !important;
         border-radius: var(--radius) !important;
         background: var(--surface) !important;
@@ -3439,123 +3494,104 @@
         box-sizing: border-box !important;
         overflow: visible !important;
       }
-      .profile-user-info.self .profile-info-row,
-      .profile-user-info-striped.self .profile-info-row,
-      .profile-user-info:has(.value_element) .profile-info-row,
-      .page-content .profile-user-info.self .profile-info-row,
-      .page-content .profile-user-info:has(.value_element) .profile-info-row {
-        display: block !important;
-        width: 100% !important;
+      .profile-info-row.urppp-query-row {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 10px 14px !important;
         border-bottom: none !important;
-        padding: 0 !important;
+        min-height: 0 !important;
+        padding: 0 0 4px !important;
         margin: 0 !important;
         overflow: visible !important;
-        min-height: 0 !important;
-        flex-direction: unset !important;
+        flex-direction: row !important;
       }
-      .profile-user-info.self .profile-info-name,
-      .profile-user-info-striped.self .profile-info-name,
-      .profile-user-info:has(.value_element) .profile-info-name,
-      .page-content .profile-user-info.self .profile-info-name,
-      .page-content .profile-user-info:has(.value_element) .profile-info-name {
-        float: left !important;
-        display: block !important;
-        width: 90px !important;
-        min-width: 90px !important;
-        max-width: 90px !important;
+      .urppp-query-pair {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        flex: 0 1 calc(33.333% - 10px) !important;
+        min-width: 250px !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      .urppp-query-pair .profile-info-name {
+        float: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        width: 84px !important;
+        min-width: 84px !important;
+        max-width: 96px !important;
         height: 36px !important;
         min-height: 36px !important;
-        margin: 0 6px 12px 0 !important;
-        padding: 0 6px 0 0 !important;
+        margin: 0 !important;
+        padding: 0 4px 0 0 !important;
         background: transparent !important;
         border: none !important;
         border-right: none !important;
         text-align: right !important;
-        line-height: 36px !important;
+        line-height: 1.3 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
-        box-sizing: border-box !important;
-        font-size: 13px !important;
         color: var(--text-secondary) !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        box-sizing: border-box !important;
       }
-      .profile-user-info.self .profile-info-value,
-      .profile-user-info-striped.self .profile-info-value,
-      .profile-user-info:has(.value_element) .profile-info-value,
-      .page-content .profile-user-info.self .profile-info-value,
-      .page-content .profile-user-info:has(.value_element) .profile-info-value {
-        float: left !important;
-        display: block !important;
-        width: 170px !important;
-        min-width: 170px !important;
-        max-width: 170px !important;
+      .urppp-query-pair .profile-info-value {
+        float: none !important;
+        display: flex !important;
+        align-items: center !important;
+        flex: 1 1 auto !important;
+        width: auto !important;
+        min-width: 150px !important;
+        max-width: none !important;
         height: 36px !important;
         min-height: 36px !important;
-        margin: 0 18px 12px 0 !important;
+        margin: 0 !important;
         margin-left: 0 !important;
-        padding: 1px 0 !important;
+        padding: 0 !important;
         background: transparent !important;
         border: none !important;
         box-sizing: border-box !important;
-        flex: none !important;
       }
-      .profile-user-info.self .profile-info-value > input,
-      .profile-user-info.self .profile-info-value > select,
-      .profile-user-info.self .profile-info-value > .form-control,
-      .profile-user-info.self .profile-info-value > .chosen-container,
-      .profile-user-info.self .value_element,
-      .profile-user-info:has(.value_element) .profile-info-value > input,
-      .profile-user-info:has(.value_element) .profile-info-value > select,
-      .profile-user-info:has(.value_element) .profile-info-value > .form-control,
-      .profile-user-info:has(.value_element) .profile-info-value > .chosen-container,
-      .profile-user-info:has(.value_element) .value_element,
-      .profile-user-info.self input.value_element,
-      .profile-user-info.self select.value_element,
-      .profile-user-info:has(.value_element) input.value_element,
-      .profile-user-info:has(.value_element) select.value_element {
+      .urppp-query-pair .profile-info-value > input,
+      .urppp-query-pair .profile-info-value > select,
+      .urppp-query-pair .profile-info-value > .form-control,
+      .urppp-query-pair .profile-info-value > .chosen-container,
+      .urppp-query-pair .value_element,
+      .urppp-query-pair input.value_element,
+      .urppp-query-pair select.value_element {
         display: block !important;
         float: none !important;
-        width: 150px !important;
+        width: 100% !important;
         min-width: 150px !important;
-        max-width: 150px !important;
+        max-width: 220px !important;
         height: 34px !important;
         min-height: 34px !important;
         margin: 0 !important;
         box-sizing: border-box !important;
       }
-      .profile-user-info.self input[style*="height"],
-      .profile-user-info.self select[style*="height"],
-      .profile-user-info:has(.value_element) input[style*="height"],
-      .profile-user-info:has(.value_element) select[style*="height"] {
-        height: 34px !important;
-        min-height: 34px !important;
-        width: 150px !important;
+      .urppp-query-pair .chosen-container,
+      .urppp-query-pair .chosen-container-single {
+        width: 100% !important;
         min-width: 150px !important;
-        max-width: 150px !important;
-      }
-      .profile-user-info.self .chosen-container,
-      .profile-user-info.self .chosen-container-single,
-      .profile-user-info:has(.value_element) .chosen-container,
-      .profile-user-info:has(.value_element) .chosen-container-single {
-        width: 150px !important;
-        min-width: 150px !important;
-        max-width: 150px !important;
+        max-width: 220px !important;
         top: 0 !important;
         height: 34px !important;
         position: relative !important;
       }
-      .profile-user-info.self .chosen-single,
-      .profile-user-info:has(.value_element) .chosen-single {
+      .urppp-query-pair .chosen-single {
         height: 34px !important;
         min-height: 34px !important;
         line-height: 32px !important;
         padding: 0 28px 0 10px !important;
         display: block !important;
-        width: 150px !important;
         box-sizing: border-box !important;
       }
-      .profile-user-info.self .chosen-single span,
-      .profile-user-info:has(.value_element) .chosen-single span {
+      .urppp-query-pair .chosen-single span {
         display: block !important;
         line-height: 32px !important;
         margin-right: 22px !important;
@@ -3563,21 +3599,26 @@
         text-overflow: ellipsis !important;
         white-space: nowrap !important;
       }
-      .profile-user-info.self .chosen-single div,
-      .profile-user-info:has(.value_element) .chosen-single div {
+      .urppp-query-pair .chosen-single div {
         position: absolute !important;
         top: 0 !important;
         right: 0 !important;
         width: 26px !important;
         height: 100% !important;
       }
-      .profile-user-info.self .chosen-single div b,
-      .profile-user-info:has(.value_element) .chosen-single div b {
+      .urppp-query-pair .chosen-single div b {
         background-position: 0 7px !important;
       }
-      .profile-user-info.self .profile-info-name:empty,
-      .profile-user-info:has(.value_element) .profile-info-name:empty {
-        visibility: hidden !important;
+      @media (max-width: 1100px) {
+        .urppp-query-pair {
+          flex: 0 1 calc(50% - 10px) !important;
+        }
+      }
+      @media (max-width: 640px) {
+        .urppp-query-pair {
+          flex: 0 1 100% !important;
+          min-width: 0 !important;
+        }
       }
 
       /* 通用控件高度（学籍等单对结构） */
@@ -4889,6 +4930,9 @@
     restyleInfoboxPercentages();
     setTimeout(restyleInfoboxPercentages, 300);
     setTimeout(restyleInfoboxPercentages, 1000);
+    beautifyQueryForms();
+    setTimeout(beautifyQueryForms, 200);
+    setTimeout(beautifyQueryForms, 800);
     beautifyPlanTree();
     setTimeout(() => beautifyPlanTree(), 400);
     if (!window.__urpppPlanTreeObs) {
@@ -4944,7 +4988,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.19');
+    console.log('[URP++] style applied v0.4.20');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5546,6 +5590,8 @@
         restyleInfoboxPercentages();
         setTimeout(restyleInfoboxPercentages, 300);
         setTimeout(restyleInfoboxPercentages, 1000);
+        beautifyQueryForms();
+        setTimeout(beautifyQueryForms, 300);
         beautifyPlanTree();
         setTimeout(() => beautifyPlanTree(), 500);
         beautifyBreadcrumbs();
@@ -5562,7 +5608,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.19',
+    version: '0.4.20',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
