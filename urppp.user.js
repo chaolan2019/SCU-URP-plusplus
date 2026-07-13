@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.21
+// @version      0.5.22
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -23,6 +23,19 @@
     html:not(.urppp-ready) body {
       opacity: 0 !important;
       pointer-events: none !important;
+    }
+    /* 双重保险：未就绪时侧栏/顶栏也不可见，避免 body opacity 被站点覆盖时闪 ACE */
+    html:not(.urppp-ready) #navbar,
+    html:not(.urppp-ready) #sidebar,
+    html:not(.urppp-ready) .main-content,
+    html:not(.urppp-ready) .page-content {
+      visibility: hidden !important;
+    }
+    html.urppp-ready #navbar,
+    html.urppp-ready #sidebar,
+    html.urppp-ready .main-content,
+    html.urppp-ready .page-content {
+      visibility: visible !important;
     }
     html.urppp-ready body,
     body.urppp-ready {
@@ -421,7 +434,7 @@
   try { ensureBootLoader(); } catch (_) {}
   // 兜底：最多 2.5s 必须进入
   if (!window.__urpppBootSafety) {
-    window.__urpppBootSafety = setTimeout(() => { try { hideBootLoader(); } catch (_) {} }, 2500);
+    window.__urpppBootSafety = setTimeout(() => { try { hideBootLoader(); } catch (_) {} }, 4500);
   }
   const THEMES = {
     'default': {
@@ -697,7 +710,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.21';
+          content:'URP++ v0.5.22';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3127,8 +3140,22 @@
     });
   }
 
+  function isNoticePageContext() {
+    try {
+      const hint = (
+        (document.title || '') + ' ' +
+        ((document.querySelector('h4.header, .breadcrumb, .page-header, .urppp-bc') || {}).textContent || '')
+      );
+      return /评估公告|通知公告|公告|通知/.test(hint);
+    } catch (_) {
+      return false;
+    }
+  }
+
   function isBusinessDataTable(table) {
     if (!table) return true;
+    // 已确认公告表不再当业务表
+    if (table.classList && table.classList.contains('urppp-notice-table')) return false;
     const id = (table.id || '') + ' ' + ((table.getAttribute('class') || ''));
     if (/freeClassroom|courseTable|codeTable|jszhpjdf|score|grade|exam|drag|classroom/i.test(id)) return true;
     if (table.querySelector('#tbodyFreeClassroom, tbody[id*="FreeClassroom"], tbody[id*="Classroom"], tbody[id*="course"], tbody[id*="Code"]')) return true;
@@ -3137,10 +3164,9 @@
     if (sample && sample.querySelectorAll('td,th').length >= 5) return true;
     const headText = ((table.querySelector('thead') && table.querySelector('thead').textContent) || (table.querySelector('tr') && table.querySelector('tr').textContent) || '').replace(/\s+/g, '');
     if (/校区|教学楼|教室|座位数|类型|课表|操作|序号|课程号|课程名|成绩|学号|姓名|教师|周次|节次/.test(headText)) return true;
-    // 行内有“课表/教室信息”操作链接
-    if (table.querySelector('a') && /课表|教室信息|查看|评估/.test(table.textContent || '')) {
-      if (!/评估公告|通知公告|公告/.test(document.title || '') && !/公告/.test((document.querySelector('h4.header, .breadcrumb') || {}).textContent || '')) {
-        // 空闲教室等
+    // 行内有“课表/教室信息”操作链接（排除公告页本身）
+    if (table.querySelector('a') && /课表|教室信息|查看/.test(table.textContent || '')) {
+      if (!isNoticePageContext()) {
         if (/座位数|教学楼|教室号|校区名/.test(table.textContent || '')) return true;
       }
     }
@@ -3176,30 +3202,40 @@
         const rows = Array.from(table.querySelectorAll('tbody > tr, tr')).filter((tr) => tr.querySelector('td'));
         if (!rows.length) return;
 
-        // 判定是否公告列表（更严格）
+        // 判定是否公告列表
         let noticeLike = 0;
-        rows.slice(0, 8).forEach((tr) => {
+        rows.slice(0, 12).forEach((tr) => {
           const tds = Array.from(tr.children).filter((c) => c.tagName === 'TD' || c.tagName === 'TH');
           if (tds.length >= 5) return; // 多列业务行
           const text = (tr.textContent || '').replace(/\s+/g, ' ').trim();
-          const hasLink = !!tr.querySelector('a[href]');
+          const hasLink = !!tr.querySelector('a[href], a[onclick], a');
           const hasDate = /\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}/.test(text);
           const hasBullet = tds.some((td) => {
             const t = (td.textContent || '').trim();
-            return t === '•' || t === '·' || t === '●' || t === '○' || t === '▪' || t.length <= 2 && /[•·●○▪◆★]/.test(t);
+            return t === '•' || t === '·' || t === '●' || t === '○' || t === '▪' || (t.length <= 2 && /[•·●○▪◆★]/.test(t));
           });
-          // 必须像公告：链接+日期，或圆点+链接；不再用“多列+短日期”这种宽松条件
-          if ((hasLink && hasDate) || (hasBullet && hasLink)) {
+          // 链接+日期 / 圆点+链接 / 圆点+日期
+          if ((hasLink && hasDate) || (hasBullet && hasLink) || (hasBullet && hasDate)) {
             noticeLike += 1;
           }
         });
         const looksDashedNotice =
           table.classList.contains('no-border-top') ||
           /dashed|border-left-style/.test(table.getAttribute('style') || '');
-        // 公告页上下文
-        const pageHint = ((document.title || '') + ' ' + ((document.querySelector('h4.header, .breadcrumb, .page-content') || {}).textContent || '')).slice(0, 200);
-        const inNoticePage = /公告|通知/.test(pageHint);
-        if (noticeLike < 1 && !(looksDashedNotice && inNoticePage)) {
+        const inNoticePage = isNoticePageContext();
+        // 公告页：有 1 行像公告，或虚线表即可；其它页要求更严
+        if (inNoticePage) {
+          if (noticeLike < 1 && !looksDashedNotice && rows.length > 0) {
+            // 公告页常见：两列 标题|日期，即便没 bullet 也认
+            const loose = rows.slice(0, 6).filter((tr) => {
+              const tds = Array.from(tr.children).filter((c) => c.tagName === 'TD' || c.tagName === 'TH');
+              if (tds.length < 1 || tds.length > 4) return false;
+              const text = (tr.textContent || '').replace(/\s+/g, ' ').trim();
+              return !!tr.querySelector('a') || /\d{4}/.test(text);
+            }).length;
+            if (loose < 1) return;
+          }
+        } else if (noticeLike < 1 && !(looksDashedNotice && /公告|通知/.test((document.title || '')))) {
           return;
         }
         if (isBusinessDataTable(table)) return;
@@ -5602,28 +5638,33 @@
         max-width: 100% !important;
         box-sizing: border-box !important;
       }
-      /* 培养方案完成情况：下方课组卡片统一尺寸节奏（排除查询条件表单） */
-      .page-content .profile-user-info:not(.self):not(.urppp-query-form):not(:has(.value_element)),
-      .page-content .profile-user-info-striped:not(.self):not(.urppp-query-form):not(:has(.value_element)) {
+      /* 培养方案完成情况：课组结果卡片统一高度；查询/表单/选项卡内容绝不套 min-height */
+      .page-content .profile-user-info.urppp-plan-card,
+      .page-content .profile-user-info-striped.urppp-plan-card {
         min-height: 108px !important;
       }
-      .page-content .col-xs-6 > .profile-user-info:not(.self):not(.urppp-query-form),
-      .page-content .col-sm-6 > .profile-user-info:not(.self):not(.urppp-query-form),
-      .page-content .col-md-6 > .profile-user-info:not(.self):not(.urppp-query-form),
-      .page-content .col-xs-4 > .profile-user-info:not(.self):not(.urppp-query-form),
-      .page-content .col-sm-4 > .profile-user-info:not(.self):not(.urppp-query-form),
-      .page-content .col-xs-3 > .profile-user-info:not(.self):not(.urppp-query-form) {
-        height: 100% !important;
-        min-height: 108px !important;
-      }
-      /* 查询条件表单：高度随内容，不留底部空档 */
+      /* 查询条件 / 含控件 / 选项卡内：高度随内容 */
       .page-content .profile-user-info.self,
       .page-content .profile-user-info.urppp-query-form,
       .page-content .profile-user-info:has(.value_element),
+      .page-content .profile-user-info:has(select),
+      .page-content .profile-user-info:has(input),
+      .page-content .profile-user-info:has(textarea),
+      .page-content .profile-user-info:has(.chosen-container),
+      .page-content .profile-user-info:has(.nav-tabs),
+      .page-content .profile-user-info:has(.tabbable),
+      .page-content .tab-content .profile-user-info,
+      .page-content .tabbable .profile-user-info,
       .profile-user-info.self,
       .profile-user-info.urppp-query-form {
         min-height: 0 !important;
         height: auto !important;
+      }
+      .page-content .col-xs-6 > .profile-user-info.urppp-plan-card,
+      .page-content .col-sm-6 > .profile-user-info.urppp-plan-card,
+      .page-content .col-md-6 > .profile-user-info.urppp-plan-card {
+        height: 100% !important;
+        min-height: 108px !important;
       }
       .page-content .row:has(> [class*="col-"] > .profile-user-info) {
         display: flex !important;
@@ -9749,7 +9790,7 @@
     });
     wrapTables();
     beautifyNoticeTables();
-    scheduleWave('notice', beautifyNoticeTables, [300, 1000]);
+    scheduleWave('notice', beautifyNoticeTables, [200, 600, 1400]);
     scheduleOnce('stripMistaken', () => {
       document.querySelectorAll('table').forEach((tb) => {
         if (isBusinessDataTable(tb)) stripMistakenNoticeTable(tb);
@@ -9864,12 +9905,13 @@
       });
     }
 
+    // 样式已同步注入，尽快揭开；过长 delay 反而会让用户觉得卡死，过短会闪 ACE
     scheduleOnce('ready', () => {
       document.body.classList.add('urppp-ready');
       hideBootLoader();
-    }, 600);
+    }, 180);
 
-    console.log('[URP++] style applied v0.5.21');
+    console.log('[URP++] style applied v0.5.22');
 
     // 课表格子背景透明度：只观察 #courseTable，避免 body 级 Observer
     (function courseTableOpacity() {
@@ -10872,7 +10914,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.21',
+    version: '0.5.22',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
