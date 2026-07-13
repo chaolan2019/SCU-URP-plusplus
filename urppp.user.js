@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.1
+// @version      0.5.2
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -365,6 +365,8 @@
 
   const THEME_KEY = 'urppp_theme_v3';
   const ACCENT_KEY = 'urppp_accent_v1';
+  const ACCENT_PRESETS_KEY = 'urppp_accent_presets_v1';
+  const DEFAULT_ACCENT_PRESETS = ['#1E3A5F', '#B53434', '#0F766E', '#7C3AED', '#C2410C', '#0369A1'];
 
   function ensureBootLoader() {
     if (document.getElementById('urppp-boot-loader')) return;
@@ -486,15 +488,58 @@
 
   function applyAccent(hex) {
     if (!hex) return;
-    const hover = darken(hex, 0.15);
-    const ring = alpha(hex, 0.15);
-    GM_setValue(ACCENT_KEY, hex);
-    document.documentElement.style.setProperty('--urppp-accent', hex);
+    const clean = String(hex).trim();
+    const body = clean.replace(/^#/, '');
+    if (!/^[0-9a-fA-F]{6}$/.test(body)) return;
+    const h = '#' + body.toUpperCase();
+    const hover = darken(h, 0.15);
+    const ring = alpha(h, 0.15);
+    GM_setValue(ACCENT_KEY, h);
+    document.documentElement.style.setProperty('--urppp-accent', h);
     document.documentElement.style.setProperty('--urppp-accent-hover', hover);
     document.documentElement.style.setProperty('--urppp-accent-ring', ring);
+    // 非 dark 主题时，主题色按钮编辑结果直接驱动主色
+    const themeName = getCurrent();
+    if (themeName !== 'dark') {
+      document.documentElement.style.setProperty('--primary', h);
+      document.documentElement.style.setProperty('--primary-hover', hover);
+      document.documentElement.style.setProperty('--border-focus', h);
+      document.documentElement.style.setProperty('--ring', ring);
+    }
+    // 同步顶栏第三个色点显示
+    try { syncNavbarThemeUI(); } catch (_) {}
   }
 
   function getAccent() { return GM_getValue(ACCENT_KEY, ''); }
+
+  function getAccentPresets() {
+    try {
+      const raw = GM_getValue(ACCENT_PRESETS_KEY, '');
+      if (!raw) return DEFAULT_ACCENT_PRESETS.slice();
+      const arr = JSON.parse(raw);
+      if (!Array.isArray(arr)) return DEFAULT_ACCENT_PRESETS.slice();
+      return arr.filter((x) => typeof x === 'string' && /^#?[0-9a-fA-F]{6}$/i.test(x.replace('#','')) )
+        .map((x) => x.startsWith('#') ? x : ('#' + x));
+    } catch (_) {
+      return DEFAULT_ACCENT_PRESETS.slice();
+    }
+  }
+
+  function saveAccentPreset(hex) {
+    const h = (hex || getAccent() || '#1E3A5F').startsWith('#') ? (hex || getAccent()) : ('#' + (hex || getAccent()));
+    let list = getAccentPresets();
+    list = [h].concat(list.filter((x) => x.toLowerCase() !== h.toLowerCase()));
+    list = list.slice(0, 12);
+    GM_setValue(ACCENT_PRESETS_KEY, JSON.stringify(list));
+    return list;
+  }
+
+  function removeAccentPreset(hex) {
+    const h = (hex || '').toLowerCase();
+    const list = getAccentPresets().filter((x) => x.toLowerCase() !== h);
+    GM_setValue(ACCENT_PRESETS_KEY, JSON.stringify(list));
+    return list;
+  }
 
   function applyTheme(name) {
     const t = THEMES[name] || THEMES['default'];
@@ -510,6 +555,7 @@
     el.textContent = css;
     if (document.body) document.body.style.fontFamily = t.font;
     applyAccent(getAccent());
+    try { syncNavbarThemeUI(); } catch (_) {}
     // 同步启动遮罩字体
     const boot = document.getElementById('urppp-boot-loader');
     if (boot) boot.style.fontFamily = t.font;
@@ -566,7 +612,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.1';
+          content:'URP++ v0.5.2';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3435,7 +3481,173 @@
         right: 0 !important;
       }
       .navbar.navbar-default .navbar-brand,
-      .navbar-default .navbar-brand { color: var(--text) !important; text-shadow: none !important; }
+      .navbar-default .navbar-brand {
+        color: var(--text) !important;
+        text-shadow: none !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+      }
+      /* 顶栏主题色切换 */
+      #urppp-nav-theme {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        margin-left: 12px !important;
+        vertical-align: middle !important;
+        position: relative !important;
+        z-index: 20 !important;
+      }
+      #urppp-nav-theme .urppp-nav-dot {
+        width: 16px !important;
+        height: 16px !important;
+        border-radius: 50% !important;
+        border: 2px solid var(--border) !important;
+        box-sizing: border-box !important;
+        cursor: pointer !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: inline-block !important;
+        box-shadow: 0 0 0 0 transparent !important;
+        transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease !important;
+        background-clip: padding-box !important;
+      }
+      #urppp-nav-theme .urppp-nav-dot:hover {
+        transform: scale(1.08) !important;
+        border-color: var(--text-muted) !important;
+      }
+      #urppp-nav-theme .urppp-nav-dot.ac {
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 3px var(--ring) !important;
+      }
+      #urppp-nav-theme .urppp-nav-edit {
+        width: 24px !important;
+        height: 24px !important;
+        border-radius: 8px !important;
+        border: 1px solid var(--border) !important;
+        background: var(--input-bg) !important;
+        color: var(--text-secondary) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        font-size: 12px !important;
+        line-height: 1 !important;
+        padding: 0 !important;
+        margin: 0 0 0 2px !important;
+        transition: all .15s ease !important;
+      }
+      #urppp-nav-theme .urppp-nav-edit:hover {
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+        background: color-mix(in srgb, var(--primary) 10%, var(--surface)) !important;
+      }
+      #urppp-nav-theme-pop {
+        position: absolute !important;
+        top: calc(100% + 10px) !important;
+        left: 0 !important;
+        min-width: 220px !important;
+        padding: 12px !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 12px 32px rgba(15,23,42,0.14) !important;
+        z-index: 1200 !important;
+        display: none !important;
+        box-sizing: border-box !important;
+      }
+      #urppp-nav-theme-pop.open {
+        display: block !important;
+      }
+      #urppp-nav-theme-pop .urppp-pop-title {
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        color: var(--text-secondary) !important;
+        margin: 0 0 8px !important;
+      }
+      #urppp-nav-theme-pop .urppp-pop-row {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        margin: 0 0 10px !important;
+      }
+      #urppp-nav-theme-pop input[type="color"] {
+        width: 36px !important;
+        height: 28px !important;
+        padding: 0 !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 8px !important;
+        background: var(--input-bg) !important;
+        cursor: pointer !important;
+      }
+      #urppp-nav-theme-pop input[type="text"] {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        height: 28px !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 8px !important;
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+        padding: 0 8px !important;
+        font-size: 12px !important;
+        box-sizing: border-box !important;
+      }
+      #urppp-nav-theme-pop .urppp-pop-actions {
+        display: flex !important;
+        gap: 6px !important;
+        margin: 0 0 10px !important;
+      }
+      #urppp-nav-theme-pop .urppp-pop-btn {
+        height: 28px !important;
+        padding: 0 10px !important;
+        border-radius: 8px !important;
+        border: 1px solid var(--border) !important;
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+        font-size: 12px !important;
+        cursor: pointer !important;
+        line-height: 28px !important;
+      }
+      #urppp-nav-theme-pop .urppp-pop-btn.primary {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        color: #fff !important;
+      }
+      #urppp-nav-theme-pop .urppp-pop-presets {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+      }
+      #urppp-nav-theme-pop .urppp-pop-preset {
+        width: 22px !important;
+        height: 22px !important;
+        border-radius: 50% !important;
+        border: 2px solid var(--border) !important;
+        cursor: pointer !important;
+        box-sizing: border-box !important;
+        position: relative !important;
+      }
+      #urppp-nav-theme-pop .urppp-pop-preset:hover {
+        border-color: var(--primary) !important;
+      }
+      #urppp-nav-theme-pop .urppp-pop-preset .x {
+        position: absolute !important;
+        top: -6px !important;
+        right: -6px !important;
+        width: 14px !important;
+        height: 14px !important;
+        border-radius: 50% !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text-muted) !important;
+        font-size: 10px !important;
+        line-height: 12px !important;
+        text-align: center !important;
+        display: none !important;
+      }
+      #urppp-nav-theme-pop .urppp-pop-preset:hover .x {
+        display: block !important;
+      }
 
       /* 导航项 */
       .ace-nav { margin: 0 !important; }
@@ -8895,11 +9107,11 @@
     // 顶栏重建（JS 强制对齐）
     rebuildNavbar();
     patchSchoolCalendarLink();
-    window.addEventListener('load', () => { rebuildNavbar(); patchSchoolCalendarLink(); });
+    window.addEventListener('load', () => { rebuildNavbar(); injectNavbarThemeSwitch(); patchSchoolCalendarLink(); });
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.1');
+    console.log('[URP++] style applied v0.5.2');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -8927,9 +9139,204 @@
 
   let navbarClickBound = false;
 
+
+  function syncNavbarThemeUI() {
+    const wrap = document.getElementById('urppp-nav-theme');
+    if (!wrap) return;
+    const ct = getCurrent();
+    wrap.querySelectorAll('.urppp-nav-dot[data-theme]').forEach((d) => {
+      d.classList.toggle('ac', d.dataset.theme === ct);
+    });
+    const customDot = wrap.querySelector('.urppp-nav-dot[data-theme="scu-red"], .urppp-nav-dot[data-role="accent"]');
+    const acc = getAccent() || '#B53434';
+    const last = wrap.querySelector('.urppp-nav-dot[data-theme="scu-red"]');
+    if (last) {
+      // 第三个主题点：有自定义强调色时显示自定义色，否则川大红
+      const themeAccent = (ct === 'scu-red' || ct === 'default') ? (getAccent() || (ct === 'scu-red' ? '#B53434' : '#1E3A5F')) : (ct === 'dark' ? '#93A8C7' : acc);
+      if (ct === 'scu-red') last.style.background = getAccent() || '#B53434';
+      else if (ct === 'default') {
+        // default 主题点保持浅灰底；第三个仍显示川大/自定义
+        last.style.background = getAccent() || '#B53434';
+      } else {
+        last.style.background = getAccent() || '#B53434';
+      }
+    }
+    const colorInput = document.getElementById('urppp-nav-color');
+    const hexInput = document.getElementById('urppp-nav-hex');
+    if (colorInput) colorInput.value = (getAccent() || '#B53434');
+    if (hexInput) hexInput.value = (getAccent() || '#B53434');
+    renderNavbarAccentPresets();
+  }
+
+  function renderNavbarAccentPresets() {
+    const box = document.getElementById('urppp-nav-presets');
+    if (!box) return;
+    const list = getAccentPresets();
+    box.innerHTML = '';
+    list.forEach((hex) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'urppp-pop-preset';
+      b.title = hex;
+      b.style.background = hex;
+      b.addEventListener('click', (e) => {
+        if (e.target && e.target.classList.contains('x')) return;
+        applyAccent(hex);
+        // 切到 scu-red 更直观展示自定义色，也可保持当前主题
+        if (getCurrent() === 'dark') {
+          // dark 下强调色不主导，切到 scu-red 或 default
+          applyTheme('scu-red');
+        } else if (getCurrent() === 'default') {
+          applyAccent(hex);
+        } else {
+          applyTheme('scu-red');
+          applyAccent(hex);
+        }
+        syncNavbarThemeUI();
+      });
+      const x = document.createElement('span');
+      x.className = 'x';
+      x.textContent = '×';
+      x.title = '删除预设';
+      x.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        removeAccentPreset(hex);
+        renderNavbarAccentPresets();
+      });
+      b.appendChild(x);
+      box.appendChild(b);
+    });
+  }
+
+  function injectNavbarThemeSwitch() {
+    try {
+      const navbar = document.getElementById('navbar') || document.querySelector('.navbar');
+      if (!navbar) return;
+      if (document.getElementById('urppp-nav-theme')) {
+        syncNavbarThemeUI();
+        return;
+      }
+      // 放在品牌标题右侧
+      const brand =
+        navbar.querySelector('.navbar-header .navbar-brand') ||
+        navbar.querySelector('.navbar-brand') ||
+        navbar.querySelector('.navbar-header');
+      if (!brand) return;
+
+      const wrap = document.createElement('div');
+      wrap.id = 'urppp-nav-theme';
+      wrap.innerHTML = [
+        '<button type="button" class="urppp-nav-dot" data-theme="default" title="简约白" style="background:#F1F5F9"></button>',
+        '<button type="button" class="urppp-nav-dot" data-theme="dark" title="深邃暗" style="background:#0B0F17"></button>',
+        '<button type="button" class="urppp-nav-dot" data-theme="scu-red" title="川大红/自定义" style="background:#B53434"></button>',
+        '<button type="button" class="urppp-nav-edit" id="urppp-nav-theme-edit" title="编辑主题色">✎</button>',
+        '<div id="urppp-nav-theme-pop" role="dialog" aria-label="编辑主题色">',
+        '  <div class="urppp-pop-title">自定义主题色</div>',
+        '  <div class="urppp-pop-row">',
+        '    <input type="color" id="urppp-nav-color" value="#B53434" />',
+        '    <input type="text" id="urppp-nav-hex" maxlength="7" value="#B53434" spellcheck="false" />',
+        '  </div>',
+        '  <div class="urppp-pop-actions">',
+        '    <button type="button" class="urppp-pop-btn primary" id="urppp-nav-apply">应用</button>',
+        '    <button type="button" class="urppp-pop-btn" id="urppp-nav-save-preset">保存预设</button>',
+        '  </div>',
+        '  <div class="urppp-pop-title">已保存预设</div>',
+        '  <div class="urppp-pop-presets" id="urppp-nav-presets"></div>',
+        '</div>'
+      ].join('');
+
+      // 插到 brand 后面（同一 header 内）
+      if (brand.parentElement) {
+        if (brand.nextSibling) brand.parentElement.insertBefore(wrap, brand.nextSibling);
+        else brand.parentElement.appendChild(wrap);
+      } else {
+        brand.appendChild(wrap);
+      }
+
+      wrap.querySelectorAll('.urppp-nav-dot[data-theme]').forEach((dot) => {
+        dot.addEventListener('click', () => {
+          applyTheme(dot.dataset.theme);
+          // scu-red 若有自定义强调色则套上
+          if (dot.dataset.theme === 'scu-red' && getAccent()) applyAccent(getAccent());
+          if (dot.dataset.theme === 'default' && getAccent()) applyAccent(getAccent());
+          syncNavbarThemeUI();
+        });
+      });
+
+      const pop = wrap.querySelector('#urppp-nav-theme-pop');
+      const editBtn = wrap.querySelector('#urppp-nav-theme-edit');
+      const colorInput = wrap.querySelector('#urppp-nav-color');
+      const hexInput = wrap.querySelector('#urppp-nav-hex');
+      const applyBtn = wrap.querySelector('#urppp-nav-apply');
+      const saveBtn = wrap.querySelector('#urppp-nav-save-preset');
+
+      const openPop = () => {
+        const acc = getAccent() || '#B53434';
+        if (colorInput) colorInput.value = acc;
+        if (hexInput) hexInput.value = acc;
+        renderNavbarAccentPresets();
+        pop.classList.add('open');
+      };
+      const closePop = () => pop.classList.remove('open');
+
+      editBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (pop.classList.contains('open')) closePop();
+        else openPop();
+      });
+      pop.addEventListener('click', (e) => e.stopPropagation());
+      document.addEventListener('click', (e) => {
+        if (!wrap.contains(e.target)) closePop();
+      });
+
+      const normalizeHex = (v) => {
+        let s = String(v || '').trim();
+        if (!s) return '';
+        if (s[0] !== '#') s = '#' + s;
+        if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toUpperCase();
+        return '';
+      };
+
+      colorInput.addEventListener('input', () => {
+        hexInput.value = colorInput.value.toUpperCase();
+      });
+      hexInput.addEventListener('change', () => {
+        const h = normalizeHex(hexInput.value);
+        if (h) {
+          hexInput.value = h;
+          colorInput.value = h;
+        }
+      });
+      applyBtn.addEventListener('click', () => {
+        const h = normalizeHex(hexInput.value) || colorInput.value;
+        if (!h) return;
+        // 编辑第三个主题色：应用到强调色，并切到 scu-red 展示
+        applyTheme('scu-red');
+        applyAccent(h);
+        syncNavbarThemeUI();
+        closePop();
+      });
+      saveBtn.addEventListener('click', () => {
+        const h = normalizeHex(hexInput.value) || colorInput.value;
+        if (!h) return;
+        applyAccent(h);
+        saveAccentPreset(h);
+        renderNavbarAccentPresets();
+        syncNavbarThemeUI();
+      });
+
+      syncNavbarThemeUI();
+    } catch (err) {
+      console.warn('[URP++] navbar theme switch inject failed', err);
+    }
+  }
   function rebuildNavbar() {
     const navbar = document.getElementById('navbar');
     const aceNav = navbar?.querySelector('.ace-nav');
+    // 主题切换不依赖 ace-nav，尽早注入
+    try { injectNavbarThemeSwitch(); } catch (_) {}
     if (!aceNav) return;
 
     function force(el, styles) {
@@ -9584,7 +9991,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.1',
+    version: '0.5.2',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
