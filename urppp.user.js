@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.24
+// @version      0.4.25
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.24';
+          content:'URP++ v0.4.25';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1092,14 +1092,29 @@
             row.style.setProperty('column-gap', '16px', 'important');
             row.style.setProperty('row-gap', '12px', 'important');
             row.style.setProperty('width', '100%', 'important');
+            row.style.setProperty('max-width', '100%', 'important');
             row.querySelectorAll('.urppp-query-pair').forEach((pair) => {
               pair.style.setProperty('display', 'flex', 'important');
               pair.style.setProperty('width', '100%', 'important');
               pair.style.setProperty('min-width', '0', 'important');
-              pair.style.setProperty('max-width', 'none', 'important');
+              pair.style.setProperty('max-width', '100%', 'important');
               pair.style.removeProperty('flex');
               const value = pair.querySelector('.profile-info-value');
-              if (value) value.style.setProperty('margin-left', '0', 'important');
+              if (value) {
+                value.style.setProperty('margin-left', '0', 'important');
+                value.style.setProperty('flex', '1 1 auto', 'important');
+                value.style.setProperty('min-width', '0', 'important');
+                value.style.setProperty('width', 'auto', 'important');
+              }
+              pair.querySelectorAll('.chosen-container, input, select.value_element').forEach((el) => {
+                if (el.tagName === 'SELECT' && (el.classList.contains('chosen') || el.nextElementSibling?.classList?.contains('chosen-container'))) {
+                  el.style.setProperty('display', 'none', 'important');
+                } else if (!el.classList.contains('urppp-chosen-hidden')) {
+                  el.style.setProperty('width', '100%', 'important');
+                  el.style.setProperty('max-width', 'none', 'important');
+                  el.style.setProperty('min-width', '0', 'important');
+                }
+              });
             });
             return;
           }
@@ -1181,9 +1196,22 @@
               value.style.setProperty('flex', '1 1 auto', 'important');
               value.style.setProperty('width', 'auto', 'important');
               value.style.setProperty('min-width', '0', 'important');
+              value.style.setProperty('max-width', 'none', 'important');
               value.style.setProperty('background', 'transparent', 'important');
               value.style.setProperty('border', 'none', 'important');
               value.style.setProperty('padding', '0', 'important');
+              value.querySelectorAll('input, select, .chosen-container, .form-control').forEach((el) => {
+                if (el.tagName === 'SELECT') {
+                  // chosen 会接管；先统一 100%，后面再 hide
+                  el.style.setProperty('width', '100%', 'important');
+                  el.style.setProperty('max-width', 'none', 'important');
+                  el.style.setProperty('min-width', '0', 'important');
+                } else {
+                  el.style.setProperty('width', '100%', 'important');
+                  el.style.setProperty('max-width', 'none', 'important');
+                  el.style.setProperty('min-width', '0', 'important');
+                }
+              });
             }
           });
           // Chosen 生成后隐藏原生 select
@@ -1197,6 +1225,15 @@
             if (sel) {
               sel.style.setProperty('display', 'none', 'important');
               sel.classList.add('urppp-chosen-hidden');
+            }
+            // 吃掉 commoncss 的 150px 固定宽，铺满 pair
+            c.style.setProperty('width', '100%', 'important');
+            c.style.setProperty('min-width', '0', 'important');
+            c.style.setProperty('max-width', 'none', 'important');
+            const single = c.querySelector('.chosen-single');
+            if (single) {
+              single.style.setProperty('width', '100%', 'important');
+              single.style.setProperty('max-width', 'none', 'important');
             }
           });
           row.dataset.urpppQueryDone = '1';
@@ -3585,9 +3622,11 @@
         border: 1px solid var(--border) !important;
         border-radius: var(--radius) !important;
         background: var(--surface) !important;
-        padding: 12px 12px 4px !important;
+        padding: 14px 16px 8px !important;
         box-sizing: border-box !important;
         overflow: visible !important;
+        width: 100% !important;
+        max-width: 100% !important;
       }
       .page-content .profile-info-row.urppp-query-row,
       .profile-user-info.urppp-query-form .profile-info-row.urppp-query-row,
@@ -3635,13 +3674,14 @@
         display: flex !important;
         align-items: center !important;
         justify-content: flex-end !important;
+        flex: 0 0 84px !important;
         width: 84px !important;
         min-width: 84px !important;
-        max-width: 96px !important;
+        max-width: 84px !important;
         height: 36px !important;
         min-height: 36px !important;
         margin: 0 !important;
-        padding: 0 4px 0 0 !important;
+        padding: 0 8px 0 0 !important;
         background: transparent !important;
         border: none !important;
         border-right: none !important;
@@ -3661,7 +3701,7 @@
         align-items: center !important;
         flex: 1 1 auto !important;
         width: auto !important;
-        min-width: 150px !important;
+        min-width: 0 !important;
         max-width: none !important;
         height: 36px !important;
         min-height: 36px !important;
@@ -3682,8 +3722,8 @@
         display: block !important;
         float: none !important;
         width: 100% !important;
-        min-width: 150px !important;
-        max-width: 220px !important;
+        min-width: 0 !important;
+        max-width: none !important;
         height: 34px !important;
         min-height: 34px !important;
         margin: 0 !important;
@@ -3692,8 +3732,8 @@
       .urppp-query-pair .chosen-container,
       .urppp-query-pair .chosen-container-single {
         width: 100% !important;
-        min-width: 150px !important;
-        max-width: 220px !important;
+        min-width: 0 !important;
+        max-width: none !important;
         top: 0 !important;
         height: 34px !important;
         position: relative !important;
@@ -3758,6 +3798,24 @@
         .profile-info-row.urppp-query-row {
           grid-template-columns: minmax(0, 1fr) !important;
         }
+      }
+
+      /* 查询 pair：最后覆盖 commoncss / 旧规则的 150px 固定宽 */
+      .profile-user-info.urppp-query-form .urppp-query-pair .chosen-container,
+      .profile-user-info.urppp-query-form .urppp-query-pair .chosen-container-single,
+      .profile-user-info.urppp-query-form .urppp-query-pair .value_element,
+      .profile-user-info.urppp-query-form .urppp-query-pair input,
+      .profile-user-info.urppp-query-form .urppp-query-pair select,
+      .profile-user-info.urppp-query-form .urppp-query-pair .form-control,
+      .urppp-query-pair .chosen-container,
+      .urppp-query-pair .chosen-container-single {
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+      }
+      .profile-user-info.urppp-query-form .urppp-query-pair .chosen-single {
+        width: 100% !important;
+        max-width: none !important;
       }
 
       /* 通用控件高度（学籍等单对结构） */
@@ -5129,7 +5187,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.24');
+    console.log('[URP++] style applied v0.4.25');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5749,7 +5807,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.24',
+    version: '0.4.25',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
