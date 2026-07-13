@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.82
+// @version      0.4.83
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.82';
+          content:'URP++ v0.4.83';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -2711,19 +2711,53 @@
         const el = document.getElementById(id);
         if (!el || !panel.contains(el)) return;
         if (el.parentElement !== right) right.appendChild(el);
-        // 可见性交给站点 show/hide；宽度强制
         el.style.setProperty('width', '100%', 'important');
         el.style.setProperty('max-width', '100%', 'important');
         el.style.setProperty('float', 'none', 'important');
         el.style.setProperty('margin', '0', 'important');
         el.style.setProperty('padding', '0', 'important');
         el.style.setProperty('box-sizing', 'border-box', 'important');
-        // 不要把 display:none 的强行 block；站点控制显示
         if (el.style.display !== 'none') {
           const cs = getComputedStyle(el);
           if (cs.display !== 'none') el.style.setProperty('display', 'block', 'important');
         }
       });
+
+      // 首次打开：#fajh 常异步填充，先预留右栏占位，避免“只有树再闪出详情”
+      const fajh = document.getElementById('fajh');
+      if (fajh && panel.contains(fajh)) {
+        if (fajh.parentElement !== right) right.appendChild(fajh);
+        // 若还是空壳，放一个轻量骨架，等 fillFajh 覆盖
+        const empty = !fajh.innerHTML || !fajh.innerHTML.trim();
+        if (empty && !fajh.querySelector('.urppp-drawer-skeleton, .profile-user-info, .widget-box')) {
+          fajh.innerHTML = [
+            "<div class='widget-box transparent urppp-drawer-skeleton'>",
+            "  <div class='widget-header widget-header-small'>",
+            "    <h4 class='widget-title smaller grey'>方案计划信息</h4>",
+            "  </div>",
+            "</div>",
+            "<div class='self profile-user-info profile-user-info-striped urppp-drawer-skeleton-card'>",
+            "  <div class='profile-info-row'><div class='profile-info-name'>加载中</div><div class='profile-info-value'>正在获取方案信息…</div></div>",
+            "</div>"
+          ].join('');
+          fajh.style.setProperty('display', 'block', 'important');
+          fajh.dataset.urpppSkeleton = '1';
+        }
+        // 站点 fillFajh 写入后清 skeleton 标记
+        if (fajh.dataset.urpppSkeleton === '1' && fajh.querySelector('.profile-info-value') && /方案名称|计划名称|年级|院系/.test(fajh.textContent || '')) {
+          delete fajh.dataset.urpppSkeleton;
+          fajh.querySelectorAll('.urppp-drawer-skeleton, .urppp-drawer-skeleton-card').forEach((n) => n.remove());
+        }
+        if (fajh.innerHTML && fajh.innerHTML.trim() && fajh.style.display === 'none') {
+          // 有内容却被 none：首开闪烁场景，直接显示
+          if (fajh.dataset.urpppSkeleton === '1' || fajh.querySelector('.profile-user-info')) {
+            fajh.style.setProperty('display', 'block', 'important');
+          }
+        }
+      }
+      // 右栏始终占位，避免左树先独大再缩回去
+      right.style.setProperty('min-height', '240px', 'important');
+      left.style.setProperty('min-height', '240px', 'important');
 
       // 树列样式
       if (treeCol) {
@@ -2776,16 +2810,35 @@
     if (window.__urpppCurriculumDrawerBound) return;
     window.__urpppCurriculumDrawerBound = true;
     const run = () => beautifyCurriculumDrawer();
-    ;[0, 300, 800, 1600].forEach((ms) => setTimeout(run, ms));
-    const obs = new MutationObserver(() => {
+    ;[0, 50, 150, 350, 800, 1600].forEach((ms) => setTimeout(run, ms));
+    const obs = new MutationObserver((muts) => {
+      // 面板宽度变化或 fajh 内容写入时立刻归位
+      const hot = muts.some((m) => {
+        if (m.type === 'childList') return true;
+        if (m.type === 'attributes' && m.target && (m.target.id === 'curriculumInfo-divcon2' || m.target.id === 'fajh')) return true;
+        return false;
+      });
+      if (!hot) return;
       clearTimeout(window.__urpppCurriculumDrawerTimer);
-      window.__urpppCurriculumDrawerTimer = setTimeout(run, 120);
+      window.__urpppCurriculumDrawerTimer = setTimeout(() => requestAnimationFrame(run), 16);
     });
     ['curriculumInfo-divcon', 'curriculumInfo-divcon1', 'curriculumInfo-divcon2'].forEach((id) => {
       const el = document.getElementById(id);
       if (el) obs.observe(el, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
     });
-    document.addEventListener('click', () => setTimeout(run, 200), true);
+    // 点击“培养方案/与我相关”后尽快布局，减少首开只见树
+    document.addEventListener('click', (e) => {
+      const t = e.target && e.target.closest ? e.target.closest('a,button,span,div') : null;
+      const txt = ((t && t.textContent) || '').replace(/\s+/g, '');
+      if (/培养方案|与我相关|方案计划|自动化培养/.test(txt) || (t && t.closest && t.closest('#curriculumInfo-divcon2'))) {
+        setTimeout(run, 0);
+        setTimeout(run, 50);
+        setTimeout(run, 150);
+        setTimeout(run, 400);
+      } else {
+        setTimeout(run, 200);
+      }
+    }, true);
   }
   function beautifyNoticeTables() {
     try {
@@ -7399,20 +7452,71 @@
         padding: 10px 14px !important;
         min-height: 0 !important;
       }
-      #curriculumInfo-divcon2 .widget-box.transparent .widget-header,
-      #curriculumInfo-divcon2 #fajh .widget-box.transparent .widget-header {
+      #curriculumInfo-divcon2 .widget-box.transparent,
+      #curriculumInfo-divcon2 #fajh .widget-box.transparent,
+      #curriculumInfo-divcon2 #xnxq .widget-box.transparent,
+      #curriculumInfo-divcon2 #kz .widget-box.transparent,
+      #curriculumInfo-divcon2 #kc .widget-box.transparent,
+      #curriculumInfo-divcon2 #kcfa .widget-box.transparent {
         border: none !important;
-        padding: 0 0 8px !important;
         background: transparent !important;
+        overflow: visible !important;
+        margin: 0 0 8px !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+      }
+      #curriculumInfo-divcon2 .widget-box.transparent .widget-header,
+      #curriculumInfo-divcon2 #fajh .widget-box.transparent .widget-header,
+      #curriculumInfo-divcon2 #xnxq .widget-box.transparent .widget-header,
+      #curriculumInfo-divcon2 #kz .widget-box.transparent .widget-header,
+      #curriculumInfo-divcon2 #kc .widget-box.transparent .widget-header,
+      #curriculumInfo-divcon2 #kcfa .widget-box.transparent .widget-header {
+        border: none !important;
+        border-bottom: none !important;
+        padding: 0 !important;
+        margin: 0 0 8px !important;
+        min-height: 0 !important;
+        background: transparent !important;
+        display: flex !important;
+        align-items: center !important;
       }
       #curriculumInfo-divcon2 .widget-title,
-      #curriculumInfo-divcon2 h4.widget-title {
+      #curriculumInfo-divcon2 h4.widget-title,
+      #curriculumInfo-divcon2 h4.widget-title.smaller,
+      #curriculumInfo-divcon2 h4.widget-title.grey {
         margin: 0 !important;
         padding: 0 !important;
         color: var(--text) !important;
         font-size: 14px !important;
         font-weight: 650 !important;
         line-height: 1.35 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        float: none !important;
+        width: auto !important;
+        max-width: 100% !important;
+        background: transparent !important;
+        border: none !important;
+      }
+      #curriculumInfo-divcon2 .widget-box.transparent .widget-title::before,
+      #curriculumInfo-divcon2 #fajh .widget-title::before,
+      #curriculumInfo-divcon2 #xnxq .widget-title::before,
+      #curriculumInfo-divcon2 #kz .widget-title::before,
+      #curriculumInfo-divcon2 #kc .widget-title::before,
+      #curriculumInfo-divcon2 #kcfa .widget-title::before {
+        content: '' !important;
+        display: inline-block !important;
+        width: 3px !important;
+        height: 14px !important;
+        border-radius: 2px !important;
+        background: var(--primary) !important;
+        flex: 0 0 auto !important;
+      }
+      /* 左树标题栏若为空，压低高度 */
+      #curriculumInfo-divcon2 .urppp-drawer-left .widget-header:has(h4:empty),
+      #curriculumInfo-divcon2 .urppp-drawer-left .widget-header:has(.widget-title:empty) {
+        display: none !important;
       }
       #curriculumInfo-divcon2 .widget-body {
         background: var(--surface) !important;
@@ -8206,7 +8310,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.82');
+    console.log('[URP++] style applied v0.4.83');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -8829,7 +8933,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.82',
+    version: '0.4.83',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
