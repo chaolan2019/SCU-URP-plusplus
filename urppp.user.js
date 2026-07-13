@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.12
+// @version      0.5.13
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -635,6 +635,7 @@
     } catch (_) {}
     try { syncNavbarThemeUI(); } catch (_) {}
     try { scrubNoticeInlineBg(); } catch (_) {}
+    try { pinHomeNoticeItems(); } catch (_) {}
     const boot = document.getElementById('urppp-boot-loader');
     if (boot) boot.style.fontFamily = t.font;
   }
@@ -690,7 +691,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.12';
+          content:'URP++ v0.5.13';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -9491,14 +9492,22 @@
       #urppp-dashboard .widget-header { display: none; }
       #urppp-dashboard .widget-body { background: transparent; border: none; padding: 0; }
       #urppp-dashboard .tabContent { counter-reset: urppp-notice; }
-      #urppp-dashboard .tabContent h3 {
-        position: relative;
+      /* 站点会给 h3.click-item 写 background-color:white；必须钉死透明 */
+      #urppp-dashboard .tabContent h3,
+      #urppp-dashboard .tabContent h3.click-item,
+      #urppp-dashboard #notices h3,
+      #urppp-dashboard #notices h3.click-item,
+      #notices h3.click-item,
+      .tabContent h3.click-item {
+        position: relative !important;
         margin: 0 0 6px !important;
         padding-left: 32px !important;
         height: auto !important;
         min-height: 0 !important;
         display: flex !important;
         align-items: center !important;
+        background: transparent !important;
+        background-color: transparent !important;
       }
       #urppp-dashboard .tabContent h3:last-child { margin-bottom: 0 !important; }
       #urppp-dashboard .tabContent h3::before {
@@ -9520,7 +9529,10 @@
         justify-content: center;
         box-shadow: 0 2px 6px var(--ring);
       }
-      #urppp-dashboard .tabContent h3 a {
+      #urppp-dashboard .tabContent h3 a,
+      #urppp-dashboard #notices h3 a,
+      #notices h3 a,
+      #notices h3.click-item a {
         color: var(--text) !important;
         font-weight: 500 !important;
         font-size: 13.5px !important;
@@ -9531,13 +9543,33 @@
         padding: 8px 10px !important;
         border-radius: var(--radius-sm) !important;
         background: var(--input-bg) !important;
+        background-color: var(--input-bg) !important;
         transition: background .2s;
         line-height: 1.35 !important;
         min-height: 0 !important;
         height: auto !important;
         max-height: none !important;
       }
-      #urppp-dashboard .tabContent h3 a:hover { background: var(--border) !important; }
+      #urppp-dashboard .tabContent h3 a:hover,
+      #urppp-dashboard #notices h3 a:hover,
+      #notices h3 a:hover,
+      #notices h3.click-item a:hover {
+        background: var(--border) !important;
+        background-color: var(--border) !important;
+      }
+      /* 暗色：列表行更贴 surface，避免发灰发白 */
+      html.urppp-theme-dark #urppp-dashboard .tabContent h3 a,
+      html.urppp-theme-dark #notices h3 a,
+      html.urppp-theme-dark #notices h3.click-item a {
+        background: var(--input-bg) !important;
+        background-color: var(--input-bg) !important;
+        color: var(--text) !important;
+      }
+      html.urppp-theme-dark #urppp-dashboard .tabContent h3 a:hover,
+      html.urppp-theme-dark #notices h3 a:hover {
+        background: color-mix(in srgb, var(--primary) 16%, var(--input-bg)) !important;
+        background-color: color-mix(in srgb, var(--primary) 16%, var(--input-bg)) !important;
+      }
       #urppp-dashboard .tabContent h3 label { font-weight: inherit !important; color: inherit !important; margin: 0 !important; }
       #urppp-dashboard .tabContent h3 a > span { display: flex !important; justify-content: space-between !important; align-items: center !important; width: 100% !important; }
       #urppp-dashboard .tabContent h3 .hide_note { flex: 1 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; margin-right: 10px !important; }
@@ -9733,7 +9765,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.12');
+    console.log('[URP++] style applied v0.5.13');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -10369,6 +10401,121 @@
   // 首页仪表板重构
   // ============================================================
 
+
+  function pinHomeNoticeItems(root) {
+    try {
+      const scope = root || document;
+      const nodes = scope.querySelectorAll
+        ? scope.querySelectorAll('#notices h3, #notices h3.click-item, #urppp-dashboard .tabContent h3, #urppp-dashboard .tabContent h3.click-item')
+        : [];
+      const list = nodes.length ? Array.from(nodes) : (scope.matches && /H3/i.test(scope.tagName) ? [scope] : []);
+      list.forEach((h3) => {
+        if (!h3 || !h3.style) return;
+        // 站点 mouseout 会写 white；直接 important 钉透明
+        h3.style.setProperty('background', 'transparent', 'important');
+        h3.style.setProperty('background-color', 'transparent', 'important');
+        h3.classList.remove('hover');
+        const a = h3.querySelector('a');
+        if (a) {
+          const bg = getComputedStyle(document.documentElement).getPropertyValue('--input-bg').trim() || '#1C2330';
+          // 不强制写 a 的具体色，清掉可能的 white 即可，交给 CSS
+          const abg = (a.style.backgroundColor || a.style.background || '').toLowerCase();
+          if (/white|#fff|rgb\(\s*255/.test(abg)) {
+            a.style.removeProperty('background');
+            a.style.removeProperty('background-color');
+          }
+        }
+      });
+    } catch (_) {}
+  }
+
+  function bindHomeNoticeScrub() {
+    if (window.__urpppHomeNoticeScrub) return;
+    window.__urpppHomeNoticeScrub = true;
+    const rePin = (e) => {
+      const h3 = e.target && e.target.closest
+        ? e.target.closest('#notices h3, #urppp-dashboard .tabContent h3, h3.click-item')
+        : null;
+      if (!h3) return;
+      if (!h3.closest || !(h3.closest('#notices') || h3.closest('#urppp-dashboard'))) return;
+      pinHomeNoticeItems(h3);
+      requestAnimationFrame(() => pinHomeNoticeItems(h3));
+      setTimeout(() => pinHomeNoticeItems(h3), 0);
+      setTimeout(() => pinHomeNoticeItems(h3), 30);
+      setTimeout(() => pinHomeNoticeItems(h3), 100);
+    };
+    document.addEventListener('mouseout', rePin, true);
+    document.addEventListener('mouseover', rePin, true);
+    document.addEventListener('mouseleave', rePin, true);
+
+    // 拦截常见 jQuery/原生写白底
+    try {
+      const $ = (typeof unsafeWindow !== 'undefined' && unsafeWindow.jQuery) ? unsafeWindow.jQuery : window.jQuery;
+      if ($ && $.fn && !window.__urpppHomeNoticeJqPatch) {
+        window.__urpppHomeNoticeJqPatch = true;
+        const oldCss = $.fn.css;
+        $.fn.css = function (name, value) {
+          try {
+            if (this && this.length) {
+              const el = this[0];
+              if (el && el.closest && el.matches && (el.matches('h3.click-item') || el.matches('#notices h3') || el.closest('#notices h3'))) {
+                const isBg =
+                  (typeof name === 'string' && /background/i.test(name)) ||
+                  (name && typeof name === 'object' && Object.keys(name).some((k) => /background/i.test(k)));
+                if (isBg) {
+                  // 允许写 transparent，拦截 white
+                  const val = typeof name === 'string' ? value : (name.backgroundColor || name.background || name['background-color']);
+                  if (val != null && /white|#fff|#ffffff|rgb\(\s*255\s*,\s*255\s*,\s*255/i.test(String(val))) {
+                    if (typeof name === 'string') return oldCss.call(this, name, 'transparent');
+                    const next = Object.assign({}, name);
+                    Object.keys(next).forEach((k) => {
+                      if (/background/i.test(k)) next[k] = 'transparent';
+                    });
+                    return oldCss.call(this, next);
+                  }
+                }
+              }
+            }
+          } catch (_) {}
+          return oldCss.apply(this, arguments);
+        };
+      }
+    } catch (_) {}
+
+    if (!window.__urpppHomeNoticeObs) {
+      window.__urpppHomeNoticeObs = new MutationObserver((muts) => {
+        let need = false;
+        for (const m of muts) {
+          const el = m.target;
+          if (!el || el.nodeType !== 1) continue;
+          if (el.id === 'notices' || (el.closest && el.closest('#notices'))) {
+            need = true;
+            break;
+          }
+          if (el.matches && (el.matches('h3.click-item') || el.matches('#notices h3'))) {
+            need = true;
+            break;
+          }
+        }
+        if (!need) return;
+        pinHomeNoticeItems();
+      });
+      const startObs = () => {
+        const host = document.getElementById('notices') || document.getElementById('urppp-dashboard') || document.body;
+        if (!host) return;
+        window.__urpppHomeNoticeObs.observe(host, {
+          subtree: true,
+          childList: true,
+          attributes: true,
+          attributeFilter: ['style', 'class'],
+        });
+        pinHomeNoticeItems();
+      };
+      startObs();
+      setTimeout(startObs, 500);
+      setTimeout(startObs, 1500);
+    }
+  }
   function rebuildDashboard() {
     if (document.getElementById('urppp-dashboard')) return;
 
@@ -10460,6 +10607,9 @@
     wrapWidget(widgets[5], left, '我的日程安排');
     wrapWidget(widgets[0], right, '通知公告');
     wrapWidget(widgets[1], right, '我的待办任务');
+    try { bindHomeNoticeScrub(); pinHomeNoticeItems(); } catch (_) {}
+    setTimeout(() => { try { bindHomeNoticeScrub(); pinHomeNoticeItems(); } catch (_) {} }, 300);
+    setTimeout(() => { try { pinHomeNoticeItems(); } catch (_) {} }, 1000);
     wrapWidget(widgets[2], right, '可申请业务');
     wrapWidget(widgets[3], right, '常用下载');
 
@@ -10608,7 +10758,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.12',
+    version: '0.5.13',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
