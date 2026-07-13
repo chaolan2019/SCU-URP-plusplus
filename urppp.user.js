@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.41
+// @version      0.5.42
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.41';
+          content:'URP++ v0.5.42';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1156,6 +1156,8 @@
     try {
       document.querySelectorAll('.profile-user-info, .profile-user-info-striped').forEach((root) => {
         if (root.classList.contains('setLabelWidth')) return;
+        if (root.classList.contains('urppp-query-form')) return;
+        if (root.querySelector('.urppp-query-pair')) return;
         const rows = Array.from(root.querySelectorAll(':scope > .profile-info-row, .profile-info-row'));
         if (!rows.length) return;
         const multi = rows.some((row) =>
@@ -1992,7 +1994,8 @@
 
         root.querySelectorAll('.profile-info-row').forEach((row) => {
           if (row.dataset.urpppQueryDone === '1') {
-            applyRowLayout(row);
+            // 已打包：只校正列数，不要拆重建（防闪烁）
+            if (row.querySelector(':scope > .urppp-query-pair')) applyRowLayout(row);
             return;
           }
           const kids = Array.from(row.children).filter((el) =>
@@ -6264,6 +6267,64 @@
         background: transparent !important;
         border: none !important;
       }
+      /*
+       * 查询表 .self 多字段行：在 JS 包 pair 之前就按横排显示，避免
+       * 先被下面 140px 信息表网格打成竖排（刷新闪 竖→横→竖）
+       * 判定：同一行内至少 2 个 .profile-info-name
+       */
+      .page-content .profile-user-info.self:not(.setLabelWidth) > .profile-info-row:has(> .profile-info-name ~ .profile-info-name),
+      .page-content .profile-user-info.self:not(.setLabelWidth) .profile-info-row:has(> .profile-info-name ~ .profile-info-name):not(.urppp-dual-pair),
+      #page-content-template .profile-user-info.self:not(.setLabelWidth) > .profile-info-row:has(> .profile-info-name ~ .profile-info-name) {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        column-gap: 14px !important;
+        row-gap: 10px !important;
+        border-bottom: none !important;
+        min-height: 0 !important;
+        background: transparent !important;
+        grid-template-columns: none !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        float: none !important;
+      }
+      .page-content .profile-user-info.self:not(.setLabelWidth) > .profile-info-row:has(> .profile-info-name ~ .profile-info-name) > .profile-info-name,
+      .page-content .profile-user-info.self:not(.setLabelWidth) .profile-info-row:has(> .profile-info-name ~ .profile-info-name) > .profile-info-name {
+        float: none !important;
+        flex: 0 0 84px !important;
+        width: 84px !important;
+        min-width: 84px !important;
+        max-width: 96px !important;
+        margin: 0 !important;
+        padding: 0 8px 0 0 !important;
+        background: transparent !important;
+        border: none !important;
+        border-right: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        color: var(--text-secondary) !important;
+        box-sizing: border-box !important;
+      }
+      .page-content .profile-user-info.self:not(.setLabelWidth) > .profile-info-row:has(> .profile-info-name ~ .profile-info-name) > .profile-info-value,
+      .page-content .profile-user-info.self:not(.setLabelWidth) .profile-info-row:has(> .profile-info-name ~ .profile-info-name) > .profile-info-value {
+        float: none !important;
+        flex: 1 1 calc(25% - 110px) !important;
+        width: auto !important;
+        min-width: 120px !important;
+        max-width: calc(25% - 24px) !important;
+        margin: 0 !important;
+        margin-left: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        min-height: 34px !important;
+        display: flex !important;
+        align-items: center !important;
+        box-sizing: border-box !important;
+      }
+      /* 已包 pair 后仍用既有 query-row 规则，上面 flex 只作用于未包 pair 的瞬间 */
+
       .profile-info-row:not(.urppp-query-row):not(.urppp-dual-pair) {
         display: grid !important;
         grid-template-columns: 140px minmax(0, 1fr) !important;
@@ -10642,17 +10703,16 @@
     setTimeout(beautifyFreeClassroomList, 1000);
     scheduleBeautifyPagebar();
     beautifyPagebar();
+    // 查询表：首屏立刻布局（CSS 已预横排）；延迟只补 Chosen / 漏网行，次数收敛防闪
     scheduleEnsureQueryChosen();
     ensureQueryChosen();
     beautifyQueryForms();
     patchChosenDropdownAlign();
-    setTimeout(beautifyQueryForms, 100);
-    setTimeout(beautifyQueryForms, 300);
-    setTimeout(beautifyQueryForms, 800);
-    setTimeout(beautifyQueryForms, 1500);
-    setTimeout(fixSinglePairProfileForms, 100);
-    setTimeout(fixSinglePairProfileForms, 400);
-    setTimeout(fixSinglePairProfileForms, 900);
+    setTimeout(() => { ensureQueryChosen(); beautifyQueryForms(); }, 200);
+    setTimeout(() => { ensureQueryChosen(); beautifyQueryForms(); }, 800);
+    // 单对信息表与查询表互斥；略延后，避免抢在查询打包前拆行
+    setTimeout(fixSinglePairProfileForms, 350);
+    setTimeout(fixSinglePairProfileForms, 1000);
     beautifyPlanTree();
     setTimeout(() => beautifyPlanTree(), 400);
     if (!window.__urpppPlanTreeObs) {
@@ -10708,7 +10768,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.41');
+    console.log('[URP++] style applied v0.5.42');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11689,7 +11749,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.41',
+    version: '0.5.42',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
