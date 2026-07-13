@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.13
+// @version      0.5.14
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -635,7 +635,6 @@
     } catch (_) {}
     try { syncNavbarThemeUI(); } catch (_) {}
     try { scrubNoticeInlineBg(); } catch (_) {}
-    try { pinHomeNoticeItems(); } catch (_) {}
     const boot = document.getElementById('urppp-boot-loader');
     if (boot) boot.style.fontFamily = t.font;
   }
@@ -691,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.13';
+          content:'URP++ v0.5.14';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3098,54 +3097,12 @@
   function bindNoticeHoverScrub() {
     if (window.__urpppNoticeHoverScrub) return;
     window.__urpppNoticeHoverScrub = true;
-
-    const rePin = (e) => {
+    // 轻量：仅 leave 后清一次，不做 document Observer / mousemove（会卡死页面）
+    document.addEventListener('mouseout', (e) => {
       const tr = e.target && e.target.closest ? e.target.closest('table.urppp-notice-table tr.urppp-notice-row') : null;
       if (!tr) return;
-      // ACE 常在 leave 后一帧写回白底，多拍几次
-      pinNoticeRowSurface(tr);
       requestAnimationFrame(() => pinNoticeRowSurface(tr));
-      setTimeout(() => pinNoticeRowSurface(tr), 0);
-      setTimeout(() => pinNoticeRowSurface(tr), 16);
-      setTimeout(() => pinNoticeRowSurface(tr), 50);
-      setTimeout(() => pinNoticeRowSurface(tr), 120);
-    };
-    document.addEventListener('mouseout', rePin, true);
-    document.addEventListener('mouseleave', rePin, true);
-    document.addEventListener('mouseover', rePin, true);
-    document.addEventListener('mousemove', (e) => {
-      // 低频：只在公告表内移动时纠偏
-      const tr = e.target && e.target.closest ? e.target.closest('table.urppp-notice-table tr.urppp-notice-row') : null;
-      if (!tr) return;
-      if (tr.__urpppPinMove && Date.now() - tr.__urpppPinMove < 80) return;
-      tr.__urpppPinMove = Date.now();
-      const bg = (tr.style.backgroundColor || getComputedStyle(tr).backgroundColor || '').toLowerCase();
-      if (/rgb\(\s*255\s*,\s*255\s*,\s*255\s*\)|#fff|white|rgb\(\s*245|rgb\(\s*249|f5f5f5|f9f9f9/.test(bg)) {
-        pinNoticeRowSurface(tr);
-      }
     }, true);
-
-    // 属性观察：谁写 style 都立刻钉回
-    if (!window.__urpppNoticeStyleObs) {
-      window.__urpppNoticeStyleObs = new MutationObserver((muts) => {
-        muts.forEach((m) => {
-          const el = m.target;
-          if (!el || el.nodeType !== 1) return;
-          const tr = el.closest ? el.closest('tr.urppp-notice-row') : null;
-          if (!tr) return;
-          // 避免自己 pin 触发死循环：短防抖
-          if (tr.__urpppPinning) return;
-          tr.__urpppPinning = true;
-          pinNoticeRowSurface(tr);
-          requestAnimationFrame(() => { tr.__urpppPinning = false; });
-        });
-      });
-      window.__urpppNoticeStyleObs.observe(document.documentElement, {
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['style', 'class'],
-      });
-    }
   }
   function stripMistakenNoticeTable(table) {
     if (!table) return;
@@ -9492,13 +9449,17 @@
       #urppp-dashboard .widget-header { display: none; }
       #urppp-dashboard .widget-body { background: transparent; border: none; padding: 0; }
       #urppp-dashboard .tabContent { counter-reset: urppp-notice; }
-      /* 站点会给 h3.click-item 写 background-color:white；必须钉死透明 */
+      /* 站点会给 h3.click-item 写 inline white；CSS !important 可压过非 !important 的 inline */
       #urppp-dashboard .tabContent h3,
       #urppp-dashboard .tabContent h3.click-item,
       #urppp-dashboard #notices h3,
       #urppp-dashboard #notices h3.click-item,
+      #notices h3,
       #notices h3.click-item,
-      .tabContent h3.click-item {
+      #notices h3[style],
+      #notices h3.click-item[style],
+      .tabContent h3.click-item,
+      .tabContent h3.click-item[style] {
         position: relative !important;
         margin: 0 0 6px !important;
         padding-left: 32px !important;
@@ -9508,6 +9469,7 @@
         align-items: center !important;
         background: transparent !important;
         background-color: transparent !important;
+        background-image: none !important;
       }
       #urppp-dashboard .tabContent h3:last-child { margin-bottom: 0 !important; }
       #urppp-dashboard .tabContent h3::before {
@@ -9765,7 +9727,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.13');
+    console.log('[URP++] style applied v0.5.14');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -10402,120 +10364,9 @@
   // ============================================================
 
 
-  function pinHomeNoticeItems(root) {
-    try {
-      const scope = root || document;
-      const nodes = scope.querySelectorAll
-        ? scope.querySelectorAll('#notices h3, #notices h3.click-item, #urppp-dashboard .tabContent h3, #urppp-dashboard .tabContent h3.click-item')
-        : [];
-      const list = nodes.length ? Array.from(nodes) : (scope.matches && /H3/i.test(scope.tagName) ? [scope] : []);
-      list.forEach((h3) => {
-        if (!h3 || !h3.style) return;
-        // 站点 mouseout 会写 white；直接 important 钉透明
-        h3.style.setProperty('background', 'transparent', 'important');
-        h3.style.setProperty('background-color', 'transparent', 'important');
-        h3.classList.remove('hover');
-        const a = h3.querySelector('a');
-        if (a) {
-          const bg = getComputedStyle(document.documentElement).getPropertyValue('--input-bg').trim() || '#1C2330';
-          // 不强制写 a 的具体色，清掉可能的 white 即可，交给 CSS
-          const abg = (a.style.backgroundColor || a.style.background || '').toLowerCase();
-          if (/white|#fff|rgb\(\s*255/.test(abg)) {
-            a.style.removeProperty('background');
-            a.style.removeProperty('background-color');
-          }
-        }
-      });
-    } catch (_) {}
-  }
-
-  function bindHomeNoticeScrub() {
-    if (window.__urpppHomeNoticeScrub) return;
-    window.__urpppHomeNoticeScrub = true;
-    const rePin = (e) => {
-      const h3 = e.target && e.target.closest
-        ? e.target.closest('#notices h3, #urppp-dashboard .tabContent h3, h3.click-item')
-        : null;
-      if (!h3) return;
-      if (!h3.closest || !(h3.closest('#notices') || h3.closest('#urppp-dashboard'))) return;
-      pinHomeNoticeItems(h3);
-      requestAnimationFrame(() => pinHomeNoticeItems(h3));
-      setTimeout(() => pinHomeNoticeItems(h3), 0);
-      setTimeout(() => pinHomeNoticeItems(h3), 30);
-      setTimeout(() => pinHomeNoticeItems(h3), 100);
-    };
-    document.addEventListener('mouseout', rePin, true);
-    document.addEventListener('mouseover', rePin, true);
-    document.addEventListener('mouseleave', rePin, true);
-
-    // 拦截常见 jQuery/原生写白底
-    try {
-      const $ = (typeof unsafeWindow !== 'undefined' && unsafeWindow.jQuery) ? unsafeWindow.jQuery : window.jQuery;
-      if ($ && $.fn && !window.__urpppHomeNoticeJqPatch) {
-        window.__urpppHomeNoticeJqPatch = true;
-        const oldCss = $.fn.css;
-        $.fn.css = function (name, value) {
-          try {
-            if (this && this.length) {
-              const el = this[0];
-              if (el && el.closest && el.matches && (el.matches('h3.click-item') || el.matches('#notices h3') || el.closest('#notices h3'))) {
-                const isBg =
-                  (typeof name === 'string' && /background/i.test(name)) ||
-                  (name && typeof name === 'object' && Object.keys(name).some((k) => /background/i.test(k)));
-                if (isBg) {
-                  // 允许写 transparent，拦截 white
-                  const val = typeof name === 'string' ? value : (name.backgroundColor || name.background || name['background-color']);
-                  if (val != null && /white|#fff|#ffffff|rgb\(\s*255\s*,\s*255\s*,\s*255/i.test(String(val))) {
-                    if (typeof name === 'string') return oldCss.call(this, name, 'transparent');
-                    const next = Object.assign({}, name);
-                    Object.keys(next).forEach((k) => {
-                      if (/background/i.test(k)) next[k] = 'transparent';
-                    });
-                    return oldCss.call(this, next);
-                  }
-                }
-              }
-            }
-          } catch (_) {}
-          return oldCss.apply(this, arguments);
-        };
-      }
-    } catch (_) {}
-
-    if (!window.__urpppHomeNoticeObs) {
-      window.__urpppHomeNoticeObs = new MutationObserver((muts) => {
-        let need = false;
-        for (const m of muts) {
-          const el = m.target;
-          if (!el || el.nodeType !== 1) continue;
-          if (el.id === 'notices' || (el.closest && el.closest('#notices'))) {
-            need = true;
-            break;
-          }
-          if (el.matches && (el.matches('h3.click-item') || el.matches('#notices h3'))) {
-            need = true;
-            break;
-          }
-        }
-        if (!need) return;
-        pinHomeNoticeItems();
-      });
-      const startObs = () => {
-        const host = document.getElementById('notices') || document.getElementById('urppp-dashboard') || document.body;
-        if (!host) return;
-        window.__urpppHomeNoticeObs.observe(host, {
-          subtree: true,
-          childList: true,
-          attributes: true,
-          attributeFilter: ['style', 'class'],
-        });
-        pinHomeNoticeItems();
-      };
-      startObs();
-      setTimeout(startObs, 500);
-      setTimeout(startObs, 1500);
-    }
-  }
+  // 首页通知：只用 CSS !important 压站点 inline white，禁止 Observer/jQuery 劫持（会卡死加载）
+  function pinHomeNoticeItems() { /* no-op: CSS handles it */ }
+  function bindHomeNoticeScrub() { /* no-op */ }
   function rebuildDashboard() {
     if (document.getElementById('urppp-dashboard')) return;
 
@@ -10607,9 +10458,6 @@
     wrapWidget(widgets[5], left, '我的日程安排');
     wrapWidget(widgets[0], right, '通知公告');
     wrapWidget(widgets[1], right, '我的待办任务');
-    try { bindHomeNoticeScrub(); pinHomeNoticeItems(); } catch (_) {}
-    setTimeout(() => { try { bindHomeNoticeScrub(); pinHomeNoticeItems(); } catch (_) {} }, 300);
-    setTimeout(() => { try { pinHomeNoticeItems(); } catch (_) {} }, 1000);
     wrapWidget(widgets[2], right, '可申请业务');
     wrapWidget(widgets[3], right, '常用下载');
 
@@ -10758,7 +10606,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.13',
+    version: '0.5.14',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
