@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.62
+// @version      0.4.63
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.62';
+          content:'URP++ v0.4.63';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1264,96 +1264,123 @@
           btn.style.setProperty('margin', '0 2px', 'important');
         });
 
-        // 页码 / 上一页下一页 / 当前页(常为 span)：整颗按钮，避免「外框大、中间细条」
+        // 页码控件：统一整颗 chip；上一页/下一页/… 与数字同一套，压死内层细条
+        const nukeInner = (el) => {
+          if (!el) return;
+          el.querySelectorAll('*').forEach((child) => {
+            child.style.cssText = [
+              'display:inline !important',
+              'position:static !important',
+              'float:none !important',
+              'width:auto !important',
+              'min-width:0 !important',
+              'max-width:none !important',
+              'height:auto !important',
+              'min-height:0 !important',
+              'max-height:none !important',
+              'line-height:inherit !important',
+              'padding:0 !important',
+              'margin:0 !important',
+              'border:0 !important',
+              'border-radius:0 !important',
+              'background:transparent !important',
+              'box-shadow:none !important',
+              'color:inherit !important',
+              'font-size:inherit !important',
+              'font-weight:inherit !important',
+              'text-decoration:none !important',
+              'vertical-align:baseline !important'
+            ].join(';');
+          });
+        };
         const stylePageChip = (el, active) => {
           if (!el || el.classList.contains('urppp-page-confirm')) return;
-          // 跳过纯文案节点（含「转到」「共」「条」等）
+          if (el.matches && el.matches('input, select, button.btn, .btn, label')) return;
           const raw = (el.textContent || '').replace(/\s+/g, '');
           if (!raw) return;
-          if (/转到|共|条|页|每页|当前|显示|记录/.test(raw) && !/^\d+$/.test(raw) && !/上一页|下一页|<|>|…|\.\.\./.test(raw)) {
+          // 跳过说明文字
+          if (/^(转到|共\d*条?|每页显示|当前显示|记录|页)$/.test(raw)) return;
+          if (/转到|共\d+条|每页显示|当前显示|记录/.test(raw) && !/上一页|下一页/.test(raw) && !/^\d+$/.test(raw) && raw.length > 6) return;
+
+          const isPrevNext = /上一页|下一页/.test(raw) || raw === '<' || raw === '>';
+          const isEllipsis = raw === '…' || raw === '...' || raw === '····' || raw === '···';
+          const isNum = /^\d{1,4}$/.test(raw);
+          const isCurrent =
+            active ||
+            /currentNum|currpage|current_page|page_current/i.test(el.id || '') ||
+            /\b(active|current|selected)\b/i.test(el.className || '');
+
+          // 只收纳页码相关节点
+          if (!(el.tagName === 'A' || isPrevNext || isEllipsis || isNum || isCurrent || /page|paginat/i.test(el.className || '') || /currentNum/i.test(el.id || ''))) {
             return;
           }
-          // 只处理像页码控件的节点
-          const looksLikePage =
-            el.tagName === 'A' ||
-            el.id.includes('currentNum') ||
-            el.id.includes('page') ||
-            el.className.toString().includes('page') ||
-            /^(上一页|下一页|<\s*上一页|下一页\s*>|<|>|…|\.\.\.|\d+)$/.test(raw) ||
-            /^\d+$/.test(raw);
-          if (!looksLikePage && el.tagName !== 'A') return;
 
           el.classList.add('urppp-page-num');
-          if (active || el.id.includes('currentNum') || el.classList.contains('active') || el.classList.contains('current')) {
-            el.classList.add('urppp-page-num-active');
-          }
-          // 清掉可能造成细条的旧尺寸
-          el.style.setProperty('display', 'inline-flex', 'important');
-          el.style.setProperty('align-items', 'center', 'important');
-          el.style.setProperty('justify-content', 'center', 'important');
-          el.style.setProperty('float', 'none', 'important');
-          el.style.setProperty('position', 'static', 'important');
-          el.style.setProperty('width', 'auto', 'important');
-          el.style.setProperty('min-width', '40px', 'important');
-          el.style.setProperty('max-width', 'none', 'important');
-          el.style.setProperty('height', '36px', 'important');
-          el.style.setProperty('min-height', '36px', 'important');
-          el.style.setProperty('max-height', '36px', 'important');
-          el.style.setProperty('padding', '0 12px', 'important');
-          el.style.setProperty('margin', '0 2px', 'important');
-          el.style.setProperty('font-size', '14px', 'important');
-          el.style.setProperty('font-weight', '600', 'important');
-          el.style.setProperty('line-height', '36px', 'important');
-          el.style.setProperty('border-radius', '8px', 'important');
-          el.style.setProperty('border', '1px solid var(--border)', 'important');
-          el.style.setProperty('box-sizing', 'border-box', 'important');
-          el.style.setProperty('overflow', 'visible', 'important');
-          el.style.setProperty('white-space', 'nowrap', 'important');
-          el.style.setProperty('vertical-align', 'middle', 'important');
-          // 子节点也别再缩成细条
-          Array.from(el.children).forEach((child) => {
-            child.style.setProperty('display', 'inline', 'important');
-            child.style.setProperty('width', 'auto', 'important');
-            child.style.setProperty('min-width', '0', 'important');
-            child.style.setProperty('height', 'auto', 'important');
-            child.style.setProperty('line-height', 'inherit', 'important');
-            child.style.setProperty('border', 'none', 'important');
-            child.style.setProperty('padding', '0', 'important');
-            child.style.setProperty('margin', '0', 'important');
-            child.style.setProperty('background', 'transparent', 'important');
-          });
-          if (el.classList.contains('urppp-page-num-active')) {
-            el.style.setProperty('background', 'var(--primary)', 'important');
-            el.style.setProperty('border-color', 'var(--primary)', 'important');
-            el.style.setProperty('color', '#fff', 'important');
-          } else {
-            el.style.setProperty('background', 'var(--surface)', 'important');
-            el.style.setProperty('color', 'var(--text)', 'important');
-          }
+          if (isCurrent) el.classList.add('urppp-page-num-active');
+          if (isPrevNext) el.classList.add('urppp-page-prevnext');
+          if (isEllipsis) el.classList.add('urppp-page-ellipsis');
+
+          const minW = isPrevNext ? '72px' : (isEllipsis ? '40px' : '40px');
+          el.style.cssText = [
+            'display:inline-flex !important',
+            'align-items:center !important',
+            'justify-content:center !important',
+            'position:static !important',
+            'float:none !important',
+            'top:auto !important',
+            'left:auto !important',
+            'right:auto !important',
+            'bottom:auto !important',
+            'transform:none !important',
+            'width:auto !important',
+            'min-width:' + minW + ' !important',
+            'max-width:none !important',
+            'height:36px !important',
+            'min-height:36px !important',
+            'max-height:36px !important',
+            'padding:0 12px !important',
+            'margin:0 2px !important',
+            'font-size:14px !important',
+            'font-weight:600 !important',
+            'line-height:36px !important',
+            'border-radius:8px !important',
+            'border:1px solid ' + (isCurrent ? 'var(--primary)' : 'var(--border)') + ' !important',
+            'background:' + (isCurrent ? 'var(--primary)' : 'var(--surface)') + ' !important',
+            'color:' + (isCurrent ? '#fff' : 'var(--text)') + ' !important',
+            'box-sizing:border-box !important',
+            'overflow:hidden !important',
+            'white-space:nowrap !important',
+            'vertical-align:middle !important',
+            'text-decoration:none !important',
+            'box-shadow:none !important',
+            'cursor:pointer !important'
+          ].join(';');
+          nukeInner(el);
         };
 
-        bar.querySelectorAll('a:not(.btn):not(.urppp-page-confirm)').forEach((a) => stylePageChip(a, false));
-        // 当前页常是 span#currentNum_* 而不是 a
-        bar.querySelectorAll('span, font, b, strong, em').forEach((sp) => {
+        // 所有 a
+        bar.querySelectorAll('a:not(.btn):not(.urppp-page-confirm)').forEach((a) => {
+          const raw = (a.textContent || '').replace(/\s+/g, '');
+          const active = /currentNum|active|current/i.test(a.id + ' ' + a.className) || false;
+          stylePageChip(a, active);
+        });
+        // 当前页 span 等
+        bar.querySelectorAll('span, font, b, strong, em, li').forEach((sp) => {
+          if (sp.closest('a')) {
+            // 链接内层只做 nuke，不单独成 chip
+            return;
+          }
           const t0 = (sp.textContent || '').replace(/\s+/g, '');
           const isCurrentId = /currentNum|currpage|current_page|page_current/i.test(sp.id || '');
           const isBareNum = /^\d{1,4}$/.test(t0);
-          // 仅当是当前页标记或独立数字页码 chip
-          if (isCurrentId || (isBareNum && sp.parentElement === bar)) {
-            stylePageChip(sp, true);
-          } else if (isBareNum && sp.children.length === 0 && sp.parentElement && sp.parentElement !== bar) {
-            // 包在容器里的纯数字：美化父级若父级也像 chip
-            const p = sp.parentElement;
-            if (p && p !== bar && (p.tagName === 'A' || p.tagName === 'SPAN' || p.tagName === 'LI')) {
-              stylePageChip(p, /current|active/i.test(p.className + p.id));
-            }
+          const isPrevNext = /上一页|下一页/.test(t0);
+          const isEllipsis = t0 === '…' || t0 === '...';
+          if (isCurrentId || isBareNum || isPrevNext || isEllipsis) {
+            stylePageChip(sp, isCurrentId || isBareNum);
           }
         });
-        // 若存在 #currentNum_urppagebar 一类
-        bar.querySelectorAll('[id*="currentNum"], [id*="CurrentNum"], [class*="current"]').forEach((el) => {
-          if (el.matches('input, select, button, .btn')) return;
-          stylePageChip(el, true);
-        });
+        // 二次：所有已标记 chip 再 nuke 一次内层（防站点后写）
+        bar.querySelectorAll('.urppp-page-num').forEach((el) => nukeInner(el));
       });
     } catch (err) {
       console.warn('[URP++] pagebar beautify failed', err);
@@ -4763,6 +4790,78 @@
         border-color: var(--primary) !important;
         color: var(--primary) !important;
       }
+      /* 上一页 / 下一页 / …：与数字同为整颗按钮，内层细条一律清掉 */
+      body #urppagebar a.urppp-page-prevnext,
+      body #urppagebar a.urppp-page-ellipsis,
+      body #urppagebar .urppp-page-prevnext,
+      body #urppagebar .urppp-page-ellipsis,
+      body #urppagebar a[onclick*="page"],
+      html body #urppagebar a {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        line-height: 36px !important;
+        padding: 0 12px !important;
+        margin: 0 2px !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 8px !important;
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        text-decoration: none !important;
+        box-shadow: none !important;
+        vertical-align: middle !important;
+      }
+      body #urppagebar a.urppp-page-prevnext {
+        min-width: 72px !important;
+      }
+      body #urppagebar a.urppp-page-ellipsis {
+        min-width: 40px !important;
+        cursor: default !important;
+      }
+      /* 关键：干掉 a/span 内部造成「中间细条」的子节点样式 */
+      body #urppagebar a > *,
+      body #urppagebar a span,
+      body #urppagebar a font,
+      body #urppagebar a b,
+      body #urppagebar a i,
+      body #urppagebar .urppp-page-num > *,
+      body #urppagebar .urppp-page-num span,
+      body #urppagebar .urppp-page-num font,
+      body #urppagebar .urppp-page-prevnext > *,
+      body #urppagebar .urppp-page-ellipsis > *,
+      html body #urppagebar a * {
+        display: inline !important;
+        position: static !important;
+        float: none !important;
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        line-height: inherit !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: 0 none !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        background-image: none !important;
+        box-shadow: none !important;
+        color: inherit !important;
+        font-size: inherit !important;
+        font-weight: inherit !important;
+        text-decoration: none !important;
+        vertical-align: baseline !important;
+        box-sizing: border-box !important;
+      }
+
       /* 当前页：整颗实心，禁止中间细条 */
       body #urppagebar .urppp-page-num-active,
       body #urppagebar span.urppp-page-num-active,
@@ -6588,7 +6687,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.62');
+    console.log('[URP++] style applied v0.4.63');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -7211,7 +7310,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.62',
+    version: '0.4.63',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
