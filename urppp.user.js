@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.90
+// @version      0.4.91
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.90';
+          content:'URP++ v0.4.91';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -5899,8 +5899,106 @@
       .btn-danger { background: #ef4444 !important; border-color: #ef4444 !important; color: #fff !important; border-radius: 6px !important; }
       .btn-default, .btn-white { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; border-radius: 6px !important; }
       .btn-default:hover, .btn-white:hover { background: var(--border) !important; }
-      .btn-app { background: var(--surface) !important; border: 1px solid var(--border) !important; color: var(--text) !important; border-radius: 6px !important; }
-      .btn-app:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
+      /* btn-app 必须压过 .btn-info 实心蓝，否则可申请业务页仍是 ACE 蓝块 */
+      .btn-app,
+      .btn.btn-app,
+      a.btn-app,
+      button.btn-app,
+      .btn.btn-app.btn-info,
+      .btn.btn-app.btn-primary,
+      .btn.btn-app.btn-success,
+      .btn.btn-app.btn-warning,
+      .btn.btn-app.btn-danger,
+      a.btn.btn-app.btn-info,
+      a.btn.btn-app.btn-primary,
+      button.btn.btn-app.btn-info {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text) !important;
+        border-radius: 12px !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+      }
+      .btn-app:hover,
+      .btn.btn-app:hover,
+      a.btn-app:hover,
+      button.btn-app:hover,
+      .btn.btn-app.btn-info:hover,
+      .btn.btn-app.btn-primary:hover,
+      a.btn.btn-app.btn-info:hover {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        color: #fff !important;
+        box-shadow: 0 4px 14px color-mix(in srgb, var(--primary) 28%, transparent) !important;
+        transform: translateY(-2px) !important;
+      }
+      .btn-app > .ace-icon,
+      .btn-app > .fa,
+      .btn-app > .glyphicon,
+      .btn.btn-app > .ace-icon,
+      .btn.btn-app > .fa,
+      a.btn-app > .fa,
+      a.btn-app > .ace-icon {
+        color: var(--primary) !important;
+      }
+      .btn-app:hover > .ace-icon,
+      .btn-app:hover > .fa,
+      .btn-app:hover > .glyphicon,
+      .btn.btn-app:hover > .ace-icon,
+      .btn.btn-app:hover > .fa,
+      a.btn-app:hover > .fa {
+        color: #fff !important;
+      }
+      /* 可申请业务等页：大按钮容器横排换行 */
+      .page-content .widget-main:has(> .btn-app),
+      .page-content .widget-body .widget-main:has(.btn-app),
+      .page-content #personalApplication,
+      .page-content .tab-content .widget-main:has(.btn-app),
+      .page-content .tab-pane:has(.btn-app) {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 12px !important;
+        align-content: flex-start !important;
+      }
+      .page-content .btn.btn-app,
+      .page-content a.btn-app,
+      .page-content button.btn-app {
+        width: 104px !important;
+        min-width: 104px !important;
+        height: 100px !important;
+        min-height: 100px !important;
+        margin: 0 !important;
+        padding: 12px 10px !important;
+        border-radius: 12px !important;
+        font-size: 12px !important;
+        font-weight: 500 !important;
+        line-height: 1.3 !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text) !important;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+      }
+      .page-content .btn.btn-app:hover,
+      .page-content a.btn-app:hover {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        color: #fff !important;
+      }
+      .page-content .btn.btn-app > .ace-icon,
+      .page-content .btn.btn-app > .fa,
+      .page-content a.btn-app > .fa,
+      .page-content a.btn-app > .ace-icon {
+        display: block !important;
+        margin: 0 0 8px !important;
+        font-size: 28px !important;
+        line-height: 1 !important;
+        color: var(--primary) !important;
+      }
+      .page-content .btn.btn-app:hover > .ace-icon,
+      .page-content .btn.btn-app:hover > .fa,
+      .page-content a.btn-app:hover > .fa {
+        color: #fff !important;
+      }
 
       /* 表单：统一圆角；select 单独控制，避免小宽度分页下拉文字被 padding 截断 */
       input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]):not([type="image"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
@@ -8414,7 +8512,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.90');
+    console.log('[URP++] style applied v0.4.91');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -9037,7 +9135,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.90',
+    version: '0.4.91',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
