@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.35
+// @version      0.5.36
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.35';
+          content:'URP++ v0.5.36';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1291,6 +1291,8 @@
       card.style.setProperty('max-width', '100%', 'important');
       card.style.setProperty('box-sizing', 'border-box', 'important');
       card.style.setProperty('margin', '0 0 16px 0', 'important');
+      card.style.setProperty('padding', '0', 'important');
+      card.style.setProperty('overflow', 'hidden', 'important');
       // 同列上方 h4.header 去卡壳（inline !important 压过全局卡片标题）
       const col = card.closest('.col-xs-4, .col-xs-8, .col-sm-4, .col-sm-8, .col-md-4, .col-md-8');
       if (col) {
@@ -1720,6 +1722,23 @@
   }
   function ensureProfileCardShell(root) {
     if (!root || !root.style) return;
+    // 学籍信息卡：固定信息表形态，与个人信息页内容卡一致
+    if (root.classList.contains('setLabelWidth')) {
+      root.classList.remove('urppp-query-form');
+      root.style.setProperty('width', '100%', 'important');
+      root.style.setProperty('max-width', '100%', 'important');
+      root.style.setProperty('box-sizing', 'border-box', 'important');
+      root.style.setProperty('float', 'none', 'important');
+      root.style.setProperty('display', 'block', 'important');
+      root.style.setProperty('background', 'var(--surface)', 'important');
+      root.style.setProperty('border', '1px solid var(--border)', 'important');
+      root.style.setProperty('border-radius', '12px', 'important');
+      root.style.setProperty('box-shadow', 'none', 'important');
+      root.style.setProperty('margin', '0 0 16px 0', 'important');
+      root.style.setProperty('padding', '0', 'important');
+      root.style.setProperty('overflow', 'hidden', 'important');
+      return;
+    }
     const inWidget = !!(root.closest && root.closest('.widget-box, .widget-main, .widget-body, .panel'));
     root.style.setProperty('width', '100%', 'important');
     root.style.setProperty('max-width', '100%', 'important');
@@ -1759,18 +1778,19 @@
     root.style.setProperty('border-radius', '12px', 'important');
     root.style.setProperty('box-shadow', 'none', 'important');
     root.style.setProperty('margin', '0 0 18px 0', 'important');
+    // 学籍 setLabelWidth：信息表，绝不当查询卡（否则 14px 内边距会像套娃）
+    // 查询卡：urppp-query-form / query-pair / chosen
+    const isRollInfo = root.classList.contains('setLabelWidth');
     const isQuery =
-      root.classList.contains('urppp-query-form') ||
-      !!root.querySelector('.urppp-query-pair, .chosen-container') ||
-      (root.classList.contains('self') && root.querySelectorAll('.profile-info-row').length > 0 &&
-        Array.from(root.querySelectorAll('.profile-info-row')).some((r) =>
-          r.querySelectorAll('.profile-info-name').length >= 2
-        ));
+      !isRollInfo && (
+        root.classList.contains('urppp-query-form') ||
+        !!root.querySelector('.urppp-query-pair, .chosen-container')
+      );
     if (isQuery) {
       root.style.setProperty('padding', '14px 16px', 'important');
       root.style.setProperty('overflow', 'visible', 'important');
     } else {
-      // 单列信息表：与标题卡视觉重量接近，内容贴边由行自己 padding
+      // 学籍/个人信息等：内容贴边，由行自己 padding
       root.style.setProperty('padding', '0', 'important');
       root.style.setProperty('overflow', 'hidden', 'important');
     }
@@ -4763,9 +4783,10 @@
         margin: 0 0 8px !important;
         min-height: 0 !important;
       }
-      /* 信息卡仍是唯一卡片 */
-      .page-content .profile-user-info.setLabelWidth,
-      .page-content .profile-user-info-striped.setLabelWidth {
+      /* 学籍信息卡：唯一外壳，无内边距（与个人信息信息表一致，避免套娃感） */
+      html body .page-content .profile-user-info.setLabelWidth,
+      html body .page-content .profile-user-info-striped.setLabelWidth,
+      html body .page-content .self.profile-user-info.setLabelWidth {
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
@@ -4774,6 +4795,15 @@
         margin: 0 0 16px !important;
         width: 100% !important;
         max-width: 100% !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+      }
+      /* 压过查询卡 .self:has(...) { padding:14px } */
+      html body .page-content .profile-user-info.setLabelWidth.urppp-query-form,
+      html body .page-content .profile-user-info.setLabelWidth:has(.urppp-query-pair),
+      html body .page-content .profile-user-info.setLabelWidth:has(.chosen-container) {
+        padding: 0 !important;
+        overflow: hidden !important;
       }
       .main-content .page-content .tabbable,
       .page-content .tabbable {
@@ -10478,7 +10508,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.35');
+    console.log('[URP++] style applied v0.5.36');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11459,7 +11489,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.35',
+    version: '0.5.36',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
