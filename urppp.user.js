@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.36
+// @version      0.5.37
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.36';
+          content:'URP++ v0.5.37';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1203,6 +1203,39 @@
   function alignRollInfoLayout() {
     const page = document.querySelector('.page-content') || document.getElementById('page-content-template');
     if (!page) return;
+
+    // 学籍双栏：标题只做文字条（与个人信息页标题层级一致，但不做第二张卡）
+    page.querySelectorAll('.col-xs-4, .col-xs-8, .col-sm-4, .col-sm-8, .col-md-4, .col-md-8').forEach((col) => {
+      if (!col.querySelector('.setLabelWidth')) return;
+      const card = col.querySelector('.setLabelWidth');
+      if (!card) return;
+      col.querySelectorAll('h4.header, h3.header, .header.smaller, .header').forEach((h) => {
+        if (card.contains(h)) return;
+        // 只要标题在信息卡前面（文档顺序）
+        if (!(h.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING)) return;
+        h.classList.add('urppp-section-label');
+        ['background','background-color','background-image','border','box-shadow','border-radius','padding','margin','min-height'].forEach((p) => {
+          h.style.removeProperty(p);
+        });
+        h.style.setProperty('background', 'transparent', 'important');
+        h.style.setProperty('background-color', 'transparent', 'important');
+        h.style.setProperty('background-image', 'none', 'important');
+        h.style.setProperty('border', '0 none transparent', 'important');
+        h.style.setProperty('box-shadow', 'none', 'important');
+        h.style.setProperty('border-radius', '0', 'important');
+        h.style.setProperty('padding', '4px 2px 10px', 'important');
+        h.style.setProperty('margin', '0 0 8px 0', 'important');
+        h.style.setProperty('min-height', '0', 'important');
+      });
+      // 信息卡本身：与个人信息内容卡一样，无内边距
+      card.classList.remove('urppp-query-form');
+      card.style.setProperty('padding', '0', 'important');
+      card.style.setProperty('overflow', 'hidden', 'important');
+      card.style.setProperty('background', 'var(--surface)', 'important');
+      card.style.setProperty('border', '1px solid var(--border)', 'important');
+      card.style.setProperty('border-radius', '12px', 'important');
+      card.style.setProperty('box-shadow', 'none', 'important');
+    });
 
     // 学籍卡若被误标成查询表单，清掉，恢复 ACE 横排
     page.querySelectorAll('.profile-user-info.setLabelWidth, .profile-user-info-striped.setLabelWidth').forEach((root) => {
@@ -9617,6 +9650,36 @@
       .timeline-item .timeline-indicator { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; }
       .timeline-item h5 { color: var(--text) !important; }
 
+
+      /* ========== 学籍双栏：标题去卡壳（class 标记，优先级拉满） ========== */
+      html body h4.header.urppp-section-label,
+      html body .header.urppp-section-label,
+      html body h4.header.smaller.lighter.grey.urppp-section-label,
+      html body .page-content h4.header.urppp-section-label,
+      html body #page-content-template h4.header.urppp-section-label {
+        background: transparent !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        border: 0 none transparent !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 4px 2px 10px !important;
+        margin: 0 0 8px !important;
+        min-height: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      html body .profile-user-info.setLabelWidth,
+      html body .profile-user-info-striped.setLabelWidth,
+      html body .self.profile-user-info.setLabelWidth {
+        padding: 0 !important;
+        margin: 0 0 16px !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        box-shadow: none !important;
+        overflow: hidden !important;
+      }
       /* FullCalendar：颜色 + 首行时间标签，禁止改 scroller overflow/height */
       .fc,
       #main-calendar .fc {
@@ -9744,6 +9807,36 @@
       }
       html.urppp-theme-dark .fc-today {
         background: rgba(147, 168, 199, 0.08) !important;
+      }
+
+      /* ========== 学籍双栏：标题去卡壳（class 标记，优先级拉满） ========== */
+      html body h4.header.urppp-section-label,
+      html body .header.urppp-section-label,
+      html body h4.header.smaller.lighter.grey.urppp-section-label,
+      html body .page-content h4.header.urppp-section-label,
+      html body #page-content-template h4.header.urppp-section-label {
+        background: transparent !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        border: 0 none transparent !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 4px 2px 10px !important;
+        margin: 0 0 8px !important;
+        min-height: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+      html body .profile-user-info.setLabelWidth,
+      html body .profile-user-info-striped.setLabelWidth,
+      html body .self.profile-user-info.setLabelWidth {
+        padding: 0 !important;
+        margin: 0 0 16px !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        box-shadow: none !important;
+        overflow: hidden !important;
       }
       /* FullCalendar 事件悬停弹窗：保留虚线框风格，仅主题色化 */
       #schedule-hover {
@@ -10508,7 +10601,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.36');
+    console.log('[URP++] style applied v0.5.37');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11489,7 +11582,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.36',
+    version: '0.5.37',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
