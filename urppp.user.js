@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.9
+// @version      0.5.10
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -689,7 +689,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.9';
+          content:'URP++ v0.5.10';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3022,6 +3022,51 @@
     }, true);
   }
   // 撤销误套在业务表上的公告样式（如空闲教室）
+
+  function scrubNoticeInlineBg(root) {
+    try {
+      const scope = root || document;
+      scope.querySelectorAll('table.urppp-notice-table tr, table.urppp-notice-table td, table.urppp-notice-table th').forEach((el) => {
+        if (!el || !el.style) return;
+        // ACE/jQuery hover 会写回 #fff；清掉后交给 CSS 主题色
+        const bg = (el.style.backgroundColor || el.style.background || '').toLowerCase();
+        if (!bg) return;
+        if (/rgb\(\s*255\s*,\s*255\s*,\s*255\s*\)|#fff|#ffffff|white/.test(bg) || bg.includes('f5f5f5') || bg.includes('f9f9f9')) {
+          el.style.removeProperty('background');
+          el.style.removeProperty('background-color');
+        }
+      });
+    } catch (_) {}
+  }
+
+  function bindNoticeHoverScrub() {
+    if (window.__urpppNoticeHoverScrub) return;
+    window.__urpppNoticeHoverScrub = true;
+    const wipe = (e) => {
+      const tr = e.target && e.target.closest ? e.target.closest('table.urppp-notice-table tr') : null;
+      if (!tr) return;
+      // 下一帧清，等 ACE mouseleave 写完再抹
+      requestAnimationFrame(() => {
+        scrubNoticeInlineBg(tr);
+        tr.classList.remove('hover');
+        tr.querySelectorAll('td,th').forEach((cell) => {
+          if (!cell.style) return;
+          cell.style.removeProperty('background');
+          cell.style.removeProperty('background-color');
+        });
+        tr.style.removeProperty('background');
+        tr.style.removeProperty('background-color');
+      });
+    };
+    document.addEventListener('mouseout', wipe, true);
+    document.addEventListener('mouseleave', wipe, true);
+    // 保险：悬停过程中若被写成白，也立刻清
+    document.addEventListener('mouseover', (e) => {
+      const tr = e.target && e.target.closest ? e.target.closest('table.urppp-notice-table tr') : null;
+      if (!tr) return;
+      scrubNoticeInlineBg(tr);
+    }, true);
+  }
   function stripMistakenNoticeTable(table) {
     if (!table) return;
     table.classList.remove('urppp-notice-table');
@@ -6173,13 +6218,34 @@
         background: var(--bg) !important;
         background-color: var(--bg) !important;
       }
-      .table-hover > tbody > tr:hover,
-      .table-hover > tbody > tr:hover > td,
-      .table-hover > tbody > tr:hover > th,
+      .table-hover > tbody > tr:not(.urppp-notice-row):hover,
+      .table-hover > tbody > tr:not(.urppp-notice-row):hover > td,
+      .table-hover > tbody > tr:not(.urppp-notice-row):hover > th,
+      .table-hover > tbody > tr.hover:not(.urppp-notice-row),
+      .table-hover > tbody > tr.hover:not(.urppp-notice-row) > td,
       .dataTable > tbody > tr:hover,
       .dataTable > tbody > tr:hover > td {
         background: var(--input-bg) !important;
         background-color: var(--input-bg) !important;
+      }
+      /* 公告卡片：不受 table-hover / ACE hover 类影响 */
+      table.urppp-notice-table.table-hover > tbody > tr,
+      table.urppp-notice-table.table-hover > tbody > tr:hover,
+      table.urppp-notice-table.table-hover > tbody > tr.hover,
+      table.urppp-notice-table > tbody > tr.urppp-notice-row,
+      table.urppp-notice-table > tbody > tr.urppp-notice-row:hover,
+      table.urppp-notice-table > tbody > tr.urppp-notice-row.hover {
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+      }
+      table.urppp-notice-table.table-hover > tbody > tr > td,
+      table.urppp-notice-table.table-hover > tbody > tr:hover > td,
+      table.urppp-notice-table.table-hover > tbody > tr.hover > td,
+      table.urppp-notice-table > tbody > tr.urppp-notice-row > td,
+      table.urppp-notice-table > tbody > tr.urppp-notice-row:hover > td,
+      table.urppp-notice-table > tbody > tr.urppp-notice-row.hover > td {
+        background: transparent !important;
+        background-color: transparent !important;
       }
 
       /* ============================================================
@@ -6221,20 +6287,29 @@
         margin: 0 0 10px !important;
         padding: 12px 18px !important;
         background: var(--surface) !important;
+        background-color: var(--surface) !important;
         border: 1px solid var(--border) !important;
         border-radius: 12px !important;
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
         position: relative !important;
         overflow: hidden !important;
+        transition: border-color .15s ease, box-shadow .15s ease !important;
       }
-      table.urppp-notice-table > tbody > tr.urppp-notice-row:hover {
+      table.urppp-notice-table > tbody > tr.urppp-notice-row:hover,
+      table.urppp-notice-table > tbody > tr.urppp-notice-row.hover {
         border-color: color-mix(in srgb, var(--primary) 35%, var(--border)) !important;
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08) !important;
       }
       table.urppp-notice-table > tbody > tr > td,
-      table.urppp-notice-table > tbody > tr.urppp-notice-row > td {
+      table.urppp-notice-table > tbody > tr.urppp-notice-row > td,
+      table.urppp-notice-table > tbody > tr.urppp-notice-row:hover > td,
+      table.urppp-notice-table > tbody > tr.urppp-notice-row.hover > td {
         display: block !important;
         border: none !important;
         background: transparent !important;
+        background-color: transparent !important;
         padding: 0 !important;
         margin: 0 !important;
         vertical-align: middle !important;
@@ -9017,10 +9092,34 @@
         color: var(--text-secondary) !important;
       }
       html.urppp-theme-dark table.urppp-notice-table > tbody > tr.urppp-notice-row,
+      html.urppp-theme-dark table.urppp-notice-table > tbody > tr,
+      html.urppp-theme-dark table.urppp-notice-table.table-hover > tbody > tr,
+      html.urppp-theme-dark table.urppp-notice-table.table-hover > tbody > tr:hover,
+      html.urppp-theme-dark table.urppp-notice-table.table-hover > tbody > tr.hover,
+      html.urppp-theme-dark table.urppp-notice-table > tbody > tr.urppp-notice-row:hover,
+      html.urppp-theme-dark table.urppp-notice-table > tbody > tr.urppp-notice-row.hover,
       html.urppp-theme-dark .urppp-notice-card {
         background: var(--surface) !important;
+        background-color: var(--surface) !important;
         border-color: var(--border) !important;
         box-shadow: 0 1px 2px rgba(0,0,0,0.25) !important;
+      }
+      html.urppp-theme-dark table.urppp-notice-table > tbody > tr > td,
+      html.urppp-theme-dark table.urppp-notice-table > tbody > tr:hover > td,
+      html.urppp-theme-dark table.urppp-notice-table > tbody > tr.hover > td,
+      html.urppp-theme-dark table.urppp-notice-table.table-hover > tbody > tr > td,
+      html.urppp-theme-dark table.urppp-notice-table.table-hover > tbody > tr:hover > td,
+      html.urppp-theme-dark table.urppp-notice-table.table-hover > tbody > tr.hover > td {
+        background: transparent !important;
+        background-color: transparent !important;
+      }
+      /* ACE 离开悬停时常把 td 写回 #fff：暗色下强制清掉 */
+      html.urppp-theme-dark .table-hover > tbody > tr:not(.urppp-notice-row).hover > td,
+      html.urppp-theme-dark .table-hover > tbody > tr:not(.urppp-notice-row) > td {
+        background-color: var(--surface) !important;
+      }
+      html.urppp-theme-dark .table-striped > tbody > tr:nth-of-type(odd):not(.urppp-notice-row) > td {
+        background-color: color-mix(in srgb, var(--bg) 70%, var(--surface)) !important;
       }
       /* 空闲教室楼栋列表 / 校区标题 */
       html.urppp-theme-dark #drag-ul,
@@ -9530,7 +9629,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.9');
+    console.log('[URP++] style applied v0.5.10');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -10405,7 +10504,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.9',
+    version: '0.5.10',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
