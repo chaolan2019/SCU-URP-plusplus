@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.43
+// @version      0.4.44
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.43';
+          content:'URP++ v0.4.44';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1333,14 +1333,8 @@
           }
         });
         scope.querySelectorAll('.chosen-search').forEach((search) => {
-          const input = search.querySelector('input');
-          if (!input) return;
-          input.style.setProperty('height', '34px', 'important');
-          input.style.setProperty('min-height', '34px', 'important');
-          input.style.setProperty('line-height', '34px', 'important');
-          input.style.setProperty('padding', '0 34px 0 10px', 'important');
-          input.style.setProperty('box-sizing', 'border-box', 'important');
-          input.style.setProperty('background-image', 'none', 'important');
+          // 不在打开时改 input padding，避免光标前闪
+          // 图标与尺寸交给 CSS 固定规则
           if (!search.querySelector('.urppp-chosen-search-icon')) {
             const icon = document.createElement('i');
             icon.className = 'fa fa-search urppp-chosen-search-icon';
@@ -5531,7 +5525,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.43');
+    console.log('[URP++] style applied v0.4.44');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -6152,7 +6146,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.43',
+    version: '0.4.44',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
