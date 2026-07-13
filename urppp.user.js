@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.22
+// @version      0.5.23
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.22';
+          content:'URP++ v0.5.23';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3300,10 +3300,18 @@
 
             tr.classList.add('urppp-notice-row');
             pinNoticeRowSurface(tr);
+            // 站点 width="88%" 等属性会在 hover 时把 flex 行挤换行
+            tr.removeAttribute('width');
+            tr.style.setProperty('flex-wrap', 'nowrap', 'important');
             tds.forEach((td) => {
+              td.removeAttribute('width');
+              td.removeAttribute('height');
+              td.removeAttribute('align');
               td.style.setProperty('border', 'none', 'important');
               td.style.setProperty('background', 'transparent', 'important');
               td.style.setProperty('vertical-align', 'middle', 'important');
+              td.style.removeProperty('width');
+              td.style.setProperty('width', 'auto', 'important');
             });
 
             // 隐藏原始 bullet 列，改用 CSS ::before
@@ -3315,9 +3323,15 @@
             }
             if (titleTd) {
               titleTd.classList.add('urppp-notice-title-cell');
+              titleTd.removeAttribute('width');
               titleTd.style.setProperty('width', 'auto', 'important');
+              titleTd.style.setProperty('max-width', '100%', 'important');
+              titleTd.style.setProperty('min-width', '0', 'important');
+              titleTd.style.setProperty('flex', '1 1 0%', 'important');
+              titleTd.style.setProperty('overflow', 'hidden', 'important');
               titleTd.style.setProperty('padding', '0', 'important');
               titleTd.style.setProperty('pointer-events', 'auto', 'important');
+              titleTd.style.setProperty('white-space', 'nowrap', 'important');
               // 链接可能不在 titleTd 内（误分类时），整行找
               let a = titleTd.querySelector('a[href], a[onclick], a');
               if (!a) a = tr.querySelector('a[href], a[onclick], a');
@@ -6359,6 +6373,8 @@
       table.urppp-notice-table > tbody > tr.urppp-notice-row,
       table.urppp-notice-table > tbody > tr {
         display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
         align-items: center !important;
         justify-content: space-between !important;
         gap: 16px !important;
@@ -6377,7 +6393,11 @@
         transition: border-color .15s ease, box-shadow .15s ease !important;
       }
       table.urppp-notice-table > tbody > tr.urppp-notice-row:hover,
-      table.urppp-notice-table > tbody > tr.urppp-notice-row.hover {
+      table.urppp-notice-table > tbody > tr.urppp-notice-row.hover,
+      table.urppp-notice-table.table-hover > tbody > tr.urppp-notice-row:hover {
+        flex-wrap: nowrap !important;
+        flex-direction: row !important;
+        align-items: center !important;
         border-color: color-mix(in srgb, var(--primary) 35%, var(--border)) !important;
         background: var(--surface) !important;
         background-color: var(--surface) !important;
@@ -6408,17 +6428,20 @@
         margin: 0 !important;
         flex: 0 0 0 !important;
       }
-      table.urppp-notice-table > tbody > tr > td.urppp-notice-title-cell {
+      table.urppp-notice-table > tbody > tr > td.urppp-notice-title-cell,
+      table.urppp-notice-table > tbody > tr.urppp-notice-row:hover > td.urppp-notice-title-cell,
+      table.urppp-notice-table > tbody > tr.hover > td.urppp-notice-title-cell {
         display: flex !important;
         align-items: center !important;
         gap: 10px !important;
-        flex: 1 1 auto !important;
+        flex: 1 1 0% !important;
         min-width: 0 !important;
-        max-width: 100% !important;
+        max-width: none !important;
         width: auto !important;
         overflow: hidden !important;
         position: static !important;
         order: 1 !important;
+        white-space: nowrap !important;
       }
       table.urppp-notice-table > tbody > tr > td.urppp-notice-title-cell::before {
         content: '' !important;
@@ -6478,14 +6501,23 @@
         pointer-events: none !important;
       }
       table.urppp-notice-table .urppp-notice-link:hover,
-      table.urppp-notice-table td.urppp-notice-title-cell a:hover {
+      table.urppp-notice-table td.urppp-notice-title-cell a:hover,
+      table.urppp-notice-table > tbody > tr:hover td.urppp-notice-title-cell a,
+      table.urppp-notice-table > tbody > tr.hover td.urppp-notice-title-cell a {
         color: var(--primary) !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: block !important;
+        max-width: 100% !important;
       }
-      table.urppp-notice-table td.urppp-notice-date-cell {
+      table.urppp-notice-table td.urppp-notice-date-cell,
+      table.urppp-notice-table > tbody > tr.urppp-notice-row:hover > td.urppp-notice-date-cell {
         display: flex !important;
         align-items: center !important;
         justify-content: flex-end !important;
         flex: 0 0 auto !important;
+        flex-shrink: 0 !important;
         width: auto !important;
         max-width: none !important;
         white-space: nowrap !important;
@@ -9910,7 +9942,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.22');
+    console.log('[URP++] style applied v0.5.23');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -10891,7 +10923,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.22',
+    version: '0.5.23',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
