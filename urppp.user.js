@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.23
+// @version      0.4.24
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.23';
+          content:'URP++ v0.4.24';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1085,17 +1085,19 @@
         root.classList.add('urppp-query-form');
         root.querySelectorAll('.profile-info-row').forEach((row) => {
           if (row.dataset.urpppQueryDone === '1') {
-            // 已包过 pair：只刷新内联横排样式
+            // 已包过 pair：强制 3 列 grid
             row.classList.add('urppp-query-row');
-            row.style.setProperty('display', 'flex', 'important');
-            row.style.setProperty('flex-wrap', 'wrap', 'important');
-            row.style.setProperty('flex-direction', 'row', 'important');
+            row.style.setProperty('display', 'grid', 'important');
+            row.style.setProperty('grid-template-columns', 'repeat(3, minmax(0, 1fr))', 'important');
+            row.style.setProperty('column-gap', '16px', 'important');
+            row.style.setProperty('row-gap', '12px', 'important');
+            row.style.setProperty('width', '100%', 'important');
             row.querySelectorAll('.urppp-query-pair').forEach((pair) => {
               pair.style.setProperty('display', 'flex', 'important');
-              pair.style.setProperty('flex', '0 0 32%', 'important');
-              pair.style.setProperty('width', '32%', 'important');
-              pair.style.setProperty('min-width', '220px', 'important');
-              pair.style.setProperty('max-width', '32%', 'important');
+              pair.style.setProperty('width', '100%', 'important');
+              pair.style.setProperty('min-width', '0', 'important');
+              pair.style.setProperty('max-width', 'none', 'important');
+              pair.style.removeProperty('flex');
               const value = pair.querySelector('.profile-info-value');
               if (value) value.style.setProperty('margin-left', '0', 'important');
             });
@@ -1138,19 +1140,21 @@
           while (row.firstChild) row.removeChild(row.firstChild);
           row.appendChild(frag);
           row.classList.add('urppp-query-row');
-          // 内联强制横排，避免任何 CSS 优先级翻车
-          row.style.setProperty('display', 'flex', 'important');
-          row.style.setProperty('flex-wrap', 'wrap', 'important');
-          row.style.setProperty('flex-direction', 'row', 'important');
+          // 内联强制 3 列 grid，避免 flex 百分比 + min-width 挤成单列
+          row.style.setProperty('display', 'grid', 'important');
+          row.style.setProperty('grid-template-columns', 'repeat(3, minmax(0, 1fr))', 'important');
+          row.style.setProperty('column-gap', '16px', 'important');
+          row.style.setProperty('row-gap', '12px', 'important');
           row.style.setProperty('align-items', 'center', 'important');
-          row.style.setProperty('gap', '12px 16px', 'important');
+          row.style.setProperty('width', '100%', 'important');
+          row.style.setProperty('box-sizing', 'border-box', 'important');
           row.querySelectorAll('.urppp-query-pair').forEach((pair) => {
             pair.style.setProperty('display', 'flex', 'important');
             pair.style.setProperty('align-items', 'center', 'important');
-            pair.style.setProperty('flex', '0 0 32%', 'important');
-            pair.style.setProperty('width', '32%', 'important');
-            pair.style.setProperty('min-width', '220px', 'important');
-            pair.style.setProperty('max-width', '32%', 'important');
+            pair.style.setProperty('width', '100%', 'important');
+            pair.style.setProperty('min-width', '0', 'important');
+            pair.style.setProperty('max-width', 'none', 'important');
+            pair.style.removeProperty('flex');
             pair.style.setProperty('box-sizing', 'border-box', 'important');
             const name = pair.querySelector('.profile-info-name');
             const value = pair.querySelector('.profile-info-value');
@@ -1158,6 +1162,7 @@
               name.style.setProperty('float', 'none', 'important');
               name.style.setProperty('width', '84px', 'important');
               name.style.setProperty('min-width', '84px', 'important');
+              name.style.setProperty('max-width', '96px', 'important');
               name.style.setProperty('margin', '0', 'important');
               name.style.setProperty('margin-left', '0', 'important');
               name.style.setProperty('display', 'flex', 'important');
@@ -1165,6 +1170,7 @@
               name.style.setProperty('justify-content', 'flex-end', 'important');
               name.style.setProperty('background', 'transparent', 'important');
               name.style.setProperty('border', 'none', 'important');
+              name.style.setProperty('padding', '0 6px 0 0', 'important');
             }
             if (value) {
               value.style.setProperty('float', 'none', 'important');
@@ -1174,7 +1180,7 @@
               value.style.setProperty('align-items', 'center', 'important');
               value.style.setProperty('flex', '1 1 auto', 'important');
               value.style.setProperty('width', 'auto', 'important');
-              value.style.setProperty('min-width', '150px', 'important');
+              value.style.setProperty('min-width', '0', 'important');
               value.style.setProperty('background', 'transparent', 'important');
               value.style.setProperty('border', 'none', 'important');
               value.style.setProperty('padding', '0', 'important');
@@ -3457,9 +3463,10 @@
       .page-content .profile-user-info.self .profile-info-row.urppp-query-row,
       .page-content .profile-user-info:has(.value_element) .profile-info-row.urppp-query-row,
       .page-content .profile-info-row.urppp-query-row {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        flex-direction: row !important;
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        column-gap: 16px !important;
+        row-gap: 12px !important;
         align-items: center !important;
       }
 
@@ -3585,18 +3592,19 @@
       .page-content .profile-info-row.urppp-query-row,
       .profile-user-info.urppp-query-form .profile-info-row.urppp-query-row,
       .profile-info-row.urppp-query-row {
-        display: flex !important;
-        flex-wrap: wrap !important;
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        column-gap: 16px !important;
+        row-gap: 12px !important;
         align-items: center !important;
-        gap: 12px 16px !important;
         border-bottom: none !important;
         min-height: 0 !important;
-        padding: 0 0 6px !important;
+        padding: 4px 0 8px !important;
         margin: 0 !important;
         overflow: visible !important;
-        flex-direction: row !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
       }
-      /* clearfix 伪元素在 flex 下会变成 flex item，必须干掉 */
       .profile-info-row.urppp-query-row:before,
       .profile-info-row.urppp-query-row:after,
       .page-content .profile-info-row.urppp-query-row:before,
@@ -3613,13 +3621,14 @@
         display: flex !important;
         align-items: center !important;
         gap: 8px !important;
-        flex: 0 0 32% !important;
-        width: 32% !important;
-        min-width: 220px !important;
-        max-width: 32% !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        flex: none !important;
         box-sizing: border-box !important;
         float: none !important;
         clear: none !important;
+        margin: 0 !important;
       }
       .urppp-query-pair .profile-info-name {
         float: none !important;
@@ -3738,21 +3747,16 @@
       .urppp-query-pair .chosen-container {
         display: block !important;
       }
-      @media (max-width: 1200px) {
-        .page-content .urppp-query-pair,
-        .urppp-query-pair {
-          flex: 0 0 48% !important;
-          width: 48% !important;
-          max-width: 48% !important;
+      @media (max-width: 1100px) {
+        .page-content .profile-info-row.urppp-query-row,
+        .profile-info-row.urppp-query-row {
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         }
       }
-      @media (max-width: 700px) {
-        .page-content .urppp-query-pair,
-        .urppp-query-pair {
-          flex: 0 0 100% !important;
-          width: 100% !important;
-          max-width: 100% !important;
-          min-width: 0 !important;
+      @media (max-width: 640px) {
+        .page-content .profile-info-row.urppp-query-row,
+        .profile-info-row.urppp-query-row {
+          grid-template-columns: minmax(0, 1fr) !important;
         }
       }
 
@@ -5125,7 +5129,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.23');
+    console.log('[URP++] style applied v0.4.24');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5745,7 +5749,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.23',
+    version: '0.4.24',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
