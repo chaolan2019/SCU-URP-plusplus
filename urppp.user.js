@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.23
+// @version      0.5.24
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -690,7 +690,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.23';
+          content:'URP++ v0.5.24';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -5645,16 +5645,18 @@
         align-items: center !important;
       }
 
-      /* 个人信息 / 学籍信息 */
+      /* 个人信息 / 学籍 / 查询表单：统一卡片壳 */
       .profile-user-info,
       .profile-user-info-striped {
+        background: var(--surface) !important;
         border: 1px solid var(--border) !important;
-        border-radius: var(--radius) !important;
+        border-radius: 12px !important;
         overflow: hidden !important;
-        margin-bottom: 16px !important;
+        margin: 0 0 16px !important;
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
+        box-shadow: none !important;
       }
       /* 培养方案完成情况：下方课组卡片统一尺寸节奏（排除查询条件表单） */
       .page-content .profile-user-info:not(.self):not(.urppp-query-form):not(:has(.value_element)),
@@ -5670,7 +5672,7 @@
         height: 100% !important;
         min-height: 108px !important;
       }
-      /* 查询条件表单：高度随内容，不留底部空档 */
+      /* 查询条件表单：高度随内容；全宽统一，避免窄条突兀 */
       .page-content .profile-user-info.self,
       .page-content .profile-user-info.urppp-query-form,
       .page-content .profile-user-info:has(.value_element),
@@ -5678,6 +5680,16 @@
       .profile-user-info.urppp-query-form {
         min-height: 0 !important;
         height: auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        display: block !important;
+        float: none !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        padding: 14px 16px !important;
+        margin: 0 0 16px !important;
+        box-sizing: border-box !important;
       }
       .page-content .row:has(> [class*="col-"] > .profile-user-info) {
         display: flex !important;
@@ -5693,30 +5705,68 @@
        * - 查询条件 .self：一行多对 name/value（float 横向排列）
        * 不能全局 float:none / display:flex，否则查询表会竖着堆
        * ============================================================ */
+      /* Chosen 下拉需要可见；圆角靠自身 background + border-radius，不依赖 overflow:hidden */
       .profile-user-info:has(.chosen-container),
       .widget-box:has(.chosen-container),
       .panel:has(.chosen-container),
       .profile-user-info.self:not(.setLabelWidth),
       .profile-user-info-striped.self:not(.setLabelWidth),
-      .profile-user-info:has(.value_element):not(.setLabelWidth) {
+      .profile-user-info:has(.value_element):not(.setLabelWidth),
+      .profile-user-info.urppp-query-form {
         overflow: visible !important;
+        background: var(--surface) !important;
+        border-radius: 12px !important;
+        border: 1px solid var(--border) !important;
       }
-      /* 学籍卡需要 overflow:hidden 才能裁出圆角 */
+      /* 学籍卡裁圆角 */
       .profile-user-info.setLabelWidth,
       .profile-user-info-striped.setLabelWidth {
         overflow: hidden !important;
-        border-radius: var(--radius, 12px) !important;
+        background: var(--surface) !important;
+        border-radius: 12px !important;
+      }
+      /* 查询表单内行/标签不要再铺方形底，避免顶破圆角观感 */
+      .profile-user-info.self .profile-info-name,
+      .profile-user-info.urppp-query-form .profile-info-name,
+      .profile-user-info:has(.value_element):not(.setLabelWidth) .profile-info-name {
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+      }
+      .profile-user-info.self .profile-info-value,
+      .profile-user-info.urppp-query-form .profile-info-value,
+      .profile-user-info:has(.value_element):not(.setLabelWidth) .profile-info-value {
+        background: transparent !important;
+        border: none !important;
+      }
+      .profile-user-info.self .profile-info-row,
+      .profile-user-info.urppp-query-form .profile-info-row,
+      .profile-user-info:has(.value_element):not(.setLabelWidth) .profile-info-row {
+        border-bottom: none !important;
+        background: transparent !important;
       }
 
-      /* 单对信息表：整卡拉满内容区，避免 shrink-to-fit 变窄条 */
-      .page-content .profile-user-info:not(.urppp-query-form),
-      .page-content .profile-user-info-striped:not(.urppp-query-form),
+      /* 所有 profile 卡片拉满内容区，避免单独窄条突兀 */
+      .page-content .profile-user-info,
+      .page-content .profile-user-info-striped,
+      .page-content .profile-user-info.self,
+      .page-content .profile-user-info.urppp-query-form,
       .page-content form .profile-user-info,
-      .page-content form .profile-user-info-striped {
+      .page-content form .profile-user-info-striped,
+      #page-content-template .profile-user-info {
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
         display: block !important;
+        float: none !important;
+      }
+      /* 外层 col 若只有查询表单，也别被 float 挤成半宽 */
+      .page-content form:has(> .profile-user-info.self),
+      .page-content form:has(> .profile-user-info.urppp-query-form),
+      .page-content .widget-main > .profile-user-info.self,
+      .page-content .widget-main > .profile-user-info.urppp-query-form {
+        width: 100% !important;
+        max-width: 100% !important;
       }
       .profile-info-row:not(.urppp-query-row):not(.urppp-dual-pair) {
         display: grid !important;
@@ -9942,7 +9992,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.23');
+    console.log('[URP++] style applied v0.5.24');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -10923,7 +10973,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.23',
+    version: '0.5.24',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
