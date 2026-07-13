@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.27
+// @version      0.4.28
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.27';
+          content:'URP++ v0.4.28';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -4137,7 +4137,7 @@
       }
       .chosen-single, .chosen-choices {
         min-height: 34px !important;
-        line-height: 32px !important;
+        line-height: 34px !important;
         padding: 0 30px 0 12px !important;
         border-radius: 8px !important;
         box-sizing: border-box !important;
@@ -4150,7 +4150,7 @@
       .chosen-single span {
         display: block !important;
         margin-right: 26px !important;
-        line-height: 32px !important;
+        line-height: 34px !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
         white-space: nowrap !important;
@@ -4184,52 +4184,37 @@
         border-color: var(--border) !important;
         box-shadow: var(--shadow) !important;
       }
-      /* 下拉搜索框：输入文字与搜索图标垂直居中 */
+      /* 下拉搜索框：固定高度，文字/图标几何居中（别再靠上） */
       .chosen-search {
         position: relative !important;
         margin: 0 !important;
-        padding: 8px 8px 6px !important;
+        padding: 8px !important;
         box-sizing: border-box !important;
       }
       .chosen-search input[type="text"],
-      .chosen-container .chosen-search input {
+      .chosen-container .chosen-search input,
+      .chosen-container-single .chosen-search input {
         width: 100% !important;
-        height: 32px !important;
-        min-height: 32px !important;
+        height: 34px !important;
+        min-height: 34px !important;
         margin: 0 !important;
-        padding: 0 12px 0 32px !important;
-        line-height: 32px !important;
+        padding: 0 12px 0 34px !important;
+        line-height: 34px !important;
         font-size: 13px !important;
         border-radius: 8px !important;
         border: 1px solid var(--border) !important;
         background-color: var(--input-bg) !important;
         color: var(--text) !important;
         box-sizing: border-box !important;
+        vertical-align: middle !important;
         background-repeat: no-repeat !important;
-        background-position: 10px center !important;
+        background-position: 12px 50% !important;
         background-size: 14px 14px !important;
       }
-      /* 有的主题用伪元素画搜索图标 */
+      /* 不用额外伪元素图标，避免和 Chosen 自带图标叠两层且偏移 */
       .chosen-search:before {
-        content: "\f002" !important;
-        font-family: FontAwesome, "Font Awesome 5 Free", "Font Awesome 6 Free", sans-serif !important;
-        font-weight: 900 !important;
-        position: absolute !important;
-        left: 18px !important;
-        top: 50% !important;
-        transform: translateY(-50%) !important;
-        width: 14px !important;
-        height: 14px !important;
-        line-height: 14px !important;
-        font-size: 12px !important;
-        color: var(--text-muted) !important;
-        pointer-events: none !important;
-        z-index: 2 !important;
-        display: block !important;
-      }
-      /* 若已有背景图标，避免双图标：输入仍留左内边距 */
-      .chosen-container-single .chosen-search input {
-        background-position: 10px 50% !important;
+        content: none !important;
+        display: none !important;
       }
       input:focus, select:focus, textarea:focus, .form-control:focus,
       .chosen-container-active .chosen-single, .chosen-container-active .chosen-choices {
@@ -4237,7 +4222,7 @@
         box-shadow: 0 0 0 3px var(--ring) !important;
         outline: none !important;
       }
-      /* 选项列表：覆盖 commoncss line-height:25px，真正垂直居中 */
+      /* 选项：固定行高=高度，避免 flex+小 line-height 视觉上浮 */
       .chosen-results {
         margin: 0 !important;
         padding: 4px 0 !important;
@@ -4245,23 +4230,32 @@
       .chosen-results li,
       .chosen-results li.active-result,
       .chosen-container .chosen-results li {
-        display: flex !important;
-        align-items: center !important;
-        min-height: 32px !important;
-        height: auto !important;
+        display: block !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        max-height: 34px !important;
         margin: 0 !important;
-        padding: 6px 12px !important;
-        line-height: 1.35 !important;
+        padding: 0 12px !important;
+        line-height: 34px !important;
         font-size: 13px !important;
         color: var(--text) !important;
         box-sizing: border-box !important;
         white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        vertical-align: middle !important;
+      }
+      .chosen-results li em {
+        font-style: normal !important;
       }
       .chosen-results li.highlighted,
-      .chosen-results li.result-selected,
-      .chosen-results li.highlighted em,
-      .chosen-results li em {
+      .chosen-results li.result-selected {
         background: var(--primary) !important;
+        color: #fff !important;
+      }
+      .chosen-results li.highlighted em,
+      .chosen-results li.result-selected em {
+        background: transparent !important;
         color: #fff !important;
       }
       .chosen-results li.no-results {
@@ -5244,7 +5238,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.27');
+    console.log('[URP++] style applied v0.4.28');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5864,7 +5858,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.27',
+    version: '0.4.28',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
