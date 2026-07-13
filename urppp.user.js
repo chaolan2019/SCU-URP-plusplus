@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.0
+// @version      0.6.1
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -682,7 +682,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.0';
+          content:'URP++ v0.6.1';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3230,36 +3230,12 @@
 
   function disarmNoticeTableHover(table) {
     if (!table) return;
-    // 摘掉 Bootstrap/ACE table-hover，从根上断掉 hover 改色
+    // CSS 已覆盖 table-hover；只摘 class + 钉背景，避免 jQuery 全量 off
     table.classList.remove('table-hover', 'table-striped');
     table.classList.add('urppp-notice-nohover');
-    try {
-      const $ = (typeof unsafeWindow !== 'undefined' && unsafeWindow.jQuery) ? unsafeWindow.jQuery : (window.jQuery || null);
-      if ($ && $.fn) {
-        const $rows = $(table).find('> tbody > tr, tr');
-        $rows.off('mouseenter.urpppNotice mouseleave.urpppNotice mouseover mouseout mouseenter mouseleave');
-        // 常见 ACE 绑定在 document / table 上，再解一层
-        $(table).off('mouseenter mouseleave mouseover mouseout');
-        $rows.each(function () {
-          const el = this;
-          try {
-            if ($._data) {
-              const ev = $._data(el, 'events');
-              if (ev) {
-                ['mouseenter', 'mouseleave', 'mouseover', 'mouseout'].forEach((type) => {
-                  if (!ev[type]) return;
-                  // 去掉会改 background 的 handler 很难识别，直接 off 全部同名
-                  $(el).off(type);
-                });
-              }
-            }
-          } catch (_) {}
-        });
-      }
-    } catch (_) {}
-    Array.from(table.querySelectorAll('tr')).forEach((tr) => {
+    table.querySelectorAll('tr.urppp-notice-row').forEach((tr) => {
       tr.classList.remove('hover');
-      if (tr.classList.contains('urppp-notice-row')) pinNoticeRowSurface(tr);
+      pinNoticeRowSurface(tr);
     });
   }
 
@@ -9084,12 +9060,8 @@
        * #curriculumInfo-divcon / #curriculumInfo-divcon1 / #curriculumInfo-divcon2
        * ============================================================ */
       /*
-       * 右侧滑出面板：只改颜色/阴影/标题，不锁 top/right/width/height/overflow/display
-       * 教室课表/培养方案都依赖 jQuery animate(right/width)
-       */
-      /*
        * 右侧滑出面板：只改颜色/阴影，绝不锁 right/width/opacity/display
-       * 站点关闭态是 right:-70% / width:0 等 inline，right:0!important 会导致空白抽屉常驻
+       * 站点关闭态是 right:-70% / width:0 等 inline；教室/培养方案依赖 jQuery animate
        */
       #curriculumInfo-divcon,
       #curriculumInfo-divcon1,
@@ -10775,11 +10747,9 @@ fo-striped.setLabelWidth,
     fixSinglePairProfileForms();
     patchAceTabNavbars();
     restyleInfoboxPercentages();
-    setTimeout(restyleInfoboxPercentages, 300);
-    setTimeout(restyleInfoboxPercentages, 1000);
     beautifyFreeClassroomList();
-    setTimeout(beautifyFreeClassroomList, 300);
-    setTimeout(beautifyFreeClassroomList, 1000);
+    setTimeout(() => { restyleInfoboxPercentages(); beautifyFreeClassroomList(); }, 300);
+    setTimeout(() => { restyleInfoboxPercentages(); beautifyFreeClassroomList(); }, 1000);
     scheduleBeautifyPagebar();
     beautifyPagebar();
     // 查询表：首屏立刻布局（CSS 已预横排）；延迟只补 Chosen / 漏网行，次数收敛防闪
@@ -10829,25 +10799,33 @@ fo-striped.setLabelWidth,
       }, true);
     }
     beautifyBreadcrumbs();
-    setTimeout(alignRollInfoLayout, 200);
-    setTimeout(patchAceTabNavbars, 200);
-    setTimeout(alignRollInfoLayout, 600);
-    setTimeout(patchAceTabNavbars, 600);
-    setTimeout(alignRollInfoLayout, 1200);
-    setTimeout(patchAceTabNavbars, 1200);
-        setTimeout(beautifyBreadcrumbs, 200);
-    setTimeout(beautifyBreadcrumbs, 600);
-    setTimeout(beautifyBreadcrumbs, 1500);
-    window.addEventListener('load', () => setTimeout(beautifyBreadcrumbs, 100));
-
-    // 顶栏重建（JS 强制对齐）
     rebuildNavbar();
     patchSchoolCalendarLink();
-    window.addEventListener('load', () => { rebuildNavbar(); injectNavbarThemeSwitch(); patchSchoolCalendarLink(); });
+
+    // 非查询/公告关键路径：合并延迟波，减少重复 DOM 扫描（不改最终样式）
+    const layoutWave = () => {
+      alignRollInfoLayout();
+      patchAceTabNavbars();
+      beautifyBreadcrumbs();
+    };
+    setTimeout(layoutWave, 200);
+    setTimeout(layoutWave, 800);
+
+    if (!window.__urpppLoadBound) {
+      window.__urpppLoadBound = true;
+      window.addEventListener('load', () => {
+        rebuildNavbar();
+        injectNavbarThemeSwitch();
+        patchSchoolCalendarLink();
+        beautifyBreadcrumbs();
+        alignRollInfoLayout();
+        patchAceTabNavbars();
+      });
+    }
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.0');
+    console.log('[URP++] style applied v0.6.1');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11838,7 +11816,7 @@ fo-striped.setLabelWidth,
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.0',
+    version: '0.6.1',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
