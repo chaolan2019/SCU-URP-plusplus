@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.25
+// @version      0.4.26
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.25';
+          content:'URP++ v0.4.26';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1075,9 +1075,95 @@
       wrap.remove();
     });
   }
-  // 查询条件：把 ACE 同行多对 name/value 包成 pair，稳定横排
+  // 查询条件：把 ACE 同行多对 name/value 包成 pair；按本行列数动态布局
   function beautifyQueryForms() {
     try {
+      const applyRowLayout = (row) => {
+        const pairs = Array.from(row.querySelectorAll(':scope > .urppp-query-pair'));
+        const n = Math.max(pairs.length, 1);
+        // 4 个就 4 列，3 个 3 列，2 个 2 列；超过 4 按 4 列换行
+        const cols = Math.min(n, 4);
+        row.classList.add('urppp-query-row');
+        row.style.setProperty('display', 'grid', 'important');
+        row.style.setProperty('grid-template-columns', 'repeat(' + cols + ', minmax(0, 1fr))', 'important');
+        row.style.setProperty('column-gap', '14px', 'important');
+        row.style.setProperty('row-gap', '10px', 'important');
+        row.style.setProperty('align-items', 'center', 'important');
+        row.style.setProperty('width', '100%', 'important');
+        row.style.setProperty('max-width', '100%', 'important');
+        row.style.setProperty('box-sizing', 'border-box', 'important');
+        row.dataset.urpppQueryCols = String(cols);
+
+        pairs.forEach((pair) => {
+          pair.style.setProperty('display', 'flex', 'important');
+          pair.style.setProperty('align-items', 'center', 'important');
+          pair.style.setProperty('width', '100%', 'important');
+          pair.style.setProperty('min-width', '0', 'important');
+          pair.style.setProperty('max-width', '100%', 'important');
+          pair.style.setProperty('box-sizing', 'border-box', 'important');
+          pair.style.removeProperty('flex');
+
+          const name = pair.querySelector('.profile-info-name');
+          const value = pair.querySelector('.profile-info-value');
+          if (name) {
+            name.style.setProperty('float', 'none', 'important');
+            name.style.setProperty('display', 'flex', 'important');
+            name.style.setProperty('align-items', 'center', 'important');
+            name.style.setProperty('justify-content', 'flex-end', 'important');
+            name.style.setProperty('flex', '0 0 84px', 'important');
+            name.style.setProperty('width', '84px', 'important');
+            name.style.setProperty('min-width', '84px', 'important');
+            name.style.setProperty('max-width', '96px', 'important');
+            name.style.setProperty('margin', '0', 'important');
+            name.style.setProperty('margin-left', '0', 'important');
+            name.style.setProperty('padding', '0 8px 0 0', 'important');
+            name.style.setProperty('background', 'transparent', 'important');
+            name.style.setProperty('border', 'none', 'important');
+            name.style.setProperty('border-right', 'none', 'important');
+          }
+          if (value) {
+            value.style.setProperty('float', 'none', 'important');
+            value.style.setProperty('display', 'flex', 'important');
+            value.style.setProperty('align-items', 'center', 'important');
+            value.style.setProperty('flex', '1 1 auto', 'important');
+            value.style.setProperty('width', 'auto', 'important');
+            value.style.setProperty('min-width', '0', 'important');
+            value.style.setProperty('max-width', 'none', 'important');
+            value.style.setProperty('margin', '0', 'important');
+            value.style.setProperty('margin-left', '0', 'important');
+            value.style.setProperty('padding', '0', 'important');
+            value.style.setProperty('background', 'transparent', 'important');
+            value.style.setProperty('border', 'none', 'important');
+            value.querySelectorAll('input, select, .chosen-container, .form-control').forEach((el) => {
+              el.style.setProperty('width', '100%', 'important');
+              el.style.setProperty('min-width', '0', 'important');
+              el.style.setProperty('max-width', 'none', 'important');
+            });
+          }
+          // Chosen 隐藏原生 select，并拉满宽度
+          pair.querySelectorAll('.chosen-container').forEach((c) => {
+            const prev = c.previousElementSibling;
+            if (prev && prev.tagName === 'SELECT') {
+              prev.style.setProperty('display', 'none', 'important');
+              prev.classList.add('urppp-chosen-hidden');
+            }
+            const sel = c.parentElement && c.parentElement.querySelector('select');
+            if (sel) {
+              sel.style.setProperty('display', 'none', 'important');
+              sel.classList.add('urppp-chosen-hidden');
+            }
+            c.style.setProperty('width', '100%', 'important');
+            c.style.setProperty('min-width', '0', 'important');
+            c.style.setProperty('max-width', 'none', 'important');
+            const single = c.querySelector('.chosen-single');
+            if (single) {
+              single.style.setProperty('width', '100%', 'important');
+              single.style.setProperty('max-width', 'none', 'important');
+            }
+          });
+        });
+      };
+
       const roots = document.querySelectorAll(
         '.profile-user-info.self, .profile-user-info-striped.self, .profile-user-info:has(.value_element)'
       );
@@ -1085,43 +1171,12 @@
         root.classList.add('urppp-query-form');
         root.querySelectorAll('.profile-info-row').forEach((row) => {
           if (row.dataset.urpppQueryDone === '1') {
-            // 已包过 pair：强制 3 列 grid
-            row.classList.add('urppp-query-row');
-            row.style.setProperty('display', 'grid', 'important');
-            row.style.setProperty('grid-template-columns', 'repeat(3, minmax(0, 1fr))', 'important');
-            row.style.setProperty('column-gap', '16px', 'important');
-            row.style.setProperty('row-gap', '12px', 'important');
-            row.style.setProperty('width', '100%', 'important');
-            row.style.setProperty('max-width', '100%', 'important');
-            row.querySelectorAll('.urppp-query-pair').forEach((pair) => {
-              pair.style.setProperty('display', 'flex', 'important');
-              pair.style.setProperty('width', '100%', 'important');
-              pair.style.setProperty('min-width', '0', 'important');
-              pair.style.setProperty('max-width', '100%', 'important');
-              pair.style.removeProperty('flex');
-              const value = pair.querySelector('.profile-info-value');
-              if (value) {
-                value.style.setProperty('margin-left', '0', 'important');
-                value.style.setProperty('flex', '1 1 auto', 'important');
-                value.style.setProperty('min-width', '0', 'important');
-                value.style.setProperty('width', 'auto', 'important');
-              }
-              pair.querySelectorAll('.chosen-container, input, select.value_element').forEach((el) => {
-                if (el.tagName === 'SELECT' && (el.classList.contains('chosen') || el.nextElementSibling?.classList?.contains('chosen-container'))) {
-                  el.style.setProperty('display', 'none', 'important');
-                } else if (!el.classList.contains('urppp-chosen-hidden')) {
-                  el.style.setProperty('width', '100%', 'important');
-                  el.style.setProperty('max-width', 'none', 'important');
-                  el.style.setProperty('min-width', '0', 'important');
-                }
-              });
-            });
+            applyRowLayout(row);
             return;
           }
           const kids = Array.from(row.children).filter((el) =>
             el.classList && (el.classList.contains('profile-info-name') || el.classList.contains('profile-info-value'))
           );
-          // 少于两对就不处理（学籍等单对结构）
           const names = kids.filter((el) => el.classList.contains('profile-info-name'));
           if (names.length < 2) {
             row.dataset.urpppQueryDone = '1';
@@ -1144,99 +1199,14 @@
               frag.appendChild(pair);
               i += 2;
             } else if (a) {
-              // 异常节点原样保留
               frag.appendChild(a);
               i += 1;
-            } else {
-              break;
-            }
+            } else break;
           }
-          // 清掉 row 里残留，再塞回 pair
           while (row.firstChild) row.removeChild(row.firstChild);
           row.appendChild(frag);
-          row.classList.add('urppp-query-row');
-          // 内联强制 3 列 grid，避免 flex 百分比 + min-width 挤成单列
-          row.style.setProperty('display', 'grid', 'important');
-          row.style.setProperty('grid-template-columns', 'repeat(3, minmax(0, 1fr))', 'important');
-          row.style.setProperty('column-gap', '16px', 'important');
-          row.style.setProperty('row-gap', '12px', 'important');
-          row.style.setProperty('align-items', 'center', 'important');
-          row.style.setProperty('width', '100%', 'important');
-          row.style.setProperty('box-sizing', 'border-box', 'important');
-          row.querySelectorAll('.urppp-query-pair').forEach((pair) => {
-            pair.style.setProperty('display', 'flex', 'important');
-            pair.style.setProperty('align-items', 'center', 'important');
-            pair.style.setProperty('width', '100%', 'important');
-            pair.style.setProperty('min-width', '0', 'important');
-            pair.style.setProperty('max-width', 'none', 'important');
-            pair.style.removeProperty('flex');
-            pair.style.setProperty('box-sizing', 'border-box', 'important');
-            const name = pair.querySelector('.profile-info-name');
-            const value = pair.querySelector('.profile-info-value');
-            if (name) {
-              name.style.setProperty('float', 'none', 'important');
-              name.style.setProperty('width', '84px', 'important');
-              name.style.setProperty('min-width', '84px', 'important');
-              name.style.setProperty('max-width', '96px', 'important');
-              name.style.setProperty('margin', '0', 'important');
-              name.style.setProperty('margin-left', '0', 'important');
-              name.style.setProperty('display', 'flex', 'important');
-              name.style.setProperty('align-items', 'center', 'important');
-              name.style.setProperty('justify-content', 'flex-end', 'important');
-              name.style.setProperty('background', 'transparent', 'important');
-              name.style.setProperty('border', 'none', 'important');
-              name.style.setProperty('padding', '0 6px 0 0', 'important');
-            }
-            if (value) {
-              value.style.setProperty('float', 'none', 'important');
-              value.style.setProperty('margin', '0', 'important');
-              value.style.setProperty('margin-left', '0', 'important');
-              value.style.setProperty('display', 'flex', 'important');
-              value.style.setProperty('align-items', 'center', 'important');
-              value.style.setProperty('flex', '1 1 auto', 'important');
-              value.style.setProperty('width', 'auto', 'important');
-              value.style.setProperty('min-width', '0', 'important');
-              value.style.setProperty('max-width', 'none', 'important');
-              value.style.setProperty('background', 'transparent', 'important');
-              value.style.setProperty('border', 'none', 'important');
-              value.style.setProperty('padding', '0', 'important');
-              value.querySelectorAll('input, select, .chosen-container, .form-control').forEach((el) => {
-                if (el.tagName === 'SELECT') {
-                  // chosen 会接管；先统一 100%，后面再 hide
-                  el.style.setProperty('width', '100%', 'important');
-                  el.style.setProperty('max-width', 'none', 'important');
-                  el.style.setProperty('min-width', '0', 'important');
-                } else {
-                  el.style.setProperty('width', '100%', 'important');
-                  el.style.setProperty('max-width', 'none', 'important');
-                  el.style.setProperty('min-width', '0', 'important');
-                }
-              });
-            }
-          });
-          // Chosen 生成后隐藏原生 select
-          row.querySelectorAll('.chosen-container').forEach((c) => {
-            const prev = c.previousElementSibling;
-            if (prev && prev.tagName === 'SELECT') {
-              prev.style.setProperty('display', 'none', 'important');
-              prev.classList.add('urppp-chosen-hidden');
-            }
-            const sel = c.parentElement && c.parentElement.querySelector('select');
-            if (sel) {
-              sel.style.setProperty('display', 'none', 'important');
-              sel.classList.add('urppp-chosen-hidden');
-            }
-            // 吃掉 commoncss 的 150px 固定宽，铺满 pair
-            c.style.setProperty('width', '100%', 'important');
-            c.style.setProperty('min-width', '0', 'important');
-            c.style.setProperty('max-width', 'none', 'important');
-            const single = c.querySelector('.chosen-single');
-            if (single) {
-              single.style.setProperty('width', '100%', 'important');
-              single.style.setProperty('max-width', 'none', 'important');
-            }
-          });
           row.dataset.urpppQueryDone = '1';
+          applyRowLayout(row);
         });
       });
     } catch (err) {
@@ -3501,9 +3471,6 @@
       .page-content .profile-user-info:has(.value_element) .profile-info-row.urppp-query-row,
       .page-content .profile-info-row.urppp-query-row {
         display: grid !important;
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        column-gap: 16px !important;
-        row-gap: 12px !important;
         align-items: center !important;
       }
 
@@ -3633,16 +3600,29 @@
       .profile-info-row.urppp-query-row {
         display: grid !important;
         grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        column-gap: 16px !important;
-        row-gap: 12px !important;
+        column-gap: 14px !important;
+        row-gap: 10px !important;
         align-items: center !important;
         border-bottom: none !important;
         min-height: 0 !important;
-        padding: 4px 0 8px !important;
+        padding: 2px 0 8px !important;
         margin: 0 !important;
         overflow: visible !important;
         width: 100% !important;
         box-sizing: border-box !important;
+      }
+      /* 按本行 pair 数动态列数，避免 4 字段硬套 3 列留下空洞 */
+      .profile-info-row.urppp-query-row[data-urppp-query-cols="1"] {
+        grid-template-columns: minmax(0, 1fr) !important;
+      }
+      .profile-info-row.urppp-query-row[data-urppp-query-cols="2"] {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      }
+      .profile-info-row.urppp-query-row[data-urppp-query-cols="3"] {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+      }
+      .profile-info-row.urppp-query-row[data-urppp-query-cols="4"] {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
       }
       .profile-info-row.urppp-query-row:before,
       .profile-info-row.urppp-query-row:after,
@@ -3787,14 +3767,13 @@
       .urppp-query-pair .chosen-container {
         display: block !important;
       }
-      @media (max-width: 1100px) {
-        .page-content .profile-info-row.urppp-query-row,
-        .profile-info-row.urppp-query-row {
+      @media (max-width: 1200px) {
+        .profile-info-row.urppp-query-row[data-urppp-query-cols="4"],
+        .profile-info-row.urppp-query-row[data-urppp-query-cols="3"] {
           grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         }
       }
-      @media (max-width: 640px) {
-        .page-content .profile-info-row.urppp-query-row,
+      @media (max-width: 700px) {
         .profile-info-row.urppp-query-row {
           grid-template-columns: minmax(0, 1fr) !important;
         }
@@ -5187,7 +5166,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.25');
+    console.log('[URP++] style applied v0.4.26');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -5807,7 +5786,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.25',
+    version: '0.4.26',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
