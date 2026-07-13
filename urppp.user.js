@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.5.8
+// @version      0.5.9
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -689,7 +689,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.5.8';
+          content:'URP++ v0.5.9';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3525,6 +3525,17 @@
     }, true);
   }
   function beautifyInternal() {
+    // body 晚于首屏 applyTheme 时补挂暗色 class
+    try {
+      const n = getCurrent();
+      document.documentElement.dataset.urpppTheme = n;
+      document.documentElement.classList.remove('urppp-theme-default', 'urppp-theme-dark', 'urppp-theme-scu-red');
+      document.documentElement.classList.add('urppp-theme-' + n);
+      if (document.body) {
+        document.body.dataset.urpppTheme = n;
+        document.body.classList.toggle('urppp-dark', n === 'dark');
+      }
+    } catch (_) {}
     let styleEl = document.getElementById('urppp-internal-style');
     const styleExists = !!styleEl;
     if (!styleEl) {
@@ -9519,7 +9530,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.5.8');
+    console.log('[URP++] style applied v0.5.9');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -10394,7 +10405,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.5.8',
+    version: '0.5.9',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
