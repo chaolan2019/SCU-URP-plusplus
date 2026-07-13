@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.4.46
+// @version      0.4.47
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -566,7 +566,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.4.46';
+          content:'URP++ v0.4.47';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1077,44 +1077,76 @@
   }
   // 查询条件：把 ACE 同行多对 name/value 包成 pair；按本行列数动态布局
   // 查询区原生 select 统一升级为 Chosen（与「学年学期」一致）
+  // 注意：脚本有 @grant，页面 jQuery/Chosen 在 unsafeWindow 上
+  function pageJQuery() {
+    const g = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+    return g.jQuery || g.$ || window.jQuery || window.$ || null;
+  }
+
   function ensureQueryChosen() {
     try {
-      const $ = window.jQuery || window.$;
-      if (!$ || !$.fn || typeof $.fn.chosen !== 'function') return;
+      const $ = pageJQuery();
+      if (!$ || !$.fn || typeof $.fn.chosen !== 'function') return false;
 
-      const sels = document.querySelectorAll(
-        '.profile-user-info select, .urppp-query-form select, select.value_element, .profile-info-value > select'
+      const roots = document.querySelectorAll(
+        '.profile-user-info, .urppp-query-form, .profile-info-row, form'
       );
+      const seen = new Set();
+      const sels = [];
+      roots.forEach((root) => {
+        root.querySelectorAll('select').forEach((sel) => {
+          if (seen.has(sel)) return;
+          seen.add(sel);
+          sels.push(sel);
+        });
+      });
+      // 兜底：独立 value_element
+      document.querySelectorAll('select.value_element, .profile-info-value > select').forEach((sel) => {
+        if (seen.has(sel)) return;
+        seen.add(sel);
+        sels.push(sel);
+      });
+
       sels.forEach((sel) => {
         if (!sel || sel.multiple || sel.disabled) return;
-        if (sel.dataset.urpppChosen === '1') return;
+        if (sel.size && sel.size > 1) return; // 列表多选框跳过
         const $sel = $(sel);
         const already =
-          $sel.data('chosen') ||
+          !!$sel.data('chosen') ||
           sel.classList.contains('chzn-done') ||
-          (sel.nextElementSibling && sel.nextElementSibling.classList.contains('chosen-container'));
+          !!(sel.nextElementSibling && sel.nextElementSibling.classList.contains('chosen-container')) ||
+          !!(sel.parentElement && sel.parentElement.querySelector(':scope > .chosen-container'));
         if (already) {
           sel.dataset.urpppChosen = '1';
+          sel.classList.add('urppp-chosen-hidden');
           sel.style.setProperty('display', 'none', 'important');
           return;
         }
         try {
           if (!sel.classList.contains('select')) sel.classList.add('select');
+          // destroy 半残状态再 init
+          try { if ($sel.data('chosen')) $sel.chosen('destroy'); } catch (_) { /* ignore */ }
           $sel.chosen({
             allow_single_deselect: true,
             search_contains: true,
             width: '100%',
-            no_results_text: '无匹配项'
+            no_results_text: '无匹配项',
+            disable_search_threshold: 0
           });
           sel.dataset.urpppChosen = '1';
+          sel.classList.add('urppp-chosen-hidden');
           sel.style.setProperty('display', 'none', 'important');
-          const cont = sel.nextElementSibling;
-          if (cont && cont.classList.contains('chosen-container')) {
+          const cont =
+            sel.nextElementSibling && sel.nextElementSibling.classList.contains('chosen-container')
+              ? sel.nextElementSibling
+              : (sel.parentElement && sel.parentElement.querySelector('.chosen-container'));
+          if (cont) {
             cont.style.setProperty('width', '100%', 'important');
             cont.style.setProperty('min-width', '0', 'important');
+            cont.style.setProperty('display', 'block', 'important');
           }
         } catch (e) {
-          console.warn('[URP++] chosen init failed', e);
+          console.warn('[URP++] chosen init failed', sel, e);
         }
       });
 
@@ -1125,20 +1157,42 @@
         $.fn.html = function () {
           const ret = oldHtml.apply(this, arguments);
           if (arguments.length) {
-            const nodes = this.filter('select').add(this.find('select'));
-            nodes.each(function () {
-              const $el = $(this);
-              if ($el.data('chosen') || $el.next('.chosen-container').length) {
-                try { $el.trigger('chosen:updated'); } catch (_) { /* ignore */ }
-              }
-            });
+            try {
+              this.filter('select').add(this.find('select')).each(function () {
+                const $el = $(this);
+                if ($el.data('chosen') || $el.next('.chosen-container').length) {
+                  try { $el.trigger('chosen:updated'); } catch (_) { /* ignore */ }
+                }
+              });
+            } catch (_) { /* ignore */ }
           }
           return ret;
         };
       }
+      return true;
     } catch (err) {
       console.warn('[URP++] ensureQueryChosen failed', err);
+      return false;
     }
+  }
+
+  function scheduleEnsureQueryChosen() {
+    if (window.__urpppChosenScheduleBound) return;
+    window.__urpppChosenScheduleBound = true;
+    const delays = [0, 100, 300, 600, 1200, 2000, 3500];
+    delays.forEach((ms) => {
+      setTimeout(() => {
+        ensureQueryChosen();
+        try { beautifyQueryForms(); } catch (_) { /* ignore */ }
+      }, ms);
+    });
+    // 页面可能晚加载 chosen
+    let tries = 0;
+    const timer = setInterval(() => {
+      tries += 1;
+      const ok = ensureQueryChosen();
+      if (ok || tries > 20) clearInterval(timer);
+    }, 400);
   }
   function beautifyQueryForms() {
     try {
@@ -3926,12 +3980,12 @@
         box-sizing: border-box !important;
       }
       .urppp-query-pair .profile-info-value > input,
-      .urppp-query-pair .profile-info-value > select,
-      .urppp-query-pair .profile-info-value > .form-control,
+      .urppp-query-pair .profile-info-value > select:not(.urppp-chosen-hidden):not(.chzn-done):not(.chosen),
+      .urppp-query-pair .profile-info-value > .form-control:not(select.urppp-chosen-hidden),
       .urppp-query-pair .profile-info-value > .chosen-container,
-      .urppp-query-pair .value_element,
+      .urppp-query-pair .value_element:not(select.urppp-chosen-hidden):not(select.chzn-done),
       .urppp-query-pair input.value_element,
-      .urppp-query-pair select.value_element {
+      .urppp-query-pair select.value_element:not(.urppp-chosen-hidden):not(.chzn-done):not(.chosen) {
         display: block !important;
         float: none !important;
         width: 100% !important;
@@ -3989,10 +4043,19 @@
       /* Chosen 启用后隐藏原生 select，避免双层/撑破布局 */
       .urppp-query-pair select.chosen,
       .urppp-query-pair select.value_element.chosen,
+      .urppp-query-pair select.urppp-chosen-hidden,
       .urppp-query-pair .chosen-container + select,
-      .urppp-query-pair select[style*="display: none"],
+      .urppp-query-pair select + .chosen-container + select,
+      .urppp-query-pair select.chzn-done,
+      .profile-user-info select.urppp-chosen-hidden,
+      .profile-user-info select.chzn-done,
+      .profile-user-info select.chosen,
       .profile-user-info.urppp-query-form select.chosen,
-      .profile-user-info.urppp-query-form .chosen-container + select {
+      .profile-user-info.urppp-query-form select.urppp-chosen-hidden,
+      .profile-user-info.urppp-query-form .chosen-container + select,
+      .profile-info-value > select.urppp-chosen-hidden,
+      .profile-info-value > select.chzn-done,
+      select.urppp-chosen-hidden {
         display: none !important;
         width: 0 !important;
         height: 0 !important;
@@ -4004,6 +4067,7 @@
         position: absolute !important;
         opacity: 0 !important;
         pointer-events: none !important;
+        visibility: hidden !important;
       }
       .urppp-query-pair .chosen-container {
         display: block !important;
@@ -4477,12 +4541,22 @@
       }
       .chosen-drop {
         position: absolute !important;
+        top: calc(100% + 6px) !important; /* 下移，避免挡住触发框 */
+        left: 0 !important;
+        right: auto !important;
         z-index: 1010 !important;
         box-sizing: border-box !important;
         border-radius: 8px !important;
         background: var(--surface) !important;
         border-color: var(--border) !important;
         box-shadow: var(--shadow) !important;
+        margin-top: 0 !important;
+      }
+      .chosen-container.chosen-with-drop .chosen-drop,
+      .chosen-container-active.chosen-with-drop .chosen-drop,
+      body .chosen-container .chosen-drop {
+        top: calc(100% + 6px) !important;
+        display: block !important;
       }
       /* Chosen 下拉：压过 commoncss/phone.css 的 25px，真正垂直居中 */
       .chosen-container .chosen-results,
@@ -5539,6 +5613,7 @@
     restyleInfoboxPercentages();
     setTimeout(restyleInfoboxPercentages, 300);
     setTimeout(restyleInfoboxPercentages, 1000);
+    scheduleEnsureQueryChosen();
     ensureQueryChosen();
     beautifyQueryForms();
     patchChosenDropdownAlign();
@@ -5601,7 +5676,7 @@
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.4.46');
+    console.log('[URP++] style applied v0.4.47');
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     (function courseTableOpacity() {
@@ -6203,6 +6278,8 @@
         restyleInfoboxPercentages();
         setTimeout(restyleInfoboxPercentages, 300);
         setTimeout(restyleInfoboxPercentages, 1000);
+        scheduleEnsureQueryChosen();
+        ensureQueryChosen();
         beautifyQueryForms();
         patchChosenDropdownAlign();
         setTimeout(beautifyQueryForms, 300);
@@ -6222,7 +6299,7 @@
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.4.46',
+    version: '0.4.47',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
