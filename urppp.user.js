@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.6
+// @version      0.6.7
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -682,7 +682,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.6';
+          content:'URP++ v0.6.7';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -10264,25 +10264,25 @@ fo-striped.setLabelWidth,
         color: var(--text) !important;
         border-color: var(--border) !important;
       }
-      html.urppp-theme-dark .table > tbody > tr > td,
+      html.urppp-theme-dark .table > tbody > tr > td:not(.green_background):not(.red_background),
       html.urppp-theme-dark .table > tbody > tr > th,
-      html.urppp-theme-dark .table-bordered > tbody > tr > td,
-      html.urppp-theme-dark .dataTable > tbody > tr > td,
+      html.urppp-theme-dark .table-bordered > tbody > tr > td:not(.green_background):not(.red_background),
+      html.urppp-theme-dark .dataTable > tbody > tr > td:not(.green_background):not(.red_background),
       html.urppp-theme-dark .table > tfoot > tr > td {
         background: var(--surface) !important;
         background-color: var(--surface) !important;
         color: var(--text) !important;
         border-color: var(--border) !important;
       }
-      html.urppp-theme-dark .table-striped > tbody > tr:nth-of-type(odd) > td,
+      html.urppp-theme-dark .table-striped > tbody > tr:nth-of-type(odd) > td:not(.green_background):not(.red_background),
       html.urppp-theme-dark .table-striped > tbody > tr:nth-of-type(odd) > th,
-      html.urppp-theme-dark .dataTable > tbody > tr:nth-of-type(odd) > td {
+      html.urppp-theme-dark .dataTable > tbody > tr:nth-of-type(odd) > td:not(.green_background):not(.red_background) {
         background: color-mix(in srgb, var(--bg) 70%, var(--surface)) !important;
         background-color: color-mix(in srgb, var(--bg) 70%, var(--surface)) !important;
         color: var(--text) !important;
       }
-      html.urppp-theme-dark .table-hover > tbody > tr:hover > td,
-      html.urppp-theme-dark .dataTable > tbody > tr:hover > td {
+      html.urppp-theme-dark .table-hover > tbody > tr:hover > td:not(.green_background):not(.red_background),
+      html.urppp-theme-dark .dataTable > tbody > tr:hover > td:not(.green_background):not(.red_background) {
         background: var(--input-bg) !important;
         background-color: var(--input-bg) !important;
       }
@@ -10318,12 +10318,36 @@ fo-striped.setLabelWidth,
         background-color: transparent !important;
       }
       /* ACE 离开悬停时常把 td 写回 #fff：暗色下强制清掉 */
-      html.urppp-theme-dark .table-hover > tbody > tr:not(.urppp-notice-row).hover > td,
-      html.urppp-theme-dark .table-hover > tbody > tr:not(.urppp-notice-row) > td {
+      html.urppp-theme-dark .table-hover > tbody > tr:not(.urppp-notice-row).hover > td:not(.green_background):not(.red_background),
+      html.urppp-theme-dark .table-hover > tbody > tr:not(.urppp-notice-row) > td:not(.green_background):not(.red_background) {
         background-color: var(--surface) !important;
       }
-      html.urppp-theme-dark .table-striped > tbody > tr:nth-of-type(odd):not(.urppp-notice-row) > td {
+      html.urppp-theme-dark .table-striped > tbody > tr:nth-of-type(odd):not(.urppp-notice-row) > td:not(.green_background):not(.red_background) {
         background-color: color-mix(in srgb, var(--bg) 70%, var(--surface)) !important;
+      }
+      /* 暗色成绩语义色：必须写在上面 surface 规则之后 */
+      html.urppp-theme-dark body .table > tbody > tr > td.green_background,
+      html.urppp-theme-dark body .table-bordered > tbody > tr > td.green_background,
+      html.urppp-theme-dark body .table-striped > tbody > tr > td.green_background,
+      html.urppp-theme-dark body .table-hover > tbody > tr > td.green_background,
+      html.urppp-theme-dark body .table-hover > tbody > tr:hover > td.green_background,
+      html.urppp-theme-dark body .table-hover > tbody > tr.hover > td.green_background,
+      html.urppp-theme-dark body .dataTable > tbody > tr > td.green_background,
+      html.urppp-theme-dark body td.green_background,
+      html.urppp-theme-dark body .green_background {
+        background: rgba(34, 197, 94, 0.28) !important;
+        background-color: rgba(34, 197, 94, 0.28) !important;
+        color: #86efac !important;
+      }
+      html.urppp-theme-dark body .table > tbody > tr > td.red_background,
+      html.urppp-theme-dark body .table-bordered > tbody > tr > td.red_background,
+      html.urppp-theme-dark body .table-hover > tbody > tr > td.red_background,
+      html.urppp-theme-dark body .table-hover > tbody > tr:hover > td.red_background,
+      html.urppp-theme-dark body td.red_background,
+      html.urppp-theme-dark body .red_background {
+        background: rgba(239, 68, 68, 0.28) !important;
+        background-color: rgba(239, 68, 68, 0.28) !important;
+        color: #fca5a5 !important;
       }
       /* 空闲教室楼栋列表 / 校区标题 */
       html.urppp-theme-dark #drag-ul,
@@ -10909,7 +10933,7 @@ fo-striped.setLabelWidth,
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.6');
+    console.log('[URP++] style applied v0.6.7');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11954,7 +11978,7 @@ fo-striped.setLabelWidth,
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.6',
+    version: '0.6.7',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
