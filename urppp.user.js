@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.23
+// @version      0.6.24
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -378,7 +378,7 @@
     { id: 'tonal', name: '色调点缀', desc: '背景轻染，卡片带同色相浅底' },
     { id: 'soft', name: '柔和粉彩', desc: '卡片明显粉彩/浅色，低对比' },
     { id: 'vibrant', name: '鲜艳', desc: '背景与卡片都更有色，主色更饱和' },
-    { id: 'expressive', name: '表现力', desc: '主色更醒目，表面同色相加浓，不乱偏色' }
+    { id: 'expressive', name: '表现力', desc: '双色拼色：卡片跟主色，背景走协调次色' }
   ];
 
   function ensureBootLoader() {
@@ -604,12 +604,11 @@
           bgSeed: 0.2, surfaceSeed: 0.22, borderSeed: 0.26
         };
       case 'expressive':
-        // 不再对卡片做大色相偏移（红种子会漂成脏黄）
-        // 表现力 = 同色相更浓表面 + 主色更深/更醒目 + secondary 色相拉开
+        // 双色拼色：卡片 = 主色浅染；背景 = 协调次色浅染（不是随机脏偏色）
         return {
-          chroma: 1.2, secShift: 48, primaryTone: 34,
-          bgSeed: 0.17, surfaceSeed: 0.19, borderSeed: 0.24,
-          surfaceHueShift: 0, contrastBoost: 1
+          chroma: 1.08, secShift: 0, primaryTone: 36,
+          duo: true,
+          bgSeed: 0.12, surfaceSeed: 0.15, borderSeed: 0.18
         };
       case 'tonal':
       default:
@@ -620,24 +619,41 @@
     }
   }
 
-  // 白底直接掺 seed：mix=0.15 → 川大红约 #F6D6D6 量级，肉眼可见
-  function tintFromSeed(seedHex, mix, hueShift) {
-    const seed = normalizeHexColor(seedHex) || DEFAULT_SEED;
+  // 白底直接掺色：mix=0.15 量级肉眼可见，又不会脏
+  function tintFromHex(hex, mix) {
+    const c = normalizeHexColor(hex) || DEFAULT_SEED;
     const m = Math.max(0, Math.min(0.45, Number(mix) || 0));
     if (m <= 0.001) return '#FFFFFF';
-    let paper = mixHex('#FFFFFF', seed, m);
-    if (hueShift) {
-      const { r, g, b } = hexToRgb(paper);
-      const hsl = rgbToHsl(r, g, b);
-      // 保持浅色明度，只转色相
-      paper = hslHex((hsl.h + hueShift + 360) % 360, Math.min(0.5, Math.max(0.12, hsl.s)), Math.max(0.88, hsl.l));
-    }
-    return paper;
+    return mixHex('#FFFFFF', c, m);
+  }
+
+  // 协调次色：固定走「同色相邻色 / 柔和互补」，避免脏黄脏绿
+  // 红 → 暖杏/浅陶；蓝 → 青灰；绿 → 薄荷；紫 → 藕粉
+  function companionHue(h) {
+    // 分段选和谐偏移，而不是死板 +40°
+    if (h < 25 || h >= 345) return (h + 28) % 360;      // 红系 → 暖橙杏
+    if (h < 55) return (h + 22) % 360;                  // 橙 → 琥珀
+    if (h < 90) return (h + 160) % 360;                 // 黄绿 → 蓝绿对比
+    if (h < 160) return (h + 40) % 360;                 // 绿 → 青绿
+    if (h < 210) return (h + 35) % 360;                 // 青 → 蓝
+    if (h < 265) return (h + 48) % 360;                 // 蓝 → 靛紫
+    if (h < 310) return (h + 40) % 360;                 // 紫 → 品红
+    return (h + 24) % 360;                              // 品红 → 玫红偏暖
+  }
+
+  function companionColor(seedHex) {
+    const seed = normalizeHexColor(seedHex) || DEFAULT_SEED;
+    const { h, s } = seedHsl(seed);
+    const ch = companionHue(h);
+    // 次色饱和略降、明度抬高，浅染时干净
+    const sat = Math.min(0.72, Math.max(0.28, s * 0.78));
+    return tone(ch, sat, 42);
   }
 
   /**
    * 从 seed 生成 light roles
-   * 用户诉求：只留一套近白卡片；其余方案卡片/背景向种子色靠拢
+   * - 多数方案：同色相染色
+   * - expressive：双色拼色（卡=主色浅染，底=次色浅染）
    */
   function buildMaterialSchemeVars(seedHex, schemeId) {
     const seed = normalizeHexColor(seedHex) || DEFAULT_SEED;
@@ -645,7 +661,8 @@
     const sid = schemeId || DEFAULT_SCHEME;
     const p = schemeProfile(sid);
     const cs = Math.min(0.92, Math.max(0.35, s * p.chroma));
-    const hs = (h + p.secShift + 360) % 360;
+    const secondaryHex = companionColor(seed);
+    const { h: sh } = seedHsl(secondaryHex);
 
     const primary = tone(h, cs, p.primaryTone);
     const primaryHover = tone(h, cs, Math.max(24, p.primaryTone - 10));
@@ -653,24 +670,25 @@
 
     let bg;
     let surface;
+    let border;
     if (p.whiteCard) {
-      // 唯一白卡：背景极浅灰偏色，卡片纯白
       bg = mixHex('#F1F5F9', mixHex('#FFFFFF', seed, 0.08), 0.5);
       surface = '#FFFFFF';
+      border = '#E5E7EB';
+    } else if (p.duo) {
+      // 拼色：背景走次色，卡片走主色 —— 预览三块应能分清
+      bg = mixHex(tintFromHex(secondaryHex, p.bgSeed + 0.04), '#EEF1F4', 0.1);
+      surface = mixHex(tintFromHex(seed, p.surfaceSeed), '#FFFFFF', 0.1);
+      border = mixHex('#E5E7EB', secondaryHex, 0.16);
     } else {
-      // 背景掺 seed，再略压暗一点，让卡片浮起来
-      bg = mixHex(tintFromSeed(seed, p.bgSeed, 0), '#E8EBEF', 0.12);
-      surface = tintFromSeed(seed, p.surfaceSeed, p.surfaceHueShift || 0);
-      // 卡片比背景亮：向白抬一点，但保留染色（最多抬 18%）
-      surface = mixHex(surface, '#FFFFFF', 0.12);
+      bg = mixHex(tintFromHex(seed, p.bgSeed), '#E8EBEF', 0.12);
+      surface = mixHex(tintFromHex(seed, p.surfaceSeed), '#FFFFFF', 0.12);
+      border = mixHex('#E5E7EB', seed, Math.max(0.08, p.borderSeed * 0.7));
     }
 
     const inputBg = p.whiteCard
       ? '#F8FAFC'
-      : mixHex(surface, tintFromSeed(seed, Math.max(0.06, p.surfaceSeed * 0.7), 0), 0.4);
-    const border = p.whiteCard
-      ? '#E5E7EB'
-      : mixHex('#E5E7EB', seed, Math.max(0.08, p.borderSeed * 0.7));
+      : mixHex(surface, tintFromHex(p.duo ? secondaryHex : seed, Math.max(0.05, (p.surfaceSeed || 0.1) * 0.55)), 0.35);
     const text = tone(h, Math.min(0.45, cs * 0.55), 14);
     const textSecondary = alpha(tone(h, cs * 0.3, 34), 0.88);
     const textMuted = alpha(tone(h, cs * 0.22, 46), 0.76);
@@ -693,7 +711,7 @@
       '--radius': '16px',
       '--radius-sm': '10px',
       '--primary-container': primaryContainer,
-      '--secondary': tone(hs, Math.min(0.88, cs * 0.9), 42),
+      '--secondary': secondaryHex,
     };
   }
 
@@ -910,7 +928,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.23';
+          content:'URP++ v0.6.24';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -11584,7 +11602,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.23');
+    console.log('[URP++] style applied v0.6.24');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12708,7 +12726,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.23',
+    version: '0.6.24',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
