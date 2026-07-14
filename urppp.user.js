@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.26
+// @version      0.6.27
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -368,6 +368,7 @@
   const ACCENT_PRESETS_KEY = 'urppp_accent_presets_v1';
   const SCHEME_KEY = 'urppp_scheme_v1';
   const THEME_FOLLOW_KEY = 'urppp_theme_follow_system_v1';
+  const FOLLOW_DYNAMIC_KEY = 'urppp_follow_use_dynamic_v1';
   const DEFAULT_ACCENT_PRESETS = ['#1E3A5F', '#B53434', '#0F766E', '#7C3AED', '#C2410C', '#0369A1', '#BE185D', '#365314'];
   const DEFAULT_SEED = '#B53434';
   const DEFAULT_SCHEME = 'tonal'; // 默认就有可见卡片染色；要白卡选 paper
@@ -375,7 +376,7 @@
   // Material You 风格方案：同一 seed 派生多套角色色
   // 约定：仅「纯白卡片」接近白卡；其余方案卡片必须可见染色
   const SCHEME_DEFS = [
-    { id: 'paper', name: '纯白卡片', desc: '唯一近白方案：卡片保持白，仅强调色跟种子' },
+    { id: 'paper', name: '纯白卡片', desc: '卡片保持白，仅强调色跟种子' },
     { id: 'tonal', name: '色调点缀', desc: '背景轻染，卡片带同色相浅底' },
     { id: 'soft', name: '柔和粉彩', desc: '卡片明显粉彩/浅色，低对比' },
     { id: 'vibrant', name: '鲜艳', desc: '背景与卡片都更有色，主色更饱和' },
@@ -826,6 +827,15 @@
     return !!on;
   }
 
+  function isFollowUseDynamic() {
+    try { return !!GM_getValue(FOLLOW_DYNAMIC_KEY, false); } catch (_) { return false; }
+  }
+
+  function setFollowUseDynamic(on) {
+    GM_setValue(FOLLOW_DYNAMIC_KEY, !!on);
+    return !!on;
+  }
+
   function systemPrefersDark() {
     try {
       return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -834,22 +844,21 @@
     }
   }
 
-  function resolveThemeName(name) {
-    // 跟随系统时：只在 简约白/深邃暗 间切换，不动动态配色
-    if (isThemeFollowSystem()) {
-      return systemPrefersDark() ? 'dark' : 'default';
-    }
-    return THEMES[name] ? name : 'default';
+  // 跟随系统时的实际主题：
+  // 深色 → 深邃暗；浅色 → 可选「动态配色」或「简约白」
+  function resolveFollowThemeName() {
+    if (systemPrefersDark()) return 'dark';
+    return isFollowUseDynamic() ? 'scu-red' : 'default';
   }
 
   function applyTheme(name, opts) {
     opts = opts || {};
     // manual: 用户点击主题模式 → 关闭跟随并应用所选
-    // system: 跟随系统刷新 → 只在 default/dark 间解析
+    // system: 跟随系统刷新
     if (opts.manual) setThemeFollowSystem(false);
     let finalName;
-    if (opts.system || (isThemeFollowSystem() && !opts.manual && name !== 'scu-red')) {
-      finalName = systemPrefersDark() ? 'dark' : 'default';
+    if (opts.system || (isThemeFollowSystem() && !opts.manual)) {
+      finalName = resolveFollowThemeName();
     } else {
       finalName = THEMES[name] ? name : (getCurrent() || 'default');
       if (!THEMES[finalName]) finalName = 'default';
@@ -926,7 +935,7 @@
       const mq = window.matchMedia('(prefers-color-scheme: dark)');
       const onChange = () => {
         if (!isThemeFollowSystem()) return;
-        try { applyTheme(systemPrefersDark() ? 'dark' : 'default', { system: true }); } catch (_) {}
+        try { applyTheme(resolveFollowThemeName(), { system: true }); } catch (_) {}
       };
       if (mq.addEventListener) mq.addEventListener('change', onChange);
       else if (mq.addListener) mq.addListener(onChange);
@@ -935,7 +944,7 @@
 
   // 尽早应用主题，让启动遮罩/立方体颜色跟主题一致
   try {
-    if (isThemeFollowSystem()) applyTheme(systemPrefersDark() ? 'dark' : 'default', { system: true });
+    if (isThemeFollowSystem()) applyTheme(resolveFollowThemeName(), { system: true });
     else applyTheme(getCurrent());
   } catch (_) {}
   try { bindSystemThemeListener(); } catch (_) {}
@@ -986,7 +995,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.26';
+          content:'URP++ v0.6.27';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -4548,9 +4557,15 @@
         border-color: var(--primary) !important;
         color: #fff !important;
       }
+      #urppp-settings-panel .urppp-set-follow-row {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+        margin-top: 8px !important;
+      }
       #urppp-settings-panel .urppp-set-follow {
         width: 100% !important;
-        margin-top: 8px !important;
+        margin-top: 0 !important;
         height: 34px !important;
         border-radius: 10px !important;
         border: 1px solid var(--border) !important;
@@ -4559,14 +4574,19 @@
         font-size: 12px !important;
         font-weight: 600 !important;
         cursor: pointer !important;
+        padding: 0 8px !important;
+        white-space: nowrap !important;
       }
-      #urppp-settings-panel .urppp-set-follow:hover {
+      #urppp-settings-panel .urppp-set-follow:hover:not(:disabled) {
         border-color: var(--primary) !important;
       }
       #urppp-settings-panel .urppp-set-follow.ac {
         background: var(--primary) !important;
         border-color: var(--primary) !important;
         color: #fff !important;
+      }
+      #urppp-settings-panel .urppp-set-follow:disabled {
+        cursor: not-allowed !important;
       }
       #urppp-settings-panel .urppp-set-presets {
         display: flex !important;
@@ -11747,7 +11767,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.26');
+    console.log('[URP++] style applied v0.6.27');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11832,9 +11852,18 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       followBtn.setAttribute('aria-pressed', follow ? 'true' : 'false');
       followBtn.textContent = follow ? '跟随系统：开' : '跟随系统：关';
     }
-    // 动态配色区：跟随系统时仍可看，但提示当前由系统接管明暗
+    const dynFollowBtn = panel.querySelector('#urppp-set-follow-dynamic');
+    const useDyn = isFollowUseDynamic();
+    if (dynFollowBtn) {
+      dynFollowBtn.classList.toggle('ac', useDyn);
+      dynFollowBtn.setAttribute('aria-pressed', useDyn ? 'true' : 'false');
+      dynFollowBtn.textContent = useDyn ? '浅色用动态配色：开' : '浅色用动态配色：关';
+      dynFollowBtn.disabled = !follow;
+      dynFollowBtn.style.opacity = follow ? '1' : '0.5';
+    }
+    // 跟随系统时动态区仍可配置（浅色会用到）
     const dyn = panel.querySelector('#urppp-set-dynamic');
-    if (dyn) dyn.style.opacity = follow ? '0.55' : '1';
+    if (dyn) dyn.style.opacity = '1';
 
     // 预设种子
     const presets = panel.querySelector('#urppp-set-presets');
@@ -11848,7 +11877,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         b.style.background = hex;
         b.addEventListener('click', () => {
           GM_setValue(ACCENT_KEY, hex);
-          applyTheme('scu-red');
+          if (isThemeFollowSystem()) applyTheme(resolveFollowThemeName(), { system: true });
+          else applyTheme('scu-red', { manual: true });
           syncSettingsPanelUI();
         });
         presets.appendChild(b);
@@ -11878,7 +11908,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         card.addEventListener('click', () => {
           setScheme(item.id);
           GM_setValue(ACCENT_KEY, seed);
-          applyTheme('scu-red');
+          if (isThemeFollowSystem()) applyTheme(resolveFollowThemeName(), { system: true });
+          else applyTheme('scu-red', { manual: true });
           syncSettingsPanelUI();
         });
         schemes.appendChild(card);
@@ -11925,12 +11956,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '      <button type="button" class="urppp-set-mode" data-theme="dark">深邃暗</button>',
       '      <button type="button" class="urppp-set-mode" data-theme="scu-red">动态配色</button>',
       '    </div>',
-      '    <button type="button" class="urppp-set-follow" id="urppp-set-follow" aria-pressed="false">跟随系统：关</button>',
-      '    <p class="urppp-set-tip" style="margin-top:8px">开启后按系统浅色/深色自动切换简约白与深邃暗；手动点主题会关闭跟随。</p>',
+      '    <div class="urppp-set-follow-row">',
+      '      <button type="button" class="urppp-set-follow" id="urppp-set-follow" aria-pressed="false">跟随系统：关</button>',
+      '      <button type="button" class="urppp-set-follow" id="urppp-set-follow-dynamic" aria-pressed="false">浅色用动态配色：关</button>',
+      '    </div>',
+      '    <p class="urppp-set-tip" style="margin-top:8px">开启后按系统浅色/深色自动切换。浅色可选用下方动态配色，深色固定深邃暗。</p>',
       '  </section>',
       '  <section class="urppp-set-sec" id="urppp-set-dynamic">',
       '    <h3>种子色</h3>',
-      '    <p class="urppp-set-tip">选一个颜色，自动生成背景、卡片、强调色等多套方案（Material You 风格）</p>',
+      '    <p class="urppp-set-tip">选一个颜色，自动生成背景、卡片、强调色等多套方案</p>',
       '    <div class="urppp-set-presets" id="urppp-set-presets"></div>',
       '    <div class="urppp-set-custom">',
       '      <input type="color" id="urppp-set-color" value="#B53434" />',
@@ -11958,8 +11992,23 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       followBtn.addEventListener('click', () => {
         const next = !isThemeFollowSystem();
         setThemeFollowSystem(next);
-        if (next) applyTheme(systemPrefersDark() ? 'dark' : 'default', { system: true });
+        if (next) applyTheme(resolveFollowThemeName(), { system: true });
         else applyTheme(getCurrent(), { manual: true });
+        syncSettingsPanelUI();
+        syncNavbarThemeUI();
+      });
+    }
+    const dynFollowBtn = panel.querySelector('#urppp-set-follow-dynamic');
+    if (dynFollowBtn) {
+      dynFollowBtn.addEventListener('click', () => {
+        if (!isThemeFollowSystem()) {
+          // 未开跟随：顺带打开跟随，再启用浅色动态
+          setThemeFollowSystem(true);
+          setFollowUseDynamic(true);
+        } else {
+          setFollowUseDynamic(!isFollowUseDynamic());
+        }
+        applyTheme(resolveFollowThemeName(), { system: true });
         syncSettingsPanelUI();
         syncNavbarThemeUI();
       });
@@ -11980,7 +12029,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const h = normalizeHexColor(hexInput.value) || colorInput.value;
       if (!h) return;
       GM_setValue(ACCENT_KEY, normalizeHexColor(h));
-      applyTheme('scu-red');
+      if (isThemeFollowSystem()) applyTheme(resolveFollowThemeName(), { system: true });
+      else applyTheme('scu-red', { manual: true });
       syncSettingsPanelUI();
     });
     panel.querySelector('#urppp-set-save').addEventListener('click', () => {
@@ -11988,7 +12038,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       if (!h) return;
       saveAccentPreset(h);
       GM_setValue(ACCENT_KEY, normalizeHexColor(h));
-      applyTheme('scu-red');
+      if (isThemeFollowSystem()) applyTheme(resolveFollowThemeName(), { system: true });
+      else applyTheme('scu-red', { manual: true });
       syncSettingsPanelUI();
     });
     // 实时拖动种子色：只刷新方案预览，松手/生成再应用
@@ -12019,7 +12070,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         card.addEventListener('click', () => {
           GM_setValue(ACCENT_KEY, h);
           setScheme(item.id);
-          applyTheme('scu-red');
+          if (isThemeFollowSystem()) applyTheme(resolveFollowThemeName(), { system: true });
+          else applyTheme('scu-red', { manual: true });
           syncSettingsPanelUI();
         });
         schemes.appendChild(card);
@@ -12902,7 +12954,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.26',
+    version: '0.6.27',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
