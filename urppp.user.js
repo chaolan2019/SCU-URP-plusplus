@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.7.5
+// @version      0.7.6
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -11896,7 +11896,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.7.5');
+    console.log('[URP++] style applied v0.7.6');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12991,7 +12991,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // ============================================================
-  // 清爽模式 Clean Mode v0.7.5
+  // 清爽模式 Clean Mode v0.7.6
   // 桌面居中一页 1:1；手机底栏；数据按真实 URP DOM/路径解析
   // 绩点：川大现行百分制对照表；教室：classroomUseStatus 网格
   // ============================================================
@@ -13639,6 +13639,20 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return { rooms, dateLabel };
   }
 
+  function occupancyReason(ct) {
+    const mod = String((ct && ct.occupancymoduleId) || '');
+    const ts = String((ct && ct.timestatenumber) || '');
+    // 对照站点图例：有课 / 考试 / 实验 / 借用（编码因校而异，做兼容映射）
+    const map = {
+      '01': '有课', '02': '有课', '03': '考试', '04': '考试',
+      '05': '实验', '06': '借用', '07': '借用', '08': '实验'
+    };
+    if (map[mod]) return map[mod];
+    if (map[ts]) return map[ts];
+    if (ct && ct.remark) return String(ct.remark).slice(0, 4);
+    return '占用';
+  }
+
   async function loadBuildingOccupancy(building) {
     // building: {path, campusNumber, buildingNumber, name} or legacy path string
     let xqh = '', jxlh = '', name = '', pagePath = '';
@@ -13697,11 +13711,25 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const cont = Math.max(1, Number(ct.continuingsession) || 1);
       const room = byName[rname];
       if (!room) return;
+      const reason = occupancyReason(ct);
       for (let s = start; s < start + cont && s <= 12; s++) {
         const slot = room.slots.find((x) => x.section === s);
         if (slot) {
           slot.busy = true;
           slot.kind = ct.timestatenumber || ct.occupancymoduleId || '';
+          slot.module = ct.occupancymoduleId || '';
+          slot.reason = reason;
+          slot.detail = {
+            room: rname,
+            section: s,
+            start,
+            span: cont,
+            reason,
+            week: (ct.id && ct.id.week) || '',
+            xq: (ct.id && ct.id.xq) || '',
+            state: ct.timestatenumber || '',
+            module: ct.occupancymoduleId || ''
+          };
         }
       }
     });
@@ -13752,13 +13780,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 #urppp-clean-root{position:fixed;inset:0;z-index:12000;display:none;background:var(--bg,#F4F6F9);color:var(--text,#111);font-family:inherit}
 #urppp-clean-root.open{display:flex;flex-direction:column}
 #urppp-clean-root *{box-sizing:border-box}
-#urppp-clean-root .uc-top{flex:0 0 52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--border);background:var(--surface,#fff)}
-#urppp-clean-root .uc-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px}
+#urppp-clean-root .uc-top{flex:0 0 60px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--border);background:var(--surface,#fff)}
+#urppp-clean-root .uc-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px}
 #urppp-clean-root .uc-top-actions{display:flex;gap:8px}
 #urppp-clean-root .uc-btn{height:32px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg,#f7f7f8);color:var(--text);font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 #urppp-clean-root .uc-btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
-#urppp-clean-root .uc-shell{flex:1;min-height:0;overflow:auto;padding:24px 32px 32px}
-#urppp-clean-root .uc-shell-inner{max-width:1520px;margin:0 auto;width:100%;min-height:calc(100% - 8px)}
+#urppp-clean-root .uc-shell{flex:1;min-height:0;overflow:auto;padding:20px 28px 28px;display:flex;align-items:center;justify-content:center}
+#urppp-clean-root .uc-shell-inner{max-width:1520px;margin:0 auto;width:100%;max-height:100%;overflow:auto}
 #urppp-clean-root .uc-desktop{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr;gap:16px;min-height:640px}
 #urppp-clean-root .uc-col{display:flex;flex-direction:column;gap:16px;min-height:0}
 #urppp-clean-root .uc-card{background:var(--surface,#fff);border:1px solid var(--border,#e7e7ea);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
@@ -13776,25 +13804,27 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 #urppp-clean-root .uc-week-head{display:grid;grid-template-columns:36px repeat(7,minmax(0,1fr));gap:6px;margin-bottom:6px}
 #urppp-clean-root .uc-week-head .h{font-size:11px;text-align:center;color:var(--text-secondary)}
 #urppp-clean-root .uc-week-body{display:grid;grid-template-columns:36px repeat(7,minmax(0,1fr));gap:6px;align-items:start}
-#urppp-clean-root .uc-sec-col .s{height:52px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text-muted,#98a2b3)}
-#urppp-clean-root .uc-day-col{position:relative;height:calc(52px * 12);background:transparent}
-#urppp-clean-root .uc-grid-cell{position:absolute;left:0;right:0;height:52px;border-radius:10px;background:var(--input-bg);border:1px solid transparent}
+#urppp-clean-root .uc-sec-col .s{height:56px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text-muted,#98a2b3)}
+#urppp-clean-root .uc-day-col{position:relative;height:calc(56px * 12);background:transparent}
+#urppp-clean-root .uc-grid-cell{position:absolute;left:0;right:0;height:52px;border-radius:10px;background:var(--input-bg);border:1px solid color-mix(in srgb,var(--border) 65%,transparent)}
 #urppp-clean-root .uc-grid-cell:nth-child(n){/* placed via top below in inline? use sequential */}
 #urppp-clean-root .uc-day-col .uc-grid-cell{width:100%}
-#urppp-clean-root .uc-lesson{position:absolute;left:2px;right:2px;z-index:2;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:10px;padding:6px 7px 14px;cursor:pointer;overflow:hidden;box-sizing:border-box}
-#urppp-clean-root .uc-lesson.is-fade{filter:saturate(.4)}
+#urppp-clean-root .uc-lesson{position:absolute;left:2px;right:2px;z-index:2;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:10px;padding:6px 7px 16px;cursor:pointer;overflow:hidden;box-sizing:border-box}
+#urppp-clean-root .uc-lesson.is-fade{filter:saturate(.4);z-index:2!important}
+#urppp-clean-root .uc-lesson:not(.is-fade){z-index:8}
 #urppp-clean-root .uc-lesson b{display:block;font-size:12px;line-height:1.25;font-weight:700}
 #urppp-clean-root .uc-lesson i{display:block;font-style:normal;font-size:10px;color:var(--text-secondary);margin-top:3px}
 #urppp-clean-root .uc-badge{position:absolute;right:5px;bottom:4px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--primary);color:#fff;font-size:10px;line-height:16px;text-align:center;font-weight:700}
-#urppp-clean-root .uc-svc{min-height:120px}
-#urppp-clean-root .uc-svc svg{width:32px;height:32px}
-#urppp-clean-root .uc-svc strong{font-size:13px}
+#urppp-clean-root .uc-svc{min-height:92px}
+#urppp-clean-root .uc-svc svg{width:24px;height:24px}
+#urppp-clean-root .uc-svc strong{font-size:12px}
 #urppp-clean-root .uc-card.grow.services{flex:0 0 auto}
 #urppp-clean-root .uc-top-theme{display:inline-flex;align-items:center;gap:8px;margin-left:12px}
-#urppp-clean-root .uc-top-theme .urppp-nav-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);padding:0;cursor:pointer}
+#urppp-clean-root .uc-top-theme .urppp-nav-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);padding:0;cursor:pointer}
 #urppp-clean-root .uc-top-theme .urppp-nav-dot.ac{border-color:var(--primary);box-shadow:0 0 0 3px var(--ring)}
-#urppp-clean-root .uc-top-theme .urppp-nav-settings{width:22px;height:22px;border:0;background:transparent;color:var(--text-secondary);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
-#urppp-clean-root .uc-top-left{display:flex;align-items:center;gap:4px}
+#urppp-clean-root .uc-top-theme .urppp-nav-settings{width:26px;height:26px;border:0;background:transparent;color:var(--text-secondary);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+#urppp-clean-root .uc-top-theme .urppp-nav-settings svg{width:16px;height:16px}
+#urppp-clean-root .uc-top-left{display:flex;align-items:center;gap:10px}
 #urppp-clean-root .uc-score-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 #urppp-clean-root .uc-score-pane{border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;background:var(--input-bg)}
 #urppp-clean-root .uc-score-pane:hover{border-color:var(--primary)}
@@ -13804,9 +13834,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 #urppp-clean-root .uc-metric em{display:block;font-style:normal;font-size:10px;color:var(--text-muted);margin-bottom:2px}
 #urppp-clean-root .uc-metric b{font-size:16px}
 #urppp-clean-root .uc-services{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-#urppp-clean-root .uc-svc{aspect-ratio:1/1;border-radius:16px;border:1px solid var(--border);background:var(--input-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;color:var(--text);padding:10px;text-align:center}
+#urppp-clean-root .uc-svc{aspect-ratio:1/1;border-radius:14px;border:1px solid var(--border);background:var(--input-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;color:var(--text);padding:8px;text-align:center;min-height:88px}
 #urppp-clean-root .uc-svc:hover{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 8%,var(--input-bg))}
-#urppp-clean-root .uc-svc svg{width:26px;height:26px;color:var(--primary)}
+#urppp-clean-root .uc-svc svg{width:24px;height:24px;color:var(--primary)}
 #urppp-clean-root .uc-svc strong{font-size:12px;line-height:1.25;font-weight:700}
 #urppp-clean-root .uc-empty,#urppp-clean-root .uc-loading{padding:18px;text-align:center;color:var(--text-secondary);font-size:13px}
 #urppp-clean-root .uc-note{font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.5}
@@ -13838,14 +13868,33 @@ body.urppp-dark #urppp-clean-root table.uc-table tbody tr.is-on td{background:co
 #urppp-clean-root .uc-build-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
 #urppp-clean-root .uc-build-grid button{border:1px solid var(--border);background:var(--input-bg);border-radius:12px;padding:10px;cursor:pointer;color:var(--text);font-size:12px;text-align:left}
 #urppp-clean-root .uc-build-grid button:hover{border-color:var(--primary)}
-#urppp-clean-root .uc-occ{overflow:auto}
-#urppp-clean-root .uc-occ-table{border-collapse:separate;border-spacing:3px;font-size:11px;min-width:720px}
-#urppp-clean-root .uc-occ-table th{position:sticky;left:0;background:var(--surface);z-index:1;padding:4px 6px;text-align:left;white-space:nowrap}
-#urppp-clean-root .uc-occ-table .sec{min-width:28px;text-align:center;color:var(--text-secondary);font-weight:600}
-#urppp-clean-root .uc-slot{width:28px;height:22px;border-radius:4px;background:#e8eef2;border:1px solid #d7dee5}
-#urppp-clean-root .uc-slot.busy{background:#7be0f6;border-color:#5bcfe8}
-#urppp-clean-root .uc-legend{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 12px;font-size:12px;color:var(--text-secondary)}
-#urppp-clean-root .uc-legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:middle;margin-right:4px}
+#urppp-clean-root .uc-occ{overflow:auto;border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:8px}
+#urppp-clean-root .uc-occ-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
+#urppp-clean-root .uc-occ-title{font-size:16px;font-weight:700}
+#urppp-clean-root .uc-occ-table{border-collapse:separate;border-spacing:4px;font-size:11px;min-width:760px}
+#urppp-clean-root .uc-occ-table th{background:var(--input-bg);color:var(--text);z-index:1;padding:6px 8px;text-align:left;white-space:nowrap;border-radius:8px}
+#urppp-clean-root .uc-occ-table th.sticky{position:sticky;left:0;z-index:3}
+#urppp-clean-root .uc-occ-table th.sticky2{position:sticky;left:64px;z-index:3}
+#urppp-clean-root .uc-occ-table .sec{min-width:30px;text-align:center;color:var(--text-secondary);font-weight:600;background:transparent}
+#urppp-clean-root .uc-slot{width:30px;height:26px;border-radius:7px;border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;padding:0;cursor:default}
+#urppp-clean-root .uc-slot.free{background:color-mix(in srgb,var(--input-bg) 88%,var(--surface));color:transparent}
+#urppp-clean-root .uc-slot.busy{cursor:pointer;color:#0b3b4a;background:#7be0f6;border-color:#4ec8e0}
+#urppp-clean-root .uc-slot.busy:hover{filter:brightness(1.05);transform:scale(1.04)}
+#urppp-clean-root .uc-legend{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:4px 0 10px;font-size:12px;color:var(--text-secondary)}
+#urppp-clean-root .uc-legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:middle;margin-right:4px;border:1px solid var(--border)}
+#urppp-clean-root .uc-legend .lg-busy{background:#7be0f6;border-color:#4ec8e0}
+#urppp-clean-root .uc-legend .lg-exam{background:#fbbf24;border-color:#f59e0b}
+#urppp-clean-root .uc-legend .lg-lab{background:#a78bfa;border-color:#8b5cf6}
+#urppp-clean-root .uc-legend .lg-borrow{background:#fb7185;border-color:#f43f5e}
+#urppp-clean-root .uc-legend .lg-free{background:var(--input-bg)}
+html.urppp-theme-dark #urppp-clean-root .uc-slot.free,
+body.urppp-dark #urppp-clean-root .uc-slot.free{background:#1c2330;border-color:#2a3548}
+html.urppp-theme-dark #urppp-clean-root .uc-slot.busy,
+body.urppp-dark #urppp-clean-root .uc-slot.busy{background:#2dd4bf;border-color:#14b8a6;color:#042f2e}
+html.urppp-theme-dark #urppp-clean-root .uc-occ,
+body.urppp-dark #urppp-clean-root .uc-occ{background:var(--surface);border-color:var(--border)}
+html.urppp-theme-dark #urppp-clean-root .uc-occ-table th,
+body.urppp-dark #urppp-clean-root .uc-occ-table th{background:var(--input-bg);color:var(--text)}
 html.urppp-clean-lock,html.urppp-clean-lock body{overflow:hidden!important}
 html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#urppp-nav-clean{
   margin-left:8px!important;height:28px!important;min-height:28px!important;max-height:28px!important;
@@ -13856,7 +13905,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
 }
 #urppp-nav-clean svg{width:14px!important;height:14px!important;display:block!important}
 @media (max-width:900px){
-  #urppp-clean-root .uc-shell{padding:12px 12px 76px}
+  #urppp-clean-root .uc-shell{padding:12px 12px 76px;align-items:stretch;justify-content:flex-start}
   #urppp-clean-root .uc-desktop{display:none}
   #urppp-clean-root .uc-mobile{display:block}
   #urppp-clean-root .uc-tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;height:56px;background:var(--surface);border-top:1px solid var(--border);z-index:12005;padding-bottom:env(safe-area-inset-bottom)}
@@ -13982,25 +14031,33 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     html += '</div><div class="uc-week-body">';
     // left section labels
     html += '<div class="uc-sec-col">';
-    for (let s = 1; s <= 12; s++) html += `<div class="s">${s}</div>`;
+    for (let s = 1; s <= 12; s++) html += `<div class="s" style="height:56px">${s}</div>`;
     html += '</div>';
     // 7 day columns
     for (let d = 0; d < 7; d++) {
-      html += `<div class="uc-day-col" data-day="${d}">`;
+      html += `<div class="uc-day-col" data-day="${d}" style="height:${56*12}px">`;
       // background grid cells: fixed equal height
-      for (let s = 1; s <= 12; s++) html += `<div class="uc-grid-cell" data-sec="${s}" style="top:${(s-1)*52}px"></div>`;
+      for (let s = 1; s <= 12; s++) html += `<div class="uc-grid-cell" data-sec="${s}" style="top:${(s-1)*56}px;height:52px"></div>`;
       // place courses absolutely
       for (let s = 1; s <= 12; s++) {
-        const starters = (byStart[d + '_' + s] || []).slice().sort((a, b) => (b.thisWeek ? 1 : 0) - (a.thisWeek ? 1 : 0));
+        const starters = (byStart[d + '_' + s] || []).slice().sort((a, b) => {
+          // 本周永远优先
+          if (a.thisWeek !== b.thisWeek) return (b.thisWeek ? 1 : 0) - (a.thisWeek ? 1 : 0);
+          return (b.span || 1) - (a.span || 1);
+        });
         if (!starters.length) continue;
-        const primary = starters.find((c) => c.thisWeek) || starters[0];
+        // 若本格同时有本周与非本周，外显本周；非本周进角标
+        const weekOnes = starters.filter((c) => c.thisWeek);
+        const primary = weekOnes[0] || starters[0];
         const rest = starters.filter((c) => c !== primary);
         const span = primary.span;
-        const top = (s - 1) * 52;
-        const height = span * 52 - 6;
+        const ROW = 56; // 格距（含上下间隔）
+        const top = (s - 1) * ROW + 2;
+        const height = span * ROW - 8;
+        const z = primary.thisWeek ? 8 : 2;
         const style = primary.thisWeek
-          ? `top:${top}px;height:${height}px;background:${primary.color}33;border-color:${primary.color}99`
-          : `top:${top}px;height:${height}px;background:color-mix(in srgb,${primary.color} 10%,var(--input-bg));border-color:var(--border);opacity:.5`;
+          ? `top:${top}px;height:${height}px;z-index:${z};background:${primary.color}33;border-color:${primary.color}99`
+          : `top:${top}px;height:${height}px;z-index:${z};background:color-mix(in srgb,${primary.color} 10%,var(--input-bg));border-color:var(--border);opacity:.48`;
         const badge = rest.length ? `<span class="uc-badge">+${rest.length}</span>` : '';
         const payload = escapeHtml(JSON.stringify({
           name: primary.name, teacher: primary.teacher, place: primary.place, week: primary.week,
@@ -14135,22 +14192,41 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
 
   function occupancyHtml(pack, buildingName) {
     if (!pack || !pack.rooms || !pack.rooms.length) return '<div class="uc-empty">该楼暂无教室占用数据</div>';
-    let head = '<tr><th>教室</th><th>座位</th>';
+    let head = '<tr><th class="sticky">教室</th><th class="sticky2">座位</th>';
     for (let i = 1; i <= 12; i++) head += `<th class="sec">${i}</th>`;
     head += '</tr>';
     const body = pack.rooms.map((r) => {
-      let row = `<tr><th>${escapeHtml(r.name)}</th><th>${escapeHtml(r.seats)}</th>`;
+      let row = `<tr><th class="sticky">${escapeHtml(r.name)}</th><th class="sticky2">${escapeHtml(r.seats)}</th>`;
       for (let i = 1; i <= 12; i++) {
         const slot = (r.slots || []).find((s) => s.section === i) || { busy: false };
-        row += `<td><div class="uc-slot ${slot.busy ? 'busy' : ''}" title="${escapeHtml(r.name)} 第${i}节"></div></td>`;
+        if (slot.busy) {
+          const reason = slot.reason || '占用';
+          const ch = reason.charAt(0);
+          const detail = escapeHtml(JSON.stringify(slot.detail || { room: r.name, section: i, reason }));
+          row += `<td><button type="button" class="uc-slot busy kind-${escapeHtml(String(slot.kind || ''))}" data-occ='${detail}' title="${escapeHtml(r.name)} 第${i}节 · ${escapeHtml(reason)}">${escapeHtml(ch)}</button></td>`;
+        } else {
+          row += `<td><div class="uc-slot free" title="${escapeHtml(r.name)} 第${i}节 · 空闲"></div></td>`;
+        }
       }
       return row + '</tr>';
     }).join('');
     return `
-      <div style="font-weight:700;margin-bottom:6px">${escapeHtml(buildingName || '')} ${escapeHtml(pack.dateLabel || '')}</div>
-      <div class="uc-legend"><span><i style="background:#7be0f6"></i>占用</span><span><i style="background:#e8eef2"></i>空闲</span></div>
-      <div class="uc-occ"><table class="uc-occ-table">${head}${body}</table></div>
-      <div style="margin-top:10px"><button type="button" class="uc-btn" id="uc-room-back">返回楼栋列表</button></div>`;
+      <div class="uc-occ-head">
+        <div>
+          <div class="uc-occ-title">${escapeHtml(buildingName || '')}</div>
+          <div class="uc-sub">${escapeHtml(pack.dateLabel || '')}${pack.jxzc ? (' · 教学第' + pack.jxzc + '周') : ''}</div>
+        </div>
+        <button type="button" class="uc-btn" id="uc-room-back">返回楼栋</button>
+      </div>
+      <div class="uc-legend">
+        <span><i class="lg-busy"></i>有课</span>
+        <span><i class="lg-exam"></i>考试</span>
+        <span><i class="lg-lab"></i>实验</span>
+        <span><i class="lg-borrow"></i>借用</span>
+        <span><i class="lg-free"></i>空闲</span>
+        <span class="uc-sub">色块字母为占用原因首字，点击查看详情</span>
+      </div>
+      <div class="uc-occ"><table class="uc-occ-table">${head}${body}</table></div>`;
   }
 
   function render() {
@@ -14189,6 +14265,24 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         bindUI(panel);
       } else render();
     };
+    // 教室占用详情
+    scope.querySelectorAll('.uc-slot.busy[data-occ]').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        try {
+          const d = JSON.parse(el.getAttribute('data-occ') || '{}');
+          openModal('占用详情', `
+            <div class="uc-occ-detail">
+              <div class="uc-name">${escapeHtml(d.room || '')}</div>
+              <div class="uc-sub" style="margin-top:8px">节次：第${escapeHtml(String(d.section || d.start || ''))}${(d.span > 1) ? ('-' + (Number(d.start || d.section) + Number(d.span) - 1)) : ''}节</div>
+              <div class="uc-sub">原因：${escapeHtml(d.reason || '占用')}</div>
+              <div class="uc-sub">状态码：${escapeHtml(String(d.state || '-'))} / 模块：${escapeHtml(String(d.module || '-'))}</div>
+            </div>
+          `, '');
+        } catch (_) {}
+      });
+    });
     // 课表：点击看详情
     scope.querySelectorAll('.uc-lesson[data-course]').forEach((el) => {
       el.addEventListener('click', (e) => {
