@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.22
+// @version      0.6.23
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -378,7 +378,7 @@
     { id: 'tonal', name: '色调点缀', desc: '背景轻染，卡片带同色相浅底' },
     { id: 'soft', name: '柔和粉彩', desc: '卡片明显粉彩/浅色，低对比' },
     { id: 'vibrant', name: '鲜艳', desc: '背景与卡片都更有色，主色更饱和' },
-    { id: 'expressive', name: '表现力', desc: '卡片色相偏移，二次色更活泼' }
+    { id: 'expressive', name: '表现力', desc: '主色更醒目，表面同色相加浓，不乱偏色' }
   ];
 
   function ensureBootLoader() {
@@ -604,10 +604,12 @@
           bgSeed: 0.2, surfaceSeed: 0.22, borderSeed: 0.26
         };
       case 'expressive':
+        // 不再对卡片做大色相偏移（红种子会漂成脏黄）
+        // 表现力 = 同色相更浓表面 + 主色更深/更醒目 + secondary 色相拉开
         return {
-          chroma: 1.05, secShift: 56, primaryTone: 38,
-          bgSeed: 0.15, surfaceSeed: 0.2, borderSeed: 0.22,
-          surfaceHueShift: 40
+          chroma: 1.2, secShift: 48, primaryTone: 34,
+          bgSeed: 0.17, surfaceSeed: 0.19, borderSeed: 0.24,
+          surfaceHueShift: 0, contrastBoost: 1
         };
       case 'tonal':
       default:
@@ -908,7 +910,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.22';
+          content:'URP++ v0.6.23';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -4313,7 +4315,8 @@
       #urppp-settings-panel {
         position: fixed !important;
         top: 56px !important;
-        right: 18px !important;
+        left: 18px !important;
+        right: auto !important;
         width: min(420px, calc(100vw - 24px)) !important;
         max-height: calc(100vh - 80px) !important;
         overflow: auto !important;
@@ -11581,7 +11584,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.22');
+    console.log('[URP++] style applied v0.6.23');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12705,7 +12708,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.22',
+    version: '0.6.23',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
