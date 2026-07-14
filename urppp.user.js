@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.10
+// @version      0.6.11
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -682,7 +682,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.10';
+          content:'URP++ v0.6.11';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1752,6 +1752,96 @@
           el.style.setProperty('line-height', '1.5', 'important');
           el.style.setProperty('font-size', '13px', 'important');
           el.style.setProperty('color', 'var(--text-secondary, var(--text-muted))', 'important');
+        });
+
+        // 站点 float:left 的 currNum/selectNum 会把分页条拆成多行 —— 清掉
+        bar.querySelectorAll('[id^="currNum_"], [id^="selectNum_"]').forEach((el) => {
+          const txt = String(el.textContent || '').trim();
+          if (!txt) {
+            el.style.setProperty('display', 'none', 'important');
+            return;
+          }
+          el.style.setProperty('float', 'none', 'important');
+          el.style.setProperty('display', 'inline', 'important');
+          el.style.setProperty('margin', '0 4px 0 0', 'important');
+        });
+
+        // 把非页码 ul 的内容收成右侧单行 meta
+        const host = wrap;
+        let meta = host.querySelector(':scope > .urppp-pagebar-meta');
+        if (!meta) {
+          meta = document.createElement('div');
+          meta.className = 'urppp-pagebar-meta';
+          const movers = [];
+          Array.from(host.childNodes).forEach((node) => {
+            if (node.nodeType === 1) {
+              const el = node;
+              if (el.classList && el.classList.contains('urppp-pagebar-meta')) return;
+              if (el.matches && (el.matches('ul.pagination') || el.matches('[id^="pagination_ul_"]') || el.matches('.urppp-pagination'))) return;
+              movers.push(el);
+            } else if (node.nodeType === 3) {
+              // 裸文本「页 | 共…」也收进去
+              if (String(node.textContent || '').trim()) movers.push(node);
+            }
+          });
+          movers.forEach((n) => meta.appendChild(n));
+          host.appendChild(meta);
+        }
+        // 隐藏态：meta 单独右对齐；有页码时页码左、meta 右
+        host.style.setProperty('display', 'flex', 'important');
+        host.style.setProperty('flex-wrap', 'nowrap', 'important');
+        host.style.setProperty('align-items', 'center', 'important');
+        host.style.setProperty('justify-content', isPageNavHiddenMode ? 'flex-end' : 'space-between', 'important');
+        host.style.setProperty('gap', '10px', 'important');
+        host.style.setProperty('width', '100%', 'important');
+        host.style.setProperty('white-space', 'nowrap', 'important');
+
+        meta.style.setProperty('display', 'inline-flex', 'important');
+        meta.style.setProperty('align-items', 'center', 'important');
+        meta.style.setProperty('flex-wrap', 'nowrap', 'important');
+        meta.style.setProperty('justify-content', 'flex-end', 'important');
+        meta.style.setProperty('gap', '0 2px', 'important');
+        meta.style.setProperty('margin-left', 'auto', 'important');
+        meta.style.setProperty('white-space', 'nowrap', 'important');
+        meta.style.setProperty('float', 'none', 'important');
+        meta.style.setProperty('line-height', '1.5', 'important');
+        meta.style.setProperty('font-size', '13px', 'important');
+        meta.style.setProperty('color', 'var(--text-secondary, var(--text-muted))', 'important');
+
+        // meta 内块级/浮动节点全部压成 inline，避免折行
+        meta.querySelectorAll('div, span, select, input, label').forEach((el) => {
+          if (el.classList && el.classList.contains('urppp-pagination-hidden')) return;
+          if (el.matches && el.matches('ul, li')) return;
+          if (el.id && String(el.id).indexOf('btn_turnpageto_') === 0 && !isJumpMode) {
+            el.style.setProperty('display', 'none', 'important');
+            return;
+          }
+          if (el.classList && el.classList.contains('urppp-page-num-source')) {
+            el.style.setProperty('display', 'none', 'important');
+            return;
+          }
+          const tag = (el.tagName || '').toLowerCase();
+          if (tag === 'select') {
+            el.style.setProperty('display', 'inline-block', 'important');
+            el.style.setProperty('float', 'none', 'important');
+            el.style.setProperty('width', 'auto', 'important');
+            el.style.setProperty('min-width', '56px', 'important');
+            el.style.setProperty('max-width', '90px', 'important');
+            el.style.setProperty('height', '28px', 'important');
+            el.style.setProperty('min-height', '28px', 'important');
+            el.style.setProperty('margin', '0 4px', 'important');
+            el.style.setProperty('vertical-align', 'middle', 'important');
+            return;
+          }
+          if (tag === 'input' && el.classList && el.classList.contains('urppp-page-goto')) {
+            el.style.setProperty('display', 'inline-block', 'important');
+            el.style.setProperty('float', 'none', 'important');
+            return;
+          }
+          el.style.setProperty('float', 'none', 'important');
+          el.style.setProperty('display', 'inline', 'important');
+          el.style.setProperty('white-space', 'nowrap', 'important');
+          el.style.setProperty('vertical-align', 'middle', 'important');
         });
       });
     } catch (err) {
@@ -4953,6 +5043,47 @@
         clear: both !important;
         margin-top: 12px !important;
         z-index: 2 !important;
+        width: 100% !important;
+        text-align: right !important;
+      }
+      #urppagebar .dataTables_paginate,
+      #urppagebar [id^="sample-table-2_paginate_"],
+      #urppagebar.urppp-pagebar {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 10px !important;
+        width: 100% !important;
+        white-space: nowrap !important;
+      }
+      #urppagebar .urppp-pagebar-meta {
+        display: inline-flex !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        justify-content: flex-end !important;
+        margin-left: auto !important;
+        white-space: nowrap !important;
+        float: none !important;
+        line-height: 1.5 !important;
+        font-size: 13px !important;
+        color: var(--text-secondary, var(--text-muted)) !important;
+        max-width: 100% !important;
+      }
+      #urppagebar .urppp-pagebar-meta select {
+        display: inline-block !important;
+        float: none !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        width: auto !important;
+        min-width: 56px !important;
+        max-width: 90px !important;
+        margin: 0 4px !important;
+        vertical-align: middle !important;
+      }
+      #urppagebar [id^="currNum_"],
+      #urppagebar [id^="selectNum_"] {
+        float: none !important;
       }
 
       /* 页面区块标题：全宽条，与内容左右对齐，下边距拉开 */
@@ -8031,15 +8162,16 @@
       /* 每页条数 */
       #urppagebar select[id^="pagination_pageSize_"],
       #urppagebar select {
-        height: 36px !important;
-        min-height: 36px !important;
+        height: 28px !important;
+        min-height: 28px !important;
         width: auto !important;
-        min-width: 64px !important;
-        max-width: none !important;
-        padding: 2px 8px !important;
+        min-width: 56px !important;
+        max-width: 90px !important;
+        padding: 0 6px !important;
         font-size: 13px !important;
         vertical-align: middle !important;
         border-radius: 8px !important;
+        float: none !important;
       }
       #urppagebar [id^="totalPage_show_"],
       #urppagebar [id^="span_page_txt_"] {
@@ -11051,7 +11183,7 @@ fo-striped.setLabelWidth,
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.10');
+    console.log('[URP++] style applied v0.6.11');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12096,7 +12228,7 @@ fo-striped.setLabelWidth,
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.10',
+    version: '0.6.11',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
