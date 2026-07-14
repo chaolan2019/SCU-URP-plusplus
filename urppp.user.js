@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.8
+// @version      0.6.9
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -682,7 +682,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.8';
+          content:'URP++ v0.6.9';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1526,20 +1526,21 @@
         bar.style.setProperty('line-height', '1.5', 'important');
         const wrap = bar.querySelector('.dataTables_paginate, [id^="sample-table-2_paginate_"]') || bar;
 
-        // 滚动分页（pageSize 含 _sl / 文案「第」/ input readonly）：
-        // 只藏上一页下一页；绝不改 flex/text-align/输入框（防三行与左右闪）
+        // 默认按「滚动/无页码」安全布局处理，避免重建瞬间误判成跳转页：
+        // 误判会套 flex，把「第 / 输入 / 页」拆成三行，并在左右之间闪。
+        // 只有明确「转到」+ 非 readonly + pageSize 无 _ 才走跳转美化。
         const pageTxt = Array.from(bar.querySelectorAll('[id^="span_page_txt_"]'))
           .map((el) => String(el.textContent || '').trim()).join('');
         const pageSizeSel = bar.querySelector('select[id^="pagination_pageSize_"]');
         const pageSizeVal = pageSizeSel ? String(pageSizeSel.value || '') : '';
-        const jumpReadonly = !!bar.querySelector('[id^="turnpageto_"][readonly]');
-        const isScrollMode =
-          jumpReadonly ||
-          pageSizeVal.indexOf('_') >= 0 ||
-          pageTxt === '第' ||
-          (pageTxt.indexOf('转到') < 0 && pageTxt.indexOf('第') >= 0);
+        const jumpInp = bar.querySelector('[id^="turnpageto_"]');
+        const jumpReadonly = !!(jumpInp && (jumpInp.readOnly || jumpInp.hasAttribute('readonly')));
+        const isJumpMode =
+          pageTxt.indexOf('转到') >= 0 &&
+          !jumpReadonly &&
+          pageSizeVal.indexOf('_') < 0;
 
-        if (isScrollMode) {
+        if (!isJumpMode) {
           bar.classList.add('urppp-pagebar-scroll');
           bar.classList.remove('urppp-pagebar-jump');
           bar.querySelectorAll('ul.pagination, [id^="pagination_ul_"]').forEach((ul) => {
@@ -7784,57 +7785,91 @@
        * 不设 text-align:right，避免每次重建从左闪到右。
        * 用 :has(readonly) 在 class 打上前也能立刻藏页码 ul。
        */
+      /* 滚动态 / 默认安全态：整条 inline 单行，绝不 flex */
       #urppagebar.urppp-pagebar-scroll .dataTables_paginate,
       #urppagebar.urppp-pagebar-scroll [id^="sample-table-2_paginate_"],
       #urppagebar:has([id^="turnpageto_"][readonly]) .dataTables_paginate,
-      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="sample-table-2_paginate_"] {
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="sample-table-2_paginate_"],
+      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) .dataTables_paginate,
+      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="sample-table-2_paginate_"] {
         display: block !important;
         white-space: nowrap !important;
         line-height: 1.5 !important;
+        text-align: left !important; /* 常驻，避免 right 切换造成左右闪 */
       }
-      /* 站点结构：currNum + selectNum + div(inline-block 包 ul 和文案) */
+      #urppagebar.urppp-pagebar-scroll .dataTables_paginate *,
+      #urppagebar.urppp-pagebar-scroll [id^="sample-table-2_paginate_"] *,
+      #urppagebar:has([id^="turnpageto_"][readonly]) .dataTables_paginate *,
+      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) .dataTables_paginate * {
+        float: none !important;
+        white-space: nowrap !important;
+        box-sizing: border-box !important;
+      }
       #urppagebar.urppp-pagebar-scroll .dataTables_paginate > div,
       #urppagebar.urppp-pagebar-scroll [id^="sample-table-2_paginate_"] > div,
       #urppagebar:has([id^="turnpageto_"][readonly]) .dataTables_paginate > div,
-      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="sample-table-2_paginate_"] > div {
+      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) .dataTables_paginate > div {
         display: inline !important;
-        float: none !important;
-        white-space: nowrap !important;
         vertical-align: middle !important;
       }
       #urppagebar.urppp-pagebar-scroll [id^="currNum_"],
       #urppagebar.urppp-pagebar-scroll [id^="selectNum_"],
       #urppagebar:has([id^="turnpageto_"][readonly]) [id^="currNum_"],
-      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="selectNum_"] {
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="selectNum_"],
+      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="currNum_"],
+      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="selectNum_"] {
         display: none !important;
       }
       #urppagebar.urppp-pagebar-scroll ul.pagination,
       #urppagebar.urppp-pagebar-scroll [id^="pagination_ul_"],
       #urppagebar:has([id^="turnpageto_"][readonly]) ul.pagination,
-      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="pagination_ul_"] {
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="pagination_ul_"],
+      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) ul.pagination,
+      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="pagination_ul_"] {
         display: none !important;
       }
       #urppagebar.urppp-pagebar-scroll [id^="span_page_txt_"],
       #urppagebar.urppp-pagebar-scroll [id^="totalPage_show_"],
       #urppagebar:has([id^="turnpageto_"][readonly]) [id^="span_page_txt_"],
-      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="totalPage_show_"] {
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="totalPage_show_"],
+      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="span_page_txt_"],
+      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="totalPage_show_"] {
         display: inline !important;
-        float: none !important;
-        white-space: nowrap !important;
+        vertical-align: middle !important;
       }
       #urppagebar.urppp-pagebar-scroll [id^="turnpageto_"],
-      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="turnpageto_"] {
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="turnpageto_"],
+      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="turnpageto_"] {
         display: inline-block !important;
-        float: none !important;
         vertical-align: middle !important;
+        width: 40px !important;
+        height: 26px !important;
+        min-height: 26px !important;
+        max-height: 26px !important;
+        margin: 0 2px !important;
+        padding: 0 4px !important;
+        line-height: 24px !important;
+        font-size: 12px !important;
       }
       #urppagebar.urppp-pagebar-scroll span:has(> [id^="turnpageto_"]),
-      #urppagebar:has([id^="turnpageto_"][readonly]) span:has(> [id^="turnpageto_"]) {
+      #urppagebar:has([id^="turnpageto_"][readonly]) span:has(> [id^="turnpageto_"]),
+      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) span:has(> [id^="turnpageto_"]) {
         display: inline-block !important;
         vertical-align: middle !important;
-        float: none !important;
+        position: static !important;
         width: auto !important;
         height: auto !important;
+        min-height: 0 !important;
+      }
+      #urppagebar.urppp-pagebar-scroll select[id^="pagination_pageSize_"],
+      #urppagebar:has([id^="turnpageto_"][readonly]) select[id^="pagination_pageSize_"],
+      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) select[id^="pagination_pageSize_"] {
+        display: inline-block !important;
+        vertical-align: middle !important;
+        height: 26px !important;
+        min-height: 26px !important;
+        width: auto !important;
+        margin: 0 2px !important;
       }
       /* 清掉旧 pagination 全局小按钮样式在页码条上的影响 */
       #urppagebar.urppp-pagebar-jump ul.pagination,
@@ -11020,7 +11055,7 @@ fo-striped.setLabelWidth,
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.8');
+    console.log('[URP++] style applied v0.6.9');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12065,7 +12100,7 @@ fo-striped.setLabelWidth,
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.8',
+    version: '0.6.9',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
