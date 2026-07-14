@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.17
+// @version      0.6.18
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -366,7 +366,9 @@
   const THEME_KEY = 'urppp_theme_v3';
   const ACCENT_KEY = 'urppp_accent_v1';
   const ACCENT_PRESETS_KEY = 'urppp_accent_presets_v1';
+  const SURFACE_KEY = 'urppp_surface_v1';
   const DEFAULT_ACCENT_PRESETS = ['#1E3A5F', '#B53434', '#0F766E', '#7C3AED', '#C2410C', '#0369A1'];
+  const DEFAULT_SURFACE = '#FFFFFF';
 
   function ensureBootLoader() {
     if (document.getElementById('urppp-boot-loader')) return;
@@ -490,17 +492,21 @@
   }
 
   // 根据强调色生成浅色表面主题（背景/边框/输入底）
-  function buildAccentSurfaceTheme(hex) {
+  // surfaceHex：可选，用户自定义卡片表面色；缺省纯白
+  function buildAccentSurfaceTheme(hex, surfaceHex) {
     const h = hex.startsWith('#') ? hex : ('#' + hex);
+    const surf = normalizeHexColor(surfaceHex) || DEFAULT_SURFACE;
+    // 输入底略向 surface 靠，避免卡片内控件突兀
+    const inputBg = mixHex(surf, lighten(h, 0.97), 0.55);
     return {
       '--bg': lighten(h, 0.94),
-      '--surface': '#FFFFFF',
+      '--surface': surf,
       '--text': darken(h, 0.72),
       '--text-secondary': alpha(darken(h, 0.35), 0.72),
       '--text-muted': alpha(darken(h, 0.2), 0.55),
       '--border': lighten(h, 0.82),
       '--border-focus': 'var(--urppp-accent, ' + h + ')',
-      '--input-bg': lighten(h, 0.97),
+      '--input-bg': inputBg,
       '--primary': 'var(--urppp-accent, ' + h + ')',
       '--primary-hover': 'var(--urppp-accent-hover, ' + darken(h, 0.15) + ')',
       '--ring': 'var(--urppp-accent-ring, ' + alpha(h, 0.14) + ')',
@@ -508,6 +514,37 @@
       '--radius': '16px',
       '--radius-sm': '10px',
     };
+  }
+
+  function normalizeHexColor(v) {
+    let s = String(v || '').trim();
+    if (!s) return '';
+    if (s[0] !== '#') s = '#' + s;
+    if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toUpperCase();
+    return '';
+  }
+
+  function mixHex(a, b, t) {
+    // t=0 全 a，t=1 全 b
+    const pa = hexToRgb(normalizeHexColor(a) || '#FFFFFF');
+    const pb = hexToRgb(normalizeHexColor(b) || '#FFFFFF');
+    const k = Math.max(0, Math.min(1, Number(t) || 0));
+    return rgbToHex(
+      pa.r + (pb.r - pa.r) * k,
+      pa.g + (pb.g - pa.g) * k,
+      pa.b + (pb.b - pa.b) * k
+    );
+  }
+
+  function getSurface() {
+    return normalizeHexColor(GM_getValue(SURFACE_KEY, '')) || DEFAULT_SURFACE;
+  }
+
+  function setSurface(hex) {
+    const h = normalizeHexColor(hex);
+    if (!h) return '';
+    GM_setValue(SURFACE_KEY, h);
+    return h;
   }
 
   // ============================================================
@@ -593,21 +630,25 @@
     // 只有「自定义」(scu-red) 吃自定义色整套表面；简约白/深邃暗用主题原配色
     if (name === 'scu-red') {
       const color = acc || '#B53434';
-      vars = Object.assign(vars, buildAccentSurfaceTheme(color));
+      const surface = getSurface();
+      vars = Object.assign(vars, buildAccentSurfaceTheme(color, surface));
       const hover = darken(color, 0.15);
       const ring = alpha(color, 0.15);
       document.documentElement.style.setProperty('--urppp-accent', color);
       document.documentElement.style.setProperty('--urppp-accent-hover', hover);
       document.documentElement.style.setProperty('--urppp-accent-ring', ring);
+      document.documentElement.style.setProperty('--urppp-surface-user', surface);
     } else if (name === 'default') {
       document.documentElement.style.setProperty('--urppp-accent', '#1E3A5F');
       document.documentElement.style.setProperty('--urppp-accent-hover', '#162D4A');
       document.documentElement.style.setProperty('--urppp-accent-ring', 'rgba(30,58,95,0.15)');
+      document.documentElement.style.removeProperty('--urppp-surface-user');
     } else {
       // dark 等：清掉 accent 对主色的影响
       document.documentElement.style.removeProperty('--urppp-accent');
       document.documentElement.style.removeProperty('--urppp-accent-hover');
       document.documentElement.style.removeProperty('--urppp-accent-ring');
+      document.documentElement.style.removeProperty('--urppp-surface-user');
     }
 
     let css = ':root {';
@@ -683,7 +724,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.17';
+          content:'URP++ v0.6.18';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -4082,7 +4123,7 @@
         position: absolute !important;
         top: calc(100% + 10px) !important;
         left: 0 !important;
-        min-width: 220px !important;
+        min-width: 248px !important;
         padding: 12px !important;
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
@@ -4091,6 +4132,12 @@
         z-index: 1200 !important;
         display: none !important;
         box-sizing: border-box !important;
+      }
+      #urppp-nav-theme-pop .urppp-pop-hint {
+        font-size: 11px !important;
+        line-height: 1.4 !important;
+        color: var(--text-muted) !important;
+        margin: -2px 0 10px !important;
       }
       #urppp-nav-theme-pop.open {
         display: block !important;
@@ -11240,7 +11287,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.17');
+    console.log('[URP++] style applied v0.6.18');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11308,6 +11355,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const hexInput = document.getElementById('urppp-nav-hex');
     if (colorInput) colorInput.value = (getAccent() || '#B53434');
     if (hexInput) hexInput.value = (getAccent() || '#B53434');
+    const surf = getSurface();
+    const surfaceColor = document.getElementById('urppp-nav-surface-color');
+    const surfaceHex = document.getElementById('urppp-nav-surface-hex');
+    if (surfaceColor) surfaceColor.value = surf;
+    if (surfaceHex) surfaceHex.value = surf;
     renderNavbarAccentPresets();
   }
 
@@ -11366,14 +11418,21 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         '<button type="button" class="urppp-nav-dot" data-theme="scu-red" title="自定义" style="background:#B53434"></button>',
         '<button type="button" class="urppp-nav-edit" id="urppp-nav-theme-edit" title="编辑主题色">✎</button>',
         '<div id="urppp-nav-theme-pop" role="dialog" aria-label="编辑主题色">',
-        '  <div class="urppp-pop-title">自定义主题色</div>',
+        '  <div class="urppp-pop-title">强调色</div>',
         '  <div class="urppp-pop-row">',
         '    <input type="color" id="urppp-nav-color" value="#B53434" />',
         '    <input type="text" id="urppp-nav-hex" maxlength="7" value="#B53434" spellcheck="false" />',
         '  </div>',
+        '  <div class="urppp-pop-title">卡片表面色</div>',
+        '  <div class="urppp-pop-row">',
+        '    <input type="color" id="urppp-nav-surface-color" value="#FFFFFF" />',
+        '    <input type="text" id="urppp-nav-surface-hex" maxlength="7" value="#FFFFFF" spellcheck="false" />',
+        '  </div>',
+        '  <div class="urppp-pop-hint">影响统计卡、通知、表单等白色内容卡</div>',
         '  <div class="urppp-pop-actions">',
         '    <button type="button" class="urppp-pop-btn primary" id="urppp-nav-apply">应用</button>',
         '    <button type="button" class="urppp-pop-btn" id="urppp-nav-save-preset">保存预设</button>',
+        '    <button type="button" class="urppp-pop-btn" id="urppp-nav-reset-surface">重置卡片</button>',
         '  </div>',
         '  <div class="urppp-pop-title">已保存预设</div>',
         '  <div class="urppp-pop-presets" id="urppp-nav-presets"></div>',
@@ -11406,13 +11465,19 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const editBtn = wrap.querySelector('#urppp-nav-theme-edit');
       const colorInput = wrap.querySelector('#urppp-nav-color');
       const hexInput = wrap.querySelector('#urppp-nav-hex');
+      const surfaceColor = wrap.querySelector('#urppp-nav-surface-color');
+      const surfaceHex = wrap.querySelector('#urppp-nav-surface-hex');
       const applyBtn = wrap.querySelector('#urppp-nav-apply');
       const saveBtn = wrap.querySelector('#urppp-nav-save-preset');
+      const resetSurfaceBtn = wrap.querySelector('#urppp-nav-reset-surface');
 
       const openPop = () => {
         const acc = getAccent() || '#B53434';
         if (colorInput) colorInput.value = acc;
         if (hexInput) hexInput.value = acc;
+        const surf = getSurface();
+        if (surfaceColor) surfaceColor.value = surf;
+        if (surfaceHex) surfaceHex.value = surf;
         renderNavbarAccentPresets();
         pop.classList.add('open');
       };
@@ -11429,13 +11494,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         if (!wrap.contains(e.target)) closePop();
       });
 
-      const normalizeHex = (v) => {
-        let s = String(v || '').trim();
-        if (!s) return '';
-        if (s[0] !== '#') s = '#' + s;
-        if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toUpperCase();
-        return '';
-      };
+      const normalizeHex = (v) => normalizeHexColor(v);
 
       colorInput.addEventListener('input', () => {
         hexInput.value = colorInput.value.toUpperCase();
@@ -11447,10 +11506,26 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           colorInput.value = h;
         }
       });
+      if (surfaceColor) {
+        surfaceColor.addEventListener('input', () => {
+          if (surfaceHex) surfaceHex.value = surfaceColor.value.toUpperCase();
+        });
+      }
+      if (surfaceHex) {
+        surfaceHex.addEventListener('change', () => {
+          const h = normalizeHex(surfaceHex.value);
+          if (h) {
+            surfaceHex.value = h;
+            if (surfaceColor) surfaceColor.value = h;
+          }
+        });
+      }
       applyBtn.addEventListener('click', () => {
         const h = normalizeHex(hexInput.value) || colorInput.value;
         if (!h) return;
+        const s = normalizeHex(surfaceHex && surfaceHex.value) || (surfaceColor && surfaceColor.value) || getSurface();
         GM_setValue(ACCENT_KEY, h);
+        setSurface(s || DEFAULT_SURFACE);
         applyTheme('scu-red'); // 自定义主题 + 整套表面
         syncNavbarThemeUI();
         closePop();
@@ -11458,12 +11533,24 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       saveBtn.addEventListener('click', () => {
         const h = normalizeHex(hexInput.value) || colorInput.value;
         if (!h) return;
+        const s = normalizeHex(surfaceHex && surfaceHex.value) || (surfaceColor && surfaceColor.value) || getSurface();
         GM_setValue(ACCENT_KEY, h);
+        setSurface(s || DEFAULT_SURFACE);
         saveAccentPreset(h);
         applyTheme('scu-red');
         renderNavbarAccentPresets();
         syncNavbarThemeUI();
       });
+      if (resetSurfaceBtn) {
+        resetSurfaceBtn.addEventListener('click', () => {
+          setSurface(DEFAULT_SURFACE);
+          if (surfaceColor) surfaceColor.value = DEFAULT_SURFACE;
+          if (surfaceHex) surfaceHex.value = DEFAULT_SURFACE;
+          // 仅在自定义主题下即时刷新卡片色
+          if (getCurrent() === 'scu-red') applyTheme('scu-red');
+          else syncNavbarThemeUI();
+        });
+      }
 
       syncNavbarThemeUI();
     } catch (err) {
@@ -12285,7 +12372,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.17',
+    version: '0.6.18',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
