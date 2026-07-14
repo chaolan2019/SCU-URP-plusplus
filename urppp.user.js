@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.7.1
+// @version      0.7.2
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -996,7 +996,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.7.1';
+          content:'URP++ v0.7.2';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -11887,7 +11887,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.7.1');
+    console.log('[URP++] style applied v0.7.2');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12966,14 +12966,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // ============================================================
-  // 清爽模式 Clean Mode v0.7.1
-  // 桌面一页：资料+课表 | 成绩总览 | 服务；手机底栏四入口
-  // 绩点：川大现行百分制对照表（95-100=4.0 … 60=0.5）；等级/字母制见成绩单；加权
+  // 清爽模式 Clean Mode v0.7.2
+  // 桌面居中一页 1:1；手机底栏；数据按真实 URP DOM/路径解析
+  // 绩点：川大现行百分制对照表；教室：classroomUseStatus 网格
   // ============================================================
   const CLEAN_FLAG = 'urppp-clean-open';
 
-  // ---- SCU GPA rules (成绩单说明) ----
-  // 川大现行百分制绩点对照（成绩单「百分制成绩与学分绩点对照表」）
+  // 川大现行百分制绩点对照（成绩单）
   const SCU_SCORE_GPA_TABLE = {
     100:4.0,99:4.0,98:4.0,97:4.0,96:4.0,95:4.0,
     94:3.9,93:3.8,92:3.7,91:3.6,90:3.5,
@@ -12989,9 +12988,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (raw == null || raw === '') return null;
     const s = String(raw).trim();
     if (!s) return null;
-    // 不计绩点
     if (/^免修$|^通过$|^取消$|^缓考$|^旷考$|^缺考$/.test(s)) return null;
-    // 字母制（成绩单）
     if (/^A\+$/i.test(s) || /^A$/i.test(s)) return 4.0;
     if (/^A-$/i.test(s)) return 3.7;
     if (/^B\+$/i.test(s)) return 3.3;
@@ -13002,7 +12999,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (/^C-$/i.test(s)) return 1.7;
     if (/^D$/i.test(s)) return 1.3;
     if (/^F$/i.test(s)) return 0;
-    // 五级制
     if (/优秀/.test(s)) return 4.0;
     if (/良好/.test(s)) return 3.0;
     if (/中等/.test(s)) return 2.0;
@@ -13014,10 +13010,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const score = Math.round(n);
     if (score < 60) return 0;
     if (score > 100) return 4.0;
-    if (Object.prototype.hasOwnProperty.call(SCU_SCORE_GPA_TABLE, score)) return SCU_SCORE_GPA_TABLE[score];
-    // 兜底：向下取整到整数分查表
-    const key = Math.max(60, Math.min(100, Math.floor(n)));
-    return SCU_SCORE_GPA_TABLE[key] != null ? SCU_SCORE_GPA_TABLE[key] : 0;
+    if (SCU_SCORE_GPA_TABLE[score] != null) return SCU_SCORE_GPA_TABLE[score];
+    return SCU_SCORE_GPA_TABLE[Math.max(60, Math.min(100, Math.floor(n)))] || 0;
   }
 
   function scoreToNumber(raw) {
@@ -13028,66 +13022,46 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (/及格/.test(s) && !/不及格/.test(s)) return 65;
     if (/不及格|不合格|不通过/.test(s)) return 0;
     if (/合格/.test(s)) return 70;
+    if (/^A/i.test(s)) return 95;
+    if (/^B/i.test(s)) return 85;
+    if (/^C/i.test(s)) return 75;
+    if (/^D/i.test(s)) return 65;
+    if (/^F/i.test(s)) return 0;
     const n = parseFloat(s.replace(/[^\d.]/g, ''));
     return Number.isNaN(n) ? null : n;
   }
 
-  function summarizeCourses(list) {
-    const rows = (list || []).filter((c) => c && c.credit > 0 && scoreToNumber(c.score) != null);
-    let creditSum = 0;
-    let scoreW = 0;
-    let gpaW = 0;
-    let gpaCredit = 0;
-    let reqCredit = 0;
-    let reqScoreW = 0;
-    let reqGpaW = 0;
-    let reqGpaCredit = 0;
+  function round2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
+  function isRequiredAttr(attr) { return /必修/.test(String(attr || '')); }
 
-    rows.forEach((c) => {
+  function summarizeCourses(list) {
+    let creditSum = 0, scoreW = 0, gpaW = 0, gpaCredit = 0;
+    let reqCredit = 0, reqScoreW = 0, reqGpaW = 0, reqGpaCredit = 0;
+    (list || []).forEach((c) => {
       const cr = Number(c.credit) || 0;
       const sc = scoreToNumber(c.score);
       const gp = scoreToGpa(c.score);
       if (sc == null || cr <= 0) return;
       creditSum += cr;
       scoreW += sc * cr;
-      if (gp != null) {
-        gpaW += gp * cr;
-        gpaCredit += cr;
-      }
+      if (gp != null) { gpaW += gp * cr; gpaCredit += cr; }
       if (c.required) {
         reqCredit += cr;
         reqScoreW += sc * cr;
-        if (gp != null) {
-          reqGpaW += gp * cr;
-          reqGpaCredit += cr;
-        }
+        if (gp != null) { reqGpaW += gp * cr; reqGpaCredit += cr; }
       }
     });
-
-    const avg = creditSum ? scoreW / creditSum : 0;
-    const gpa = gpaCredit ? gpaW / gpaCredit : 0;
-    const reqAvg = reqCredit ? reqScoreW / reqCredit : 0;
-    const reqGpa = reqGpaCredit ? reqGpaW / reqGpaCredit : 0;
     return {
       totalCredit: round2(creditSum),
-      avgScore: round2(avg),
-      avgGpa: round2(gpa),
+      avgScore: round2(creditSum ? scoreW / creditSum : 0),
+      avgGpa: round2(gpaCredit ? gpaW / gpaCredit : 0),
       requiredCredit: round2(reqCredit),
-      requiredGpa: round2(reqGpa),
-      requiredAvg: round2(reqAvg),
-      count: rows.length
+      requiredGpa: round2(reqGpaCredit ? reqGpaW / reqGpaCredit : 0),
+      requiredAvg: round2(reqCredit ? reqScoreW / reqCredit : 0),
+      count: (list || []).length
     };
   }
 
-  function round2(n) {
-    return Math.round((Number(n) || 0) * 100) / 100;
-  }
-
-  function isRequiredAttr(attr) {
-    return /必修/.test(String(attr || ''));
-  }
-
-  // ---- network helpers ----
   function absUrl(url) {
     const u = String(url || '');
     if (/^https?:\/\//i.test(u)) return u;
@@ -13096,128 +13070,115 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return location.origin + '/' + u.replace(/^\.\//, '');
   }
 
-  function fetchText(url) {
+  // 注意：不要带 X-Requested-With，否则部分 URP 页只回片段、没有完整 table
+  function fetchText(url, opts) {
     const full = absUrl(url);
+    const method = (opts && opts.method) || 'GET';
+    const data = (opts && opts.data) || null;
     return new Promise((resolve, reject) => {
       const done = (ok, val) => (ok ? resolve(val) : reject(new Error(val || 'fetch failed')));
       try {
         if (typeof GM_xmlhttpRequest === 'function') {
           GM_xmlhttpRequest({
-            method: 'GET',
+            method,
             url: full,
-            anonymous: false,
+            data: data || undefined,
+            headers: opts && opts.headers ? opts.headers : {},
             withCredentials: true,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
             onload: (r) => {
               if (r.status >= 200 && r.status < 400) done(true, r.responseText || '');
-              else done(false, 'HTTP ' + r.status + ' ' + full);
+              else done(false, 'HTTP ' + r.status);
             },
-            onerror: () => done(false, 'network error ' + full)
+            onerror: () => done(false, 'network error')
           });
           return;
         }
       } catch (_) {}
-      fetch(full, { credentials: 'include', cache: 'no-store' })
-        .then((r) => {
-          if (!r.ok) throw new Error('HTTP ' + r.status);
-          return r.text();
-        })
-        .then((txt) => done(true, txt))
-        .catch((e) => done(false, (e && e.message) || 'fetch fail'));
+      fetch(full, {
+        method,
+        credentials: 'include',
+        cache: 'no-store',
+        headers: opts && opts.headers ? opts.headers : {},
+        body: data || undefined
+      }).then((r) => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+      }).then((txt) => done(true, txt)).catch((e) => done(false, e && e.message));
     });
   }
 
-  function extractUrlFromHtml(html, patterns) {
-    const text = String(html || '');
-    for (const p of patterns) {
-      const re = typeof p === 'string' ? new RegExp(p, 'i') : p;
-      const m = text.match(re);
-      if (m && m[1]) return m[1].replace(/\\u002F/g, '/');
-    }
-    return '';
-  }
-
   function parseHtml(html) {
-    return new DOMParser().parseFromString(html, 'text/html');
+    return new DOMParser().parseFromString(String(html || ''), 'text/html');
   }
 
-  // ---- data: profile ----
+  function escapeHtml(s) {
+    return String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  // ---- profile ----
   async function loadProfile() {
-    const profile = {
-      name: '',
-      avatar: '',
-      majorPlan: '',
-      majorGpa: '',
-      studentId: ''
-    };
+    const profile = { name: '', avatar: '', majorPlan: '', majorGpa: '', studentId: '' };
     try {
       const user = document.querySelector('#navbar .user-info, .ace-nav .user-info, .user-info');
       if (user) {
-        // ACE: <small>欢迎您,</small>姓名  —— 不要把「欢迎您」当姓名
-        const clone = user.cloneNode(true);
-        clone.querySelectorAll('small').forEach((s) => s.remove());
-        let t = (clone.textContent || '').replace(/\s+/g, ' ').trim();
-        t = t.replace(/^欢迎您[,，\s]*/g, '').replace(/^你好[,，\s]*/g, '').trim();
-        // 去掉学号
-        t = t.replace(/\d{10,}/g, '').trim();
-        const m = t.match(/([\u4e00-\u9fa5·]{2,12})/);
-        if (m && !/欢迎|同学|用户|管理/.test(m[1])) profile.name = m[1];
+        // 真实 DOM: <small>欢迎您，</small>\n刘冠博
+        const small = user.querySelector('small');
+        if (small) small.remove(); // only clone ideally
       }
-      // 顶栏 brand 旁有时只有头像 title
+      const user2 = document.querySelector('#navbar .user-info, .ace-nav .user-info, .user-info');
+      if (user2) {
+        const clone = user2.cloneNode(true);
+        clone.querySelectorAll('small, i, img, b, .badge').forEach((n) => n.remove());
+        let t = (clone.textContent || '').replace(/\s+/g, ' ').trim();
+        t = t.replace(/^欢迎您[，,]\s*/g, '').replace(/^欢迎您\s*/g, '').trim();
+        t = t.replace(/\d{8,}/g, '').trim();
+        const m = t.match(/([\u4e00-\u9fa5·]{2,12})/);
+        if (m && !/欢迎|同学|首页|反馈|密码|注销/.test(m[1])) profile.name = m[1];
+      }
+      // 恢复 small：上面误删了 live DOM，补救——重新从 outerHTML 解析
+      // 更稳：只从 textContent 拆
       if (!profile.name) {
-        const img0 = document.querySelector('#navbar img.nav-user-photo, .ace-nav img.nav-user-photo');
-        if (img0 && img0.getAttribute('alt') && /[\u4e00-\u9fa5]{2,}/.test(img0.getAttribute('alt'))) {
-          profile.name = img0.getAttribute('alt').trim();
+        const u = document.querySelector('#navbar .user-info, .ace-nav .user-info');
+        if (u) {
+          const raw = (u.innerText || u.textContent || '').replace(/\s+/g, ' ').trim();
+          const m = raw.match(/欢迎您[，,]\s*([\u4e00-\u9fa5·]{2,12})/) || raw.replace(/欢迎您[，,]?/g, ' ').match(/([\u4e00-\u9fa5·]{2,12})/);
+          if (m && !/欢迎/.test(m[1])) profile.name = m[1];
         }
       }
-      const img = document.querySelector('#navbar img.nav-user-photo, .ace-nav img.nav-user-photo, img.nav-user-photo');
+      const img = document.querySelector('#navbar img.nav-user-photo, .ace-nav img.nav-user-photo');
       if (img && img.src) profile.avatar = img.src;
       const bodyText = (document.body && document.body.innerText) || '';
-      const gpaM = bodyText.match(/主修必修GPA[^\d]*(\d+\.\d+)/) || bodyText.match(/(\d+\.\d+)\s*主修必修GPA/);
+      const gpaM = bodyText.match(/(\d+\.\d+)\s*主修必修GPA/) || bodyText.match(/主修必修GPA[^\d]*(\d+\.\d+)/);
       if (gpaM) profile.majorGpa = gpaM[1];
-      document.querySelectorAll('.infobox, .urppp-stat-card, .widget-box, .urppp-welcome').forEach((box) => {
+      document.querySelectorAll('.infobox, .widget-box, .urppp-stat-card').forEach((box) => {
         const tx = (box.textContent || '').replace(/\s+/g, ' ');
         if (/主修必修GPA|GPA算法/.test(tx)) {
           const n = tx.match(/(\d+\.\d+)/);
           if (n) profile.majorGpa = n[1];
         }
-        if (/培养方案|主修为/.test(tx) && !profile.majorPlan) {
+        if (/主修为|培养方案/.test(tx) && !profile.majorPlan) {
           const m = tx.match(/主修为\s*([^\n]{2,40})/) || tx.match(/([\u4e00-\u9fa5A-Za-z0-9（）()]{4,40}培养方案)/);
-          if (m) profile.majorPlan = m[1].replace(/…+$/, '').trim();
+          if (m) profile.majorPlan = m[1].replace(/…+/g, '').trim();
         }
       });
-      // 首页「欢迎回来」旁无姓名时，再扫 page-content 顶部
-      if (!profile.name) {
-        const top = document.querySelector('.navbar .user-menu, #navbar li.light-blue a');
-        if (top) {
-          const tt = (top.textContent || '').replace(/\s+/g, ' ').replace(/欢迎您[,，]?/g, ' ').trim();
-          const m = tt.match(/([\u4e00-\u9fa5·]{2,12})/);
-          if (m && !/欢迎|首页|反馈|密码|注销/.test(m[1])) profile.name = m[1];
-        }
-      }
     } catch (_) {}
 
-    // 补拉学籍页
     try {
       const html = await fetchText('/student/rollManagement/rollInfo/index');
       const doc = parseHtml(html);
       const text = (doc.body && doc.body.innerText) || '';
       if (!profile.name) {
         const nm = text.match(/姓名\s*([^\s]{2,20})/);
-        if (nm) profile.name = nm[1];
-      }
-      if (!profile.studentId) {
-        const id = text.match(/学号\s*(\d{8,20})/);
-        if (id) profile.studentId = id[1];
+        if (nm) profile.name = nm[1].trim();
       }
       if (!profile.majorPlan) {
         const mp = text.match(/主修方案名称\s*([^\n]+)/) || text.match(/专业\s*([^\n]{2,40})/);
         if (mp) profile.majorPlan = mp[1].trim();
       }
-      const photo = doc.querySelector('img[src*="photo"], img[src*="Photo"], .profile-picture img, img.editable-click');
+      const photo = doc.querySelector('.profile-picture img, img[src*="photo" i], img[src*="Photo"]');
       if (photo && photo.getAttribute('src') && !profile.avatar) {
         const src = photo.getAttribute('src');
-        profile.avatar = src.startsWith('http') ? src : (location.origin + (src.startsWith('/') ? src : '/' + src));
+        profile.avatar = /^https?:/i.test(src) ? src : absUrl(src);
       }
     } catch (_) {}
 
@@ -13227,166 +13188,112 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return profile;
   }
 
-  // ---- data: schedule ----
+  // ---- schedule: #courseTable td#d_s .class_div ----
   const DAY_NAMES = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
-  async function loadSchedule() {
-    let html = '';
-    try {
-      html = await fetchText('/student/courseSelect/thisSemesterCurriculum/index');
-    } catch (e1) {
-      try {
-        html = await fetchText('/student/courseSelect/thisSemesterCurriculum/ajaxStudentSchedule/callback');
-      } catch (e2) {
-        return { courses: [], rawOk: false, error: String(e1 && e1.message || e1) };
-      }
-    }
-    // 若首页壳里没有表，尝试 callback
-    if (!/courseTable|第一大节|第一节/.test(html)) {
-      const cb = extractUrlFromHtml(html, [
-        /["'](\/student\/courseSelect\/thisSemesterCurriculum\/ajaxStudentSchedule\/callback[^"']*)["']/i,
-        /url\s*[:=]\s*["']([^"']*ajaxStudentSchedule[^"']*)["']/i
-      ]);
-      if (cb) {
-        try { html = await fetchText(cb); } catch (_) {}
-      }
-    }
-    const doc = parseHtml(html);
-    const table = doc.getElementById('courseTable') || doc.querySelector('#courseTableBody')?.closest('table') || doc.querySelector('table.table-bordered');
+  function parseScheduleFromDoc(doc) {
     const courses = [];
-    if (!table) return { courses, rawOk: false, error: 'no courseTable' };
-
-    // cells id like "1_1" = Monday section 1? From sample: id="7_1" sunday?, id="1_1" monday
-    // thead: 节次, 星期日, 星期一...星期六
-    // tbody rows: 大节 + 小节 + 7 day tds
-    const body = table.querySelector('#courseTableBody') || table.querySelector('tbody');
-    if (!body) return { courses, rawOk: true };
-
-    body.querySelectorAll('tr').forEach((tr) => {
-      const ths = tr.querySelectorAll('th');
-      const tds = tr.querySelectorAll('td');
-      // find section number from th text 第N节
-      let section = 0;
-      ths.forEach((th) => {
-        const m = (th.textContent || '').match(/第\s*(\d+)\s*节/);
-        if (m) section = parseInt(m[1], 10);
-      });
-      if (!section) {
-        // try id on th like 0_1
-        ths.forEach((th) => {
-          const id = th.id || '';
-          const m = id.match(/_(\d+)$/);
-          if (m) section = parseInt(m[1], 10);
-        });
+    const body = doc.querySelector('#courseTableBody') || doc.querySelector('#courseTable tbody');
+    if (!body) return courses;
+    body.querySelectorAll('td[id]').forEach((td) => {
+      const idm = String(td.id || '').match(/^(\d+)_(\d+)$/);
+      if (!idm) return;
+      const d = parseInt(idm[1], 10);
+      const section = parseInt(idm[2], 10);
+      // 站点 1=周一..6=周六,7=周日 → JS getDay 0=周日
+      const day = d === 7 ? 0 : d;
+      const blocks = td.querySelectorAll('.class_div, .div_style, div[class*="div-kcb"]');
+      const list = blocks.length ? blocks : [];
+      if (!list.length && (td.textContent || '').trim()) {
+        // text-only fallback
+        const raw = (td.textContent || '').replace(/\s+/g, ' ').trim();
+        if (raw) courses.push({ name: raw.slice(0, 40), teacher: '', place: '', week: '', day, section });
+        return;
       }
-      tds.forEach((td, idx) => {
-        // id 形如 1_3=周一第3节；7_x=周日
-        let day = idx; // fallback: 列序 0=周日
-        let sec = section;
-        const idm = String(td.id || '').match(/^(\d+)_(\d+)$/);
-        if (idm) {
-          const d = parseInt(idm[1], 10);
-          sec = parseInt(idm[2], 10) || sec;
-          // 站点：1..6=周一..六，7=周日
-          day = (d === 7) ? 0 : d;
-        }
-        const blocks = td.querySelectorAll('.class_div, .div_style, div[class*="div-kcb"], div[class*="kcb"]');
-        const texts = [];
-        const pushCourse = (title, teacher, place, week, jie) => {
-          const name = String(title || '').replace(/_\d+$/, '').replace(/\s+/g, ' ').trim();
-          if (!name || name.length < 2) return;
-          if (/^第\d+大节$|^第\d+节$/.test(name)) return;
-          texts.push({
-            name,
-            teacher: String(teacher || '').trim(),
-            place: String(place || '').trim(),
-            week: String(week || '').trim(),
-            sectionText: String(jie || '').trim(),
-            day,
-            section: sec || section || 0
-          });
-        };
-        if (blocks.length) {
-          blocks.forEach((b) => {
-            const ps = Array.from(b.querySelectorAll('p')).map((p) => (p.textContent || '').trim()).filter(Boolean);
-            const place = (b.querySelector('.p-jxl-1, [class*="jxl"]') || {}).textContent || '';
-            const title = ps[0] || (b.querySelector('.p-kcm-1, .p-kcm, [class*="kcm"]') || {}).textContent || '';
-            const teacher = ps.find((x, i) => i > 0 && !/周|节|望江|江安|华西|基教|综合楼|教/.test(x)) || '';
-            const week = ps.find((x) => /周/.test(x)) || '';
-            const jie = ps.find((x) => /节/.test(x)) || '';
-            pushCourse(title, teacher, place, week, jie);
-          });
-        } else {
-          const raw = (td.textContent || '').replace(/\s+/g, ' ').trim();
-          if (raw) pushCourse(raw.slice(0, 40), '', '', '', '');
-        }
-        texts.forEach((c) => courses.push(c));
+      list.forEach((b) => {
+        const ps = Array.from(b.querySelectorAll('p')).map((p) => (p.textContent || '').trim()).filter(Boolean);
+        const title = (b.querySelector('.p-kcm-1, .p-kcm') || {}).textContent || ps[0] || '';
+        const place = (b.querySelector('.p-jxl-1, [class*="jxl"]') || {}).textContent || '';
+        const teacher = ps.find((x, i) => i > 0 && !/周|节/.test(x) && x !== place) || '';
+        const week = ps.find((x) => /周/.test(x)) || '';
+        const name = String(title).replace(/_\d+\s*$/, '').trim();
+        if (!name || name.length < 2) return;
+        courses.push({
+          name,
+          teacher: String(teacher).trim(),
+          place: String(place || '').trim(),
+          week: String(week).trim(),
+          day,
+          section
+        });
       });
     });
-
-    // dedupe by name+day+section
+    // dedupe
     const seen = new Set();
-    const uniq = [];
-    courses.forEach((c) => {
+    return courses.filter((c) => {
       const k = [c.day, c.section, c.name, c.place].join('|');
-      if (seen.has(k)) return;
+      if (seen.has(k)) return false;
       seen.add(k);
-      uniq.push(c);
+      return true;
     });
-    return { courses: uniq, rawOk: true };
   }
 
-  // ---- data: scores ----
+  async function loadSchedule() {
+    try {
+      const html = await fetchText('/student/courseSelect/thisSemesterCurriculum/index');
+      let courses = parseScheduleFromDoc(parseHtml(html));
+      if (!courses.length) {
+        // 再试 callback 全文
+        try {
+          const cbHtml = await fetchText('/student/courseSelect/thisSemesterCurriculum/ajaxStudentSchedule/callback');
+          courses = parseScheduleFromDoc(parseHtml(cbHtml));
+        } catch (_) {}
+      }
+      return { courses, rawOk: courses.length > 0, error: courses.length ? '' : '课表解析为空' };
+    } catch (e) {
+      return { courses: [], rawOk: false, error: String(e && e.message || e) };
+    }
+  }
+
+  // ---- scores ----
   function parseScoreTables(doc) {
-    const schemes = [];
-    // headers like h4 with plan name
-    const headers = Array.from(doc.querySelectorAll('h4.header, h4'));
-    const tables = Array.from(doc.querySelectorAll('table.table, table'));
-    tables.forEach((table) => {
-      const head = ((table.tHead && table.tHead.innerText) || (table.rows[0] && table.rows[0].innerText) || '').replace(/\s+/g, '');
-      if (!/课程名/.test(head) || !/成绩/.test(head)) return;
-      // find preceding h4
+    const groups = [];
+    doc.querySelectorAll('table').forEach((table) => {
+      const headCells = Array.from((table.tHead && table.tHead.rows[0] ? table.tHead.rows[0].cells : (table.rows[0] && table.rows[0].cells) || []))
+        .map((c) => (c.textContent || '').replace(/\s+/g, ''));
+      if (!headCells.length) return;
+      const headJoined = headCells.join('|');
+      if (!/课程名/.test(headJoined) || !/成绩/.test(headJoined)) return;
+      const idx = {
+        code: headCells.findIndex((h) => h === '课程号'),
+        seq: headCells.findIndex((h) => h === '课序号'),
+        name: headCells.findIndex((h) => h === '课程名'),
+        attr: headCells.findIndex((h) => /课程属性|属性/.test(h)),
+        credit: headCells.findIndex((h) => h === '学分'),
+        score: headCells.findIndex((h) => h === '成绩')
+      };
+      if (idx.name < 0 || idx.score < 0) return;
       let title = '成绩';
       let el = table.previousElementSibling;
-      for (let i = 0; i < 6 && el; i++, el = el.previousElementSibling) {
-        if (el.matches && el.matches('h4, .header')) {
+      for (let i = 0; i < 8 && el; i++, el = el.previousElementSibling) {
+        if (/^H[1-4]$/.test(el.tagName) || (el.classList && el.classList.contains('header'))) {
           title = (el.textContent || '').replace(/\s+/g, ' ').trim();
           break;
         }
       }
-      // also search parent
-      const parentH = table.closest('.widget-box, .tab-pane, .page-content')?.querySelector('h4');
-      if (parentH && title === '成绩') title = (parentH.textContent || '').replace(/\s+/g, ' ').trim();
-
       const courses = [];
-      const rows = table.querySelectorAll('tbody tr, tr');
-      rows.forEach((tr) => {
-        const tds = Array.from(tr.querySelectorAll('td'));
-        if (tds.length < 5) return;
-        const cells = tds.map((td) => (td.textContent || '').replace(/\s+/g, ' ').trim());
-        // flexible column detect
-        // common: 序号 课程号 课程名 课程属性 学分 成绩 ...
-        // or: 序号 课程号 课序号 课程名 课程属性 学分 成绩
-        let code = '', name = '', attr = '', credit = 0, score = '';
-        if (/^\d+$/.test(cells[0]) && /[A-Za-z0-9]{6,}/.test(cells[1])) {
-          code = cells[1];
-          // if cells[2] looks like course seq short number and cells[3] is name
-          if (/^\d{1,3}$/.test(cells[2]) && cells[3] && !/必修|选修|任选/.test(cells[3])) {
-            name = cells[3];
-            attr = cells[4] || '';
-            credit = parseFloat(cells[5]) || 0;
-            score = cells[6] || '';
-          } else {
-            name = cells[2] || '';
-            attr = cells[3] || '';
-            credit = parseFloat(cells[4]) || 0;
-            score = cells[5] || '';
-          }
-        } else return;
-        if (!name || !score) return;
-        if (/序号|课程名/.test(name)) return;
+      const rows = table.tBodies.length ? table.tBodies[0].rows : Array.from(table.rows).slice(1);
+      Array.from(rows).forEach((tr) => {
+        const tds = Array.from(tr.cells || tr.querySelectorAll('td'));
+        if (tds.length < 4) return;
+        const get = (i) => (i >= 0 && tds[i] ? (tds[i].textContent || '').replace(/\s+/g, ' ').trim() : '');
+        const name = get(idx.name);
+        const score = get(idx.score);
+        if (!name || !score || /课程名|序号/.test(name)) return;
+        const attr = get(idx.attr);
+        const credit = parseFloat(get(idx.credit)) || 0;
         courses.push({
-          code,
+          code: get(idx.code),
           name,
           attr,
           credit,
@@ -13395,311 +13302,260 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         });
       });
       if (courses.length) {
-        schemes.push({
-          title: title.slice(0, 80),
-          courses,
-          summary: summarizeCourses(courses)
-        });
+        groups.push({ title: title.slice(0, 100), courses, summary: summarizeCourses(courses) });
       }
     });
-    return schemes;
-  }
-
-  async function loadScorePage(indexPath, callbackHint) {
-    const indexHtml = await fetchText(indexPath);
-    let html = indexHtml;
-    let groups = parseScoreTables(parseHtml(html));
-    if (groups.length) return { html, groups };
-    const cb = extractUrlFromHtml(indexHtml, [
-      new RegExp('["\'](/student/integratedQuery/scoreQuery/[^"\']*' + callbackHint + '[^"\']*)["\']', 'i'),
-      new RegExp('url\\s*[:=]\\s*["\']([^"\']*' + callbackHint + '[^"\']*)["\']', 'i'),
-      new RegExp('(\\/student\\/integratedQuery\\/scoreQuery\\/[^"\'\\s]*' + callbackHint + '[^"\'\\s]*)', 'i')
-    ]);
-    if (cb) {
-      try {
-        // 常见 callback 要 POST 或带参数；先 GET
-        html = await fetchText(cb);
-        groups = parseScoreTables(parseHtml(html));
-        if (groups.length) return { html, groups };
-        // 再试 POST 空表单
-        html = await new Promise((resolve, reject) => {
-          const full = absUrl(cb);
-          if (typeof GM_xmlhttpRequest === 'function') {
-            GM_xmlhttpRequest({
-              method: 'POST',
-              url: full,
-              data: '',
-              headers: {
-                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                'X-Requested-With': 'XMLHttpRequest'
-              },
-              withCredentials: true,
-              onload: (r) => resolve(r.responseText || ''),
-              onerror: () => reject(new Error('post fail'))
-            });
-          } else {
-            fetch(full, { method: 'POST', credentials: 'include', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: '' })
-              .then((r) => r.text()).then(resolve).catch(reject);
-          }
-        });
-        groups = parseScoreTables(parseHtml(html));
-      } catch (_) {}
-    }
-    return { html, groups };
+    return groups;
   }
 
   async function loadScores() {
     const out = { passing: [], schemes: [], error: '' };
     try {
-      const passPack = await loadScorePage(
-        '/student/integratedQuery/scoreQuery/allPassingScores/index',
-        'allPassingScores'
-      );
-      const schemePack = await loadScorePage(
-        '/student/integratedQuery/scoreQuery/schemeScores/index',
-        'schemeScores'
-      );
-      const passGroups = passPack.groups || [];
+      const [passHtml, schemeHtml] = await Promise.all([
+        fetchText('/student/integratedQuery/scoreQuery/allPassingScores/index'),
+        fetchText('/student/integratedQuery/scoreQuery/schemeScores/index')
+      ]);
+      const passGroups = parseScoreTables(parseHtml(passHtml));
+      const schemeGroups = parseScoreTables(parseHtml(schemeHtml));
       const allPass = [];
       passGroups.forEach((g) => g.courses.forEach((c) => allPass.push(Object.assign({ term: g.title }, c))));
-      out.passing = [{
-        title: '全部及格成绩',
-        courses: allPass,
-        summary: summarizeCourses(allPass),
-        groups: passGroups
-      }];
-      out.schemes = schemePack.groups || [];
+      out.passing = [{ title: '全部及格成绩', courses: allPass, summary: summarizeCourses(allPass), groups: passGroups }];
+      out.schemes = schemeGroups;
       if (!out.schemes.length && allPass.length) {
         out.schemes = [{ title: '方案成绩', courses: allPass, summary: summarizeCourses(allPass) }];
       }
-      if (!allPass.length && !out.schemes.length) {
-        out.error = '未解析到成绩表（可能需在成绩页打开一次后重试）';
-      }
+      if (!allPass.length && !out.schemes.length) out.error = '未解析到成绩表';
     } catch (e) {
-      out.error = (e && e.message) || '成绩加载失败';
+      out.error = String(e && e.message || e);
     }
     return out;
   }
 
-  // ---- data: classroom (best-effort) ----
-  async function loadClassroomBuildings() {
-    try {
-      const html = await fetchText('/student/teachingResources/freeClassroom/index');
-      const doc = parseHtml(html);
-      const groups = [];
-      let current = { campus: '校区', buildings: [] };
-      doc.querySelectorAll('h4, button, a').forEach((el) => {
-        if (el.tagName === 'H4') {
-          if (current.buildings.length) groups.push(current);
-          current = { campus: (el.textContent || '').trim(), buildings: [] };
-          return;
-        }
-        if (el.tagName === 'BUTTON' || (el.tagName === 'A' && /教|楼|馆|中心|学院/.test(el.textContent || ''))) {
-          const name = (el.textContent || '').replace(/\s+/g, ' ').trim();
-          if (!name || name.length > 40) return;
-          if (/查询|保存|关闭|Toggle|首页/.test(name)) return;
-          current.buildings.push({ name, id: el.id || name });
-        }
+  // ---- classroom: list buildings then occupancy grid ----
+  async function loadClassroomCatalog() {
+    const html = await fetchText('/student/teachingResources/classroomUseStatus/index');
+    const doc = parseHtml(html);
+    const groups = [];
+    let campus = '校区';
+    // walk DOM for h4 campus + rows with 查看
+    doc.querySelectorAll('h4, tr, button[onclick], a[onclick]').forEach((el) => {
+      if (el.tagName === 'H4') {
+        const t = (el.textContent || '').trim();
+        if (t && t.length < 20) campus = t;
+        return;
+      }
+      const on = el.getAttribute('onclick') || '';
+      const m = on.match(/location\s*=\s*["']([^"']+)["']/) || on.match(/location\.href\s*=\s*["']([^"']+)["']/);
+      if (!m) return;
+      const path = m[1];
+      if (!/classroomUseStatus\//.test(path)) return;
+      const rowText = ((el.closest('tr') || el).textContent || '').replace(/\s+/g, ' ').trim();
+      const name = rowText.replace(/查看/g, '').replace(/^\d+\s*/, '').trim() || decodeURIComponent(path.split('/').pop() || '');
+      if (!name || /教学楼信息/.test(name)) return;
+      let g = groups.find((x) => x.campus === campus);
+      if (!g) { g = { campus, buildings: [] }; groups.push(g); }
+      if (!g.buildings.some((b) => b.path === path)) {
+        g.buildings.push({ name: name.slice(0, 40), path });
+      }
+    });
+    return groups;
+  }
+
+  function parseOccupancyDoc(doc) {
+    const table = doc.getElementById('classroomInfoTable') || doc.querySelector('table.table');
+    if (!table) return { rooms: [], dateLabel: '' };
+    const dateLabel = ((doc.body.innerText || '').match(/\d{4}-\d{2}-\d{2}[（(][^)）]+[)）]/) || [])[0] || '';
+    const rooms = [];
+    Array.from(table.rows).forEach((tr) => {
+      const ths = tr.querySelectorAll('th');
+      if (ths.length < 1) return;
+      const roomName = (ths[0].textContent || '').trim();
+      if (!/^B?\d|[A-Z]?\d{2,}/.test(roomName) && !/^[A-Za-z]?\d{2,4}/.test(roomName)) {
+        // still allow Chinese? skip header rows
+        if (/教室|座位数|类型/.test(roomName)) return;
+      }
+      if (/教室|座位数|类型/.test(roomName)) return;
+      const seats = ths[1] ? (ths[1].textContent || '').trim() : '';
+      const type = ths[2] ? (ths[2].textContent || '').trim() : '';
+      const slots = [];
+      tr.querySelectorAll('td.td-b, td[id]').forEach((td) => {
+        const idm = String(td.id || '').match(/_(\d+)$/);
+        const sec = idm ? parseInt(idm[1], 10) : slots.length + 1;
+        const bg = (td.getAttribute('style') || '') + ' ' + (td.style && td.style.backgroundColor || '');
+        const busy = /background|rgb\(|#/i.test(bg) && !/transparent|rgba\(0,\s*0,\s*0,\s*0\)/i.test(bg) && td.style.backgroundColor !== '';
+        // also check computed from inline style attribute
+        const styleAttr = td.getAttribute('style') || '';
+        const isBusy = /background-color\s*:\s*(?!transparent)(?!rgba\(0)/i.test(styleAttr);
+        slots.push({ section: sec, busy: isBusy || (styleAttr.includes('background') && /rgb|#/i.test(styleAttr)), color: (td.style && td.style.backgroundColor) || '' });
       });
-      if (current.buildings.length) groups.push(current);
-      return groups;
-    } catch (_) {
-      return [];
-    }
+      if (roomName) rooms.push({ name: roomName, seats, type, slots });
+    });
+    return { rooms, dateLabel };
   }
 
-  // ---- icons (inline svg) ----
-  const ICONS = {
-    clean: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h10M4 18h13"/><circle cx="18" cy="12" r="2.2"/><circle cx="17" cy="18" r="2.2"/></svg>',
-    exit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 6H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h4"/><path d="M14 12H7"/><path d="M15 8l4 4-4 4"/></svg>',
-    schedule: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
-    score: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 4h10v16H7z"/><path d="M10 8h4M10 12h4M10 16h2"/></svg>',
-    room: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V7l9-4 9 4v14"/><path d="M9 21v-8h6v8"/><path d="M9 10h.01M15 10h.01"/></svg>',
-    more: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>',
-    home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11.5 12 4l8 7.5"/><path d="M7 10.5V20h10v-9.5"/></svg>',
-    eval: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 6h12M8 12h12M8 18h8"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></svg>',
-    plan: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3h9l3 3v15H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg>',
-    apply: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>',
-    close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6 6 18"/></svg>',
-    refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg>'
+  async function loadBuildingOccupancy(path) {
+    const html = await fetchText(path);
+    return parseOccupancyDoc(parseHtml(html));
+  }
+
+  // ---- icons ----
+  const ICO = {
+    clean: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h11M4 17h14"/></svg>',
+    exit: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 6H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/><path d="M14 12H8"/><path d="m14 8 4 4-4 4"/></svg>',
+    refresh: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.2-5.5"/><path d="M20 4v5h-5"/></svg>',
+    schedule: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3.5v4M16 3.5v4"/></svg>',
+    score: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M7 3.5h10v17H7z"/><path d="M10 8h4M10 12h4M10 16h3"/></svg>',
+    room: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 20V8l8-4 8 4v12"/><path d="M9 20v-7h6v7"/><path d="M9 10h.01M15 10h.01"/></svg>',
+    eval: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 7h11M8 12h11M8 17h8"/><path d="M5 7h.01M5 12h.01M5 17h.01"/></svg>',
+    plan: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M7 3.5h8l3 3V20.5H7z"/><path d="M15 3.5V7h3M10 12h5M10 16h5"/></svg>',
+    apply: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="6" y="3.5" width="12" height="17" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>',
+    home: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="m4 11 8-7 8 7"/><path d="M7 10.5V20h10v-9.5"/></svg>',
+    more: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="6" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18" cy="12" r="1.4"/></svg>',
+    close: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>'
   };
+  function ico(n) { return ICO[n] || ICO.more; }
 
-  function icon(name) {
-    return ICONS[name] || ICONS.more;
-  }
-
-  // ---- state ----
   const state = {
     open: false,
     mobileTab: 'home',
     profile: null,
     schedule: null,
     scores: null,
-    buildings: null,
+    catalog: null,
+    occupancy: null,
+    currentBuilding: null,
     loading: { profile: false, schedule: false, scores: false, room: false },
     selected: { passing: new Set(), scheme: new Set() },
     activeSchemeIdx: 0
   };
 
-  // ---- UI build ----
   function ensureStyle() {
-    if (document.getElementById('urppp-clean-style')) return;
-    const st = document.createElement('style');
+    let st = document.getElementById('urppp-clean-style');
+    if (st) st.remove();
+    st = document.createElement('style');
     st.id = 'urppp-clean-style';
     st.textContent = `
-  #urppp-clean-root{position:fixed;inset:0;z-index:12000;display:none;background:var(--bg,#F4F6F9);color:var(--text,#0F172A);font-family:inherit;overflow:hidden}
-  #urppp-clean-root.open{display:flex;flex-direction:column}
-  #urppp-clean-root *{box-sizing:border-box}
-  #urppp-clean-root .uc-ico{width:18px;height:18px;display:inline-flex}
-  #urppp-clean-root .uc-ico svg{width:18px;height:18px;display:block}
-  #urppp-clean-root .uc-top{flex:0 0 auto;height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-bottom:1px solid var(--border,#E2E8F0);background:var(--surface,#fff)}
-  #urppp-clean-root .uc-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px}
-  #urppp-clean-root .uc-top-actions{display:flex;gap:8px;align-items:center}
-  #urppp-clean-root .uc-btn{height:32px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg,#F8FAFC);color:var(--text);font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
-  #urppp-clean-root .uc-btn.primary{background:var(--primary,#1E3A5F);border-color:var(--primary);color:#fff}
-  #urppp-clean-root .uc-btn:hover{filter:brightness(0.98)}
-  #urppp-clean-root .uc-body{flex:1 1 auto;min-height:0;overflow:auto;padding:20px 24px 24px}
-  #urppp-clean-root .uc-desktop{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr;gap:16px;min-height:calc(100% - 8px);height:100%}
-  #urppp-clean-root .uc-card{background:var(--surface,#fff);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow,0 2px 12px rgba(0,0,0,.05));overflow:hidden}
-  #urppp-clean-root .uc-card-hd{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:13px}
-  #urppp-clean-root .uc-card-bd{padding:14px}
-  #urppp-clean-root .uc-profile{display:flex;gap:14px;align-items:center}
-  #urppp-clean-root .uc-avatar{width:64px;height:64px;border-radius:16px;background:var(--input-bg);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--primary);flex:0 0 64px}
-  #urppp-clean-root .uc-avatar img{width:100%;height:100%;object-fit:cover}
-  #urppp-clean-root .uc-name{font-size:18px;font-weight:700;margin:0 0 4px}
-  #urppp-clean-root .uc-sub{font-size:12px;color:var(--text-secondary,#64748B);line-height:1.5}
-  #urppp-clean-root .uc-gpa{margin-top:6px;display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--primary) 12%,var(--input-bg));color:var(--text);font-weight:700;font-size:13px}
-  #urppp-clean-root .uc-left{display:flex;flex-direction:column;gap:16px;min-height:0}
-  #urppp-clean-root .uc-sched{flex:1 1 auto;min-height:320px;display:flex;flex-direction:column}
-  #urppp-clean-root .uc-sched .uc-card-bd{flex:1;overflow:auto}
-  #urppp-clean-root .uc-week{display:grid;grid-template-columns:36px repeat(7,1fr);gap:6px;min-width:640px}
-  #urppp-clean-root .uc-week .hd{font-size:11px;text-align:center;color:var(--text-secondary);padding:4px 0}
-  #urppp-clean-root .uc-week .sec{font-size:10px;color:var(--text-muted);display:flex;align-items:center;justify-content:center}
-  #urppp-clean-root .uc-cell{min-height:52px;border-radius:10px;background:var(--input-bg);border:1px solid transparent;padding:4px;overflow:hidden}
-  #urppp-clean-root .uc-lesson{background:color-mix(in srgb,var(--primary) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--primary) 22%,var(--border));border-radius:8px;padding:4px 5px;margin-bottom:3px;cursor:pointer}
-  #urppp-clean-root .uc-lesson b{display:block;font-size:11px;line-height:1.25;color:var(--text);font-weight:700}
-  #urppp-clean-root .uc-lesson i{display:block;font-style:normal;font-size:10px;color:var(--text-secondary);margin-top:2px}
-  #urppp-clean-root .uc-score-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  #urppp-clean-root .uc-score-pane{border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;background:var(--input-bg);transition:transform .15s,box-shadow .15s}
-  #urppp-clean-root .uc-score-pane:hover{transform:translateY(-1px);box-shadow:0 6px 16px var(--ring,rgba(0,0,0,.08))}
-  #urppp-clean-root .uc-score-pane h5{margin:0 0 10px;font-size:13px}
-  #urppp-clean-root .uc-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  #urppp-clean-root .uc-metric{background:var(--surface);border-radius:10px;padding:8px;border:1px solid var(--border)}
-  #urppp-clean-root .uc-metric em{display:block;font-style:normal;font-size:10px;color:var(--text-muted);margin-bottom:2px}
-  #urppp-clean-root .uc-metric b{font-size:16px;font-weight:700;color:var(--text)}
-  #urppp-clean-root .uc-services{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:12px}
-  #urppp-clean-root .uc-svc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;aspect-ratio:1/1;min-height:108px;padding:12px;border-radius:16px;border:1px solid var(--border);background:var(--input-bg);cursor:pointer;text-align:center;color:var(--text)}
-  #urppp-clean-root .uc-svc:hover{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 8%,var(--input-bg))}
-  #urppp-clean-root .uc-svc .uc-ico{width:28px;height:28px}
-  #urppp-clean-root .uc-svc .uc-ico svg{width:28px;height:28px}
-  #urppp-clean-root .uc-svc strong{font-size:12px;line-height:1.3}
-  #urppp-clean-root .uc-svc span{display:none}
-  #urppp-clean-root .uc-mobile{display:none}
-  #urppp-clean-root .uc-tabbar{display:none}
-  #urppp-clean-root .uc-empty,#urppp-clean-root .uc-loading{padding:20px;text-align:center;color:var(--text-secondary);font-size:13px}
-  #urppp-clean-root .uc-mask{position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:12010;display:none}
-  #urppp-clean-root .uc-mask.open{display:block}
-  #urppp-clean-root .uc-modal{position:fixed;z-index:12020;left:50%;top:50%;transform:translate(-50%,-50%);width:min(920px,94vw);max-height:86vh;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.2);display:none;flex-direction:column;overflow:hidden}
-  #urppp-clean-root .uc-modal.open{display:flex}
-  #urppp-clean-root .uc-modal-hd{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-weight:700}
-  #urppp-clean-root .uc-modal-bd{padding:12px 14px;overflow:auto;flex:1}
-  #urppp-clean-root .uc-modal-ft{padding:10px 14px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:var(--input-bg)}
-  #urppp-clean-root table.uc-table{width:100%;border-collapse:collapse;font-size:12px}
-  #urppp-clean-root table.uc-table th,#urppp-clean-root table.uc-table td{padding:8px 6px;border-bottom:1px solid var(--border);text-align:left}
-  #urppp-clean-root table.uc-table th{color:var(--text-secondary);font-weight:600;position:sticky;top:0;background:var(--surface)}
-  #urppp-clean-root .uc-chip{display:inline-flex;gap:8px;flex-wrap:wrap}
-  #urppp-clean-root .uc-chip b{font-size:13px}
-  #urppp-clean-root .uc-note{font-size:11px;color:var(--text-muted);margin-top:8px}
-  #urppp-clean-root .uc-build-list{display:flex;flex-wrap:wrap;gap:8px}
-  #urppp-clean-root .uc-build-list button{border:1px solid var(--border);background:var(--input-bg);border-radius:10px;padding:8px 10px;cursor:pointer;color:var(--text);font-size:12px}
-  #urppp-clean-root .uc-build-list button:hover{border-color:var(--primary)}
-  #urppp-clean-root .uc-room-hint{font-size:12px;color:var(--text-secondary);line-height:1.6}
-  @media (max-width:900px){
+#urppp-clean-root{position:fixed;inset:0;z-index:12000;display:none;background:var(--bg,#F4F6F9);color:var(--text,#111);font-family:inherit}
+#urppp-clean-root.open{display:flex;flex-direction:column}
+#urppp-clean-root *{box-sizing:border-box}
+#urppp-clean-root .uc-top{flex:0 0 52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--border);background:var(--surface,#fff)}
+#urppp-clean-root .uc-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px}
+#urppp-clean-root .uc-top-actions{display:flex;gap:8px}
+#urppp-clean-root .uc-btn{height:32px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg,#f7f7f8);color:var(--text);font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+#urppp-clean-root .uc-btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
+#urppp-clean-root .uc-shell{flex:1;min-height:0;overflow:auto;padding:24px 32px 32px}
+#urppp-clean-root .uc-shell-inner{max-width:1280px;margin:0 auto;width:100%;min-height:calc(100% - 8px)}
+#urppp-clean-root .uc-desktop{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr;gap:16px;min-height:640px}
+#urppp-clean-root .uc-col{display:flex;flex-direction:column;gap:16px;min-height:0}
+#urppp-clean-root .uc-card{background:var(--surface,#fff);border:1px solid var(--border,#e7e7ea);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+#urppp-clean-root .uc-card.grow{flex:1;min-height:0;display:flex;flex-direction:column}
+#urppp-clean-root .uc-hd{padding:12px 14px;border-bottom:1px solid var(--border);font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+#urppp-clean-root .uc-bd{padding:14px}
+#urppp-clean-root .uc-card.grow .uc-bd{flex:1;overflow:auto}
+#urppp-clean-root .uc-profile{display:flex;gap:14px;align-items:center}
+#urppp-clean-root .uc-avatar{width:64px;height:64px;border-radius:16px;background:var(--input-bg);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--primary);flex:0 0 64px}
+#urppp-clean-root .uc-avatar img{width:100%;height:100%;object-fit:cover}
+#urppp-clean-root .uc-name{font-size:18px;font-weight:700;margin:0 0 4px}
+#urppp-clean-root .uc-sub{font-size:12px;color:var(--text-secondary,#667085);line-height:1.5}
+#urppp-clean-root .uc-gpa{margin-top:6px;display:inline-flex;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--primary) 12%,var(--input-bg));font-weight:700;font-size:13px}
+#urppp-clean-root .uc-week{display:grid;grid-template-columns:32px repeat(7,minmax(0,1fr));gap:6px;min-width:620px}
+#urppp-clean-root .uc-week .h{font-size:11px;text-align:center;color:var(--text-secondary)}
+#urppp-clean-root .uc-week .s{font-size:10px;color:var(--text-muted,#98a2b3);display:flex;align-items:center;justify-content:center}
+#urppp-clean-root .uc-cell{min-height:48px;border-radius:10px;background:var(--input-bg);padding:3px}
+#urppp-clean-root .uc-lesson{background:color-mix(in srgb,var(--primary) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:8px;padding:4px 5px;margin-bottom:3px}
+#urppp-clean-root .uc-lesson b{display:block;font-size:11px;line-height:1.25}
+#urppp-clean-root .uc-lesson i{display:block;font-style:normal;font-size:10px;color:var(--text-secondary);margin-top:2px}
+#urppp-clean-root .uc-score-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#urppp-clean-root .uc-score-pane{border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;background:var(--input-bg)}
+#urppp-clean-root .uc-score-pane:hover{border-color:var(--primary)}
+#urppp-clean-root .uc-score-pane h5{margin:0 0 10px;font-size:13px}
+#urppp-clean-root .uc-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#urppp-clean-root .uc-metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px}
+#urppp-clean-root .uc-metric em{display:block;font-style:normal;font-size:10px;color:var(--text-muted);margin-bottom:2px}
+#urppp-clean-root .uc-metric b{font-size:16px}
+#urppp-clean-root .uc-services{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+#urppp-clean-root .uc-svc{aspect-ratio:1/1;border-radius:16px;border:1px solid var(--border);background:var(--input-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;color:var(--text);padding:10px;text-align:center}
+#urppp-clean-root .uc-svc:hover{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 8%,var(--input-bg))}
+#urppp-clean-root .uc-svc svg{width:26px;height:26px;color:var(--primary)}
+#urppp-clean-root .uc-svc strong{font-size:12px;line-height:1.25;font-weight:700}
+#urppp-clean-root .uc-empty,#urppp-clean-root .uc-loading{padding:18px;text-align:center;color:var(--text-secondary);font-size:13px}
+#urppp-clean-root .uc-note{font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.5}
+#urppp-clean-root .uc-mobile{display:none}
+#urppp-clean-root .uc-tabbar{display:none}
+#urppp-clean-root .uc-mask{position:fixed;inset:0;background:rgba(15,23,42,.36);z-index:12010;display:none}
+#urppp-clean-root .uc-mask.open{display:block}
+#urppp-clean-root .uc-modal{position:fixed;z-index:12020;left:50%;top:50%;transform:translate(-50%,-50%);width:min(980px,92vw);max-height:86vh;background:var(--surface);border:1px solid var(--border);border-radius:16px;display:none;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.2)}
+#urppp-clean-root .uc-modal.open{display:flex}
+#urppp-clean-root .uc-modal-hd{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:700}
+#urppp-clean-root .uc-modal-bd{padding:12px 14px;overflow:auto;flex:1}
+#urppp-clean-root .uc-modal-ft{padding:10px 14px;border-top:1px solid var(--border);background:var(--input-bg);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}
+#urppp-clean-root table.uc-table{width:100%;border-collapse:collapse;font-size:12px}
+#urppp-clean-root table.uc-table th,#urppp-clean-root table.uc-table td{padding:8px 6px;border-bottom:1px solid var(--border);text-align:left}
+#urppp-clean-root table.uc-table th{position:sticky;top:0;background:var(--surface);color:var(--text-secondary)}
+#urppp-clean-root .uc-build-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
+#urppp-clean-root .uc-build-grid button{border:1px solid var(--border);background:var(--input-bg);border-radius:12px;padding:10px;cursor:pointer;color:var(--text);font-size:12px;text-align:left}
+#urppp-clean-root .uc-build-grid button:hover{border-color:var(--primary)}
+#urppp-clean-root .uc-occ{overflow:auto}
+#urppp-clean-root .uc-occ-table{border-collapse:separate;border-spacing:3px;font-size:11px;min-width:720px}
+#urppp-clean-root .uc-occ-table th{position:sticky;left:0;background:var(--surface);z-index:1;padding:4px 6px;text-align:left;white-space:nowrap}
+#urppp-clean-root .uc-occ-table .sec{min-width:28px;text-align:center;color:var(--text-secondary);font-weight:600}
+#urppp-clean-root .uc-slot{width:28px;height:22px;border-radius:4px;background:#e8eef2;border:1px solid #d7dee5}
+#urppp-clean-root .uc-slot.busy{background:#7be0f6;border-color:#5bcfe8}
+#urppp-clean-root .uc-legend{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 12px;font-size:12px;color:var(--text-secondary)}
+#urppp-clean-root .uc-legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:middle;margin-right:4px}
+html.urppp-clean-lock,html.urppp-clean-lock body{overflow:hidden!important}
+html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#urppp-nav-clean{
+  margin-left:8px!important;height:28px!important;min-height:28px!important;max-height:28px!important;
+  padding:0 10px!important;border-radius:8px!important;border:1px solid var(--border)!important;
+  background:var(--input-bg)!important;color:var(--text)!important;font-size:12px!important;
+  display:inline-flex!important;align-items:center!important;gap:6px!important;width:auto!important;
+  box-shadow:none!important;line-height:26px!important;cursor:pointer!important;float:none!important
+}
+#urppp-nav-clean svg{width:14px!important;height:14px!important;display:block!important}
+@media (max-width:900px){
+  #urppp-clean-root .uc-shell{padding:12px 12px 76px}
   #urppp-clean-root .uc-desktop{display:none}
-  #urppp-clean-root .uc-mobile{display:block;padding-bottom:70px}
+  #urppp-clean-root .uc-mobile{display:block}
   #urppp-clean-root .uc-tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;height:56px;background:var(--surface);border-top:1px solid var(--border);z-index:12005;padding-bottom:env(safe-area-inset-bottom)}
-  #urppp-clean-root .uc-tabbar button{flex:1;border:0;background:transparent;color:var(--text-secondary);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:10px;cursor:pointer}
+  #urppp-clean-root .uc-tabbar button{flex:1;border:0;background:transparent;color:var(--text-secondary);font-size:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
   #urppp-clean-root .uc-tabbar button.ac{color:var(--primary);font-weight:700}
   #urppp-clean-root .uc-score-grid{grid-template-columns:1fr}
-  #urppp-clean-root .uc-services{grid-template-columns:1fr}
-  #urppp-clean-root .uc-modal{width:100vw;height:100vh;max-height:100vh;left:0;top:0;transform:none;border-radius:0}
-  #urppp-clean-root .uc-week{min-width:0;grid-template-columns:28px repeat(7,minmax(42px,1fr))}
-  }
-  html.urppp-clean-lock,html.urppp-clean-lock body{overflow:hidden !important}
-  html body #navbar #urppp-nav-clean,
-  html body #urppp-nav-theme #urppp-nav-clean,
-  #urppp-nav-clean{
-    margin-left:8px !important;
-    height:28px !important;
-    min-height:28px !important;
-    max-height:28px !important;
-    padding:0 10px !important;
-    border-radius:8px !important;
-    border:1px solid var(--border) !important;
-    background:var(--input-bg) !important;
-    background-color:var(--input-bg) !important;
-    color:var(--text) !important;
-    font-size:12px !important;
-    line-height:26px !important;
-    cursor:pointer !important;
-    display:inline-flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    gap:6px !important;
-    box-shadow:none !important;
-    float:none !important;
-    width:auto !important;
-    min-width:0 !important;
-    vertical-align:middle !important;
-  }
-  html body #navbar #urppp-nav-clean:hover,
-  #urppp-nav-clean:hover{border-color:var(--primary) !important;color:var(--primary) !important;background:var(--input-bg) !important}
-  html body #navbar #urppp-nav-clean svg,
-  #urppp-nav-clean svg,
-  #urppp-nav-clean .uc-ico,
-  #urppp-nav-clean .uc-ico svg{
-    width:14px !important;
-    height:14px !important;
-    display:block !important;
-    flex:0 0 14px !important;
-  }
-  #urppp-nav-clean span{font-size:12px !important;line-height:1 !important;color:inherit !important}
-  `;
+  #urppp-clean-root .uc-services{grid-template-columns:repeat(2,1fr)}
+  #urppp-clean-root .uc-modal{inset:0;width:100vw;height:100vh;max-height:100vh;left:0;top:0;transform:none;border-radius:0}
+}
+`;
     (document.head || document.documentElement).appendChild(st);
   }
 
-  function root() {
-    return document.getElementById('urppp-clean-root');
-  }
+  function rootEl() { return document.getElementById('urppp-clean-root'); }
 
   function ensureRoot() {
     ensureStyle();
-    let el = root();
+    let el = rootEl();
     if (el) return el;
     el = document.createElement('div');
     el.id = 'urppp-clean-root';
     el.innerHTML = `
       <div class="uc-top">
-        <div class="uc-brand"><span class="uc-ico">${icon('clean')}</span><span>清爽模式</span></div>
+        <div class="uc-brand">${ico('clean')}<span>清爽模式</span></div>
         <div class="uc-top-actions">
-          <button type="button" class="uc-btn" id="uc-refresh"><span class="uc-ico">${icon('refresh')}</span>刷新</button>
-          <button type="button" class="uc-btn primary" id="uc-exit"><span class="uc-ico">${icon('exit')}</span>退出</button>
+          <button type="button" class="uc-btn" id="uc-refresh">${ico('refresh')}<span>刷新</span></button>
+          <button type="button" class="uc-btn primary" id="uc-exit">${ico('exit')}<span>退出</span></button>
         </div>
       </div>
-      <div class="uc-body" id="uc-body"></div>
+      <div class="uc-shell"><div class="uc-shell-inner" id="uc-body"></div></div>
       <div class="uc-tabbar" id="uc-tabbar">
-        <button type="button" data-tab="home" class="ac"><span class="uc-ico">${icon('home')}</span>首页</button>
-        <button type="button" data-tab="scores"><span class="uc-ico">${icon('score')}</span>成绩</button>
-        <button type="button" data-tab="room"><span class="uc-ico">${icon('room')}</span>教室</button>
-        <button type="button" data-tab="more"><span class="uc-ico">${icon('more')}</span>其他</button>
+        <button type="button" data-tab="home" class="ac">${ico('home')}<span>首页</span></button>
+        <button type="button" data-tab="scores">${ico('score')}<span>成绩</span></button>
+        <button type="button" data-tab="room">${ico('room')}<span>教室</span></button>
+        <button type="button" data-tab="more">${ico('more')}<span>其他</span></button>
       </div>
       <div class="uc-mask" id="uc-mask"></div>
       <div class="uc-modal" id="uc-modal">
-        <div class="uc-modal-hd"><span id="uc-modal-title">详情</span><button type="button" class="uc-btn" id="uc-modal-close"><span class="uc-ico">${icon('close')}</span></button></div>
+        <div class="uc-modal-hd"><span id="uc-modal-title">详情</span><button type="button" class="uc-btn" id="uc-modal-close">${ico('close')}</button></div>
         <div class="uc-modal-bd" id="uc-modal-body"></div>
         <div class="uc-modal-ft" id="uc-modal-ft"></div>
-      </div>
-    `;
+      </div>`;
     document.documentElement.appendChild(el);
     el.querySelector('#uc-exit').onclick = closeCleanMode;
     el.querySelector('#uc-refresh').onclick = () => openCleanMode(true);
@@ -13717,249 +13573,210 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   function metricHtml(s) {
     s = s || summarizeCourses([]);
-    const items = [
-      ['总学分', s.totalCredit],
-      ['平均绩点', s.avgGpa],
-      ['平均成绩', s.avgScore],
-      ['必修学分', s.requiredCredit],
-      ['必修绩点', s.requiredGpa],
-      ['必修平均', s.requiredAvg]
-    ];
+    const items = [['总学分', s.totalCredit], ['平均绩点', s.avgGpa], ['平均成绩', s.avgScore], ['必修学分', s.requiredCredit], ['必修绩点', s.requiredGpa], ['必修平均', s.requiredAvg]];
     return `<div class="uc-metrics">${items.map(([k, v]) => `<div class="uc-metric"><em>${k}</em><b>${v}</b></div>`).join('')}</div>`;
   }
 
   function renderScheduleBoard(courses) {
     const by = {};
     (courses || []).forEach((c) => {
-      const key = c.day + '_' + c.section;
-      if (!by[key]) by[key] = [];
-      by[key].push(c);
+      const k = c.day + '_' + c.section;
+      (by[k] || (by[k] = [])).push(c);
     });
-    const maxSec = 12;
-    let html = '<div class="uc-week"><div class="hd"></div>';
-    for (let d = 0; d < 7; d++) html += `<div class="hd">${DAY_NAMES[d]}</div>`;
-    for (let s = 1; s <= maxSec; s++) {
-      html += `<div class="sec">${s}</div>`;
+    let html = '<div class="uc-week"><div class="h"></div>';
+    for (let d = 0; d < 7; d++) html += `<div class="h">${DAY_NAMES[d]}</div>`;
+    for (let s = 1; s <= 12; s++) {
+      html += `<div class="s">${s}</div>`;
       for (let d = 0; d < 7; d++) {
         const list = by[d + '_' + s] || [];
         html += '<div class="uc-cell">';
         list.forEach((c) => {
-          html += `<div class="uc-lesson" title="${escapeHtml(c.name)}"><b>${escapeHtml(c.name)}</b><i>${escapeHtml(c.place || c.week || '')}</i></div>`;
+          html += `<div class="uc-lesson"><b>${escapeHtml(c.name)}</b><i>${escapeHtml(c.place || c.week || '')}</i></div>`;
         });
         html += '</div>';
       }
     }
-    html += '</div>';
-    return html;
-  }
-
-  function todayCourses(courses) {
-    const day = new Date().getDay(); // 0 sun
-    return (courses || []).filter((c) => c.day === day).sort((a, b) => a.section - b.section);
-  }
-
-  function renderTodayList(courses) {
-    const list = todayCourses(courses);
-    if (!list.length) return '<div class="uc-empty">今日暂无课程</div>';
-    return list.map((c) => `
-      <div class="uc-lesson" style="margin-bottom:8px;padding:10px">
-        <b style="font-size:14px">第${c.section}节 · ${escapeHtml(c.name)}</b>
-        <i>${escapeHtml([c.place, c.teacher, c.week].filter(Boolean).join(' · '))}</i>
-      </div>
-    `).join('');
+    return html + '</div>';
   }
 
   function servicesHtml() {
     const items = [
-      { key: 'room', title: '空闲教室', desc: '选楼查看节次占用', icon: 'room', action: 'room' },
-      { key: 'eval', title: '教学评估', desc: '进入评教', icon: 'eval', href: '/student/teachingEvaluation/newEvaluation/index' },
-      { key: 'plan', title: '培养方案', desc: '方案与修读情况', icon: 'plan', href: '/student/comprehensiveQuery/search/trainProgram/index' },
-      { key: 'apply1', title: '补办学生证', desc: '可申请业务', icon: 'apply', href: '/student/application/index' },
-      { key: 'apply2', title: '免修申请', desc: '可申请业务', icon: 'apply', href: '/student/application/index' },
-      { key: 'apply3', title: '替代课申请', desc: '可申请业务', icon: 'apply', href: '/student/application/index' },
-      { key: 'apply4', title: '补办火车票优惠卡', desc: '可申请业务', icon: 'apply', href: '/student/application/index' }
+      { t: '空闲教室', i: 'room', a: 'room' },
+      { t: '教学评估', i: 'eval', h: '/student/teachingEvaluation/newEvaluation/index' },
+      { t: '培养方案', i: 'plan', h: '/student/comprehensiveQuery/search/trainProgram/index' },
+      { t: '补办学生证', i: 'apply', h: '/student/application/index' },
+      { t: '免修申请', i: 'apply', h: '/student/application/index' },
+      { t: '替代课申请', i: 'apply', h: '/student/application/index' },
+      { t: '火车票优惠卡', i: 'apply', h: '/student/application/index' }
     ];
     return `<div class="uc-services">${items.map((it) => `
-      <button type="button" class="uc-svc" data-action="${it.action || ''}" data-href="${it.href || ''}">
-        <span class="uc-ico">${icon(it.icon)}</span>
-        <strong>${it.title}</strong>
-        <span>${it.desc}</span>
-      </button>
-    `).join('')}</div>`;
-  }
-
-  function escapeHtml(s) {
-    return String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      <button type="button" class="uc-svc" data-action="${it.a || ''}" data-href="${it.h || ''}">
+        ${ico(it.i)}<strong>${it.t}</strong>
+      </button>`).join('')}</div>`;
   }
 
   function renderDesktop() {
     const p = state.profile || {};
     const courses = (state.schedule && state.schedule.courses) || [];
-    const pass = (state.scores && state.scores.passing && state.scores.passing[0]) || { summary: summarizeCourses([]), courses: [] };
+    const pass = (state.scores && state.scores.passing && state.scores.passing[0]) || { summary: summarizeCourses([]) };
     const schemes = (state.scores && state.scores.schemes) || [];
-    const scheme = schemes[state.activeSchemeIdx] || schemes[0] || { summary: summarizeCourses([]), title: '方案成绩', courses: [] };
-    const avatar = p.avatar
-      ? `<img src="${escapeHtml(p.avatar)}" alt="">`
-      : `<span>${escapeHtml((p.name || '同')[0])}</span>`;
+    const scheme = schemes[state.activeSchemeIdx] || schemes[0] || { summary: summarizeCourses([]), title: '方案成绩' };
+    const av = p.avatar ? `<img src="${escapeHtml(p.avatar)}" alt="">` : `<span>${escapeHtml((p.name || '同')[0])}</span>`;
+    const scoreBody = state.loading.scores
+      ? '<div class="uc-loading">成绩加载中…</div>'
+      : (state.scores && state.scores.error
+        ? `<div class="uc-empty">${escapeHtml(state.scores.error)}</div>`
+        : `<div class="uc-score-grid">
+            <div class="uc-score-pane" data-score="passing"><h5>全部及格成绩</h5>${metricHtml(pass.summary)}</div>
+            <div class="uc-score-pane" data-score="scheme"><h5>${escapeHtml((scheme.title || '方案成绩').split(/通过|获得|不通过/)[0].trim() || '方案成绩')}</h5>${metricHtml(scheme.summary)}</div>
+          </div>
+          <div class="uc-note">绩点按川大现行对照表（95–100→4.0 … 60→0.5）。点击卡片查看明细并勾选计算。</div>`);
 
-    return `
-      <div class="uc-desktop">
-        <div class="uc-left">
-          <div class="uc-card">
-            <div class="uc-card-bd">
-              <div class="uc-profile">
-                <div class="uc-avatar">${avatar}</div>
-                <div>
-                  <div class="uc-name">${escapeHtml(p.name || '同学')}</div>
-                  <div class="uc-sub">主修方案：${escapeHtml(p.majorPlan || '—')}</div>
-                  <div class="uc-gpa">主修必修绩点 ${escapeHtml(p.majorGpa || '—')}</div>
-                </div>
-              </div>
-            </div>
+    return `<div class="uc-desktop">
+      <div class="uc-col">
+        <div class="uc-card"><div class="uc-bd"><div class="uc-profile">
+          <div class="uc-avatar">${av}</div>
+          <div>
+            <div class="uc-name">${escapeHtml(p.name || '同学')}</div>
+            <div class="uc-sub">主修方案：${escapeHtml(p.majorPlan || '—')}</div>
+            <div class="uc-gpa">主修必修绩点 ${escapeHtml(String(p.majorGpa || '—'))}</div>
           </div>
-          <div class="uc-card uc-sched">
-            <div class="uc-card-hd"><span><span class="uc-ico">${icon('schedule')}</span> 本周课表</span><span class="uc-sub">${courses.length ? courses.length + ' 个课次' : ''}</span></div>
-            <div class="uc-card-bd">${state.loading.schedule ? '<div class="uc-loading">课表加载中…</div>' : renderScheduleBoard(courses)}</div>
-          </div>
-        </div>
-        <div class="uc-left">
-          <div class="uc-card">
-            <div class="uc-card-hd"><span><span class="uc-ico">${icon('score')}</span> 成绩总览</span><span class="uc-sub">点击查看明细/计算</span></div>
-            <div class="uc-card-bd">
-              ${state.loading.scores ? '<div class="uc-loading">成绩加载中…</div>' : (state.scores && state.scores.error ? `<div class="uc-empty">${escapeHtml(state.scores.error)}</div>` : `
-              <div class="uc-score-grid">
-                <div class="uc-score-pane" data-score="passing">
-                  <h5>全部及格成绩</h5>
-                  ${metricHtml(pass.summary)}
-                </div>
-                <div class="uc-score-pane" data-score="scheme">
-                  <h5>${escapeHtml((scheme.title || '方案成绩').split(/通过|获得|不通过/)[0].trim() || '方案成绩')}</h5>
-                  ${metricHtml(scheme.summary)}
-                </div>
-              </div>
-              <div class="uc-note">计算规则：按川大成绩单现行对照表（95–100→4.0 … 60→0.5，&lt;60→0）；等级制优4/良3/中2/及1；字母制 A–F 按成绩单。加权平均分与平均学分绩点按学分加权。</div>
-              `)}
-            </div>
-          </div>
-          <div class="uc-card" style="flex:1">
-            <div class="uc-card-hd"><span><span class="uc-ico">${icon('more')}</span> 服务</span></div>
-            <div class="uc-card-bd">${servicesHtml()}</div>
-          </div>
+        </div></div></div>
+        <div class="uc-card grow">
+          <div class="uc-hd"><span>本周课表</span><span class="uc-sub">${courses.length ? courses.length + ' 个课次' : (state.schedule && state.schedule.error) || ''}</span></div>
+          <div class="uc-bd">${state.loading.schedule ? '<div class="uc-loading">课表加载中…</div>' : (courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${escapeHtml((state.schedule && state.schedule.error) || '暂无课表数据')}</div>`)}</div>
         </div>
       </div>
-    `;
+      <div class="uc-col">
+        <div class="uc-card">
+          <div class="uc-hd"><span>成绩总览</span><span class="uc-sub">点击查看明细</span></div>
+          <div class="uc-bd">${scoreBody}</div>
+        </div>
+        <div class="uc-card grow">
+          <div class="uc-hd">服务</div>
+          <div class="uc-bd">${servicesHtml()}</div>
+        </div>
+      </div>
+    </div>`;
   }
 
   function renderMobile() {
     const p = state.profile || {};
     const courses = (state.schedule && state.schedule.courses) || [];
     const pass = (state.scores && state.scores.passing && state.scores.passing[0]) || { summary: summarizeCourses([]) };
-    const schemes = (state.scores && state.scores.schemes) || [];
-    const scheme = schemes[state.activeSchemeIdx] || schemes[0] || { summary: summarizeCourses([]), title: '方案成绩' };
-    const avatar = p.avatar ? `<img src="${escapeHtml(p.avatar)}" alt="">` : `<span>${escapeHtml((p.name || '同')[0])}</span>`;
+    const scheme = ((state.scores && state.scores.schemes) || [])[state.activeSchemeIdx] || { summary: summarizeCourses([]) };
+    const av = p.avatar ? `<img src="${escapeHtml(p.avatar)}" alt="">` : `<span>${escapeHtml((p.name || '同')[0])}</span>`;
     if (state.mobileTab === 'scores') {
-      return `<div class="uc-mobile">
-        <div class="uc-card" style="margin-bottom:12px"><div class="uc-card-bd">
-          <div class="uc-score-pane" data-score="passing" style="margin-bottom:12px"><h5>全部及格成绩</h5>${metricHtml(pass.summary)}</div>
-          <div class="uc-score-pane" data-score="scheme"><h5>方案成绩</h5>${metricHtml(scheme.summary)}</div>
-          <div class="uc-note">点击卡片查看明细并勾选计算</div>
-        </div></div>
-      </div>`;
+      return `<div class="uc-mobile"><div class="uc-card"><div class="uc-bd">
+        <div class="uc-score-pane" data-score="passing" style="margin-bottom:12px"><h5>全部及格成绩</h5>${metricHtml(pass.summary)}</div>
+        <div class="uc-score-pane" data-score="scheme"><h5>方案成绩</h5>${metricHtml(scheme.summary)}</div>
+      </div></div></div>`;
     }
     if (state.mobileTab === 'room') {
-      return `<div class="uc-mobile"><div class="uc-card"><div class="uc-card-hd">教室查询</div><div class="uc-card-bd" id="uc-mobile-room">${roomPanelHtml()}</div></div></div>`;
+      return `<div class="uc-mobile"><div class="uc-card"><div class="uc-hd">教室查询</div><div class="uc-bd" id="uc-room-panel">${roomPickerHtml()}</div></div></div>`;
     }
     if (state.mobileTab === 'more') {
-      return `<div class="uc-mobile"><div class="uc-card"><div class="uc-card-bd">${servicesHtml()}</div></div></div>`;
+      return `<div class="uc-mobile"><div class="uc-card"><div class="uc-bd">${servicesHtml()}</div></div></div>`;
     }
-    // home
+    const today = new Date().getDay();
+    const todayList = courses.filter((c) => c.day === today).sort((a, b) => a.section - b.section);
     return `<div class="uc-mobile">
-      <div class="uc-card" style="margin-bottom:12px"><div class="uc-card-bd">
-        <div class="uc-profile">
-          <div class="uc-avatar">${avatar}</div>
-          <div>
-            <div class="uc-name">${escapeHtml(p.name || '同学')}</div>
-            <div class="uc-sub">${escapeHtml(p.majorPlan || '')}</div>
-            <div class="uc-gpa">主修必修绩点 ${escapeHtml(p.majorGpa || '—')}</div>
-          </div>
-        </div>
-      </div></div>
-      <div class="uc-card"><div class="uc-card-hd">今日课表</div><div class="uc-card-bd">
-        ${state.loading.schedule ? '<div class="uc-loading">加载中…</div>' : renderTodayList(courses)}
-        <div style="margin-top:12px">${state.loading.schedule ? '' : renderScheduleBoard(courses)}</div>
+      <div class="uc-card" style="margin-bottom:12px"><div class="uc-bd"><div class="uc-profile">
+        <div class="uc-avatar">${av}</div>
+        <div><div class="uc-name">${escapeHtml(p.name || '同学')}</div>
+        <div class="uc-sub">${escapeHtml(p.majorPlan || '')}</div>
+        <div class="uc-gpa">主修必修绩点 ${escapeHtml(String(p.majorGpa || '—'))}</div></div>
+      </div></div></div>
+      <div class="uc-card"><div class="uc-hd">今日课表</div><div class="uc-bd">
+        ${todayList.length ? todayList.map((c) => `<div class="uc-lesson" style="margin-bottom:8px;padding:10px"><b style="font-size:14px">第${c.section}节 · ${escapeHtml(c.name)}</b><i>${escapeHtml([c.place, c.teacher].filter(Boolean).join(' · '))}</i></div>`).join('') : '<div class="uc-empty">今日暂无课程</div>'}
+        <div style="margin-top:12px;overflow:auto">${renderScheduleBoard(courses)}</div>
       </div></div>
     </div>`;
   }
 
-  function roomPanelHtml() {
-    const groups = state.buildings || [];
-    if (state.loading.room) return '<div class="uc-loading">楼栋加载中…</div>';
-    if (!groups.length) {
-      return `<div class="uc-room-hint">
-        未能解析教学楼列表。你仍可前往完整页面查询：
-        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-          <button type="button" class="uc-btn primary" data-href="/student/teachingResources/freeClassroom/index">空闲教室</button>
-          <button type="button" class="uc-btn" data-href="/student/teachingResources/classroomUseStatus/index">教室使用状况</button>
-          <button type="button" class="uc-btn" data-href="/student/teachingResources/freeClassroom/today">今日空闲</button>
-        </div>
-      </div>`;
-    }
-    return groups.map((g) => `
+  function roomPickerHtml() {
+    if (state.loading.room) return '<div class="uc-loading">教学楼加载中…</div>';
+    const groups = state.catalog || [];
+    if (!groups.length) return '<div class="uc-empty">未读到教学楼列表</div>';
+    // prefer 江安 first
+    const ordered = groups.slice().sort((a, b) => (/江安/.test(a.campus) ? -1 : 0) - (/江安/.test(b.campus) ? -1 : 0));
+    return ordered.map((g) => `
       <div style="margin-bottom:14px">
-        <div style="font-weight:700;margin-bottom:8px">${escapeHtml(g.campus)}</div>
-        <div class="uc-build-list">
-          ${g.buildings.map((b) => `<button type="button" data-building="${escapeHtml(b.name)}">${escapeHtml(b.name)}</button>`).join('')}
+        <div style="font-weight:700;margin:0 0 8px">${escapeHtml(g.campus)}</div>
+        <div class="uc-build-grid">
+          ${g.buildings.map((b) => `<button type="button" data-build-path="${escapeHtml(b.path)}">${escapeHtml(b.name)}</button>`).join('')}
         </div>
-      </div>
-    `).join('') + `<div class="uc-note">点击楼栋将打开官方教室页（带清爽入口保留）。完整节次网格将在接口对齐后增强为同窗网格。</div>
-    <div style="margin-top:8px"><button type="button" class="uc-btn" data-href="/student/teachingResources/classroomUseStatus/index">打开教室使用状况</button></div>`;
+      </div>`).join('');
+  }
+
+  function occupancyHtml(pack, buildingName) {
+    if (!pack || !pack.rooms || !pack.rooms.length) return '<div class="uc-empty">该楼暂无教室占用数据</div>';
+    let head = '<tr><th>教室</th><th>座位</th>';
+    for (let i = 1; i <= 12; i++) head += `<th class="sec">${i}</th>`;
+    head += '</tr>';
+    const body = pack.rooms.map((r) => {
+      let row = `<tr><th>${escapeHtml(r.name)}</th><th>${escapeHtml(r.seats)}</th>`;
+      for (let i = 1; i <= 12; i++) {
+        const slot = (r.slots || []).find((s) => s.section === i) || { busy: false };
+        row += `<td><div class="uc-slot ${slot.busy ? 'busy' : ''}" title="${escapeHtml(r.name)} 第${i}节"></div></td>`;
+      }
+      return row + '</tr>';
+    }).join('');
+    return `
+      <div style="font-weight:700;margin-bottom:6px">${escapeHtml(buildingName || '')} ${escapeHtml(pack.dateLabel || '')}</div>
+      <div class="uc-legend"><span><i style="background:#7be0f6"></i>占用</span><span><i style="background:#e8eef2"></i>空闲</span></div>
+      <div class="uc-occ"><table class="uc-occ-table">${head}${body}</table></div>
+      <div style="margin-top:10px"><button type="button" class="uc-btn" id="uc-room-back">返回楼栋列表</button></div>`;
   }
 
   function render() {
     const el = ensureRoot();
     const body = el.querySelector('#uc-body');
-    const isMobile = window.matchMedia && window.matchMedia('(max-width:900px)').matches;
-    body.innerHTML = isMobile ? renderMobile() : renderDesktop();
-    bindDynamic(body);
+    const mobile = window.matchMedia && window.matchMedia('(max-width:900px)').matches;
+    body.innerHTML = mobile ? renderMobile() : renderDesktop();
+    bindUI(body);
   }
 
-  function bindDynamic(scope) {
-    scope.querySelectorAll('[data-score]').forEach((pane) => {
-      pane.addEventListener('click', () => openScoreModal(pane.getAttribute('data-score')));
-    });
-    scope.querySelectorAll('[data-href]').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        const href = btn.getAttribute('data-href');
-        if (!href) return;
-        e.preventDefault();
-        closeCleanMode();
-        location.href = href;
-      });
-    });
-    scope.querySelectorAll('[data-action="room"]').forEach((btn) => {
-      btn.addEventListener('click', () => openRoomModal());
-    });
-    scope.querySelectorAll('[data-building]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        // jump to official classroom use status with hint
-        closeCleanMode();
-        location.href = '/student/teachingResources/classroomUseStatus/index';
-      });
-    });
+  function bindUI(scope) {
+    if (!scope) return;
+    scope.querySelectorAll('[data-score]').forEach((n) => n.addEventListener('click', () => openScoreModal(n.getAttribute('data-score'))));
+    scope.querySelectorAll('[data-href]').forEach((n) => n.addEventListener('click', (e) => {
+      const href = n.getAttribute('data-href');
+      if (!href) return;
+      e.preventDefault();
+      closeCleanMode();
+      location.href = href;
+    }));
+    scope.querySelectorAll('[data-action="room"]').forEach((n) => n.addEventListener('click', () => openRoomModal()));
+    scope.querySelectorAll('[data-build-path]').forEach((n) => n.addEventListener('click', async () => {
+      const path = n.getAttribute('data-build-path');
+      const name = (n.textContent || '').trim();
+      await showBuilding(path, name);
+    }));
+    const back = scope.querySelector('#uc-room-back');
+    if (back) back.onclick = () => {
+      state.occupancy = null;
+      state.currentBuilding = null;
+      const panel = document.querySelector('#uc-modal-body') || document.querySelector('#uc-room-panel');
+      if (panel && panel.id === 'uc-modal-body') {
+        panel.innerHTML = roomPickerHtml();
+        bindUI(panel);
+      } else render();
+    };
   }
 
-  function openModal(title, bodyHtml, ftHtml) {
+  function openModal(title, body, ft) {
     const el = ensureRoot();
     el.querySelector('#uc-mask').classList.add('open');
-    const modal = el.querySelector('#uc-modal');
-    modal.classList.add('open');
+    el.querySelector('#uc-modal').classList.add('open');
     el.querySelector('#uc-modal-title').textContent = title;
-    el.querySelector('#uc-modal-body').innerHTML = bodyHtml;
-    el.querySelector('#uc-modal-ft').innerHTML = ftHtml || '';
+    el.querySelector('#uc-modal-body').innerHTML = body;
+    el.querySelector('#uc-modal-ft').innerHTML = ft || '';
+    bindUI(el.querySelector('#uc-modal-body'));
+    bindUI(el.querySelector('#uc-modal-ft'));
   }
-
   function closeModal() {
-    const el = root();
+    const el = rootEl();
     if (!el) return;
     el.querySelector('#uc-mask').classList.remove('open');
     el.querySelector('#uc-modal').classList.remove('open');
@@ -13972,144 +13789,116 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const pack = kind === 'scheme' ? scheme : pass;
     const key = kind === 'scheme' ? 'scheme' : 'passing';
     if (!state.selected[key]) state.selected[key] = new Set();
-
-    const schemeSwitcher = kind === 'scheme' && schemes.length > 1
-      ? `<div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">${schemes.map((s, i) =>
-        `<button type="button" class="uc-btn ${i === state.activeSchemeIdx ? 'primary' : ''}" data-scheme-idx="${i}">${escapeHtml((s.title || '方案').slice(0, 24))}</button>`
-      ).join('')}</div>`
+    const switcher = kind === 'scheme' && schemes.length > 1
+      ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">${schemes.map((s, i) =>
+        `<button type="button" class="uc-btn ${i === state.activeSchemeIdx ? 'primary' : ''}" data-scheme-idx="${i}">${escapeHtml((s.title || '方案').slice(0, 28))}</button>`).join('')}</div>`
       : '';
-
-    const rows = (pack.courses || []).map((c, idx) => {
-      const id = key + '_' + idx;
-      const checked = state.selected[key].has(idx) ? 'checked' : '';
-      return `<tr>
-        <td><input type="checkbox" data-idx="${idx}" ${checked}></td>
-        <td>${escapeHtml(c.name)}</td>
-        <td>${escapeHtml(c.attr || '')}</td>
-        <td>${c.credit}</td>
-        <td>${escapeHtml(c.score)}</td>
-        <td>${scoreToGpa(c.score) == null ? '—' : scoreToGpa(c.score)}</td>
-      </tr>`;
-    }).join('');
-
-    const body = `
-      ${schemeSwitcher}
-      ${metricHtml(pack.summary)}
-      <div class="uc-note">列表绩点按川大规则本地换算；勾选后底部显示已选课程的学分/均分/绩点。</div>
-      <div style="margin-top:10px;overflow:auto;max-height:45vh">
-        <table class="uc-table">
-          <thead><tr><th></th><th>课程</th><th>属性</th><th>学分</th><th>成绩</th><th>绩点</th></tr></thead>
-          <tbody>${rows || '<tr><td colspan="6">暂无课程数据</td></tr>'}</tbody>
-        </table>
-      </div>
-    `;
-    openModal(kind === 'scheme' ? '方案成绩' : '全部及格成绩', body, `<div class="uc-chip" id="uc-calc-chip">已选 0 门</div><button type="button" class="uc-btn" id="uc-clear-sel">清空选择</button>`);
-
-    const modalBody = document.querySelector('#uc-modal-body');
-    const ft = document.querySelector('#uc-calc-chip');
-    const syncCalc = () => {
+    const rows = (pack.courses || []).map((c, idx) => `<tr>
+      <td><input type="checkbox" data-idx="${idx}" ${state.selected[key].has(idx) ? 'checked' : ''}></td>
+      <td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.attr || '')}</td><td>${c.credit}</td>
+      <td>${escapeHtml(c.score)}</td><td>${scoreToGpa(c.score) == null ? '—' : scoreToGpa(c.score)}</td>
+    </tr>`).join('');
+    openModal(kind === 'scheme' ? '方案成绩' : '全部及格成绩', `
+      ${switcher}${metricHtml(pack.summary)}
+      <div class="uc-note">勾选课程后底部显示本地估算（学分/均分/绩点）。</div>
+      <div style="margin-top:10px;overflow:auto;max-height:46vh">
+        <table class="uc-table"><thead><tr><th></th><th>课程</th><th>属性</th><th>学分</th><th>成绩</th><th>绩点</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="6">暂无数据</td></tr>'}</tbody></table>
+      </div>`, `<div id="uc-calc">已选 0 门</div><button type="button" class="uc-btn" id="uc-clear">清空</button>`);
+    const body = document.querySelector('#uc-modal-body');
+    const calc = document.getElementById('uc-calc');
+    const sync = () => {
       const selected = [];
       state.selected[key] = new Set();
-      modalBody.querySelectorAll('input[type=checkbox][data-idx]').forEach((ck) => {
-        if (ck.checked) {
-          const i = parseInt(ck.getAttribute('data-idx'), 10);
-          state.selected[key].add(i);
-          if (pack.courses[i]) selected.push(pack.courses[i]);
-        }
+      body.querySelectorAll('input[type=checkbox][data-idx]').forEach((ck) => {
+        if (!ck.checked) return;
+        const i = parseInt(ck.getAttribute('data-idx'), 10);
+        state.selected[key].add(i);
+        if (pack.courses[i]) selected.push(pack.courses[i]);
       });
       const sum = summarizeCourses(selected);
-      if (ft) {
-        ft.innerHTML = selected.length
-          ? `已选 <b>${selected.length}</b> 门 · 学分 <b>${sum.totalCredit}</b> · 均分 <b>${sum.avgScore}</b> · 绩点 <b>${sum.avgGpa}</b>`
-          : '已选 0 门';
-      }
+      if (calc) calc.innerHTML = selected.length
+        ? `已选 <b>${selected.length}</b> 门 · 学分 <b>${sum.totalCredit}</b> · 均分 <b>${sum.avgScore}</b> · 绩点 <b>${sum.avgGpa}</b>`
+        : '已选 0 门';
     };
-    modalBody.querySelectorAll('input[type=checkbox][data-idx]').forEach((ck) => ck.addEventListener('change', syncCalc));
-    modalBody.querySelectorAll('[data-scheme-idx]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        state.activeSchemeIdx = parseInt(btn.getAttribute('data-scheme-idx'), 10) || 0;
-        openScoreModal('scheme');
-      });
-    });
-    const clearBtn = document.getElementById('uc-clear-sel');
-    if (clearBtn) clearBtn.onclick = () => {
-      modalBody.querySelectorAll('input[type=checkbox]').forEach((ck) => { ck.checked = false; });
-      syncCalc();
-    };
-    syncCalc();
+    body.querySelectorAll('input[type=checkbox]').forEach((ck) => ck.addEventListener('change', sync));
+    body.querySelectorAll('[data-scheme-idx]').forEach((btn) => btn.addEventListener('click', () => {
+      state.activeSchemeIdx = parseInt(btn.getAttribute('data-scheme-idx'), 10) || 0;
+      openScoreModal('scheme');
+    }));
+    const clear = document.getElementById('uc-clear');
+    if (clear) clear.onclick = () => { body.querySelectorAll('input[type=checkbox]').forEach((ck) => { ck.checked = false; }); sync(); };
+    sync();
   }
 
   async function openRoomModal() {
     openModal('空闲教室', '<div class="uc-loading">加载教学楼…</div>', '');
-    if (!state.buildings) {
-      state.loading.room = true;
-      state.buildings = await loadClassroomBuildings();
-      state.loading.room = false;
+    try {
+      if (!state.catalog) {
+        state.loading.room = true;
+        state.catalog = await loadClassroomCatalog();
+        state.loading.room = false;
+      }
+      openModal('空闲教室', roomPickerHtml(), `<span class="uc-sub">选择楼栋查看教室×节次占用（对齐教室使用状况）</span>`);
+    } catch (e) {
+      openModal('空闲教室', `<div class="uc-empty">${escapeHtml(e && e.message || e)}</div>`, '');
     }
-    openModal('空闲教室', roomPanelHtml(), `<button type="button" class="uc-btn" data-href="/student/teachingResources/freeClassroom/today">今日空闲页</button>`);
-    const body = document.querySelector('#uc-modal-body');
-    const ft = document.querySelector('#uc-modal-ft');
-    bindDynamic(body);
-    if (ft) bindDynamic(ft);
+  }
+
+  async function showBuilding(path, name) {
+    const body = document.querySelector('#uc-modal-body') || document.querySelector('#uc-room-panel');
+    if (body) body.innerHTML = '<div class="uc-loading">加载占用网格…</div>';
+    try {
+      const pack = await loadBuildingOccupancy(path);
+      state.occupancy = pack;
+      state.currentBuilding = { path, name };
+      if (body) {
+        body.innerHTML = occupancyHtml(pack, name);
+        bindUI(body);
+      }
+    } catch (e) {
+      if (body) body.innerHTML = `<div class="uc-empty">${escapeHtml(e && e.message || e)}</div>`;
+    }
   }
 
   async function loadAll(force) {
     if (force) {
-      state.profile = null;
-      state.schedule = null;
-      state.scores = null;
-      state.buildings = null;
+      state.profile = null; state.schedule = null; state.scores = null; state.catalog = null; state.occupancy = null;
     }
-    state.loading.profile = true;
-    state.loading.schedule = true;
-    state.loading.scores = true;
+    state.loading.profile = state.loading.schedule = state.loading.scores = true;
     render();
-    // 并行拉取；单个失败不拖垮整页
-    const tasks = [
+    await Promise.all([
       (async () => {
-        try {
-          if (!(state.profile && !force)) state.profile = await loadProfile();
-        } catch (e) {
-          console.warn('[URP++] clean profile', e);
-          if (!state.profile) state.profile = { name: '同学', avatar: '', majorPlan: '主修方案', majorGpa: '—', studentId: '' };
-        } finally { state.loading.profile = false; render(); }
+        try { if (!(state.profile && !force)) state.profile = await loadProfile(); }
+        catch (e) { state.profile = { name: '同学', majorPlan: '主修方案', majorGpa: '—', avatar: '' }; console.warn(e); }
+        finally { state.loading.profile = false; render(); }
       })(),
       (async () => {
-        try {
-          if (!(state.schedule && !force)) state.schedule = await loadSchedule();
-        } catch (e) {
-          console.warn('[URP++] clean schedule', e);
-          state.schedule = { courses: [], rawOk: false, error: String(e && e.message || e) };
-        } finally { state.loading.schedule = false; render(); }
+        try { if (!(state.schedule && !force)) state.schedule = await loadSchedule(); }
+        catch (e) { state.schedule = { courses: [], error: String(e && e.message || e) }; }
+        finally { state.loading.schedule = false; render(); }
       })(),
       (async () => {
-        try {
-          if (!(state.scores && !force)) state.scores = await loadScores();
-        } catch (e) {
-          console.warn('[URP++] clean scores', e);
-          state.scores = { passing: [], schemes: [], error: String(e && e.message || e) };
-        } finally { state.loading.scores = false; render(); }
+        try { if (!(state.scores && !force)) state.scores = await loadScores(); }
+        catch (e) { state.scores = { passing: [], schemes: [], error: String(e && e.message || e) }; }
+        finally { state.loading.scores = false; render(); }
       })()
-    ];
-    await Promise.all(tasks);
+    ]);
     render();
   }
 
-  function openCleanMode(forceReload) {
+  function openCleanMode(force) {
     ensureRoot();
     state.open = true;
-    document.documentElement.classList.add('urppp-clean-lock');
-    document.documentElement.classList.add(CLEAN_FLAG);
-    root().classList.add('open');
-    loadAll(!!forceReload);
+    document.documentElement.classList.add('urppp-clean-lock', CLEAN_FLAG);
+    rootEl().classList.add('open');
+    loadAll(!!force);
   }
-
   function closeCleanMode() {
     state.open = false;
     closeModal();
-    document.documentElement.classList.remove('urppp-clean-lock');
-    document.documentElement.classList.remove(CLEAN_FLAG);
-    const el = root();
+    document.documentElement.classList.remove('urppp-clean-lock', CLEAN_FLAG);
+    const el = rootEl();
     if (el) el.classList.remove('open');
   }
 
@@ -14118,7 +13907,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       let btn = document.getElementById('urppp-nav-clean');
       const host = document.getElementById('urppp-nav-theme') ||
         document.querySelector('#navbar .navbar-header') ||
-        document.querySelector('#navbar .navbar-brand')?.parentElement ||
         document.querySelector('#navbar');
       if (!host) return;
       if (!btn) {
@@ -14126,53 +13914,22 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         btn.type = 'button';
         btn.id = 'urppp-nav-clean';
         btn.title = '清爽模式';
-        btn.innerHTML = `<span class="uc-ico" style="width:14px;height:14px;display:inline-flex">${icon('clean')}</span><span>清爽</span>`;
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          openCleanMode(false);
-        });
+        btn.innerHTML = `${ico('clean')}<span>清爽</span>`;
+        btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openCleanMode(false); });
         host.appendChild(btn);
       }
-      // 强制尺寸，防止被 ACE .btn 样式撑爆
-      const force = {
-        display: 'inline-flex',
-        'align-items': 'center',
-        'justify-content': 'center',
-        gap: '6px',
-        height: '28px',
-        'min-height': '28px',
-        'max-height': '28px',
-        padding: '0 10px',
-        margin: '0 0 0 8px',
-        border: '1px solid var(--border)',
-        'border-radius': '8px',
-        background: 'var(--input-bg)',
-        color: 'var(--text)',
-        'font-size': '12px',
-        'line-height': '26px',
-        width: 'auto',
-        'min-width': '0',
-        'box-shadow': 'none',
-        float: 'none',
-        position: 'relative',
-        top: '0',
-        transform: 'none'
-      };
-      Object.entries(force).forEach(([k, v]) => btn.style.setProperty(k, v, 'important'));
-      const svg = btn.querySelector('svg');
-      if (svg) {
-        svg.style.setProperty('width', '14px', 'important');
-        svg.style.setProperty('height', '14px', 'important');
-        svg.setAttribute('width', '14');
-        svg.setAttribute('height', '14');
-      }
-    } catch (err) {
-      console.warn('[URP++] clean entry inject failed', err);
+      ['display', 'align-items', 'height', 'padding', 'border', 'border-radius', 'background', 'color', 'font-size', 'gap', 'width', 'box-shadow'].forEach(() => {});
+      Object.entries({
+        display: 'inline-flex', 'align-items': 'center', height: '28px', 'min-height': '28px',
+        padding: '0 10px', border: '1px solid var(--border)', 'border-radius': '8px',
+        background: 'var(--input-bg)', color: 'var(--text)', 'font-size': '12px', gap: '6px',
+        width: 'auto', 'box-shadow': 'none', margin: '0 0 0 8px', float: 'none'
+      }).forEach(([k, v]) => btn.style.setProperty(k, v, 'important'));
+    } catch (e) {
+      console.warn('[URP++] clean entry', e);
     }
   }
 
-  // public API on window for main script hooks
   window.__urpppCleanMode = {
     open: openCleanMode,
     close: closeCleanMode,
@@ -14181,14 +13938,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     summarizeCourses
   };
 
-  // auto inject when possible
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => setTimeout(injectCleanEntry, 300));
-  } else {
-    setTimeout(injectCleanEntry, 300);
-  }
-  // retry (navbar rebuilt async)
-  ;[800, 1600, 3000].forEach((ms) => setTimeout(injectCleanEntry, ms));
+    document.addEventListener('DOMContentLoaded', () => setTimeout(injectCleanEntry, 200));
+  } else setTimeout(injectCleanEntry, 200);
+  ;[600, 1500, 3000].forEach((ms) => setTimeout(injectCleanEntry, ms));
 
   // ============================================================
   // 初始化
@@ -14304,7 +14057,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.7.1',
+    version: '0.7.2',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
