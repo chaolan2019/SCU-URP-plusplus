@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.7.0
+// @version      0.7.1
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -996,7 +996,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.7.0';
+          content:'URP++ v0.7.1';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -11887,7 +11887,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.7.0');
+    console.log('[URP++] style applied v0.7.1');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12966,23 +12966,43 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // ============================================================
-  // 清爽模式 Clean Mode v0.7.0
+  // 清爽模式 Clean Mode v0.7.1
   // 桌面一页：资料+课表 | 成绩总览 | 服务；手机底栏四入口
-  // 绩点：百分制 分/10-5（上限4.0，及格最低1.0）；等级制 优4良3中2及1；加权
+  // 绩点：川大现行百分制对照表（95-100=4.0 … 60=0.5）；等级/字母制见成绩单；加权
   // ============================================================
   const CLEAN_FLAG = 'urppp-clean-open';
 
   // ---- SCU GPA rules (成绩单说明) ----
+  // 川大现行百分制绩点对照（成绩单「百分制成绩与学分绩点对照表」）
+  const SCU_SCORE_GPA_TABLE = {
+    100:4.0,99:4.0,98:4.0,97:4.0,96:4.0,95:4.0,
+    94:3.9,93:3.8,92:3.7,91:3.6,90:3.5,
+    89:3.4,88:3.3,87:3.2,86:3.1,85:3.0,
+    84:2.9,83:2.8,82:2.7,81:2.6,80:2.5,
+    79:2.4,78:2.3,77:2.2,76:2.1,75:2.0,
+    74:1.9,73:1.8,72:1.7,71:1.6,70:1.5,
+    69:1.4,68:1.3,67:1.2,66:1.1,65:1.0,
+    64:0.9,63:0.8,62:0.7,61:0.6,60:0.5
+  };
+
   function scoreToGpa(raw) {
     if (raw == null || raw === '') return null;
     const s = String(raw).trim();
-    if (!s || /取消|缓考|免修|旷考|缺考|通过(?!)/.test(s) && !/及格|合格|优秀|良好|中等/.test(s)) {
-      // 纯“通过/免修”等无百分制：不计绩点（返回 null 表示跳过）
-      if (/^免修|通过$|合格$/.test(s)) {
-        if (s === '合格') return 1.0;
-        return null;
-      }
-    }
+    if (!s) return null;
+    // 不计绩点
+    if (/^免修$|^通过$|^取消$|^缓考$|^旷考$|^缺考$/.test(s)) return null;
+    // 字母制（成绩单）
+    if (/^A\+$/i.test(s) || /^A$/i.test(s)) return 4.0;
+    if (/^A-$/i.test(s)) return 3.7;
+    if (/^B\+$/i.test(s)) return 3.3;
+    if (/^B$/i.test(s)) return 3.0;
+    if (/^B-$/i.test(s)) return 2.7;
+    if (/^C\+$/i.test(s)) return 2.3;
+    if (/^C$/i.test(s)) return 2.0;
+    if (/^C-$/i.test(s)) return 1.7;
+    if (/^D$/i.test(s)) return 1.3;
+    if (/^F$/i.test(s)) return 0;
+    // 五级制
     if (/优秀/.test(s)) return 4.0;
     if (/良好/.test(s)) return 3.0;
     if (/中等/.test(s)) return 2.0;
@@ -12991,12 +13011,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (/合格/.test(s)) return 1.0;
     const n = parseFloat(s.replace(/[^\d.]/g, ''));
     if (Number.isNaN(n)) return null;
-    if (n < 60) return 0;
-    // 百分制：分数/10-5，最高 4.0，最低 1.0（及格线）
-    const g = n / 10 - 5;
-    if (g > 4) return 4.0;
-    if (g < 1) return 1.0;
-    return Math.round(g * 100) / 100;
+    const score = Math.round(n);
+    if (score < 60) return 0;
+    if (score > 100) return 4.0;
+    if (Object.prototype.hasOwnProperty.call(SCU_SCORE_GPA_TABLE, score)) return SCU_SCORE_GPA_TABLE[score];
+    // 兜底：向下取整到整数分查表
+    const key = Math.max(60, Math.min(100, Math.floor(n)));
+    return SCU_SCORE_GPA_TABLE[key] != null ? SCU_SCORE_GPA_TABLE[key] : 0;
   }
 
   function scoreToNumber(raw) {
@@ -13067,33 +13088,53 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // ---- network helpers ----
+  function absUrl(url) {
+    const u = String(url || '');
+    if (/^https?:\/\//i.test(u)) return u;
+    if (u.startsWith('//')) return location.protocol + u;
+    if (u.startsWith('/')) return location.origin + u;
+    return location.origin + '/' + u.replace(/^\.\//, '');
+  }
+
   function fetchText(url) {
+    const full = absUrl(url);
     return new Promise((resolve, reject) => {
       const done = (ok, val) => (ok ? resolve(val) : reject(new Error(val || 'fetch failed')));
       try {
         if (typeof GM_xmlhttpRequest === 'function') {
           GM_xmlhttpRequest({
             method: 'GET',
-            url,
+            url: full,
             anonymous: false,
             withCredentials: true,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
             onload: (r) => {
               if (r.status >= 200 && r.status < 400) done(true, r.responseText || '');
-              else done(false, 'HTTP ' + r.status);
+              else done(false, 'HTTP ' + r.status + ' ' + full);
             },
-            onerror: () => done(false, 'network error')
+            onerror: () => done(false, 'network error ' + full)
           });
           return;
         }
       } catch (_) {}
-      fetch(url, { credentials: 'include', cache: 'no-store' })
+      fetch(full, { credentials: 'include', cache: 'no-store' })
         .then((r) => {
           if (!r.ok) throw new Error('HTTP ' + r.status);
           return r.text();
         })
-        .then((t) => done(true, t))
-        .catch((e) => done(false, e && e.message));
+        .then((txt) => done(true, txt))
+        .catch((e) => done(false, (e && e.message) || 'fetch fail'));
     });
+  }
+
+  function extractUrlFromHtml(html, patterns) {
+    const text = String(html || '');
+    for (const p of patterns) {
+      const re = typeof p === 'string' ? new RegExp(p, 'i') : p;
+      const m = text.match(re);
+      if (m && m[1]) return m[1].replace(/\\u002F/g, '/');
+    }
+    return '';
   }
 
   function parseHtml(html) {
@@ -13110,21 +13151,31 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       studentId: ''
     };
     try {
-      const user = document.querySelector('.user-info, #navbar .user-info, .ace-nav .user-info');
+      const user = document.querySelector('#navbar .user-info, .ace-nav .user-info, .user-info');
       if (user) {
-        const t = (user.textContent || '').replace(/\s+/g, ' ').trim();
-        // 常见：姓名 学号 或 欢迎 xxx
-        const m = t.match(/([\u4e00-\u9fa5·]{2,20})/);
-        if (m) profile.name = m[1];
+        // ACE: <small>欢迎您,</small>姓名  —— 不要把「欢迎您」当姓名
+        const clone = user.cloneNode(true);
+        clone.querySelectorAll('small').forEach((s) => s.remove());
+        let t = (clone.textContent || '').replace(/\s+/g, ' ').trim();
+        t = t.replace(/^欢迎您[,，\s]*/g, '').replace(/^你好[,，\s]*/g, '').trim();
+        // 去掉学号
+        t = t.replace(/\d{10,}/g, '').trim();
+        const m = t.match(/([\u4e00-\u9fa5·]{2,12})/);
+        if (m && !/欢迎|同学|用户|管理/.test(m[1])) profile.name = m[1];
+      }
+      // 顶栏 brand 旁有时只有头像 title
+      if (!profile.name) {
+        const img0 = document.querySelector('#navbar img.nav-user-photo, .ace-nav img.nav-user-photo');
+        if (img0 && img0.getAttribute('alt') && /[\u4e00-\u9fa5]{2,}/.test(img0.getAttribute('alt'))) {
+          profile.name = img0.getAttribute('alt').trim();
+        }
       }
       const img = document.querySelector('#navbar img.nav-user-photo, .ace-nav img.nav-user-photo, img.nav-user-photo');
       if (img && img.src) profile.avatar = img.src;
-      // 首页学业信息
       const bodyText = (document.body && document.body.innerText) || '';
       const gpaM = bodyText.match(/主修必修GPA[^\d]*(\d+\.\d+)/) || bodyText.match(/(\d+\.\d+)\s*主修必修GPA/);
       if (gpaM) profile.majorGpa = gpaM[1];
-      // 从数字旁结构再试
-      document.querySelectorAll('.infobox, .urppp-stat-card, .widget-box').forEach((box) => {
+      document.querySelectorAll('.infobox, .urppp-stat-card, .widget-box, .urppp-welcome').forEach((box) => {
         const tx = (box.textContent || '').replace(/\s+/g, ' ');
         if (/主修必修GPA|GPA算法/.test(tx)) {
           const n = tx.match(/(\d+\.\d+)/);
@@ -13135,6 +13186,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           if (m) profile.majorPlan = m[1].replace(/…+$/, '').trim();
         }
       });
+      // 首页「欢迎回来」旁无姓名时，再扫 page-content 顶部
+      if (!profile.name) {
+        const top = document.querySelector('.navbar .user-menu, #navbar li.light-blue a');
+        if (top) {
+          const tt = (top.textContent || '').replace(/\s+/g, ' ').replace(/欢迎您[,，]?/g, ' ').trim();
+          const m = tt.match(/([\u4e00-\u9fa5·]{2,12})/);
+          if (m && !/欢迎|首页|反馈|密码|注销/.test(m[1])) profile.name = m[1];
+        }
+      }
     } catch (_) {}
 
     // 补拉学籍页
@@ -13171,11 +13231,30 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   const DAY_NAMES = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
 
   async function loadSchedule() {
-    const html = await fetchText('/student/courseSelect/thisSemesterCurriculum/index');
+    let html = '';
+    try {
+      html = await fetchText('/student/courseSelect/thisSemesterCurriculum/index');
+    } catch (e1) {
+      try {
+        html = await fetchText('/student/courseSelect/thisSemesterCurriculum/ajaxStudentSchedule/callback');
+      } catch (e2) {
+        return { courses: [], rawOk: false, error: String(e1 && e1.message || e1) };
+      }
+    }
+    // 若首页壳里没有表，尝试 callback
+    if (!/courseTable|第一大节|第一节/.test(html)) {
+      const cb = extractUrlFromHtml(html, [
+        /["'](\/student\/courseSelect\/thisSemesterCurriculum\/ajaxStudentSchedule\/callback[^"']*)["']/i,
+        /url\s*[:=]\s*["']([^"']*ajaxStudentSchedule[^"']*)["']/i
+      ]);
+      if (cb) {
+        try { html = await fetchText(cb); } catch (_) {}
+      }
+    }
     const doc = parseHtml(html);
-    const table = doc.getElementById('courseTable') || doc.querySelector('table.table-bordered');
+    const table = doc.getElementById('courseTable') || doc.querySelector('#courseTableBody')?.closest('table') || doc.querySelector('table.table-bordered');
     const courses = [];
-    if (!table) return { courses, rawOk: false };
+    if (!table) return { courses, rawOk: false, error: 'no courseTable' };
 
     // cells id like "1_1" = Monday section 1? From sample: id="7_1" sunday?, id="1_1" monday
     // thead: 节次, 星期日, 星期一...星期六
@@ -13201,36 +13280,45 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         });
       }
       tds.forEach((td, idx) => {
-        // map column: 0=周日 ... 6=周六 based on thead order after two th
-        const day = idx; // 0 sunday
-        const blocks = td.querySelectorAll('.class_div, .div_style, div[class*="div-kcb"], div');
+        // id 形如 1_3=周一第3节；7_x=周日
+        let day = idx; // fallback: 列序 0=周日
+        let sec = section;
+        const idm = String(td.id || '').match(/^(\d+)_(\d+)$/);
+        if (idm) {
+          const d = parseInt(idm[1], 10);
+          sec = parseInt(idm[2], 10) || sec;
+          // 站点：1..6=周一..六，7=周日
+          day = (d === 7) ? 0 : d;
+        }
+        const blocks = td.querySelectorAll('.class_div, .div_style, div[class*="div-kcb"], div[class*="kcb"]');
         const texts = [];
+        const pushCourse = (title, teacher, place, week, jie) => {
+          const name = String(title || '').replace(/_\d+$/, '').replace(/\s+/g, ' ').trim();
+          if (!name || name.length < 2) return;
+          if (/^第\d+大节$|^第\d+节$/.test(name)) return;
+          texts.push({
+            name,
+            teacher: String(teacher || '').trim(),
+            place: String(place || '').trim(),
+            week: String(week || '').trim(),
+            sectionText: String(jie || '').trim(),
+            day,
+            section: sec || section || 0
+          });
+        };
         if (blocks.length) {
           blocks.forEach((b) => {
-            const name = (b.querySelector('.p-kcm-1, .p-kcm, [class*="kcm"]') || b).textContent;
             const ps = Array.from(b.querySelectorAll('p')).map((p) => (p.textContent || '').trim()).filter(Boolean);
             const place = (b.querySelector('.p-jxl-1, [class*="jxl"]') || {}).textContent || '';
-            const teacher = ps.find((x) => !/周|节/.test(x) && x !== (ps[0] || '')) || '';
+            const title = ps[0] || (b.querySelector('.p-kcm-1, .p-kcm, [class*="kcm"]') || {}).textContent || '';
+            const teacher = ps.find((x, i) => i > 0 && !/周|节|望江|江安|华西|基教|综合楼|教/.test(x)) || '';
             const week = ps.find((x) => /周/.test(x)) || '';
             const jie = ps.find((x) => /节/.test(x)) || '';
-            const title = (ps[0] || name || '').replace(/_\d+$/, '').trim();
-            if (title && title.length > 1 && !/^\s*$/.test(title)) {
-              texts.push({
-                name: title,
-                teacher: (teacher || '').trim(),
-                place: (place || '').trim(),
-                week: week,
-                sectionText: jie,
-                day,
-                section
-              });
-            }
+            pushCourse(title, teacher, place, week, jie);
           });
         } else {
           const raw = (td.textContent || '').replace(/\s+/g, ' ').trim();
-          if (raw) {
-            texts.push({ name: raw.slice(0, 40), teacher: '', place: '', week: '', sectionText: '', day, section });
-          }
+          if (raw) pushCourse(raw.slice(0, 40), '', '', '', '');
         }
         texts.forEach((c) => courses.push(c));
       });
@@ -13317,17 +13405,61 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return schemes;
   }
 
+  async function loadScorePage(indexPath, callbackHint) {
+    const indexHtml = await fetchText(indexPath);
+    let html = indexHtml;
+    let groups = parseScoreTables(parseHtml(html));
+    if (groups.length) return { html, groups };
+    const cb = extractUrlFromHtml(indexHtml, [
+      new RegExp('["\'](/student/integratedQuery/scoreQuery/[^"\']*' + callbackHint + '[^"\']*)["\']', 'i'),
+      new RegExp('url\\s*[:=]\\s*["\']([^"\']*' + callbackHint + '[^"\']*)["\']', 'i'),
+      new RegExp('(\\/student\\/integratedQuery\\/scoreQuery\\/[^"\'\\s]*' + callbackHint + '[^"\'\\s]*)', 'i')
+    ]);
+    if (cb) {
+      try {
+        // 常见 callback 要 POST 或带参数；先 GET
+        html = await fetchText(cb);
+        groups = parseScoreTables(parseHtml(html));
+        if (groups.length) return { html, groups };
+        // 再试 POST 空表单
+        html = await new Promise((resolve, reject) => {
+          const full = absUrl(cb);
+          if (typeof GM_xmlhttpRequest === 'function') {
+            GM_xmlhttpRequest({
+              method: 'POST',
+              url: full,
+              data: '',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest'
+              },
+              withCredentials: true,
+              onload: (r) => resolve(r.responseText || ''),
+              onerror: () => reject(new Error('post fail'))
+            });
+          } else {
+            fetch(full, { method: 'POST', credentials: 'include', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: '' })
+              .then((r) => r.text()).then(resolve).catch(reject);
+          }
+        });
+        groups = parseScoreTables(parseHtml(html));
+      } catch (_) {}
+    }
+    return { html, groups };
+  }
+
   async function loadScores() {
     const out = { passing: [], schemes: [], error: '' };
     try {
-      const [passHtml, schemeHtml] = await Promise.all([
-        fetchText('/student/integratedQuery/scoreQuery/allPassingScores/index'),
-        fetchText('/student/integratedQuery/scoreQuery/schemeScores/index')
-      ]);
-      const passDoc = parseHtml(passHtml);
-      const schemeDoc = parseHtml(schemeHtml);
-      // passing: merge all tables into one list + also keep term groups
-      const passGroups = parseScoreTables(passDoc);
+      const passPack = await loadScorePage(
+        '/student/integratedQuery/scoreQuery/allPassingScores/index',
+        'allPassingScores'
+      );
+      const schemePack = await loadScorePage(
+        '/student/integratedQuery/scoreQuery/schemeScores/index',
+        'schemeScores'
+      );
+      const passGroups = passPack.groups || [];
       const allPass = [];
       passGroups.forEach((g) => g.courses.forEach((c) => allPass.push(Object.assign({ term: g.title }, c))));
       out.passing = [{
@@ -13336,9 +13468,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         summary: summarizeCourses(allPass),
         groups: passGroups
       }];
-      out.schemes = parseScoreTables(schemeDoc);
+      out.schemes = schemePack.groups || [];
       if (!out.schemes.length && allPass.length) {
         out.schemes = [{ title: '方案成绩', courses: allPass, summary: summarizeCourses(allPass) }];
+      }
+      if (!allPass.length && !out.schemes.length) {
+        out.error = '未解析到成绩表（可能需在成绩页打开一次后重试）';
       }
     } catch (e) {
       out.error = (e && e.message) || '成绩加载失败';
@@ -13423,8 +13558,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   #urppp-clean-root .uc-btn{height:32px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg,#F8FAFC);color:var(--text);font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
   #urppp-clean-root .uc-btn.primary{background:var(--primary,#1E3A5F);border-color:var(--primary);color:#fff}
   #urppp-clean-root .uc-btn:hover{filter:brightness(0.98)}
-  #urppp-clean-root .uc-body{flex:1 1 auto;min-height:0;overflow:auto;padding:16px}
-  #urppp-clean-root .uc-desktop{display:grid;grid-template-columns:4fr 3fr;grid-template-rows:auto 1fr;gap:16px;min-height:100%}
+  #urppp-clean-root .uc-body{flex:1 1 auto;min-height:0;overflow:auto;padding:20px 24px 24px}
+  #urppp-clean-root .uc-desktop{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr;gap:16px;min-height:calc(100% - 8px);height:100%}
   #urppp-clean-root .uc-card{background:var(--surface,#fff);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow,0 2px 12px rgba(0,0,0,.05));overflow:hidden}
   #urppp-clean-root .uc-card-hd{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:13px}
   #urppp-clean-root .uc-card-bd{padding:14px}
@@ -13452,11 +13587,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   #urppp-clean-root .uc-metric{background:var(--surface);border-radius:10px;padding:8px;border:1px solid var(--border)}
   #urppp-clean-root .uc-metric em{display:block;font-style:normal;font-size:10px;color:var(--text-muted);margin-bottom:2px}
   #urppp-clean-root .uc-metric b{font-size:16px;font-weight:700;color:var(--text)}
-  #urppp-clean-root .uc-services{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  #urppp-clean-root .uc-svc{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:14px;border-radius:14px;border:1px solid var(--border);background:var(--input-bg);cursor:pointer;text-align:left;color:var(--text)}
-  #urppp-clean-root .uc-svc:hover{border-color:var(--primary)}
-  #urppp-clean-root .uc-svc strong{font-size:13px}
-  #urppp-clean-root .uc-svc span{font-size:11px;color:var(--text-secondary)}
+  #urppp-clean-root .uc-services{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:12px}
+  #urppp-clean-root .uc-svc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;aspect-ratio:1/1;min-height:108px;padding:12px;border-radius:16px;border:1px solid var(--border);background:var(--input-bg);cursor:pointer;text-align:center;color:var(--text)}
+  #urppp-clean-root .uc-svc:hover{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 8%,var(--input-bg))}
+  #urppp-clean-root .uc-svc .uc-ico{width:28px;height:28px}
+  #urppp-clean-root .uc-svc .uc-ico svg{width:28px;height:28px}
+  #urppp-clean-root .uc-svc strong{font-size:12px;line-height:1.3}
+  #urppp-clean-root .uc-svc span{display:none}
   #urppp-clean-root .uc-mobile{display:none}
   #urppp-clean-root .uc-tabbar{display:none}
   #urppp-clean-root .uc-empty,#urppp-clean-root .uc-loading{padding:20px;text-align:center;color:var(--text-secondary);font-size:13px}
@@ -13489,9 +13626,44 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   #urppp-clean-root .uc-week{min-width:0;grid-template-columns:28px repeat(7,minmax(42px,1fr))}
   }
   html.urppp-clean-lock,html.urppp-clean-lock body{overflow:hidden !important}
-  #urppp-nav-clean{margin-left:8px;height:28px;padding:0 10px;border-radius:8px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
-  #urppp-nav-clean:hover{border-color:var(--primary);color:var(--primary)}
-  #urppp-nav-clean svg{width:14px;height:14px}
+  html body #navbar #urppp-nav-clean,
+  html body #urppp-nav-theme #urppp-nav-clean,
+  #urppp-nav-clean{
+    margin-left:8px !important;
+    height:28px !important;
+    min-height:28px !important;
+    max-height:28px !important;
+    padding:0 10px !important;
+    border-radius:8px !important;
+    border:1px solid var(--border) !important;
+    background:var(--input-bg) !important;
+    background-color:var(--input-bg) !important;
+    color:var(--text) !important;
+    font-size:12px !important;
+    line-height:26px !important;
+    cursor:pointer !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:6px !important;
+    box-shadow:none !important;
+    float:none !important;
+    width:auto !important;
+    min-width:0 !important;
+    vertical-align:middle !important;
+  }
+  html body #navbar #urppp-nav-clean:hover,
+  #urppp-nav-clean:hover{border-color:var(--primary) !important;color:var(--primary) !important;background:var(--input-bg) !important}
+  html body #navbar #urppp-nav-clean svg,
+  #urppp-nav-clean svg,
+  #urppp-nav-clean .uc-ico,
+  #urppp-nav-clean .uc-ico svg{
+    width:14px !important;
+    height:14px !important;
+    display:block !important;
+    flex:0 0 14px !important;
+  }
+  #urppp-nav-clean span{font-size:12px !important;line-height:1 !important;color:inherit !important}
   `;
     (document.head || document.documentElement).appendChild(st);
   }
@@ -13654,7 +13826,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           <div class="uc-card">
             <div class="uc-card-hd"><span><span class="uc-ico">${icon('score')}</span> 成绩总览</span><span class="uc-sub">点击查看明细/计算</span></div>
             <div class="uc-card-bd">
-              ${state.loading.scores ? '<div class="uc-loading">成绩加载中…</div>' : `
+              ${state.loading.scores ? '<div class="uc-loading">成绩加载中…</div>' : (state.scores && state.scores.error ? `<div class="uc-empty">${escapeHtml(state.scores.error)}</div>` : `
               <div class="uc-score-grid">
                 <div class="uc-score-pane" data-score="passing">
                   <h5>全部及格成绩</h5>
@@ -13665,8 +13837,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
                   ${metricHtml(scheme.summary)}
                 </div>
               </div>
-              <div class="uc-note">计算规则：百分制绩点=分数/10−5（上限4.0，及格最低1.0，不及格0）；优秀4.0/良好3.0/中等2.0/及格1.0；加权平均分与平均学分绩点按学分加权。弹窗内可勾选课程本地估算。</div>
-              `}
+              <div class="uc-note">计算规则：按川大成绩单现行对照表（95–100→4.0 … 60→0.5，&lt;60→0）；等级制优4/良3/中2/及1；字母制 A–F 按成绩单。加权平均分与平均学分绩点按学分加权。</div>
+              `)}
             </div>
           </div>
           <div class="uc-card" style="flex:1">
@@ -13892,21 +14064,35 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     state.loading.schedule = true;
     state.loading.scores = true;
     render();
-    try {
-      const [profile, schedule, scores] = await Promise.all([
-        state.profile && !force ? state.profile : loadProfile(),
-        state.schedule && !force ? state.schedule : loadSchedule(),
-        state.scores && !force ? state.scores : loadScores()
-      ]);
-      state.profile = profile;
-      state.schedule = schedule;
-      state.scores = scores;
-    } finally {
-      state.loading.profile = false;
-      state.loading.schedule = false;
-      state.loading.scores = false;
-      render();
-    }
+    // 并行拉取；单个失败不拖垮整页
+    const tasks = [
+      (async () => {
+        try {
+          if (!(state.profile && !force)) state.profile = await loadProfile();
+        } catch (e) {
+          console.warn('[URP++] clean profile', e);
+          if (!state.profile) state.profile = { name: '同学', avatar: '', majorPlan: '主修方案', majorGpa: '—', studentId: '' };
+        } finally { state.loading.profile = false; render(); }
+      })(),
+      (async () => {
+        try {
+          if (!(state.schedule && !force)) state.schedule = await loadSchedule();
+        } catch (e) {
+          console.warn('[URP++] clean schedule', e);
+          state.schedule = { courses: [], rawOk: false, error: String(e && e.message || e) };
+        } finally { state.loading.schedule = false; render(); }
+      })(),
+      (async () => {
+        try {
+          if (!(state.scores && !force)) state.scores = await loadScores();
+        } catch (e) {
+          console.warn('[URP++] clean scores', e);
+          state.scores = { passing: [], schemes: [], error: String(e && e.message || e) };
+        } finally { state.loading.scores = false; render(); }
+      })()
+    ];
+    await Promise.all(tasks);
+    render();
   }
 
   function openCleanMode(forceReload) {
@@ -13929,22 +14115,58 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   function injectCleanEntry() {
     try {
-      if (document.getElementById('urppp-nav-clean')) return;
+      let btn = document.getElementById('urppp-nav-clean');
       const host = document.getElementById('urppp-nav-theme') ||
         document.querySelector('#navbar .navbar-header') ||
+        document.querySelector('#navbar .navbar-brand')?.parentElement ||
         document.querySelector('#navbar');
       if (!host) return;
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.id = 'urppp-nav-clean';
-      btn.title = '清爽模式';
-      btn.innerHTML = `${icon('clean')}<span>清爽</span>`;
-      btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        openCleanMode(false);
-      });
-      host.appendChild(btn);
+      if (!btn) {
+        btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = 'urppp-nav-clean';
+        btn.title = '清爽模式';
+        btn.innerHTML = `<span class="uc-ico" style="width:14px;height:14px;display:inline-flex">${icon('clean')}</span><span>清爽</span>`;
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          openCleanMode(false);
+        });
+        host.appendChild(btn);
+      }
+      // 强制尺寸，防止被 ACE .btn 样式撑爆
+      const force = {
+        display: 'inline-flex',
+        'align-items': 'center',
+        'justify-content': 'center',
+        gap: '6px',
+        height: '28px',
+        'min-height': '28px',
+        'max-height': '28px',
+        padding: '0 10px',
+        margin: '0 0 0 8px',
+        border: '1px solid var(--border)',
+        'border-radius': '8px',
+        background: 'var(--input-bg)',
+        color: 'var(--text)',
+        'font-size': '12px',
+        'line-height': '26px',
+        width: 'auto',
+        'min-width': '0',
+        'box-shadow': 'none',
+        float: 'none',
+        position: 'relative',
+        top: '0',
+        transform: 'none'
+      };
+      Object.entries(force).forEach(([k, v]) => btn.style.setProperty(k, v, 'important'));
+      const svg = btn.querySelector('svg');
+      if (svg) {
+        svg.style.setProperty('width', '14px', 'important');
+        svg.style.setProperty('height', '14px', 'important');
+        svg.setAttribute('width', '14');
+        svg.setAttribute('height', '14');
+      }
     } catch (err) {
       console.warn('[URP++] clean entry inject failed', err);
     }
@@ -14082,7 +14304,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.7.0',
+    version: '0.7.1',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
