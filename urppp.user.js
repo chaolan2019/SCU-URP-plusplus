@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.10
+// @version      0.6.8
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -682,7 +682,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.10';
+          content:'URP++ v0.6.8';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1582,7 +1582,7 @@
           if (disabled) span.classList.add('urppp-page-chip-disabled');
           if (prev || next) span.classList.add('urppp-page-chip-nav');
 
-          const minW = (prev || next) ? '56px' : '34px';
+          const minW = (prev || next) ? '72px' : '40px';
           const bg = active ? 'var(--primary)' : 'var(--surface)';
           const bd = active ? 'var(--primary)' : 'var(--border)';
           const fg = active ? '#fff' : (disabled ? 'var(--text-muted)' : 'var(--text)');
@@ -1595,13 +1595,13 @@
             'position:static !important',
             'width:auto !important',
             'min-width:' + minW + ' !important',
-            'height:32px !important',
-            'min-height:32px !important',
-            'max-height:32px !important',
-            'padding:0 10px !important',
+            'height:36px !important',
+            'min-height:36px !important',
+            'max-height:36px !important',
+            'padding:0 12px !important',
             'margin:0 !important',
-            'line-height:32px !important',
-            'font-size:13px !important',
+            'line-height:36px !important',
+            'font-size:14px !important',
             'font-weight:600 !important',
             'border-radius:8px !important',
             'border:1px solid ' + bd + ' !important',
@@ -1615,12 +1615,33 @@
           ].join(';');
         });
 
-        // 跳转区：取消 absolute 叠层，确定默认隐藏、focus 显示（交给站点 + CSS）
-        bar.querySelectorAll('[id^="btn_turnpageto_"]').forEach((btn) => {
+        // 跳转区：有则美化尺寸/定位；无跳转功能的页面（站点 display:none 或未注入）绝不强制显示
+        const jumpInputs = Array.from(bar.querySelectorAll('[id^="turnpageto_"]'));
+        const jumpBtns = Array.from(bar.querySelectorAll('[id^="btn_turnpageto_"]'));
+        const hasJumpUi = jumpInputs.length > 0 || jumpBtns.length > 0;
+        // 站点关闭跳转时，输入/按钮通常带 display:none；也可能存在但不可见
+        const jumpEnabled = jumpInputs.some((inp) => {
+          const st = (inp.getAttribute('style') || '') + ';' + (inp.style && inp.style.cssText || '');
+          // 未显式 none 且不是 type=hidden，视为启用
+          if ((inp.type || '').toLowerCase() === 'hidden') return false;
+          if (/display\s*:\s*none/i.test(st)) return false;
+          const cs = window.getComputedStyle(inp);
+          // 若被我们之前错误显示，仍可能是 visible；以站点原始意图：有 focus 处理器且非 hidden
+          return cs.display !== 'none' || !/display\s*:\s*none/i.test(inp.getAttribute('style') || '');
+        });
+        // 更稳：pagebar 第 6 参为 "off" 时站点仍可能生成节点但默认 none；
+        // 若所有 jump 控件 computed 为 none，则整组隐藏并跳过美化显示。
+        const anyJumpVisible = jumpInputs.concat(jumpBtns).some((el) => {
+          try {
+            const cs = window.getComputedStyle(el);
+            return cs.display !== 'none' && cs.visibility !== 'hidden' && cs.opacity !== '0';
+          } catch (_) { return false; }
+        });
+        // 若节点存在但当前都是 none，保持隐藏（不强制 display）
+        const enableJumpChrome = hasJumpUi && anyJumpVisible;
+
+        jumpBtns.forEach((btn) => {
           btn.classList.add('urppp-page-confirm');
-          if (btn.dataset.urpppPageConfirmDone === '1') return;
-          btn.dataset.urpppPageConfirmDone = '1';
-          // 不要强制 display；站点 turnpagetoFocus/Blur 控制
           btn.style.setProperty('position', 'static', 'important');
           btn.style.setProperty('left', 'auto', 'important');
           btn.style.setProperty('top', 'auto', 'important');
@@ -1632,122 +1653,51 @@
           btn.style.setProperty('font-size', '13px', 'important');
           btn.style.setProperty('line-height', '1', 'important');
           btn.style.setProperty('vertical-align', 'middle', 'important');
-          btn.style.setProperty('pointer-events', 'auto', 'important');
+          // 不写 display：交给站点 none/inline-block
         });
 
-        // 跳转输入框：只初始化一次。focus 会显示「确定」触发 MutationObserver，
-        // 若每次都重写 style 会打断输入/失焦。
-        bar.querySelectorAll('[id^="turnpageto_"]').forEach((inp) => {
-          if (inp.dataset.urpppPageGotoDone === '1') {
-            // 只确保可点可输入
-            inp.style.setProperty('pointer-events', 'auto', 'important');
-            inp.style.setProperty('user-select', 'text', 'important');
-            inp.removeAttribute('readonly');
-            inp.removeAttribute('disabled');
-            return;
-          }
-          inp.dataset.urpppPageGotoDone = '1';
+        jumpInputs.forEach((inp) => {
+          // 无跳转功能：保持隐藏，不要 set display
+          const attrStyle = inp.getAttribute('style') || '';
+          const siteWantsHidden =
+            (inp.type || '').toLowerCase() === 'hidden' ||
+            /display\s*:\s*none/i.test(attrStyle) ||
+            !enableJumpChrome;
           inp.classList.add('urppp-page-goto');
-          inp.style.setProperty('position', 'relative', 'important');
-          inp.style.setProperty('z-index', '5', 'important');
-          inp.style.setProperty('display', 'inline-block', 'important');
+          inp.style.setProperty('position', 'static', 'important');
+          // 关键：不要 display:inline-block !important 强行显示
+          if (siteWantsHidden) {
+            inp.style.setProperty('display', 'none', 'important');
+          }
           inp.style.setProperty('height', '32px', 'important');
-          inp.style.setProperty('width', '52px', 'important');
+          inp.style.setProperty('width', '48px', 'important');
           inp.style.setProperty('margin', '0 4px', 'important');
           inp.style.setProperty('padding', '4px 8px', 'important');
           inp.style.setProperty('font-size', '14px', 'important');
           inp.style.setProperty('line-height', '1.2', 'important');
           inp.style.setProperty('box-sizing', 'border-box', 'important');
           inp.style.setProperty('vertical-align', 'middle', 'important');
-          inp.style.setProperty('pointer-events', 'auto', 'important');
-          inp.style.setProperty('user-select', 'text', 'important');
-          inp.style.setProperty('cursor', 'text', 'important');
-          inp.removeAttribute('readonly');
-          inp.removeAttribute('disabled');
-          // 聚焦时确保对应「确定」能显示（站点一般写 style.display）
-          if (!inp.__urpppGotoFocusBound) {
-            inp.__urpppGotoFocusBound = true;
-            const resolveConfirmBtn = () => {
-              const id = String(inp.id || '');
-              const btnId = id.replace(/^turnpageto_/, 'btn_turnpageto_');
-              return document.getElementById(btnId)
-                || (inp.parentElement && inp.parentElement.querySelector('[id^="btn_turnpageto_"]'))
-                || bar.querySelector('[id^="btn_turnpageto_"]');
-            };
-            const showConfirm = () => {
-              const btn = resolveConfirmBtn();
-              if (!btn) return;
-              btn.classList.add('urppp-page-confirm', 'urppp-page-confirm-show');
-              // 清掉 none，再强制显示（class + inline 双保险）
-              btn.style.removeProperty('display');
-              btn.style.setProperty('display', 'inline-flex', 'important');
-              btn.style.setProperty('visibility', 'visible', 'important');
-              btn.style.setProperty('opacity', '1', 'important');
-              btn.style.setProperty('pointer-events', 'auto', 'important');
-              btn.style.setProperty('position', 'static', 'important');
-              btn.style.setProperty('float', 'none', 'important');
-            };
-            const hideConfirm = () => {
-              setTimeout(() => {
-                const btn = resolveConfirmBtn();
-                if (!btn) return;
-                if (document.activeElement === btn || document.activeElement === inp) return;
-                btn.classList.remove('urppp-page-confirm-show');
-                // 交还站点默认隐藏
-                btn.style.setProperty('display', 'none', 'important');
-              }, 120);
-            };
-            inp.addEventListener('focus', showConfirm);
-            inp.addEventListener('input', showConfirm);
-            inp.addEventListener('click', showConfirm);
-            inp.addEventListener('blur', hideConfirm);
-          }
           const wrapSpan = inp.parentElement;
           if (wrapSpan && wrapSpan.tagName === 'SPAN') {
-            wrapSpan.style.setProperty('position', 'relative', 'important');
-            wrapSpan.style.setProperty('z-index', '5', 'important');
-            wrapSpan.style.setProperty('display', 'inline-flex', 'important');
-            wrapSpan.style.setProperty('align-items', 'center', 'important');
+            wrapSpan.style.setProperty('position', 'static', 'important');
+            if (siteWantsHidden) {
+              wrapSpan.style.setProperty('display', 'none', 'important');
+            } else {
+              wrapSpan.style.setProperty('display', 'inline-flex', 'important');
+              wrapSpan.style.setProperty('align-items', 'center', 'important');
+            }
             wrapSpan.style.setProperty('width', 'auto', 'important');
             wrapSpan.style.setProperty('height', 'auto', 'important');
             wrapSpan.style.setProperty('min-height', '0', 'important');
             wrapSpan.style.setProperty('vertical-align', 'middle', 'important');
-            wrapSpan.style.setProperty('pointer-events', 'auto', 'important');
+          }
+          // 配套确定按钮：无跳转时一并藏
+          if (siteWantsHidden) {
+            const btnId = String(inp.id || '').replace(/^turnpageto_/, 'btn_turnpageto_');
+            const btn = document.getElementById(btnId);
+            if (btn) btn.style.setProperty('display', 'none', 'important');
           }
         });
-
-        // 翻页后把表格滚动容器滚回顶部（kctd_scroll / page_scroll 等）
-        if (!bar.__urpppPageScrollBound) {
-          bar.__urpppPageScrollBound = true;
-          const scrollTableHost = () => {
-            const host =
-              document.getElementById('kctd_scroll') ||
-              document.getElementById('page_scroll') ||
-              document.querySelector('[id$="_scroll"]') ||
-              bar.previousElementSibling;
-            if (!host) return;
-            try { host.scrollTop = 0; } catch (_) {}
-            // 页面本身也回到表格附近
-            try {
-              const top = host.getBoundingClientRect().top + window.pageYOffset - 80;
-              if (window.scrollY > top + 40) window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-            } catch (_) {}
-          };
-          bar.addEventListener('click', (e) => {
-            const t = e.target;
-            if (!t) return;
-            // 页码 chip / 确定
-            if (
-              t.closest('ul.pagination li') ||
-              (t.id && String(t.id).indexOf('btn_turnpageto_') === 0) ||
-              (t.classList && t.classList.contains('urppp-page-confirm'))
-            ) {
-              setTimeout(scrollTableHost, 50);
-              setTimeout(scrollTableHost, 200);
-              setTimeout(scrollTableHost, 500);
-            }
-          }, true);
-        }
 
         // 统计文字区
         bar.querySelectorAll('[id^="totalPage_show_"], [id^="span_page_txt_"]').forEach((el) => {
@@ -1777,11 +1727,8 @@
         if (host.__urpppPagebarObs) return;
         host.__urpppPagebarObs = true;
         const obs = new MutationObserver(() => {
-          // 输入框聚焦时不要重跑，避免打断打字
-          const ae = document.activeElement;
-          if (ae && ae.id && String(ae.id).indexOf('turnpageto_') === 0) return;
           clearTimeout(window.__urpppPagebarTimer);
-          window.__urpppPagebarTimer = setTimeout(() => beautifyPagebar(host.parentElement || document), 180);
+          window.__urpppPagebarTimer = setTimeout(() => beautifyPagebar(host.parentElement || document), 150);
         });
         obs.observe(host, { childList: true, subtree: true });
       });
@@ -7417,68 +7364,30 @@
         transition: all .15s ease !important;
       }
       /* 分页「确定」：用更高优先级盖过全局 .btn display:inline-flex */
-      /* 确定：默认跟站点 inline display；仅当 style 含 display:none 时隐藏 */
       #urppagebar .btn.urppp-page-confirm,
       #urppagebar button.urppp-page-confirm,
       #urppagebar a.btn.urppp-page-confirm,
       #urppagebar input.urppp-page-confirm,
-      #urppagebar [id^="btn_turnpageto_"],
-      body #urppagebar .urppp-page-confirm,
-      body #urppagebar [id^="btn_turnpageto_"] {
+      .urppagebreak .btn.urppp-page-confirm,
+      .urppagebreak button.urppp-page-confirm,
+      body #urppagebar .urppp-page-confirm {
+        display: none !important;
         height: 32px !important;
         min-height: 32px !important;
         max-height: 32px !important;
         min-width: 52px !important;
         padding: 0 12px !important;
         font-size: 13px !important;
-        line-height: 1 !important;
-        box-sizing: border-box !important;
-        vertical-align: middle !important;
-        pointer-events: auto !important;
-      }
-      /* 站点隐藏时：inline style display:none 必须能赢过 .btn{display:inline-flex} */
-      #urppagebar [id^="btn_turnpageto_"][style*="display: none"],
-      #urppagebar [id^="btn_turnpageto_"][style*="display:none"],
-      body #urppagebar .btn[id^="btn_turnpageto_"][style*="display: none"],
-      body #urppagebar .btn[id^="btn_turnpageto_"][style*="display:none"] {
-        display: none !important;
-      }
-      /* 站点显示时：inline style display:inline-block 可能被 .btn 盖住，这里兜底 */
-      #urppagebar [id^="btn_turnpageto_"][style*="display: inline"],
-      #urppagebar [id^="btn_turnpageto_"][style*="display:inline"],
-      #urppagebar [id^="btn_turnpageto_"][style*="display: block"],
-      #urppagebar [id^="btn_turnpageto_"][style*="display:block"],
-      body #urppagebar .btn[id^="btn_turnpageto_"][style*="display: inline"],
-      body #urppagebar .btn[id^="btn_turnpageto_"][style*="display:inline"] {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
       }
       #urppagebar .btn.urppp-page-confirm.urppp-page-confirm-show,
       #urppagebar button.urppp-page-confirm.urppp-page-confirm-show,
       #urppagebar a.btn.urppp-page-confirm.urppp-page-confirm-show,
       #urppagebar input.urppp-page-confirm.urppp-page-confirm-show,
       .urppagebreak .btn.urppp-page-confirm.urppp-page-confirm-show,
-      body #urppagebar .urppp-page-confirm.urppp-page-confirm-show,
-      html body #urppagebar [id^="btn_turnpageto_"].urppp-page-confirm-show,
-      html body #urppagebar .btn[id^="btn_turnpageto_"].urppp-page-confirm-show {
+      body #urppagebar .urppp-page-confirm.urppp-page-confirm-show {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        pointer-events: auto !important;
-        position: static !important;
-        float: none !important;
-        height: 32px !important;
-        min-width: 52px !important;
-        margin: 0 4px !important;
-        padding: 0 12px !important;
-      }
-      /* 未 show 时：若站点 inline 是 none，保持隐藏；不要全局 none!important */
-      html body #urppagebar [id^="btn_turnpageto_"]:not(.urppp-page-confirm-show)[style*="display: none"],
-      html body #urppagebar [id^="btn_turnpageto_"]:not(.urppp-page-confirm-show)[style*="display:none"] {
-        display: none !important;
       }
       .btn:not(.btn-app) > .ace-icon,
       .btn:not(.btn-app) > .fa,
@@ -7875,25 +7784,11 @@
       #urppagebar [id^="sample-table-2_paginate_"] {
         display: flex !important;
         align-items: center !important;
-        flex-wrap: nowrap !important;
-        gap: 6px 8px !important;
+        flex-wrap: wrap !important;
+        gap: 8px 10px !important;
         position: relative !important;
         width: 100% !important;
         line-height: 1.5 !important;
-        overflow-x: auto !important;
-        overflow-y: hidden !important;
-      }
-      @media (max-width: 1100px) {
-        #urppagebar .dataTables_paginate,
-        #urppagebar [id^="sample-table-2_paginate_"] {
-          flex-wrap: wrap !important;
-          overflow-x: visible !important;
-        }
-      }
-      /* 首屏尽量单行：页码与跳转区紧凑 */
-      #urppagebar ul.pagination {
-        flex: 0 1 auto !important;
-        max-width: 100% !important;
       }
       /* 清掉旧 pagination 全局小按钮样式在页码条上的影响 */
       #urppagebar ul.pagination,
@@ -7937,14 +7832,14 @@
         position: static !important;
         box-sizing: border-box !important;
         width: auto !important;
-        min-width: 34px !important;
-        height: 32px !important;
-        min-height: 32px !important;
-        max-height: 32px !important;
-        padding: 0 10px !important;
+        min-width: 40px !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        padding: 0 12px !important;
         margin: 0 !important;
-        line-height: 32px !important;
-        font-size: 13px !important;
+        line-height: 36px !important;
+        font-size: 14px !important;
         font-weight: 600 !important;
         border-radius: 8px !important;
         border: 1px solid var(--border) !important;
@@ -7958,7 +7853,7 @@
       #urppagebar ul.pagination > li.previous > span,
       #urppagebar ul.pagination > li.next > span,
       #urppagebar .urppp-page-chip-nav {
-        min-width: 56px !important;
+        min-width: 72px !important;
       }
       /* 分页条里的说明文字 / 每页条数：正常排版 */
       #urppagebar > span,
@@ -8017,48 +7912,39 @@
         color: #fff !important;
         border-color: var(--primary) !important;
       }
-      /* 跳转输入 + 确定：流式排列，确定默认隐藏 */
+      /* 跳转输入 + 确定：只改尺寸定位，绝不强制 display（无跳转页站点为 none） */
       #urppagebar [id^="turnpageto_"],
       #urppagebar input.urppp-page-goto {
-        display: inline-block !important;
-        position: relative !important;
-        z-index: 6 !important;
+        position: static !important;
         height: 32px !important;
-        width: 52px !important;
+        width: 48px !important;
         margin: 0 4px !important;
         padding: 4px 8px !important;
         font-size: 14px !important;
         line-height: 1.2 !important;
         box-sizing: border-box !important;
         vertical-align: middle !important;
-        pointer-events: auto !important;
-        user-select: text !important;
-        -webkit-user-select: text !important;
-        cursor: text !important;
-        background: var(--input-bg) !important;
-        color: var(--text) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 8px !important;
-      }
-      #urppagebar [id^="turnpageto_"]:focus,
-      #urppagebar input.urppp-page-goto:focus {
-        border-color: var(--primary) !important;
-        box-shadow: 0 0 0 3px var(--ring) !important;
-        outline: none !important;
       }
       #urppagebar [id^="btn_turnpageto_"],
       #urppagebar .urppp-page-confirm {
         position: static !important;
         left: auto !important;
         top: auto !important;
-        height: 36px !important;
-        min-width: 56px !important;
+        height: 32px !important;
+        min-width: 52px !important;
         margin: 0 4px !important;
         padding: 0 12px !important;
         font-size: 13px !important;
         line-height: 1 !important;
         vertical-align: middle !important;
         float: none !important;
+      }
+      /* 站点 display:none 时必须继续隐藏（压过全局 .btn{display:inline-flex}） */
+      #urppagebar [id^="turnpageto_"][style*="display: none"],
+      #urppagebar [id^="turnpageto_"][style*="display:none"],
+      #urppagebar [id^="btn_turnpageto_"][style*="display: none"],
+      #urppagebar [id^="btn_turnpageto_"][style*="display:none"] {
+        display: none !important;
       }
       /* 站点默认 display:none；focus 时 inline-block —— 不要用全局 .btn 盖掉 none */
       #urppagebar [id^="btn_turnpageto_"][style*="display: none"],
@@ -11094,7 +10980,7 @@ fo-striped.setLabelWidth,
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.10');
+    console.log('[URP++] style applied v0.6.8');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12139,7 +12025,7 @@ fo-striped.setLabelWidth,
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.10',
+    version: '0.6.8',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
