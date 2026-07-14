@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.16
+// @version      0.6.17
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -683,7 +683,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.16';
+          content:'URP++ v0.6.17';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1399,6 +1399,33 @@
     return g.jQuery || g.$ || window.jQuery || window.$ || null;
   }
 
+  function isPagebarSelect(sel) {
+    if (!sel) return false;
+    if (sel.id && String(sel.id).indexOf('pagination_pageSize_') === 0) return true;
+    return !!(sel.closest && sel.closest('#urppagebar, .urppagebreak, .dataTables_paginate, [id^="sample-table-2_paginate_"]'));
+  }
+
+  function destroyPagebarChosen(sel) {
+    if (!sel) return;
+    try {
+      const $ = pageJQuery();
+      if ($ && $.fn && $(sel).data('chosen')) $(sel).chosen('destroy');
+    } catch (_) { /* ignore */ }
+    try {
+      if (sel.parentElement) {
+        sel.parentElement.querySelectorAll(':scope > .chosen-container').forEach((c) => {
+          try { c.remove(); } catch (_) { /* ignore */ }
+        });
+      }
+      if (sel.nextElementSibling && sel.nextElementSibling.classList.contains('chosen-container')) {
+        try { sel.nextElementSibling.remove(); } catch (_) { /* ignore */ }
+      }
+    } catch (_) { /* ignore */ }
+    sel.classList.remove('urppp-chosen-hidden', 'chzn-done', 'chosen');
+    try { delete sel.dataset.urpppChosen; } catch (_) { /* ignore */ }
+    sel.style.setProperty('display', 'inline-block', 'important');
+  }
+
   function ensureQueryChosen() {
     try {
       const $ = pageJQuery();
@@ -1426,32 +1453,12 @@
       sels.forEach((sel) => {
         if (!sel || sel.multiple || sel.disabled) return;
         if (sel.size && sel.size > 1) return; // 列表多选框跳过
-        // 分页条「每页显示」绝不能 Chosen：width:100% 会让「滚动加载(30)」长度反复跳
-        const inPagebar =
-          (sel.id && String(sel.id).indexOf('pagination_pageSize_') === 0) ||
-          !!(sel.closest && sel.closest('#urppagebar, .urppagebreak, .dataTables_paginate, [id^="sample-table-2_paginate_"]'));
-        const $sel = $(sel);
-        if (inPagebar) {
-          try {
-            if ($sel.data('chosen') || sel.classList.contains('chzn-done')) {
-              $sel.chosen('destroy');
-            }
-          } catch (_) { /* ignore */ }
-          // 清掉可能残留的 chosen 容器
-          if (sel.parentElement) {
-            sel.parentElement.querySelectorAll(':scope > .chosen-container').forEach((c) => {
-              try { c.remove(); } catch (_) { /* ignore */ }
-            });
-          }
-          if (sel.nextElementSibling && sel.nextElementSibling.classList.contains('chosen-container')) {
-            try { sel.nextElementSibling.remove(); } catch (_) { /* ignore */ }
-          }
-          sel.classList.remove('urppp-chosen-hidden', 'chzn-done', 'chosen');
-          delete sel.dataset.urpppChosen;
-          sel.style.removeProperty('display');
-          sel.style.setProperty('display', 'inline-block', 'important');
+        // 分页条「每页显示」绝不能 Chosen
+        if (isPagebarSelect(sel)) {
+          destroyPagebarChosen(sel);
           return;
         }
+        const $sel = $(sel);
         const already =
           !!$sel.data('chosen') ||
           sel.classList.contains('chzn-done') ||
@@ -1572,23 +1579,9 @@
           bar.querySelectorAll('ul.pagination, [id^="pagination_ul_"]').forEach((ul) => {
             ul.style.setProperty('display', 'none', 'important');
           });
-          // 拆掉误挂的 Chosen，恢复原生 select（固定宽度，长度不再跳）
-          bar.querySelectorAll('select[id^="pagination_pageSize_"], select').forEach((sel) => {
-            try {
-              const $ = pageJQuery();
-              if ($ && $.fn && $(sel).data('chosen')) $(sel).chosen('destroy');
-            } catch (_) { /* ignore */ }
-            if (sel.parentElement) {
-              sel.parentElement.querySelectorAll(':scope > .chosen-container').forEach((c) => {
-                try { c.remove(); } catch (_) { /* ignore */ }
-              });
-            }
-            if (sel.nextElementSibling && sel.nextElementSibling.classList.contains('chosen-container')) {
-              try { sel.nextElementSibling.remove(); } catch (_) { /* ignore */ }
-            }
-            sel.classList.remove('urppp-chosen-hidden', 'chzn-done', 'chosen');
-            delete sel.dataset.urpppChosen;
-            sel.style.setProperty('display', 'inline-block', 'important');
+          // 拆掉误挂的 Chosen，恢复原生 select
+          bar.querySelectorAll('select').forEach((sel) => {
+            destroyPagebarChosen(sel);
             sel.style.setProperty('width', '128px', 'important');
             sel.style.setProperty('min-width', '128px', 'important');
             sel.style.setProperty('max-width', '128px', 'important');
@@ -3293,7 +3286,7 @@
     });
   }
 
-    function scrubTableHeaderInlineBg() {
+  function scrubTableHeaderInlineBg() {
     try {
       if (!document.documentElement.classList.contains('urppp-theme-dark') &&
           !(document.body && document.body.classList.contains('urppp-dark'))) return;
@@ -3310,7 +3303,7 @@
     } catch (_) {}
   }
 
-function scrubNoticeInlineBg(root) {
+  function scrubNoticeInlineBg(root) {
     try {
       const scope = root || document;
       if (scope.matches && scope.matches('tr.urppp-notice-row')) {
@@ -3382,14 +3375,22 @@ function scrubNoticeInlineBg(root) {
     });
   }
 
+  function isNoticeBulletText(s) {
+    const t = String(s || '').replace(/\s+/g, '');
+    return /^[•·●○▪◆★\-–]$/.test(t) || /^\d{1,4}$/.test(t);
+  }
+
+  function isNoticeDateText(s) {
+    return /\d{4}[-/.年]\d{1,2}([-/.月]\d{1,2})?/.test(String(s || ''));
+  }
+
   function isNoticePageContext() {
     try {
       const path = String(location.pathname || '') + ' ' + String(location.href || '');
-      if (/courseSelectNotice|evaluationNotice|notice\/index|公告/i.test(path)) return true;
+      if (/courseSelectNotice|evaluationNotice|notice\/index/i.test(path)) return true;
       const hint = (
         (document.title || '') + ' ' +
-        ((document.querySelector('h4.header, h3.header, .breadcrumb, .page-header, .urppp-nav-active, .active') || {}).textContent || '') + ' ' +
-        ((document.querySelector('h4, h3') || {}).textContent || '')
+        ((document.querySelector('h4.header, h3.header, h4, h3, .breadcrumb, .page-header') || {}).textContent || '')
       );
       return /评估公告|通知公告|选课公告|公告|通知/.test(hint);
     } catch (_) {
@@ -3400,29 +3401,20 @@ function scrubNoticeInlineBg(root) {
   function isNoticeListTable(table) {
     if (!table) return false;
     const headText = ((table.querySelector('thead') && table.querySelector('thead').textContent) || '').replace(/\s+/g, '');
-    // 选课公告 / 评估公告常见表头：序号 + 标题 + 发布时间
     if (/标题/.test(headText) && /发布时间|发布日期|日期|时间/.test(headText)) return true;
     if (isNoticePageContext() && /标题|公告|通知/.test(headText) && !/教室|教学楼|课程号|成绩|学号|座位数/.test(headText)) return true;
-    // 无 thead 的 dashed 公告表：• | a | 日期
+    // 无 thead：●/序号 + a + 日期
+    const rows = table.querySelectorAll('tbody tr, tr');
+    let hit = 0;
+    rows.forEach((tr) => {
+      const tds = tr.querySelectorAll('td');
+      if (tds.length < 2 || tds.length > 4) return;
+      if (isNoticeBulletText(tds[0].textContent) && tr.querySelector('a') && isNoticeDateText(tr.textContent)) hit += 1;
+    });
+    if (hit < 1) return false;
+    if (isNoticePageContext() || hit === rows.length) return true;
     const st = table.getAttribute('style') || '';
-    if (/dashed/i.test(st) || table.classList.contains('no-border-top')) {
-      const row = table.querySelector('tbody tr, tr');
-      if (row && row.querySelector('a') && /\d{4}[-/.年]\d{1,2}/.test(row.textContent || '')) return true;
-    }
-    // 裸 body 选课公告：table[width] + ● + a + 日期，无 thead/class
-    {
-      const rows = table.querySelectorAll('tbody tr, tr');
-      let hit = 0;
-      rows.forEach((tr) => {
-        const tds = tr.querySelectorAll('td');
-        if (tds.length < 2 || tds.length > 4) return;
-        const b = (tds[0].textContent || '').replace(/\s+/g, '');
-        const hasBullet = /^[•·●○▪◆★\-–]$/.test(b) || /^\d{1,4}$/.test(b);
-        if (hasBullet && tr.querySelector('a') && /\d{4}[-/.年]\d{1,2}/.test(tr.textContent || '')) hit += 1;
-      });
-      if (hit >= 1 && (isNoticePageContext() || hit === rows.length || /选课公告|评估公告/.test(document.title || ''))) return true;
-    }
-    return false;
+    return /dashed/i.test(st) || table.classList.contains('no-border-top') || !!table.getAttribute('width');
   }
 
   function isBusinessDataTable(table) {
@@ -3460,44 +3452,23 @@ function scrubNoticeInlineBg(root) {
         }
       });
 
-      // 选课公告页常是裸 body：只有 h4 + div>table(width=97%, font-size:18px)，无 page-content/dashed
-      const tableSet = new Set();
-      const addTables = (list) => { list.forEach((tb) => { if (tb) tableSet.add(tb); }); };
-      addTables(document.querySelectorAll(
-        '.page-content table, #page-content-template table, .main-content table, .page-content-area table, table[style*="dashed"], table.no-border-top, table.urppp-notice-table, table.table'
+      // 候选表：常规容器 + 公告页/结构兜底
+      const tableSet = new Set(document.querySelectorAll(
+        '.page-content table, #page-content-template table, .main-content table, table.table, table.urppp-notice-table, table[style*="dashed"], table.no-border-top'
       ));
-      // 公告页兜底：扫全部 table（再靠 isBusinessDataTable / noticeLike 过滤）
-      if (isNoticePageContext() || /选课公告|评估公告|通知公告/.test(document.title || '') || /courseSelectNotice/i.test(location.pathname || '')) {
-        addTables(document.querySelectorAll('table'));
+      if (isNoticePageContext()) {
+        document.querySelectorAll('table').forEach((tb) => tableSet.add(tb));
+      } else {
+        document.querySelectorAll('table').forEach((tb) => {
+          if (isNoticeListTable(tb)) tableSet.add(tb);
+        });
       }
-      // 结构兜底：●/• + a + 日期 的三列表，即使不在公告 path 也收
-      document.querySelectorAll('table').forEach((tb) => {
-        const tr = tb.querySelector('tr');
-        if (!tr) return;
-        const tds = tr.querySelectorAll('td');
-        if (tds.length < 2 || tds.length > 4) return;
-        const txt0 = (tds[0].textContent || '').replace(/\s+/g, '');
-        if (!/^[•·●○▪◆★\-–]$/.test(txt0) && !/^\d{1,4}$/.test(txt0)) return;
-        if (!tr.querySelector('a')) return;
-        if (!/\d{4}[-/.年]\d{1,2}/.test(tr.textContent || '')) return;
-        tableSet.add(tb);
-      });
-      const tables = Array.from(tableSet);
-      tables.forEach((table) => {
-        if (!table) return;
-        if (isBusinessDataTable(table)) return;
-        if (table.dataset.urpppNoticeScan === '1' && table.classList.contains('urppp-notice-table')) {
-          // 已确认公告表，可增量处理未完成行
-        }
-
+      Array.from(tableSet).forEach((table) => {
+        if (!table || isBusinessDataTable(table)) return;
         // 跳过真正业务数据表（有 thead 多列表头）；公告「标题+发布时间」放行
         if (table.querySelector('thead th') && table.querySelectorAll('thead th').length >= 3) {
           const thText = (table.querySelector('thead')?.textContent || '');
-          if (isNoticeListTable(table) || (/标题/.test(thText) && /发布时间|发布日期|日期/.test(thText))) {
-            // keep
-          } else if (/序号|课程|成绩|教室|校区|学号|姓名|教学楼|座位|操作|类型/.test(thText) && !/标题|公告|通知/.test(thText)) {
-            return;
-          }
+          if (!isNoticeListTable(table) && /序号|课程|成绩|教室|校区|学号|姓名|教学楼|座位|操作|类型/.test(thText) && !/标题|公告|通知/.test(thText)) return;
         }
         const rows = Array.from(table.querySelectorAll('tbody > tr, tr')).filter((tr) => tr.querySelector('td'));
         if (!rows.length) return;
@@ -3511,11 +3482,7 @@ function scrubNoticeInlineBg(root) {
           const text = (tr.textContent || '').replace(/\s+/g, ' ').trim();
           const hasLink = !!tr.querySelector('a[href], a[onclick], a');
           const hasDate = /\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}/.test(text);
-          const hasBullet = tds.some((td) => {
-            const t = (td.textContent || '').replace(/\s+/g, '');
-            return t === '•' || t === '·' || t === '●' || t === '○' || t === '▪' || t === '-' || t === '–' ||
-              (t.length <= 2 && /[•·●○▪◆★\-]/.test(t));
-          });
+          const hasBullet = tds.some((td) => isNoticeBulletText(td.textContent));
           if ((hasLink && hasDate) || (hasBullet && hasLink) || (hasBullet && hasDate)) {
             noticeLike += 1;
           }
@@ -3578,12 +3545,7 @@ function scrubNoticeInlineBg(root) {
               const t = clean(td.textContent);
               const hasA = !!td.querySelector('a');
               // 序号列 / 圆点列
-              const tCompact = t.replace(/\s+/g, '');
-              if (!bulletTd && (
-                tCompact === '•' || tCompact === '·' || tCompact === '●' || tCompact === '○' || tCompact === '▪' ||
-                (/^[•·●○▪◆★]$/.test(tCompact)) ||
-                (i === 0 && /^\d{1,4}$/.test(tCompact) && tds.length >= 2)
-              )) {
+              if (!bulletTd && isNoticeBulletText(t) && (i === 0 || tds.length >= 2)) {
                 bulletTd = td;
                 return;
               }
@@ -3898,7 +3860,7 @@ function scrubNoticeInlineBg(root) {
   }
 
   function scheduleBeautifyNoticeTables() {
-    ;[0, 200, 600, 1200, 2500, 5000].forEach((ms) => setTimeout(() => {
+    ;[0, 400, 1500].forEach((ms) => setTimeout(() => {
       try { beautifyNoticeTables(); } catch (_) {}
     }, ms));
     if (window.__urpppNoticeObs) return;
@@ -7956,20 +7918,13 @@ function scrubNoticeInlineBg(root) {
       #urppagebar.urppp-pagebar-jump .dataTables_paginate {
         white-space: normal !important;
       }
-      #urppagebar.urppp-pagebar-scroll,
-      #urppagebar.urppp-pagebar-scroll .dataTables_paginate,
-      #urppagebar:has([id^="turnpageto_"][readonly]),
-      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) {
-        white-space: nowrap !important;
-      }
-      /* 默认不强制 flex，避免滚动态把「第/输入/页」拆成三行 */
+      /* 默认不强制 flex；真跳转才 flex */
       #urppagebar .dataTables_paginate,
       #urppagebar [id^="sample-table-2_paginate_"] {
         position: relative !important;
         width: 100% !important;
         line-height: 1.5 !important;
       }
-      /* 真跳转分页才用 flex 排布页码 chip */
       #urppagebar.urppp-pagebar-jump .dataTables_paginate,
       #urppagebar.urppp-pagebar-jump [id^="sample-table-2_paginate_"] {
         display: flex !important;
@@ -7978,17 +7933,15 @@ function scrubNoticeInlineBg(root) {
         gap: 8px 10px !important;
       }
       /*
-       * 滚动态：保持站点 inline 单行流。
-       * 不设 text-align:right，避免每次重建从左闪到右。
-       * 用 :has(readonly) 在 class 打上前也能立刻藏页码 ul。
+       * 滚动态：单行右对齐。
+       * class 由 JS 打标；:has(readonly) 覆盖重建瞬间、class 尚未挂上时。
        */
-      /* 滚动态：固定单行 + 右对齐（常驻，避免重建时左右闪） */
+      #urppagebar.urppp-pagebar-scroll,
       #urppagebar.urppp-pagebar-scroll .dataTables_paginate,
       #urppagebar.urppp-pagebar-scroll [id^="sample-table-2_paginate_"],
+      #urppagebar:has([id^="turnpageto_"][readonly]),
       #urppagebar:has([id^="turnpageto_"][readonly]) .dataTables_paginate,
-      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="sample-table-2_paginate_"],
-      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) .dataTables_paginate,
-      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="sample-table-2_paginate_"] {
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="sample-table-2_paginate_"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
@@ -8000,67 +7953,51 @@ function scrubNoticeInlineBg(root) {
         line-height: 1.5 !important;
         text-align: right !important;
       }
-      /* 站点内层 inline-block 容器：改成横向 flex，禁止内部折成「第 / 输入 / 页」三行 */
       #urppagebar.urppp-pagebar-scroll .dataTables_paginate > div,
       #urppagebar.urppp-pagebar-scroll [id^="sample-table-2_paginate_"] > div,
       #urppagebar:has([id^="turnpageto_"][readonly]) .dataTables_paginate > div,
-      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) .dataTables_paginate > div {
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="sample-table-2_paginate_"] > div {
         display: inline-flex !important;
-        flex-direction: row !important;
         flex-wrap: nowrap !important;
         align-items: center !important;
         justify-content: flex-end !important;
         float: none !important;
         width: auto !important;
-        max-width: none !important;
         white-space: nowrap !important;
-        vertical-align: middle !important;
         flex: 0 0 auto !important;
       }
       #urppagebar.urppp-pagebar-scroll [id^="currNum_"],
       #urppagebar.urppp-pagebar-scroll [id^="selectNum_"],
-      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="currNum_"],
-      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="selectNum_"],
-      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="currNum_"],
-      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="selectNum_"] {
-        display: none !important;
-      }
       #urppagebar.urppp-pagebar-scroll ul.pagination,
       #urppagebar.urppp-pagebar-scroll [id^="pagination_ul_"],
+      #urppagebar.urppp-pagebar-scroll [id^="btn_turnpageto_"],
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="currNum_"],
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="selectNum_"],
       #urppagebar:has([id^="turnpageto_"][readonly]) ul.pagination,
       #urppagebar:has([id^="turnpageto_"][readonly]) [id^="pagination_ul_"],
-      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) ul.pagination,
-      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="pagination_ul_"] {
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="btn_turnpageto_"] {
         display: none !important;
       }
       #urppagebar.urppp-pagebar-scroll [id^="span_page_txt_"],
       #urppagebar.urppp-pagebar-scroll [id^="totalPage_show_"],
       #urppagebar:has([id^="turnpageto_"][readonly]) [id^="span_page_txt_"],
-      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="totalPage_show_"],
-      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="span_page_txt_"],
-      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="totalPage_show_"] {
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="totalPage_show_"] {
         display: inline !important;
         float: none !important;
         white-space: nowrap !important;
         vertical-align: middle !important;
-        flex: 0 0 auto !important;
       }
       #urppagebar.urppp-pagebar-scroll span:has(> [id^="turnpageto_"]),
-      #urppagebar:has([id^="turnpageto_"][readonly]) span:has(> [id^="turnpageto_"]),
-      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) span:has(> [id^="turnpageto_"]) {
+      #urppagebar:has([id^="turnpageto_"][readonly]) span:has(> [id^="turnpageto_"]) {
         display: inline-flex !important;
         align-items: center !important;
         position: static !important;
         width: auto !important;
         height: auto !important;
-        min-height: 0 !important;
         float: none !important;
-        flex: 0 0 auto !important;
-        vertical-align: middle !important;
       }
       #urppagebar.urppp-pagebar-scroll [id^="turnpageto_"],
-      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="turnpageto_"],
-      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="turnpageto_"] {
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="turnpageto_"] {
         display: inline-block !important;
         float: none !important;
         vertical-align: middle !important;
@@ -8069,24 +8006,20 @@ function scrubNoticeInlineBg(root) {
         max-width: 40px !important;
         height: 26px !important;
         min-height: 26px !important;
-        max-height: 26px !important;
         margin: 0 2px !important;
         padding: 0 4px !important;
         line-height: 24px !important;
         font-size: 12px !important;
-        flex: 0 0 auto !important;
         box-sizing: border-box !important;
       }
-      /* 每页条数：压过全局 select{max-width:100%}，禁止独占一行 */
+      /* 每页条数：固定 128px，完整显示「滚动加载(30)」 */
+      #urppagebar.urppp-pagebar-scroll select,
       #urppagebar.urppp-pagebar-scroll select[id^="pagination_pageSize_"],
-      #urppagebar:has([id^="turnpageto_"][readonly]) select[id^="pagination_pageSize_"],
-      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) select[id^="pagination_pageSize_"],
-      html body #urppagebar.urppp-pagebar-scroll select,
-      html body #urppagebar.urppp-pagebar-scroll select.form-control {
+      #urppagebar:has([id^="turnpageto_"][readonly]) select,
+      html body #urppagebar.urppp-pagebar-scroll select {
         display: inline-block !important;
         float: none !important;
         vertical-align: middle !important;
-        /* 站点 on 模式原宽 100px；中文「滚动加载(30)」需更宽，固定避免截断乱跳 */
         width: 128px !important;
         min-width: 128px !important;
         max-width: 128px !important;
@@ -8100,10 +8033,6 @@ function scrubNoticeInlineBg(root) {
         text-overflow: clip !important;
         overflow: hidden !important;
         white-space: nowrap !important;
-      }
-      #urppagebar.urppp-pagebar-scroll [id^="btn_turnpageto_"],
-      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="btn_turnpageto_"] {
-        display: none !important;
       }
 
       /* 清掉旧 pagination 全局小按钮样式在页码条上的影响 */
@@ -8279,24 +8208,6 @@ function scrubNoticeInlineBg(root) {
         font-size: 13px !important;
         vertical-align: middle !important;
         border-radius: 8px !important;
-      }
-      html body #urppagebar.urppp-pagebar-scroll select[id^="pagination_pageSize_"],
-      html body #urppagebar.urppp-pagebar-scroll select {
-        display: inline-block !important;
-        height: 28px !important;
-        min-height: 28px !important;
-        max-height: 28px !important;
-        width: 128px !important;
-        min-width: 128px !important;
-        max-width: 128px !important;
-        padding: 0 8px !important;
-        margin: 0 4px !important;
-        font-size: 12px !important;
-        vertical-align: middle !important;
-        border-radius: 6px !important;
-        flex: 0 0 128px !important;
-        text-overflow: clip !important;
-        overflow: hidden !important;
       }
       #urppagebar [id^="totalPage_show_"],
       #urppagebar [id^="span_page_txt_"] {
@@ -11329,7 +11240,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.16');
+    console.log('[URP++] style applied v0.6.17');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12374,7 +12285,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.16',
+    version: '0.6.17',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
