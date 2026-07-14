@@ -13121,29 +13121,17 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     try {
       const user = document.querySelector('#navbar .user-info, .ace-nav .user-info, .user-info');
       if (user) {
-        // 真实 DOM: <small>欢迎您，</small>\n刘冠博
-        const small = user.querySelector('small');
-        if (small) small.remove(); // only clone ideally
-      }
-      const user2 = document.querySelector('#navbar .user-info, .ace-nav .user-info, .user-info');
-      if (user2) {
-        const clone = user2.cloneNode(true);
-        clone.querySelectorAll('small, i, img, b, .badge').forEach((n) => n.remove());
-        let t = (clone.textContent || '').replace(/\s+/g, ' ').trim();
-        t = t.replace(/^欢迎您[，,]\s*/g, '').replace(/^欢迎您\s*/g, '').trim();
-        t = t.replace(/\d{8,}/g, '').trim();
-        const m = t.match(/([\u4e00-\u9fa5·]{2,12})/);
-        if (m && !/欢迎|同学|首页|反馈|密码|注销/.test(m[1])) profile.name = m[1];
-      }
-      // 恢复 small：上面误删了 live DOM，补救——重新从 outerHTML 解析
-      // 更稳：只从 textContent 拆
-      if (!profile.name) {
-        const u = document.querySelector('#navbar .user-info, .ace-nav .user-info');
-        if (u) {
-          const raw = (u.innerText || u.textContent || '').replace(/\s+/g, ' ').trim();
-          const m = raw.match(/欢迎您[，,]\s*([\u4e00-\u9fa5·]{2,12})/) || raw.replace(/欢迎您[，,]?/g, ' ').match(/([\u4e00-\u9fa5·]{2,12})/);
-          if (m && !/欢迎/.test(m[1])) profile.name = m[1];
+        // 真实 DOM: <small>欢迎您，</small>\n刘冠博  —— 只读 clone，不改 live DOM
+        const raw = (user.innerText || user.textContent || '').replace(/\s+/g, ' ').trim();
+        let m = raw.match(/欢迎您[，,]\s*([\u4e00-\u9fa5·]{2,12})/);
+        if (!m) {
+          const clone = user.cloneNode(true);
+          clone.querySelectorAll('small, i, img, b, .badge').forEach((n) => n.remove());
+          let t = (clone.textContent || '').replace(/\s+/g, ' ').trim();
+          t = t.replace(/^欢迎您[，,]\s*/g, '').replace(/\d{8,}/g, '').trim();
+          m = t.match(/([\u4e00-\u9fa5·]{2,12})/);
         }
+        if (m && m[1] && !/欢迎|同学|首页|反馈|密码|注销/.test(m[1])) profile.name = m[1];
       }
       const img = document.querySelector('#navbar img.nav-user-photo, .ace-nav img.nav-user-photo');
       if (img && img.src) profile.avatar = img.src;
