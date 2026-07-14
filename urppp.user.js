@@ -1526,46 +1526,36 @@
         bar.style.setProperty('line-height', '1.5', 'important');
         const wrap = bar.querySelector('.dataTables_paginate, [id^="sample-table-2_paginate_"]') || bar;
 
-        // 滚动分页：pageSize 含 _ 或文案「第」——只藏上一页/下一页，其余跟站点原样
+        // 滚动分页：只打标记 + 藏上一页/下一页，其余完全交给站点原布局（防三行/左右闪）
         const pageTxt = Array.from(bar.querySelectorAll('[id^="span_page_txt_"]'))
           .map((el) => String(el.textContent || '').trim()).join('');
         const pageSizeSel = bar.querySelector('select[id^="pagination_pageSize_"]');
         const pageSizeVal = pageSizeSel ? String(pageSizeSel.value || '') : '';
+        const jumpReadonly = bar.querySelector('[id^="turnpageto_"][readonly], [id^="turnpageto_"][readOnly]');
         const isScrollMode =
+          !!jumpReadonly ||
           pageSizeVal.indexOf('_') >= 0 ||
           pageTxt === '第' ||
           (pageTxt.indexOf('转到') < 0 && pageTxt.indexOf('第') >= 0);
 
         if (isScrollMode) {
-          // 关键：不要把 wrap 改成 flex，会把「第 / 输入 / 页」拆成三行
-          wrap.style.setProperty('display', 'block', 'important');
-          wrap.style.setProperty('text-align', 'right', 'important');
-          wrap.style.setProperty('white-space', 'nowrap', 'important');
-          wrap.style.setProperty('line-height', '1.5', 'important');
-          wrap.style.setProperty('position', 'relative', 'important');
-          // 只藏页码导航
+          bar.classList.add('urppp-pagebar-scroll');
+          bar.classList.remove('urppp-pagebar-jump');
+          // 只藏页码导航；不要改 wrap 的 display/text-align（那是三行和左右闪的根因）
           bar.querySelectorAll('ul.pagination, [id^="pagination_ul_"]').forEach((ul) => {
             ul.style.setProperty('display', 'none', 'important');
           });
-          // 清 float，避免 currNum 把后面内容挤下去；不碰 turnpageto
+          // 仅去掉空的 float 占位，不改其它节点
           bar.querySelectorAll('[id^="currNum_"], [id^="selectNum_"]').forEach((el) => {
             el.style.setProperty('float', 'none', 'important');
             if (!String(el.textContent || '').trim()) {
               el.style.setProperty('display', 'none', 'important');
             }
           });
-          // 站点包着 ul+文案 的 inline-block div：保持单行
-          Array.from(wrap.children).forEach((child) => {
-            if (!child || child.tagName !== 'DIV') return;
-            const id = child.id || '';
-            if (id.indexOf('currNum_') === 0 || id.indexOf('selectNum_') === 0 || id.indexOf('div_page_loading_') === 0) return;
-            child.style.setProperty('display', 'inline', 'important');
-            child.style.setProperty('white-space', 'nowrap', 'important');
-            child.style.setProperty('float', 'none', 'important');
-            child.style.setProperty('vertical-align', 'middle', 'important');
-          });
-          return; // 滚动态到此结束，不改输入框/确定/chip
+          return;
         }
+        bar.classList.add('urppp-pagebar-jump');
+        bar.classList.remove('urppp-pagebar-scroll');
 
         wrap.style.setProperty('display', 'flex', 'important');
         wrap.style.setProperty('align-items', 'center', 'important');
@@ -7781,37 +7771,49 @@
       #urppagebar .dataTables_paginate {
         white-space: normal !important;
       }
+      /* 默认不强制 flex；只有真跳转分页才 flex，避免滚动态把「第/输入/页」拆成三行 */
       #urppagebar .dataTables_paginate,
       #urppagebar [id^="sample-table-2_paginate_"] {
         position: relative !important;
         width: 100% !important;
         line-height: 1.5 !important;
       }
-      /* 真分页态（有可见 chip）再 flex；滚动态由 JS 写 block+右对齐 */
-      #urppagebar .dataTables_paginate:has(ul.pagination > li),
-      #urppagebar [id^="sample-table-2_paginate_"]:has(ul.pagination > li) {
+      #urppagebar.urppp-pagebar-jump .dataTables_paginate,
+      #urppagebar.urppp-pagebar-jump [id^="sample-table-2_paginate_"] {
         display: flex !important;
         align-items: center !important;
         flex-wrap: wrap !important;
         gap: 8px 10px !important;
       }
-      /* 站点 display:none 的页码 ul 保持隐藏 */
-      #urppagebar ul.pagination[style*="display: none"],
-      #urppagebar ul.pagination[style*="display:none"],
-      #urppagebar [id^="pagination_ul_"][style*="display: none"],
-      #urppagebar [id^="pagination_ul_"][style*="display:none"] {
-        display: none !important;
+      /* 滚动态：站点原 inline 流 + 单行；右对齐用 CSS 常驻，避免 JS 重建时左右闪 */
+      #urppagebar.urppp-pagebar-scroll,
+      #urppagebar.urppp-pagebar-scroll .dataTables_paginate,
+      #urppagebar.urppp-pagebar-scroll [id^="sample-table-2_paginate_"],
+      #urppagebar:has([id^="turnpageto_"][readonly]),
+      #urppagebar:has([id^="turnpageto_"][readonly]) .dataTables_paginate,
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="sample-table-2_paginate_"] {
+        display: block !important;
+        text-align: right !important;
+        white-space: nowrap !important;
+        line-height: 1.5 !important;
       }
-      /* 滚动态：input readonly 时立刻藏上一页/下一页，避免注入瞬间闪一下 */
+      #urppagebar.urppp-pagebar-scroll [id^="currNum_"],
+      #urppagebar.urppp-pagebar-scroll [id^="selectNum_"],
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="currNum_"],
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="selectNum_"] {
+        float: none !important;
+      }
+      /* 滚动态立刻藏页码按钮（CSS 优先，不依赖 observer） */
+      #urppagebar.urppp-pagebar-scroll ul.pagination,
+      #urppagebar.urppp-pagebar-scroll [id^="pagination_ul_"],
       #urppagebar:has([id^="turnpageto_"][readonly]) ul.pagination,
-      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="pagination_ul_"],
-      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) ul.pagination,
-      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="pagination_ul_"] {
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="pagination_ul_"] {
         display: none !important;
       }
       /* 清掉旧 pagination 全局小按钮样式在页码条上的影响 */
-      #urppagebar ul.pagination,
-      #urppagebar ul.urppp-pagination {
+      #urppagebar.urppp-pagebar-jump ul.pagination,
+      #urppagebar.urppp-pagebar-jump ul.urppp-pagination {
+        display: inline-flex !important;
         align-items: center !important;
         flex-wrap: wrap !important;
         gap: 4px !important;
@@ -7822,10 +7824,6 @@
         position: static !important;
         border: none !important;
         background: transparent !important;
-      }
-      #urppagebar ul.pagination:not([style*="display: none"]):not([style*="display:none"]),
-      #urppagebar ul.urppp-pagination:not([style*="display: none"]):not([style*="display:none"]) {
-        display: inline-flex !important;
       }
       #urppagebar ul.pagination > li,
       #urppagebar .paginate_button,
@@ -7891,14 +7889,14 @@
         line-height: 1.3 !important;
         vertical-align: middle !important;
       }
-      #urppagebar input.urppp-page-goto {
+      #urppagebar.urppp-pagebar-jump [id^="turnpageto_"] {
         height: 32px !important;
         min-height: 32px !important;
         line-height: 1.3 !important;
         width: 48px !important;
         vertical-align: middle !important;
       }
-      #urppagebar [id^="btn_turnpageto_"] {
+      #urppagebar.urppp-pagebar-jump [id^="btn_turnpageto_"] {
         height: 32px !important;
         min-height: 32px !important;
         line-height: 1 !important;
@@ -7934,8 +7932,9 @@
         color: #fff !important;
         border-color: var(--primary) !important;
       }
-      /* 跳转输入：仅 JS 标记的真跳转框改尺寸；滚动态输入框完全跟站点，避免闪 */
-      #urppagebar input.urppp-page-goto {
+      /* 跳转输入：仅真跳转分页改尺寸；滚动态完全跟站点，避免闪 */
+      #urppagebar.urppp-pagebar-jump [id^="turnpageto_"],
+      #urppagebar.urppp-pagebar-jump input.urppp-page-goto {
         display: inline-block !important;
         position: static !important;
         height: 36px !important;
