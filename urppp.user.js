@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.9
+// @version      0.6.10
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -682,7 +682,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.9';
+          content:'URP++ v0.6.10';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1667,32 +1667,40 @@
           // 聚焦时确保对应「确定」能显示（站点一般写 style.display）
           if (!inp.__urpppGotoFocusBound) {
             inp.__urpppGotoFocusBound = true;
-            const showConfirm = () => {
+            const resolveConfirmBtn = () => {
               const id = String(inp.id || '');
-              // turnpageto_xxx -> btn_turnpageto_xxx
               const btnId = id.replace(/^turnpageto_/, 'btn_turnpageto_');
-              const btn = document.getElementById(btnId) || bar.querySelector('[id^="btn_turnpageto_"]');
-              if (!btn) return;
-              // 站点若写成 none，聚焦时改为 inline-block；失焦交还给站点
-              if (!btn.style.display || btn.style.display === 'none') {
-                btn.style.setProperty('display', 'inline-block', 'important');
-              }
-              btn.style.setProperty('pointer-events', 'auto', 'important');
+              return document.getElementById(btnId)
+                || (inp.parentElement && inp.parentElement.querySelector('[id^="btn_turnpageto_"]'))
+                || bar.querySelector('[id^="btn_turnpageto_"]');
             };
-            const hideConfirmIfEmpty = () => {
-              // 不强制隐藏：站点 blur 会处理；仅清我们加的 important display 若站点要隐藏
+            const showConfirm = () => {
+              const btn = resolveConfirmBtn();
+              if (!btn) return;
+              btn.classList.add('urppp-page-confirm', 'urppp-page-confirm-show');
+              // 清掉 none，再强制显示（class + inline 双保险）
+              btn.style.removeProperty('display');
+              btn.style.setProperty('display', 'inline-flex', 'important');
+              btn.style.setProperty('visibility', 'visible', 'important');
+              btn.style.setProperty('opacity', '1', 'important');
+              btn.style.setProperty('pointer-events', 'auto', 'important');
+              btn.style.setProperty('position', 'static', 'important');
+              btn.style.setProperty('float', 'none', 'important');
+            };
+            const hideConfirm = () => {
               setTimeout(() => {
-                const id = String(inp.id || '');
-                const btnId = id.replace(/^turnpageto_/, 'btn_turnpageto_');
-                const btn = document.getElementById(btnId);
+                const btn = resolveConfirmBtn();
                 if (!btn) return;
-                // 若焦点还在按钮上，不藏
-                if (document.activeElement === btn) return;
-              }, 0);
+                if (document.activeElement === btn || document.activeElement === inp) return;
+                btn.classList.remove('urppp-page-confirm-show');
+                // 交还站点默认隐藏
+                btn.style.setProperty('display', 'none', 'important');
+              }, 120);
             };
             inp.addEventListener('focus', showConfirm);
             inp.addEventListener('input', showConfirm);
             inp.addEventListener('click', showConfirm);
+            inp.addEventListener('blur', hideConfirm);
           }
           const wrapSpan = inp.parentElement;
           if (wrapSpan && wrapSpan.tagName === 'SPAN') {
@@ -1707,6 +1715,39 @@
             wrapSpan.style.setProperty('pointer-events', 'auto', 'important');
           }
         });
+
+        // 翻页后把表格滚动容器滚回顶部（kctd_scroll / page_scroll 等）
+        if (!bar.__urpppPageScrollBound) {
+          bar.__urpppPageScrollBound = true;
+          const scrollTableHost = () => {
+            const host =
+              document.getElementById('kctd_scroll') ||
+              document.getElementById('page_scroll') ||
+              document.querySelector('[id$="_scroll"]') ||
+              bar.previousElementSibling;
+            if (!host) return;
+            try { host.scrollTop = 0; } catch (_) {}
+            // 页面本身也回到表格附近
+            try {
+              const top = host.getBoundingClientRect().top + window.pageYOffset - 80;
+              if (window.scrollY > top + 40) window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+            } catch (_) {}
+          };
+          bar.addEventListener('click', (e) => {
+            const t = e.target;
+            if (!t) return;
+            // 页码 chip / 确定
+            if (
+              t.closest('ul.pagination li') ||
+              (t.id && String(t.id).indexOf('btn_turnpageto_') === 0) ||
+              (t.classList && t.classList.contains('urppp-page-confirm'))
+            ) {
+              setTimeout(scrollTableHost, 50);
+              setTimeout(scrollTableHost, 200);
+              setTimeout(scrollTableHost, 500);
+            }
+          }, true);
+        }
 
         // 统计文字区
         bar.querySelectorAll('[id^="totalPage_show_"], [id^="span_page_txt_"]').forEach((el) => {
@@ -7418,10 +7459,26 @@
       #urppagebar a.btn.urppp-page-confirm.urppp-page-confirm-show,
       #urppagebar input.urppp-page-confirm.urppp-page-confirm-show,
       .urppagebreak .btn.urppp-page-confirm.urppp-page-confirm-show,
-      body #urppagebar .urppp-page-confirm.urppp-page-confirm-show {
+      body #urppagebar .urppp-page-confirm.urppp-page-confirm-show,
+      html body #urppagebar [id^="btn_turnpageto_"].urppp-page-confirm-show,
+      html body #urppagebar .btn[id^="btn_turnpageto_"].urppp-page-confirm-show {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        position: static !important;
+        float: none !important;
+        height: 32px !important;
+        min-width: 52px !important;
+        margin: 0 4px !important;
+        padding: 0 12px !important;
+      }
+      /* 未 show 时：若站点 inline 是 none，保持隐藏；不要全局 none!important */
+      html body #urppagebar [id^="btn_turnpageto_"]:not(.urppp-page-confirm-show)[style*="display: none"],
+      html body #urppagebar [id^="btn_turnpageto_"]:not(.urppp-page-confirm-show)[style*="display:none"] {
+        display: none !important;
       }
       .btn:not(.btn-app) > .ace-icon,
       .btn:not(.btn-app) > .fa,
@@ -7818,12 +7875,20 @@
       #urppagebar [id^="sample-table-2_paginate_"] {
         display: flex !important;
         align-items: center !important;
-        flex-wrap: wrap !important;
+        flex-wrap: nowrap !important;
         gap: 6px 8px !important;
         position: relative !important;
         width: 100% !important;
         line-height: 1.5 !important;
-        row-gap: 8px !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+      }
+      @media (max-width: 1100px) {
+        #urppagebar .dataTables_paginate,
+        #urppagebar [id^="sample-table-2_paginate_"] {
+          flex-wrap: wrap !important;
+          overflow-x: visible !important;
+        }
       }
       /* 首屏尽量单行：页码与跳转区紧凑 */
       #urppagebar ul.pagination {
@@ -11029,7 +11094,7 @@ fo-striped.setLabelWidth,
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.9');
+    console.log('[URP++] style applied v0.6.10');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12074,7 +12139,7 @@ fo-striped.setLabelWidth,
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.9',
+    version: '0.6.10',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
