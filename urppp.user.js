@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.2
+// @version      0.6.3
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -682,7 +682,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.2';
+          content:'URP++ v0.6.3';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -9832,17 +9832,11 @@
         border-color: var(--border) !important;
         color: var(--text) !important;
       }
-      /* 给首页日程一个合理最小高度，避免首屏容器高度为 0 时 FC 算成矮条 */
+      /* 仅给宿主最小高度提示，不锁内部 scroller，避免滚动异常 */
       #urppp-left #main-calendar,
-      #urppp-left .fc,
-      #urppp-dashboard #main-calendar,
-      #urppp-dashboard .fc {
-        min-height: 520px !important;
+      #urppp-dashboard #main-calendar {
+        min-height: 480px !important;
         width: 100% !important;
-      }
-      #urppp-left .urppp-card-body:has(.fc),
-      #urppp-left .urppp-card-body:has(#main-calendar) {
-        min-height: 520px !important;
       }
       .fc th,
       .fc td,
@@ -10835,9 +10829,9 @@ fo-striped.setLabelWidth,
       });
     }
 
-    setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); try { refreshHomeFullCalendar(); } catch (_) {} }, 600);
+    setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); try { refreshHomeFullCalendar({ force: false }); } catch (_) {} }, 600);
 
-    console.log('[URP++] style applied v0.6.2');
+    console.log('[URP++] style applied v0.6.3');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11588,41 +11582,44 @@ fo-striped.setLabelWidth,
       }, 50);
     }, true);
   }
-  // FullCalendar 迁入新容器后需多次 updateSize；DevTools 开合会触发 resize 才变正常
-  function refreshHomeFullCalendar() {
+  // FullCalendar 迁入新容器后需要 remount 重测；禁止滚动时反复 render/updateSize（会把滚动条弹回顶部）
+  function refreshHomeFullCalendar(opts) {
     try {
+      const force = !!(opts && opts.force);
       const $ = (typeof unsafeWindow !== 'undefined' && unsafeWindow.jQuery)
         ? unsafeWindow.jQuery
         : (window.jQuery || null);
       if (!$ || !$.fn || !$.fn.fullCalendar) return false;
-      const nodes = [];
-      const a = document.getElementById('main-calendar');
-      if (a) nodes.push(a);
-      document.querySelectorAll('#urppp-left .fc, #urppp-dashboard .fc, .page-content .fc').forEach((el) => {
-        if (nodes.indexOf(el) < 0) nodes.push(el);
-      });
-      if (!nodes.length) return false;
-      nodes.forEach((el) => {
-        try {
-          const $el = $(el);
-          // render 在元素被移动后重建尺寸；updateSize 更轻
-          if ($el.data('fullCalendar') || $el.hasClass('fc')) {
-            try { $el.fullCalendar('render'); } catch (_) {}
-            try { $el.fullCalendar('updateSize'); } catch (_) {}
-            try { $el.fullCalendar('rerenderEvents'); } catch (_) {}
-          }
-        } catch (_) {}
-      });
-      // 兜底：触发 resize，站点若监听 window 也会重算
-      try {
-        window.dispatchEvent(new Event('resize'));
-      } catch (_) {
-        try {
-          const ev = document.createEvent('UIEvents');
-          ev.initUIEvent('resize', true, false, window, 0);
-          window.dispatchEvent(ev);
-        } catch (__) {}
+
+      const host = document.getElementById('main-calendar')
+        || document.querySelector('#urppp-left .fc, #urppp-dashboard .fc');
+      if (!host) return false;
+      const $el = $(host);
+      if (!($el.data('fullCalendar') || $el.hasClass('fc'))) return false;
+
+      // 记录内部滚动位置，避免 updateSize 后弹回
+      const scrollers = Array.from(host.querySelectorAll('.fc-scroller, .fc-time-grid-container, .fc-day-grid-container'));
+      const saved = scrollers.map((s) => ({ el: s, top: s.scrollTop, left: s.scrollLeft }));
+
+      // 只在首测 / 强制时 render；日常只用 updateSize
+      if (force || !host.dataset.urpppFcSized) {
+        try { $el.fullCalendar('render'); } catch (_) {}
       }
+      try { $el.fullCalendar('updateSize'); } catch (_) {}
+
+      // 恢复滚动
+      requestAnimationFrame(() => {
+        saved.forEach((s) => {
+          try {
+            s.el.scrollTop = s.top;
+            s.el.scrollLeft = s.left;
+          } catch (_) {}
+        });
+      });
+
+      // 高度看起来正常后再标记，后续不再频繁 render
+      const h = host.getBoundingClientRect().height || 0;
+      if (h >= 360) host.dataset.urpppFcSized = '1';
       return true;
     } catch (err) {
       console.warn('[URP++] fullCalendar refresh failed', err);
@@ -11631,21 +11628,23 @@ fo-striped.setLabelWidth,
   }
 
   function scheduleHomeFullCalendarRefresh() {
-    if (window.__urpppFcRefreshBound) {
-      ;[0, 50, 150, 400, 900, 1600].forEach((ms) => setTimeout(refreshHomeFullCalendar, ms));
-      return;
+    // 仅首屏 remount 后少量补测；不要挂 resize 全量刷（滚动中误触发会弹回）
+    const once = (ms, force) => setTimeout(() => refreshHomeFullCalendar({ force: !!force }), ms);
+    if (!window.__urpppFcRefreshBound) {
+      window.__urpppFcRefreshBound = true;
+      // 首轮 force render，后续只 updateSize
+      once(0, true);
+      once(120, true);
+      once(350, false);
+      once(900, false);
+      window.addEventListener('load', () => {
+        once(50, false);
+        once(400, false);
+      });
+    } else {
+      once(0, false);
+      once(200, false);
     }
-    window.__urpppFcRefreshBound = true;
-    ;[0, 50, 150, 400, 900, 1600].forEach((ms) => setTimeout(refreshHomeFullCalendar, ms));
-    window.addEventListener('load', () => {
-      setTimeout(refreshHomeFullCalendar, 0);
-      setTimeout(refreshHomeFullCalendar, 300);
-    });
-    // 布局稳定后再算一次（侧栏/主题切换后）
-    window.addEventListener('resize', () => {
-      clearTimeout(window.__urpppFcResizeTimer);
-      window.__urpppFcResizeTimer = setTimeout(refreshHomeFullCalendar, 80);
-    });
   }
 
   function rebuildDashboard() {
@@ -11745,10 +11744,8 @@ fo-striped.setLabelWidth,
 
     if (studyWidget) studyWidget.style.display = 'none';
 
-    // FullCalendar 迁入 urppp-card 后容器高度才稳定，需多次 updateSize
+    // FullCalendar 迁入 urppp-card 后补测尺寸（内部会限频，避免滚动弹回）
     scheduleHomeFullCalendarRefresh();
-    setTimeout(refreshHomeFullCalendar, 200);
-    setTimeout(refreshHomeFullCalendar, 600);
 
     console.log('[URP++] 首页仪表板已重构');
   }
@@ -11885,7 +11882,7 @@ fo-striped.setLabelWidth,
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.2',
+    version: '0.6.3',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
