@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.18
+// @version      0.6.19
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -366,9 +366,19 @@
   const THEME_KEY = 'urppp_theme_v3';
   const ACCENT_KEY = 'urppp_accent_v1';
   const ACCENT_PRESETS_KEY = 'urppp_accent_presets_v1';
-  const SURFACE_KEY = 'urppp_surface_v1';
-  const DEFAULT_ACCENT_PRESETS = ['#1E3A5F', '#B53434', '#0F766E', '#7C3AED', '#C2410C', '#0369A1'];
-  const DEFAULT_SURFACE = '#FFFFFF';
+  const SCHEME_KEY = 'urppp_scheme_v1';
+  const DEFAULT_ACCENT_PRESETS = ['#1E3A5F', '#B53434', '#0F766E', '#7C3AED', '#C2410C', '#0369A1', '#BE185D', '#365314'];
+  const DEFAULT_SEED = '#B53434';
+  const DEFAULT_SCHEME = 'tonal';
+
+  // Material You 风格方案：同一 seed 派生多套角色色（非手调 surface）
+  const SCHEME_DEFS = [
+    { id: 'tonal', name: '色调点缀', desc: '默认 Material You，主色克制、表面轻染' },
+    { id: 'vibrant', name: '鲜艳', desc: '主色更饱和，背景与卡片更有色相' },
+    { id: 'expressive', name: '表现力', desc: '色相偏移，二次色更活泼' },
+    { id: 'neutral', name: '中性', desc: '表面近灰，品牌色只用于强调' },
+    { id: 'soft', name: '柔和', desc: '低对比粉彩表面，主色偏浅' }
+  ];
 
   function ensureBootLoader() {
     if (document.getElementById('urppp-boot-loader')) return;
@@ -438,7 +448,7 @@
       font: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
     },
     'scu-red': {
-      name: '川大红',
+      name: '动态配色',
       vars: {
         '--bg': '#FDF6F5', '--surface': '#FFFFFF',
         '--text': '#2C1810', '--text-secondary': '#A0807A', '--text-muted': '#C0A8A2',
@@ -450,12 +460,14 @@
         '--shadow': '0 2px 16px rgba(139,31,31,0.05), 0 0 0 1px rgba(139,31,31,0.03)',
         '--radius': '16px', '--radius-sm': '10px',
       },
-      font: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", serif',
+      font: '-apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif',
     },
   };
 
   // ============================================================
-  // 颜色工具
+  // 颜色工具 + Material You 风格动态配色
+  // 说明：完整 HCT 在浏览器内过重；这里用 HSL 近似 MD3 角色映射
+  // seed → primary/secondary/neutral tonal steps → scheme roles
   // ============================================================
 
   function hexToRgb(hex) {
@@ -475,6 +487,14 @@
     }).join('');
   }
 
+  function normalizeHexColor(v) {
+    let s = String(v || '').trim();
+    if (!s) return '';
+    if (s[0] !== '#') s = '#' + s;
+    if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toUpperCase();
+    return '';
+  }
+
   function darken(hex, p) {
     const { r, g, b } = hexToRgb(hex);
     const f = 1 - p;
@@ -491,41 +511,7 @@
     return `rgba(${r},${g},${b},${a})`;
   }
 
-  // 根据强调色生成浅色表面主题（背景/边框/输入底）
-  // surfaceHex：可选，用户自定义卡片表面色；缺省纯白
-  function buildAccentSurfaceTheme(hex, surfaceHex) {
-    const h = hex.startsWith('#') ? hex : ('#' + hex);
-    const surf = normalizeHexColor(surfaceHex) || DEFAULT_SURFACE;
-    // 输入底略向 surface 靠，避免卡片内控件突兀
-    const inputBg = mixHex(surf, lighten(h, 0.97), 0.55);
-    return {
-      '--bg': lighten(h, 0.94),
-      '--surface': surf,
-      '--text': darken(h, 0.72),
-      '--text-secondary': alpha(darken(h, 0.35), 0.72),
-      '--text-muted': alpha(darken(h, 0.2), 0.55),
-      '--border': lighten(h, 0.82),
-      '--border-focus': 'var(--urppp-accent, ' + h + ')',
-      '--input-bg': inputBg,
-      '--primary': 'var(--urppp-accent, ' + h + ')',
-      '--primary-hover': 'var(--urppp-accent-hover, ' + darken(h, 0.15) + ')',
-      '--ring': 'var(--urppp-accent-ring, ' + alpha(h, 0.14) + ')',
-      '--shadow': '0 2px 16px ' + alpha(h, 0.06) + ', 0 0 0 1px ' + alpha(h, 0.04),
-      '--radius': '16px',
-      '--radius-sm': '10px',
-    };
-  }
-
-  function normalizeHexColor(v) {
-    let s = String(v || '').trim();
-    if (!s) return '';
-    if (s[0] !== '#') s = '#' + s;
-    if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toUpperCase();
-    return '';
-  }
-
   function mixHex(a, b, t) {
-    // t=0 全 a，t=1 全 b
     const pa = hexToRgb(normalizeHexColor(a) || '#FFFFFF');
     const pb = hexToRgb(normalizeHexColor(b) || '#FFFFFF');
     const k = Math.max(0, Math.min(1, Number(t) || 0));
@@ -536,15 +522,155 @@
     );
   }
 
-  function getSurface() {
-    return normalizeHexColor(GM_getValue(SURFACE_KEY, '')) || DEFAULT_SURFACE;
+  function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h = 0, s = 0;
+    const l = (max + min) / 2;
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        default: h = (r - g) / d + 4; break;
+      }
+      h /= 6;
+    }
+    return { h: h * 360, s, l };
   }
 
-  function setSurface(hex) {
-    const h = normalizeHexColor(hex);
-    if (!h) return '';
-    GM_setValue(SURFACE_KEY, h);
-    return h;
+  function hslToRgb(h, s, l) {
+    h = ((h % 360) + 360) % 360;
+    s = Math.max(0, Math.min(1, s));
+    l = Math.max(0, Math.min(1, l));
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = l - c / 2;
+    let r = 0, g = 0, b = 0;
+    if (h < 60) { r = c; g = x; }
+    else if (h < 120) { r = x; g = c; }
+    else if (h < 180) { g = c; b = x; }
+    else if (h < 240) { g = x; b = c; }
+    else if (h < 300) { r = x; b = c; }
+    else { r = c; b = x; }
+    return {
+      r: Math.round((r + m) * 255),
+      g: Math.round((g + m) * 255),
+      b: Math.round((b + m) * 255)
+    };
+  }
+
+  function hslHex(h, s, l) {
+    const { r, g, b } = hslToRgb(h, s, l);
+    return rgbToHex(r, g, b);
+  }
+
+  function seedHsl(hex) {
+    const { r, g, b } = hexToRgb(normalizeHexColor(hex) || DEFAULT_SEED);
+    const hsl = rgbToHsl(r, g, b);
+    // 过灰种子抬一点饱和，避免整套发死
+    if (hsl.s < 0.12) hsl.s = 0.18;
+    return hsl;
+  }
+
+  // MD3 风格 tone：0 黑 → 100 白。用 HSL.l 近似 tone/100
+  function tone(h, s, toneVal) {
+    const t = Math.max(0, Math.min(100, toneVal)) / 100;
+    // 中高 tone 略降饱和，贴近 HCT 观感
+    const sat = s * (t < 0.35 ? 0.95 : t < 0.7 ? 0.72 : 0.42);
+    return hslHex(h, sat, t);
+  }
+
+  function schemeProfile(id) {
+    // chroma 倍率、secondary 色相偏移、surface 染色强度
+    switch (id) {
+      case 'vibrant':
+        return { chroma: 1.25, secShift: 18, surfaceTint: 0.22, primaryTone: 38, nameBoost: 1 };
+      case 'expressive':
+        return { chroma: 1.1, secShift: 60, surfaceTint: 0.18, primaryTone: 40, nameBoost: 1 };
+      case 'neutral':
+        return { chroma: 0.55, secShift: 0, surfaceTint: 0.06, primaryTone: 36, nameBoost: 0.8 };
+      case 'soft':
+        return { chroma: 0.85, secShift: 12, surfaceTint: 0.28, primaryTone: 46, nameBoost: 0.9 };
+      case 'tonal':
+      default:
+        return { chroma: 1.0, secShift: 24, surfaceTint: 0.12, primaryTone: 40, nameBoost: 1 };
+    }
+  }
+
+  /**
+   * 从 seed 生成一套 light roles（Material You light scheme 近似）
+   * primary≈P40, onPrimary≈P100, primaryContainer≈P90
+   * bg≈N98, surface≈N99/N100, surface-ish cards slightly above bg
+   * text≈N10, muted≈N50, border≈NV80
+   */
+  function buildMaterialSchemeVars(seedHex, schemeId) {
+    const seed = normalizeHexColor(seedHex) || DEFAULT_SEED;
+    const { h, s } = seedHsl(seed);
+    const p = schemeProfile(schemeId || DEFAULT_SCHEME);
+    const cs = Math.min(0.92, s * p.chroma);
+    const hs = (h + p.secShift + 360) % 360;
+    const hn = h; // neutral 同色相低饱和
+
+    const primary = tone(h, cs, p.primaryTone);
+    const primaryHover = tone(h, cs, Math.max(22, p.primaryTone - 10));
+    const primaryContainer = tone(h, cs * 0.7, 90);
+    // surface: 接近白，带 seed 轻染（MY surface tint）
+    const bgBase = tone(hn, cs * 0.22 * p.surfaceTint * 4, 97);
+    const surfaceBase = tone(hn, cs * 0.16 * p.surfaceTint * 3, 99.2);
+    const bg = mixHex(bgBase, '#F5F7FA', 1 - p.surfaceTint);
+    const surface = mixHex(surfaceBase, '#FFFFFF', Math.max(0.35, 1 - p.surfaceTint * 1.4));
+    const inputBg = mixHex(surface, tone(hn, cs * 0.2, 96), 0.45);
+    const border = mixHex(tone(hn, cs * 0.25, 88), '#E5E7EB', 0.35);
+    const text = tone(hn, Math.min(0.35, cs * 0.45), 12);
+    const textSecondary = alpha(tone(hn, cs * 0.3, 35), 0.82);
+    const textMuted = alpha(tone(hn, cs * 0.25, 48), 0.72);
+    // secondary 仅用于阴影/环，主 token 仍走现有体系
+    const ring = alpha(primary, 0.16);
+    const shadow = '0 2px 16px ' + alpha(primary, 0.07) + ', 0 0 0 1px ' + alpha(primary, 0.04);
+
+    return {
+      '--bg': bg,
+      '--surface': surface,
+      '--text': text,
+      '--text-secondary': textSecondary,
+      '--text-muted': textMuted,
+      '--border': border,
+      '--border-focus': primary,
+      '--input-bg': inputBg,
+      '--primary': primary,
+      '--primary-hover': primaryHover,
+      '--ring': ring,
+      '--shadow': shadow,
+      '--radius': '16px',
+      '--radius-sm': '10px',
+      // 扩展 token，供后续组件用
+      '--primary-container': primaryContainer,
+      '--secondary': tone(hs, Math.min(0.85, cs * 0.85), 42),
+    };
+  }
+
+  function buildSchemePreview(seedHex, schemeId) {
+    const v = buildMaterialSchemeVars(seedHex, schemeId);
+    return {
+      id: schemeId,
+      primary: v['--primary'],
+      bg: v['--bg'],
+      surface: v['--surface'],
+      border: v['--border'],
+      text: v['--text']
+    };
+  }
+
+  function listSchemePreviews(seedHex) {
+    const seed = normalizeHexColor(seedHex) || getAccent() || DEFAULT_SEED;
+    return SCHEME_DEFS.map((d) => Object.assign({}, d, buildSchemePreview(seed, d.id)));
+  }
+
+  // 兼容旧调用名
+  function buildAccentSurfaceTheme(hex) {
+    return buildMaterialSchemeVars(hex, getScheme());
   }
 
   // ============================================================
@@ -552,24 +678,35 @@
   // ============================================================
 
   function clearInlinePrimaryOverrides() {
-    // 清掉内联主题变量，避免压过 :root 主题切换
     const root = document.documentElement;
     ;[
       '--primary', '--primary-hover', '--border-focus', '--ring',
       '--bg', '--surface', '--text', '--text-secondary', '--text-muted',
-      '--border', '--input-bg', '--shadow'
+      '--border', '--input-bg', '--shadow', '--primary-container', '--secondary'
     ].forEach((k) => root.style.removeProperty(k));
+  }
+
+  function getAccent() {
+    return normalizeHexColor(GM_getValue(ACCENT_KEY, '')) || '';
+  }
+
+  function getScheme() {
+    const s = String(GM_getValue(SCHEME_KEY, DEFAULT_SCHEME) || DEFAULT_SCHEME);
+    return SCHEME_DEFS.some((d) => d.id === s) ? s : DEFAULT_SCHEME;
+  }
+
+  function setScheme(id) {
+    const sid = SCHEME_DEFS.some((d) => d.id === id) ? id : DEFAULT_SCHEME;
+    GM_setValue(SCHEME_KEY, sid);
+    return sid;
   }
 
   function applyAccent(hex, opts) {
     if (!hex) return;
-    const clean = String(hex).trim();
-    const body = clean.replace(/^#/, '');
-    if (!/^[0-9a-fA-F]{6}$/.test(body)) return;
-    const h = '#' + body.toUpperCase();
+    const h = normalizeHexColor(hex);
+    if (!h) return;
     GM_setValue(ACCENT_KEY, h);
-    // 自定义色统一落到 scu-red 主题，由 applyTheme 重建整套背景/主色
-    // skipTheme 用于 applyTheme 内部避免递归
+    if (opts && opts.scheme) setScheme(opts.scheme);
     if (opts && opts.skipTheme) {
       const hover = darken(h, 0.15);
       const ring = alpha(h, 0.15);
@@ -577,13 +714,13 @@
       document.documentElement.style.setProperty('--urppp-accent-hover', hover);
       document.documentElement.style.setProperty('--urppp-accent-ring', ring);
       try { syncNavbarThemeUI(); } catch (_) {}
+      try { syncSettingsPanelUI(); } catch (_) {}
       return;
     }
     applyTheme('scu-red');
     try { syncNavbarThemeUI(); } catch (_) {}
+    try { syncSettingsPanelUI(); } catch (_) {}
   }
-
-  function getAccent() { return GM_getValue(ACCENT_KEY, ''); }
 
   function getAccentPresets() {
     try {
@@ -592,14 +729,15 @@
       const arr = JSON.parse(raw);
       if (!Array.isArray(arr)) return DEFAULT_ACCENT_PRESETS.slice();
       return arr.filter((x) => typeof x === 'string' && /^#?[0-9a-fA-F]{6}$/i.test(x.replace('#','')) )
-        .map((x) => x.startsWith('#') ? x : ('#' + x));
+        .map((x) => x.startsWith('#') ? x.toUpperCase() : ('#' + x.toUpperCase()));
     } catch (_) {
       return DEFAULT_ACCENT_PRESETS.slice();
     }
   }
 
   function saveAccentPreset(hex) {
-    const h = (hex || getAccent() || '#1E3A5F').startsWith('#') ? (hex || getAccent()) : ('#' + (hex || getAccent()));
+    const h = normalizeHexColor(hex || getAccent() || DEFAULT_SEED);
+    if (!h) return getAccentPresets();
     let list = getAccentPresets();
     list = [h].concat(list.filter((x) => x.toLowerCase() !== h.toLowerCase()));
     list = list.slice(0, 12);
@@ -617,7 +755,6 @@
   function applyTheme(name) {
     const t = THEMES[name] || THEMES['default'];
     GM_setValue(THEME_KEY, name);
-    // 先清内联覆盖，再写主题 :root
     clearInlinePrimaryOverrides();
     const el = document.getElementById('urppp-theme-vars') || (() => {
       const e = document.createElement('style'); e.id = 'urppp-theme-vars';
@@ -627,28 +764,30 @@
 
     const acc = getAccent();
     let vars = Object.assign({}, t.vars);
-    // 只有「自定义」(scu-red) 吃自定义色整套表面；简约白/深邃暗用主题原配色
+    // 只有动态配色 (scu-red) 吃 seed + scheme 算法
     if (name === 'scu-red') {
-      const color = acc || '#B53434';
-      const surface = getSurface();
-      vars = Object.assign(vars, buildAccentSurfaceTheme(color, surface));
-      const hover = darken(color, 0.15);
-      const ring = alpha(color, 0.15);
-      document.documentElement.style.setProperty('--urppp-accent', color);
+      const color = acc || DEFAULT_SEED;
+      const scheme = getScheme();
+      vars = Object.assign(vars, buildMaterialSchemeVars(color, scheme));
+      const primary = vars['--primary'] || color;
+      const hover = vars['--primary-hover'] || darken(primary, 0.12);
+      document.documentElement.style.setProperty('--urppp-accent', primary);
       document.documentElement.style.setProperty('--urppp-accent-hover', hover);
-      document.documentElement.style.setProperty('--urppp-accent-ring', ring);
-      document.documentElement.style.setProperty('--urppp-surface-user', surface);
+      document.documentElement.style.setProperty('--urppp-accent-ring', vars['--ring'] || alpha(primary, 0.15));
+      document.documentElement.style.setProperty('--urppp-seed', color);
+      document.documentElement.style.setProperty('--urppp-scheme', scheme);
     } else if (name === 'default') {
       document.documentElement.style.setProperty('--urppp-accent', '#1E3A5F');
       document.documentElement.style.setProperty('--urppp-accent-hover', '#162D4A');
       document.documentElement.style.setProperty('--urppp-accent-ring', 'rgba(30,58,95,0.15)');
-      document.documentElement.style.removeProperty('--urppp-surface-user');
+      document.documentElement.style.removeProperty('--urppp-seed');
+      document.documentElement.style.removeProperty('--urppp-scheme');
     } else {
-      // dark 等：清掉 accent 对主色的影响
       document.documentElement.style.removeProperty('--urppp-accent');
       document.documentElement.style.removeProperty('--urppp-accent-hover');
       document.documentElement.style.removeProperty('--urppp-accent-ring');
-      document.documentElement.style.removeProperty('--urppp-surface-user');
+      document.documentElement.style.removeProperty('--urppp-seed');
+      document.documentElement.style.removeProperty('--urppp-scheme');
     }
 
     let css = ':root {';
@@ -667,6 +806,7 @@
       }
     } catch (_) {}
     try { syncNavbarThemeUI(); } catch (_) {}
+    try { syncSettingsPanelUI(); } catch (_) {}
     try { scrubNoticeInlineBg(); } catch (_) {}
     try { scrubTableHeaderInlineBg(); } catch (_) {}
     const boot = document.getElementById('urppp-boot-loader');
@@ -724,7 +864,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.18';
+          content:'URP++ v0.6.19';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -4084,89 +4224,177 @@
         border-color: var(--primary) !important;
         box-shadow: 0 0 0 3px var(--ring) !important;
       }
-      #urppp-nav-theme .urppp-nav-edit {
-        width: 20px !important;
-        height: 20px !important;
-        border-radius: 0 !important;
+      #urppp-nav-theme .urppp-nav-settings {
+        width: 22px !important;
+        height: 22px !important;
+        border-radius: 8px !important;
         border: none !important;
         background: transparent !important;
-        background-color: transparent !important;
         color: var(--text-secondary) !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
         cursor: pointer !important;
-        font-size: 13px !important;
-        line-height: 1 !important;
         padding: 0 !important;
-        margin: 0 0 0 2px !important;
+        margin: 0 0 0 4px !important;
         box-shadow: none !important;
-        transition: color .15s ease, transform .15s ease !important;
+        transition: color .15s ease, background .15s ease, transform .15s ease !important;
         vertical-align: middle !important;
-        position: relative !important;
-        top: 0 !important;
       }
-      #urppp-nav-theme .urppp-nav-edit:hover {
-        border: none !important;
+      #urppp-nav-theme .urppp-nav-settings:hover {
         color: var(--primary) !important;
-        background: transparent !important;
-        background-color: transparent !important;
-        transform: scale(1.08) !important;
+        background: var(--ring) !important;
+        transform: scale(1.05) !important;
       }
-      #urppp-nav-theme .urppp-nav-edit:active,
-      #urppp-nav-theme .urppp-nav-edit:focus {
-        background: transparent !important;
-        box-shadow: none !important;
+      #urppp-nav-theme .urppp-nav-settings:focus {
         outline: none !important;
+        box-shadow: 0 0 0 3px var(--ring) !important;
       }
-      #urppp-nav-theme-pop {
-        position: absolute !important;
-        top: calc(100% + 10px) !important;
-        left: 0 !important;
-        min-width: 248px !important;
-        padding: 12px !important;
+      #urppp-nav-theme .urppp-nav-settings svg {
+        display: block !important;
+        width: 14px !important;
+        height: 14px !important;
+      }
+
+      /* 设置面板 */
+      #urppp-settings-mask {
+        position: fixed !important;
+        inset: 0 !important;
+        background: rgba(15, 23, 42, 0.28) !important;
+        z-index: 10050 !important;
+        display: none !important;
+        backdrop-filter: blur(2px) !important;
+      }
+      #urppp-settings-mask.open { display: block !important; }
+      #urppp-settings-panel {
+        position: fixed !important;
+        top: 56px !important;
+        right: 18px !important;
+        width: min(420px, calc(100vw - 24px)) !important;
+        max-height: calc(100vh - 80px) !important;
+        overflow: auto !important;
         background: var(--surface) !important;
+        color: var(--text) !important;
         border: 1px solid var(--border) !important;
-        border-radius: 12px !important;
-        box-shadow: 0 12px 32px rgba(15,23,42,0.14) !important;
-        z-index: 1200 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 18px 48px rgba(15,23,42,0.18) !important;
+        z-index: 10060 !important;
         display: none !important;
         box-sizing: border-box !important;
       }
-      #urppp-nav-theme-pop .urppp-pop-hint {
-        font-size: 11px !important;
-        line-height: 1.4 !important;
-        color: var(--text-muted) !important;
-        margin: -2px 0 10px !important;
-      }
-      #urppp-nav-theme-pop.open {
-        display: block !important;
-      }
-      #urppp-nav-theme-pop .urppp-pop-title {
-        font-size: 12px !important;
-        font-weight: 600 !important;
-        color: var(--text-secondary) !important;
-        margin: 0 0 8px !important;
-      }
-      #urppp-nav-theme-pop .urppp-pop-row {
+      #urppp-settings-panel.open { display: block !important; }
+      #urppp-settings-panel .urppp-set-head {
         display: flex !important;
         align-items: center !important;
-        gap: 8px !important;
-        margin: 0 0 10px !important;
+        justify-content: space-between !important;
+        padding: 14px 16px 10px !important;
+        border-bottom: 1px solid var(--border) !important;
+        position: sticky !important;
+        top: 0 !important;
+        background: var(--surface) !important;
+        z-index: 1 !important;
       }
-      #urppp-nav-theme-pop input[type="color"] {
-        width: 36px !important;
+      #urppp-settings-panel .urppp-set-title {
+        font-size: 15px !important;
+        font-weight: 700 !important;
+        color: var(--text) !important;
+      }
+      #urppp-settings-panel .urppp-set-close {
+        width: 28px !important;
         height: 28px !important;
+        border: none !important;
+        border-radius: 8px !important;
+        background: transparent !important;
+        color: var(--text-muted) !important;
+        font-size: 18px !important;
+        cursor: pointer !important;
+        line-height: 1 !important;
+      }
+      #urppp-settings-panel .urppp-set-close:hover {
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+      }
+      #urppp-settings-panel .urppp-set-body {
+        padding: 12px 16px 18px !important;
+      }
+      #urppp-settings-panel .urppp-set-sec {
+        margin: 0 0 18px !important;
+      }
+      #urppp-settings-panel .urppp-set-sec h3 {
+        margin: 0 0 8px !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.02em !important;
+        color: var(--text-secondary) !important;
+        text-transform: none !important;
+      }
+      #urppp-settings-panel .urppp-set-tip {
+        margin: 0 0 10px !important;
+        font-size: 12px !important;
+        line-height: 1.5 !important;
+        color: var(--text-muted) !important;
+      }
+      #urppp-settings-panel .urppp-set-modes {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 8px !important;
+      }
+      #urppp-settings-panel .urppp-set-mode {
+        height: 34px !important;
+        border-radius: 10px !important;
+        border: 1px solid var(--border) !important;
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+        font-size: 12px !important;
+        cursor: pointer !important;
+      }
+      #urppp-settings-panel .urppp-set-mode:hover {
+        border-color: var(--primary) !important;
+      }
+      html.urppp-theme-default #urppp-settings-panel .urppp-set-mode[data-theme="default"],
+      html.urppp-theme-dark #urppp-settings-panel .urppp-set-mode[data-theme="dark"],
+      html.urppp-theme-scu-red #urppp-settings-panel .urppp-set-mode[data-theme="scu-red"] {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        color: #fff !important;
+      }
+      #urppp-settings-panel .urppp-set-presets {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        margin: 0 0 12px !important;
+      }
+      #urppp-settings-panel .urppp-set-swatch {
+        width: 26px !important;
+        height: 26px !important;
+        border-radius: 50% !important;
+        border: 2px solid var(--border) !important;
+        cursor: pointer !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
+      }
+      #urppp-settings-panel .urppp-set-swatch.ac {
+        box-shadow: 0 0 0 3px var(--ring) !important;
+        border-color: var(--primary) !important;
+      }
+      #urppp-settings-panel .urppp-set-custom {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 8px !important;
+      }
+      #urppp-settings-panel #urppp-set-color {
+        width: 40px !important;
+        height: 32px !important;
         padding: 0 !important;
         border: 1px solid var(--border) !important;
         border-radius: 8px !important;
         background: var(--input-bg) !important;
         cursor: pointer !important;
       }
-      #urppp-nav-theme-pop input[type="text"] {
-        flex: 1 1 auto !important;
-        min-width: 0 !important;
-        height: 28px !important;
+      #urppp-settings-panel #urppp-set-hex {
+        width: 96px !important;
+        height: 32px !important;
         border: 1px solid var(--border) !important;
         border-radius: 8px !important;
         background: var(--input-bg) !important;
@@ -4175,61 +4403,83 @@
         font-size: 12px !important;
         box-sizing: border-box !important;
       }
-      #urppp-nav-theme-pop .urppp-pop-actions {
-        display: flex !important;
-        gap: 6px !important;
-        margin: 0 0 10px !important;
-      }
-      #urppp-nav-theme-pop .urppp-pop-btn {
-        height: 28px !important;
-        padding: 0 10px !important;
+      #urppp-settings-panel .urppp-set-btn {
+        height: 32px !important;
+        padding: 0 12px !important;
         border-radius: 8px !important;
-        border: 1px solid var(--border) !important;
-        background: var(--input-bg) !important;
-        color: var(--text) !important;
+        border: 1px solid var(--primary) !important;
+        background: var(--primary) !important;
+        color: #fff !important;
         font-size: 12px !important;
         cursor: pointer !important;
-        line-height: 28px !important;
       }
-      #urppp-nav-theme-pop .urppp-pop-btn.primary {
-        background: var(--primary) !important;
-        border-color: var(--primary) !important;
-        color: #fff !important;
+      #urppp-settings-panel .urppp-set-btn.ghost {
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
       }
-      #urppp-nav-theme-pop .urppp-pop-presets {
+      #urppp-settings-panel .urppp-set-schemes {
         display: flex !important;
-        flex-wrap: wrap !important;
-        gap: 6px !important;
+        flex-direction: column !important;
+        gap: 8px !important;
       }
-      #urppp-nav-theme-pop .urppp-pop-preset {
-        width: 22px !important;
-        height: 22px !important;
-        border-radius: 50% !important;
-        border: 2px solid var(--border) !important;
+      #urppp-settings-panel .urppp-set-scheme {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        width: 100% !important;
+        text-align: left !important;
+        padding: 10px !important;
+        border-radius: 12px !important;
+        border: 1px solid var(--border) !important;
+        background: var(--input-bg) !important;
         cursor: pointer !important;
         box-sizing: border-box !important;
-        position: relative !important;
       }
-      #urppp-nav-theme-pop .urppp-pop-preset:hover {
+      #urppp-settings-panel .urppp-set-scheme:hover {
         border-color: var(--primary) !important;
       }
-      #urppp-nav-theme-pop .urppp-pop-preset .x {
-        position: absolute !important;
-        top: -6px !important;
-        right: -6px !important;
-        width: 14px !important;
-        height: 14px !important;
-        border-radius: 50% !important;
+      #urppp-settings-panel .urppp-set-scheme.ac {
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 3px var(--ring) !important;
         background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
-        color: var(--text-muted) !important;
-        font-size: 10px !important;
-        line-height: 12px !important;
-        text-align: center !important;
-        display: none !important;
       }
-      #urppp-nav-theme-pop .urppp-pop-preset:hover .x {
+      #urppp-settings-panel .urppp-set-scheme-preview {
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        flex: 0 0 auto !important;
+      }
+      #urppp-settings-panel .urppp-set-scheme-preview span {
         display: block !important;
+        width: 22px !important;
+        height: 22px !important;
+        border-radius: 6px !important;
+        border: 1px solid rgba(0,0,0,0.06) !important;
+        box-sizing: border-box !important;
+      }
+      #urppp-settings-panel .urppp-set-scheme-preview span:nth-child(2) {
+        width: 28px !important;
+        height: 28px !important;
+        border-radius: 8px !important;
+      }
+      #urppp-settings-panel .urppp-set-scheme-meta {
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+      }
+      #urppp-settings-panel .urppp-set-scheme-meta strong {
+        display: block !important;
+        font-size: 13px !important;
+        color: var(--text) !important;
+        font-weight: 700 !important;
+        margin: 0 0 2px !important;
+      }
+      #urppp-settings-panel .urppp-set-scheme-meta em {
+        display: block !important;
+        font-style: normal !important;
+        font-size: 11px !important;
+        line-height: 1.4 !important;
+        color: var(--text-muted) !important;
       }
 
       /* 导航项 */
@@ -11287,7 +11537,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.18');
+    console.log('[URP++] style applied v0.6.19');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11337,61 +11587,203 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     wrap.querySelectorAll('.urppp-nav-dot[data-theme]').forEach((d) => {
       d.classList.toggle('ac', d.dataset.theme === ct);
     });
-    const customDot = wrap.querySelector('.urppp-nav-dot[data-theme="scu-red"], .urppp-nav-dot[data-role="accent"]');
-    const acc = getAccent() || '#B53434';
     const last = wrap.querySelector('.urppp-nav-dot[data-theme="scu-red"]');
     if (last) {
-      // 第三个主题点：有自定义强调色时显示自定义色，否则川大红
-      const themeAccent = (ct === 'scu-red' || ct === 'default') ? (getAccent() || (ct === 'scu-red' ? '#B53434' : '#1E3A5F')) : (ct === 'dark' ? '#93A8C7' : acc);
-      if (ct === 'scu-red') last.style.background = getAccent() || '#B53434';
-      else if (ct === 'default') {
-        // default 主题点保持浅灰底；第三个仍显示川大/自定义
-        last.style.background = getAccent() || '#B53434';
-      } else {
-        last.style.background = getAccent() || '#B53434';
+      const seed = getAccent() || DEFAULT_SEED;
+      try {
+        const prev = buildSchemePreview(seed, getScheme());
+        last.style.background = 'linear-gradient(135deg, ' + prev.primary + ' 0 55%, ' + prev.surface + ' 55% 100%)';
+      } catch (_) {
+        last.style.background = seed;
       }
     }
-    const colorInput = document.getElementById('urppp-nav-color');
-    const hexInput = document.getElementById('urppp-nav-hex');
-    if (colorInput) colorInput.value = (getAccent() || '#B53434');
-    if (hexInput) hexInput.value = (getAccent() || '#B53434');
-    const surf = getSurface();
-    const surfaceColor = document.getElementById('urppp-nav-surface-color');
-    const surfaceHex = document.getElementById('urppp-nav-surface-hex');
-    if (surfaceColor) surfaceColor.value = surf;
-    if (surfaceHex) surfaceHex.value = surf;
-    renderNavbarAccentPresets();
   }
 
-  function renderNavbarAccentPresets() {
-    const box = document.getElementById('urppp-nav-presets');
-    if (!box) return;
-    const list = getAccentPresets();
-    box.innerHTML = '';
-    list.forEach((hex) => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'urppp-pop-preset';
-      b.title = hex;
-      b.style.background = hex;
-      b.addEventListener('click', (e) => {
-        if (e.target && e.target.classList.contains('x')) return;
-        GM_setValue(ACCENT_KEY, hex);
-        applyTheme('scu-red');
-        syncNavbarThemeUI();
+  function syncSettingsPanelUI() {
+    const panel = document.getElementById('urppp-settings-panel');
+    if (!panel) return;
+    const seed = getAccent() || DEFAULT_SEED;
+    const scheme = getScheme();
+    const colorInput = panel.querySelector('#urppp-set-color');
+    const hexInput = panel.querySelector('#urppp-set-hex');
+    if (colorInput) colorInput.value = seed;
+    if (hexInput) hexInput.value = seed;
+
+    // 预设种子
+    const presets = panel.querySelector('#urppp-set-presets');
+    if (presets) {
+      presets.innerHTML = '';
+      getAccentPresets().forEach((hex) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'urppp-set-swatch' + (hex.toLowerCase() === seed.toLowerCase() ? ' ac' : '');
+        b.title = hex;
+        b.style.background = hex;
+        b.addEventListener('click', () => {
+          GM_setValue(ACCENT_KEY, hex);
+          applyTheme('scu-red');
+          syncSettingsPanelUI();
+        });
+        presets.appendChild(b);
       });
-      const x = document.createElement('span');
-      x.className = 'x';
-      x.textContent = '×';
-      x.title = '删除预设';
-      x.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        removeAccentPreset(hex);
-        renderNavbarAccentPresets();
+    }
+
+    // 方案卡
+    const schemes = panel.querySelector('#urppp-set-schemes');
+    if (schemes) {
+      schemes.innerHTML = '';
+      listSchemePreviews(seed).forEach((item) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'urppp-set-scheme' + (item.id === scheme ? ' ac' : '');
+        card.dataset.scheme = item.id;
+        card.innerHTML = [
+          '<div class="urppp-set-scheme-preview">',
+          '  <span style="background:' + item.bg + '"></span>',
+          '  <span style="background:' + item.surface + ';border-color:' + item.border + '"></span>',
+          '  <span style="background:' + item.primary + '"></span>',
+          '</div>',
+          '<div class="urppp-set-scheme-meta">',
+          '  <strong>' + item.name + '</strong>',
+          '  <em>' + item.desc + '</em>',
+          '</div>'
+        ].join('');
+        card.addEventListener('click', () => {
+          setScheme(item.id);
+          GM_setValue(ACCENT_KEY, seed);
+          applyTheme('scu-red');
+          syncSettingsPanelUI();
+        });
+        schemes.appendChild(card);
       });
-      b.appendChild(x);
-      box.appendChild(b);
+    }
+  }
+
+  function openSettingsPanel() {
+    ensureSettingsPanel();
+    const panel = document.getElementById('urppp-settings-panel');
+    const mask = document.getElementById('urppp-settings-mask');
+    if (!panel || !mask) return;
+    syncSettingsPanelUI();
+    mask.classList.add('open');
+    panel.classList.add('open');
+  }
+
+  function closeSettingsPanel() {
+    const panel = document.getElementById('urppp-settings-panel');
+    const mask = document.getElementById('urppp-settings-mask');
+    if (panel) panel.classList.remove('open');
+    if (mask) mask.classList.remove('open');
+  }
+
+  function ensureSettingsPanel() {
+    if (document.getElementById('urppp-settings-panel')) return;
+    const mask = document.createElement('div');
+    mask.id = 'urppp-settings-mask';
+    mask.addEventListener('click', closeSettingsPanel);
+    const panel = document.createElement('div');
+    panel.id = 'urppp-settings-panel';
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-label', 'URP++ 设置');
+    panel.innerHTML = [
+      '<div class="urppp-set-head">',
+      '  <div class="urppp-set-title">设置</div>',
+      '  <button type="button" class="urppp-set-close" id="urppp-set-close" aria-label="关闭">×</button>',
+      '</div>',
+      '<div class="urppp-set-body">',
+      '  <section class="urppp-set-sec">',
+      '    <h3>主题模式</h3>',
+      '    <div class="urppp-set-modes" id="urppp-set-modes">',
+      '      <button type="button" class="urppp-set-mode" data-theme="default">简约白</button>',
+      '      <button type="button" class="urppp-set-mode" data-theme="dark">深邃暗</button>',
+      '      <button type="button" class="urppp-set-mode" data-theme="scu-red">动态配色</button>',
+      '    </div>',
+      '  </section>',
+      '  <section class="urppp-set-sec" id="urppp-set-dynamic">',
+      '    <h3>种子色</h3>',
+      '    <p class="urppp-set-tip">选一个颜色，自动生成背景、卡片、强调色等多套方案（Material You 风格）</p>',
+      '    <div class="urppp-set-presets" id="urppp-set-presets"></div>',
+      '    <div class="urppp-set-custom">',
+      '      <input type="color" id="urppp-set-color" value="#B53434" />',
+      '      <input type="text" id="urppp-set-hex" maxlength="7" value="#B53434" spellcheck="false" />',
+      '      <button type="button" class="urppp-set-btn" id="urppp-set-gen">生成方案</button>',
+      '      <button type="button" class="urppp-set-btn ghost" id="urppp-set-save">存为预设</button>',
+      '    </div>',
+      '    <h3 style="margin-top:16px">配色方案</h3>',
+      '    <div class="urppp-set-schemes" id="urppp-set-schemes"></div>',
+      '  </section>',
+      '</div>'
+    ].join('');
+    document.documentElement.appendChild(mask);
+    document.documentElement.appendChild(panel);
+
+    panel.querySelector('#urppp-set-close').addEventListener('click', closeSettingsPanel);
+    panel.querySelectorAll('.urppp-set-mode').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        applyTheme(btn.dataset.theme);
+        syncSettingsPanelUI();
+      });
+    });
+    const colorInput = panel.querySelector('#urppp-set-color');
+    const hexInput = panel.querySelector('#urppp-set-hex');
+    colorInput.addEventListener('input', () => {
+      hexInput.value = colorInput.value.toUpperCase();
+    });
+    hexInput.addEventListener('change', () => {
+      const h = normalizeHexColor(hexInput.value);
+      if (h) {
+        hexInput.value = h;
+        colorInput.value = h;
+      }
+    });
+    panel.querySelector('#urppp-set-gen').addEventListener('click', () => {
+      const h = normalizeHexColor(hexInput.value) || colorInput.value;
+      if (!h) return;
+      GM_setValue(ACCENT_KEY, normalizeHexColor(h));
+      applyTheme('scu-red');
+      syncSettingsPanelUI();
+    });
+    panel.querySelector('#urppp-set-save').addEventListener('click', () => {
+      const h = normalizeHexColor(hexInput.value) || colorInput.value;
+      if (!h) return;
+      saveAccentPreset(h);
+      GM_setValue(ACCENT_KEY, normalizeHexColor(h));
+      applyTheme('scu-red');
+      syncSettingsPanelUI();
+    });
+    // 实时拖动种子色：只刷新方案预览，松手/生成再应用
+    colorInput.addEventListener('change', () => {
+      const h = normalizeHexColor(colorInput.value);
+      if (!h) return;
+      hexInput.value = h;
+      // 预览用临时 seed 渲染方案卡，不立刻写盘
+      const schemes = panel.querySelector('#urppp-set-schemes');
+      if (!schemes) return;
+      const curScheme = getScheme();
+      schemes.innerHTML = '';
+      listSchemePreviews(h).forEach((item) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'urppp-set-scheme' + (item.id === curScheme ? ' ac' : '');
+        card.innerHTML = [
+          '<div class="urppp-set-scheme-preview">',
+          '  <span style="background:' + item.bg + '"></span>',
+          '  <span style="background:' + item.surface + ';border-color:' + item.border + '"></span>',
+          '  <span style="background:' + item.primary + '"></span>',
+          '</div>',
+          '<div class="urppp-set-scheme-meta">',
+          '  <strong>' + item.name + '</strong>',
+          '  <em>' + item.desc + '</em>',
+          '</div>'
+        ].join('');
+        card.addEventListener('click', () => {
+          GM_setValue(ACCENT_KEY, h);
+          setScheme(item.id);
+          applyTheme('scu-red');
+          syncSettingsPanelUI();
+        });
+        schemes.appendChild(card);
+      });
     });
   }
 
@@ -11403,7 +11795,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         syncNavbarThemeUI();
         return;
       }
-      // 放在品牌标题右侧
       const brand =
         navbar.querySelector('.navbar-header .navbar-brand') ||
         navbar.querySelector('.navbar-brand') ||
@@ -11415,31 +11806,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       wrap.innerHTML = [
         '<button type="button" class="urppp-nav-dot" data-theme="default" title="简约白" style="background:#F1F5F9"></button>',
         '<button type="button" class="urppp-nav-dot" data-theme="dark" title="深邃暗" style="background:#0B0F17"></button>',
-        '<button type="button" class="urppp-nav-dot" data-theme="scu-red" title="自定义" style="background:#B53434"></button>',
-        '<button type="button" class="urppp-nav-edit" id="urppp-nav-theme-edit" title="编辑主题色">✎</button>',
-        '<div id="urppp-nav-theme-pop" role="dialog" aria-label="编辑主题色">',
-        '  <div class="urppp-pop-title">强调色</div>',
-        '  <div class="urppp-pop-row">',
-        '    <input type="color" id="urppp-nav-color" value="#B53434" />',
-        '    <input type="text" id="urppp-nav-hex" maxlength="7" value="#B53434" spellcheck="false" />',
-        '  </div>',
-        '  <div class="urppp-pop-title">卡片表面色</div>',
-        '  <div class="urppp-pop-row">',
-        '    <input type="color" id="urppp-nav-surface-color" value="#FFFFFF" />',
-        '    <input type="text" id="urppp-nav-surface-hex" maxlength="7" value="#FFFFFF" spellcheck="false" />',
-        '  </div>',
-        '  <div class="urppp-pop-hint">影响统计卡、通知、表单等白色内容卡</div>',
-        '  <div class="urppp-pop-actions">',
-        '    <button type="button" class="urppp-pop-btn primary" id="urppp-nav-apply">应用</button>',
-        '    <button type="button" class="urppp-pop-btn" id="urppp-nav-save-preset">保存预设</button>',
-        '    <button type="button" class="urppp-pop-btn" id="urppp-nav-reset-surface">重置卡片</button>',
-        '  </div>',
-        '  <div class="urppp-pop-title">已保存预设</div>',
-        '  <div class="urppp-pop-presets" id="urppp-nav-presets"></div>',
-        '</div>'
+        '<button type="button" class="urppp-nav-dot" data-theme="scu-red" title="动态配色" style="background:#B53434"></button>',
+        '<button type="button" class="urppp-nav-settings" id="urppp-nav-settings" title="设置" aria-label="设置">',
+        '  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">',
+        '    <circle cx="12" cy="12" r="3"></circle>',
+        '    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>',
+        '  </svg>',
+        '</button>'
       ].join('');
 
-      // 插到 brand 后面（同一 header 内），并垂直居中
       if (brand.parentElement) {
         brand.parentElement.style.setProperty('display', 'flex', 'important');
         brand.parentElement.style.setProperty('align-items', 'center', 'important');
@@ -11454,109 +11829,23 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
       wrap.querySelectorAll('.urppp-nav-dot[data-theme]').forEach((dot) => {
         dot.addEventListener('click', () => {
-          // 简约白/深邃暗：只切主题，不叠加自定义表面
-          // 自定义：切 scu-red 并应用已保存 accent（若无则川大红默认）
           applyTheme(dot.dataset.theme);
           syncNavbarThemeUI();
         });
       });
-
-      const pop = wrap.querySelector('#urppp-nav-theme-pop');
-      const editBtn = wrap.querySelector('#urppp-nav-theme-edit');
-      const colorInput = wrap.querySelector('#urppp-nav-color');
-      const hexInput = wrap.querySelector('#urppp-nav-hex');
-      const surfaceColor = wrap.querySelector('#urppp-nav-surface-color');
-      const surfaceHex = wrap.querySelector('#urppp-nav-surface-hex');
-      const applyBtn = wrap.querySelector('#urppp-nav-apply');
-      const saveBtn = wrap.querySelector('#urppp-nav-save-preset');
-      const resetSurfaceBtn = wrap.querySelector('#urppp-nav-reset-surface');
-
-      const openPop = () => {
-        const acc = getAccent() || '#B53434';
-        if (colorInput) colorInput.value = acc;
-        if (hexInput) hexInput.value = acc;
-        const surf = getSurface();
-        if (surfaceColor) surfaceColor.value = surf;
-        if (surfaceHex) surfaceHex.value = surf;
-        renderNavbarAccentPresets();
-        pop.classList.add('open');
-      };
-      const closePop = () => pop.classList.remove('open');
-
-      editBtn.addEventListener('click', (e) => {
+      wrap.querySelector('#urppp-nav-settings').addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (pop.classList.contains('open')) closePop();
-        else openPop();
-      });
-      pop.addEventListener('click', (e) => e.stopPropagation());
-      document.addEventListener('click', (e) => {
-        if (!wrap.contains(e.target)) closePop();
+        openSettingsPanel();
       });
 
-      const normalizeHex = (v) => normalizeHexColor(v);
-
-      colorInput.addEventListener('input', () => {
-        hexInput.value = colorInput.value.toUpperCase();
-      });
-      hexInput.addEventListener('change', () => {
-        const h = normalizeHex(hexInput.value);
-        if (h) {
-          hexInput.value = h;
-          colorInput.value = h;
-        }
-      });
-      if (surfaceColor) {
-        surfaceColor.addEventListener('input', () => {
-          if (surfaceHex) surfaceHex.value = surfaceColor.value.toUpperCase();
-        });
-      }
-      if (surfaceHex) {
-        surfaceHex.addEventListener('change', () => {
-          const h = normalizeHex(surfaceHex.value);
-          if (h) {
-            surfaceHex.value = h;
-            if (surfaceColor) surfaceColor.value = h;
-          }
-        });
-      }
-      applyBtn.addEventListener('click', () => {
-        const h = normalizeHex(hexInput.value) || colorInput.value;
-        if (!h) return;
-        const s = normalizeHex(surfaceHex && surfaceHex.value) || (surfaceColor && surfaceColor.value) || getSurface();
-        GM_setValue(ACCENT_KEY, h);
-        setSurface(s || DEFAULT_SURFACE);
-        applyTheme('scu-red'); // 自定义主题 + 整套表面
-        syncNavbarThemeUI();
-        closePop();
-      });
-      saveBtn.addEventListener('click', () => {
-        const h = normalizeHex(hexInput.value) || colorInput.value;
-        if (!h) return;
-        const s = normalizeHex(surfaceHex && surfaceHex.value) || (surfaceColor && surfaceColor.value) || getSurface();
-        GM_setValue(ACCENT_KEY, h);
-        setSurface(s || DEFAULT_SURFACE);
-        saveAccentPreset(h);
-        applyTheme('scu-red');
-        renderNavbarAccentPresets();
-        syncNavbarThemeUI();
-      });
-      if (resetSurfaceBtn) {
-        resetSurfaceBtn.addEventListener('click', () => {
-          setSurface(DEFAULT_SURFACE);
-          if (surfaceColor) surfaceColor.value = DEFAULT_SURFACE;
-          if (surfaceHex) surfaceHex.value = DEFAULT_SURFACE;
-          // 仅在自定义主题下即时刷新卡片色
-          if (getCurrent() === 'scu-red') applyTheme('scu-red');
-          else syncNavbarThemeUI();
-        });
-      }
-
+      ensureSettingsPanel();
       syncNavbarThemeUI();
     } catch (err) {
       console.warn('[URP++] navbar theme switch inject failed', err);
     }
   }
+
   function rebuildNavbar() {
     const navbar = document.getElementById('navbar');
     const aceNav = navbar?.querySelector('.ace-nav');
@@ -12372,7 +12661,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.18',
+    version: '0.6.19',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
