@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.13
+// @version      0.6.14
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -683,7 +683,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.13';
+          content:'URP++ v0.6.14';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3384,19 +3384,32 @@ function scrubNoticeInlineBg(root) {
 
   function isNoticePageContext() {
     try {
+      const path = String(location.pathname || '') + ' ' + String(location.href || '');
+      if (/courseSelectNotice|evaluationNotice|notice\/index|公告/i.test(path)) return true;
       const hint = (
         (document.title || '') + ' ' +
-        ((document.querySelector('h4.header, .breadcrumb, .page-header') || {}).textContent || '')
+        ((document.querySelector('h4.header, h3.header, .breadcrumb, .page-header, .urppp-nav-active, .active') || {}).textContent || '')
       );
-      return /评估公告|通知公告|公告|通知/.test(hint);
+      return /评估公告|通知公告|选课公告|公告|通知/.test(hint);
     } catch (_) {
       return false;
     }
   }
 
+  function isNoticeListTable(table) {
+    if (!table) return false;
+    const headText = ((table.querySelector('thead') && table.querySelector('thead').textContent) || '').replace(/\s+/g, '');
+    // 选课公告 / 评估公告常见表头：序号 + 标题 + 发布时间
+    if (/标题/.test(headText) && /发布时间|发布日期|日期|时间/.test(headText)) return true;
+    if (isNoticePageContext() && /标题|公告|通知/.test(headText) && !/教室|教学楼|课程号|成绩|学号|座位数/.test(headText)) return true;
+    return false;
+  }
+
   function isBusinessDataTable(table) {
     if (!table) return true;
     if (table.classList && table.classList.contains('urppp-notice-table')) return false;
+    // 公告列表（含「标题 + 发布时间」）优先，避免被「序号」误判成业务表
+    if (isNoticeListTable(table)) return false;
     const id = (table.id || '') + ' ' + ((table.getAttribute('class') || ''));
     if (/freeClassroom|courseTable|codeTable|jszhpjdf|score|grade|exam|drag|classroom/i.test(id)) return true;
     if (table.querySelector('#tbodyFreeClassroom, tbody[id*="FreeClassroom"], tbody[id*="Classroom"], tbody[id*="course"], tbody[id*="Code"]')) return true;
@@ -3404,7 +3417,9 @@ function scrubNoticeInlineBg(root) {
     const sample = table.querySelector('tbody tr, tr');
     if (sample && sample.querySelectorAll('td,th').length >= 5) return true;
     const headText = ((table.querySelector('thead') && table.querySelector('thead').textContent) || (table.querySelector('tr') && table.querySelector('tr').textContent) || '').replace(/\s+/g, '');
-    if (/校区|教学楼|教室|座位数|类型|课表|操作|序号|课程号|课程名|成绩|学号|姓名|教师|周次|节次/.test(headText)) return true;
+    // 「序号」单独不够；有标题+发布时间的是公告
+    if (/校区|教学楼|教室|座位数|类型|课表|操作|课程号|课程名|成绩|学号|姓名|教师|周次|节次/.test(headText)) return true;
+    if (/序号/.test(headText) && !/标题|公告|通知|发布时间/.test(headText)) return true;
     // 行内操作链接：排除公告页；“评估”单独不能当业务表信号（评估公告正文里常见）
     if (table.querySelector('a') && /课表|教室信息|查看/.test(table.textContent || '')) {
       if (!isNoticePageContext() && /座位数|教学楼|教室号|校区名/.test(table.textContent || '')) return true;
@@ -3433,10 +3448,14 @@ function scrubNoticeInlineBg(root) {
           // 已确认公告表，可增量处理未完成行
         }
 
-        // 跳过真正业务数据表（有 thead 多列表头）
+        // 跳过真正业务数据表（有 thead 多列表头）；公告「标题+发布时间」放行
         if (table.querySelector('thead th') && table.querySelectorAll('thead th').length >= 3) {
           const thText = (table.querySelector('thead')?.textContent || '');
-          if (/序号|课程|成绩|教室|校区|学号|姓名|教学楼|座位|操作|类型/.test(thText)) return;
+          if (isNoticeListTable(table) || (/标题/.test(thText) && /发布时间|发布日期|日期/.test(thText))) {
+            // keep
+          } else if (/序号|课程|成绩|教室|校区|学号|姓名|教学楼|座位|操作|类型/.test(thText) && !/标题|公告|通知/.test(thText)) {
+            return;
+          }
         }
         const rows = Array.from(table.querySelectorAll('tbody > tr, tr')).filter((tr) => tr.querySelector('td'));
         if (!rows.length) return;
@@ -3515,13 +3534,22 @@ function scrubNoticeInlineBg(root) {
             tds.forEach((td, i) => {
               const t = clean(td.textContent);
               const hasA = !!td.querySelector('a');
-              if (!bulletTd && (t === '•' || t === '·' || t === '●' || t === '○' || t === '▪' || (/^[•·●○▪◆★]$/.test(t)))) {
+              // 序号列 / 圆点列
+              if (!bulletTd && (
+                t === '•' || t === '·' || t === '●' || t === '○' || t === '▪' || (/^[•·●○▪◆★]$/.test(t)) ||
+                (i === 0 && /^\d{1,4}$/.test(t) && tds.length >= 2)
+              )) {
                 bulletTd = td;
                 return;
               }
-              if (!dateTd && (/\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}/.test(t) || /text-align\s*:\s*right/i.test(td.getAttribute('style') || '') || i === tds.length - 1 && t.length <= 20 && /\d{4}/.test(t))) {
-                // 最后一列短文本且像日期
-                if (/\d{4}/.test(t) && t.length <= 24) {
+              // 发布时间：2026-07-10 11:10:21
+              if (!dateTd && (
+                /\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}/.test(t) ||
+                /\d{4}-\d{1,2}-\d{1,2}\s+\d{1,2}:\d{2}/.test(t) ||
+                /text-align\s*:\s*right/i.test(td.getAttribute('style') || '') ||
+                (i === tds.length - 1 && t.length <= 28 && /\d{4}/.test(t))
+              )) {
+                if (/\d{4}/.test(t) && t.length <= 32) {
                   dateTd = td;
                   return;
                 }
@@ -11238,7 +11266,7 @@ fo-striped.setLabelWidth,
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.13');
+    console.log('[URP++] style applied v0.6.14');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12283,7 +12311,7 @@ fo-striped.setLabelWidth,
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.13',
+    version: '0.6.14',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
