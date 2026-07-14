@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.5
+// @version      0.6.6
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -682,7 +682,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.5';
+          content:'URP++ v0.6.6';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -6917,6 +6917,67 @@
         background: var(--input-bg) !important;
         background-color: var(--input-bg) !important;
       }
+      /*
+       * 成绩表站点标记：
+       *   td.green_background = 及格/通过
+       *   td.red_background / .pink 等 = 不及格（若有）
+       * 必须压过上面 tbody td 的 surface !important
+       */
+      html body .table > tbody > tr > td.green_background,
+      html body .table-bordered > tbody > tr > td.green_background,
+      html body .table-striped > tbody > tr > td.green_background,
+      html body .table-hover > tbody > tr > td.green_background,
+      html body .dataTable > tbody > tr > td.green_background,
+      html body td.green_background,
+      html body .green_background {
+        background: #d9f5d6 !important;
+        background-color: #d9f5d6 !important;
+        color: #166534 !important;
+      }
+      html body .table-hover > tbody > tr:hover > td.green_background,
+      html body .table-hover > tbody > tr.hover > td.green_background {
+        background: #c6efc0 !important;
+        background-color: #c6efc0 !important;
+        color: #14532d !important;
+      }
+      html body .table > tbody > tr > td.red_background,
+      html body .table-bordered > tbody > tr > td.red_background,
+      html body .dataTable > tbody > tr > td.red_background,
+      html body td.red_background,
+      html body .red_background {
+        background: #fde2e1 !important;
+        background-color: #fde2e1 !important;
+        color: #991b1b !important;
+      }
+      html body .table-hover > tbody > tr:hover > td.red_background,
+      html body .table-hover > tbody > tr.hover > td.red_background {
+        background: #fbcaca !important;
+        background-color: #fbcaca !important;
+        color: #7f1d1d !important;
+      }
+      /* 暗色模式：保留语义色但降低刺眼程度 */
+      html.urppp-theme-dark td.green_background,
+      html.urppp-theme-dark .green_background,
+      html.urppp-theme-dark .table > tbody > tr > td.green_background {
+        background: rgba(34, 197, 94, 0.22) !important;
+        background-color: rgba(34, 197, 94, 0.22) !important;
+        color: #86efac !important;
+      }
+      html.urppp-theme-dark .table-hover > tbody > tr:hover > td.green_background {
+        background: rgba(34, 197, 94, 0.30) !important;
+        background-color: rgba(34, 197, 94, 0.30) !important;
+      }
+      html.urppp-theme-dark td.red_background,
+      html.urppp-theme-dark .red_background,
+      html.urppp-theme-dark .table > tbody > tr > td.red_background {
+        background: rgba(239, 68, 68, 0.22) !important;
+        background-color: rgba(239, 68, 68, 0.22) !important;
+        color: #fca5a5 !important;
+      }
+      html.urppp-theme-dark .table-hover > tbody > tr:hover > td.red_background {
+        background: rgba(239, 68, 68, 0.30) !important;
+        background-color: rgba(239, 68, 68, 0.30) !important;
+      }
       /* 公告卡片：彻底切断 table-hover / ACE hover 白底 */
       table.urppp-notice-table,
       table.urppp-notice-table.table,
@@ -10848,7 +10909,7 @@ fo-striped.setLabelWidth,
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.5');
+    console.log('[URP++] style applied v0.6.6');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11893,7 +11954,7 @@ fo-striped.setLabelWidth,
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.5',
+    version: '0.6.6',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
