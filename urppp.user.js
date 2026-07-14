@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.15
+// @version      0.6.16
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -683,7 +683,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.15';
+          content:'URP++ v0.6.16';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3388,7 +3388,8 @@ function scrubNoticeInlineBg(root) {
       if (/courseSelectNotice|evaluationNotice|notice\/index|公告/i.test(path)) return true;
       const hint = (
         (document.title || '') + ' ' +
-        ((document.querySelector('h4.header, h3.header, .breadcrumb, .page-header, .urppp-nav-active, .active') || {}).textContent || '')
+        ((document.querySelector('h4.header, h3.header, .breadcrumb, .page-header, .urppp-nav-active, .active') || {}).textContent || '') + ' ' +
+        ((document.querySelector('h4, h3') || {}).textContent || '')
       );
       return /评估公告|通知公告|选课公告|公告|通知/.test(hint);
     } catch (_) {
@@ -3408,14 +3409,18 @@ function scrubNoticeInlineBg(root) {
       const row = table.querySelector('tbody tr, tr');
       if (row && row.querySelector('a') && /\d{4}[-/.年]\d{1,2}/.test(row.textContent || '')) return true;
     }
-    if (isNoticePageContext()) {
+    // 裸 body 选课公告：table[width] + ● + a + 日期，无 thead/class
+    {
       const rows = table.querySelectorAll('tbody tr, tr');
       let hit = 0;
       rows.forEach((tr) => {
         const tds = tr.querySelectorAll('td');
-        if (tds.length >= 2 && tds.length <= 4 && tr.querySelector('a') && /\d{4}[-/.年]\d{1,2}/.test(tr.textContent || '')) hit += 1;
+        if (tds.length < 2 || tds.length > 4) return;
+        const b = (tds[0].textContent || '').replace(/\s+/g, '');
+        const hasBullet = /^[•·●○▪◆★\-–]$/.test(b) || /^\d{1,4}$/.test(b);
+        if (hasBullet && tr.querySelector('a') && /\d{4}[-/.年]\d{1,2}/.test(tr.textContent || '')) hit += 1;
       });
-      if (hit >= 1) return true;
+      if (hit >= 1 && (isNoticePageContext() || hit === rows.length || /选课公告|评估公告/.test(document.title || ''))) return true;
     }
     return false;
   }
@@ -3455,10 +3460,29 @@ function scrubNoticeInlineBg(root) {
         }
       });
 
-      // 选课公告等页：table 常无 class=table，且挂在 #page-content-template 下
-      const tables = document.querySelectorAll(
-        '.page-content table, #page-content-template table, .main-content table, table[style*="dashed"], table.no-border-top, table.urppp-notice-table'
-      );
+      // 选课公告页常是裸 body：只有 h4 + div>table(width=97%, font-size:18px)，无 page-content/dashed
+      const tableSet = new Set();
+      const addTables = (list) => { list.forEach((tb) => { if (tb) tableSet.add(tb); }); };
+      addTables(document.querySelectorAll(
+        '.page-content table, #page-content-template table, .main-content table, .page-content-area table, table[style*="dashed"], table.no-border-top, table.urppp-notice-table, table.table'
+      ));
+      // 公告页兜底：扫全部 table（再靠 isBusinessDataTable / noticeLike 过滤）
+      if (isNoticePageContext() || /选课公告|评估公告|通知公告/.test(document.title || '') || /courseSelectNotice/i.test(location.pathname || '')) {
+        addTables(document.querySelectorAll('table'));
+      }
+      // 结构兜底：●/• + a + 日期 的三列表，即使不在公告 path 也收
+      document.querySelectorAll('table').forEach((tb) => {
+        const tr = tb.querySelector('tr');
+        if (!tr) return;
+        const tds = tr.querySelectorAll('td');
+        if (tds.length < 2 || tds.length > 4) return;
+        const txt0 = (tds[0].textContent || '').replace(/\s+/g, '');
+        if (!/^[•·●○▪◆★\-–]$/.test(txt0) && !/^\d{1,4}$/.test(txt0)) return;
+        if (!tr.querySelector('a')) return;
+        if (!/\d{4}[-/.年]\d{1,2}/.test(tr.textContent || '')) return;
+        tableSet.add(tb);
+      });
+      const tables = Array.from(tableSet);
       tables.forEach((table) => {
         if (!table) return;
         if (isBusinessDataTable(table)) return;
@@ -3488,8 +3512,9 @@ function scrubNoticeInlineBg(root) {
           const hasLink = !!tr.querySelector('a[href], a[onclick], a');
           const hasDate = /\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}/.test(text);
           const hasBullet = tds.some((td) => {
-            const t = (td.textContent || '').trim();
-            return t === '•' || t === '·' || t === '●' || t === '○' || t === '▪' || t === '-' || t === '–' || (t.length <= 2 && /[•·●○▪◆★\-]/.test(t));
+            const t = (td.textContent || '').replace(/\s+/g, '');
+            return t === '•' || t === '·' || t === '●' || t === '○' || t === '▪' || t === '-' || t === '–' ||
+              (t.length <= 2 && /[•·●○▪◆★\-]/.test(t));
           });
           if ((hasLink && hasDate) || (hasBullet && hasLink) || (hasBullet && hasDate)) {
             noticeLike += 1;
@@ -3553,9 +3578,11 @@ function scrubNoticeInlineBg(root) {
               const t = clean(td.textContent);
               const hasA = !!td.querySelector('a');
               // 序号列 / 圆点列
+              const tCompact = t.replace(/\s+/g, '');
               if (!bulletTd && (
-                t === '•' || t === '·' || t === '●' || t === '○' || t === '▪' || (/^[•·●○▪◆★]$/.test(t)) ||
-                (i === 0 && /^\d{1,4}$/.test(t) && tds.length >= 2)
+                tCompact === '•' || tCompact === '·' || tCompact === '●' || tCompact === '○' || tCompact === '▪' ||
+                (/^[•·●○▪◆★]$/.test(tCompact)) ||
+                (i === 0 && /^\d{1,4}$/.test(tCompact) && tds.length >= 2)
               )) {
                 bulletTd = td;
                 return;
@@ -11302,7 +11329,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.15');
+    console.log('[URP++] style applied v0.6.16');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12347,7 +12374,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.15',
+    version: '0.6.16',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
