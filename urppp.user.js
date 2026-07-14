@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.7
+// @version      0.6.8
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -682,7 +682,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.7';
+          content:'URP++ v0.6.8';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1618,8 +1618,9 @@
         // 跳转区：取消 absolute 叠层，确定默认隐藏、focus 显示（交给站点 + CSS）
         bar.querySelectorAll('[id^="btn_turnpageto_"]').forEach((btn) => {
           btn.classList.add('urppp-page-confirm');
+          if (btn.dataset.urpppPageConfirmDone === '1') return;
+          btn.dataset.urpppPageConfirmDone = '1';
           // 不要强制 display；站点 turnpagetoFocus/Blur 控制
-          // 但去掉 absolute，避免和文字重叠
           btn.style.setProperty('position', 'static', 'important');
           btn.style.setProperty('left', 'auto', 'important');
           btn.style.setProperty('top', 'auto', 'important');
@@ -1631,30 +1632,49 @@
           btn.style.setProperty('font-size', '13px', 'important');
           btn.style.setProperty('line-height', '1', 'important');
           btn.style.setProperty('vertical-align', 'middle', 'important');
+          btn.style.setProperty('pointer-events', 'auto', 'important');
         });
 
-        // 跳转输入框的 relative 包裹：改为 inline-flex，避免 42x26 裁切
+        // 跳转输入框：只初始化一次。focus 会显示「确定」触发 MutationObserver，
+        // 若每次都重写 style 会打断输入/失焦。
         bar.querySelectorAll('[id^="turnpageto_"]').forEach((inp) => {
+          if (inp.dataset.urpppPageGotoDone === '1') {
+            // 只确保可点可输入
+            inp.style.setProperty('pointer-events', 'auto', 'important');
+            inp.style.setProperty('user-select', 'text', 'important');
+            inp.removeAttribute('readonly');
+            inp.removeAttribute('disabled');
+            return;
+          }
+          inp.dataset.urpppPageGotoDone = '1';
           inp.classList.add('urppp-page-goto');
-          inp.style.setProperty('position', 'static', 'important');
+          inp.style.setProperty('position', 'relative', 'important');
+          inp.style.setProperty('z-index', '5', 'important');
           inp.style.setProperty('display', 'inline-block', 'important');
           inp.style.setProperty('height', '32px', 'important');
-          inp.style.setProperty('width', '48px', 'important');
+          inp.style.setProperty('width', '52px', 'important');
           inp.style.setProperty('margin', '0 4px', 'important');
           inp.style.setProperty('padding', '4px 8px', 'important');
           inp.style.setProperty('font-size', '14px', 'important');
           inp.style.setProperty('line-height', '1.2', 'important');
           inp.style.setProperty('box-sizing', 'border-box', 'important');
           inp.style.setProperty('vertical-align', 'middle', 'important');
+          inp.style.setProperty('pointer-events', 'auto', 'important');
+          inp.style.setProperty('user-select', 'text', 'important');
+          inp.style.setProperty('cursor', 'text', 'important');
+          inp.removeAttribute('readonly');
+          inp.removeAttribute('disabled');
           const wrapSpan = inp.parentElement;
           if (wrapSpan && wrapSpan.tagName === 'SPAN') {
-            wrapSpan.style.setProperty('position', 'static', 'important');
+            wrapSpan.style.setProperty('position', 'relative', 'important');
+            wrapSpan.style.setProperty('z-index', '5', 'important');
             wrapSpan.style.setProperty('display', 'inline-flex', 'important');
             wrapSpan.style.setProperty('align-items', 'center', 'important');
             wrapSpan.style.setProperty('width', 'auto', 'important');
             wrapSpan.style.setProperty('height', 'auto', 'important');
             wrapSpan.style.setProperty('min-height', '0', 'important');
             wrapSpan.style.setProperty('vertical-align', 'middle', 'important');
+            wrapSpan.style.setProperty('pointer-events', 'auto', 'important');
           }
         });
 
@@ -1686,8 +1706,11 @@
         if (host.__urpppPagebarObs) return;
         host.__urpppPagebarObs = true;
         const obs = new MutationObserver(() => {
+          // 输入框聚焦时不要重跑，避免打断打字
+          const ae = document.activeElement;
+          if (ae && ae.id && String(ae.id).indexOf('turnpageto_') === 0) return;
           clearTimeout(window.__urpppPagebarTimer);
-          window.__urpppPagebarTimer = setTimeout(() => beautifyPagebar(host.parentElement || document), 150);
+          window.__urpppPagebarTimer = setTimeout(() => beautifyPagebar(host.parentElement || document), 180);
         });
         obs.observe(host, { childList: true, subtree: true });
       });
@@ -7875,15 +7898,30 @@
       #urppagebar [id^="turnpageto_"],
       #urppagebar input.urppp-page-goto {
         display: inline-block !important;
-        position: static !important;
-        height: 36px !important;
-        width: 48px !important;
+        position: relative !important;
+        z-index: 6 !important;
+        height: 32px !important;
+        width: 52px !important;
         margin: 0 4px !important;
         padding: 4px 8px !important;
         font-size: 14px !important;
         line-height: 1.2 !important;
         box-sizing: border-box !important;
         vertical-align: middle !important;
+        pointer-events: auto !important;
+        user-select: text !important;
+        -webkit-user-select: text !important;
+        cursor: text !important;
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 8px !important;
+      }
+      #urppagebar [id^="turnpageto_"]:focus,
+      #urppagebar input.urppp-page-goto:focus {
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 3px var(--ring) !important;
+        outline: none !important;
       }
       #urppagebar [id^="btn_turnpageto_"],
       #urppagebar .urppp-page-confirm {
@@ -10933,7 +10971,7 @@ fo-striped.setLabelWidth,
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.7');
+    console.log('[URP++] style applied v0.6.8');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11978,7 +12016,7 @@ fo-striped.setLabelWidth,
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.7',
+    version: '0.6.8',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
