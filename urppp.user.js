@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.7.3
+// @version      0.7.4
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -11887,7 +11887,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.7.3');
+    console.log('[URP++] style applied v0.7.4');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12966,7 +12966,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // ============================================================
-  // 清爽模式 Clean Mode v0.7.3
+  // 清爽模式 Clean Mode v0.7.4
   // 桌面居中一页 1:1；手机底栏；数据按真实 URP DOM/路径解析
   // 绩点：川大现行百分制对照表；教室：classroomUseStatus 网格
   // ============================================================
@@ -13227,8 +13227,35 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // 课表真实数据在 JSON callback，index 页只是壳
+  function getCurrentWeekNumber() {
+    try {
+      const t = (document.body && document.body.innerText) || '';
+      const m = t.match(/第\s*(\d{1,2})\s*周/);
+      if (m) return parseInt(m[1], 10);
+    } catch (_) {}
+    return 0;
+  }
+
+  function weekBitActive(classWeek, weekNo) {
+    if (!weekNo || !classWeek) return false;
+    const s = String(classWeek);
+    // 常见 24 位：第 n 周对应 index n-1，'1' 表示有课
+    if (s.length >= weekNo) return s.charAt(weekNo - 1) === '1';
+    return false;
+  }
+
+  const COURSE_PALETTE = ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#06B6D4','#EC4899','#84CC16','#F97316','#6366F1'];
+
+  function courseColor(name) {
+    let h = 0;
+    const s = String(name || '');
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return COURSE_PALETTE[h % COURSE_PALETTE.length];
+  }
+
   function parseScheduleFromJson(data) {
     const courses = [];
+    const weekNo = getCurrentWeekNumber();
     const packs = (data && data.xkxx) || [];
     packs.forEach((pack) => {
       Object.keys(pack || {}).forEach((key) => {
@@ -13238,29 +13265,32 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         const teacher = c.attendClassTeacher || '';
         const list = c.timeAndPlaceList || [];
         list.forEach((tp) => {
-          // classDay: 1=周一 ... 7=周日
           const d = Number(tp.classDay) || 0;
-          const day = d === 7 ? 0 : d;
+          const day = d === 7 ? 0 : d; // 1=周一..7=周日
           const start = Number(tp.classSessions) || 1;
-          const cont = Math.max(1, Number(tp.continuingSession) || 1);
+          const span = Math.max(1, Number(tp.continuingSession) || 1);
           const place = [tp.campusName, tp.teachingBuildingName, tp.classroomName].filter(Boolean).join('');
           const week = tp.weekDescription || c.skzcs || '';
-          for (let s = start; s < start + cont && s <= 12; s++) {
-            courses.push({
-              name: String(name).trim(),
-              teacher: String(teacher).trim(),
-              place: String(place).trim(),
-              week: String(week).trim(),
-              day,
-              section: s
-            });
-          }
+          const thisWeek = weekBitActive(tp.classWeek, weekNo) || (weekNo && week.indexOf(String(weekNo)) >= 0);
+          courses.push({
+            name: String(name).trim(),
+            teacher: String(teacher).trim(),
+            place: String(place).trim(),
+            week: String(week).trim(),
+            classWeek: String(tp.classWeek || ''),
+            day,
+            section: start,
+            span,
+            thisWeek: !!thisWeek,
+            color: courseColor(name)
+          });
         });
       });
     });
+    // 合并同一 day/start/name/place 的重复
     const seen = new Set();
     return courses.filter((c) => {
-      const k = [c.day, c.section, c.name, c.place].join('|');
+      const k = [c.day, c.section, c.span, c.name, c.place, c.week].join('|');
       if (seen.has(k)) return false;
       seen.add(k);
       return true;
@@ -13427,8 +13457,31 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return groups;
   }
 
+  function pickMajorSchemeIndex(schemes, majorPlan) {
+    if (!schemes || !schemes.length) return 0;
+    const plan = String(majorPlan || '');
+    // 1) 标题含「培养方案」且不含微专业/辅修
+    let idx = schemes.findIndex((g) => /培养方案/.test(g.title || '') && !/微专业|辅修|双学位/.test(g.title || ''));
+    if (idx >= 0) return idx;
+    // 2) 与资料卡主修方案名匹配
+    if (plan) {
+      idx = schemes.findIndex((g) => (g.title || '').indexOf(plan.replace(/培养方案.*/, '培养方案')) >= 0 || plan.indexOf((g.title || '').slice(0, 4)) >= 0);
+      if (idx >= 0) return idx;
+      idx = schemes.findIndex((g) => (g.title || '').indexOf(plan.slice(0, 4)) >= 0);
+      if (idx >= 0) return idx;
+    }
+    // 3) 课程数最多的非微专业
+    let best = 0, bestN = -1;
+    schemes.forEach((g, i) => {
+      if (/微专业|辅修/.test(g.title || '')) return;
+      const n = (g.courses || []).length;
+      if (n > bestN) { bestN = n; best = i; }
+    });
+    return best;
+  }
+
   async function loadScores() {
-    const out = { passing: [], schemes: [], error: '' };
+    const out = { passing: [], schemes: [], error: '', majorIdx: 0 };
     try {
       const [passGroups, schemeGroups] = await Promise.all([
         loadScoreByIndex('/student/integratedQuery/scoreQuery/allPassingScores/index', 'allPassingScores/callback'),
@@ -13449,6 +13502,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       if (!out.schemes.length && allPass.length) {
         out.schemes = [{ title: '方案成绩', courses: allPass, summary: summarizeCoursesPreferOfficial(allPass) }];
       }
+      out.majorIdx = pickMajorSchemeIndex(out.schemes, state.profile && state.profile.majorPlan);
       if (!allPass.length && !out.schemes.length) out.error = '成绩 callback 无数据';
     } catch (e) {
       out.error = String(e && e.message || e);
@@ -13456,34 +13510,76 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return out;
   }
 
-  // ---- classroom: list buildings then occupancy grid ----
+  // ---- classroom: 页面内嵌 xqList/jxlList JSON，再拼路径 ----
   async function loadClassroomCatalog() {
     const html = await fetchText('/student/teachingResources/classroomUseStatus/index');
-    const doc = parseHtml(html);
-    const groups = [];
-    let campus = '校区';
-    // walk DOM for h4 campus + rows with 查看
-    doc.querySelectorAll('h4, tr, button[onclick], a[onclick]').forEach((el) => {
-      if (el.tagName === 'H4') {
-        const t = (el.textContent || '').trim();
-        if (t && t.length < 20) campus = t;
-        return;
+    // 真实结构：脚本里有 campusName/campusNumber 与 teachingBuildingName 数组
+    let xqList = [];
+    let jxlList = [];
+    try {
+      const xqM = html.match(/xqList\s*=\s*(\[\{[\s\S]*?\}\])\s*;/);
+      const jxlM = html.match(/jxlList\s*=\s*(\[\{[\s\S]*?\}\])\s*;/);
+      // 宽松：从首次 campusName 数组截取
+      if (!xqM) {
+        const m = html.match(/\[\{"campusName":"望江"[\s\S]*?\}\]/);
+        if (m) xqList = JSON.parse(m[0]);
+      } else xqList = JSON.parse(xqM[1]);
+      if (!jxlM) {
+        const m = html.match(/\[\{"id":\{"campusNumber":"01"[\s\S]*?\}\]\s*[,;]/);
+        if (m) {
+          const raw = m[0].replace(/[,;]\s*$/, '');
+          jxlList = JSON.parse(raw);
+        } else {
+          // 再试 teachingBuildingName 数组
+          const i = html.indexOf('"teachingBuildingName"');
+          const start = html.lastIndexOf('[', i);
+          if (start >= 0) {
+            let depth = 0, end = -1;
+            for (let k = start; k < html.length && k < start + 200000; k++) {
+              if (html[k] === '[') depth++;
+              else if (html[k] === ']') { depth--; if (depth === 0) { end = k + 1; break; } }
+            }
+            if (end > start) jxlList = JSON.parse(html.slice(start, end));
+          }
+        }
+      } else jxlList = JSON.parse(jxlM[1]);
+    } catch (e) {
+      console.warn('[URP++] classroom json parse', e);
+    }
+    // campus map
+    if (!xqList.length) {
+      xqList = [
+        { campusNumber: '01', campusName: '望江' },
+        { campusNumber: '02', campusName: '华西' },
+        { campusNumber: '03', campusName: '江安' }
+      ];
+    }
+    const groups = xqList.map((xq) => ({
+      campus: xq.campusName || xq.campusNumber,
+      campusNumber: String(xq.campusNumber || ''),
+      buildings: []
+    }));
+    jxlList.forEach((j) => {
+      const cn = String((j.id && j.id.campusNumber) || '');
+      const bn = String((j.id && j.id.teachingBuildingNumber) || '');
+      const name = j.teachingBuildingName || bn;
+      if (!cn || !bn || !name) return;
+      let g = groups.find((x) => x.campusNumber === cn);
+      if (!g) {
+        g = { campus: cn, campusNumber: cn, buildings: [] };
+        groups.push(g);
       }
-      const on = el.getAttribute('onclick') || '';
-      const m = on.match(/location\s*=\s*["']([^"']+)["']/) || on.match(/location\.href\s*=\s*["']([^"']+)["']/);
-      if (!m) return;
-      const path = m[1];
-      if (!/classroomUseStatus\//.test(path)) return;
-      const rowText = ((el.closest('tr') || el).textContent || '').replace(/\s+/g, ' ').trim();
-      const name = rowText.replace(/查看/g, '').replace(/^\d+\s*/, '').trim() || decodeURIComponent(path.split('/').pop() || '');
-      if (!name || /教学楼信息/.test(name)) return;
-      let g = groups.find((x) => x.campus === campus);
-      if (!g) { g = { campus, buildings: [] }; groups.push(g); }
-      if (!g.buildings.some((b) => b.path === path)) {
-        g.buildings.push({ name: name.slice(0, 40), path });
-      }
+      // 页面：encodeURI(encodeURI(Pargs))
+      // 站点：location="/student/teachingResources/classroomUseStatus/"+ encodeURI(encodeURI(Pargs))
+      // Pargs = campusNumber/buildingNumber/campusName/buildingName
+      // 数字段不编码，中文双重 encodeURI
+      const path = '/student/teachingResources/classroomUseStatus/' +
+        cn + '/' + bn + '/' +
+        encodeURI(encodeURI(g.campus || cn)) + '/' +
+        encodeURI(encodeURI(name));
+      g.buildings.push({ name, path, campusNumber: cn, buildingNumber: bn });
     });
-    return groups;
+    return groups.filter((g) => g.buildings.length);
   }
 
   function parseOccupancyDoc(doc) {
@@ -13569,7 +13665,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 #urppp-clean-root .uc-btn{height:32px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg,#f7f7f8);color:var(--text);font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 #urppp-clean-root .uc-btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
 #urppp-clean-root .uc-shell{flex:1;min-height:0;overflow:auto;padding:24px 32px 32px}
-#urppp-clean-root .uc-shell-inner{max-width:1280px;margin:0 auto;width:100%;min-height:calc(100% - 8px)}
+#urppp-clean-root .uc-shell-inner{max-width:1520px;margin:0 auto;width:100%;min-height:calc(100% - 8px)}
 #urppp-clean-root .uc-desktop{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr;gap:16px;min-height:640px}
 #urppp-clean-root .uc-col{display:flex;flex-direction:column;gap:16px;min-height:0}
 #urppp-clean-root .uc-card{background:var(--surface,#fff);border:1px solid var(--border,#e7e7ea);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
@@ -13583,13 +13679,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 #urppp-clean-root .uc-name{font-size:18px;font-weight:700;margin:0 0 4px}
 #urppp-clean-root .uc-sub{font-size:12px;color:var(--text-secondary,#667085);line-height:1.5}
 #urppp-clean-root .uc-gpa{margin-top:6px;display:inline-flex;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--primary) 12%,var(--input-bg));font-weight:700;font-size:13px}
-#urppp-clean-root .uc-week{display:grid;grid-template-columns:32px repeat(7,minmax(0,1fr));gap:6px;min-width:620px}
+#urppp-clean-root .uc-week{display:grid;grid-template-columns:32px repeat(7,minmax(0,1fr));gap:6px;min-width:680px}
 #urppp-clean-root .uc-week .h{font-size:11px;text-align:center;color:var(--text-secondary)}
 #urppp-clean-root .uc-week .s{font-size:10px;color:var(--text-muted,#98a2b3);display:flex;align-items:center;justify-content:center}
-#urppp-clean-root .uc-cell{min-height:48px;border-radius:10px;background:var(--input-bg);padding:3px}
-#urppp-clean-root .uc-lesson{background:color-mix(in srgb,var(--primary) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:8px;padding:4px 5px;margin-bottom:3px}
+#urppp-clean-root .uc-cell{min-height:48px;border-radius:10px;background:var(--input-bg);padding:3px;position:relative}
+#urppp-clean-root .uc-lesson{position:relative;background:color-mix(in srgb,var(--primary) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:8px;padding:5px 6px;margin-bottom:3px;cursor:pointer;overflow:hidden}
+#urppp-clean-root .uc-lesson.is-fade{filter:saturate(.35)}
 #urppp-clean-root .uc-lesson b{display:block;font-size:11px;line-height:1.25}
 #urppp-clean-root .uc-lesson i{display:block;font-style:normal;font-size:10px;color:var(--text-secondary);margin-top:2px}
+#urppp-clean-root .uc-badge{position:absolute;top:3px;right:3px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--primary);color:#fff;font-size:10px;line-height:16px;text-align:center;font-weight:700}
 #urppp-clean-root .uc-score-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 #urppp-clean-root .uc-score-pane{border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;background:var(--input-bg)}
 #urppp-clean-root .uc-score-pane:hover{border-color:var(--primary)}
@@ -13614,9 +13712,22 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 #urppp-clean-root .uc-modal-hd{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:700}
 #urppp-clean-root .uc-modal-bd{padding:12px 14px;overflow:auto;flex:1}
 #urppp-clean-root .uc-modal-ft{padding:10px 14px;border-top:1px solid var(--border);background:var(--input-bg);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}
-#urppp-clean-root table.uc-table{width:100%;border-collapse:collapse;font-size:12px}
-#urppp-clean-root table.uc-table th,#urppp-clean-root table.uc-table td{padding:8px 6px;border-bottom:1px solid var(--border);text-align:left}
-#urppp-clean-root table.uc-table th{position:sticky;top:0;background:var(--surface);color:var(--text-secondary)}
+#urppp-clean-root table.uc-table{width:100%;border-collapse:collapse;font-size:12px;background:transparent}
+#urppp-clean-root table.uc-table th,#urppp-clean-root table.uc-table td{padding:8px 6px;border-bottom:1px solid var(--border);text-align:left;background:transparent;color:var(--text)}
+#urppp-clean-root table.uc-table th{position:sticky;top:0;background:var(--surface)!important;color:var(--text-secondary)}
+#urppp-clean-root table.uc-table tbody tr{cursor:pointer;user-select:none}
+#urppp-clean-root table.uc-table tbody tr:hover td{background:var(--input-bg)!important}
+#urppp-clean-root table.uc-table tbody tr.is-on td{background:color-mix(in srgb,var(--primary) 16%,var(--surface))!important}
+#urppp-clean-root table.uc-table tbody tr.is-on{box-shadow:inset 3px 0 0 var(--primary)}
+#urppp-clean-root .uc-select-box{position:fixed;border:1px solid var(--primary);background:color-mix(in srgb,var(--primary) 18%,transparent);pointer-events:none;z-index:12050;display:none}
+html.urppp-theme-dark #urppp-clean-root table.uc-table th,
+html.urppp-theme-dark #urppp-clean-root table.uc-table td,
+body.urppp-dark #urppp-clean-root table.uc-table th,
+body.urppp-dark #urppp-clean-root table.uc-table td{background:var(--surface)!important;color:var(--text)!important;border-color:var(--border)!important}
+html.urppp-theme-dark #urppp-clean-root table.uc-table tbody tr:hover td,
+body.urppp-dark #urppp-clean-root table.uc-table tbody tr:hover td{background:var(--input-bg)!important}
+html.urppp-theme-dark #urppp-clean-root table.uc-table tbody tr.is-on td,
+body.urppp-dark #urppp-clean-root table.uc-table tbody tr.is-on td{background:color-mix(in srgb,var(--primary) 22%,var(--surface))!important}
 #urppp-clean-root .uc-build-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
 #urppp-clean-root .uc-build-grid button{border:1px solid var(--border);background:var(--input-bg);border-radius:12px;padding:10px;cursor:pointer;color:var(--text);font-size:12px;text-align:left}
 #urppp-clean-root .uc-build-grid button:hover{border-color:var(--primary)}
@@ -13703,21 +13814,50 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   }
 
   function renderScheduleBoard(courses) {
-    const by = {};
-    (courses || []).forEach((c) => {
-      const k = c.day + '_' + c.section;
-      (by[k] || (by[k] = [])).push(c);
+    // 跨节：同一 day 上按 section 起点画 span 行；同格多课：本周优先外显，其余折叠角标
+    const weekNo = getCurrentWeekNumber();
+    const list = (courses || []).map((c) => Object.assign({}, c, {
+      thisWeek: c.thisWeek || weekBitActive(c.classWeek, weekNo),
+      span: Math.max(1, c.span || 1),
+      color: c.color || courseColor(c.name)
+    }));
+    // occupied cells covered by multi-span starters
+    const covered = new Set();
+    list.forEach((c) => {
+      for (let s = c.section + 1; s < c.section + c.span && s <= 12; s++) covered.add(c.day + '_' + s + '_' + c.name + '_' + c.place);
     });
-    let html = '<div class="uc-week"><div class="h"></div>';
+    const byCell = {};
+    list.forEach((c) => {
+      // only render at start section
+      const k = c.day + '_' + c.section;
+      (byCell[k] || (byCell[k] = [])).push(c);
+    });
+    let html = `<div class="uc-week" data-week="${weekNo}"><div class="h"></div>`;
     for (let d = 0; d < 7; d++) html += `<div class="h">${DAY_NAMES[d]}</div>`;
     for (let s = 1; s <= 12; s++) {
       html += `<div class="s">${s}</div>`;
       for (let d = 0; d < 7; d++) {
-        const list = by[d + '_' + s] || [];
-        html += '<div class="uc-cell">';
-        list.forEach((c) => {
-          html += `<div class="uc-lesson"><b>${escapeHtml(c.name)}</b><i>${escapeHtml(c.place || c.week || '')}</i></div>`;
-        });
+        const cellCourses = (byCell[d + '_' + s] || []).slice().sort((a, b) => (b.thisWeek ? 1 : 0) - (a.thisWeek ? 1 : 0));
+        // filter ones that are continuation-only duplicates already represented as span
+        const starters = cellCourses;
+        const primary = starters.find((c) => c.thisWeek) || starters[0];
+        const rest = starters.filter((c) => c !== primary);
+        const span = primary ? primary.span : 1;
+        html += `<div class="uc-cell" data-day="${d}" data-sec="${s}">`;
+        if (primary) {
+          const fade = primary.thisWeek ? '' : ' is-fade';
+          const bg = primary.thisWeek ? primary.color : 'transparent';
+          const style = primary.thisWeek
+            ? `background:${primary.color}22;border-color:${primary.color}66;color:var(--text)`
+            : `background:color-mix(in srgb,${primary.color} 8%,var(--input-bg));border-color:var(--border);opacity:.55`;
+          const badge = rest.length ? `<span class="uc-badge">+${rest.length}</span>` : '';
+          const spanAttr = span > 1 ? ` data-span="${span}"` : '';
+          html += `<div class="uc-lesson${fade}" style="${style};${span > 1 ? 'min-height:' + (span * 48 - 8) + 'px' : ''}"${spanAttr} data-course='${escapeHtml(JSON.stringify({ name: primary.name, teacher: primary.teacher, place: primary.place, week: primary.week, day: primary.day, section: primary.section, span: primary.span, thisWeek: primary.thisWeek, others: rest.map((r) => ({ name: r.name, teacher: r.teacher, place: r.place, week: r.week, thisWeek: r.thisWeek })) }))}'>
+            <b>${escapeHtml(primary.name)}</b>
+            <i>${escapeHtml([primary.place, primary.week].filter(Boolean).join(' · '))}</i>
+            ${badge}
+          </div>`;
+        }
         html += '</div>';
       }
     }
@@ -13745,6 +13885,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     const courses = (state.schedule && state.schedule.courses) || [];
     const pass = (state.scores && state.scores.passing && state.scores.passing[0]) || { summary: summarizeCourses([]) };
     const schemes = (state.scores && state.scores.schemes) || [];
+    if (state.scores && state.scores.majorIdx != null && state._schemeInited !== true) {
+      state.activeSchemeIdx = state.scores.majorIdx || 0;
+      state._schemeInited = true;
+    }
     const scheme = schemes[state.activeSchemeIdx] || schemes[0] || { summary: summarizeCourses([]), title: '方案成绩' };
     const av = p.avatar ? `<img src="${escapeHtml(p.avatar)}" alt="">` : `<span>${escapeHtml((p.name || '同')[0])}</span>`;
     const scoreBody = state.loading.scores
@@ -13768,7 +13912,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           </div>
         </div></div></div>
         <div class="uc-card grow">
-          <div class="uc-hd"><span>本周课表</span><span class="uc-sub">${courses.length ? courses.length + ' 个课次' : (state.schedule && state.schedule.error) || ''}</span></div>
+          <div class="uc-hd"><span>课表</span><span class="uc-sub">${getCurrentWeekNumber() ? ('第' + getCurrentWeekNumber() + '周 · ') : ''}${courses.length ? courses.length + ' 个课次' : (state.schedule && state.schedule.error) || ''}</span></div>
           <div class="uc-bd">${state.loading.schedule ? '<div class="uc-loading">课表加载中…</div>' : (courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${escapeHtml((state.schedule && state.schedule.error) || '暂无课表数据')}</div>`)}</div>
         </div>
       </div>
@@ -13888,6 +14032,26 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         bindUI(panel);
       } else render();
     };
+    // 课表：点击看详情
+    scope.querySelectorAll('.uc-lesson[data-course]').forEach((el) => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        try {
+          const data = JSON.parse(el.getAttribute('data-course') || '{}');
+          const others = (data.others || []).map((o) =>
+            `<div class="uc-lesson ${o.thisWeek ? '' : 'is-fade'}" style="margin-top:8px"><b>${escapeHtml(o.name)}</b><i>${escapeHtml([o.place, o.week, o.teacher].filter(Boolean).join(' · '))}${o.thisWeek ? ' · 本周' : ' · 非本周'}</i></div>`
+          ).join('');
+          openModal('课程详情', `
+            <div class="uc-lesson" style="padding:12px;min-height:auto">
+              <b style="font-size:15px">${escapeHtml(data.name || '')}</b>
+              <i style="font-size:12px;margin-top:6px;display:block">${escapeHtml([data.place, data.teacher, data.week].filter(Boolean).join(' · '))}</i>
+              <div class="uc-note">${data.thisWeek ? '本周有课' : '本周无课（淡显）'} · 第${data.section || '?'}${data.span > 1 ? '-' + (data.section + data.span - 1) : ''}节 · ${DAY_NAMES[data.day] || ''}</div>
+            </div>
+            ${others ? '<div class="uc-hd" style="border:0;padding:12px 0 6px">同时段其他课程</div>' + others : ''}
+          `, '');
+        } catch (_) {}
+      });
+    });
   }
 
   function openModal(title, body, ft) {
@@ -13910,6 +14074,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   function openScoreModal(kind) {
     const pass = (state.scores && state.scores.passing && state.scores.passing[0]) || { courses: [], summary: summarizeCourses([]) };
     const schemes = (state.scores && state.scores.schemes) || [];
+    if (kind === 'scheme' && state.scores && state.scores.majorIdx != null && state._schemeInited !== true) {
+      state.activeSchemeIdx = state.scores.majorIdx || 0;
+      state._schemeInited = true;
+    }
     const scheme = schemes[state.activeSchemeIdx] || schemes[0] || { courses: [], summary: summarizeCourses([]), title: '方案成绩' };
     const pack = kind === 'scheme' ? scheme : pass;
     const key = kind === 'scheme' ? 'scheme' : 'passing';
@@ -13918,42 +14086,109 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">${schemes.map((s, i) =>
         `<button type="button" class="uc-btn ${i === state.activeSchemeIdx ? 'primary' : ''}" data-scheme-idx="${i}">${escapeHtml((s.title || '方案').slice(0, 28))}</button>`).join('')}</div>`
       : '';
-    const rows = (pack.courses || []).map((c, idx) => `<tr>
-      <td><input type="checkbox" data-idx="${idx}" ${state.selected[key].has(idx) ? 'checked' : ''}></td>
-      <td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.attr || '')}</td><td>${c.credit}</td>
-      <td>${escapeHtml(c.score)}</td><td>${scoreToGpa(c.score) == null ? '—' : scoreToGpa(c.score)}</td>
-    </tr>`).join('');
-    openModal(kind === 'scheme' ? '方案成绩' : '全部及格成绩', `
+    const rows = (pack.courses || []).map((c, idx) => {
+      const on = state.selected[key].has(idx);
+      const gp = (c.officialGpa != null) ? c.officialGpa : scoreToGpa(c.score);
+      return `<tr class="${on ? 'is-on' : ''}" data-idx="${idx}">
+        <td class="uc-selmark">${on ? '✓' : ''}</td>
+        <td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.attr || '')}</td><td>${c.credit}</td>
+        <td>${escapeHtml(c.score)}</td><td>${gp == null ? '—' : gp}</td>
+      </tr>`;
+    }).join('');
+    openModal(kind === 'scheme' ? ('方案成绩 · ' + (scheme.title || '')) : '全部及格成绩', `
       ${switcher}${metricHtml(pack.summary)}
-      <div class="uc-note">勾选课程后底部显示本地估算（学分/均分/绩点）。</div>
-      <div style="margin-top:10px;overflow:auto;max-height:46vh">
-        <table class="uc-table"><thead><tr><th></th><th>课程</th><th>属性</th><th>学分</th><th>成绩</th><th>绩点</th></tr></thead>
+      <div class="uc-note">点击行选择/取消；按住拖拽可框选。底部实时计算学分/均分/绩点。</div>
+      <div style="margin-top:10px;overflow:auto;max-height:46vh;position:relative" id="uc-score-wrap">
+        <table class="uc-table" id="uc-score-table"><thead><tr><th></th><th>课程</th><th>属性</th><th>学分</th><th>成绩</th><th>绩点</th></tr></thead>
         <tbody>${rows || '<tr><td colspan="6">暂无数据</td></tr>'}</tbody></table>
+        <div class="uc-select-box" id="uc-select-box"></div>
       </div>`, `<div id="uc-calc">已选 0 门</div><button type="button" class="uc-btn" id="uc-clear">清空</button>`);
     const body = document.querySelector('#uc-modal-body');
     const calc = document.getElementById('uc-calc');
-    const sync = () => {
-      const selected = [];
-      state.selected[key] = new Set();
-      body.querySelectorAll('input[type=checkbox][data-idx]').forEach((ck) => {
-        if (!ck.checked) return;
-        const i = parseInt(ck.getAttribute('data-idx'), 10);
-        state.selected[key].add(i);
-        if (pack.courses[i]) selected.push(pack.courses[i]);
+    const table = document.getElementById('uc-score-table');
+    const wrap = document.getElementById('uc-score-wrap');
+    const box = document.getElementById('uc-select-box');
+
+    const paint = () => {
+      table.querySelectorAll('tbody tr[data-idx]').forEach((tr) => {
+        const i = parseInt(tr.getAttribute('data-idx'), 10);
+        const on = state.selected[key].has(i);
+        tr.classList.toggle('is-on', on);
+        const mark = tr.querySelector('.uc-selmark');
+        if (mark) mark.textContent = on ? '✓' : '';
       });
-      const sum = summarizeCourses(selected);
+      const selected = [];
+      state.selected[key].forEach((i) => { if (pack.courses[i]) selected.push(pack.courses[i]); });
+      const sum = summarizeCoursesPreferOfficial(selected);
       if (calc) calc.innerHTML = selected.length
         ? `已选 <b>${selected.length}</b> 门 · 学分 <b>${sum.totalCredit}</b> · 均分 <b>${sum.avgScore}</b> · 绩点 <b>${sum.avgGpa}</b>`
         : '已选 0 门';
     };
-    body.querySelectorAll('input[type=checkbox]').forEach((ck) => ck.addEventListener('change', sync));
+
+    const toggleIdx = (i, force) => {
+      if (force === true) state.selected[key].add(i);
+      else if (force === false) state.selected[key].delete(i);
+      else if (state.selected[key].has(i)) state.selected[key].delete(i);
+      else state.selected[key].add(i);
+    };
+
+    // 点击行选择
+    table.querySelectorAll('tbody tr[data-idx]').forEach((tr) => {
+      tr.addEventListener('click', (e) => {
+        if (e.detail === 0) return;
+        const i = parseInt(tr.getAttribute('data-idx'), 10);
+        toggleIdx(i);
+        paint();
+      });
+    });
+
+    // 拖拽框选
+    let dragging = false, x0 = 0, y0 = 0, additive = false;
+    const rowsEls = () => Array.from(table.querySelectorAll('tbody tr[data-idx]'));
+    const onMove = (e) => {
+      if (!dragging || !box) return;
+      const x1 = e.clientX, y1 = e.clientY;
+      const left = Math.min(x0, x1), top = Math.min(y0, y1);
+      const w = Math.abs(x1 - x0), h = Math.abs(y1 - y0);
+      box.style.display = 'block';
+      box.style.left = left + 'px';
+      box.style.top = top + 'px';
+      box.style.width = w + 'px';
+      box.style.height = h + 'px';
+      const sel = { left, top, right: left + w, bottom: top + h };
+      rowsEls().forEach((tr) => {
+        const r = tr.getBoundingClientRect();
+        const hit = !(r.right < sel.left || r.left > sel.right || r.bottom < sel.top || r.top > sel.bottom);
+        const i = parseInt(tr.getAttribute('data-idx'), 10);
+        if (hit) toggleIdx(i, true);
+        else if (!additive) toggleIdx(i, false);
+      });
+      paint();
+    };
+    const onUp = () => {
+      dragging = false;
+      if (box) box.style.display = 'none';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    wrap.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      // 从空白/行上开始框选
+      dragging = true;
+      additive = e.ctrlKey || e.metaKey || e.shiftKey;
+      x0 = e.clientX; y0 = e.clientY;
+      if (!additive) state.selected[key] = new Set();
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
     body.querySelectorAll('[data-scheme-idx]').forEach((btn) => btn.addEventListener('click', () => {
       state.activeSchemeIdx = parseInt(btn.getAttribute('data-scheme-idx'), 10) || 0;
       openScoreModal('scheme');
     }));
     const clear = document.getElementById('uc-clear');
-    if (clear) clear.onclick = () => { body.querySelectorAll('input[type=checkbox]').forEach((ck) => { ck.checked = false; }); sync(); };
-    sync();
+    if (clear) clear.onclick = () => { state.selected[key] = new Set(); paint(); };
+    paint();
   }
 
   async function openRoomModal() {
@@ -14004,8 +14239,13 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         finally { state.loading.schedule = false; render(); }
       })(),
       (async () => {
-        try { if (!(state.scores && !force)) state.scores = await loadScores(); }
-        catch (e) { state.scores = { passing: [], schemes: [], error: String(e && e.message || e) }; }
+        try {
+          if (!(state.scores && !force)) {
+            state.scores = await loadScores();
+            state.activeSchemeIdx = (state.scores && state.scores.majorIdx) || 0;
+            state._schemeInited = true;
+          }
+        } catch (e) { state.scores = { passing: [], schemes: [], error: String(e && e.message || e) }; }
         finally { state.loading.scores = false; render(); }
       })()
     ]);
