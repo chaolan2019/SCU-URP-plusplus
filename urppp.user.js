@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.9
+// @version      0.6.10
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -682,7 +682,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.9';
+          content:'URP++ v0.6.10';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -7761,9 +7761,15 @@
         box-sizing: border-box !important;
       }
       /* 「共 x 条」等纯文本：正常行高，禁止被 36px chip 行高带歪 */
-      #urppagebar,
-      #urppagebar .dataTables_paginate {
+      #urppagebar.urppp-pagebar-jump,
+      #urppagebar.urppp-pagebar-jump .dataTables_paginate {
         white-space: normal !important;
+      }
+      #urppagebar.urppp-pagebar-scroll,
+      #urppagebar.urppp-pagebar-scroll .dataTables_paginate,
+      #urppagebar:has([id^="turnpageto_"][readonly]),
+      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) {
+        white-space: nowrap !important;
       }
       /* 默认不强制 flex，避免滚动态把「第/输入/页」拆成三行 */
       #urppagebar .dataTables_paginate,
@@ -7785,32 +7791,40 @@
        * 不设 text-align:right，避免每次重建从左闪到右。
        * 用 :has(readonly) 在 class 打上前也能立刻藏页码 ul。
        */
-      /* 滚动态 / 默认安全态：整条 inline 单行，绝不 flex */
+      /* 滚动态：固定单行 + 右对齐（常驻，避免重建时左右闪） */
       #urppagebar.urppp-pagebar-scroll .dataTables_paginate,
       #urppagebar.urppp-pagebar-scroll [id^="sample-table-2_paginate_"],
       #urppagebar:has([id^="turnpageto_"][readonly]) .dataTables_paginate,
       #urppagebar:has([id^="turnpageto_"][readonly]) [id^="sample-table-2_paginate_"],
       #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) .dataTables_paginate,
       #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="sample-table-2_paginate_"] {
-        display: block !important;
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+        gap: 0 4px !important;
+        width: 100% !important;
         white-space: nowrap !important;
         line-height: 1.5 !important;
-        text-align: left !important; /* 常驻，避免 right 切换造成左右闪 */
+        text-align: right !important;
       }
-      #urppagebar.urppp-pagebar-scroll .dataTables_paginate *,
-      #urppagebar.urppp-pagebar-scroll [id^="sample-table-2_paginate_"] *,
-      #urppagebar:has([id^="turnpageto_"][readonly]) .dataTables_paginate *,
-      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) .dataTables_paginate * {
-        float: none !important;
-        white-space: nowrap !important;
-        box-sizing: border-box !important;
-      }
+      /* 站点内层 inline-block 容器：改成横向 flex，禁止内部折成「第 / 输入 / 页」三行 */
       #urppagebar.urppp-pagebar-scroll .dataTables_paginate > div,
       #urppagebar.urppp-pagebar-scroll [id^="sample-table-2_paginate_"] > div,
       #urppagebar:has([id^="turnpageto_"][readonly]) .dataTables_paginate > div,
       #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) .dataTables_paginate > div {
-        display: inline !important;
+        display: inline-flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        float: none !important;
+        width: auto !important;
+        max-width: none !important;
+        white-space: nowrap !important;
         vertical-align: middle !important;
+        flex: 0 0 auto !important;
       }
       #urppagebar.urppp-pagebar-scroll [id^="currNum_"],
       #urppagebar.urppp-pagebar-scroll [id^="selectNum_"],
@@ -7835,14 +7849,33 @@
       #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="span_page_txt_"],
       #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="totalPage_show_"] {
         display: inline !important;
+        float: none !important;
+        white-space: nowrap !important;
+        vertical-align: middle !important;
+        flex: 0 0 auto !important;
+      }
+      #urppagebar.urppp-pagebar-scroll span:has(> [id^="turnpageto_"]),
+      #urppagebar:has([id^="turnpageto_"][readonly]) span:has(> [id^="turnpageto_"]),
+      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) span:has(> [id^="turnpageto_"]) {
+        display: inline-flex !important;
+        align-items: center !important;
+        position: static !important;
+        width: auto !important;
+        height: auto !important;
+        min-height: 0 !important;
+        float: none !important;
+        flex: 0 0 auto !important;
         vertical-align: middle !important;
       }
       #urppagebar.urppp-pagebar-scroll [id^="turnpageto_"],
       #urppagebar:has([id^="turnpageto_"][readonly]) [id^="turnpageto_"],
       #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="turnpageto_"] {
         display: inline-block !important;
+        float: none !important;
         vertical-align: middle !important;
         width: 40px !important;
+        min-width: 40px !important;
+        max-width: 40px !important;
         height: 26px !important;
         min-height: 26px !important;
         max-height: 26px !important;
@@ -7850,27 +7883,34 @@
         padding: 0 4px !important;
         line-height: 24px !important;
         font-size: 12px !important;
+        flex: 0 0 auto !important;
+        box-sizing: border-box !important;
       }
-      #urppagebar.urppp-pagebar-scroll span:has(> [id^="turnpageto_"]),
-      #urppagebar:has([id^="turnpageto_"][readonly]) span:has(> [id^="turnpageto_"]),
-      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) span:has(> [id^="turnpageto_"]) {
-        display: inline-block !important;
-        vertical-align: middle !important;
-        position: static !important;
-        width: auto !important;
-        height: auto !important;
-        min-height: 0 !important;
-      }
+      /* 每页条数：压过全局 select{max-width:100%}，禁止独占一行 */
       #urppagebar.urppp-pagebar-scroll select[id^="pagination_pageSize_"],
       #urppagebar:has([id^="turnpageto_"][readonly]) select[id^="pagination_pageSize_"],
-      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) select[id^="pagination_pageSize_"] {
+      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) select[id^="pagination_pageSize_"],
+      html body #urppagebar.urppp-pagebar-scroll select,
+      html body #urppagebar.urppp-pagebar-scroll select.form-control {
         display: inline-block !important;
+        float: none !important;
         vertical-align: middle !important;
+        width: auto !important;
+        min-width: 52px !important;
+        max-width: 72px !important;
         height: 26px !important;
         min-height: 26px !important;
-        width: auto !important;
+        max-height: 26px !important;
         margin: 0 2px !important;
+        padding: 0 4px !important;
+        flex: 0 0 auto !important;
+        box-sizing: border-box !important;
       }
+      #urppagebar.urppp-pagebar-scroll [id^="btn_turnpageto_"],
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="btn_turnpageto_"] {
+        display: none !important;
+      }
+
       /* 清掉旧 pagination 全局小按钮样式在页码条上的影响 */
       #urppagebar.urppp-pagebar-jump ul.pagination,
       #urppagebar.urppp-pagebar-jump ul.urppp-pagination {
@@ -8032,9 +8072,9 @@
         align-items: center !important;
         justify-content: center !important;
       }
-      /* 每页条数 */
-      #urppagebar select[id^="pagination_pageSize_"],
-      #urppagebar select {
+      /* 每页条数：真跳转分页可用稍大尺寸；滚动态保持紧凑行内 */
+      #urppagebar.urppp-pagebar-jump select[id^="pagination_pageSize_"],
+      #urppagebar.urppp-pagebar-jump select {
         height: 36px !important;
         min-height: 36px !important;
         width: auto !important;
@@ -8044,6 +8084,22 @@
         font-size: 13px !important;
         vertical-align: middle !important;
         border-radius: 8px !important;
+      }
+      html body #urppagebar.urppp-pagebar-scroll select[id^="pagination_pageSize_"],
+      html body #urppagebar.urppp-pagebar-scroll select {
+        display: inline-block !important;
+        height: 26px !important;
+        min-height: 26px !important;
+        max-height: 26px !important;
+        width: auto !important;
+        min-width: 52px !important;
+        max-width: 72px !important;
+        padding: 0 4px !important;
+        margin: 0 2px !important;
+        font-size: 12px !important;
+        vertical-align: middle !important;
+        border-radius: 6px !important;
+        flex: 0 0 auto !important;
       }
       #urppagebar [id^="totalPage_show_"],
       #urppagebar [id^="span_page_txt_"] {
@@ -11055,7 +11111,7 @@ fo-striped.setLabelWidth,
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.9');
+    console.log('[URP++] style applied v0.6.10');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12100,7 +12156,7 @@ fo-striped.setLabelWidth,
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.9',
+    version: '0.6.10',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
