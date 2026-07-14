@@ -7802,6 +7802,13 @@
       #urppagebar [id^="pagination_ul_"][style*="display:none"] {
         display: none !important;
       }
+      /* 滚动态：input readonly 时立刻藏上一页/下一页，避免注入瞬间闪一下 */
+      #urppagebar:has([id^="turnpageto_"][readonly]) ul.pagination,
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="pagination_ul_"],
+      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) ul.pagination,
+      #urppagebar:has(select[id^="pagination_pageSize_"] option:checked[value*="_"]) [id^="pagination_ul_"] {
+        display: none !important;
+      }
       /* 清掉旧 pagination 全局小按钮样式在页码条上的影响 */
       #urppagebar ul.pagination,
       #urppagebar ul.urppp-pagination {
