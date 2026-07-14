@@ -367,6 +367,7 @@
   const ACCENT_KEY = 'urppp_accent_v1';
   const ACCENT_PRESETS_KEY = 'urppp_accent_presets_v1';
   const SCHEME_KEY = 'urppp_scheme_v1';
+  const THEME_FOLLOW_KEY = 'urppp_theme_follow_system_v1';
   const DEFAULT_ACCENT_PRESETS = ['#1E3A5F', '#B53434', '#0F766E', '#7C3AED', '#C2410C', '#0369A1', '#BE185D', '#365314'];
   const DEFAULT_SEED = '#B53434';
   const DEFAULT_SCHEME = 'tonal'; // 默认就有可见卡片染色；要白卡选 paper
@@ -426,7 +427,7 @@
       name: '简约白',
       vars: {
         '--bg': '#F4F6F9', '--surface': '#FFFFFF',
-        '--text': '#0F172A', '--text-secondary': '#64748B', '--text-muted': '#94A3B8',
+        '--text': '#000000', '--text-secondary': '#334155', '--text-muted': '#64748B',
         '--border': '#E2E8F0', '--border-focus': '#1E3A5F',
         '--input-bg': '#F8FAFC', '--primary': '#1E3A5F', '--primary-hover': '#162D4A',
         '--ring': 'rgba(30,58,95,0.15)',
@@ -439,7 +440,7 @@
       name: '深邃暗',
       vars: {
         '--bg': '#0B0F17', '--surface': '#151A24',
-        '--text': '#E2E8F0', '--text-secondary': '#94A3B8', '--text-muted': '#64748B',
+        '--text': '#FFFFFF', '--text-secondary': '#CBD5E1', '--text-muted': '#94A3B8',
         '--border': '#1E293B', '--border-focus': '#93A8C7',
         '--input-bg': '#1C2330', '--primary': '#93A8C7', '--primary-hover': '#AFC0D8',
         '--ring': 'rgba(147,168,199,0.25)',
@@ -816,9 +817,45 @@
     return list;
   }
 
-  function applyTheme(name) {
-    const t = THEMES[name] || THEMES['default'];
-    GM_setValue(THEME_KEY, name);
+  function isThemeFollowSystem() {
+    try { return !!GM_getValue(THEME_FOLLOW_KEY, false); } catch (_) { return false; }
+  }
+
+  function setThemeFollowSystem(on) {
+    GM_setValue(THEME_FOLLOW_KEY, !!on);
+    return !!on;
+  }
+
+  function systemPrefersDark() {
+    try {
+      return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function resolveThemeName(name) {
+    // 跟随系统时：只在 简约白/深邃暗 间切换，不动动态配色
+    if (isThemeFollowSystem()) {
+      return systemPrefersDark() ? 'dark' : 'default';
+    }
+    return THEMES[name] ? name : 'default';
+  }
+
+  function applyTheme(name, opts) {
+    opts = opts || {};
+    // manual: 用户点击主题模式 → 关闭跟随并应用所选
+    // system: 跟随系统刷新 → 只在 default/dark 间解析
+    if (opts.manual) setThemeFollowSystem(false);
+    let finalName;
+    if (opts.system || (isThemeFollowSystem() && !opts.manual && name !== 'scu-red')) {
+      finalName = systemPrefersDark() ? 'dark' : 'default';
+    } else {
+      finalName = THEMES[name] ? name : (getCurrent() || 'default');
+      if (!THEMES[finalName]) finalName = 'default';
+    }
+    const t = THEMES[finalName] || THEMES['default'];
+    if (!opts.skipPersist) GM_setValue(THEME_KEY, finalName);
     clearInlinePrimaryOverrides();
     const el = document.getElementById('urppp-theme-vars') || (() => {
       const e = document.createElement('style'); e.id = 'urppp-theme-vars';
@@ -829,7 +866,7 @@
     const acc = getAccent();
     let vars = Object.assign({}, t.vars);
     // 只有动态配色 (scu-red) 吃 seed + scheme 算法
-    if (name === 'scu-red') {
+    if (finalName === 'scu-red') {
       const color = acc || DEFAULT_SEED;
       const scheme = getScheme();
       vars = Object.assign(vars, buildMaterialSchemeVars(color, scheme));
@@ -840,7 +877,7 @@
       document.documentElement.style.setProperty('--urppp-accent-ring', vars['--ring'] || alpha(primary, 0.15));
       document.documentElement.style.setProperty('--urppp-seed', color);
       document.documentElement.style.setProperty('--urppp-scheme', scheme);
-    } else if (name === 'default') {
+    } else if (finalName === 'default') {
       document.documentElement.style.setProperty('--urppp-accent', '#1E3A5F');
       document.documentElement.style.setProperty('--urppp-accent-hover', '#162D4A');
       document.documentElement.style.setProperty('--urppp-accent-ring', 'rgba(30,58,95,0.15)');
@@ -861,12 +898,14 @@
     if (document.body) document.body.style.fontFamily = t.font;
     try {
       const root = document.documentElement;
-      root.dataset.urpppTheme = name;
+      root.dataset.urpppTheme = finalName;
       root.classList.remove('urppp-theme-default', 'urppp-theme-dark', 'urppp-theme-scu-red');
-      root.classList.add('urppp-theme-' + name);
+      root.classList.add('urppp-theme-' + finalName);
+      root.classList.toggle('urppp-theme-follow', isThemeFollowSystem());
       if (document.body) {
-        document.body.dataset.urpppTheme = name;
-        document.body.classList.toggle('urppp-dark', name === 'dark');
+        document.body.dataset.urpppTheme = finalName;
+        document.body.classList.toggle('urppp-dark', finalName === 'dark');
+        document.body.classList.toggle('urppp-theme-follow', isThemeFollowSystem());
       }
     } catch (_) {}
     try { syncNavbarThemeUI(); } catch (_) {}
@@ -879,8 +918,27 @@
 
   function getCurrent() { return GM_getValue(THEME_KEY, 'default'); }
 
+  function bindSystemThemeListener() {
+    if (window.__urpppSystemThemeBound) return;
+    if (!window.matchMedia) return;
+    window.__urpppSystemThemeBound = true;
+    try {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      const onChange = () => {
+        if (!isThemeFollowSystem()) return;
+        try { applyTheme(systemPrefersDark() ? 'dark' : 'default', { system: true }); } catch (_) {}
+      };
+      if (mq.addEventListener) mq.addEventListener('change', onChange);
+      else if (mq.addListener) mq.addListener(onChange);
+    } catch (_) {}
+  }
+
   // 尽早应用主题，让启动遮罩/立方体颜色跟主题一致
-  try { applyTheme(getCurrent()); } catch (_) {}
+  try {
+    if (isThemeFollowSystem()) applyTheme(systemPrefersDark() ? 'dark' : 'default', { system: true });
+    else applyTheme(getCurrent());
+  } catch (_) {}
+  try { bindSystemThemeListener(); } catch (_) {}
 
   // ============================================================
   // 登录页重建
@@ -4416,9 +4474,30 @@
       #urppp-settings-panel .urppp-set-mode:hover {
         border-color: var(--primary) !important;
       }
-      html.urppp-theme-default #urppp-settings-panel .urppp-set-mode[data-theme="default"],
-      html.urppp-theme-dark #urppp-settings-panel .urppp-set-mode[data-theme="dark"],
-      html.urppp-theme-scu-red #urppp-settings-panel .urppp-set-mode[data-theme="scu-red"] {
+      #urppp-settings-panel .urppp-set-mode.ac,
+      html.urppp-theme-default:not(.urppp-theme-follow) #urppp-settings-panel .urppp-set-mode[data-theme="default"],
+      html.urppp-theme-dark:not(.urppp-theme-follow) #urppp-settings-panel .urppp-set-mode[data-theme="dark"],
+      html.urppp-theme-scu-red:not(.urppp-theme-follow) #urppp-settings-panel .urppp-set-mode[data-theme="scu-red"] {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        color: #fff !important;
+      }
+      #urppp-settings-panel .urppp-set-follow {
+        width: 100% !important;
+        margin-top: 8px !important;
+        height: 34px !important;
+        border-radius: 10px !important;
+        border: 1px solid var(--border) !important;
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+      }
+      #urppp-settings-panel .urppp-set-follow:hover {
+        border-color: var(--primary) !important;
+      }
+      #urppp-settings-panel .urppp-set-follow.ac {
         background: var(--primary) !important;
         border-color: var(--primary) !important;
         color: #fff !important;
@@ -11669,10 +11748,27 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (!panel) return;
     const seed = getAccent() || DEFAULT_SEED;
     const scheme = getScheme();
+    const ct = getCurrent();
+    const follow = isThemeFollowSystem();
     const colorInput = panel.querySelector('#urppp-set-color');
     const hexInput = panel.querySelector('#urppp-set-hex');
     if (colorInput) colorInput.value = seed;
     if (hexInput) hexInput.value = seed;
+
+    // 主题模式高亮
+    panel.querySelectorAll('.urppp-set-mode').forEach((btn) => {
+      const on = !follow && btn.dataset.theme === ct;
+      btn.classList.toggle('ac', on);
+    });
+    const followBtn = panel.querySelector('#urppp-set-follow');
+    if (followBtn) {
+      followBtn.classList.toggle('ac', follow);
+      followBtn.setAttribute('aria-pressed', follow ? 'true' : 'false');
+      followBtn.textContent = follow ? '跟随系统：开' : '跟随系统：关';
+    }
+    // 动态配色区：跟随系统时仍可看，但提示当前由系统接管明暗
+    const dyn = panel.querySelector('#urppp-set-dynamic');
+    if (dyn) dyn.style.opacity = follow ? '0.55' : '1';
 
     // 预设种子
     const presets = panel.querySelector('#urppp-set-presets');
@@ -11763,6 +11859,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '      <button type="button" class="urppp-set-mode" data-theme="dark">深邃暗</button>',
       '      <button type="button" class="urppp-set-mode" data-theme="scu-red">动态配色</button>',
       '    </div>',
+      '    <button type="button" class="urppp-set-follow" id="urppp-set-follow" aria-pressed="false">跟随系统：关</button>',
+      '    <p class="urppp-set-tip" style="margin-top:8px">开启后按系统浅色/深色自动切换简约白与深邃暗；手动点主题会关闭跟随。</p>',
       '  </section>',
       '  <section class="urppp-set-sec" id="urppp-set-dynamic">',
       '    <h3>种子色</h3>',
@@ -11785,10 +11883,21 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     panel.querySelector('#urppp-set-close').addEventListener('click', closeSettingsPanel);
     panel.querySelectorAll('.urppp-set-mode').forEach((btn) => {
       btn.addEventListener('click', () => {
-        applyTheme(btn.dataset.theme);
+        applyTheme(btn.dataset.theme, { manual: true });
         syncSettingsPanelUI();
       });
     });
+    const followBtn = panel.querySelector('#urppp-set-follow');
+    if (followBtn) {
+      followBtn.addEventListener('click', () => {
+        const next = !isThemeFollowSystem();
+        setThemeFollowSystem(next);
+        if (next) applyTheme(systemPrefersDark() ? 'dark' : 'default', { system: true });
+        else applyTheme(getCurrent(), { manual: true });
+        syncSettingsPanelUI();
+        syncNavbarThemeUI();
+      });
+    }
     const colorInput = panel.querySelector('#urppp-set-color');
     const hexInput = panel.querySelector('#urppp-set-hex');
     colorInput.addEventListener('input', () => {
@@ -11894,8 +12003,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
       wrap.querySelectorAll('.urppp-nav-dot[data-theme]').forEach((dot) => {
         dot.addEventListener('click', () => {
-          applyTheme(dot.dataset.theme);
+          applyTheme(dot.dataset.theme, { manual: true });
           syncNavbarThemeUI();
+          try { syncSettingsPanelUI(); } catch (_) {}
         });
       });
       wrap.querySelector('#urppp-nav-settings').addEventListener('click', (e) => {
