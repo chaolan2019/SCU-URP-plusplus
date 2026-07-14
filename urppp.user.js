@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.7.2
+// @version      0.7.3
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -11887,7 +11887,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.7.2');
+    console.log('[URP++] style applied v0.7.3');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12966,7 +12966,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // ============================================================
-  // 清爽模式 Clean Mode v0.7.2
+  // 清爽模式 Clean Mode v0.7.3
   // 桌面居中一页 1:1；手机底栏；数据按真实 URP DOM/路径解析
   // 绩点：川大现行百分制对照表；教室：classroomUseStatus 网格
   // ============================================================
@@ -13226,24 +13226,166 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     });
   }
 
+  // 课表真实数据在 JSON callback，index 页只是壳
+  function parseScheduleFromJson(data) {
+    const courses = [];
+    const packs = (data && data.xkxx) || [];
+    packs.forEach((pack) => {
+      Object.keys(pack || {}).forEach((key) => {
+        const c = pack[key];
+        if (!c) return;
+        const name = c.courseName || c.englishCourseName || key;
+        const teacher = c.attendClassTeacher || '';
+        const list = c.timeAndPlaceList || [];
+        list.forEach((tp) => {
+          // classDay: 1=周一 ... 7=周日
+          const d = Number(tp.classDay) || 0;
+          const day = d === 7 ? 0 : d;
+          const start = Number(tp.classSessions) || 1;
+          const cont = Math.max(1, Number(tp.continuingSession) || 1);
+          const place = [tp.campusName, tp.teachingBuildingName, tp.classroomName].filter(Boolean).join('');
+          const week = tp.weekDescription || c.skzcs || '';
+          for (let s = start; s < start + cont && s <= 12; s++) {
+            courses.push({
+              name: String(name).trim(),
+              teacher: String(teacher).trim(),
+              place: String(place).trim(),
+              week: String(week).trim(),
+              day,
+              section: s
+            });
+          }
+        });
+      });
+    });
+    const seen = new Set();
+    return courses.filter((c) => {
+      const k = [c.day, c.section, c.name, c.place].join('|');
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  }
+
   async function loadSchedule() {
     try {
-      const html = await fetchText('/student/courseSelect/thisSemesterCurriculum/index');
-      let courses = parseScheduleFromDoc(parseHtml(html));
-      if (!courses.length) {
-        // 再试 callback 全文
-        try {
-          const cbHtml = await fetchText('/student/courseSelect/thisSemesterCurriculum/ajaxStudentSchedule/callback');
-          courses = parseScheduleFromDoc(parseHtml(cbHtml));
-        } catch (_) {}
+      // 优先 JSON（与页面 $.get 一致）
+      const raw = await fetchText('/student/courseSelect/thisSemesterCurriculum/ajaxStudentSchedule/callback');
+      let courses = [];
+      try {
+        const data = JSON.parse(raw);
+        courses = parseScheduleFromJson(data);
+      } catch (_) {
+        courses = parseScheduleFromDoc(parseHtml(raw));
       }
-      return { courses, rawOk: courses.length > 0, error: courses.length ? '' : '课表解析为空' };
+      if (!courses.length) {
+        // 兜底：已渲染页的 DOM（用户若已打开过课表页）
+        courses = parseScheduleFromDoc(document);
+      }
+      return { courses, rawOk: courses.length > 0, error: courses.length ? '' : '课表 JSON 无 timeAndPlaceList' };
     } catch (e) {
+      try {
+        const courses = parseScheduleFromDoc(document);
+        if (courses.length) return { courses, rawOk: true, error: '' };
+      } catch (_) {}
       return { courses: [], rawOk: false, error: String(e && e.message || e) };
     }
   }
 
-  // ---- scores ----
+  // ---- scores: index 壳 + $.get(callback) JSON ----
+  function extractScoreCallback(html, hint) {
+    const h = String(html || '');
+    // var url = "/student/integratedQuery/scoreQuery/xxx/allPassingScores/callback";
+    const re = new RegExp('url\\s*=\\s*["\']([^"\']*' + hint + '[^"\']*)["\']', 'i');
+    const m = h.match(re);
+    if (m && m[1]) return m[1];
+    const re2 = new RegExp('(\\/student\\/integratedQuery\\/scoreQuery\\/[^"\'\\s]+' + hint + ')', 'i');
+    const m2 = h.match(re2);
+    return m2 ? m2[1] : '';
+  }
+
+  function parseScoreJson(data) {
+    const groups = [];
+    const lnList = (data && data.lnList) || [];
+    lnList.forEach((ln) => {
+      const title = ln.cjlx || ln.cjbh || ln.famc || ln.zxjxjhh || '成绩';
+      const courses = [];
+      (ln.cjList || []).forEach((cj) => {
+        const name = cj.courseName || cj.englishCourseName || '';
+        if (!name) return;
+        // 展示分：优先百分制 cj / courseScore；等级 gradeName
+        let score = cj.cj != null && cj.cj !== '' ? String(cj.cj) : '';
+        if (!score && cj.courseScore != null) score = String(cj.courseScore);
+        if (!score && cj.gradeName) score = String(cj.gradeName);
+        if (!score && cj.zscj != null) score = String(cj.zscj);
+        const attr = cj.courseAttributeName || cj.xkcsxmc || '';
+        const credit = parseFloat(cj.credit) || 0;
+        const code = (cj.id && (cj.id.courseNumber || cj.id.kch_zj)) || '';
+        courses.push({
+          code,
+          name,
+          attr,
+          credit,
+          score,
+          required: isRequiredAttr(attr),
+          // 官方绩点字段（若有，优先用于展示/计算）
+          officialGpa: cj.gradePointScore != null ? Number(cj.gradePointScore) : null
+        });
+      });
+      if (courses.length) {
+        groups.push({
+          title: String(title).slice(0, 100),
+          courses,
+          summary: summarizeCourses(courses),
+          meta: {
+            zxf: ln.zxf, tgms: ln.tgms, zms: ln.zms, famc: ln.famc
+          }
+        });
+      }
+    });
+    return groups;
+  }
+
+  // 若接口带官方绩点，汇总时优先使用
+  function summarizeCoursesPreferOfficial(list) {
+    const base = summarizeCourses(list);
+    // 用 officialGpa 重算平均绩点（更贴近成绩单）
+    let gpaW = 0, gpaCredit = 0, reqGpaW = 0, reqGpaCredit = 0;
+    (list || []).forEach((c) => {
+      const cr = Number(c.credit) || 0;
+      if (cr <= 0) return;
+      const gp = (c.officialGpa != null && !Number.isNaN(c.officialGpa)) ? c.officialGpa : scoreToGpa(c.score);
+      if (gp == null) return;
+      gpaW += gp * cr; gpaCredit += cr;
+      if (c.required) { reqGpaW += gp * cr; reqGpaCredit += cr; }
+    });
+    if (gpaCredit) base.avgGpa = round2(gpaW / gpaCredit);
+    if (reqGpaCredit) base.requiredGpa = round2(reqGpaW / reqGpaCredit);
+    return base;
+  }
+
+  async function loadScoreByIndex(indexPath, callbackHint) {
+    const indexHtml = await fetchText(indexPath);
+    // 先试壳内表（少数情况）
+    let groups = parseScoreTables(parseHtml(indexHtml));
+    if (groups.length) return groups;
+    const cb = extractScoreCallback(indexHtml, callbackHint);
+    if (!cb) return [];
+    // 页面使用 $.get(url) —— 必须 GET JSON
+    const raw = await fetchText(cb);
+    try {
+      const data = JSON.parse(raw);
+      groups = parseScoreJson(data).map((g) => {
+        g.summary = summarizeCoursesPreferOfficial(g.courses);
+        return g;
+      });
+    } catch (_) {
+      groups = parseScoreTables(parseHtml(raw));
+    }
+    return groups;
+  }
+
+  // 保留 HTML 表解析作兜底
   function parseScoreTables(doc) {
     const groups = [];
     doc.querySelectorAll('table').forEach((table) => {
@@ -13254,7 +13396,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       if (!/课程名/.test(headJoined) || !/成绩/.test(headJoined)) return;
       const idx = {
         code: headCells.findIndex((h) => h === '课程号'),
-        seq: headCells.findIndex((h) => h === '课序号'),
         name: headCells.findIndex((h) => h === '课程名'),
         attr: headCells.findIndex((h) => /课程属性|属性/.test(h)),
         credit: headCells.findIndex((h) => h === '学分'),
@@ -13279,19 +13420,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         const score = get(idx.score);
         if (!name || !score || /课程名|序号/.test(name)) return;
         const attr = get(idx.attr);
-        const credit = parseFloat(get(idx.credit)) || 0;
-        courses.push({
-          code: get(idx.code),
-          name,
-          attr,
-          credit,
-          score,
-          required: isRequiredAttr(attr)
-        });
+        courses.push({ code: get(idx.code), name, attr, credit: parseFloat(get(idx.credit)) || 0, score, required: isRequiredAttr(attr) });
       });
-      if (courses.length) {
-        groups.push({ title: title.slice(0, 100), courses, summary: summarizeCourses(courses) });
-      }
+      if (courses.length) groups.push({ title: title.slice(0, 100), courses, summary: summarizeCourses(courses) });
     });
     return groups;
   }
@@ -13299,20 +13430,26 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   async function loadScores() {
     const out = { passing: [], schemes: [], error: '' };
     try {
-      const [passHtml, schemeHtml] = await Promise.all([
-        fetchText('/student/integratedQuery/scoreQuery/allPassingScores/index'),
-        fetchText('/student/integratedQuery/scoreQuery/schemeScores/index')
+      const [passGroups, schemeGroups] = await Promise.all([
+        loadScoreByIndex('/student/integratedQuery/scoreQuery/allPassingScores/index', 'allPassingScores/callback'),
+        loadScoreByIndex('/student/integratedQuery/scoreQuery/schemeScores/index', 'schemeScores/callback')
       ]);
-      const passGroups = parseScoreTables(parseHtml(passHtml));
-      const schemeGroups = parseScoreTables(parseHtml(schemeHtml));
       const allPass = [];
       passGroups.forEach((g) => g.courses.forEach((c) => allPass.push(Object.assign({ term: g.title }, c))));
-      out.passing = [{ title: '全部及格成绩', courses: allPass, summary: summarizeCourses(allPass), groups: passGroups }];
-      out.schemes = schemeGroups;
+      out.passing = [{
+        title: '全部及格成绩',
+        courses: allPass,
+        summary: summarizeCoursesPreferOfficial(allPass),
+        groups: passGroups
+      }];
+      out.schemes = schemeGroups.map((g) => {
+        g.summary = summarizeCoursesPreferOfficial(g.courses);
+        return g;
+      });
       if (!out.schemes.length && allPass.length) {
-        out.schemes = [{ title: '方案成绩', courses: allPass, summary: summarizeCourses(allPass) }];
+        out.schemes = [{ title: '方案成绩', courses: allPass, summary: summarizeCoursesPreferOfficial(allPass) }];
       }
-      if (!allPass.length && !out.schemes.length) out.error = '未解析到成绩表';
+      if (!allPass.length && !out.schemes.length) out.error = '成绩 callback 无数据';
     } catch (e) {
       out.error = String(e && e.message || e);
     }
