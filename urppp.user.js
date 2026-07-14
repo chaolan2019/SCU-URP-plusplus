@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.19
+// @version      0.6.20
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -575,64 +575,87 @@
   }
 
   // MD3 风格 tone：0 黑 → 100 白。用 HSL.l 近似 tone/100
+  // 高 tone 仍保留足够饱和，否则背景/卡片会洗成纯白
   function tone(h, s, toneVal) {
     const t = Math.max(0, Math.min(100, toneVal)) / 100;
-    // 中高 tone 略降饱和，贴近 HCT 观感
-    const sat = s * (t < 0.35 ? 0.95 : t < 0.7 ? 0.72 : 0.42);
+    let satMul = 0.95;
+    if (t >= 0.92) satMul = 0.78;
+    else if (t >= 0.8) satMul = 0.7;
+    else if (t >= 0.55) satMul = 0.78;
+    else if (t >= 0.35) satMul = 0.9;
+    const sat = Math.max(0, Math.min(0.95, s * satMul));
     return hslHex(h, sat, t);
   }
 
   function schemeProfile(id) {
-    // chroma 倍率、secondary 色相偏移、surface 染色强度
+    // bgSat/surfaceSat：浅色表面可见染色；bgTone 越低背景越「有色」
     switch (id) {
       case 'vibrant':
-        return { chroma: 1.25, secShift: 18, surfaceTint: 0.22, primaryTone: 38, nameBoost: 1 };
+        return {
+          chroma: 1.2, secShift: 16, primaryTone: 38,
+          bgTone: 94, surfaceTone: 98, bgSat: 0.34, surfaceSat: 0.16, borderSat: 0.22
+        };
       case 'expressive':
-        return { chroma: 1.1, secShift: 60, surfaceTint: 0.18, primaryTone: 40, nameBoost: 1 };
+        return {
+          chroma: 1.05, secShift: 58, primaryTone: 40,
+          bgTone: 94.5, surfaceTone: 98, bgSat: 0.28, surfaceSat: 0.14, borderSat: 0.2,
+          surfaceHueShift: 28
+        };
       case 'neutral':
-        return { chroma: 0.55, secShift: 0, surfaceTint: 0.06, primaryTone: 36, nameBoost: 0.8 };
+        return {
+          chroma: 0.7, secShift: 0, primaryTone: 36,
+          bgTone: 96, surfaceTone: 99, bgSat: 0.08, surfaceSat: 0.03, borderSat: 0.06
+        };
       case 'soft':
-        return { chroma: 0.85, secShift: 12, surfaceTint: 0.28, primaryTone: 46, nameBoost: 0.9 };
+        return {
+          chroma: 0.95, secShift: 12, primaryTone: 44,
+          bgTone: 95, surfaceTone: 97.5, bgSat: 0.3, surfaceSat: 0.2, borderSat: 0.18
+        };
       case 'tonal':
       default:
-        return { chroma: 1.0, secShift: 24, surfaceTint: 0.12, primaryTone: 40, nameBoost: 1 };
+        return {
+          chroma: 1.0, secShift: 22, primaryTone: 40,
+          bgTone: 95, surfaceTone: 98.5, bgSat: 0.22, surfaceSat: 0.1, borderSat: 0.16
+        };
     }
   }
 
   /**
-   * 从 seed 生成一套 light roles（Material You light scheme 近似）
-   * primary≈P40, onPrimary≈P100, primaryContainer≈P90
-   * bg≈N98, surface≈N99/N100, surface-ish cards slightly above bg
-   * text≈N10, muted≈N50, border≈NV80
+   * 从 seed 生成 light roles（Material You 近似）
+   * - primary ≈ tone 40
+   * - background ≈ 同色相高 tone + 可见 chroma（不再洗成灰白）
+   * - surface/卡片 ≈ 比 bg 更亮一层，仍带轻染色
+   * - 各 scheme 的 bg/surface 饱和度与色相偏移不同，预览必须肉眼可辨
    */
   function buildMaterialSchemeVars(seedHex, schemeId) {
     const seed = normalizeHexColor(seedHex) || DEFAULT_SEED;
     const { h, s } = seedHsl(seed);
     const p = schemeProfile(schemeId || DEFAULT_SCHEME);
-    const cs = Math.min(0.92, s * p.chroma);
+    const cs = Math.min(0.9, Math.max(0.28, s * p.chroma));
     const hs = (h + p.secShift + 360) % 360;
-    const hn = h; // neutral 同色相低饱和
+    const surfaceH = (h + (p.surfaceHueShift || 0) + 360) % 360;
 
     const primary = tone(h, cs, p.primaryTone);
-    const primaryHover = tone(h, cs, Math.max(22, p.primaryTone - 10));
-    const primaryContainer = tone(h, cs * 0.7, 90);
-    // surface: 接近白，带 seed 轻染（MY surface tint）
-    const bgBase = tone(hn, cs * 0.22 * p.surfaceTint * 4, 97);
-    const surfaceBase = tone(hn, cs * 0.16 * p.surfaceTint * 3, 99.2);
-    const bg = mixHex(bgBase, '#F5F7FA', 1 - p.surfaceTint);
-    const surface = mixHex(surfaceBase, '#FFFFFF', Math.max(0.35, 1 - p.surfaceTint * 1.4));
-    const inputBg = mixHex(surface, tone(hn, cs * 0.2, 96), 0.45);
-    const border = mixHex(tone(hn, cs * 0.25, 88), '#E5E7EB', 0.35);
-    const text = tone(hn, Math.min(0.35, cs * 0.45), 12);
-    const textSecondary = alpha(tone(hn, cs * 0.3, 35), 0.82);
-    const textMuted = alpha(tone(hn, cs * 0.25, 48), 0.72);
-    // secondary 仅用于阴影/环，主 token 仍走现有体系
-    const ring = alpha(primary, 0.16);
-    const shadow = '0 2px 16px ' + alpha(primary, 0.07) + ', 0 0 0 1px ' + alpha(primary, 0.04);
+    const primaryHover = tone(h, cs, Math.max(24, p.primaryTone - 10));
+    const primaryContainer = tone(h, Math.min(0.85, cs * 0.75), 90);
+
+    // 背景：明显带 seed 色相（如红种子 → 浅粉底）
+    const bg = tone(h, cs * p.bgSat, p.bgTone);
+    // 卡片：更亮，但与 bg 分层；expressive 可轻微偏色相
+    const surface = tone(surfaceH, cs * p.surfaceSat, p.surfaceTone);
+    // 再抬一点亮度，保证卡片浮在背景上
+    const surfaceLift = mixHex(surface, '#FFFFFF', schemeId === 'neutral' ? 0.35 : 0.18);
+    const inputBg = mixHex(surfaceLift, tone(h, cs * (p.bgSat * 0.7), 96), 0.4);
+    const border = tone(h, cs * p.borderSat, 86);
+    const text = tone(h, Math.min(0.4, cs * 0.5), 14);
+    const textSecondary = alpha(tone(h, cs * 0.28, 34), 0.86);
+    const textMuted = alpha(tone(h, cs * 0.22, 46), 0.75);
+    const ring = alpha(primary, 0.18);
+    const shadow = '0 2px 16px ' + alpha(primary, 0.1) + ', 0 0 0 1px ' + alpha(primary, 0.05);
 
     return {
       '--bg': bg,
-      '--surface': surface,
+      '--surface': surfaceLift,
       '--text': text,
       '--text-secondary': textSecondary,
       '--text-muted': textMuted,
@@ -645,9 +668,8 @@
       '--shadow': shadow,
       '--radius': '16px',
       '--radius-sm': '10px',
-      // 扩展 token，供后续组件用
       '--primary-container': primaryContainer,
-      '--secondary': tone(hs, Math.min(0.85, cs * 0.85), 42),
+      '--secondary': tone(hs, Math.min(0.88, cs * 0.9), 42),
     };
   }
 
@@ -864,7 +886,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.19';
+          content:'URP++ v0.6.20';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -11537,7 +11559,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.19');
+    console.log('[URP++] style applied v0.6.20');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12661,7 +12683,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.19',
+    version: '0.6.20',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
