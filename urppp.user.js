@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.8
+// @version      0.6.9
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -682,7 +682,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.8';
+          content:'URP++ v0.6.9';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1582,7 +1582,7 @@
           if (disabled) span.classList.add('urppp-page-chip-disabled');
           if (prev || next) span.classList.add('urppp-page-chip-nav');
 
-          const minW = (prev || next) ? '72px' : '40px';
+          const minW = (prev || next) ? '56px' : '34px';
           const bg = active ? 'var(--primary)' : 'var(--surface)';
           const bd = active ? 'var(--primary)' : 'var(--border)';
           const fg = active ? '#fff' : (disabled ? 'var(--text-muted)' : 'var(--text)');
@@ -1595,13 +1595,13 @@
             'position:static !important',
             'width:auto !important',
             'min-width:' + minW + ' !important',
-            'height:36px !important',
-            'min-height:36px !important',
-            'max-height:36px !important',
-            'padding:0 12px !important',
+            'height:32px !important',
+            'min-height:32px !important',
+            'max-height:32px !important',
+            'padding:0 10px !important',
             'margin:0 !important',
-            'line-height:36px !important',
-            'font-size:14px !important',
+            'line-height:32px !important',
+            'font-size:13px !important',
             'font-weight:600 !important',
             'border-radius:8px !important',
             'border:1px solid ' + bd + ' !important',
@@ -1664,6 +1664,36 @@
           inp.style.setProperty('cursor', 'text', 'important');
           inp.removeAttribute('readonly');
           inp.removeAttribute('disabled');
+          // 聚焦时确保对应「确定」能显示（站点一般写 style.display）
+          if (!inp.__urpppGotoFocusBound) {
+            inp.__urpppGotoFocusBound = true;
+            const showConfirm = () => {
+              const id = String(inp.id || '');
+              // turnpageto_xxx -> btn_turnpageto_xxx
+              const btnId = id.replace(/^turnpageto_/, 'btn_turnpageto_');
+              const btn = document.getElementById(btnId) || bar.querySelector('[id^="btn_turnpageto_"]');
+              if (!btn) return;
+              // 站点若写成 none，聚焦时改为 inline-block；失焦交还给站点
+              if (!btn.style.display || btn.style.display === 'none') {
+                btn.style.setProperty('display', 'inline-block', 'important');
+              }
+              btn.style.setProperty('pointer-events', 'auto', 'important');
+            };
+            const hideConfirmIfEmpty = () => {
+              // 不强制隐藏：站点 blur 会处理；仅清我们加的 important display 若站点要隐藏
+              setTimeout(() => {
+                const id = String(inp.id || '');
+                const btnId = id.replace(/^turnpageto_/, 'btn_turnpageto_');
+                const btn = document.getElementById(btnId);
+                if (!btn) return;
+                // 若焦点还在按钮上，不藏
+                if (document.activeElement === btn) return;
+              }, 0);
+            };
+            inp.addEventListener('focus', showConfirm);
+            inp.addEventListener('input', showConfirm);
+            inp.addEventListener('click', showConfirm);
+          }
           const wrapSpan = inp.parentElement;
           if (wrapSpan && wrapSpan.tagName === 'SPAN') {
             wrapSpan.style.setProperty('position', 'relative', 'important');
@@ -7346,20 +7376,42 @@
         transition: all .15s ease !important;
       }
       /* 分页「确定」：用更高优先级盖过全局 .btn display:inline-flex */
+      /* 确定：默认跟站点 inline display；仅当 style 含 display:none 时隐藏 */
       #urppagebar .btn.urppp-page-confirm,
       #urppagebar button.urppp-page-confirm,
       #urppagebar a.btn.urppp-page-confirm,
       #urppagebar input.urppp-page-confirm,
-      .urppagebreak .btn.urppp-page-confirm,
-      .urppagebreak button.urppp-page-confirm,
-      body #urppagebar .urppp-page-confirm {
-        display: none !important;
+      #urppagebar [id^="btn_turnpageto_"],
+      body #urppagebar .urppp-page-confirm,
+      body #urppagebar [id^="btn_turnpageto_"] {
         height: 32px !important;
         min-height: 32px !important;
         max-height: 32px !important;
         min-width: 52px !important;
         padding: 0 12px !important;
         font-size: 13px !important;
+        line-height: 1 !important;
+        box-sizing: border-box !important;
+        vertical-align: middle !important;
+        pointer-events: auto !important;
+      }
+      /* 站点隐藏时：inline style display:none 必须能赢过 .btn{display:inline-flex} */
+      #urppagebar [id^="btn_turnpageto_"][style*="display: none"],
+      #urppagebar [id^="btn_turnpageto_"][style*="display:none"],
+      body #urppagebar .btn[id^="btn_turnpageto_"][style*="display: none"],
+      body #urppagebar .btn[id^="btn_turnpageto_"][style*="display:none"] {
+        display: none !important;
+      }
+      /* 站点显示时：inline style display:inline-block 可能被 .btn 盖住，这里兜底 */
+      #urppagebar [id^="btn_turnpageto_"][style*="display: inline"],
+      #urppagebar [id^="btn_turnpageto_"][style*="display:inline"],
+      #urppagebar [id^="btn_turnpageto_"][style*="display: block"],
+      #urppagebar [id^="btn_turnpageto_"][style*="display:block"],
+      body #urppagebar .btn[id^="btn_turnpageto_"][style*="display: inline"],
+      body #urppagebar .btn[id^="btn_turnpageto_"][style*="display:inline"] {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
       }
       #urppagebar .btn.urppp-page-confirm.urppp-page-confirm-show,
       #urppagebar button.urppp-page-confirm.urppp-page-confirm-show,
@@ -7767,10 +7819,16 @@
         display: flex !important;
         align-items: center !important;
         flex-wrap: wrap !important;
-        gap: 8px 10px !important;
+        gap: 6px 8px !important;
         position: relative !important;
         width: 100% !important;
         line-height: 1.5 !important;
+        row-gap: 8px !important;
+      }
+      /* 首屏尽量单行：页码与跳转区紧凑 */
+      #urppagebar ul.pagination {
+        flex: 0 1 auto !important;
+        max-width: 100% !important;
       }
       /* 清掉旧 pagination 全局小按钮样式在页码条上的影响 */
       #urppagebar ul.pagination,
@@ -7814,14 +7872,14 @@
         position: static !important;
         box-sizing: border-box !important;
         width: auto !important;
-        min-width: 40px !important;
-        height: 36px !important;
-        min-height: 36px !important;
-        max-height: 36px !important;
-        padding: 0 12px !important;
+        min-width: 34px !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        max-height: 32px !important;
+        padding: 0 10px !important;
         margin: 0 !important;
-        line-height: 36px !important;
-        font-size: 14px !important;
+        line-height: 32px !important;
+        font-size: 13px !important;
         font-weight: 600 !important;
         border-radius: 8px !important;
         border: 1px solid var(--border) !important;
@@ -7835,7 +7893,7 @@
       #urppagebar ul.pagination > li.previous > span,
       #urppagebar ul.pagination > li.next > span,
       #urppagebar .urppp-page-chip-nav {
-        min-width: 72px !important;
+        min-width: 56px !important;
       }
       /* 分页条里的说明文字 / 每页条数：正常排版 */
       #urppagebar > span,
@@ -10971,7 +11029,7 @@ fo-striped.setLabelWidth,
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.8');
+    console.log('[URP++] style applied v0.6.9');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12016,7 +12074,7 @@ fo-striped.setLabelWidth,
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.8',
+    version: '0.6.9',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
