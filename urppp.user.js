@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.4
+// @version      0.6.5
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -682,7 +682,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.4';
+          content:'URP++ v0.6.5';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -10515,25 +10515,43 @@ fo-striped.setLabelWidth,
       .urppp-stat-skeleton .label { background: var(--input-bg); color: transparent !important; border-radius: 4px; width: 80px; height: 20px; }
       .urppp-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
       @media (max-width: 1100px) { .urppp-main-grid { grid-template-columns: 1fr; } }
-      /* 日程卡：避免 overflow:hidden 裁掉时间轴首行；滚动仍由 FC 内部 scroller 负责 */
+      /* 日程卡：必须 overflow:hidden 才能裁出底角圆角；滚动交给 FC 内部 .fc-scroller */
       #urppp-left .urppp-card {
-        box-shadow: none !important;
-        overflow: visible !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius, 16px) !important;
+        box-shadow: var(--shadow) !important;
+        overflow: hidden !important;
       }
       #urppp-left .urppp-card-body {
         background: var(--surface) !important;
-        overflow: visible !important;
-        padding-top: 12px !important;
-        padding-bottom: 12px !important;
+        overflow: hidden !important;
+        padding: 12px 16px 16px !important;
+        border-radius: 0 0 var(--radius, 16px) var(--radius, 16px) !important;
       }
       #urppp-left .fc,
       #urppp-left #main-calendar {
         background: var(--surface) !important;
+        border-radius: 0 0 12px 12px !important;
+        overflow: hidden !important;
+        width: 100% !important;
+      }
+      /* 内部滚动层保持可滚，不要被外层圆角规则改成 visible 导致直角穿出 */
+      #urppp-left .fc .fc-scroller,
+      #urppp-left .fc-time-grid-container {
+        border-radius: 0 0 10px 10px !important;
       }
       #urppp-left .fc-toolbar { margin: 0 0 12px 0 !important; padding: 8px 8px 0 8px !important; }
       #urppp-left .fc-toolbar .fc-center h2,
       #urppp-left .fc-toolbar h2 { display: inline-block !important; background: var(--surface) !important; border: 1px solid var(--border) !important; border-radius: var(--radius) !important; padding: 6px 14px !important; font-size: 14px !important; color: var(--text) !important; box-shadow: var(--shadow) !important; }
-      .urppp-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 20px; }
+      .urppp-card {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius, 16px) !important;
+        box-shadow: var(--shadow) !important;
+        overflow: hidden !important;
+        margin-bottom: 20px !important;
+      }
       .urppp-card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
       .urppp-card-header h4 { font-size: 16px; font-weight: 600; color: var(--text); margin: 0; }
       .urppp-card-tools .widget-toolbar { padding: 0; line-height: 1; }
@@ -10830,7 +10848,7 @@ fo-striped.setLabelWidth,
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.4');
+    console.log('[URP++] style applied v0.6.5');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11875,7 +11893,7 @@ fo-striped.setLabelWidth,
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.4',
+    version: '0.6.5',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
