@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.27
+// @version      0.6.28
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -995,7 +995,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.27';
+          content:'URP++ v0.6.28';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1195,7 +1195,7 @@
         <div class="us" id="urppp-dots">
           <span data-theme="default" title="简约白" style="background:#F1F5F9"></span>
           <span data-theme="dark" title="深邃暗" style="background:#0B0F17"></span>
-          <span data-theme="scu-red" title="川大红" style="background:#B53434"></span>
+          <span data-theme="scu-red" title="动态配色" style="background:#B53434"></span>
         </div>
       </div>
     </div>`);
@@ -1267,17 +1267,34 @@
       }
     });
 
-    // 主题
+    // 主题：仅三圆点（简约白 / 深邃暗 / 动态配色），登录页不提供设置入口
     const dots = root.querySelector('#urppp-dots');
-    const ct = getCurrent();
-    dots.querySelectorAll('span').forEach(d => {
-      if (d.dataset.theme === ct) d.classList.add('ac');
-      d.addEventListener('click', () => {
-        applyTheme(d.dataset.theme);
-        dots.querySelectorAll('span').forEach(dd => dd.classList.remove('ac'));
-        d.classList.add('ac');
+    const syncLoginDots = () => {
+      if (!dots) return;
+      const ct = getCurrent();
+      dots.querySelectorAll('span').forEach((d) => {
+        d.classList.toggle('ac', d.dataset.theme === ct);
       });
-    });
+      const dyn = dots.querySelector('span[data-theme="scu-red"]');
+      if (dyn) {
+        const seed = getAccent() || DEFAULT_SEED;
+        try {
+          const prev = buildSchemePreview(seed, getScheme());
+          dyn.style.background = 'linear-gradient(135deg, ' + prev.primary + ' 0 55%, ' + prev.surface + ' 55% 100%)';
+        } catch (_) {
+          dyn.style.background = seed;
+        }
+      }
+    };
+    if (dots) {
+      dots.querySelectorAll('span').forEach((d) => {
+        d.addEventListener('click', () => {
+          applyTheme(d.dataset.theme, { manual: true });
+          syncLoginDots();
+        });
+      });
+      syncLoginDots();
+    }
 
     console.log('[URP++] 登录界面已重建');
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 100);
@@ -11767,7 +11784,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.27');
+    console.log('[URP++] style applied v0.6.28');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12954,7 +12971,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.27',
+    version: '0.6.28',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
