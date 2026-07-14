@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.25
+// @version      0.6.26
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -986,7 +986,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.25';
+          content:'URP++ v0.6.26';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -4272,6 +4272,72 @@
       hr { border-color: var(--border) !important; }
       .text-muted, .muted, .help-block { color: var(--text-muted) !important; }
 
+      /*
+       * 简约白 / 深邃暗：主文案强制黑/白体系
+       * 数字、标题、侧栏、面包屑不再吃 primary
+       * 链接仍保留 primary
+       */
+      html.urppp-theme-default .infobox .infobox-data-number,
+      html.urppp-theme-default .infobox .urppp-pct-text,
+      html.urppp-theme-default .urppp-stat-card .value,
+      html.urppp-theme-default .urppp-welcome h2,
+      html.urppp-theme-default .widget-header .widget-title,
+      html.urppp-theme-default h4.widget-title,
+      html.urppp-theme-default .breadcrumb > li.active,
+      html.urppp-theme-default .breadcrumb > li:last-child,
+      html.urppp-theme-default .breadcrumb > li.active > span,
+      html.urppp-theme-default .breadcrumb > li.active .urppp-bc-label,
+      html.urppp-theme-default .breadcrumb > li:last-child > span,
+      html.urppp-theme-default .breadcrumb > li:last-child .urppp-bc-label,
+      html.urppp-theme-default .breadcrumb .home-icon,
+      html.urppp-theme-default .breadcrumb .fa-home,
+      html.urppp-theme-default .urppp-nav-item.active > .urppp-nav-link,
+      html.urppp-theme-default .urppp-nav-item.open.active > .urppp-nav-link,
+      html.urppp-theme-dark .infobox .infobox-data-number,
+      html.urppp-theme-dark .infobox .urppp-pct-text,
+      html.urppp-theme-dark .urppp-stat-card .value,
+      html.urppp-theme-dark .urppp-welcome h2,
+      html.urppp-theme-dark .widget-header .widget-title,
+      html.urppp-theme-dark h4.widget-title,
+      html.urppp-theme-dark .breadcrumb > li.active,
+      html.urppp-theme-dark .breadcrumb > li:last-child,
+      html.urppp-theme-dark .breadcrumb > li.active > span,
+      html.urppp-theme-dark .breadcrumb > li.active .urppp-bc-label,
+      html.urppp-theme-dark .breadcrumb > li:last-child > span,
+      html.urppp-theme-dark .breadcrumb > li:last-child .urppp-bc-label,
+      html.urppp-theme-dark .breadcrumb .home-icon,
+      html.urppp-theme-dark .breadcrumb .fa-home,
+      html.urppp-theme-dark .urppp-nav-item.active > .urppp-nav-link,
+      html.urppp-theme-dark .urppp-nav-item.open.active > .urppp-nav-link {
+        color: var(--text) !important;
+      }
+      html.urppp-theme-default .infobox .infobox-content,
+      html.urppp-theme-default .urppp-stat-card .label,
+      html.urppp-theme-default .urppp-welcome p,
+      html.urppp-theme-default .breadcrumb > li,
+      html.urppp-theme-dark .infobox .infobox-content,
+      html.urppp-theme-dark .urppp-stat-card .label,
+      html.urppp-theme-dark .urppp-welcome p,
+      html.urppp-theme-dark .breadcrumb > li {
+        color: var(--text-secondary) !important;
+      }
+      /* 侧栏默认项：简约白更深、深邃暗更亮 */
+      html.urppp-theme-default .urppp-nav-link {
+        color: #111111 !important;
+      }
+      html.urppp-theme-dark .urppp-nav-link {
+        color: #f5f5f5 !important;
+      }
+      html.urppp-theme-default .urppp-nav-link:hover,
+      html.urppp-theme-dark .urppp-nav-link:hover {
+        color: var(--text) !important;
+      }
+      /* 标题图标点缀可保留 primary；标题文字本体必须是 text */
+      html.urppp-theme-default .widget-header .widget-title,
+      html.urppp-theme-dark .widget-header .widget-title {
+        color: var(--text) !important;
+      }
+
       /* 顶栏 —— 基于真实 DOM */
       .navbar.navbar-default,
       .navbar.navbar-default.navbar-fixed-top,
@@ -5069,8 +5135,8 @@
       .urppp-nav-item.active > .urppp-nav-link,
       .urppp-nav-item.open.active > .urppp-nav-link {
         background: var(--input-bg);
-        color: var(--primary);
-        font-weight: 500;
+        color: var(--text);
+        font-weight: 600;
       }
       .urppp-nav-link > .fa {
         width: 22px;
@@ -5844,7 +5910,7 @@
         line-height: 1.2 !important;
         margin: 0 0 6px !important;
         display: block !important;
-        color: var(--primary) !important;
+        color: var(--text) !important;
       }
       .infobox .infobox-content {
         font-size: 13px !important;
@@ -5870,7 +5936,7 @@
         font-size: 16px !important;
         font-weight: 700 !important;
         line-height: 1.2 !important;
-        color: var(--primary) !important;
+        color: var(--text) !important;
       }
       .infobox .urppp-pct-bar {
         order: 2 !important;
@@ -11325,7 +11391,7 @@ fo-striped.setLabelWidth,
       .urppp-stat-card .value {
         font-size: 34px;
         font-weight: 700;
-        color: var(--primary);
+        color: var(--text);
         line-height: 1;
         flex-shrink: 0;
       }
@@ -11681,7 +11747,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.25');
+    console.log('[URP++] style applied v0.6.26');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12836,7 +12902,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.25',
+    version: '0.6.26',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
