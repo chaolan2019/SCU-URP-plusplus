@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.9
+// @version      0.6.10
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -682,7 +682,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.9';
+          content:'URP++ v0.6.10';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1532,9 +1532,48 @@
         wrap.style.setProperty('position', 'relative', 'important');
         wrap.style.setProperty('line-height', '1.5', 'important');
 
-        // ul.pagination
-        bar.querySelectorAll('ul.pagination').forEach((ul) => {
+        // 先判定分页模式（pagination.js）：
+        // - 跳转态：span_page_txt="转到" + input 可编辑 + 显示 ul.pagination
+        // - 滚动/无页码态(_sl)：span_page_txt="第" + input readonly + 站点 display:none 掉 ul
+        // 绝不能把站点已隐藏的 ul 强制 inline-flex 显示回来
+        const jumpInputs = Array.from(bar.querySelectorAll('[id^="turnpageto_"]'));
+        const jumpBtns = Array.from(bar.querySelectorAll('[id^="btn_turnpageto_"]'));
+        const pageTxtEls = Array.from(bar.querySelectorAll('[id^="span_page_txt_"]'));
+        const pageTxt = pageTxtEls.map((el) => String(el.textContent || '').trim()).join('');
+        const pageSizeSel = bar.querySelector('select[id^="pagination_pageSize_"]');
+        const pageSizeVal = pageSizeSel ? String(pageSizeSel.value || '') : '';
+        const isScrollPageSize = pageSizeVal.indexOf('_sl') >= 0 || pageSizeVal.indexOf('_') >= 0;
+        const isJumpMode = !isScrollPageSize && (
+          jumpInputs.some((inp) => {
+            if ((inp.type || '').toLowerCase() === 'hidden') return false;
+            if (inp.readOnly || inp.disabled) return false;
+            const onf = inp.getAttribute('onfocus') || '';
+            if (onf && /turnpagetoFocus/i.test(onf)) return true;
+            return pageTxt.indexOf('转到') >= 0;
+          }) || (pageTxt.indexOf('转到') >= 0 && jumpInputs.some((inp) => !inp.readOnly && !inp.disabled))
+        );
+        // 文案是「第」= 站点滚动态/无页码按钮态
+        const isPageNavHiddenMode =
+          !isJumpMode ||
+          pageTxt === '第' ||
+          pageTxt.indexOf('转到') < 0 && (pageTxt.indexOf('第') >= 0 || isScrollPageSize);
+
+        // ul.pagination：隐藏态彻底藏；显示态才美化
+        bar.querySelectorAll('ul.pagination, [id^="pagination_ul_"]').forEach((ul) => {
           ul.classList.add('urppp-pagination');
+          if (isPageNavHiddenMode) {
+            ul.classList.add('urppp-pagination-hidden');
+            ul.classList.remove('urppp-pagination-visible');
+            ul.style.setProperty('display', 'none', 'important');
+            ul.style.setProperty('visibility', 'hidden', 'important');
+            ul.style.setProperty('height', '0', 'important');
+            ul.style.setProperty('overflow', 'hidden', 'important');
+            ul.style.setProperty('margin', '0', 'important');
+            ul.style.setProperty('padding', '0', 'important');
+            return;
+          }
+          ul.classList.add('urppp-pagination-visible');
+          ul.classList.remove('urppp-pagination-hidden');
           ul.style.cssText = [
             'display:inline-flex !important',
             'align-items:center !important',
@@ -1544,93 +1583,81 @@
             'padding:0 !important',
             'list-style:none !important',
             'float:none !important',
-            'position:static !important'
+            'position:static !important',
+            'visibility:visible !important',
+            'height:auto !important',
+            'overflow:visible !important'
           ].join(';');
         });
 
         // 每个 li.paginate_button 是整颗按钮；内层 span 铺满且无边框
-        bar.querySelectorAll('ul.pagination > li').forEach((li) => {
-          const active = li.classList.contains('active');
-          const disabled = li.classList.contains('disabled');
-          const prev = li.classList.contains('previous') || /previous/i.test(li.getAttribute('name') || '');
-          const next = li.classList.contains('next') || /next/i.test(li.getAttribute('name') || '');
-          li.classList.add('urppp-page-li');
-          if (active) li.classList.add('urppp-page-li-active');
-          if (disabled) li.classList.add('urppp-page-li-disabled');
-          if (prev) li.classList.add('urppp-page-li-prev');
-          if (next) li.classList.add('urppp-page-li-next');
+        if (!isPageNavHiddenMode) {
+          bar.querySelectorAll('ul.pagination > li').forEach((li) => {
+            const active = li.classList.contains('active');
+            const disabled = li.classList.contains('disabled');
+            const prev = li.classList.contains('previous') || /previous/i.test(li.getAttribute('name') || '');
+            const next = li.classList.contains('next') || /next/i.test(li.getAttribute('name') || '');
+            li.classList.add('urppp-page-li');
+            if (active) li.classList.add('urppp-page-li-active');
+            if (disabled) li.classList.add('urppp-page-li-disabled');
+            if (prev) li.classList.add('urppp-page-li-prev');
+            if (next) li.classList.add('urppp-page-li-next');
 
-          li.style.cssText = [
-            'display:inline-flex !important',
-            'align-items:center !important',
-            'justify-content:center !important',
-            'float:none !important',
-            'position:static !important',
-            'margin:0 !important',
-            'padding:0 !important',
-            'list-style:none !important',
-            'border:none !important',
-            'background:transparent !important',
-            'height:auto !important',
-            'min-height:0 !important'
-          ].join(';');
+            li.style.cssText = [
+              'display:inline-flex !important',
+              'align-items:center !important',
+              'justify-content:center !important',
+              'float:none !important',
+              'position:static !important',
+              'margin:0 !important',
+              'padding:0 !important',
+              'list-style:none !important',
+              'border:none !important',
+              'background:transparent !important',
+              'height:auto !important',
+              'min-height:0 !important'
+            ].join(';');
 
-          const span = li.querySelector(':scope > span, :scope > a') || li.firstElementChild;
-          if (!span) return;
-          span.classList.add('urppp-page-chip');
-          if (active) span.classList.add('urppp-page-chip-active');
-          if (disabled) span.classList.add('urppp-page-chip-disabled');
-          if (prev || next) span.classList.add('urppp-page-chip-nav');
+            const span = li.querySelector(':scope > span, :scope > a') || li.firstElementChild;
+            if (!span) return;
+            span.classList.add('urppp-page-chip');
+            if (active) span.classList.add('urppp-page-chip-active');
+            if (disabled) span.classList.add('urppp-page-chip-disabled');
+            if (prev || next) span.classList.add('urppp-page-chip-nav');
 
-          const minW = (prev || next) ? '72px' : '40px';
-          const bg = active ? 'var(--primary)' : 'var(--surface)';
-          const bd = active ? 'var(--primary)' : 'var(--border)';
-          const fg = active ? '#fff' : (disabled ? 'var(--text-muted)' : 'var(--text)');
-          span.style.cssText = [
-            'display:inline-flex !important',
-            'align-items:center !important',
-            'justify-content:center !important',
-            'box-sizing:border-box !important',
-            'float:none !important',
-            'position:static !important',
-            'width:auto !important',
-            'min-width:' + minW + ' !important',
-            'height:36px !important',
-            'min-height:36px !important',
-            'max-height:36px !important',
-            'padding:0 12px !important',
-            'margin:0 !important',
-            'line-height:36px !important',
-            'font-size:14px !important',
-            'font-weight:600 !important',
-            'border-radius:8px !important',
-            'border:1px solid ' + bd + ' !important',
-            'background:' + bg + ' !important',
-            'color:' + fg + ' !important',
-            'box-shadow:none !important',
-            'text-decoration:none !important',
-            'cursor:' + (disabled ? 'default' : 'pointer') + ' !important',
-            'white-space:nowrap !important',
-            'overflow:hidden !important'
-          ].join(';');
-        });
-
-        // 跳转区：pagination.js 始终生成 turnpageto；
-        // 真正可跳转：span_page_txt="转到" 且 input 可编辑/有 onfocus
-        // 滚动分页(_sl)：文案改成「第」、input readonly、去掉 onfocus —— 这不是跳转，不要画成输入框
-        const jumpInputs = Array.from(bar.querySelectorAll('[id^="turnpageto_"]'));
-        const jumpBtns = Array.from(bar.querySelectorAll('[id^="btn_turnpageto_"]'));
-        const pageTxtEls = Array.from(bar.querySelectorAll('[id^="span_page_txt_"]'));
-        const pageTxt = pageTxtEls.map((el) => String(el.textContent || '').trim()).join('');
-        const isJumpMode = jumpInputs.some((inp) => {
-          if ((inp.type || '').toLowerCase() === 'hidden') return false;
-          if (inp.readOnly || inp.disabled) return false;
-          // 站点滚动态会 removeAttr('onfocus')；跳转态有 turnpagetoFocus
-          const onf = inp.getAttribute('onfocus') || '';
-          if (onf && /turnpagetoFocus/i.test(onf)) return true;
-          // 文案「转到」也视为跳转
-          return pageTxt.indexOf('转到') >= 0;
-        }) || (pageTxt.indexOf('转到') >= 0 && jumpInputs.some((inp) => !inp.readOnly && !inp.disabled));
+            const minW = (prev || next) ? '72px' : '40px';
+            const bg = active ? 'var(--primary)' : 'var(--surface)';
+            const bd = active ? 'var(--primary)' : 'var(--border)';
+            const fg = active ? '#fff' : (disabled ? 'var(--text-muted)' : 'var(--text)');
+            span.style.cssText = [
+              'display:inline-flex !important',
+              'align-items:center !important',
+              'justify-content:center !important',
+              'box-sizing:border-box !important',
+              'float:none !important',
+              'position:static !important',
+              'width:auto !important',
+              'min-width:' + minW + ' !important',
+              'height:36px !important',
+              'min-height:36px !important',
+              'max-height:36px !important',
+              'padding:0 12px !important',
+              'margin:0 !important',
+              'line-height:36px !important',
+              'font-size:14px !important',
+              'font-weight:600 !important',
+              'border-radius:8px !important',
+              'border:1px solid ' + bd + ' !important',
+              'background:' + bg + ' !important',
+              'color:' + fg + ' !important',
+              'box-shadow:none !important',
+              'text-decoration:none !important',
+              'cursor:' + (disabled ? 'default' : 'pointer') + ' !important',
+              'white-space:nowrap !important',
+              'overflow:hidden !important'
+            ].join(';');
+          });
+        }
 
         jumpBtns.forEach((btn) => {
           btn.classList.add('urppp-page-confirm');
@@ -7806,8 +7833,8 @@
         line-height: 1.5 !important;
       }
       /* 清掉旧 pagination 全局小按钮样式在页码条上的影响 */
-      #urppagebar ul.pagination,
-      #urppagebar ul.urppp-pagination {
+      #urppagebar ul.pagination.urppp-pagination-visible,
+      #urppagebar ul.urppp-pagination.urppp-pagination-visible {
         display: inline-flex !important;
         align-items: center !important;
         flex-wrap: wrap !important;
@@ -7819,6 +7846,18 @@
         position: static !important;
         border: none !important;
         background: transparent !important;
+      }
+      /* 滚动分页 / 无页码态：站点 display:none，绝不能被我们 flex 救回 */
+      #urppagebar ul.pagination.urppp-pagination-hidden,
+      #urppagebar ul.urppp-pagination.urppp-pagination-hidden,
+      #urppagebar [id^="pagination_ul_"].urppp-pagination-hidden {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
       }
       #urppagebar ul.pagination > li,
       #urppagebar .paginate_button,
@@ -11012,7 +11051,7 @@ fo-striped.setLabelWidth,
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.9');
+    console.log('[URP++] style applied v0.6.10');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12057,7 +12096,7 @@ fo-striped.setLabelWidth,
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.9',
+    version: '0.6.10',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
