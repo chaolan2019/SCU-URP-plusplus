@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.28
+// @version      0.6.29
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -995,7 +995,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.28';
+          content:'URP++ v0.6.29';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3615,20 +3615,73 @@
     });
   }
 
+  function isLightInlineColor(val) {
+    const s = String(val || '').trim().toLowerCase();
+    if (!s || s === 'transparent' || s === 'inherit' || s === 'initial') return false;
+    // 常见评教/ACE 浅色：#EDF3F4 / #e6e6e6 / #fff / rgb 高亮
+    if (/#(?:f{3,6}|e[0-9a-f]{5}|d[89a-f][0-9a-f]{4}|c[89a-f][0-9a-f]{4})/i.test(s)) return true;
+    const m = s.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+    if (m) {
+      const r = +m[1], g = +m[2], b = +m[3];
+      // 浅灰/浅青底：平均亮度高
+      return (r + g + b) / 3 >= 200;
+    }
+    return false;
+  }
+
+  function scrubLightInlineBg(el) {
+    if (!el || !el.style) return;
+    const st = el.getAttribute('style') || '';
+    if (!st || !/background/i.test(st)) return;
+    const bg = el.style.backgroundColor || el.style.background || '';
+    // 有 background 内联且偏浅 / 或显式写了 background* 属性，一律清掉交给主题
+    if (isLightInlineColor(bg) || /background(-color|-image)?\s*:/i.test(st)) {
+      el.style.removeProperty('background');
+      el.style.removeProperty('background-color');
+      el.style.removeProperty('background-image');
+    }
+    // 边框浅色也清
+    ;['borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor'].forEach((k) => {
+      const v = el.style[k];
+      if (v && isLightInlineColor(v)) el.style.removeProperty(k.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase()));
+    });
+    // 简化：统一清 border-color 系列
+    if (/border(-color)?\s*:/i.test(st) && /#e6e6e6|#eee|#ddd|#ccc/i.test(st)) {
+      el.style.removeProperty('border-color');
+      el.style.removeProperty('border-top-color');
+      el.style.removeProperty('border-right-color');
+      el.style.removeProperty('border-bottom-color');
+      el.style.removeProperty('border-left-color');
+    }
+  }
+
   function scrubTableHeaderInlineBg() {
     try {
       if (!document.documentElement.classList.contains('urppp-theme-dark') &&
           !(document.body && document.body.classList.contains('urppp-dark'))) return;
-      document.querySelectorAll('table thead, table thead tr, table thead th, table thead td').forEach((el) => {
-        const st = el.getAttribute('style') || '';
-        if (!st) return;
-        // 清掉浅色背景内联，交给主题 CSS
-        if (/background/i.test(st) || /background-color/i.test(st)) {
-          el.style.removeProperty('background');
-          el.style.removeProperty('background-color');
-          el.style.removeProperty('background-image');
-        }
+      // 表头 + 评教 table-box 整表浅色内联
+      document.querySelectorAll(
+        'table, table thead, table thead tr, table thead th, table thead td, table tbody, table tbody tr, table tbody td, table tbody th, .table-box, .table-box table, .table-box td, .table-box th'
+      ).forEach(scrubLightInlineBg);
+    } catch (_) {}
+  }
+
+  function scheduleScrubTableInlineBg() {
+    ;[0, 200, 800, 1600].forEach((ms) => setTimeout(() => {
+      try { scrubTableHeaderInlineBg(); } catch (_) {}
+    }, ms));
+    if (window.__urpppTableScrubObs) return;
+    window.__urpppTableScrubObs = true;
+    try {
+      const host = document.querySelector('.page-content, #page-content-template, .main-content') || document.body;
+      if (!host) return;
+      const obs = new MutationObserver(() => {
+        clearTimeout(window.__urpppTableScrubTimer);
+        window.__urpppTableScrubTimer = setTimeout(() => {
+          try { scrubTableHeaderInlineBg(); } catch (_) {}
+        }, 120);
       });
+      obs.observe(host, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
     } catch (_) {}
   }
 
@@ -11075,14 +11128,62 @@ fo-striped.setLabelWidth,
         background: var(--bg) !important;
         color: var(--text) !important;
       }
-      /* 表格：强制 td/th 吃主题色，盖掉 Bootstrap #fff */
+      /* 表格：强制 td/th 吃主题色，盖掉 Bootstrap #fff / 评教 table-box #EDF3F4 */
       html.urppp-theme-dark .table,
       html.urppp-theme-dark .table-bordered,
       html.urppp-theme-dark .table-striped,
       html.urppp-theme-dark .dataTable,
-      html.urppp-theme-dark .urppp-table-wrap {
+      html.urppp-theme-dark .urppp-table-wrap,
+      html.urppp-theme-dark table.table-box,
+      html.urppp-theme-dark .table-box,
+      html.urppp-theme-dark table[style*='background'],
+      html.urppp-theme-dark table[style*='EDF3F4'],
+      html.urppp-theme-dark table[style*='edf3f4'],
+      body.urppp-dark .table,
+      body.urppp-dark table.table-box,
+      body.urppp-dark .table-box {
         background: var(--surface) !important;
         background-color: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      /* 评教问卷等：无 .table class 的裸 table / table-box */
+      html.urppp-theme-dark .page-content table,
+      html.urppp-theme-dark #page-content-template table,
+      html.urppp-theme-dark .main-content table,
+      html.urppp-theme-dark .widget-body table,
+      html.urppp-theme-dark .widget-main table,
+      body.urppp-dark .page-content table {
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      html.urppp-theme-dark .page-content table td,
+      html.urppp-theme-dark .page-content table th,
+      html.urppp-theme-dark #page-content-template table td,
+      html.urppp-theme-dark #page-content-template table th,
+      html.urppp-theme-dark .main-content table td,
+      html.urppp-theme-dark .main-content table th,
+      html.urppp-theme-dark .widget-body table td,
+      html.urppp-theme-dark .widget-body table th,
+      html.urppp-theme-dark table.table-box td,
+      html.urppp-theme-dark table.table-box th,
+      html.urppp-theme-dark .table-box td,
+      html.urppp-theme-dark .table-box th,
+      body.urppp-dark .page-content table td,
+      body.urppp-dark .page-content table th {
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      html.urppp-theme-dark .page-content table thead th,
+      html.urppp-theme-dark .page-content table thead td,
+      html.urppp-theme-dark table.table-box thead th,
+      html.urppp-theme-dark .table-box thead th {
+        background: var(--input-bg) !important;
+        background-color: var(--input-bg) !important;
         color: var(--text) !important;
         border-color: var(--border) !important;
       }
@@ -11671,6 +11772,7 @@ fo-striped.setLabelWidth,
     });
     wrapTables();
     scheduleBeautifyNoticeTables();
+    scheduleScrubTableInlineBg();
 setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusinessDataTable(tb)) stripMistakenNoticeTable(tb); }), 500);
     scheduleWeekScheduleFix();
     fixWeekScheduleLayout();
@@ -11784,7 +11886,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.28');
+    console.log('[URP++] style applied v0.6.29');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12971,7 +13073,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.28',
+    version: '0.6.29',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
