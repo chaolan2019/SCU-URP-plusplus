@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.12
+// @version      0.6.13
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -627,6 +627,7 @@
     } catch (_) {}
     try { syncNavbarThemeUI(); } catch (_) {}
     try { scrubNoticeInlineBg(); } catch (_) {}
+    try { scrubTableHeaderInlineBg(); } catch (_) {}
     const boot = document.getElementById('urppp-boot-loader');
     if (boot) boot.style.fontFamily = t.font;
   }
@@ -682,7 +683,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.12';
+          content:'URP++ v0.6.13';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -3292,7 +3293,24 @@
     });
   }
 
-  function scrubNoticeInlineBg(root) {
+    function scrubTableHeaderInlineBg() {
+    try {
+      if (!document.documentElement.classList.contains('urppp-theme-dark') &&
+          !(document.body && document.body.classList.contains('urppp-dark'))) return;
+      document.querySelectorAll('table thead, table thead tr, table thead th, table thead td').forEach((el) => {
+        const st = el.getAttribute('style') || '';
+        if (!st) return;
+        // 清掉浅色背景内联，交给主题 CSS
+        if (/background/i.test(st) || /background-color/i.test(st)) {
+          el.style.removeProperty('background');
+          el.style.removeProperty('background-color');
+          el.style.removeProperty('background-image');
+        }
+      });
+    } catch (_) {}
+  }
+
+function scrubNoticeInlineBg(root) {
     try {
       const scope = root || document;
       if (scope.matches && scope.matches('tr.urppp-notice-row')) {
@@ -10520,13 +10538,36 @@ fo-striped.setLabelWidth,
         color: var(--text) !important;
         border-color: var(--border) !important;
       }
+      /* 表头：压过 ACE/Bootstrap 的 #f2f2f2 / .center / 内联浅色 */
       html.urppp-theme-dark .table > thead > tr > th,
       html.urppp-theme-dark .table-bordered > thead > tr > th,
-      html.urppp-theme-dark .dataTable > thead > tr > th {
+      html.urppp-theme-dark .dataTable > thead > tr > th,
+      html.urppp-theme-dark table.table > thead > tr > th,
+      html.urppp-theme-dark table.table-striped > thead > tr > th,
+      html.urppp-theme-dark table.table-bordered > thead > tr > th,
+      html.urppp-theme-dark .table thead th,
+      html.urppp-theme-dark .table thead td,
+      html.urppp-theme-dark table thead th,
+      html.urppp-theme-dark table thead td,
+      html.urppp-theme-dark .table > thead > tr,
+      html.urppp-theme-dark .table-bordered > thead > tr,
+      html.urppp-theme-dark table > thead > tr.center,
+      html.urppp-theme-dark table > thead > tr.center > th,
+      html body.urppp-dark .table > thead > tr > th,
+      html body.urppp-dark table thead th,
+      html body.urppp-dark .table thead th {
         background: var(--input-bg) !important;
         background-color: var(--input-bg) !important;
+        background-image: none !important;
         color: var(--text) !important;
         border-color: var(--border) !important;
+      }
+      html.urppp-theme-dark .table > thead,
+      html.urppp-theme-dark .table-bordered > thead,
+      html.urppp-theme-dark table > thead {
+        background: var(--input-bg) !important;
+        background-color: var(--input-bg) !important;
+        background-image: none !important;
       }
       html.urppp-theme-dark .table > tbody > tr > td:not(.green_background):not(.red_background),
       html.urppp-theme-dark .table > tbody > tr > th,
@@ -11197,7 +11238,7 @@ fo-striped.setLabelWidth,
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.12');
+    console.log('[URP++] style applied v0.6.13');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12242,7 +12283,7 @@ fo-striped.setLabelWidth,
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.12',
+    version: '0.6.13',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
