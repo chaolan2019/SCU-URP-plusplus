@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.11
+// @version      0.6.12
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -682,7 +682,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.11';
+          content:'URP++ v0.6.12';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1425,7 +1425,32 @@
       sels.forEach((sel) => {
         if (!sel || sel.multiple || sel.disabled) return;
         if (sel.size && sel.size > 1) return; // 列表多选框跳过
+        // 分页条「每页显示」绝不能 Chosen：width:100% 会让「滚动加载(30)」长度反复跳
+        const inPagebar =
+          (sel.id && String(sel.id).indexOf('pagination_pageSize_') === 0) ||
+          !!(sel.closest && sel.closest('#urppagebar, .urppagebreak, .dataTables_paginate, [id^="sample-table-2_paginate_"]'));
         const $sel = $(sel);
+        if (inPagebar) {
+          try {
+            if ($sel.data('chosen') || sel.classList.contains('chzn-done')) {
+              $sel.chosen('destroy');
+            }
+          } catch (_) { /* ignore */ }
+          // 清掉可能残留的 chosen 容器
+          if (sel.parentElement) {
+            sel.parentElement.querySelectorAll(':scope > .chosen-container').forEach((c) => {
+              try { c.remove(); } catch (_) { /* ignore */ }
+            });
+          }
+          if (sel.nextElementSibling && sel.nextElementSibling.classList.contains('chosen-container')) {
+            try { sel.nextElementSibling.remove(); } catch (_) { /* ignore */ }
+          }
+          sel.classList.remove('urppp-chosen-hidden', 'chzn-done', 'chosen');
+          delete sel.dataset.urpppChosen;
+          sel.style.removeProperty('display');
+          sel.style.setProperty('display', 'inline-block', 'important');
+          return;
+        }
         const already =
           !!$sel.data('chosen') ||
           sel.classList.contains('chzn-done') ||
@@ -1545,6 +1570,30 @@
           bar.classList.remove('urppp-pagebar-jump');
           bar.querySelectorAll('ul.pagination, [id^="pagination_ul_"]').forEach((ul) => {
             ul.style.setProperty('display', 'none', 'important');
+          });
+          // 拆掉误挂的 Chosen，恢复原生 select（固定宽度，长度不再跳）
+          bar.querySelectorAll('select[id^="pagination_pageSize_"], select').forEach((sel) => {
+            try {
+              const $ = pageJQuery();
+              if ($ && $.fn && $(sel).data('chosen')) $(sel).chosen('destroy');
+            } catch (_) { /* ignore */ }
+            if (sel.parentElement) {
+              sel.parentElement.querySelectorAll(':scope > .chosen-container').forEach((c) => {
+                try { c.remove(); } catch (_) { /* ignore */ }
+              });
+            }
+            if (sel.nextElementSibling && sel.nextElementSibling.classList.contains('chosen-container')) {
+              try { sel.nextElementSibling.remove(); } catch (_) { /* ignore */ }
+            }
+            sel.classList.remove('urppp-chosen-hidden', 'chzn-done', 'chosen');
+            delete sel.dataset.urpppChosen;
+            sel.style.setProperty('display', 'inline-block', 'important');
+            sel.style.setProperty('width', '128px', 'important');
+            sel.style.setProperty('min-width', '128px', 'important');
+            sel.style.setProperty('max-width', '128px', 'important');
+          });
+          bar.querySelectorAll('.chosen-container').forEach((c) => {
+            try { c.style.setProperty('display', 'none', 'important'); } catch (_) { /* ignore */ }
           });
           return;
         }
@@ -7723,12 +7772,36 @@
         appearance: menulist !important;
         text-overflow: ellipsis !important;
       }
-      /* 分页条每页条数：禁止 ellipsis 截成「滚动…」反复跳 */
+      /* 分页条每页条数：禁止 ellipsis；禁止 Chosen 接管 */
       #urppagebar select,
       #urppagebar select.form-control,
       .urppagebreak select {
         text-overflow: clip !important;
         max-width: none !important;
+      }
+      #urppagebar .chosen-container,
+      #urppagebar .chosen-container-single,
+      .urppagebreak .chosen-container {
+        display: none !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+      #urppagebar select[id^="pagination_pageSize_"],
+      #urppagebar select.urppp-chosen-hidden,
+      #urppagebar select.chzn-done {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: static !important;
+        width: 128px !important;
+        min-width: 128px !important;
+        max-width: 128px !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        pointer-events: auto !important;
       }
       /* 分页/每页条数：不截断，不强制压扁 */
       .urppagebreak select,
@@ -11124,7 +11197,7 @@ fo-striped.setLabelWidth,
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.11');
+    console.log('[URP++] style applied v0.6.12');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12169,7 +12242,7 @@ fo-striped.setLabelWidth,
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.11',
+    version: '0.6.12',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
