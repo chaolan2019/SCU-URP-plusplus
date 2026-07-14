@@ -4538,7 +4538,7 @@
         position: fixed !important;
         inset: 0 !important;
         background: rgba(15, 23, 42, 0.28) !important;
-        z-index: 10050 !important;
+        z-index: 13050 !important; /* 高于清爽层 12000 */
         display: none !important;
         backdrop-filter: blur(2px) !important;
       }
@@ -4556,7 +4556,7 @@
         border: 1px solid var(--border) !important;
         border-radius: 16px !important;
         box-shadow: 0 18px 48px rgba(15,23,42,0.18) !important;
-        z-index: 10060 !important;
+        z-index: 13060 !important; /* 高于清爽层，清爽内也可打开设置 */
         display: none !important;
         box-sizing: border-box !important;
       }
