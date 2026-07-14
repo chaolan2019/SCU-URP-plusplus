@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.7.4
+// @version      0.7.5
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -369,6 +369,7 @@
   const ACCENT_PRESETS_KEY = 'urppp_accent_presets_v1';
   const SCHEME_KEY = 'urppp_scheme_v1';
   const THEME_FOLLOW_KEY = 'urppp_theme_follow_system_v1';
+  const CLEAN_DEFAULT_KEY = 'urppp_clean_default_v1';
   const FOLLOW_DYNAMIC_KEY = 'urppp_follow_use_dynamic_v1';
   const DEFAULT_ACCENT_PRESETS = ['#1E3A5F', '#B53434', '#0F766E', '#7C3AED', '#C2410C', '#0369A1', '#BE185D', '#365314'];
   const DEFAULT_SEED = '#B53434';
@@ -825,6 +826,14 @@
 
   function setThemeFollowSystem(on) {
     GM_setValue(THEME_FOLLOW_KEY, !!on);
+    return !!on;
+  }
+
+  function isCleanDefault() {
+    try { return !!GM_getValue(CLEAN_DEFAULT_KEY, false); } catch (_) { return false; }
+  }
+  function setCleanDefault(on) {
+    GM_setValue(CLEAN_DEFAULT_KEY, !!on);
     return !!on;
   }
 
@@ -11887,7 +11896,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.7.4');
+    console.log('[URP++] style applied v0.7.5');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -11980,6 +11989,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       dynFollowBtn.textContent = useDyn ? '浅色用动态配色：开' : '浅色用动态配色：关';
       dynFollowBtn.disabled = !follow;
       dynFollowBtn.style.opacity = follow ? '1' : '0.5';
+    }
+    const cleanDefBtn = panel.querySelector('#urppp-set-clean-default');
+    if (cleanDefBtn) {
+      const on = isCleanDefault();
+      cleanDefBtn.classList.toggle('ac', on);
+      cleanDefBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      cleanDefBtn.textContent = on ? '默认进入清爽模式：开' : '默认进入清爽模式：关';
     }
     // 跟随系统时动态区仍可配置（浅色会用到）
     const dyn = panel.querySelector('#urppp-set-dynamic');
@@ -12081,6 +12097,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '      <button type="button" class="urppp-set-follow" id="urppp-set-follow-dynamic" aria-pressed="false">浅色用动态配色：关</button>',
       '    </div>',
       '    <p class="urppp-set-tip" style="margin-top:8px">开启后按系统浅色/深色自动切换。浅色可选用下方动态配色，深色固定深邃暗。</p>',
+      '    <button type="button" class="urppp-set-follow" id="urppp-set-clean-default" aria-pressed="false" style="margin-top:10px;width:100%">默认进入清爽模式：关</button>',
+      '    <p class="urppp-set-tip" style="margin-top:8px">开启后，登录进入系统将自动打开清爽模式（可随时退出）。</p>',
       '  </section>',
       '  <section class="urppp-set-sec" id="urppp-set-dynamic">',
       '    <h3>种子色</h3>',
@@ -12131,6 +12149,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         applyTheme(resolveFollowThemeName(), { system: true });
         syncSettingsPanelUI();
         syncNavbarThemeUI();
+      });
+    }
+    const cleanDefBtn = panel.querySelector('#urppp-set-clean-default');
+    if (cleanDefBtn) {
+      cleanDefBtn.addEventListener('click', () => {
+        setCleanDefault(!isCleanDefault());
+        syncSettingsPanelUI();
       });
     }
     const colorInput = panel.querySelector('#urppp-set-color');
@@ -12966,7 +12991,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // ============================================================
-  // 清爽模式 Clean Mode v0.7.4
+  // 清爽模式 Clean Mode v0.7.5
   // 桌面居中一页 1:1；手机底栏；数据按真实 URP DOM/路径解析
   // 绩点：川大现行百分制对照表；教室：classroomUseStatus 网格
   // ============================================================
@@ -13614,9 +13639,77 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return { rooms, dateLabel };
   }
 
-  async function loadBuildingOccupancy(path) {
-    const html = await fetchText(path);
-    return parseOccupancyDoc(parseHtml(html));
+  async function loadBuildingOccupancy(building) {
+    // building: {path, campusNumber, buildingNumber, name} or legacy path string
+    let xqh = '', jxlh = '', name = '', pagePath = '';
+    if (building && typeof building === 'object') {
+      xqh = String(building.campusNumber || '');
+      jxlh = String(building.buildingNumber || '');
+      name = building.name || '';
+      pagePath = building.path || '';
+    } else {
+      pagePath = String(building || '');
+      const m = pagePath.match(/classroomUseStatus\/(\d+)\/(\d+)\//);
+      if (m) { xqh = m[1]; jxlh = m[2]; }
+    }
+    if (!xqh || !jxlh) throw new Error('缺少校区/楼栋编号');
+    const today = new Date();
+    const date = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+    // 与页面 $("#searchCondition").serialize() 对齐
+    const body = 'xqh=' + encodeURIComponent(xqh)
+      + '&jxlh=' + encodeURIComponent(jxlh)
+      + '&jslx=&jasm=&zwFrom=&zwTo=&searchDate=' + encodeURIComponent(date);
+    const raw = await new Promise((resolve, reject) => {
+      const full = absUrl('/student/teachingResources/classroomUseStatus/jasInfo');
+      if (typeof GM_xmlhttpRequest === 'function') {
+        GM_xmlhttpRequest({
+          method: 'POST', url: full, data: body, withCredentials: true,
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          onload: (r) => r.status >= 200 && r.status < 400 ? resolve(r.responseText || '') : reject(new Error('HTTP ' + r.status)),
+          onerror: () => reject(new Error('network'))
+        });
+      } else {
+        fetch(full, { method: 'POST', credentials: 'include', headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest'
+        }, body }).then(r => r.text()).then(resolve).catch(reject);
+      }
+    });
+    let data;
+    try { data = JSON.parse(raw); } catch (_) { throw new Error('jasInfo 非 JSON'); }
+    const rooms = (data.classrooms || []).map((c) => {
+      const rname = c.classroomName || (c.id && c.id.classroomNumber) || '';
+      const seats = c.placeNum || '';
+      const type = c.remark || '';
+      const slots = [];
+      for (let s = 1; s <= 12; s++) slots.push({ section: s, busy: false });
+      return { name: rname, seats, type, slots, map: {} };
+    });
+    const byName = {};
+    rooms.forEach((r) => { byName[r.name] = r; });
+    (data.classroomTime || []).forEach((ct) => {
+      const id = ct.id || {};
+      const rname = id.classroomNumber || '';
+      const start = Number(id.sessionstart) || 1;
+      const cont = Math.max(1, Number(ct.continuingsession) || 1);
+      const room = byName[rname];
+      if (!room) return;
+      for (let s = start; s < start + cont && s <= 12; s++) {
+        const slot = room.slots.find((x) => x.section === s);
+        if (slot) {
+          slot.busy = true;
+          slot.kind = ct.timestatenumber || ct.occupancymoduleId || '';
+        }
+      }
+    });
+    return {
+      rooms,
+      dateLabel: (data.date || date) + (data.week != null ? ('（周' + data.week + '）') : ''),
+      jxzc: data.jxzc
+    };
   }
 
   // ---- icons ----
@@ -13679,15 +13772,29 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 #urppp-clean-root .uc-name{font-size:18px;font-weight:700;margin:0 0 4px}
 #urppp-clean-root .uc-sub{font-size:12px;color:var(--text-secondary,#667085);line-height:1.5}
 #urppp-clean-root .uc-gpa{margin-top:6px;display:inline-flex;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--primary) 12%,var(--input-bg));font-weight:700;font-size:13px}
-#urppp-clean-root .uc-week{display:grid;grid-template-columns:32px repeat(7,minmax(0,1fr));gap:6px;min-width:680px}
-#urppp-clean-root .uc-week .h{font-size:11px;text-align:center;color:var(--text-secondary)}
-#urppp-clean-root .uc-week .s{font-size:10px;color:var(--text-muted,#98a2b3);display:flex;align-items:center;justify-content:center}
-#urppp-clean-root .uc-cell{min-height:48px;border-radius:10px;background:var(--input-bg);padding:3px;position:relative}
-#urppp-clean-root .uc-lesson{position:relative;background:color-mix(in srgb,var(--primary) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:8px;padding:5px 6px;margin-bottom:3px;cursor:pointer;overflow:hidden}
-#urppp-clean-root .uc-lesson.is-fade{filter:saturate(.35)}
-#urppp-clean-root .uc-lesson b{display:block;font-size:11px;line-height:1.25}
-#urppp-clean-root .uc-lesson i{display:block;font-style:normal;font-size:10px;color:var(--text-secondary);margin-top:2px}
-#urppp-clean-root .uc-badge{position:absolute;top:3px;right:3px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--primary);color:#fff;font-size:10px;line-height:16px;text-align:center;font-weight:700}
+#urppp-clean-root .uc-week{min-width:720px}
+#urppp-clean-root .uc-week-head{display:grid;grid-template-columns:36px repeat(7,minmax(0,1fr));gap:6px;margin-bottom:6px}
+#urppp-clean-root .uc-week-head .h{font-size:11px;text-align:center;color:var(--text-secondary)}
+#urppp-clean-root .uc-week-body{display:grid;grid-template-columns:36px repeat(7,minmax(0,1fr));gap:6px;align-items:start}
+#urppp-clean-root .uc-sec-col .s{height:52px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text-muted,#98a2b3)}
+#urppp-clean-root .uc-day-col{position:relative;height:calc(52px * 12);background:transparent}
+#urppp-clean-root .uc-grid-cell{position:absolute;left:0;right:0;height:52px;border-radius:10px;background:var(--input-bg);border:1px solid transparent}
+#urppp-clean-root .uc-grid-cell:nth-child(n){/* placed via top below in inline? use sequential */}
+#urppp-clean-root .uc-day-col .uc-grid-cell{width:100%}
+#urppp-clean-root .uc-lesson{position:absolute;left:2px;right:2px;z-index:2;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:10px;padding:6px 7px 14px;cursor:pointer;overflow:hidden;box-sizing:border-box}
+#urppp-clean-root .uc-lesson.is-fade{filter:saturate(.4)}
+#urppp-clean-root .uc-lesson b{display:block;font-size:12px;line-height:1.25;font-weight:700}
+#urppp-clean-root .uc-lesson i{display:block;font-style:normal;font-size:10px;color:var(--text-secondary);margin-top:3px}
+#urppp-clean-root .uc-badge{position:absolute;right:5px;bottom:4px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--primary);color:#fff;font-size:10px;line-height:16px;text-align:center;font-weight:700}
+#urppp-clean-root .uc-svc{min-height:120px}
+#urppp-clean-root .uc-svc svg{width:32px;height:32px}
+#urppp-clean-root .uc-svc strong{font-size:13px}
+#urppp-clean-root .uc-card.grow.services{flex:0 0 auto}
+#urppp-clean-root .uc-top-theme{display:inline-flex;align-items:center;gap:8px;margin-left:12px}
+#urppp-clean-root .uc-top-theme .urppp-nav-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);padding:0;cursor:pointer}
+#urppp-clean-root .uc-top-theme .urppp-nav-dot.ac{border-color:var(--primary);box-shadow:0 0 0 3px var(--ring)}
+#urppp-clean-root .uc-top-theme .urppp-nav-settings{width:22px;height:22px;border:0;background:transparent;color:var(--text-secondary);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+#urppp-clean-root .uc-top-left{display:flex;align-items:center;gap:4px}
 #urppp-clean-root .uc-score-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 #urppp-clean-root .uc-score-pane{border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;background:var(--input-bg)}
 #urppp-clean-root .uc-score-pane:hover{border-color:var(--primary)}
@@ -13773,7 +13880,17 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     el.id = 'urppp-clean-root';
     el.innerHTML = `
       <div class="uc-top">
-        <div class="uc-brand">${ico('clean')}<span>清爽模式</span></div>
+        <div class="uc-top-left">
+          <div class="uc-brand">${ico('clean')}<span>清爽模式</span></div>
+          <div class="uc-top-theme" id="uc-top-theme">
+            <button type="button" class="urppp-nav-dot" data-theme="default" title="简约白" style="background:#F1F5F9"></button>
+            <button type="button" class="urppp-nav-dot" data-theme="dark" title="深邃暗" style="background:#0B0F17"></button>
+            <button type="button" class="urppp-nav-dot" data-theme="scu-red" title="动态配色" style="background:#B53434"></button>
+            <button type="button" class="urppp-nav-settings" id="uc-settings" title="设置" aria-label="设置">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
+          </div>
+        </div>
         <div class="uc-top-actions">
           <button type="button" class="uc-btn" id="uc-refresh">${ico('refresh')}<span>刷新</span></button>
           <button type="button" class="uc-btn primary" id="uc-exit">${ico('exit')}<span>退出</span></button>
@@ -13797,6 +13914,38 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     el.querySelector('#uc-refresh').onclick = () => openCleanMode(true);
     el.querySelector('#uc-mask').onclick = closeModal;
     el.querySelector('#uc-modal-close').onclick = closeModal;
+    const syncCleanThemeDots = () => {
+      const ct = getCurrent();
+      el.querySelectorAll('#uc-top-theme .urppp-nav-dot[data-theme]').forEach((d) => {
+        d.classList.toggle('ac', d.dataset.theme === ct);
+      });
+      const last = el.querySelector('#uc-top-theme .urppp-nav-dot[data-theme="scu-red"]');
+      if (last) {
+        try {
+          const seed = getAccent() || DEFAULT_SEED;
+          const prev = buildSchemePreview(seed, getScheme());
+          last.style.background = 'linear-gradient(135deg, ' + prev.primary + ' 0 55%, ' + prev.surface + ' 55% 100%)';
+        } catch (_) {
+          last.style.background = getAccent() || '#B53434';
+        }
+      }
+    };
+    el.querySelectorAll('#uc-top-theme .urppp-nav-dot[data-theme]').forEach((dot) => {
+      dot.addEventListener('click', () => {
+        applyTheme(dot.dataset.theme, { manual: true });
+        syncCleanThemeDots();
+        try { syncNavbarThemeUI(); } catch (_) {}
+        try { syncSettingsPanelUI(); } catch (_) {}
+      });
+    });
+    const setBtn = el.querySelector('#uc-settings');
+    if (setBtn) setBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      try { openSettingsPanel(); } catch (_) {}
+    });
+    el.__syncCleanThemeDots = syncCleanThemeDots;
+    syncCleanThemeDots();
     el.querySelectorAll('#uc-tabbar button').forEach((btn) => {
       btn.onclick = () => {
         state.mobileTab = btn.dataset.tab;
@@ -13814,54 +13963,60 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   }
 
   function renderScheduleBoard(courses) {
-    // 跨节：同一 day 上按 section 起点画 span 行；同格多课：本周优先外显，其余折叠角标
     const weekNo = getCurrentWeekNumber();
     const list = (courses || []).map((c) => Object.assign({}, c, {
       thisWeek: c.thisWeek || weekBitActive(c.classWeek, weekNo),
       span: Math.max(1, c.span || 1),
       color: c.color || courseColor(c.name)
     }));
-    // occupied cells covered by multi-span starters
-    const covered = new Set();
+    // group by day+startSection
+    const byStart = {};
     list.forEach((c) => {
-      for (let s = c.section + 1; s < c.section + c.span && s <= 12; s++) covered.add(c.day + '_' + s + '_' + c.name + '_' + c.place);
-    });
-    const byCell = {};
-    list.forEach((c) => {
-      // only render at start section
       const k = c.day + '_' + c.section;
-      (byCell[k] || (byCell[k] = [])).push(c);
+      (byStart[k] || (byStart[k] = [])).push(c);
     });
-    let html = `<div class="uc-week" data-week="${weekNo}"><div class="h"></div>`;
+    // mark cells that are only continuations (for empty look still show grid)
+    let html = `<div class="uc-week" data-week="${weekNo}">`;
+    html += '<div class="uc-week-head"><div class="h"></div>';
     for (let d = 0; d < 7; d++) html += `<div class="h">${DAY_NAMES[d]}</div>`;
-    for (let s = 1; s <= 12; s++) {
-      html += `<div class="s">${s}</div>`;
-      for (let d = 0; d < 7; d++) {
-        const cellCourses = (byCell[d + '_' + s] || []).slice().sort((a, b) => (b.thisWeek ? 1 : 0) - (a.thisWeek ? 1 : 0));
-        // filter ones that are continuation-only duplicates already represented as span
-        const starters = cellCourses;
+    html += '</div><div class="uc-week-body">';
+    // left section labels
+    html += '<div class="uc-sec-col">';
+    for (let s = 1; s <= 12; s++) html += `<div class="s">${s}</div>`;
+    html += '</div>';
+    // 7 day columns
+    for (let d = 0; d < 7; d++) {
+      html += `<div class="uc-day-col" data-day="${d}">`;
+      // background grid cells: fixed equal height
+      for (let s = 1; s <= 12; s++) html += `<div class="uc-grid-cell" data-sec="${s}" style="top:${(s-1)*52}px"></div>`;
+      // place courses absolutely
+      for (let s = 1; s <= 12; s++) {
+        const starters = (byStart[d + '_' + s] || []).slice().sort((a, b) => (b.thisWeek ? 1 : 0) - (a.thisWeek ? 1 : 0));
+        if (!starters.length) continue;
         const primary = starters.find((c) => c.thisWeek) || starters[0];
         const rest = starters.filter((c) => c !== primary);
-        const span = primary ? primary.span : 1;
-        html += `<div class="uc-cell" data-day="${d}" data-sec="${s}">`;
-        if (primary) {
-          const fade = primary.thisWeek ? '' : ' is-fade';
-          const bg = primary.thisWeek ? primary.color : 'transparent';
-          const style = primary.thisWeek
-            ? `background:${primary.color}22;border-color:${primary.color}66;color:var(--text)`
-            : `background:color-mix(in srgb,${primary.color} 8%,var(--input-bg));border-color:var(--border);opacity:.55`;
-          const badge = rest.length ? `<span class="uc-badge">+${rest.length}</span>` : '';
-          const spanAttr = span > 1 ? ` data-span="${span}"` : '';
-          html += `<div class="uc-lesson${fade}" style="${style};${span > 1 ? 'min-height:' + (span * 48 - 8) + 'px' : ''}"${spanAttr} data-course='${escapeHtml(JSON.stringify({ name: primary.name, teacher: primary.teacher, place: primary.place, week: primary.week, day: primary.day, section: primary.section, span: primary.span, thisWeek: primary.thisWeek, others: rest.map((r) => ({ name: r.name, teacher: r.teacher, place: r.place, week: r.week, thisWeek: r.thisWeek })) }))}'>
-            <b>${escapeHtml(primary.name)}</b>
-            <i>${escapeHtml([primary.place, primary.week].filter(Boolean).join(' · '))}</i>
-            ${badge}
-          </div>`;
-        }
-        html += '</div>';
+        const span = primary.span;
+        const top = (s - 1) * 52;
+        const height = span * 52 - 6;
+        const style = primary.thisWeek
+          ? `top:${top}px;height:${height}px;background:${primary.color}33;border-color:${primary.color}99`
+          : `top:${top}px;height:${height}px;background:color-mix(in srgb,${primary.color} 10%,var(--input-bg));border-color:var(--border);opacity:.5`;
+        const badge = rest.length ? `<span class="uc-badge">+${rest.length}</span>` : '';
+        const payload = escapeHtml(JSON.stringify({
+          name: primary.name, teacher: primary.teacher, place: primary.place, week: primary.week,
+          day: primary.day, section: primary.section, span: primary.span, thisWeek: primary.thisWeek,
+          others: rest.map((r) => ({ name: r.name, teacher: r.teacher, place: r.place, week: r.week, thisWeek: r.thisWeek, section: r.section, span: r.span }))
+        }));
+        html += `<div class="uc-lesson${primary.thisWeek ? '' : ' is-fade'}" style="${style}" data-course='${payload}'>
+          <b>${escapeHtml(primary.name)}</b>
+          <i>${escapeHtml([primary.place, primary.week].filter(Boolean).join(' · '))}</i>
+          ${badge}
+        </div>`;
       }
+      html += '</div>';
     }
-    return html + '</div>';
+    html += '</div></div>';
+    return html;
   }
 
   function servicesHtml() {
@@ -13921,7 +14076,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           <div class="uc-hd"><span>成绩总览</span><span class="uc-sub">点击查看明细</span></div>
           <div class="uc-bd">${scoreBody}</div>
         </div>
-        <div class="uc-card grow">
+        <div class="uc-card services">
           <div class="uc-hd">服务</div>
           <div class="uc-bd">${servicesHtml()}</div>
         </div>
@@ -13973,7 +14128,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       <div style="margin-bottom:14px">
         <div style="font-weight:700;margin:0 0 8px">${escapeHtml(g.campus)}</div>
         <div class="uc-build-grid">
-          ${g.buildings.map((b) => `<button type="button" data-build-path="${escapeHtml(b.path)}">${escapeHtml(b.name)}</button>`).join('')}
+          ${g.buildings.map((b) => `<button type="button" data-build-path="${escapeHtml(b.path)}" data-cn="${escapeHtml(b.campusNumber || '')}" data-bn="${escapeHtml(b.buildingNumber || '')}">${escapeHtml(b.name)}</button>`).join('')}
         </div>
       </div>`).join('');
   }
@@ -14020,7 +14175,9 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     scope.querySelectorAll('[data-build-path]').forEach((n) => n.addEventListener('click', async () => {
       const path = n.getAttribute('data-build-path');
       const name = (n.textContent || '').trim();
-      await showBuilding(path, name);
+      const cn = n.getAttribute('data-cn') || '';
+      const bn = n.getAttribute('data-bn') || '';
+      await showBuilding({ path, name, campusNumber: cn, buildingNumber: bn }, name);
     }));
     const back = scope.querySelector('#uc-room-back');
     if (back) back.onclick = () => {
@@ -14133,9 +14290,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     };
 
     // 点击行选择
+    let suppressClick = false;
     table.querySelectorAll('tbody tr[data-idx]').forEach((tr) => {
       tr.addEventListener('click', (e) => {
-        if (e.detail === 0) return;
+        if (suppressClick) { suppressClick = false; return; }
         const i = parseInt(tr.getAttribute('data-idx'), 10);
         toggleIdx(i);
         paint();
@@ -14171,15 +14329,50 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
     };
+    // 框选基线：始终在已有选择上累加/切换，不整表清空
+    let baseSet = null;
+    const onMove2 = (e) => {
+      if (!dragging || !box) return;
+      const x1 = e.clientX, y1 = e.clientY;
+      const left = Math.min(x0, x1), top = Math.min(y0, y1);
+      const w = Math.abs(x1 - x0), h = Math.abs(y1 - y0);
+      box.style.display = (w > 4 || h > 4) ? 'block' : 'none';
+      box.style.left = left + 'px';
+      box.style.top = top + 'px';
+      box.style.width = w + 'px';
+      box.style.height = h + 'px';
+      if (w <= 4 && h <= 4) return;
+      const sel = { left, top, right: left + w, bottom: top + h };
+      // 恢复基线后，对命中行 toggle
+      state.selected[key] = new Set(baseSet);
+      rowsEls().forEach((tr) => {
+        const r = tr.getBoundingClientRect();
+        const hit = !(r.right < sel.left || r.left > sel.right || r.bottom < sel.top || r.top > sel.bottom);
+        if (!hit) return;
+        const i = parseInt(tr.getAttribute('data-idx'), 10);
+        if (baseSet.has(i)) state.selected[key].delete(i);
+        else state.selected[key].add(i);
+      });
+      paint();
+    };
+    const onUp2 = (e) => {
+      const moved = Math.abs(e.clientX - x0) > 4 || Math.abs(e.clientY - y0) > 4;
+      dragging = false;
+      if (box) box.style.display = 'none';
+      document.removeEventListener('mousemove', onMove2);
+      document.removeEventListener('mouseup', onUp2);
+      // 纯点击（未拖拽）由 tr click 处理；这里避免 mousedown 抢状态
+      if (moved) suppressClick = true;
+      paint();
+    };
     wrap.addEventListener('mousedown', (e) => {
       if (e.button !== 0) return;
-      // 从空白/行上开始框选
+      // 点在行上：允许点击选择；拖拽时用框选
       dragging = true;
-      additive = e.ctrlKey || e.metaKey || e.shiftKey;
       x0 = e.clientX; y0 = e.clientY;
-      if (!additive) state.selected[key] = new Set();
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
+      baseSet = new Set(state.selected[key]);
+      document.addEventListener('mousemove', onMove2);
+      document.addEventListener('mouseup', onUp2);
     });
 
     body.querySelectorAll('[data-scheme-idx]').forEach((btn) => btn.addEventListener('click', () => {
@@ -14205,13 +14398,14 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     }
   }
 
-  async function showBuilding(path, name) {
+  async function showBuilding(building, name) {
     const body = document.querySelector('#uc-modal-body') || document.querySelector('#uc-room-panel');
     if (body) body.innerHTML = '<div class="uc-loading">加载占用网格…</div>';
     try {
-      const pack = await loadBuildingOccupancy(path);
+      const pack = await loadBuildingOccupancy(building);
       state.occupancy = pack;
-      state.currentBuilding = { path, name };
+      state.currentBuilding = typeof building === 'object' ? building : { path: building, name };
+      name = name || (building && building.name) || '';
       if (body) {
         body.innerHTML = occupancyHtml(pack, name);
         bindUI(body);
@@ -14257,6 +14451,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     state.open = true;
     document.documentElement.classList.add('urppp-clean-lock', CLEAN_FLAG);
     rootEl().classList.add('open');
+    try { if (rootEl().__syncCleanThemeDots) rootEl().__syncCleanThemeDots(); } catch (_) {}
     loadAll(!!force);
   }
   function closeCleanMode() {
@@ -14345,6 +14540,12 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       ;[400, 1200, 2500].forEach((ms) => setTimeout(() => {
         try { if (window.__urpppCleanMode) window.__urpppCleanMode.inject(); } catch (_) {}
       }, ms));
+      // 默认进入清爽模式
+      try {
+        if (isCleanDefault() && window.__urpppCleanMode) {
+          setTimeout(() => { try { window.__urpppCleanMode.open(false); } catch (_) {} }, 700);
+        }
+      } catch (_) {}
     }
   }
 
