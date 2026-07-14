@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.10
+// @version      0.6.11
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -682,7 +682,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.10';
+          content:'URP++ v0.6.11';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -7723,6 +7723,13 @@
         appearance: menulist !important;
         text-overflow: ellipsis !important;
       }
+      /* 分页条每页条数：禁止 ellipsis 截成「滚动…」反复跳 */
+      #urppagebar select,
+      #urppagebar select.form-control,
+      .urppagebreak select {
+        text-overflow: clip !important;
+        max-width: none !important;
+      }
       /* 分页/每页条数：不截断，不强制压扁 */
       .urppagebreak select,
       .urppagebreak #pagesize,
@@ -7895,16 +7902,20 @@
         display: inline-block !important;
         float: none !important;
         vertical-align: middle !important;
-        width: auto !important;
-        min-width: 52px !important;
-        max-width: 72px !important;
-        height: 26px !important;
-        min-height: 26px !important;
-        max-height: 26px !important;
-        margin: 0 2px !important;
-        padding: 0 4px !important;
-        flex: 0 0 auto !important;
+        /* 站点 on 模式原宽 100px；中文「滚动加载(30)」需更宽，固定避免截断乱跳 */
+        width: 128px !important;
+        min-width: 128px !important;
+        max-width: 128px !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        max-height: 28px !important;
+        margin: 0 4px !important;
+        padding: 0 8px !important;
+        flex: 0 0 128px !important;
         box-sizing: border-box !important;
+        text-overflow: clip !important;
+        overflow: hidden !important;
+        white-space: nowrap !important;
       }
       #urppagebar.urppp-pagebar-scroll [id^="btn_turnpageto_"],
       #urppagebar:has([id^="turnpageto_"][readonly]) [id^="btn_turnpageto_"] {
@@ -8088,18 +8099,20 @@
       html body #urppagebar.urppp-pagebar-scroll select[id^="pagination_pageSize_"],
       html body #urppagebar.urppp-pagebar-scroll select {
         display: inline-block !important;
-        height: 26px !important;
-        min-height: 26px !important;
-        max-height: 26px !important;
-        width: auto !important;
-        min-width: 52px !important;
-        max-width: 72px !important;
-        padding: 0 4px !important;
-        margin: 0 2px !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        max-height: 28px !important;
+        width: 128px !important;
+        min-width: 128px !important;
+        max-width: 128px !important;
+        padding: 0 8px !important;
+        margin: 0 4px !important;
         font-size: 12px !important;
         vertical-align: middle !important;
         border-radius: 6px !important;
-        flex: 0 0 auto !important;
+        flex: 0 0 128px !important;
+        text-overflow: clip !important;
+        overflow: hidden !important;
       }
       #urppagebar [id^="totalPage_show_"],
       #urppagebar [id^="span_page_txt_"] {
@@ -11111,7 +11124,7 @@ fo-striped.setLabelWidth,
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.10');
+    console.log('[URP++] style applied v0.6.11');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12156,7 +12169,7 @@ fo-striped.setLabelWidth,
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.10',
+    version: '0.6.11',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
