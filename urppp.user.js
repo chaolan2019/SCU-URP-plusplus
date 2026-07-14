@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.6.8
+// @version      0.6.9
 // @description  四川大学 URP 教务系统登录页美化 | UI UX Pro Max | Minimalism & Swiss Style
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -682,7 +682,7 @@
 
         /* 版本水印 */
         #urppp-root::after{
-          content:'URP++ v0.6.8';
+          content:'URP++ v0.6.9';
           position:fixed;bottom:14px;right:18px;
           font-size:11px;color:var(--text-secondary);
           opacity:.5;letter-spacing:1px;pointer-events:none;
@@ -1615,30 +1615,22 @@
           ].join(';');
         });
 
-        // 跳转区：有则美化尺寸/定位；无跳转功能的页面（站点 display:none 或未注入）绝不强制显示
+        // 跳转区：pagination.js 始终生成 turnpageto；
+        // 真正可跳转：span_page_txt="转到" 且 input 可编辑/有 onfocus
+        // 滚动分页(_sl)：文案改成「第」、input readonly、去掉 onfocus —— 这不是跳转，不要画成输入框
         const jumpInputs = Array.from(bar.querySelectorAll('[id^="turnpageto_"]'));
         const jumpBtns = Array.from(bar.querySelectorAll('[id^="btn_turnpageto_"]'));
-        const hasJumpUi = jumpInputs.length > 0 || jumpBtns.length > 0;
-        // 站点关闭跳转时，输入/按钮通常带 display:none；也可能存在但不可见
-        const jumpEnabled = jumpInputs.some((inp) => {
-          const st = (inp.getAttribute('style') || '') + ';' + (inp.style && inp.style.cssText || '');
-          // 未显式 none 且不是 type=hidden，视为启用
+        const pageTxtEls = Array.from(bar.querySelectorAll('[id^="span_page_txt_"]'));
+        const pageTxt = pageTxtEls.map((el) => String(el.textContent || '').trim()).join('');
+        const isJumpMode = jumpInputs.some((inp) => {
           if ((inp.type || '').toLowerCase() === 'hidden') return false;
-          if (/display\s*:\s*none/i.test(st)) return false;
-          const cs = window.getComputedStyle(inp);
-          // 若被我们之前错误显示，仍可能是 visible；以站点原始意图：有 focus 处理器且非 hidden
-          return cs.display !== 'none' || !/display\s*:\s*none/i.test(inp.getAttribute('style') || '');
-        });
-        // 更稳：pagebar 第 6 参为 "off" 时站点仍可能生成节点但默认 none；
-        // 若所有 jump 控件 computed 为 none，则整组隐藏并跳过美化显示。
-        const anyJumpVisible = jumpInputs.concat(jumpBtns).some((el) => {
-          try {
-            const cs = window.getComputedStyle(el);
-            return cs.display !== 'none' && cs.visibility !== 'hidden' && cs.opacity !== '0';
-          } catch (_) { return false; }
-        });
-        // 若节点存在但当前都是 none，保持隐藏（不强制 display）
-        const enableJumpChrome = hasJumpUi && anyJumpVisible;
+          if (inp.readOnly || inp.disabled) return false;
+          // 站点滚动态会 removeAttr('onfocus')；跳转态有 turnpagetoFocus
+          const onf = inp.getAttribute('onfocus') || '';
+          if (onf && /turnpagetoFocus/i.test(onf)) return true;
+          // 文案「转到」也视为跳转
+          return pageTxt.indexOf('转到') >= 0;
+        }) || (pageTxt.indexOf('转到') >= 0 && jumpInputs.some((inp) => !inp.readOnly && !inp.disabled));
 
         jumpBtns.forEach((btn) => {
           btn.classList.add('urppp-page-confirm');
@@ -1653,21 +1645,55 @@
           btn.style.setProperty('font-size', '13px', 'important');
           btn.style.setProperty('line-height', '1', 'important');
           btn.style.setProperty('vertical-align', 'middle', 'important');
-          // 不写 display：交给站点 none/inline-block
+          if (!isJumpMode) {
+            btn.style.setProperty('display', 'none', 'important');
+            btn.classList.remove('urppp-page-confirm-show');
+          }
         });
 
         jumpInputs.forEach((inp) => {
-          // 无跳转功能：保持隐藏，不要 set display
-          const attrStyle = inp.getAttribute('style') || '';
-          const siteWantsHidden =
-            (inp.type || '').toLowerCase() === 'hidden' ||
-            /display\s*:\s*none/i.test(attrStyle) ||
-            !enableJumpChrome;
-          inp.classList.add('urppp-page-goto');
-          inp.style.setProperty('position', 'static', 'important');
-          // 关键：不要 display:inline-block !important 强行显示
-          if (siteWantsHidden) {
+          const wrapSpan = inp.parentElement;
+          // 清理旧的纯文本页码
+          if (wrapSpan) {
+            wrapSpan.querySelectorAll('.urppp-page-num-text').forEach((n) => n.remove());
+          }
+
+          if (!isJumpMode) {
+            // 非跳转：隐藏输入框，用纯文本显示当前页（「第 1 页」）
+            inp.classList.remove('urppp-page-goto');
+            inp.classList.add('urppp-page-num-source');
             inp.style.setProperty('display', 'none', 'important');
+            inp.style.setProperty('position', 'static', 'important');
+            const num = document.createElement('span');
+            num.className = 'urppp-page-num-text';
+            num.textContent = String(inp.value || '').trim() || '1';
+            num.setAttribute('aria-hidden', 'true');
+            if (wrapSpan) {
+              wrapSpan.insertBefore(num, inp);
+              wrapSpan.style.setProperty('position', 'static', 'important');
+              wrapSpan.style.setProperty('display', 'inline', 'important');
+              wrapSpan.style.setProperty('width', 'auto', 'important');
+              wrapSpan.style.setProperty('height', 'auto', 'important');
+              wrapSpan.style.setProperty('min-height', '0', 'important');
+              wrapSpan.style.setProperty('vertical-align', 'baseline', 'important');
+            } else {
+              inp.insertAdjacentElement('beforebegin', num);
+            }
+            const btnId = String(inp.id || '').replace(/^turnpageto_/, 'btn_turnpageto_');
+            const btn = document.getElementById(btnId);
+            if (btn) {
+              btn.style.setProperty('display', 'none', 'important');
+              btn.classList.remove('urppp-page-confirm-show');
+            }
+            return;
+          }
+
+          // 跳转模式：美化输入，不强制盖掉站点 display
+          inp.classList.add('urppp-page-goto');
+          inp.classList.remove('urppp-page-num-source');
+          inp.style.setProperty('position', 'static', 'important');
+          if (!/display\s*:\s*none/i.test(inp.getAttribute('style') || '')) {
+            // 仅在站点未隐藏时给尺寸，不写 display
           }
           inp.style.setProperty('height', '32px', 'important');
           inp.style.setProperty('width', '48px', 'important');
@@ -1677,25 +1703,14 @@
           inp.style.setProperty('line-height', '1.2', 'important');
           inp.style.setProperty('box-sizing', 'border-box', 'important');
           inp.style.setProperty('vertical-align', 'middle', 'important');
-          const wrapSpan = inp.parentElement;
           if (wrapSpan && wrapSpan.tagName === 'SPAN') {
             wrapSpan.style.setProperty('position', 'static', 'important');
-            if (siteWantsHidden) {
-              wrapSpan.style.setProperty('display', 'none', 'important');
-            } else {
-              wrapSpan.style.setProperty('display', 'inline-flex', 'important');
-              wrapSpan.style.setProperty('align-items', 'center', 'important');
-            }
+            wrapSpan.style.setProperty('display', 'inline-flex', 'important');
+            wrapSpan.style.setProperty('align-items', 'center', 'important');
             wrapSpan.style.setProperty('width', 'auto', 'important');
             wrapSpan.style.setProperty('height', 'auto', 'important');
             wrapSpan.style.setProperty('min-height', '0', 'important');
             wrapSpan.style.setProperty('vertical-align', 'middle', 'important');
-          }
-          // 配套确定按钮：无跳转时一并藏
-          if (siteWantsHidden) {
-            const btnId = String(inp.id || '').replace(/^turnpageto_/, 'btn_turnpageto_');
-            const btn = document.getElementById(btnId);
-            if (btn) btn.style.setProperty('display', 'none', 'important');
           }
         });
 
@@ -7912,8 +7927,25 @@
         color: #fff !important;
         border-color: var(--primary) !important;
       }
-      /* 跳转输入 + 确定：只改尺寸定位，绝不强制 display（无跳转页站点为 none） */
-      #urppagebar [id^="turnpageto_"],
+      /* 非跳转页：当前页纯文本（替代输入框） */
+      #urppagebar .urppp-page-num-text {
+        display: inline !important;
+        margin: 0 2px !important;
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        color: var(--text) !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        line-height: 1.5 !important;
+        vertical-align: baseline !important;
+      }
+      /* 跳转输入：只改尺寸定位；非跳转源 input 保持 hidden */
+      #urppagebar input.urppp-page-num-source,
+      #urppagebar [id^="turnpageto_"].urppp-page-num-source {
+        display: none !important;
+      }
+      #urppagebar [id^="turnpageto_"].urppp-page-goto,
       #urppagebar input.urppp-page-goto {
         position: static !important;
         height: 32px !important;
@@ -10980,7 +11012,7 @@ fo-striped.setLabelWidth,
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.6.8');
+    console.log('[URP++] style applied v0.6.9');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12025,7 +12057,7 @@ fo-striped.setLabelWidth,
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.6.8',
+    version: '0.6.9',
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
