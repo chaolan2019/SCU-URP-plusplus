@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.7.10
+// @version      0.7.11
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -4330,33 +4330,60 @@
       try {
         m.classList.remove('in', 'show');
         m.setAttribute('aria-hidden', 'true');
+        // 先清再写，确保能压过任何残留
         m.style.removeProperty('display');
-        m.style.setProperty('display', 'none');
+        m.style.setProperty('display', 'none', 'important');
+        // 下一帧降级为普通 none，避免长期 important 锁死后续打开
+        setTimeout(() => {
+          try {
+            if (!m.classList.contains('in') && !m.classList.contains('show')) {
+              if (m.style.getPropertyPriority('display') === 'important') m.style.removeProperty('display');
+              m.style.display = 'none';
+            }
+          } catch (_) {}
+        }, 30);
       } catch (_) {}
     };
+    const clearBackdrops = () => {
+      document.querySelectorAll('.modal-backdrop').forEach((b) => {
+        try { if (b.parentElement) b.parentElement.removeChild(b); } catch (_) {}
+      });
+      if (document.body) {
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('padding-right');
+        document.body.style.removeProperty('overflow');
+      }
+    };
     const hideModalEl = (m) => {
-      if (!m || !m.classList || !m.classList.contains('modal')) return;
+      if (!m) return;
+      // 允许传入 backdrop：找到当前打开 modal
+      if (m.classList && m.classList.contains('modal-backdrop')) {
+        m = document.querySelector('.modal.in, .modal.show') || m;
+      }
+      if (!m || !m.classList || !m.classList.contains('modal')) {
+        clearBackdrops();
+        return;
+      }
       unlock(m);
+      // 空白关闭要“一定关得掉”：先硬关，再尝试触发站点回调
+      forceHide(m);
+      clearBackdrops();
       try {
-        const $ = (typeof pageJQuery === 'function' && pageJQuery()) || window.jQuery || window.$;
+        const $ = (typeof pageJQuery === 'function' && pageJQuery())
+          || (typeof unsafeWindow !== 'undefined' && (unsafeWindow.jQuery || unsafeWindow.$))
+          || window.jQuery || window.$;
         if ($ && $.fn && typeof $.fn.modal === 'function') {
-          $(m).modal('hide');
-          // 若站点 static/backdrop 失效，短延迟强制收尾
-          setTimeout(() => {
-            if (!m.classList.contains('in') && !m.classList.contains('show')) {
-              forceHide(m);
-              cleanupStuckModals();
-            } else if (m.classList.contains('in') || m.classList.contains('show')) {
-              // jQuery hide 未生效时硬关
-              forceHide(m);
-              cleanupStuckModals();
-            }
-          }, 80);
-          return;
+          try { $(m).trigger('hide.bs.modal'); } catch (_) {}
+          try { $(m).modal('hide'); } catch (_) {}
+          try { $(m).trigger('hidden.bs.modal'); } catch (_) {}
         }
       } catch (_) {}
-      forceHide(m);
-      cleanupStuckModals();
+      // 双保险
+      setTimeout(() => {
+        forceHide(m);
+        if (!document.querySelector('.modal.in, .modal.show')) clearBackdrops();
+        try { cleanupStuckModals(); } catch (_) {}
+      }, 0);
     };
     document.addEventListener('show.bs.modal', (e) => {
       const m = e.target;
@@ -4391,62 +4418,64 @@
         }
       }
     }, true);
-    // 点击遮罩 / 弹窗空白（非 dialog 内容）关闭
-    // 用 click 捕获，兼容站点 stopPropagation；同时兼容 dialog 居中后点两侧空白
-    document.addEventListener('click', (e) => {
+    // 点击遮罩 / 弹窗空白关闭（硬关，不依赖 Bootstrap 是否吃到事件）
+    const onBlankClose = (e) => {
       const t = e.target;
       if (!t || !t.closest) return;
-      // 忽略关闭按钮本身（另有处理）
-      if (t.closest('[data-dismiss="modal"], .modal .close, .modal [aria-label="Close"]')) return;
-      // 1) backdrop
+      // 点在内容区内部：不关
+      if (t.closest('.modal-dialog, .modal-content, .modal-header, .modal-body, .modal-footer')) {
+        // 但关闭按钮继续走下面逻辑
+        if (!t.closest('[data-dismiss="modal"], .modal .close, .modal [aria-label="Close"]')) return;
+      }
+      // backdrop
       if (t.classList && t.classList.contains('modal-backdrop')) {
-        const open = document.querySelector('.modal.in, .modal.show');
+        const open = document.querySelector('.modal.in, .modal.show') || document.querySelector('.modal[style*="display: block"], .modal[style*="display:block"]');
         if (open) {
           e.preventDefault();
           e.stopPropagation();
           hideModalEl(open);
+        } else {
+          // 没有 open class 也清掉残留遮罩
+          e.preventDefault();
+          clearBackdrops();
+          cleanupStuckModals();
         }
         return;
       }
-      // 2) 点在 .modal 根节点（target 就是 modal）
-      if (t.classList && t.classList.contains('modal') && (t.classList.contains('in') || t.classList.contains('show'))) {
-        e.preventDefault();
-        e.stopPropagation();
-        hideModalEl(t);
+      // modal shell / outside dialog by geometry
+      let shell = null;
+      if (t.classList && t.classList.contains('modal')) shell = t;
+      else shell = t.closest('.modal.in, .modal.show, .modal');
+      if (!shell || !shell.classList.contains('modal')) return;
+      const openLike = shell.classList.contains('in') || shell.classList.contains('show') || getComputedStyle(shell).display !== 'none';
+      if (!openLike) return;
+      const dialog = shell.querySelector('.modal-dialog');
+      if (dialog) {
+        const r = dialog.getBoundingClientRect();
+        const x = e.clientX, y = e.clientY;
+        const inside = x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+        if (inside && !t.closest('[data-dismiss="modal"], .modal .close, .modal [aria-label="Close"]')) return;
+      } else if (t.closest('.modal-content')) {
         return;
       }
-      // 3) 点在 modal 内但不在 dialog/content 上
-      const shell = t.closest('.modal.in, .modal.show');
-      if (shell && !t.closest('.modal-dialog, .modal-content')) {
-        e.preventDefault();
-        e.stopPropagation();
-        hideModalEl(shell);
-        return;
-      }
-      // 4) 点在 modal 上但落在 dialog 外侧空白：用坐标判断
-      if (shell && t.closest('.modal')) {
-        const dialog = shell.querySelector('.modal-dialog');
-        if (dialog) {
-          const r = dialog.getBoundingClientRect();
-          const x = e.clientX, y = e.clientY;
-          const inside = x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
-          if (!inside) {
-            e.preventDefault();
-            e.stopPropagation();
-            hideModalEl(shell);
-          }
-        }
-      }
-    }, true);
-    // 兜底：点关闭按钮 / data-dismiss 后 50ms 再清一次
+      e.preventDefault();
+      e.stopPropagation();
+      hideModalEl(shell);
+    };
+    document.addEventListener('pointerdown', onBlankClose, true);
+    document.addEventListener('mousedown', onBlankClose, true);
+    document.addEventListener('click', onBlankClose, true);
+    // 关闭按钮：立即硬关，避免只靠 Bootstrap
     document.addEventListener('click', (e) => {
       const t = e.target && e.target.closest ? e.target.closest('[data-dismiss="modal"], .modal .close, .modal [aria-label="Close"]') : null;
       if (!t) return;
       const m = t.closest('.modal');
-      setTimeout(() => {
-        try { cleanupStuckModals(); } catch (_) {}
-        if (m && !m.classList.contains('in') && !m.classList.contains('show')) forceHide(m);
-      }, 50);
+      if (m) {
+        e.preventDefault();
+        e.stopPropagation();
+        hideModalEl(m);
+      }
+      setTimeout(() => { try { cleanupStuckModals(); } catch (_) {} }, 50);
       setTimeout(() => { try { cleanupStuckModals(); } catch (_) {} }, 220);
     }, true);
     // 侧栏抽屉打开：站点 animate width，清理我们可能写过的锁
@@ -12127,7 +12156,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.7.10');
+    console.log('[URP++] style applied v0.7.11');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
