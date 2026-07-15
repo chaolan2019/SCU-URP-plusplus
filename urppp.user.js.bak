@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.7.8
+// @version      0.7.8-noclean-sync
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -369,7 +369,6 @@
   const ACCENT_PRESETS_KEY = 'urppp_accent_presets_v1';
   const SCHEME_KEY = 'urppp_scheme_v1';
   const THEME_FOLLOW_KEY = 'urppp_theme_follow_system_v1';
-  const CLEAN_DEFAULT_KEY = 'urppp_clean_default_v1';
   const FOLLOW_DYNAMIC_KEY = 'urppp_follow_use_dynamic_v1';
   const DEFAULT_ACCENT_PRESETS = ['#1E3A5F', '#B53434', '#0F766E', '#7C3AED', '#C2410C', '#0369A1', '#BE185D', '#365314'];
   const DEFAULT_SEED = '#B53434';
@@ -826,14 +825,6 @@
 
   function setThemeFollowSystem(on) {
     GM_setValue(THEME_FOLLOW_KEY, !!on);
-    return !!on;
-  }
-
-  function isCleanDefault() {
-    try { return !!GM_getValue(CLEAN_DEFAULT_KEY, false); } catch (_) { return false; }
-  }
-  function setCleanDefault(on) {
-    GM_setValue(CLEAN_DEFAULT_KEY, !!on);
     return !!on;
   }
 
@@ -4601,7 +4592,7 @@
         position: fixed !important;
         inset: 0 !important;
         background: rgba(15, 23, 42, 0.28) !important;
-        z-index: 13050 !important; /* 高于清爽层 12000 */
+        z-index: 10050 !important;
         display: none !important;
         backdrop-filter: blur(2px) !important;
       }
@@ -4619,7 +4610,7 @@
         border: 1px solid var(--border) !important;
         border-radius: 16px !important;
         box-shadow: 0 18px 48px rgba(15,23,42,0.18) !important;
-        z-index: 13060 !important; /* 高于清爽层，清爽内也可打开设置 */
+        z-index: 10060 !important;
         display: none !important;
         box-sizing: border-box !important;
       }
@@ -11973,7 +11964,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.7.8');
+    console.log('[URP++] style applied v0.7.2');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12066,13 +12057,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       dynFollowBtn.textContent = useDyn ? '浅色用动态配色：开' : '浅色用动态配色：关';
       dynFollowBtn.disabled = !follow;
       dynFollowBtn.style.opacity = follow ? '1' : '0.5';
-    }
-    const cleanDefBtn = panel.querySelector('#urppp-set-clean-default');
-    if (cleanDefBtn) {
-      const on = isCleanDefault();
-      cleanDefBtn.classList.toggle('ac', on);
-      cleanDefBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-      cleanDefBtn.textContent = on ? '默认进入清爽模式：开' : '默认进入清爽模式：关';
     }
     // 跟随系统时动态区仍可配置（浅色会用到）
     const dyn = panel.querySelector('#urppp-set-dynamic');
@@ -12174,8 +12158,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '      <button type="button" class="urppp-set-follow" id="urppp-set-follow-dynamic" aria-pressed="false">浅色用动态配色：关</button>',
       '    </div>',
       '    <p class="urppp-set-tip" style="margin-top:8px">开启后按系统浅色/深色自动切换。浅色可选用下方动态配色，深色固定深邃暗。</p>',
-      '    <button type="button" class="urppp-set-follow" id="urppp-set-clean-default" aria-pressed="false" style="margin-top:10px;width:100%">默认进入清爽模式：关</button>',
-      '    <p class="urppp-set-tip" style="margin-top:8px">开启后，登录进入系统将自动打开清爽模式（可随时退出）。</p>',
       '  </section>',
       '  <section class="urppp-set-sec" id="urppp-set-dynamic">',
       '    <h3>种子色</h3>',
@@ -12226,13 +12208,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         applyTheme(resolveFollowThemeName(), { system: true });
         syncSettingsPanelUI();
         syncNavbarThemeUI();
-      });
-    }
-    const cleanDefBtn = panel.querySelector('#urppp-set-clean-default');
-    if (cleanDefBtn) {
-      cleanDefBtn.addEventListener('click', () => {
-        setCleanDefault(!isCleanDefault());
-        syncSettingsPanelUI();
       });
     }
     const colorInput = panel.querySelector('#urppp-set-color');
@@ -13068,7 +13043,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // ============================================================
-  // 清爽模式 Clean Mode v0.7.7
+  // 清爽模式 Clean Mode v0.7.2
   // 桌面居中一页 1:1；手机底栏；数据按真实 URP DOM/路径解析
   // 绩点：川大现行百分制对照表；教室：classroomUseStatus 网格
   // ============================================================
@@ -13223,17 +13198,29 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     try {
       const user = document.querySelector('#navbar .user-info, .ace-nav .user-info, .user-info');
       if (user) {
-        // 真实 DOM: <small>欢迎您，</small>\n刘冠博  —— 只读 clone，不改 live DOM
-        const raw = (user.innerText || user.textContent || '').replace(/\s+/g, ' ').trim();
-        let m = raw.match(/欢迎您[，,]\s*([\u4e00-\u9fa5·]{2,12})/);
-        if (!m) {
-          const clone = user.cloneNode(true);
-          clone.querySelectorAll('small, i, img, b, .badge').forEach((n) => n.remove());
-          let t = (clone.textContent || '').replace(/\s+/g, ' ').trim();
-          t = t.replace(/^欢迎您[，,]\s*/g, '').replace(/\d{8,}/g, '').trim();
-          m = t.match(/([\u4e00-\u9fa5·]{2,12})/);
+        // 真实 DOM: <small>欢迎您，</small>\n刘冠博
+        const small = user.querySelector('small');
+        if (small) small.remove(); // only clone ideally
+      }
+      const user2 = document.querySelector('#navbar .user-info, .ace-nav .user-info, .user-info');
+      if (user2) {
+        const clone = user2.cloneNode(true);
+        clone.querySelectorAll('small, i, img, b, .badge').forEach((n) => n.remove());
+        let t = (clone.textContent || '').replace(/\s+/g, ' ').trim();
+        t = t.replace(/^欢迎您[，,]\s*/g, '').replace(/^欢迎您\s*/g, '').trim();
+        t = t.replace(/\d{8,}/g, '').trim();
+        const m = t.match(/([\u4e00-\u9fa5·]{2,12})/);
+        if (m && !/欢迎|同学|首页|反馈|密码|注销/.test(m[1])) profile.name = m[1];
+      }
+      // 恢复 small：上面误删了 live DOM，补救——重新从 outerHTML 解析
+      // 更稳：只从 textContent 拆
+      if (!profile.name) {
+        const u = document.querySelector('#navbar .user-info, .ace-nav .user-info');
+        if (u) {
+          const raw = (u.innerText || u.textContent || '').replace(/\s+/g, ' ').trim();
+          const m = raw.match(/欢迎您[，,]\s*([\u4e00-\u9fa5·]{2,12})/) || raw.replace(/欢迎您[，,]?/g, ' ').match(/([\u4e00-\u9fa5·]{2,12})/);
+          if (m && !/欢迎/.test(m[1])) profile.name = m[1];
         }
-        if (m && m[1] && !/欢迎|同学|首页|反馈|密码|注销/.test(m[1])) profile.name = m[1];
       }
       const img = document.querySelector('#navbar img.nav-user-photo, .ace-nav img.nav-user-photo');
       if (img && img.src) profile.avatar = img.src;
@@ -13328,196 +13315,24 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     });
   }
 
-  // 课表真实数据在 JSON callback，index 页只是壳
-  function getCurrentWeekNumber() {
-    try {
-      const t = (document.body && document.body.innerText) || '';
-      const m = t.match(/第\s*(\d{1,2})\s*周/);
-      if (m) return parseInt(m[1], 10);
-    } catch (_) {}
-    return 0;
-  }
-
-  function weekBitActive(classWeek, weekNo) {
-    if (!weekNo || !classWeek) return false;
-    const s = String(classWeek);
-    // 常见 24 位：第 n 周对应 index n-1，'1' 表示有课
-    if (s.length >= weekNo) return s.charAt(weekNo - 1) === '1';
-    return false;
-  }
-
-  const COURSE_PALETTE = ['#3B82F6','#10B981','#F59E0B','#EF4444','#8B5CF6','#06B6D4','#EC4899','#84CC16','#F97316','#6366F1'];
-
-  function courseColor(name) {
-    let h = 0;
-    const s = String(name || '');
-    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-    return COURSE_PALETTE[h % COURSE_PALETTE.length];
-  }
-
-  function parseScheduleFromJson(data) {
-    const courses = [];
-    const weekNo = getCurrentWeekNumber();
-    const packs = (data && data.xkxx) || [];
-    packs.forEach((pack) => {
-      Object.keys(pack || {}).forEach((key) => {
-        const c = pack[key];
-        if (!c) return;
-        const name = c.courseName || c.englishCourseName || key;
-        const teacher = c.attendClassTeacher || '';
-        const list = c.timeAndPlaceList || [];
-        list.forEach((tp) => {
-          const d = Number(tp.classDay) || 0;
-          const day = d === 7 ? 0 : d; // 1=周一..7=周日
-          const start = Number(tp.classSessions) || 1;
-          const span = Math.max(1, Number(tp.continuingSession) || 1);
-          const place = [tp.campusName, tp.teachingBuildingName, tp.classroomName].filter(Boolean).join('');
-          const week = tp.weekDescription || c.skzcs || '';
-          const thisWeek = weekBitActive(tp.classWeek, weekNo) || (weekNo && week.indexOf(String(weekNo)) >= 0);
-          courses.push({
-            name: String(name).trim(),
-            teacher: String(teacher).trim(),
-            place: String(place).trim(),
-            week: String(week).trim(),
-            classWeek: String(tp.classWeek || ''),
-            day,
-            section: start,
-            span,
-            thisWeek: !!thisWeek,
-            color: courseColor(name)
-          });
-        });
-      });
-    });
-    // 合并同一 day/start/name/place 的重复
-    const seen = new Set();
-    return courses.filter((c) => {
-      const k = [c.day, c.section, c.span, c.name, c.place, c.week].join('|');
-      if (seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    });
-  }
-
   async function loadSchedule() {
     try {
-      // 优先 JSON（与页面 $.get 一致）
-      const raw = await fetchText('/student/courseSelect/thisSemesterCurriculum/ajaxStudentSchedule/callback');
-      let courses = [];
-      try {
-        const data = JSON.parse(raw);
-        courses = parseScheduleFromJson(data);
-      } catch (_) {
-        courses = parseScheduleFromDoc(parseHtml(raw));
-      }
+      const html = await fetchText('/student/courseSelect/thisSemesterCurriculum/index');
+      let courses = parseScheduleFromDoc(parseHtml(html));
       if (!courses.length) {
-        // 兜底：已渲染页的 DOM（用户若已打开过课表页）
-        courses = parseScheduleFromDoc(document);
+        // 再试 callback 全文
+        try {
+          const cbHtml = await fetchText('/student/courseSelect/thisSemesterCurriculum/ajaxStudentSchedule/callback');
+          courses = parseScheduleFromDoc(parseHtml(cbHtml));
+        } catch (_) {}
       }
-      return { courses, rawOk: courses.length > 0, error: courses.length ? '' : '课表 JSON 无 timeAndPlaceList' };
+      return { courses, rawOk: courses.length > 0, error: courses.length ? '' : '课表解析为空' };
     } catch (e) {
-      try {
-        const courses = parseScheduleFromDoc(document);
-        if (courses.length) return { courses, rawOk: true, error: '' };
-      } catch (_) {}
       return { courses: [], rawOk: false, error: String(e && e.message || e) };
     }
   }
 
-  // ---- scores: index 壳 + $.get(callback) JSON ----
-  function extractScoreCallback(html, hint) {
-    const h = String(html || '');
-    // var url = "/student/integratedQuery/scoreQuery/xxx/allPassingScores/callback";
-    const re = new RegExp('url\\s*=\\s*["\']([^"\']*' + hint + '[^"\']*)["\']', 'i');
-    const m = h.match(re);
-    if (m && m[1]) return m[1];
-    const re2 = new RegExp('(\\/student\\/integratedQuery\\/scoreQuery\\/[^"\'\\s]+' + hint + ')', 'i');
-    const m2 = h.match(re2);
-    return m2 ? m2[1] : '';
-  }
-
-  function parseScoreJson(data) {
-    const groups = [];
-    const lnList = (data && data.lnList) || [];
-    lnList.forEach((ln) => {
-      const title = ln.cjlx || ln.cjbh || ln.famc || ln.zxjxjhh || '成绩';
-      const courses = [];
-      (ln.cjList || []).forEach((cj) => {
-        const name = cj.courseName || cj.englishCourseName || '';
-        if (!name) return;
-        // 展示分：优先百分制 cj / courseScore；等级 gradeName
-        let score = cj.cj != null && cj.cj !== '' ? String(cj.cj) : '';
-        if (!score && cj.courseScore != null) score = String(cj.courseScore);
-        if (!score && cj.gradeName) score = String(cj.gradeName);
-        if (!score && cj.zscj != null) score = String(cj.zscj);
-        const attr = cj.courseAttributeName || cj.xkcsxmc || '';
-        const credit = parseFloat(cj.credit) || 0;
-        const code = (cj.id && (cj.id.courseNumber || cj.id.kch_zj)) || '';
-        courses.push({
-          code,
-          name,
-          attr,
-          credit,
-          score,
-          required: isRequiredAttr(attr),
-          // 官方绩点字段（若有，优先用于展示/计算）
-          officialGpa: cj.gradePointScore != null ? Number(cj.gradePointScore) : null
-        });
-      });
-      if (courses.length) {
-        groups.push({
-          title: String(title).slice(0, 100),
-          courses,
-          summary: summarizeCourses(courses),
-          meta: {
-            zxf: ln.zxf, tgms: ln.tgms, zms: ln.zms, famc: ln.famc
-          }
-        });
-      }
-    });
-    return groups;
-  }
-
-  // 若接口带官方绩点，汇总时优先使用
-  function summarizeCoursesPreferOfficial(list) {
-    const base = summarizeCourses(list);
-    // 用 officialGpa 重算平均绩点（更贴近成绩单）
-    let gpaW = 0, gpaCredit = 0, reqGpaW = 0, reqGpaCredit = 0;
-    (list || []).forEach((c) => {
-      const cr = Number(c.credit) || 0;
-      if (cr <= 0) return;
-      const gp = (c.officialGpa != null && !Number.isNaN(c.officialGpa)) ? c.officialGpa : scoreToGpa(c.score);
-      if (gp == null) return;
-      gpaW += gp * cr; gpaCredit += cr;
-      if (c.required) { reqGpaW += gp * cr; reqGpaCredit += cr; }
-    });
-    if (gpaCredit) base.avgGpa = round2(gpaW / gpaCredit);
-    if (reqGpaCredit) base.requiredGpa = round2(reqGpaW / reqGpaCredit);
-    return base;
-  }
-
-  async function loadScoreByIndex(indexPath, callbackHint) {
-    const indexHtml = await fetchText(indexPath);
-    // 先试壳内表（少数情况）
-    let groups = parseScoreTables(parseHtml(indexHtml));
-    if (groups.length) return groups;
-    const cb = extractScoreCallback(indexHtml, callbackHint);
-    if (!cb) return [];
-    // 页面使用 $.get(url) —— 必须 GET JSON
-    const raw = await fetchText(cb);
-    try {
-      const data = JSON.parse(raw);
-      groups = parseScoreJson(data).map((g) => {
-        g.summary = summarizeCoursesPreferOfficial(g.courses);
-        return g;
-      });
-    } catch (_) {
-      groups = parseScoreTables(parseHtml(raw));
-    }
-    return groups;
-  }
-
-  // 保留 HTML 表解析作兜底
+  // ---- scores ----
   function parseScoreTables(doc) {
     const groups = [];
     doc.querySelectorAll('table').forEach((table) => {
@@ -13528,6 +13343,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       if (!/课程名/.test(headJoined) || !/成绩/.test(headJoined)) return;
       const idx = {
         code: headCells.findIndex((h) => h === '课程号'),
+        seq: headCells.findIndex((h) => h === '课序号'),
         name: headCells.findIndex((h) => h === '课程名'),
         attr: headCells.findIndex((h) => /课程属性|属性/.test(h)),
         credit: headCells.findIndex((h) => h === '学分'),
@@ -13552,136 +13368,74 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         const score = get(idx.score);
         if (!name || !score || /课程名|序号/.test(name)) return;
         const attr = get(idx.attr);
-        courses.push({ code: get(idx.code), name, attr, credit: parseFloat(get(idx.credit)) || 0, score, required: isRequiredAttr(attr) });
+        const credit = parseFloat(get(idx.credit)) || 0;
+        courses.push({
+          code: get(idx.code),
+          name,
+          attr,
+          credit,
+          score,
+          required: isRequiredAttr(attr)
+        });
       });
-      if (courses.length) groups.push({ title: title.slice(0, 100), courses, summary: summarizeCourses(courses) });
+      if (courses.length) {
+        groups.push({ title: title.slice(0, 100), courses, summary: summarizeCourses(courses) });
+      }
     });
     return groups;
   }
 
-  function pickMajorSchemeIndex(schemes, majorPlan) {
-    if (!schemes || !schemes.length) return 0;
-    const plan = String(majorPlan || '');
-    // 1) 标题含「培养方案」且不含微专业/辅修
-    let idx = schemes.findIndex((g) => /培养方案/.test(g.title || '') && !/微专业|辅修|双学位/.test(g.title || ''));
-    if (idx >= 0) return idx;
-    // 2) 与资料卡主修方案名匹配
-    if (plan) {
-      idx = schemes.findIndex((g) => (g.title || '').indexOf(plan.replace(/培养方案.*/, '培养方案')) >= 0 || plan.indexOf((g.title || '').slice(0, 4)) >= 0);
-      if (idx >= 0) return idx;
-      idx = schemes.findIndex((g) => (g.title || '').indexOf(plan.slice(0, 4)) >= 0);
-      if (idx >= 0) return idx;
-    }
-    // 3) 课程数最多的非微专业
-    let best = 0, bestN = -1;
-    schemes.forEach((g, i) => {
-      if (/微专业|辅修/.test(g.title || '')) return;
-      const n = (g.courses || []).length;
-      if (n > bestN) { bestN = n; best = i; }
-    });
-    return best;
-  }
-
   async function loadScores() {
-    const out = { passing: [], schemes: [], error: '', majorIdx: 0 };
+    const out = { passing: [], schemes: [], error: '' };
     try {
-      const [passGroups, schemeGroups] = await Promise.all([
-        loadScoreByIndex('/student/integratedQuery/scoreQuery/allPassingScores/index', 'allPassingScores/callback'),
-        loadScoreByIndex('/student/integratedQuery/scoreQuery/schemeScores/index', 'schemeScores/callback')
+      const [passHtml, schemeHtml] = await Promise.all([
+        fetchText('/student/integratedQuery/scoreQuery/allPassingScores/index'),
+        fetchText('/student/integratedQuery/scoreQuery/schemeScores/index')
       ]);
+      const passGroups = parseScoreTables(parseHtml(passHtml));
+      const schemeGroups = parseScoreTables(parseHtml(schemeHtml));
       const allPass = [];
       passGroups.forEach((g) => g.courses.forEach((c) => allPass.push(Object.assign({ term: g.title }, c))));
-      out.passing = [{
-        title: '全部及格成绩',
-        courses: allPass,
-        summary: summarizeCoursesPreferOfficial(allPass),
-        groups: passGroups
-      }];
-      out.schemes = schemeGroups.map((g) => {
-        g.summary = summarizeCoursesPreferOfficial(g.courses);
-        return g;
-      });
+      out.passing = [{ title: '全部及格成绩', courses: allPass, summary: summarizeCourses(allPass), groups: passGroups }];
+      out.schemes = schemeGroups;
       if (!out.schemes.length && allPass.length) {
-        out.schemes = [{ title: '方案成绩', courses: allPass, summary: summarizeCoursesPreferOfficial(allPass) }];
+        out.schemes = [{ title: '方案成绩', courses: allPass, summary: summarizeCourses(allPass) }];
       }
-      out.majorIdx = pickMajorSchemeIndex(out.schemes, state.profile && state.profile.majorPlan);
-      if (!allPass.length && !out.schemes.length) out.error = '成绩 callback 无数据';
+      if (!allPass.length && !out.schemes.length) out.error = '未解析到成绩表';
     } catch (e) {
       out.error = String(e && e.message || e);
     }
     return out;
   }
 
-  // ---- classroom: 页面内嵌 xqList/jxlList JSON，再拼路径 ----
+  // ---- classroom: list buildings then occupancy grid ----
   async function loadClassroomCatalog() {
     const html = await fetchText('/student/teachingResources/classroomUseStatus/index');
-    // 真实结构：脚本里有 campusName/campusNumber 与 teachingBuildingName 数组
-    let xqList = [];
-    let jxlList = [];
-    try {
-      const xqM = html.match(/xqList\s*=\s*(\[\{[\s\S]*?\}\])\s*;/);
-      const jxlM = html.match(/jxlList\s*=\s*(\[\{[\s\S]*?\}\])\s*;/);
-      // 宽松：从首次 campusName 数组截取
-      if (!xqM) {
-        const m = html.match(/\[\{"campusName":"望江"[\s\S]*?\}\]/);
-        if (m) xqList = JSON.parse(m[0]);
-      } else xqList = JSON.parse(xqM[1]);
-      if (!jxlM) {
-        const m = html.match(/\[\{"id":\{"campusNumber":"01"[\s\S]*?\}\]\s*[,;]/);
-        if (m) {
-          const raw = m[0].replace(/[,;]\s*$/, '');
-          jxlList = JSON.parse(raw);
-        } else {
-          // 再试 teachingBuildingName 数组
-          const i = html.indexOf('"teachingBuildingName"');
-          const start = html.lastIndexOf('[', i);
-          if (start >= 0) {
-            let depth = 0, end = -1;
-            for (let k = start; k < html.length && k < start + 200000; k++) {
-              if (html[k] === '[') depth++;
-              else if (html[k] === ']') { depth--; if (depth === 0) { end = k + 1; break; } }
-            }
-            if (end > start) jxlList = JSON.parse(html.slice(start, end));
-          }
-        }
-      } else jxlList = JSON.parse(jxlM[1]);
-    } catch (e) {
-      console.warn('[URP++] classroom json parse', e);
-    }
-    // campus map
-    if (!xqList.length) {
-      xqList = [
-        { campusNumber: '01', campusName: '望江' },
-        { campusNumber: '02', campusName: '华西' },
-        { campusNumber: '03', campusName: '江安' }
-      ];
-    }
-    const groups = xqList.map((xq) => ({
-      campus: xq.campusName || xq.campusNumber,
-      campusNumber: String(xq.campusNumber || ''),
-      buildings: []
-    }));
-    jxlList.forEach((j) => {
-      const cn = String((j.id && j.id.campusNumber) || '');
-      const bn = String((j.id && j.id.teachingBuildingNumber) || '');
-      const name = j.teachingBuildingName || bn;
-      if (!cn || !bn || !name) return;
-      let g = groups.find((x) => x.campusNumber === cn);
-      if (!g) {
-        g = { campus: cn, campusNumber: cn, buildings: [] };
-        groups.push(g);
+    const doc = parseHtml(html);
+    const groups = [];
+    let campus = '校区';
+    // walk DOM for h4 campus + rows with 查看
+    doc.querySelectorAll('h4, tr, button[onclick], a[onclick]').forEach((el) => {
+      if (el.tagName === 'H4') {
+        const t = (el.textContent || '').trim();
+        if (t && t.length < 20) campus = t;
+        return;
       }
-      // 页面：encodeURI(encodeURI(Pargs))
-      // 站点：location="/student/teachingResources/classroomUseStatus/"+ encodeURI(encodeURI(Pargs))
-      // Pargs = campusNumber/buildingNumber/campusName/buildingName
-      // 数字段不编码，中文双重 encodeURI
-      const path = '/student/teachingResources/classroomUseStatus/' +
-        cn + '/' + bn + '/' +
-        encodeURI(encodeURI(g.campus || cn)) + '/' +
-        encodeURI(encodeURI(name));
-      g.buildings.push({ name, path, campusNumber: cn, buildingNumber: bn });
+      const on = el.getAttribute('onclick') || '';
+      const m = on.match(/location\s*=\s*["']([^"']+)["']/) || on.match(/location\.href\s*=\s*["']([^"']+)["']/);
+      if (!m) return;
+      const path = m[1];
+      if (!/classroomUseStatus\//.test(path)) return;
+      const rowText = ((el.closest('tr') || el).textContent || '').replace(/\s+/g, ' ').trim();
+      const name = rowText.replace(/查看/g, '').replace(/^\d+\s*/, '').trim() || decodeURIComponent(path.split('/').pop() || '');
+      if (!name || /教学楼信息/.test(name)) return;
+      let g = groups.find((x) => x.campus === campus);
+      if (!g) { g = { campus, buildings: [] }; groups.push(g); }
+      if (!g.buildings.some((b) => b.path === path)) {
+        g.buildings.push({ name: name.slice(0, 40), path });
+      }
     });
-    return groups.filter((g) => g.buildings.length);
+    return groups;
   }
 
   function parseOccupancyDoc(doc) {
@@ -13716,112 +13470,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return { rooms, dateLabel };
   }
 
-  function occupancyReason(ct) {
-    // 站点 classroomStatusLayout 着色：
-    // 06 有课(#7be0f6) 07 考试(#fbb9e1) 14 实验(#f5f67b) room 借用(#90feaa)
-    // jasInfo 不返回课程名/考试名，只能展示类型首字；详情同理
-    const mod = String((ct && ct.occupancymoduleId) || '');
-    const map = { '06': '有课', '07': '考试', '14': '实验', 'room': '借用' };
-    if (map[mod]) return map[mod];
-    if (ct && ct.remark) {
-      const r = String(ct.remark).trim();
-      if (r) return r;
-    }
-    return '占用';
-  }
-  function occupancyKindClass(reason) {
-    if (reason === '有课') return 'kind-course';
-    if (reason === '考试') return 'kind-exam';
-    if (reason === '实验') return 'kind-lab';
-    if (reason === '借用') return 'kind-borrow';
-    return 'kind-busy';
-  }
-
-  async function loadBuildingOccupancy(building) {
-    // building: {path, campusNumber, buildingNumber, name} or legacy path string
-    let xqh = '', jxlh = '', name = '', pagePath = '';
-    if (building && typeof building === 'object') {
-      xqh = String(building.campusNumber || '');
-      jxlh = String(building.buildingNumber || '');
-      name = building.name || '';
-      pagePath = building.path || '';
-    } else {
-      pagePath = String(building || '');
-      const m = pagePath.match(/classroomUseStatus\/(\d+)\/(\d+)\//);
-      if (m) { xqh = m[1]; jxlh = m[2]; }
-    }
-    if (!xqh || !jxlh) throw new Error('缺少校区/楼栋编号');
-    const today = new Date();
-    const date = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
-    // 与页面 $("#searchCondition").serialize() 对齐
-    const body = 'xqh=' + encodeURIComponent(xqh)
-      + '&jxlh=' + encodeURIComponent(jxlh)
-      + '&jslx=&jasm=&zwFrom=&zwTo=&searchDate=' + encodeURIComponent(date);
-    const raw = await new Promise((resolve, reject) => {
-      const full = absUrl('/student/teachingResources/classroomUseStatus/jasInfo');
-      if (typeof GM_xmlhttpRequest === 'function') {
-        GM_xmlhttpRequest({
-          method: 'POST', url: full, data: body, withCredentials: true,
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            'X-Requested-With': 'XMLHttpRequest'
-          },
-          onload: (r) => r.status >= 200 && r.status < 400 ? resolve(r.responseText || '') : reject(new Error('HTTP ' + r.status)),
-          onerror: () => reject(new Error('network'))
-        });
-      } else {
-        fetch(full, { method: 'POST', credentials: 'include', headers: {
-          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-          'X-Requested-With': 'XMLHttpRequest'
-        }, body }).then(r => r.text()).then(resolve).catch(reject);
-      }
-    });
-    let data;
-    try { data = JSON.parse(raw); } catch (_) { throw new Error('jasInfo 非 JSON'); }
-    const rooms = (data.classrooms || []).map((c) => {
-      const rname = c.classroomName || (c.id && c.id.classroomNumber) || '';
-      const seats = c.placeNum || '';
-      const type = c.remark || '';
-      const slots = [];
-      for (let s = 1; s <= 12; s++) slots.push({ section: s, busy: false });
-      return { name: rname, seats, type, slots, map: {} };
-    });
-    const byName = {};
-    rooms.forEach((r) => { byName[r.name] = r; });
-    (data.classroomTime || []).forEach((ct) => {
-      const id = ct.id || {};
-      const rname = id.classroomNumber || '';
-      const start = Number(id.sessionstart) || 1;
-      const cont = Math.max(1, Number(ct.continuingsession) || 1);
-      const room = byName[rname];
-      if (!room) return;
-      const reason = occupancyReason(ct);
-      for (let s = start; s < start + cont && s <= 12; s++) {
-        const slot = room.slots.find((x) => x.section === s);
-        if (slot) {
-          slot.busy = true;
-          slot.kind = ct.timestatenumber || ct.occupancymoduleId || '';
-          slot.module = ct.occupancymoduleId || '';
-          slot.reason = reason;
-          slot.detail = {
-            room: rname,
-            section: s,
-            start,
-            span: cont,
-            reason,
-            week: (ct.id && ct.id.week) || '',
-            xq: (ct.id && ct.id.xq) || '',
-            state: ct.timestatenumber || '',
-            module: ct.occupancymoduleId || ''
-          };
-        }
-      }
-    });
-    return {
-      rooms,
-      dateLabel: (data.date || date) + (data.week != null ? ('（周' + data.week + '）') : ''),
-      jxzc: data.jxzc
-    };
+  async function loadBuildingOccupancy(path) {
+    const html = await fetchText(path);
+    return parseOccupancyDoc(parseHtml(html));
   }
 
   // ---- icons ----
@@ -13864,80 +13515,45 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 #urppp-clean-root{position:fixed;inset:0;z-index:12000;display:none;background:var(--bg,#F4F6F9);color:var(--text,#111);font-family:inherit}
 #urppp-clean-root.open{display:flex;flex-direction:column}
 #urppp-clean-root *{box-sizing:border-box}
-#urppp-clean-root .uc-top{flex:0 0 60px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--border);background:var(--surface,#fff)}
-#urppp-clean-root .uc-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px}
+#urppp-clean-root .uc-top{flex:0 0 52px;display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--border);background:var(--surface,#fff)}
+#urppp-clean-root .uc-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px}
 #urppp-clean-root .uc-top-actions{display:flex;gap:8px}
 #urppp-clean-root .uc-btn{height:32px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg,#f7f7f8);color:var(--text);font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 #urppp-clean-root .uc-btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
-#urppp-clean-root .uc-shell{flex:1;min-height:0;overflow:auto;padding:20px 28px 28px;display:flex;align-items:center;justify-content:center}
-#urppp-clean-root .uc-shell-inner{max-width:1520px;margin:0 auto;width:100%;max-height:100%;overflow:auto}
+#urppp-clean-root .uc-shell{flex:1;min-height:0;overflow:auto;padding:24px 32px 32px}
+#urppp-clean-root .uc-shell-inner{max-width:1280px;margin:0 auto;width:100%;min-height:calc(100% - 8px)}
 #urppp-clean-root .uc-desktop{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr;gap:16px;min-height:640px}
 #urppp-clean-root .uc-col{display:flex;flex-direction:column;gap:16px;min-height:0}
 #urppp-clean-root .uc-card{background:var(--surface,#fff);border:1px solid var(--border,#e7e7ea);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
 #urppp-clean-root .uc-card.grow{flex:1;min-height:0;display:flex;flex-direction:column}
-#urppp-clean-root .uc-hd{padding:12px 14px;border-bottom:1px solid var(--border);font-weight:700;font-size:15px;display:flex;justify-content:space-between;align-items:center}
+#urppp-clean-root .uc-hd{padding:12px 14px;border-bottom:1px solid var(--border);font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center}
 #urppp-clean-root .uc-bd{padding:14px}
 #urppp-clean-root .uc-card.grow .uc-bd{flex:1;overflow:auto}
 #urppp-clean-root .uc-profile{display:flex;gap:14px;align-items:center}
-#urppp-clean-root .uc-avatar{width:auto;height:72px;max-width:96px;min-width:56px;border-radius:12px;background:var(--input-bg);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--primary);flex:0 0 auto}
-#urppp-clean-root .uc-avatar img{height:72px;width:auto;max-width:96px;object-fit:contain;display:block;border-radius:12px}
+#urppp-clean-root .uc-avatar{width:64px;height:64px;border-radius:16px;background:var(--input-bg);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--primary);flex:0 0 64px}
+#urppp-clean-root .uc-avatar img{width:100%;height:100%;object-fit:cover}
 #urppp-clean-root .uc-name{font-size:18px;font-weight:700;margin:0 0 4px}
 #urppp-clean-root .uc-sub{font-size:12px;color:var(--text-secondary,#667085);line-height:1.5}
 #urppp-clean-root .uc-gpa{margin-top:6px;display:inline-flex;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--primary) 12%,var(--input-bg));font-weight:700;font-size:13px}
-#urppp-clean-root .uc-week{min-width:720px}
-#urppp-clean-root .uc-week-head{display:grid;grid-template-columns:36px repeat(7,minmax(0,1fr));gap:6px;margin-bottom:6px}
-#urppp-clean-root .uc-week-head .h{font-size:11px;text-align:center;color:var(--text-secondary)}
-#urppp-clean-root .uc-week-body{display:grid;grid-template-columns:36px repeat(7,minmax(0,1fr));gap:6px;align-items:start}
-#urppp-clean-root .uc-sec-col .s{height:56px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text-muted,#98a2b3)}
-#urppp-clean-root .uc-day-col{position:relative;height:calc(56px * 12);background:transparent}
-#urppp-clean-root .uc-grid-cell{position:absolute;left:0;right:0;height:52px;border-radius:10px;background:var(--input-bg);border:1px solid color-mix(in srgb,var(--border) 65%,transparent)}
-#urppp-clean-root .uc-grid-cell:nth-child(n){/* placed via top below in inline? use sequential */}
-#urppp-clean-root .uc-day-col .uc-grid-cell{width:100%}
-#urppp-clean-root .uc-lesson{position:absolute;left:0;right:0;z-index:2;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:10px;padding:6px 7px 16px;cursor:pointer;overflow:hidden;box-sizing:border-box}
-#urppp-clean-root .uc-lesson.is-fade{filter:saturate(.4);z-index:2!important}
-#urppp-clean-root .uc-lesson:not(.is-fade){z-index:8}
-#urppp-clean-root .uc-lesson b{display:block;font-size:12px;line-height:1.25;font-weight:700}
-#urppp-clean-root .uc-lesson i{display:block;font-style:normal;font-size:10px;color:var(--text-secondary);margin-top:3px}
-#urppp-clean-root .uc-badge{position:absolute;right:5px;bottom:4px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--primary);color:#fff;font-size:10px;line-height:16px;text-align:center;font-weight:700}
-#urppp-clean-root .uc-part-line{position:absolute;left:0;right:0;height:0;border-top:2px dashed color-mix(in srgb,var(--primary) 35%,var(--border));z-index:1;pointer-events:none;opacity:.9}
-#urppp-clean-root .uc-namecell{position:relative;padding-left:22px!important}
-#urppp-clean-root .uc-selmark{position:absolute;left:6px;top:50%;transform:translateY(-50%);width:14px;height:14px;line-height:14px;text-align:center;font-size:12px;font-weight:700;color:var(--primary);opacity:0}
-#urppp-clean-root table.uc-table tbody tr.is-on .uc-selmark{opacity:1}
-#urppp-clean-root .uc-cname{display:inline}
-#urppp-clean-root .uc-calc{font-size:15px;font-weight:600;color:var(--text);line-height:1.5}
-#urppp-clean-root .uc-calc b{font-size:17px;font-weight:800;color:var(--primary);margin:0 2px}
-#urppp-clean-root .uc-slot.kind-course{background:#7be0f6;border-color:#4ec8e0;color:#0b3b4a}
-#urppp-clean-root .uc-slot.kind-exam{background:#fbb9e1;border-color:#f472b6;color:#831843}
-#urppp-clean-root .uc-slot.kind-lab{background:#f5f67b;border-color:#eab308;color:#713f12}
-#urppp-clean-root .uc-slot.kind-borrow{background:#90feaa;border-color:#4ade80;color:#14532d}
-html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-course,body.urppp-dark #urppp-clean-root .uc-slot.kind-course{background:#2dd4bf;border-color:#14b8a6;color:#042f2e}
-html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-exam,body.urppp-dark #urppp-clean-root .uc-slot.kind-exam{background:#f472b6;border-color:#db2777;color:#4c0519}
-html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-lab,body.urppp-dark #urppp-clean-root .uc-slot.kind-lab{background:#facc15;border-color:#eab308;color:#422006}
-html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #urppp-clean-root .uc-slot.kind-borrow{background:#4ade80;border-color:#22c55e;color:#052e16}
-#urppp-clean-root .uc-modal-stack-hint{font-size:12px;color:var(--text-muted)}
-
-#urppp-clean-root .uc-svc{min-height:92px}
-#urppp-clean-root .uc-svc svg{width:24px;height:24px}
-#urppp-clean-root .uc-svc strong{font-size:12px}
-#urppp-clean-root .uc-card.grow.services{flex:0 0 auto}
-#urppp-clean-root .uc-top-theme{display:inline-flex;align-items:center;gap:8px;margin-left:12px}
-#urppp-clean-root .uc-top-theme .urppp-nav-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);padding:0;cursor:pointer}
-#urppp-clean-root .uc-top-theme .urppp-nav-dot.ac{border-color:var(--primary);box-shadow:0 0 0 3px var(--ring)}
-#urppp-clean-root .uc-top-theme .urppp-nav-settings{width:26px;height:26px;border:0;background:transparent;color:var(--text-secondary);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
-#urppp-clean-root .uc-top-theme .urppp-nav-settings svg{width:16px;height:16px}
-#urppp-clean-root .uc-top-left{display:flex;align-items:center;gap:10px}
+#urppp-clean-root .uc-week{display:grid;grid-template-columns:32px repeat(7,minmax(0,1fr));gap:6px;min-width:620px}
+#urppp-clean-root .uc-week .h{font-size:11px;text-align:center;color:var(--text-secondary)}
+#urppp-clean-root .uc-week .s{font-size:10px;color:var(--text-muted,#98a2b3);display:flex;align-items:center;justify-content:center}
+#urppp-clean-root .uc-cell{min-height:48px;border-radius:10px;background:var(--input-bg);padding:3px}
+#urppp-clean-root .uc-lesson{background:color-mix(in srgb,var(--primary) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:8px;padding:4px 5px;margin-bottom:3px}
+#urppp-clean-root .uc-lesson b{display:block;font-size:11px;line-height:1.25}
+#urppp-clean-root .uc-lesson i{display:block;font-style:normal;font-size:10px;color:var(--text-secondary);margin-top:2px}
 #urppp-clean-root .uc-score-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 #urppp-clean-root .uc-score-pane{border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;background:var(--input-bg)}
 #urppp-clean-root .uc-score-pane:hover{border-color:var(--primary)}
-#urppp-clean-root .uc-score-pane h5{margin:0 0 10px;font-size:15px;font-weight:700}
+#urppp-clean-root .uc-score-pane h5{margin:0 0 10px;font-size:13px}
 #urppp-clean-root .uc-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 #urppp-clean-root .uc-metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px}
-#urppp-clean-root .uc-metric em{display:block;font-style:normal;font-size:12px;color:var(--text-muted);margin-bottom:2px}
-#urppp-clean-root .uc-metric b{font-size:18px}
+#urppp-clean-root .uc-metric em{display:block;font-style:normal;font-size:10px;color:var(--text-muted);margin-bottom:2px}
+#urppp-clean-root .uc-metric b{font-size:16px}
 #urppp-clean-root .uc-services{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-#urppp-clean-root .uc-svc{aspect-ratio:1/1;border-radius:14px;border:1px solid var(--border);background:var(--input-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;color:var(--text);padding:8px;text-align:center;min-height:88px}
+#urppp-clean-root .uc-svc{aspect-ratio:1/1;border-radius:16px;border:1px solid var(--border);background:var(--input-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;color:var(--text);padding:10px;text-align:center}
 #urppp-clean-root .uc-svc:hover{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 8%,var(--input-bg))}
-#urppp-clean-root .uc-svc svg{width:24px;height:24px;color:var(--primary)}
+#urppp-clean-root .uc-svc svg{width:26px;height:26px;color:var(--primary)}
 #urppp-clean-root .uc-svc strong{font-size:12px;line-height:1.25;font-weight:700}
 #urppp-clean-root .uc-empty,#urppp-clean-root .uc-loading{padding:18px;text-align:center;color:var(--text-secondary);font-size:13px}
 #urppp-clean-root .uc-note{font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.5}
@@ -13950,52 +13566,20 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
 #urppp-clean-root .uc-modal-hd{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:700}
 #urppp-clean-root .uc-modal-bd{padding:12px 14px;overflow:auto;flex:1}
 #urppp-clean-root .uc-modal-ft{padding:10px 14px;border-top:1px solid var(--border);background:var(--input-bg);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}
-#urppp-clean-root table.uc-table{width:100%;border-collapse:collapse;font-size:12px;background:transparent}
-#urppp-clean-root table.uc-table th,#urppp-clean-root table.uc-table td{padding:8px 6px;border-bottom:1px solid var(--border);text-align:left;background:transparent;color:var(--text)}
-#urppp-clean-root table.uc-table th{position:sticky;top:0;background:var(--surface)!important;color:var(--text-secondary)}
-#urppp-clean-root table.uc-table tbody tr{cursor:pointer;user-select:none}
-#urppp-clean-root table.uc-table tbody tr:hover td{background:var(--input-bg)!important}
-#urppp-clean-root table.uc-table tbody tr.is-on td{background:color-mix(in srgb,var(--primary) 16%,var(--surface))!important}
-#urppp-clean-root table.uc-table tbody tr.is-on{box-shadow:inset 3px 0 0 var(--primary)}
-#urppp-clean-root .uc-select-box{position:fixed;border:1px solid var(--primary);background:color-mix(in srgb,var(--primary) 18%,transparent);pointer-events:none;z-index:12050;display:none}
-html.urppp-theme-dark #urppp-clean-root table.uc-table th,
-html.urppp-theme-dark #urppp-clean-root table.uc-table td,
-body.urppp-dark #urppp-clean-root table.uc-table th,
-body.urppp-dark #urppp-clean-root table.uc-table td{background:var(--surface)!important;color:var(--text)!important;border-color:var(--border)!important}
-html.urppp-theme-dark #urppp-clean-root table.uc-table tbody tr:hover td,
-body.urppp-dark #urppp-clean-root table.uc-table tbody tr:hover td{background:var(--input-bg)!important}
-html.urppp-theme-dark #urppp-clean-root table.uc-table tbody tr.is-on td,
-body.urppp-dark #urppp-clean-root table.uc-table tbody tr.is-on td{background:color-mix(in srgb,var(--primary) 22%,var(--surface))!important}
+#urppp-clean-root table.uc-table{width:100%;border-collapse:collapse;font-size:12px}
+#urppp-clean-root table.uc-table th,#urppp-clean-root table.uc-table td{padding:8px 6px;border-bottom:1px solid var(--border);text-align:left}
+#urppp-clean-root table.uc-table th{position:sticky;top:0;background:var(--surface);color:var(--text-secondary)}
 #urppp-clean-root .uc-build-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px}
 #urppp-clean-root .uc-build-grid button{border:1px solid var(--border);background:var(--input-bg);border-radius:12px;padding:10px;cursor:pointer;color:var(--text);font-size:12px;text-align:left}
 #urppp-clean-root .uc-build-grid button:hover{border-color:var(--primary)}
-#urppp-clean-root .uc-occ{overflow:auto;border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:8px}
-#urppp-clean-root .uc-occ-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
-#urppp-clean-root .uc-occ-title{font-size:16px;font-weight:700}
-#urppp-clean-root .uc-occ-table{border-collapse:separate;border-spacing:4px;font-size:11px;min-width:760px}
-#urppp-clean-root .uc-occ-table th{background:var(--input-bg);color:var(--text);z-index:1;padding:6px 8px;text-align:left;white-space:nowrap;border-radius:8px}
-#urppp-clean-root .uc-occ-table th.sticky{position:sticky;left:0;z-index:3}
-#urppp-clean-root .uc-occ-table th.sticky2{position:sticky;left:64px;z-index:3}
-#urppp-clean-root .uc-occ-table .sec{min-width:30px;text-align:center;color:var(--text-secondary);font-weight:600;background:transparent}
-#urppp-clean-root .uc-slot{width:30px;height:26px;border-radius:7px;border:1px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;padding:0;cursor:default}
-#urppp-clean-root .uc-slot.free{background:color-mix(in srgb,var(--input-bg) 88%,var(--surface));color:transparent}
-#urppp-clean-root .uc-slot.busy{cursor:pointer;color:#0b3b4a;background:#7be0f6;border-color:#4ec8e0}
-#urppp-clean-root .uc-slot.busy:hover{filter:brightness(1.05);transform:scale(1.04)}
-#urppp-clean-root .uc-legend{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:4px 0 10px;font-size:12px;color:var(--text-secondary)}
-#urppp-clean-root .uc-legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:middle;margin-right:4px;border:1px solid var(--border)}
-#urppp-clean-root .uc-legend .lg-busy{background:#7be0f6;border-color:#4ec8e0}
-#urppp-clean-root .uc-legend .lg-exam{background:#fbbf24;border-color:#f59e0b}
-#urppp-clean-root .uc-legend .lg-lab{background:#a78bfa;border-color:#8b5cf6}
-#urppp-clean-root .uc-legend .lg-borrow{background:#fb7185;border-color:#f43f5e}
-#urppp-clean-root .uc-legend .lg-free{background:var(--input-bg)}
-html.urppp-theme-dark #urppp-clean-root .uc-slot.free,
-body.urppp-dark #urppp-clean-root .uc-slot.free{background:#1c2330;border-color:#2a3548}
-html.urppp-theme-dark #urppp-clean-root .uc-slot.busy,
-body.urppp-dark #urppp-clean-root .uc-slot.busy{background:#2dd4bf;border-color:#14b8a6;color:#042f2e}
-html.urppp-theme-dark #urppp-clean-root .uc-occ,
-body.urppp-dark #urppp-clean-root .uc-occ{background:var(--surface);border-color:var(--border)}
-html.urppp-theme-dark #urppp-clean-root .uc-occ-table th,
-body.urppp-dark #urppp-clean-root .uc-occ-table th{background:var(--input-bg);color:var(--text)}
+#urppp-clean-root .uc-occ{overflow:auto}
+#urppp-clean-root .uc-occ-table{border-collapse:separate;border-spacing:3px;font-size:11px;min-width:720px}
+#urppp-clean-root .uc-occ-table th{position:sticky;left:0;background:var(--surface);z-index:1;padding:4px 6px;text-align:left;white-space:nowrap}
+#urppp-clean-root .uc-occ-table .sec{min-width:28px;text-align:center;color:var(--text-secondary);font-weight:600}
+#urppp-clean-root .uc-slot{width:28px;height:22px;border-radius:4px;background:#e8eef2;border:1px solid #d7dee5}
+#urppp-clean-root .uc-slot.busy{background:#7be0f6;border-color:#5bcfe8}
+#urppp-clean-root .uc-legend{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0 12px;font-size:12px;color:var(--text-secondary)}
+#urppp-clean-root .uc-legend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:middle;margin-right:4px}
 html.urppp-clean-lock,html.urppp-clean-lock body{overflow:hidden!important}
 html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#urppp-nav-clean{
   margin-left:8px!important;height:28px!important;min-height:28px!important;max-height:28px!important;
@@ -14006,7 +13590,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
 }
 #urppp-nav-clean svg{width:14px!important;height:14px!important;display:block!important}
 @media (max-width:900px){
-  #urppp-clean-root .uc-shell{padding:12px 12px 76px;align-items:stretch;justify-content:flex-start}
+  #urppp-clean-root .uc-shell{padding:12px 12px 76px}
   #urppp-clean-root .uc-desktop{display:none}
   #urppp-clean-root .uc-mobile{display:block}
   #urppp-clean-root .uc-tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;height:56px;background:var(--surface);border-top:1px solid var(--border);z-index:12005;padding-bottom:env(safe-area-inset-bottom)}
@@ -14030,17 +13614,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     el.id = 'urppp-clean-root';
     el.innerHTML = `
       <div class="uc-top">
-        <div class="uc-top-left">
-          <div class="uc-brand">${ico('clean')}<span>清爽模式</span></div>
-          <div class="uc-top-theme" id="uc-top-theme">
-            <button type="button" class="urppp-nav-dot" data-theme="default" title="简约白" style="background:#F1F5F9"></button>
-            <button type="button" class="urppp-nav-dot" data-theme="dark" title="深邃暗" style="background:#0B0F17"></button>
-            <button type="button" class="urppp-nav-dot" data-theme="scu-red" title="动态配色" style="background:#B53434"></button>
-            <button type="button" class="urppp-nav-settings" id="uc-settings" title="设置" aria-label="设置">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            </button>
-          </div>
-        </div>
+        <div class="uc-brand">${ico('clean')}<span>清爽模式</span></div>
         <div class="uc-top-actions">
           <button type="button" class="uc-btn" id="uc-refresh">${ico('refresh')}<span>刷新</span></button>
           <button type="button" class="uc-btn primary" id="uc-exit">${ico('exit')}<span>退出</span></button>
@@ -14064,38 +13638,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     el.querySelector('#uc-refresh').onclick = () => openCleanMode(true);
     el.querySelector('#uc-mask').onclick = closeModal;
     el.querySelector('#uc-modal-close').onclick = closeModal;
-    const syncCleanThemeDots = () => {
-      const ct = getCurrent();
-      el.querySelectorAll('#uc-top-theme .urppp-nav-dot[data-theme]').forEach((d) => {
-        d.classList.toggle('ac', d.dataset.theme === ct);
-      });
-      const last = el.querySelector('#uc-top-theme .urppp-nav-dot[data-theme="scu-red"]');
-      if (last) {
-        try {
-          const seed = getAccent() || DEFAULT_SEED;
-          const prev = buildSchemePreview(seed, getScheme());
-          last.style.background = 'linear-gradient(135deg, ' + prev.primary + ' 0 55%, ' + prev.surface + ' 55% 100%)';
-        } catch (_) {
-          last.style.background = getAccent() || '#B53434';
-        }
-      }
-    };
-    el.querySelectorAll('#uc-top-theme .urppp-nav-dot[data-theme]').forEach((dot) => {
-      dot.addEventListener('click', () => {
-        applyTheme(dot.dataset.theme, { manual: true });
-        syncCleanThemeDots();
-        try { syncNavbarThemeUI(); } catch (_) {}
-        try { syncSettingsPanelUI(); } catch (_) {}
-      });
-    });
-    const setBtn = el.querySelector('#uc-settings');
-    if (setBtn) setBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      try { openSettingsPanel(); } catch (_) {}
-    });
-    el.__syncCleanThemeDots = syncCleanThemeDots;
-    syncCleanThemeDots();
     el.querySelectorAll('#uc-tabbar button').forEach((btn) => {
       btn.onclick = () => {
         state.mobileTab = btn.dataset.tab;
@@ -14113,71 +13655,25 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   }
 
   function renderScheduleBoard(courses) {
-    const weekNo = getCurrentWeekNumber();
-    const list = (courses || []).map((c) => Object.assign({}, c, {
-      thisWeek: c.thisWeek || weekBitActive(c.classWeek, weekNo),
-      span: Math.max(1, c.span || 1),
-      color: c.color || courseColor(c.name)
-    }));
-    // group by day+startSection
-    const byStart = {};
-    list.forEach((c) => {
+    const by = {};
+    (courses || []).forEach((c) => {
       const k = c.day + '_' + c.section;
-      (byStart[k] || (byStart[k] = [])).push(c);
+      (by[k] || (by[k] = [])).push(c);
     });
-    // mark cells that are only continuations (for empty look still show grid)
-    let html = `<div class="uc-week" data-week="${weekNo}">`;
-    html += '<div class="uc-week-head"><div class="h"></div>';
+    let html = '<div class="uc-week"><div class="h"></div>';
     for (let d = 0; d < 7; d++) html += `<div class="h">${DAY_NAMES[d]}</div>`;
-    html += '</div><div class="uc-week-body">';
-    // left section labels
-    html += '<div class="uc-sec-col">';
-    for (let s = 1; s <= 12; s++) html += `<div class="s" style="height:56px">${s}</div>`;
-    html += '</div>';
-    // 7 day columns
-    for (let d = 0; d < 7; d++) {
-      html += `<div class="uc-day-col" data-day="${d}" style="height:${56*12}px">`;
-      // background grid cells: fixed equal height, full column width
-      for (let s = 1; s <= 12; s++) html += `<div class="uc-grid-cell" data-sec="${s}" style="top:${(s-1)*56}px;height:52px"></div>`;
-      // 4|5 与 9|10 之间分割线（上午/下午/晚上）
-      html += `<div class="uc-part-line" style="top:${4*56 - 2}px"></div>`;
-      html += `<div class="uc-part-line" style="top:${9*56 - 2}px"></div>`;
-      // place courses absolutely
-      for (let s = 1; s <= 12; s++) {
-        const starters = (byStart[d + '_' + s] || []).slice().sort((a, b) => {
-          // 本周永远优先
-          if (a.thisWeek !== b.thisWeek) return (b.thisWeek ? 1 : 0) - (a.thisWeek ? 1 : 0);
-          return (b.span || 1) - (a.span || 1);
+    for (let s = 1; s <= 12; s++) {
+      html += `<div class="s">${s}</div>`;
+      for (let d = 0; d < 7; d++) {
+        const list = by[d + '_' + s] || [];
+        html += '<div class="uc-cell">';
+        list.forEach((c) => {
+          html += `<div class="uc-lesson"><b>${escapeHtml(c.name)}</b><i>${escapeHtml(c.place || c.week || '')}</i></div>`;
         });
-        if (!starters.length) continue;
-        // 若本格同时有本周与非本周，外显本周；非本周进角标
-        const weekOnes = starters.filter((c) => c.thisWeek);
-        const primary = weekOnes[0] || starters[0];
-        const rest = starters.filter((c) => c !== primary);
-        const span = primary.span;
-        const ROW = 56; // 格距（含上下间隔）
-        const top = (s - 1) * ROW + 2;
-        const height = span * ROW - 8;
-        const z = primary.thisWeek ? 8 : 2;
-        const style = primary.thisWeek
-          ? `top:${top}px;height:${height}px;z-index:${z};background:${primary.color}33;border-color:${primary.color}99`
-          : `top:${top}px;height:${height}px;z-index:${z};background:color-mix(in srgb,${primary.color} 10%,var(--input-bg));border-color:var(--border);opacity:.48`;
-        const badge = rest.length ? `<span class="uc-badge">+${rest.length}</span>` : '';
-        const payload = escapeHtml(JSON.stringify({
-          name: primary.name, teacher: primary.teacher, place: primary.place, week: primary.week,
-          day: primary.day, section: primary.section, span: primary.span, thisWeek: primary.thisWeek,
-          others: rest.map((r) => ({ name: r.name, teacher: r.teacher, place: r.place, week: r.week, thisWeek: r.thisWeek, section: r.section, span: r.span }))
-        }));
-        html += `<div class="uc-lesson${primary.thisWeek ? '' : ' is-fade'}" style="${style}" data-course='${payload}'>
-          <b>${escapeHtml(primary.name)}</b>
-          <i>${escapeHtml([primary.place, primary.week].filter(Boolean).join(' · '))}</i>
-          ${badge}
-        </div>`;
+        html += '</div>';
       }
-      html += '</div>';
     }
-    html += '</div></div>';
-    return html;
+    return html + '</div>';
   }
 
   function servicesHtml() {
@@ -14201,10 +13697,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     const courses = (state.schedule && state.schedule.courses) || [];
     const pass = (state.scores && state.scores.passing && state.scores.passing[0]) || { summary: summarizeCourses([]) };
     const schemes = (state.scores && state.scores.schemes) || [];
-    if (state.scores && state.scores.majorIdx != null && state._schemeInited !== true) {
-      state.activeSchemeIdx = state.scores.majorIdx || 0;
-      state._schemeInited = true;
-    }
     const scheme = schemes[state.activeSchemeIdx] || schemes[0] || { summary: summarizeCourses([]), title: '方案成绩' };
     const av = p.avatar ? `<img src="${escapeHtml(p.avatar)}" alt="">` : `<span>${escapeHtml((p.name || '同')[0])}</span>`;
     const scoreBody = state.loading.scores
@@ -14228,7 +13720,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           </div>
         </div></div></div>
         <div class="uc-card grow">
-          <div class="uc-hd"><span>课表</span><span class="uc-sub">${getCurrentWeekNumber() ? ('第' + getCurrentWeekNumber() + '周 · ') : ''}${courses.length ? courses.length + ' 个课次' : (state.schedule && state.schedule.error) || ''}</span></div>
+          <div class="uc-hd"><span>本周课表</span><span class="uc-sub">${courses.length ? courses.length + ' 个课次' : (state.schedule && state.schedule.error) || ''}</span></div>
           <div class="uc-bd">${state.loading.schedule ? '<div class="uc-loading">课表加载中…</div>' : (courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${escapeHtml((state.schedule && state.schedule.error) || '暂无课表数据')}</div>`)}</div>
         </div>
       </div>
@@ -14237,7 +13729,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           <div class="uc-hd"><span>成绩总览</span><span class="uc-sub">点击查看明细</span></div>
           <div class="uc-bd">${scoreBody}</div>
         </div>
-        <div class="uc-card services">
+        <div class="uc-card grow">
           <div class="uc-hd">服务</div>
           <div class="uc-bd">${servicesHtml()}</div>
         </div>
@@ -14289,48 +13781,29 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       <div style="margin-bottom:14px">
         <div style="font-weight:700;margin:0 0 8px">${escapeHtml(g.campus)}</div>
         <div class="uc-build-grid">
-          ${g.buildings.map((b) => `<button type="button" data-build-path="${escapeHtml(b.path)}" data-cn="${escapeHtml(b.campusNumber || '')}" data-bn="${escapeHtml(b.buildingNumber || '')}">${escapeHtml(b.name)}</button>`).join('')}
+          ${g.buildings.map((b) => `<button type="button" data-build-path="${escapeHtml(b.path)}">${escapeHtml(b.name)}</button>`).join('')}
         </div>
       </div>`).join('');
   }
 
   function occupancyHtml(pack, buildingName) {
     if (!pack || !pack.rooms || !pack.rooms.length) return '<div class="uc-empty">该楼暂无教室占用数据</div>';
-    let head = '<tr><th class="sticky">教室</th><th class="sticky2">座位</th>';
+    let head = '<tr><th>教室</th><th>座位</th>';
     for (let i = 1; i <= 12; i++) head += `<th class="sec">${i}</th>`;
     head += '</tr>';
     const body = pack.rooms.map((r) => {
-      let row = `<tr><th class="sticky">${escapeHtml(r.name)}</th><th class="sticky2">${escapeHtml(r.seats)}</th>`;
+      let row = `<tr><th>${escapeHtml(r.name)}</th><th>${escapeHtml(r.seats)}</th>`;
       for (let i = 1; i <= 12; i++) {
         const slot = (r.slots || []).find((s) => s.section === i) || { busy: false };
-        if (slot.busy) {
-          const reason = slot.reason || '占用';
-          const ch = reason.charAt(0);
-          const detail = escapeHtml(JSON.stringify(slot.detail || { room: r.name, section: i, reason }));
-          row += `<td><button type="button" class="uc-slot busy ${occupancyKindClass(reason)}" data-occ='${detail}' title="${escapeHtml(r.name)} 第${i}节 · ${escapeHtml(reason)}">${escapeHtml(ch)}</button></td>`;
-        } else {
-          row += `<td><div class="uc-slot free" title="${escapeHtml(r.name)} 第${i}节 · 空闲"></div></td>`;
-        }
+        row += `<td><div class="uc-slot ${slot.busy ? 'busy' : ''}" title="${escapeHtml(r.name)} 第${i}节"></div></td>`;
       }
       return row + '</tr>';
     }).join('');
     return `
-      <div class="uc-occ-head">
-        <div>
-          <div class="uc-occ-title">${escapeHtml(buildingName || '')}</div>
-          <div class="uc-sub">${escapeHtml(pack.dateLabel || '')}${pack.jxzc ? (' · 教学第' + pack.jxzc + '周') : ''}</div>
-        </div>
-        <button type="button" class="uc-btn" id="uc-room-back">返回楼栋</button>
-      </div>
-      <div class="uc-legend">
-        <span><i class="lg-busy"></i>有课</span>
-        <span><i class="lg-exam"></i>考试</span>
-        <span><i class="lg-lab"></i>实验</span>
-        <span><i class="lg-borrow"></i>借用</span>
-        <span><i class="lg-free"></i>空闲</span>
-        <span class="uc-sub">色块字母为占用原因首字，点击查看详情</span>
-      </div>
-      <div class="uc-occ"><table class="uc-occ-table">${head}${body}</table></div>`;
+      <div style="font-weight:700;margin-bottom:6px">${escapeHtml(buildingName || '')} ${escapeHtml(pack.dateLabel || '')}</div>
+      <div class="uc-legend"><span><i style="background:#7be0f6"></i>占用</span><span><i style="background:#e8eef2"></i>空闲</span></div>
+      <div class="uc-occ"><table class="uc-occ-table">${head}${body}</table></div>
+      <div style="margin-top:10px"><button type="button" class="uc-btn" id="uc-room-back">返回楼栋列表</button></div>`;
   }
 
   function render() {
@@ -14355,9 +13828,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     scope.querySelectorAll('[data-build-path]').forEach((n) => n.addEventListener('click', async () => {
       const path = n.getAttribute('data-build-path');
       const name = (n.textContent || '').trim();
-      const cn = n.getAttribute('data-cn') || '';
-      const bn = n.getAttribute('data-bn') || '';
-      await showBuilding({ path, name, campusNumber: cn, buildingNumber: bn }, name);
+      await showBuilding(path, name);
     }));
     const back = scope.querySelector('#uc-room-back');
     if (back) back.onclick = () => {
@@ -14369,64 +13840,12 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         bindUI(panel);
       } else render();
     };
-    // 教室占用详情
-    scope.querySelectorAll('.uc-slot.busy[data-occ]').forEach((el) => {
-      el.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        try {
-          const d = JSON.parse(el.getAttribute('data-occ') || '{}');
-          openModal('占用详情', `
-            <div class="uc-occ-detail">
-              <div class="uc-name">${escapeHtml(d.room || '')}</div>
-              <div class="uc-sub" style="margin-top:8px">节次：第${escapeHtml(String(d.section || d.start || ''))}${(d.span > 1) ? ('-' + (Number(d.start || d.section) + Number(d.span) - 1)) : ''}节</div>
-              <div class="uc-sub">占用类型：${escapeHtml(d.reason || '占用')}</div>
-              <div class="uc-note" style="margin-top:10px">说明：URP 教室占用接口只返回类型码（有课/考试/实验/借用），不返回具体课程名或考试名，故首字取类型首字。</div>
-            </div>
-          `, '', { stack: true });
-        } catch (_) {}
-      });
-    });
-    // 课表：点击看详情
-    scope.querySelectorAll('.uc-lesson[data-course]').forEach((el) => {
-      el.addEventListener('click', (e) => {
-        e.stopPropagation();
-        try {
-          const data = JSON.parse(el.getAttribute('data-course') || '{}');
-          const others = (data.others || []).map((o) =>
-            `<div class="uc-lesson ${o.thisWeek ? '' : 'is-fade'}" style="margin-top:8px"><b>${escapeHtml(o.name)}</b><i>${escapeHtml([o.place, o.week, o.teacher].filter(Boolean).join(' · '))}${o.thisWeek ? ' · 本周' : ' · 非本周'}</i></div>`
-          ).join('');
-          openModal('课程详情', `
-            <div class="uc-lesson" style="padding:12px;min-height:auto">
-              <b style="font-size:15px">${escapeHtml(data.name || '')}</b>
-              <i style="font-size:12px;margin-top:6px;display:block">${escapeHtml([data.place, data.teacher, data.week].filter(Boolean).join(' · '))}</i>
-              <div class="uc-note">${data.thisWeek ? '本周有课' : '本周无课（淡显）'} · 第${data.section || '?'}${data.span > 1 ? '-' + (data.section + data.span - 1) : ''}节 · ${DAY_NAMES[data.day] || ''}</div>
-            </div>
-            ${others ? '<div class="uc-hd" style="border:0;padding:12px 0 6px">同时段其他课程</div>' + others : ''}
-          `, '');
-        } catch (_) {}
-      });
-    });
   }
 
-  const modalStack = [];
-  function openModal(title, body, ft, opts) {
-    opts = opts || {};
+  function openModal(title, body, ft) {
     const el = ensureRoot();
-    const mask = el.querySelector('#uc-mask');
-    let modal = el.querySelector('#uc-modal');
-    // 栈式弹窗：保留下层（如教室列表），上层详情关闭后回到下层
-    if (opts.stack && modal.classList.contains('open')) {
-      modalStack.push({
-        title: el.querySelector('#uc-modal-title').textContent,
-        body: el.querySelector('#uc-modal-body').innerHTML,
-        ft: el.querySelector('#uc-modal-ft').innerHTML
-      });
-    } else if (!opts.stack) {
-      modalStack.length = 0;
-    }
-    mask.classList.add('open');
-    modal.classList.add('open');
+    el.querySelector('#uc-mask').classList.add('open');
+    el.querySelector('#uc-modal').classList.add('open');
     el.querySelector('#uc-modal-title').textContent = title;
     el.querySelector('#uc-modal-body').innerHTML = body;
     el.querySelector('#uc-modal-ft').innerHTML = ft || '';
@@ -14436,15 +13855,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   function closeModal() {
     const el = rootEl();
     if (!el) return;
-    if (modalStack.length) {
-      const prev = modalStack.pop();
-      el.querySelector('#uc-modal-title').textContent = prev.title;
-      el.querySelector('#uc-modal-body').innerHTML = prev.body;
-      el.querySelector('#uc-modal-ft').innerHTML = prev.ft || '';
-      bindUI(el.querySelector('#uc-modal-body'));
-      bindUI(el.querySelector('#uc-modal-ft'));
-      return;
-    }
     el.querySelector('#uc-mask').classList.remove('open');
     el.querySelector('#uc-modal').classList.remove('open');
   }
@@ -14452,10 +13862,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   function openScoreModal(kind) {
     const pass = (state.scores && state.scores.passing && state.scores.passing[0]) || { courses: [], summary: summarizeCourses([]) };
     const schemes = (state.scores && state.scores.schemes) || [];
-    if (kind === 'scheme' && state.scores && state.scores.majorIdx != null && state._schemeInited !== true) {
-      state.activeSchemeIdx = state.scores.majorIdx || 0;
-      state._schemeInited = true;
-    }
     const scheme = schemes[state.activeSchemeIdx] || schemes[0] || { courses: [], summary: summarizeCourses([]), title: '方案成绩' };
     const pack = kind === 'scheme' ? scheme : pass;
     const key = kind === 'scheme' ? 'scheme' : 'passing';
@@ -14464,148 +13870,42 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">${schemes.map((s, i) =>
         `<button type="button" class="uc-btn ${i === state.activeSchemeIdx ? 'primary' : ''}" data-scheme-idx="${i}">${escapeHtml((s.title || '方案').slice(0, 28))}</button>`).join('')}</div>`
       : '';
-    const rows = (pack.courses || []).map((c, idx) => {
-      const on = state.selected[key].has(idx);
-      const gp = (c.officialGpa != null) ? c.officialGpa : scoreToGpa(c.score);
-      return `<tr class="${on ? 'is-on' : ''}" data-idx="${idx}">
-        <td class="uc-namecell"><span class="uc-selmark" aria-hidden="true">${on ? '✓' : ''}</span><span class="uc-cname">${escapeHtml(c.name)}</span></td>
-        <td>${escapeHtml(c.attr || '')}</td><td>${c.credit}</td>
-        <td>${escapeHtml(c.score)}</td><td>${gp == null ? '—' : gp}</td>
-      </tr>`;
-    }).join('');
-    openModal(kind === 'scheme' ? ('方案成绩 · ' + (scheme.title || '')) : '全部及格成绩', `
+    const rows = (pack.courses || []).map((c, idx) => `<tr>
+      <td><input type="checkbox" data-idx="${idx}" ${state.selected[key].has(idx) ? 'checked' : ''}></td>
+      <td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.attr || '')}</td><td>${c.credit}</td>
+      <td>${escapeHtml(c.score)}</td><td>${scoreToGpa(c.score) == null ? '—' : scoreToGpa(c.score)}</td>
+    </tr>`).join('');
+    openModal(kind === 'scheme' ? '方案成绩' : '全部及格成绩', `
       ${switcher}${metricHtml(pack.summary)}
-      <div class="uc-note">点击行选择/取消；按住拖拽可框选。底部实时计算学分/均分/绩点。</div>
-      <div style="margin-top:10px;overflow:auto;max-height:46vh;position:relative" id="uc-score-wrap">
-        <table class="uc-table" id="uc-score-table"><thead><tr><th>课程</th><th>属性</th><th>学分</th><th>成绩</th><th>绩点</th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="5">暂无数据</td></tr>'}</tbody></table>
-        <div class="uc-select-box" id="uc-select-box"></div>
+      <div class="uc-note">勾选课程后底部显示本地估算（学分/均分/绩点）。</div>
+      <div style="margin-top:10px;overflow:auto;max-height:46vh">
+        <table class="uc-table"><thead><tr><th></th><th>课程</th><th>属性</th><th>学分</th><th>成绩</th><th>绩点</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="6">暂无数据</td></tr>'}</tbody></table>
       </div>`, `<div id="uc-calc">已选 0 门</div><button type="button" class="uc-btn" id="uc-clear">清空</button>`);
     const body = document.querySelector('#uc-modal-body');
     const calc = document.getElementById('uc-calc');
-    const table = document.getElementById('uc-score-table');
-    const wrap = document.getElementById('uc-score-wrap');
-    const box = document.getElementById('uc-select-box');
-
-    const paint = () => {
-      table.querySelectorAll('tbody tr[data-idx]').forEach((tr) => {
-        const i = parseInt(tr.getAttribute('data-idx'), 10);
-        const on = state.selected[key].has(i);
-        tr.classList.toggle('is-on', on);
-        const mark = tr.querySelector('.uc-selmark');
-        if (mark) mark.textContent = on ? '✓' : '';
-      });
+    const sync = () => {
       const selected = [];
-      state.selected[key].forEach((i) => { if (pack.courses[i]) selected.push(pack.courses[i]); });
-      const sum = summarizeCoursesPreferOfficial(selected);
-      if (calc) {
-        calc.className = 'uc-calc';
-        calc.innerHTML = selected.length
-          ? `已选 <b>${selected.length}</b> 门 · 学分 <b>${sum.totalCredit}</b> · 均分 <b>${sum.avgScore}</b> · 绩点 <b>${sum.avgGpa}</b>`
-          : '已选 0 门';
-      }
-    };
-
-    const toggleIdx = (i, force) => {
-      if (force === true) state.selected[key].add(i);
-      else if (force === false) state.selected[key].delete(i);
-      else if (state.selected[key].has(i)) state.selected[key].delete(i);
-      else state.selected[key].add(i);
-    };
-
-    // 点击行选择
-    let suppressClick = false;
-    table.querySelectorAll('tbody tr[data-idx]').forEach((tr) => {
-      tr.addEventListener('click', (e) => {
-        if (suppressClick) { suppressClick = false; return; }
-        const i = parseInt(tr.getAttribute('data-idx'), 10);
-        toggleIdx(i);
-        paint();
+      state.selected[key] = new Set();
+      body.querySelectorAll('input[type=checkbox][data-idx]').forEach((ck) => {
+        if (!ck.checked) return;
+        const i = parseInt(ck.getAttribute('data-idx'), 10);
+        state.selected[key].add(i);
+        if (pack.courses[i]) selected.push(pack.courses[i]);
       });
-    });
-
-    // 拖拽框选
-    let dragging = false, x0 = 0, y0 = 0, additive = false;
-    const rowsEls = () => Array.from(table.querySelectorAll('tbody tr[data-idx]'));
-    const onMove = (e) => {
-      if (!dragging || !box) return;
-      const x1 = e.clientX, y1 = e.clientY;
-      const left = Math.min(x0, x1), top = Math.min(y0, y1);
-      const w = Math.abs(x1 - x0), h = Math.abs(y1 - y0);
-      box.style.display = 'block';
-      box.style.left = left + 'px';
-      box.style.top = top + 'px';
-      box.style.width = w + 'px';
-      box.style.height = h + 'px';
-      const sel = { left, top, right: left + w, bottom: top + h };
-      rowsEls().forEach((tr) => {
-        const r = tr.getBoundingClientRect();
-        const hit = !(r.right < sel.left || r.left > sel.right || r.bottom < sel.top || r.top > sel.bottom);
-        const i = parseInt(tr.getAttribute('data-idx'), 10);
-        if (hit) toggleIdx(i, true);
-        else if (!additive) toggleIdx(i, false);
-      });
-      paint();
+      const sum = summarizeCourses(selected);
+      if (calc) calc.innerHTML = selected.length
+        ? `已选 <b>${selected.length}</b> 门 · 学分 <b>${sum.totalCredit}</b> · 均分 <b>${sum.avgScore}</b> · 绩点 <b>${sum.avgGpa}</b>`
+        : '已选 0 门';
     };
-    const onUp = () => {
-      dragging = false;
-      if (box) box.style.display = 'none';
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-    };
-    // 框选基线：始终在已有选择上累加/切换，不整表清空
-    let baseSet = null;
-    const onMove2 = (e) => {
-      if (!dragging || !box) return;
-      const x1 = e.clientX, y1 = e.clientY;
-      const left = Math.min(x0, x1), top = Math.min(y0, y1);
-      const w = Math.abs(x1 - x0), h = Math.abs(y1 - y0);
-      box.style.display = (w > 4 || h > 4) ? 'block' : 'none';
-      box.style.left = left + 'px';
-      box.style.top = top + 'px';
-      box.style.width = w + 'px';
-      box.style.height = h + 'px';
-      if (w <= 4 && h <= 4) return;
-      const sel = { left, top, right: left + w, bottom: top + h };
-      // 恢复基线后，对命中行 toggle
-      state.selected[key] = new Set(baseSet);
-      rowsEls().forEach((tr) => {
-        const r = tr.getBoundingClientRect();
-        const hit = !(r.right < sel.left || r.left > sel.right || r.bottom < sel.top || r.top > sel.bottom);
-        if (!hit) return;
-        const i = parseInt(tr.getAttribute('data-idx'), 10);
-        if (baseSet.has(i)) state.selected[key].delete(i);
-        else state.selected[key].add(i);
-      });
-      paint();
-    };
-    const onUp2 = (e) => {
-      const moved = Math.abs(e.clientX - x0) > 4 || Math.abs(e.clientY - y0) > 4;
-      dragging = false;
-      if (box) box.style.display = 'none';
-      document.removeEventListener('mousemove', onMove2);
-      document.removeEventListener('mouseup', onUp2);
-      // 纯点击（未拖拽）由 tr click 处理；这里避免 mousedown 抢状态
-      if (moved) suppressClick = true;
-      paint();
-    };
-    wrap.addEventListener('mousedown', (e) => {
-      if (e.button !== 0) return;
-      // 点在行上：允许点击选择；拖拽时用框选
-      dragging = true;
-      x0 = e.clientX; y0 = e.clientY;
-      baseSet = new Set(state.selected[key]);
-      document.addEventListener('mousemove', onMove2);
-      document.addEventListener('mouseup', onUp2);
-    });
-
+    body.querySelectorAll('input[type=checkbox]').forEach((ck) => ck.addEventListener('change', sync));
     body.querySelectorAll('[data-scheme-idx]').forEach((btn) => btn.addEventListener('click', () => {
       state.activeSchemeIdx = parseInt(btn.getAttribute('data-scheme-idx'), 10) || 0;
       openScoreModal('scheme');
     }));
     const clear = document.getElementById('uc-clear');
-    if (clear) clear.onclick = () => { state.selected[key] = new Set(); paint(); };
-    paint();
+    if (clear) clear.onclick = () => { body.querySelectorAll('input[type=checkbox]').forEach((ck) => { ck.checked = false; }); sync(); };
+    sync();
   }
 
   async function openRoomModal() {
@@ -14622,14 +13922,13 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     }
   }
 
-  async function showBuilding(building, name) {
+  async function showBuilding(path, name) {
     const body = document.querySelector('#uc-modal-body') || document.querySelector('#uc-room-panel');
     if (body) body.innerHTML = '<div class="uc-loading">加载占用网格…</div>';
     try {
-      const pack = await loadBuildingOccupancy(building);
+      const pack = await loadBuildingOccupancy(path);
       state.occupancy = pack;
-      state.currentBuilding = typeof building === 'object' ? building : { path: building, name };
-      name = name || (building && building.name) || '';
+      state.currentBuilding = { path, name };
       if (body) {
         body.innerHTML = occupancyHtml(pack, name);
         bindUI(body);
@@ -14657,13 +13956,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         finally { state.loading.schedule = false; render(); }
       })(),
       (async () => {
-        try {
-          if (!(state.scores && !force)) {
-            state.scores = await loadScores();
-            state.activeSchemeIdx = (state.scores && state.scores.majorIdx) || 0;
-            state._schemeInited = true;
-          }
-        } catch (e) { state.scores = { passing: [], schemes: [], error: String(e && e.message || e) }; }
+        try { if (!(state.scores && !force)) state.scores = await loadScores(); }
+        catch (e) { state.scores = { passing: [], schemes: [], error: String(e && e.message || e) }; }
         finally { state.loading.scores = false; render(); }
       })()
     ]);
@@ -14675,7 +13969,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     state.open = true;
     document.documentElement.classList.add('urppp-clean-lock', CLEAN_FLAG);
     rootEl().classList.add('open');
-    try { if (rootEl().__syncCleanThemeDots) rootEl().__syncCleanThemeDots(); } catch (_) {}
     loadAll(!!force);
   }
   function closeCleanMode() {
@@ -14764,12 +14057,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       ;[400, 1200, 2500].forEach((ms) => setTimeout(() => {
         try { if (window.__urpppCleanMode) window.__urpppCleanMode.inject(); } catch (_) {}
       }, ms));
-      // 默认进入清爽模式
-      try {
-        if (isCleanDefault() && window.__urpppCleanMode) {
-          setTimeout(() => { try { window.__urpppCleanMode.open(false); } catch (_) {} }, 700);
-        }
-      } catch (_) {}
     }
   }
 
