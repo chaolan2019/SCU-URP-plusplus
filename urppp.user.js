@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.7.13
+// @version      0.7.14
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -835,6 +835,15 @@
   function setCleanDefault(on) {
     GM_setValue(CLEAN_DEFAULT_KEY, !!on);
     return !!on;
+  }
+  // 清爽模式自动进入仅首页；其它业务页不自动弹出
+  function isHomePage() {
+    try {
+      const p = String(location.pathname || '').replace(/\/+$/, '') || '/';
+      return p === '/' || p === '/index' || /\/index\.html?$/i.test(p);
+    } catch (_) {
+      return false;
+    }
   }
 
   function isFollowUseDynamic() {
@@ -12157,7 +12166,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.7.13');
+    console.log('[URP++] style applied v0.7.14');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12359,7 +12368,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '    </div>',
       '    <p class="urppp-set-tip" style="margin-top:8px">开启后按系统浅色/深色自动切换。浅色可选用下方动态配色，深色固定深邃暗。</p>',
       '    <button type="button" class="urppp-set-follow" id="urppp-set-clean-default" aria-pressed="false" style="margin-top:10px;width:100%">默认进入清爽模式：关</button>',
-      '    <p class="urppp-set-tip" style="margin-top:8px">开启后，登录进入系统将自动打开清爽模式（可随时退出）。</p>',
+      '    <p class="urppp-set-tip" style="margin-top:8px">开启后，仅在首页自动打开清爽模式（其它页面不自动进入，可随时退出）。</p>',
       '  </section>',
       '  <section class="urppp-set-sec" id="urppp-set-dynamic">',
       '    <h3>种子色</h3>',
@@ -13252,7 +13261,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // ============================================================
-  // 清爽模式 Clean Mode v0.7.7
+  // 清爽模式 Clean Mode v0.7.14
   // 桌面居中一页 1:1；手机底栏；数据按真实 URP DOM/路径解析
   // 绩点：川大现行百分制对照表；教室：classroomUseStatus 网格
   // ============================================================
@@ -14059,7 +14068,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 #urppp-clean-root .uc-col{display:flex;flex-direction:column;gap:16px;min-height:0}
 #urppp-clean-root .uc-card{background:var(--surface,#fff);border:1px solid var(--border,#e7e7ea);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
 #urppp-clean-root .uc-card.grow{flex:1;min-height:0;display:flex;flex-direction:column}
-#urppp-clean-root .uc-hd{padding:12px 14px;border-bottom:1px solid var(--border);font-weight:700;font-size:15px;display:flex;justify-content:space-between;align-items:center}
+#urppp-clean-root .uc-hd{padding:12px 14px;border-bottom:1px solid var(--border);font-weight:700;font-size:16px;display:flex;justify-content:space-between;align-items:center}
 #urppp-clean-root .uc-bd{padding:14px}
 #urppp-clean-root .uc-card.grow .uc-bd{flex:1;overflow:auto}
 #urppp-clean-root .uc-profile{display:flex;gap:14px;align-items:center}
@@ -14088,8 +14097,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 #urppp-clean-root .uc-selmark{position:absolute;left:6px;top:50%;transform:translateY(-50%);width:14px;height:14px;line-height:14px;text-align:center;font-size:12px;font-weight:700;color:var(--primary);opacity:0}
 #urppp-clean-root table.uc-table tbody tr.is-on .uc-selmark{opacity:1}
 #urppp-clean-root .uc-cname{display:inline}
-#urppp-clean-root .uc-calc{font-size:15px;font-weight:600;color:var(--text);line-height:1.5}
-#urppp-clean-root .uc-calc b{font-size:17px;font-weight:800;color:var(--primary);margin:0 2px}
+#urppp-clean-root .uc-calc{font-size:16px;font-weight:600;color:var(--text);line-height:1.55}
+#urppp-clean-root .uc-calc b{font-size:18px;font-weight:800;color:var(--primary);margin:0 2px}
 #urppp-clean-root .uc-slot.kind-course{background:#7be0f6;border-color:#4ec8e0;color:#0b3b4a}
 #urppp-clean-root .uc-slot.kind-exam{background:#fbb9e1;border-color:#f472b6;color:#831843}
 #urppp-clean-root .uc-slot.kind-lab{background:#f5f67b;border-color:#eab308;color:#713f12}
@@ -14113,25 +14122,25 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
 #urppp-clean-root .uc-score-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 #urppp-clean-root .uc-score-pane{border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;background:var(--input-bg)}
 #urppp-clean-root .uc-score-pane:hover{border-color:var(--primary)}
-#urppp-clean-root .uc-score-pane h5{margin:0 0 10px;font-size:15px;font-weight:700}
+#urppp-clean-root .uc-score-pane h5{margin:0 0 10px;font-size:16px;font-weight:700}
 #urppp-clean-root .uc-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 #urppp-clean-root .uc-metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px}
-#urppp-clean-root .uc-metric em{display:block;font-style:normal;font-size:12px;color:var(--text-muted);margin-bottom:2px}
-#urppp-clean-root .uc-metric b{font-size:18px}
+#urppp-clean-root .uc-metric em{display:block;font-style:normal;font-size:13px;color:var(--text-muted);margin-bottom:3px}
+#urppp-clean-root .uc-metric b{font-size:20px}
 #urppp-clean-root .uc-services{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 #urppp-clean-root .uc-svc{aspect-ratio:1/1;border-radius:14px;border:1px solid var(--border);background:var(--input-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;color:var(--text);padding:8px;text-align:center;min-height:88px}
 #urppp-clean-root .uc-svc:hover{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 8%,var(--input-bg))}
 #urppp-clean-root .uc-svc svg{width:24px;height:24px;color:var(--primary)}
 #urppp-clean-root .uc-svc strong{font-size:12px;line-height:1.25;font-weight:700}
 #urppp-clean-root .uc-empty,#urppp-clean-root .uc-loading{padding:18px;text-align:center;color:var(--text-secondary);font-size:13px}
-#urppp-clean-root .uc-note{font-size:11px;color:var(--text-muted);margin-top:8px;line-height:1.5}
+#urppp-clean-root .uc-note{font-size:12px;color:var(--text-muted);margin-top:8px;line-height:1.55}
 #urppp-clean-root .uc-mobile{display:none}
 #urppp-clean-root .uc-tabbar{display:none}
 #urppp-clean-root .uc-mask{position:fixed;inset:0;background:rgba(15,23,42,.36);z-index:12010;display:none}
 #urppp-clean-root .uc-mask.open{display:block}
 #urppp-clean-root .uc-modal{position:fixed;z-index:12020;left:50%;top:50%;transform:translate(-50%,-50%);width:min(980px,92vw);max-height:86vh;background:var(--surface);border:1px solid var(--border);border-radius:16px;display:none;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.2)}
 #urppp-clean-root .uc-modal.open{display:flex}
-#urppp-clean-root .uc-modal-hd{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:700}
+#urppp-clean-root .uc-modal-hd{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:17px}
 #urppp-clean-root .uc-modal-bd{padding:12px 14px;overflow:auto;flex:1}
 #urppp-clean-root .uc-modal-ft{padding:10px 14px;border-top:1px solid var(--border);background:var(--input-bg);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}
 #urppp-clean-root table.uc-table{width:100%;border-collapse:collapse;font-size:12px;background:transparent}
@@ -14141,7 +14150,8 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
 #urppp-clean-root table.uc-table tbody tr:hover td{background:var(--input-bg)!important}
 #urppp-clean-root table.uc-table tbody tr.is-on td{background:color-mix(in srgb,var(--primary) 16%,var(--surface))!important}
 #urppp-clean-root table.uc-table tbody tr.is-on{box-shadow:inset 3px 0 0 var(--primary)}
-#urppp-clean-root .uc-select-box{position:fixed;border:1px solid var(--primary);background:color-mix(in srgb,var(--primary) 18%,transparent);pointer-events:none;z-index:12050;display:none}
+#urppp-clean-root #uc-score-wrap{position:relative!important}
+#urppp-clean-root .uc-select-box{position:absolute;border:1.5px solid var(--primary);background:color-mix(in srgb,var(--primary) 16%,transparent);pointer-events:none;z-index:20;display:none;border-radius:6px;box-sizing:border-box}
 html.urppp-theme-dark #urppp-clean-root table.uc-table th,
 html.urppp-theme-dark #urppp-clean-root table.uc-table td,
 body.urppp-dark #urppp-clean-root table.uc-table th,
@@ -14708,50 +14718,34 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       });
     });
 
-    // 拖拽框选
-    let dragging = false, x0 = 0, y0 = 0, additive = false;
-    const rowsEls = () => Array.from(table.querySelectorAll('tbody tr[data-idx]'));
-    const onMove = (e) => {
-      if (!dragging || !box) return;
-      const x1 = e.clientX, y1 = e.clientY;
-      const left = Math.min(x0, x1), top = Math.min(y0, y1);
-      const w = Math.abs(x1 - x0), h = Math.abs(y1 - y0);
-      box.style.display = 'block';
-      box.style.left = left + 'px';
-      box.style.top = top + 'px';
-      box.style.width = w + 'px';
-      box.style.height = h + 'px';
-      const sel = { left, top, right: left + w, bottom: top + h };
-      rowsEls().forEach((tr) => {
-        const r = tr.getBoundingClientRect();
-        const hit = !(r.right < sel.left || r.left > sel.right || r.bottom < sel.top || r.top > sel.bottom);
-        const i = parseInt(tr.getAttribute('data-idx'), 10);
-        if (hit) toggleIdx(i, true);
-        else if (!additive) toggleIdx(i, false);
-      });
-      paint();
-    };
-    const onUp = () => {
-      dragging = false;
-      if (box) box.style.display = 'none';
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-    };
-    // 框选基线：始终在已有选择上累加/切换，不整表清空
+    // 拖拽框选：选择框相对 wrap 绝对定位，避免被 modal transform 造成漂移
+    let dragging = false, x0 = 0, y0 = 0;
     let baseSet = null;
-    const onMove2 = (e) => {
-      if (!dragging || !box) return;
-      const x1 = e.clientX, y1 = e.clientY;
-      const left = Math.min(x0, x1), top = Math.min(y0, y1);
-      const w = Math.abs(x1 - x0), h = Math.abs(y1 - y0);
-      box.style.display = (w > 4 || h > 4) ? 'block' : 'none';
+    const rowsEls = () => Array.from(table.querySelectorAll('tbody tr[data-idx]'));
+    const placeBox = (x1, y1) => {
+      if (!box || !wrap) return { left: 0, top: 0, right: 0, bottom: 0, w: 0, h: 0 };
+      const wr = wrap.getBoundingClientRect();
+      const leftV = Math.min(x0, x1);
+      const topV = Math.min(y0, y1);
+      const rightV = Math.max(x0, x1);
+      const bottomV = Math.max(y0, y1);
+      const w = rightV - leftV;
+      const h = bottomV - topV;
+      // 相对 wrap 内容区（含滚动）
+      const left = leftV - wr.left + wrap.scrollLeft;
+      const top = topV - wr.top + wrap.scrollTop;
+      box.style.display = (w > 3 || h > 3) ? 'block' : 'none';
       box.style.left = left + 'px';
       box.style.top = top + 'px';
       box.style.width = w + 'px';
       box.style.height = h + 'px';
-      if (w <= 4 && h <= 4) return;
-      const sel = { left, top, right: left + w, bottom: top + h };
-      // 恢复基线后，对命中行 toggle
+      return { left: leftV, top: topV, right: rightV, bottom: bottomV, w, h };
+    };
+    const onMoveSel = (e) => {
+      if (!dragging) return;
+      e.preventDefault();
+      const sel = placeBox(e.clientX, e.clientY);
+      if (sel.w <= 3 && sel.h <= 3) return;
       state.selected[key] = new Set(baseSet);
       rowsEls().forEach((tr) => {
         const r = tr.getBoundingClientRect();
@@ -14763,24 +14757,24 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       });
       paint();
     };
-    const onUp2 = (e) => {
-      const moved = Math.abs(e.clientX - x0) > 4 || Math.abs(e.clientY - y0) > 4;
+    const onUpSel = (e) => {
+      const moved = Math.abs(e.clientX - x0) > 3 || Math.abs(e.clientY - y0) > 3;
       dragging = false;
       if (box) box.style.display = 'none';
-      document.removeEventListener('mousemove', onMove2);
-      document.removeEventListener('mouseup', onUp2);
-      // 纯点击（未拖拽）由 tr click 处理；这里避免 mousedown 抢状态
+      document.removeEventListener('mousemove', onMoveSel, true);
+      document.removeEventListener('mouseup', onUpSel, true);
       if (moved) suppressClick = true;
       paint();
     };
     wrap.addEventListener('mousedown', (e) => {
       if (e.button !== 0) return;
-      // 点在行上：允许点击选择；拖拽时用框选
       dragging = true;
-      x0 = e.clientX; y0 = e.clientY;
+      x0 = e.clientX;
+      y0 = e.clientY;
       baseSet = new Set(state.selected[key]);
-      document.addEventListener('mousemove', onMove2);
-      document.addEventListener('mouseup', onUp2);
+      placeBox(x0, y0);
+      document.addEventListener('mousemove', onMoveSel, true);
+      document.addEventListener('mouseup', onUpSel, true);
     });
 
     body.querySelectorAll('[data-scheme-idx]').forEach((btn) => btn.addEventListener('click', () => {
@@ -14948,9 +14942,9 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       ;[400, 1200, 2500].forEach((ms) => setTimeout(() => {
         try { if (window.__urpppCleanMode) window.__urpppCleanMode.inject(); } catch (_) {}
       }, ms));
-      // 默认进入清爽模式
+      // 默认进入清爽模式：仅首页
       try {
-        if (isCleanDefault() && window.__urpppCleanMode) {
+        if (isCleanDefault() && isHomePage() && window.__urpppCleanMode) {
           setTimeout(() => { try { window.__urpppCleanMode.open(false); } catch (_) {} }, 700);
         }
       } catch (_) {}
