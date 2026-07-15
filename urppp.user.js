@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.7.6
+// @version      0.7.7
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -11896,7 +11896,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.7.6');
+    console.log('[URP++] style applied v0.7.7');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
@@ -12991,7 +12991,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // ============================================================
-  // 清爽模式 Clean Mode v0.7.6
+  // 清爽模式 Clean Mode v0.7.7
   // 桌面居中一页 1:1；手机底栏；数据按真实 URP DOM/路径解析
   // 绩点：川大现行百分制对照表；教室：classroomUseStatus 网格
   // ============================================================
@@ -13640,17 +13640,24 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   function occupancyReason(ct) {
+    // 站点 classroomStatusLayout 着色：
+    // 06 有课(#7be0f6) 07 考试(#fbb9e1) 14 实验(#f5f67b) room 借用(#90feaa)
+    // jasInfo 不返回课程名/考试名，只能展示类型首字；详情同理
     const mod = String((ct && ct.occupancymoduleId) || '');
-    const ts = String((ct && ct.timestatenumber) || '');
-    // 对照站点图例：有课 / 考试 / 实验 / 借用（编码因校而异，做兼容映射）
-    const map = {
-      '01': '有课', '02': '有课', '03': '考试', '04': '考试',
-      '05': '实验', '06': '借用', '07': '借用', '08': '实验'
-    };
+    const map = { '06': '有课', '07': '考试', '14': '实验', 'room': '借用' };
     if (map[mod]) return map[mod];
-    if (map[ts]) return map[ts];
-    if (ct && ct.remark) return String(ct.remark).slice(0, 4);
+    if (ct && ct.remark) {
+      const r = String(ct.remark).trim();
+      if (r) return r;
+    }
     return '占用';
+  }
+  function occupancyKindClass(reason) {
+    if (reason === '有课') return 'kind-course';
+    if (reason === '考试') return 'kind-exam';
+    if (reason === '实验') return 'kind-lab';
+    if (reason === '借用') return 'kind-borrow';
+    return 'kind-busy';
   }
 
   async function loadBuildingOccupancy(building) {
@@ -13791,12 +13798,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 #urppp-clean-root .uc-col{display:flex;flex-direction:column;gap:16px;min-height:0}
 #urppp-clean-root .uc-card{background:var(--surface,#fff);border:1px solid var(--border,#e7e7ea);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
 #urppp-clean-root .uc-card.grow{flex:1;min-height:0;display:flex;flex-direction:column}
-#urppp-clean-root .uc-hd{padding:12px 14px;border-bottom:1px solid var(--border);font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+#urppp-clean-root .uc-hd{padding:12px 14px;border-bottom:1px solid var(--border);font-weight:700;font-size:15px;display:flex;justify-content:space-between;align-items:center}
 #urppp-clean-root .uc-bd{padding:14px}
 #urppp-clean-root .uc-card.grow .uc-bd{flex:1;overflow:auto}
 #urppp-clean-root .uc-profile{display:flex;gap:14px;align-items:center}
-#urppp-clean-root .uc-avatar{width:64px;height:64px;border-radius:16px;background:var(--input-bg);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--primary);flex:0 0 64px}
-#urppp-clean-root .uc-avatar img{width:100%;height:100%;object-fit:cover}
+#urppp-clean-root .uc-avatar{width:auto;height:72px;max-width:96px;min-width:56px;border-radius:12px;background:var(--input-bg);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--primary);flex:0 0 auto}
+#urppp-clean-root .uc-avatar img{height:72px;width:auto;max-width:96px;object-fit:contain;display:block;border-radius:12px}
 #urppp-clean-root .uc-name{font-size:18px;font-weight:700;margin:0 0 4px}
 #urppp-clean-root .uc-sub{font-size:12px;color:var(--text-secondary,#667085);line-height:1.5}
 #urppp-clean-root .uc-gpa{margin-top:6px;display:inline-flex;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--primary) 12%,var(--input-bg));font-weight:700;font-size:13px}
@@ -13809,12 +13816,29 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 #urppp-clean-root .uc-grid-cell{position:absolute;left:0;right:0;height:52px;border-radius:10px;background:var(--input-bg);border:1px solid color-mix(in srgb,var(--border) 65%,transparent)}
 #urppp-clean-root .uc-grid-cell:nth-child(n){/* placed via top below in inline? use sequential */}
 #urppp-clean-root .uc-day-col .uc-grid-cell{width:100%}
-#urppp-clean-root .uc-lesson{position:absolute;left:2px;right:2px;z-index:2;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:10px;padding:6px 7px 16px;cursor:pointer;overflow:hidden;box-sizing:border-box}
+#urppp-clean-root .uc-lesson{position:absolute;left:0;right:0;z-index:2;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:10px;padding:6px 7px 16px;cursor:pointer;overflow:hidden;box-sizing:border-box}
 #urppp-clean-root .uc-lesson.is-fade{filter:saturate(.4);z-index:2!important}
 #urppp-clean-root .uc-lesson:not(.is-fade){z-index:8}
 #urppp-clean-root .uc-lesson b{display:block;font-size:12px;line-height:1.25;font-weight:700}
 #urppp-clean-root .uc-lesson i{display:block;font-style:normal;font-size:10px;color:var(--text-secondary);margin-top:3px}
 #urppp-clean-root .uc-badge{position:absolute;right:5px;bottom:4px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--primary);color:#fff;font-size:10px;line-height:16px;text-align:center;font-weight:700}
+#urppp-clean-root .uc-part-line{position:absolute;left:0;right:0;height:0;border-top:2px dashed color-mix(in srgb,var(--primary) 35%,var(--border));z-index:1;pointer-events:none;opacity:.9}
+#urppp-clean-root .uc-namecell{position:relative;padding-left:22px!important}
+#urppp-clean-root .uc-selmark{position:absolute;left:6px;top:50%;transform:translateY(-50%);width:14px;height:14px;line-height:14px;text-align:center;font-size:12px;font-weight:700;color:var(--primary);opacity:0}
+#urppp-clean-root table.uc-table tbody tr.is-on .uc-selmark{opacity:1}
+#urppp-clean-root .uc-cname{display:inline}
+#urppp-clean-root .uc-calc{font-size:15px;font-weight:600;color:var(--text);line-height:1.5}
+#urppp-clean-root .uc-calc b{font-size:17px;font-weight:800;color:var(--primary);margin:0 2px}
+#urppp-clean-root .uc-slot.kind-course{background:#7be0f6;border-color:#4ec8e0;color:#0b3b4a}
+#urppp-clean-root .uc-slot.kind-exam{background:#fbb9e1;border-color:#f472b6;color:#831843}
+#urppp-clean-root .uc-slot.kind-lab{background:#f5f67b;border-color:#eab308;color:#713f12}
+#urppp-clean-root .uc-slot.kind-borrow{background:#90feaa;border-color:#4ade80;color:#14532d}
+html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-course,body.urppp-dark #urppp-clean-root .uc-slot.kind-course{background:#2dd4bf;border-color:#14b8a6;color:#042f2e}
+html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-exam,body.urppp-dark #urppp-clean-root .uc-slot.kind-exam{background:#f472b6;border-color:#db2777;color:#4c0519}
+html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-lab,body.urppp-dark #urppp-clean-root .uc-slot.kind-lab{background:#facc15;border-color:#eab308;color:#422006}
+html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #urppp-clean-root .uc-slot.kind-borrow{background:#4ade80;border-color:#22c55e;color:#052e16}
+#urppp-clean-root .uc-modal-stack-hint{font-size:12px;color:var(--text-muted)}
+
 #urppp-clean-root .uc-svc{min-height:92px}
 #urppp-clean-root .uc-svc svg{width:24px;height:24px}
 #urppp-clean-root .uc-svc strong{font-size:12px}
@@ -13828,11 +13852,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 #urppp-clean-root .uc-score-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 #urppp-clean-root .uc-score-pane{border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;background:var(--input-bg)}
 #urppp-clean-root .uc-score-pane:hover{border-color:var(--primary)}
-#urppp-clean-root .uc-score-pane h5{margin:0 0 10px;font-size:13px}
+#urppp-clean-root .uc-score-pane h5{margin:0 0 10px;font-size:15px;font-weight:700}
 #urppp-clean-root .uc-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 #urppp-clean-root .uc-metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px}
-#urppp-clean-root .uc-metric em{display:block;font-style:normal;font-size:10px;color:var(--text-muted);margin-bottom:2px}
-#urppp-clean-root .uc-metric b{font-size:16px}
+#urppp-clean-root .uc-metric em{display:block;font-style:normal;font-size:12px;color:var(--text-muted);margin-bottom:2px}
+#urppp-clean-root .uc-metric b{font-size:18px}
 #urppp-clean-root .uc-services{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
 #urppp-clean-root .uc-svc{aspect-ratio:1/1;border-radius:14px;border:1px solid var(--border);background:var(--input-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;color:var(--text);padding:8px;text-align:center;min-height:88px}
 #urppp-clean-root .uc-svc:hover{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 8%,var(--input-bg))}
@@ -14036,8 +14060,11 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     // 7 day columns
     for (let d = 0; d < 7; d++) {
       html += `<div class="uc-day-col" data-day="${d}" style="height:${56*12}px">`;
-      // background grid cells: fixed equal height
+      // background grid cells: fixed equal height, full column width
       for (let s = 1; s <= 12; s++) html += `<div class="uc-grid-cell" data-sec="${s}" style="top:${(s-1)*56}px;height:52px"></div>`;
+      // 4|5 与 9|10 之间分割线（上午/下午/晚上）
+      html += `<div class="uc-part-line" style="top:${4*56 - 2}px"></div>`;
+      html += `<div class="uc-part-line" style="top:${9*56 - 2}px"></div>`;
       // place courses absolutely
       for (let s = 1; s <= 12; s++) {
         const starters = (byStart[d + '_' + s] || []).slice().sort((a, b) => {
@@ -14203,7 +14230,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           const reason = slot.reason || '占用';
           const ch = reason.charAt(0);
           const detail = escapeHtml(JSON.stringify(slot.detail || { room: r.name, section: i, reason }));
-          row += `<td><button type="button" class="uc-slot busy kind-${escapeHtml(String(slot.kind || ''))}" data-occ='${detail}' title="${escapeHtml(r.name)} 第${i}节 · ${escapeHtml(reason)}">${escapeHtml(ch)}</button></td>`;
+          row += `<td><button type="button" class="uc-slot busy ${occupancyKindClass(reason)}" data-occ='${detail}' title="${escapeHtml(r.name)} 第${i}节 · ${escapeHtml(reason)}">${escapeHtml(ch)}</button></td>`;
         } else {
           row += `<td><div class="uc-slot free" title="${escapeHtml(r.name)} 第${i}节 · 空闲"></div></td>`;
         }
@@ -14276,10 +14303,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
             <div class="uc-occ-detail">
               <div class="uc-name">${escapeHtml(d.room || '')}</div>
               <div class="uc-sub" style="margin-top:8px">节次：第${escapeHtml(String(d.section || d.start || ''))}${(d.span > 1) ? ('-' + (Number(d.start || d.section) + Number(d.span) - 1)) : ''}节</div>
-              <div class="uc-sub">原因：${escapeHtml(d.reason || '占用')}</div>
-              <div class="uc-sub">状态码：${escapeHtml(String(d.state || '-'))} / 模块：${escapeHtml(String(d.module || '-'))}</div>
+              <div class="uc-sub">占用类型：${escapeHtml(d.reason || '占用')}</div>
+              <div class="uc-note" style="margin-top:10px">说明：URP 教室占用接口只返回类型码（有课/考试/实验/借用），不返回具体课程名或考试名，故首字取类型首字。</div>
             </div>
-          `, '');
+          `, '', { stack: true });
         } catch (_) {}
       });
     });
@@ -14305,10 +14332,24 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     });
   }
 
-  function openModal(title, body, ft) {
+  const modalStack = [];
+  function openModal(title, body, ft, opts) {
+    opts = opts || {};
     const el = ensureRoot();
-    el.querySelector('#uc-mask').classList.add('open');
-    el.querySelector('#uc-modal').classList.add('open');
+    const mask = el.querySelector('#uc-mask');
+    let modal = el.querySelector('#uc-modal');
+    // 栈式弹窗：保留下层（如教室列表），上层详情关闭后回到下层
+    if (opts.stack && modal.classList.contains('open')) {
+      modalStack.push({
+        title: el.querySelector('#uc-modal-title').textContent,
+        body: el.querySelector('#uc-modal-body').innerHTML,
+        ft: el.querySelector('#uc-modal-ft').innerHTML
+      });
+    } else if (!opts.stack) {
+      modalStack.length = 0;
+    }
+    mask.classList.add('open');
+    modal.classList.add('open');
     el.querySelector('#uc-modal-title').textContent = title;
     el.querySelector('#uc-modal-body').innerHTML = body;
     el.querySelector('#uc-modal-ft').innerHTML = ft || '';
@@ -14318,6 +14359,15 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   function closeModal() {
     const el = rootEl();
     if (!el) return;
+    if (modalStack.length) {
+      const prev = modalStack.pop();
+      el.querySelector('#uc-modal-title').textContent = prev.title;
+      el.querySelector('#uc-modal-body').innerHTML = prev.body;
+      el.querySelector('#uc-modal-ft').innerHTML = prev.ft || '';
+      bindUI(el.querySelector('#uc-modal-body'));
+      bindUI(el.querySelector('#uc-modal-ft'));
+      return;
+    }
     el.querySelector('#uc-mask').classList.remove('open');
     el.querySelector('#uc-modal').classList.remove('open');
   }
@@ -14341,8 +14391,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       const on = state.selected[key].has(idx);
       const gp = (c.officialGpa != null) ? c.officialGpa : scoreToGpa(c.score);
       return `<tr class="${on ? 'is-on' : ''}" data-idx="${idx}">
-        <td class="uc-selmark">${on ? '✓' : ''}</td>
-        <td>${escapeHtml(c.name)}</td><td>${escapeHtml(c.attr || '')}</td><td>${c.credit}</td>
+        <td class="uc-namecell"><span class="uc-selmark" aria-hidden="true">${on ? '✓' : ''}</span><span class="uc-cname">${escapeHtml(c.name)}</span></td>
+        <td>${escapeHtml(c.attr || '')}</td><td>${c.credit}</td>
         <td>${escapeHtml(c.score)}</td><td>${gp == null ? '—' : gp}</td>
       </tr>`;
     }).join('');
@@ -14350,8 +14400,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       ${switcher}${metricHtml(pack.summary)}
       <div class="uc-note">点击行选择/取消；按住拖拽可框选。底部实时计算学分/均分/绩点。</div>
       <div style="margin-top:10px;overflow:auto;max-height:46vh;position:relative" id="uc-score-wrap">
-        <table class="uc-table" id="uc-score-table"><thead><tr><th></th><th>课程</th><th>属性</th><th>学分</th><th>成绩</th><th>绩点</th></tr></thead>
-        <tbody>${rows || '<tr><td colspan="6">暂无数据</td></tr>'}</tbody></table>
+        <table class="uc-table" id="uc-score-table"><thead><tr><th>课程</th><th>属性</th><th>学分</th><th>成绩</th><th>绩点</th></tr></thead>
+        <tbody>${rows || '<tr><td colspan="5">暂无数据</td></tr>'}</tbody></table>
         <div class="uc-select-box" id="uc-select-box"></div>
       </div>`, `<div id="uc-calc">已选 0 门</div><button type="button" class="uc-btn" id="uc-clear">清空</button>`);
     const body = document.querySelector('#uc-modal-body');
@@ -14371,9 +14421,12 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       const selected = [];
       state.selected[key].forEach((i) => { if (pack.courses[i]) selected.push(pack.courses[i]); });
       const sum = summarizeCoursesPreferOfficial(selected);
-      if (calc) calc.innerHTML = selected.length
-        ? `已选 <b>${selected.length}</b> 门 · 学分 <b>${sum.totalCredit}</b> · 均分 <b>${sum.avgScore}</b> · 绩点 <b>${sum.avgGpa}</b>`
-        : '已选 0 门';
+      if (calc) {
+        calc.className = 'uc-calc';
+        calc.innerHTML = selected.length
+          ? `已选 <b>${selected.length}</b> 门 · 学分 <b>${sum.totalCredit}</b> · 均分 <b>${sum.avgScore}</b> · 绩点 <b>${sum.avgGpa}</b>`
+          : '已选 0 门';
+      }
     };
 
     const toggleIdx = (i, force) => {
