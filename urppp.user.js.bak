@@ -10021,17 +10021,10 @@
         padding: 12px 18px !important;
       }
 
-      /* 弹窗：只美化外观；display 完全交给 Bootstrap，避免关不掉/打不开 */
-      /* 关闭态兜底：无 .in/.show 时强制隐藏，防止历史 inline/display 残留 */
-      .modal.fade:not(.in):not(.show),
-      .modal:not(.in):not(.show):not(.urppp-force-open) {
+      /* 弹窗：只美化外观；display 尽量交给 Bootstrap */
+      /* 仅兜底关闭态 fade 且无 in/show，避免假弹窗常驻；不要强制 .in{display:block} 以免干扰打开动画 */
+      .modal.fade:not(.in):not(.show) {
         display: none !important;
-        pointer-events: none !important;
-      }
-      .modal.in,
-      .modal.show {
-        display: block !important;
-        pointer-events: auto !important;
       }
       .modal-dialog {
         z-index: 1051 !important;
