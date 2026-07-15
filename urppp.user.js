@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         SCU URP++教务系统美化
-// @namespace    https://github.com/hanako/urp-plus
+// @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
 // @version      1.0.1
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Chao_Lan,Hanako
