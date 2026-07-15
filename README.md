@@ -13,6 +13,22 @@
 
 ---
 
+## 效果展示
+
+### 主站美化
+
+![主站美化](./docs/Main-Page.jpg)
+
+### 清爽模式（桌面）
+
+![清爽模式桌面](./docs/Clean-Mode.jpg)
+
+### 清爽模式（手机）
+
+![清爽模式手机](./docs/Clean-Mode-Mobile.png)
+
+---
+
 ## 功能概览
 
 ### 主脚本 `urppp.user.js`
@@ -70,7 +86,10 @@ URP++/
 ├── README.md                  # 主脚本说明
 ├── README_.md                 # 辅助插件说明与风险声明
 └── docs/
-    └── scu-urppp-logo.png     # 标题 Logo
+    ├── scu-urppp-logo.png     # 标题 Logo
+    ├── Main-Page.jpg          # 效果：主站美化
+    ├── Clean-Mode.jpg         # 效果：清爽模式桌面
+    └── Clean-Mode-Mobile.png  # 效果：清爽模式手机
 ```
 
 ---
