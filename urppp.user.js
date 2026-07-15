@@ -4610,8 +4610,7 @@
         }
       }
       // 点左侧主页面空白 / 列表区域：关闭所有打开抽屉
-      e.preventDefault();
-      // 不 stopPropagation，尽量不破坏站点其它逻辑；只执行关闭
+      // 不 preventDefault/stopPropagation，避免影响查询区聚焦与列表点击
       openPanels.forEach(closeDrawerPanel);
     }, true);
   }
