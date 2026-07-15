@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.7.9
+// @version      0.7.10
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -4392,31 +4392,50 @@
       }
     }, true);
     // 点击遮罩 / 弹窗空白（非 dialog 内容）关闭
-    document.addEventListener('mousedown', (e) => {
+    // 用 click 捕获，兼容站点 stopPropagation；同时兼容 dialog 居中后点两侧空白
+    document.addEventListener('click', (e) => {
       const t = e.target;
       if (!t || !t.closest) return;
-      // 1) 直接点在 .modal 外壳（Bootstrap 约定：target === modal）
-      if (t.classList && t.classList.contains('modal') && (t.classList.contains('in') || t.classList.contains('show'))) {
-        // 点到 dialog 内部不算
-        if (t.querySelector && e.target.closest && e.target.closest('.modal-dialog')) return;
-        e.preventDefault();
-        hideModalEl(t);
-        return;
-      }
-      // 2) 点在 backdrop 上
+      // 忽略关闭按钮本身（另有处理）
+      if (t.closest('[data-dismiss="modal"], .modal .close, .modal [aria-label="Close"]')) return;
+      // 1) backdrop
       if (t.classList && t.classList.contains('modal-backdrop')) {
         const open = document.querySelector('.modal.in, .modal.show');
         if (open) {
           e.preventDefault();
+          e.stopPropagation();
           hideModalEl(open);
         }
         return;
       }
-      // 3) 点在 modal 内、但不在 dialog 上（某些主题结构）
-      const shell = t.closest && t.closest('.modal.in, .modal.show');
-      if (shell && !t.closest('.modal-dialog')) {
+      // 2) 点在 .modal 根节点（target 就是 modal）
+      if (t.classList && t.classList.contains('modal') && (t.classList.contains('in') || t.classList.contains('show'))) {
         e.preventDefault();
+        e.stopPropagation();
+        hideModalEl(t);
+        return;
+      }
+      // 3) 点在 modal 内但不在 dialog/content 上
+      const shell = t.closest('.modal.in, .modal.show');
+      if (shell && !t.closest('.modal-dialog, .modal-content')) {
+        e.preventDefault();
+        e.stopPropagation();
         hideModalEl(shell);
+        return;
+      }
+      // 4) 点在 modal 上但落在 dialog 外侧空白：用坐标判断
+      if (shell && t.closest('.modal')) {
+        const dialog = shell.querySelector('.modal-dialog');
+        if (dialog) {
+          const r = dialog.getBoundingClientRect();
+          const x = e.clientX, y = e.clientY;
+          const inside = x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+          if (!inside) {
+            e.preventDefault();
+            e.stopPropagation();
+            hideModalEl(shell);
+          }
+        }
       }
     }, true);
     // 兜底：点关闭按钮 / data-dismiss 后 50ms 再清一次
@@ -10142,6 +10161,11 @@
       .modal.show .modal-dialog {
         pointer-events: auto !important;
       }
+      /* 保证 modal 全屏层可点到两侧空白（不要让子元素铺满拦截） */
+      .modal.in > .modal-dialog,
+      .modal.show > .modal-dialog {
+        pointer-events: auto !important;
+      }
 
 
       /* ============================================================
@@ -10164,7 +10188,10 @@
         box-sizing: border-box !important;
         border-radius: 0 !important;
         float: none !important;
-        /* 不写 position/top/right/bottom/width/height/overflow !important */
+        /* 标题按钮需要可见：不要裁切顶部操作区 */
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        /* 不写 position/top/right/bottom/width/height !important */
       }
 
       /* 培养方案查询页抽屉 #curriculumInfo-divcon：只美化，不重组 DOM */
@@ -10208,20 +10235,86 @@
       }
       #curriculumInfo-divcon > .div-title,
       #curriculumInfo-divcon1 > .div-title,
-      #curriculumInfo-divcon2 > .div-title {
+      #curriculumInfo-divcon2 > .div-title,
+      #calssInfo-divcon > .div-title,
+      #classroomInfo-divcon > .div-title {
         width: 100% !important;
         position: sticky !important;
         top: 0 !important;
-        z-index: 3 !important;
+        z-index: 5 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
+        flex-wrap: nowrap !important;
         min-height: 56px !important;
-        padding: 0 16px 0 20px !important;
+        height: auto !important;
+        padding: 10px 16px 10px 20px !important;
         margin: 0 !important;
         background: var(--surface) !important;
         border-bottom: 1px solid var(--border) !important;
         box-sizing: border-box !important;
+        overflow: visible !important;
+        gap: 10px !important;
+      }
+      /* 课表信息抽屉标题行：右侧按钮完整可见，不被裁切 */
+      #calssInfo-divcon > .div-title,
+      #classroomInfo-divcon > .div-title {
+        padding-right: 18px !important;
+      }
+      #calssInfo-divcon > .div-title .right_top_oper,
+      #classroomInfo-divcon > .div-title .right_top_oper,
+      #curriculumInfo-divcon > .div-title .right_top_oper,
+      #curriculumInfo-divcon1 > .div-title .right_top_oper,
+      #curriculumInfo-divcon2 > .div-title .right_top_oper,
+      #calssInfo-divcon .div-title .right_top_oper,
+      #classroomInfo-divcon .div-title .right_top_oper {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        flex: 0 0 auto !important;
+        gap: 8px !important;
+        float: none !important;
+        position: static !important;
+        margin: 0 !important;
+        max-width: none !important;
+        overflow: visible !important;
+        white-space: nowrap !important;
+      }
+      #calssInfo-divcon > .div-title .right_top_oper .btn,
+      #classroomInfo-divcon > .div-title .right_top_oper .btn,
+      #calssInfo-divcon .div-title .btn,
+      #classroomInfo-divcon .div-title .btn,
+      #calssInfo-divcon > .div-title a.btn,
+      #classroomInfo-divcon > .div-title a.btn {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        height: 30px !important;
+        min-height: 30px !important;
+        max-height: 30px !important;
+        padding: 0 12px !important;
+        margin: 0 !important;
+        float: none !important;
+        position: static !important;
+        overflow: visible !important;
+        white-space: nowrap !important;
+        line-height: 1 !important;
+        font-size: 12px !important;
+        border-radius: 8px !important;
+        flex: 0 0 auto !important;
+      }
+      #calssInfo-divcon > .div-title h3,
+      #classroomInfo-divcon > .div-title h3,
+      #calssInfo-divcon > .div-title h4,
+      #classroomInfo-divcon > .div-title h4,
+      #calssInfo-divcon > .div-title h5,
+      #classroomInfo-divcon > .div-title h5 {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
       }
       #curriculumInfo-divcon > .div-title h3,
       #curriculumInfo-divcon1 > .div-title h3,
@@ -12034,7 +12127,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
-    console.log('[URP++] style applied v0.7.9');
+    console.log('[URP++] style applied v0.7.10');
     try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
