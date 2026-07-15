@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SCU URP++教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      1.0.0
+// @version      1.0.1
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Chao_Lan,Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -13976,42 +13976,72 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   
   async function loadEvaluationMap() {
+    // 成绩「未评估」只认期末评教（flag=kt）。
+    // 课堂及时评教（flag=ktjs）不影响成绩是否显示，不能用来打未评估标签。
     const map = {}; // courseNumber -> { ktid, kxh, kcm, done, url }
-    const flags = ['kt', 'ktjs'];
-    for (const flag of flags) {
-      try {
-        const raw = await fetchText('/student/teachingAssessment/evaluation/queryAll', {
-          method: 'POST',
-          data: 'pageNum=1&pageSize=200&flag=' + encodeURIComponent(flag),
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            'X-Requested-With': 'XMLHttpRequest'
+    try {
+      const raw = await fetchText('/student/teachingAssessment/evaluation/queryAll', {
+        method: 'POST',
+        data: 'pageNum=1&pageSize=200&flag=kt',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      let data;
+      try { data = JSON.parse(raw); } catch (_) { data = null; }
+      const recs = (data && data.data && data.data.records) || [];
+      recs.forEach((r) => {
+        const kch = String(r.KCH || '').trim();
+        if (!kch) return;
+        const done = String(r.SFPG) === '1';
+        const ktid = String(r.KTID || '').trim();
+        // 同一课程多条问卷：全部完成才算 done
+        if (!map[kch]) {
+          map[kch] = {
+            ktid,
+            kxh: String(r.KXH || ''),
+            kcm: r.KCM || '',
+            done,
+            pending: done ? 0 : 1,
+            total: 1,
+            url: (!done && ktid)
+              ? ('/student/teachingEvaluation/newEvaluation/evaluation/' + ktid)
+              : '/student/teachingEvaluation/newEvaluation/index'
+          };
+          return;
+        }
+        map[kch].total += 1;
+        if (!done) {
+          map[kch].pending += 1;
+          map[kch].done = false;
+          if (ktid) {
+            map[kch].ktid = ktid;
+            map[kch].url = '/student/teachingEvaluation/newEvaluation/evaluation/' + ktid;
           }
-        });
-        let data;
-        try { data = JSON.parse(raw); } catch (_) { continue; }
-        const recs = (data && data.data && data.data.records) || [];
-        recs.forEach((r) => {
-          const kch = String(r.KCH || '').trim();
-          if (!kch) return;
-          const done = String(r.SFPG) === '1';
-          const ktid = String(r.KTID || '').trim();
-          // 优先保留未评估记录
-          if (!map[kch] || (map[kch].done && !done)) {
-            map[kch] = {
-              ktid,
-              kxh: String(r.KXH || ''),
-              kcm: r.KCM || '',
-              done,
-              url: (!done && ktid) ? ('/student/teachingEvaluation/newEvaluation/evaluation/' + ktid) : '/student/teachingEvaluation/newEvaluation/index'
-            };
-          }
-        });
-      } catch (e) {
-        console.warn('[URP++] evaluation map', flag, e);
-      }
+        }
+      });
+      Object.keys(map).forEach((k) => {
+        const it = map[k];
+        it.done = !(it.pending > 0);
+      });
+    } catch (e) {
+      console.warn('[URP++] evaluation map', e);
     }
     return map;
+  }
+
+  function hasDisplayableScore(c) {
+    if (!c) return false;
+    if (c.officialGpa != null && isValidOfficialGpa(c.officialGpa)) return true;
+    const raw = c.score;
+    if (raw == null || raw === '') return false;
+    if (isUnevaluatedScore(raw)) return false;
+    // 有可解析分数/等级，即视为成绩已出
+    if (scoreToNumber(raw) != null) return true;
+    if (scoreToGpa(raw) != null) return true;
+    // 非空且不是“未评估”类文案，也当作已有展示成绩
+    return !/未评估|未评教|待评估|待评教/.test(String(raw));
   }
 
   function attachEvaluationLinks(scorePack, evalMap) {
@@ -14020,10 +14050,21 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       if (!c || !c.code) return;
       const hit = evalMap[c.code];
       if (!hit) return;
-      if (c.unevaluated || !hit.done) {
-        c.unevaluated = c.unevaluated || !hit.done;
+
+      // 成绩接口已给出有效成绩时：不再标未评估（期末评教完成后成绩会放出）
+      if (hasDisplayableScore(c)) {
+        c.unevaluated = false;
+        // 若期末评教仍未完成，仅保留跳转入口，不改分数展示
+        if (!hit.done) c.evalUrl = hit.url || '/student/teachingEvaluation/newEvaluation/index';
+        else c.evalUrl = c.evalUrl || '';
+        return;
+      }
+
+      // 无有效成绩 + 期末评教未完成：标未评估并可跳转
+      if (!hit.done) {
+        c.unevaluated = true;
         c.evalUrl = hit.url || '/student/teachingEvaluation/newEvaluation/index';
-        if (c.unevaluated && (!c.score || c.score === '' || isUnevaluatedScore(c.score))) c.score = '未评估';
+        if (!c.score || c.score === '' || isUnevaluatedScore(c.score)) c.score = '未评估';
       }
     });
     (scorePack.passing || []).forEach((g) => apply(g.courses));
