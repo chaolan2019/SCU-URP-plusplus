@@ -14867,6 +14867,11 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   function injectCleanEntry() {
     try {
       let btn = document.getElementById('urppp-nav-clean');
+      // 仅首页展示清爽入口；业务页移除残留按钮
+      if (!isHomePage()) {
+        if (btn) btn.remove();
+        return;
+      }
       const host = document.getElementById('urppp-nav-theme') ||
         document.querySelector('#navbar .navbar-header') ||
         document.querySelector('#navbar');
@@ -14880,7 +14885,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openCleanMode(false); });
         host.appendChild(btn);
       }
-      ['display', 'align-items', 'height', 'padding', 'border', 'border-radius', 'background', 'color', 'font-size', 'gap', 'width', 'box-shadow'].forEach(() => {});
       Object.entries({
         display: 'inline-flex', 'align-items': 'center', height: '28px', 'min-height': '28px',
         padding: '0 10px', border: '1px solid var(--border)', 'border-radius': '8px',
