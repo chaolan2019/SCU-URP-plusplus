@@ -4,6 +4,7 @@
 // @version      1.0.1
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Chao_Lan,Hanako
+// @license      MIT
 // @match        http://zhjw.scu.edu.cn/*
 // @match        http://202.115.47.141/*
 // @grant        GM_addStyle
