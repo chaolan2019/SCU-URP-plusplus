@@ -4,6 +4,8 @@
 // @version      1.2.6
 // @description  URP++ 扩展：登录验证码识别 + 评教自动填写/到时自动保存 + 列表页全自动评教。设置挂到 URP++ 设置面板。
 // @author       Chao_Lan,Hanako
+// @license      MIT
+// @icon         https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/docs/icon.png
 // @match        http://zhjw.scu.edu.cn/*
 // @match        http://202.115.47.141/*
 // @match        https://*.scu.edu.cn/*
@@ -14,7 +16,6 @@
 // @grant        GM_registerMenuCommand
 // @connect      *
 // @run-at       document-idle
-// @license      MIT
 // ==/UserScript==
 
 /**
