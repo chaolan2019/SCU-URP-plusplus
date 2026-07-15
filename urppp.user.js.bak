@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         URP++ 教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.7.11-noclean-sync
+// @version      0.7.12-noclean-sync
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Hanako
 // @match        http://zhjw.scu.edu.cn/*
@@ -4490,6 +4490,123 @@
       }
     }, true);
   }
+
+  // ============================================================
+  // 右侧滑出抽屉（培养方案/课表信息）：点左侧空白收回
+  // 站点关闭通常是 right 负值 / width:0 的 jQuery animate
+  // ============================================================
+  function getDrawerPanels() {
+    return ['curriculumInfo-divcon','curriculumInfo-divcon1','curriculumInfo-divcon2','calssInfo-divcon','classroomInfo-divcon'].map((id) => document.getElementById(id)).filter(Boolean);
+  }
+  function isDrawerOpen(el) {
+    if (!el) return false;
+    try {
+      const st = getComputedStyle(el);
+      if (st.display === 'none' || st.visibility === 'hidden') return false;
+      const rect = el.getBoundingClientRect();
+      // 打开时通常贴右、宽度可观
+      if (rect.width < 80) return false;
+      // 大部分在视口内
+      if (rect.right < 40) return false;
+      // right 负很多也算关
+      const right = parseFloat(el.style.right);
+      if (!Number.isNaN(right) && right < -20) return false;
+      return rect.width > 120 && rect.left < window.innerWidth;
+    } catch (_) {
+      return false;
+    }
+  }
+  function closeDrawerPanel(el) {
+    if (!el) return;
+    try {
+      // 先清我们可能写过的锁
+      ;['display','opacity','pointer-events','visibility','right','width'].forEach((p) => {
+        if (el.style && el.style.getPropertyPriority(p) === 'important') el.style.removeProperty(p);
+      });
+    } catch (_) {}
+    // 优先走站点关闭按钮
+    try {
+      const closer = el.querySelector(
+        '.div-title .close, .div-title [onclick*="close"], .div-title [onclick*="Close"], ' +
+        '.right_top_oper .close, a[onclick*="close"], button[onclick*="close"], ' +
+        '[title="关闭"], [title="收起"], .fa-times, .fa-close, .glyphicon-remove'
+      );
+      if (closer) {
+        const clickable = closer.closest('a,button') || closer;
+        clickable.click();
+        // 若点击后仍开着，继续硬关
+        setTimeout(() => {
+          if (isDrawerOpen(el)) hardCloseDrawer(el);
+        }, 120);
+        return;
+      }
+    } catch (_) {}
+    hardCloseDrawer(el);
+  }
+  function hardCloseDrawer(el) {
+    if (!el) return;
+    try {
+      const $ = (typeof pageJQuery === 'function' && pageJQuery())
+        || (typeof unsafeWindow !== 'undefined' && (unsafeWindow.jQuery || unsafeWindow.$))
+        || window.jQuery || window.$;
+      // 常见站点关闭动画：right 到负值 / width 到 0
+      if ($ && $.fn && typeof $(el).animate === 'function') {
+        const w = el.getBoundingClientRect().width || el.offsetWidth || 480;
+        try {
+          $(el).stop(true, true).animate({ right: -Math.max(w, 300), width: 0 }, 180, function () {
+            try {
+              el.style.right = '-' + Math.max(w, 300) + 'px';
+              el.style.width = '0px';
+              el.style.display = 'none';
+            } catch (_) {}
+          });
+          return;
+        } catch (_) {}
+      }
+    } catch (_) {}
+    try {
+      const w = el.getBoundingClientRect().width || 480;
+      el.style.transition = 'right .18s ease, width .18s ease, opacity .12s ease';
+      el.style.right = '-' + Math.max(w, 300) + 'px';
+      el.style.width = '0px';
+      el.style.opacity = '0';
+      setTimeout(() => {
+        try {
+          el.style.display = 'none';
+          el.style.opacity = '';
+          el.style.transition = '';
+        } catch (_) {}
+      }, 200);
+    } catch (_) {
+      try { el.style.display = 'none'; } catch (_) {}
+    }
+  }
+  function patchDrawerBlankClose() {
+    if (window.__urpppDrawerBlankClose) return;
+    window.__urpppDrawerBlankClose = true;
+    document.addEventListener('pointerdown', (e) => {
+      const t = e.target;
+      if (!t || !t.closest) return;
+      const openPanels = getDrawerPanels().filter(isDrawerOpen);
+      if (!openPanels.length) return;
+      // 点在任一打开抽屉内部：不关
+      if (openPanels.some((p) => p.contains(t))) return;
+      // 点在会打开抽屉的操作上：不关（避免刚点开又被关）
+      const opener = t.closest('a,button,td,span,i,div');
+      if (opener) {
+        const oc = (opener.getAttribute('onclick') || '') + ' ' + (opener.getAttribute('href') || '');
+        if (/curriculumInfo-divcon|calssInfo-divcon|classroomInfo-divcon|查看课表|课表信息|培养方案|divcon/i.test(oc + (opener.textContent || ''))) {
+          // 仅当显式指向抽屉时放行
+          if (/curriculumInfo-divcon|calssInfo-divcon|classroomInfo-divcon|open|show/i.test(oc)) return;
+        }
+      }
+      // 点左侧主页面空白 / 列表区域：关闭所有打开抽屉
+      e.preventDefault();
+      // 不 stopPropagation，尽量不破坏站点其它逻辑；只执行关闭
+      openPanels.forEach(closeDrawerPanel);
+    }, true);
+  }
+
   function beautifyInternal() {
     // body 晚于首屏 applyTheme 时补挂暗色 class
     try {
