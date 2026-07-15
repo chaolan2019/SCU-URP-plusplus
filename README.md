@@ -85,6 +85,7 @@ URP++/
 ├── urpppp.user.js             # 辅助插件（可选）
 ├── README.md                  # 主脚本说明
 ├── README_.md                 # 辅助插件说明与风险声明
+├── LICENSE                    # MIT 开源协议
 └── docs/
     ├── scu-urppp-logo.png     # 标题 Logo
     ├── Main-Page.jpg          # 效果：主站美化
@@ -126,4 +127,6 @@ node --check urppp.user.js
 
 ## 许可
 
-MIT（以脚本头 `@license` 为准）。
+本项目采用 [MIT License](./LICENSE)。
+
+脚本头中的 `@license MIT` 供 Tampermonkey / Greasy Fork 识别；仓库根目录的 `LICENSE` 文件供 GitHub 显示开源协议。
