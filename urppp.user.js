@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         URP++ 教务系统美化
+// @name         SCU URP++教务系统美化
 // @namespace    https://github.com/hanako/urp-plus
-// @version      0.7.14
+// @version      1.0.0
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
-// @author       Hanako
+// @author       Chao_Lan,Hanako
 // @match        http://zhjw.scu.edu.cn/*
 // @match        http://202.115.47.141/*
 // @grant        GM_addStyle
@@ -4716,10 +4716,17 @@
         inset: 0 !important;
         background: rgba(15, 23, 42, 0.28) !important;
         z-index: 13050 !important; /* 高于清爽层 12000 */
-        display: none !important;
-        backdrop-filter: blur(2px) !important;
+        display: block !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        backdrop-filter: blur(0px) !important;
+        transition: opacity .22s ease, backdrop-filter .28s ease !important;
       }
-      #urppp-settings-mask.open { display: block !important; }
+      #urppp-settings-mask.open {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        backdrop-filter: blur(3px) !important;
+      }
       #urppp-settings-panel {
         position: fixed !important;
         top: 56px !important;
@@ -4734,10 +4741,37 @@
         border-radius: 16px !important;
         box-shadow: 0 18px 48px rgba(15,23,42,0.18) !important;
         z-index: 13060 !important; /* 高于清爽层，清爽内也可打开设置 */
-        display: none !important;
+        display: block !important;
         box-sizing: border-box !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transform: translateY(-10px) scale(.96) !important;
+        transform-origin: top left !important;
+        transition: opacity .24s cubic-bezier(.22,1,.36,1), transform .28s cubic-bezier(.22,1,.36,1), box-shadow .22s ease !important;
       }
-      #urppp-settings-panel.open { display: block !important; }
+      #urppp-settings-panel.open {
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        transform: translateY(0) scale(1) !important;
+        box-shadow: 0 22px 56px rgba(15,23,42,0.22) !important;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        #urppp-settings-mask, #urppp-settings-panel {
+          transition: none !important;
+          transform: none !important;
+        }
+        #urppp-settings-mask:not(.open),
+        #urppp-settings-panel:not(.open) {
+          display: none !important;
+          opacity: 0 !important;
+        }
+        #urppp-settings-mask.open,
+        #urppp-settings-panel.open {
+          display: block !important;
+          opacity: 1 !important;
+          pointer-events: auto !important;
+        }
+      }
       #urppp-settings-panel .urppp-set-head {
         display: flex !important;
         align-items: center !important;
@@ -12329,6 +12363,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const mask = document.getElementById('urppp-settings-mask');
     if (!panel || !mask) return;
     syncSettingsPanelUI();
+    // 强制重触发过渡：先关再开
+    mask.classList.remove('open');
+    panel.classList.remove('open');
+    void panel.offsetWidth;
     mask.classList.add('open');
     panel.classList.add('open');
   }
@@ -13261,7 +13299,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // ============================================================
-  // 清爽模式 Clean Mode v0.7.14
+  // 清爽模式 Clean Mode v1.0.0
   // 桌面居中一页 1:1；手机底栏；数据按真实 URP DOM/路径解析
   // 绩点：川大现行百分制对照表；教室：classroomUseStatus 网格
   // ============================================================
@@ -13279,10 +13317,42 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     64:0.9,63:0.8,62:0.7,61:0.6,60:0.5
   };
 
+
+  function isUnevaluatedScore(raw) {
+    if (raw == null || raw === '') return false;
+    const s = String(raw).trim();
+    if (!s) return false;
+    if (/未评估|未评教|待评估|待评教/.test(s)) return true;
+    const n = Number(s);
+    if (!Number.isNaN(n) && n < 0) return true;
+    return false;
+  }
+
+  function isValidOfficialGpa(v) {
+    if (v == null || v === '') return false;
+    const n = Number(v);
+    return !Number.isNaN(n) && n >= 0 && n <= 5;
+  }
+
+  function firstContentChar(text) {
+    const s = String(text || '').trim();
+    if (!s) return '';
+    const m = s.match(/[\u4e00-\u9fffA-Za-z0-9]/);
+    return m ? m[0] : s.charAt(0);
+  }
+
+  function weekBitmapActive(bitmap, week) {
+    const s = String(bitmap || '');
+    const w = Number(week) || 0;
+    if (!s || w <= 0 || w > s.length) return false;
+    return s.charAt(w - 1) === '1';
+  }
+
   function scoreToGpa(raw) {
     if (raw == null || raw === '') return null;
     const s = String(raw).trim();
     if (!s) return null;
+    if (isUnevaluatedScore(s)) return null;
     if (/^免修$|^通过$|^取消$|^缓考$|^旷考$|^缺考$/.test(s)) return null;
     if (/^A\+$/i.test(s) || /^A$/i.test(s)) return 4.0;
     if (/^A-$/i.test(s)) return 3.7;
@@ -13301,7 +13371,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (/不及格|不合格|不通过/.test(s)) return 0;
     if (/合格/.test(s)) return 1.0;
     const n = parseFloat(s.replace(/[^\d.]/g, ''));
-    if (Number.isNaN(n)) return null;
+    if (Number.isNaN(n) || n < 0) return null;
     const score = Math.round(n);
     if (score < 60) return 0;
     if (score > 100) return 4.0;
@@ -13311,6 +13381,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   function scoreToNumber(raw) {
     const s = String(raw || '').trim();
+    if (!s || isUnevaluatedScore(s)) return null;
     if (/优秀/.test(s)) return 95;
     if (/良好/.test(s)) return 85;
     if (/中等/.test(s)) return 75;
@@ -13323,7 +13394,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (/^D/i.test(s)) return 65;
     if (/^F/i.test(s)) return 0;
     const n = parseFloat(s.replace(/[^\d.]/g, ''));
-    return Number.isNaN(n) ? null : n;
+    if (Number.isNaN(n) || n < 0) return null;
+    return n;
   }
 
   function round2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
@@ -13333,9 +13405,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     let creditSum = 0, scoreW = 0, gpaW = 0, gpaCredit = 0;
     let reqCredit = 0, reqScoreW = 0, reqGpaW = 0, reqGpaCredit = 0;
     (list || []).forEach((c) => {
+      if (c && (c.unevaluated || isUnevaluatedScore(c.score))) return;
       const cr = Number(c.credit) || 0;
       const sc = scoreToNumber(c.score);
-      const gp = scoreToGpa(c.score);
+      const gp = (isValidOfficialGpa(c.officialGpa) ? Number(c.officialGpa) : scoreToGpa(c.score));
       if (sc == null || cr <= 0) return;
       creditSum += cr;
       scoreW += sc * cr;
@@ -13522,13 +13595,136 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // 课表真实数据在 JSON callback，index 页只是壳
-  function getCurrentWeekNumber() {
+  const TERM_WEEK_KEY = 'urppp_term_week_v1';
+  function rememberTermWeek(n) {
+    const w = Number(n) || 0;
+    if (w < 1 || w > 30) return 0;
+    state._termWeek = w;
+    try { GM_setValue(TERM_WEEK_KEY, w); } catch (_) {}
+    return w;
+  }
+  function readRememberedTermWeek() {
+    if (state && state._termWeek >= 1) return state._termWeek;
     try {
-      const t = (document.body && document.body.innerText) || '';
-      const m = t.match(/第\s*(\d{1,2})\s*周/);
-      if (m) return parseInt(m[1], 10);
+      const w = Number(GM_getValue(TERM_WEEK_KEY, 0)) || 0;
+      if (w >= 1 && w <= 30) {
+        state._termWeek = w;
+        return w;
+      }
     } catch (_) {}
     return 0;
+  }
+  function extractTermWeekFromText(text) {
+    const s = String(text || '').replace(/\s+/g, ' ');
+    if (!s) return 0;
+    // 只认「学年/季节 + 第N周」，绝不单独吃课程描述里的「第1周」
+    const patterns = [
+      /(?:\d{4}\s*[-–]\s*\d{4}).{0,40}?第\s*(\d{1,2})\s*周/,
+      /20\d{2}.{0,40}?第\s*(\d{1,2})\s*周/,
+      /(?:春|秋|夏|冬)\s*第\s*(\d{1,2})\s*周/,
+      // 顶栏常见：2025-2026 春 第19周 星期三
+      /第\s*(\d{1,2})\s*周\s*(?:星期|周[一二三四五六日天])/
+    ];
+    for (let i = 0; i < patterns.length; i++) {
+      const m = s.match(patterns[i]);
+      if (m) {
+        const n = parseInt(m[1], 10);
+        if (n >= 1 && n <= 30) return n;
+      }
+    }
+    return 0;
+  }
+
+  function getCurrentWeekNumber() {
+    try {
+      // 1) 顶栏/页头：同时扫 text + HTML（小屏时 text 可能被折叠，HTML 仍在）
+      const headNodes = [
+        document.querySelector('#navbar'),
+        document.querySelector('.navbar-fixed-top'),
+        document.querySelector('.navbar'),
+        document.querySelector('#navbar .navbar-header'),
+        document.querySelector('#navbar .navbar-buttons'),
+        document.querySelector('.ace-nav'),
+        document.querySelector('#breadcrumbs'),
+        document.querySelector('#page-content-header'),
+        document.querySelector('.page-header'),
+        document.querySelector('header')
+      ].filter(Boolean);
+      for (let i = 0; i < headNodes.length; i++) {
+        const node = headNodes[i];
+        const n = extractTermWeekFromText(node.innerText || node.textContent || '')
+          || extractTermWeekFromText(node.innerHTML || '');
+        if (n) return rememberTermWeek(n);
+      }
+      // 2) 全页 HTML（比 innerText 更稳，小屏折叠文字也能扫到）
+      const html = (document.documentElement && document.documentElement.innerHTML) || '';
+      const nHtml = extractTermWeekFromText(html);
+      if (nHtml) return rememberTermWeek(nHtml);
+      // 3) 正文（带上下文）
+      const body = (document.body && document.body.innerText) || '';
+      const n2 = extractTermWeekFromText(body);
+      if (n2) return rememberTermWeek(n2);
+      // 4) 持久化缓存（跨桌面/小屏）
+      const cached = readRememberedTermWeek();
+      if (cached) return cached;
+    } catch (_) {}
+    return 0;
+  }
+
+  function getViewWeekNumber() {
+    const sys = getCurrentWeekNumber() || readRememberedTermWeek() || 0;
+    // 用户手动切周后锁定；未锁定时始终跟随系统教学周
+    if (!state.weekLocked) {
+      if (sys >= 1) state.viewWeek = sys;
+      else if (!state.viewWeek || state.viewWeek < 1) state.viewWeek = 1;
+    } else if (!state.viewWeek || state.viewWeek < 1) {
+      state.viewWeek = sys >= 1 ? sys : 1;
+    }
+    // 保险：未锁定时若仍是 1 且系统周更大，强制纠正（修小屏误判）
+    if (!state.weekLocked && sys > 1 && state.viewWeek === 1) state.viewWeek = sys;
+    return state.viewWeek;
+  }
+
+  async function ensureTermWeekResolved() {
+    let w = getCurrentWeekNumber();
+    if (w >= 1) return w;
+    // 主动拉首页 HTML 解析顶栏周次（小屏/清爽遮罩下 DOM 可能读不全）
+    try {
+      const html = await fetchText('/index');
+      w = extractTermWeekFromText(html);
+      if (w) return rememberTermWeek(w);
+    } catch (_) {}
+    // 再试教室占用接口的教学周 jxzc
+    try {
+      const today = new Date();
+      const date = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+      const body = 'xqh=03&jxlh=302&jslx=&jasm=&zwFrom=&zwTo=&searchDate=' + encodeURIComponent(date);
+      const raw = await fetchText('/student/teachingResources/classroomUseStatus/jasInfo', {
+        method: 'POST',
+        data: body,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      const data = JSON.parse(raw);
+      const tw = Number(data && data.jxzc);
+      if (tw >= 1 && tw <= 30) return rememberTermWeek(tw);
+    } catch (_) {}
+    return readRememberedTermWeek() || 0;
+  }
+
+  function inferMaxWeek(courses) {
+    let maxW = getCurrentWeekNumber() || 20;
+    (courses || []).forEach((c) => {
+      const s = String(c.classWeek || '');
+      if (s.length > maxW) maxW = s.length;
+      const m = String(c.week || '').match(/(\d{1,2})\s*[-~至到]\s*(\d{1,2})/);
+      if (m) maxW = Math.max(maxW, parseInt(m[2], 10) || 0);
+      const ms = String(c.week || '').match(/\d{1,2}/g);
+      if (ms) ms.forEach((n) => { maxW = Math.max(maxW, parseInt(n, 10) || 0); });
+    });
+    return Math.min(Math.max(maxW, 1), 30);
   }
 
   function weekBitActive(classWeek, weekNo) {
@@ -13599,6 +13795,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       let courses = [];
       try {
         const data = JSON.parse(raw);
+        // 部分学期接口会带当前教学周
+        const tw = Number(data && (data.jxzc || data.zc || data.currentWeek));
+        // 注意：data.week 在教室接口里常是星期，不能当教学周
+        if (tw >= 1 && tw <= 30) {
+          state._termWeek = Math.max(state._termWeek || 0, tw);
+          if (!state.weekLocked) state.viewWeek = state._termWeek;
+        }
         courses = parseScheduleFromJson(data);
       } catch (_) {
         courses = parseScheduleFromDoc(parseHtml(raw));
@@ -13646,15 +13849,22 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         const attr = cj.courseAttributeName || cj.xkcsxmc || '';
         const credit = parseFloat(cj.credit) || 0;
         const code = (cj.id && (cj.id.courseNumber || cj.id.kch_zj)) || '';
+        const seq = (cj.id && (cj.id.coureSequenceNumber || cj.id.courseSequenceNumber || cj.id.kxh)) || cj.classNo || '';
+        const rawGpa = cj.gradePointScore != null ? Number(cj.gradePointScore) : null;
+        const unevaluated = isUnevaluatedScore(score) || isUnevaluatedScore(cj.gradeName) || (rawGpa != null && rawGpa < 0);
+        const displayScore = unevaluated ? '未评估' : score;
         courses.push({
           code,
+          seq: String(seq || ''),
           name,
           attr,
           credit,
-          score,
+          score: displayScore,
+          unevaluated,
           required: isRequiredAttr(attr),
-          // 官方绩点字段（若有，优先用于展示/计算）
-          officialGpa: cj.gradePointScore != null ? Number(cj.gradePointScore) : null
+          // 官方绩点：负值（-999）视为无效
+          officialGpa: isValidOfficialGpa(rawGpa) ? rawGpa : null,
+          evalUrl: ''
         });
       });
       if (courses.length) {
@@ -13673,20 +13883,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   // 若接口带官方绩点，汇总时优先使用
   function summarizeCoursesPreferOfficial(list) {
-    const base = summarizeCourses(list);
-    // 用 officialGpa 重算平均绩点（更贴近成绩单）
-    let gpaW = 0, gpaCredit = 0, reqGpaW = 0, reqGpaCredit = 0;
-    (list || []).forEach((c) => {
-      const cr = Number(c.credit) || 0;
-      if (cr <= 0) return;
-      const gp = (c.officialGpa != null && !Number.isNaN(c.officialGpa)) ? c.officialGpa : scoreToGpa(c.score);
-      if (gp == null) return;
-      gpaW += gp * cr; gpaCredit += cr;
-      if (c.required) { reqGpaW += gp * cr; reqGpaCredit += cr; }
-    });
-    if (gpaCredit) base.avgGpa = round2(gpaW / gpaCredit);
-    if (reqGpaCredit) base.requiredGpa = round2(reqGpaW / reqGpaCredit);
-    return base;
+    // 未评估/-999 一律不计入学分/均分/绩点
+    return summarizeCourses(list);
   }
 
   async function loadScoreByIndex(indexPath, callbackHint) {
@@ -13745,7 +13943,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         const score = get(idx.score);
         if (!name || !score || /课程名|序号/.test(name)) return;
         const attr = get(idx.attr);
-        courses.push({ code: get(idx.code), name, attr, credit: parseFloat(get(idx.credit)) || 0, score, required: isRequiredAttr(attr) });
+        const unevaluated = isUnevaluatedScore(score);
+        courses.push({ code: get(idx.code), name, attr, credit: parseFloat(get(idx.credit)) || 0, score: unevaluated ? '未评估' : score, unevaluated, required: isRequiredAttr(attr), officialGpa: null, evalUrl: '' });
       });
       if (courses.length) groups.push({ title: title.slice(0, 100), courses, summary: summarizeCourses(courses) });
     });
@@ -13775,6 +13974,63 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return best;
   }
 
+  
+  async function loadEvaluationMap() {
+    const map = {}; // courseNumber -> { ktid, kxh, kcm, done, url }
+    const flags = ['kt', 'ktjs'];
+    for (const flag of flags) {
+      try {
+        const raw = await fetchText('/student/teachingAssessment/evaluation/queryAll', {
+          method: 'POST',
+          data: 'pageNum=1&pageSize=200&flag=' + encodeURIComponent(flag),
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        let data;
+        try { data = JSON.parse(raw); } catch (_) { continue; }
+        const recs = (data && data.data && data.data.records) || [];
+        recs.forEach((r) => {
+          const kch = String(r.KCH || '').trim();
+          if (!kch) return;
+          const done = String(r.SFPG) === '1';
+          const ktid = String(r.KTID || '').trim();
+          // 优先保留未评估记录
+          if (!map[kch] || (map[kch].done && !done)) {
+            map[kch] = {
+              ktid,
+              kxh: String(r.KXH || ''),
+              kcm: r.KCM || '',
+              done,
+              url: (!done && ktid) ? ('/student/teachingEvaluation/newEvaluation/evaluation/' + ktid) : '/student/teachingEvaluation/newEvaluation/index'
+            };
+          }
+        });
+      } catch (e) {
+        console.warn('[URP++] evaluation map', flag, e);
+      }
+    }
+    return map;
+  }
+
+  function attachEvaluationLinks(scorePack, evalMap) {
+    if (!scorePack || !evalMap) return scorePack;
+    const apply = (courses) => (courses || []).forEach((c) => {
+      if (!c || !c.code) return;
+      const hit = evalMap[c.code];
+      if (!hit) return;
+      if (c.unevaluated || !hit.done) {
+        c.unevaluated = c.unevaluated || !hit.done;
+        c.evalUrl = hit.url || '/student/teachingEvaluation/newEvaluation/index';
+        if (c.unevaluated && (!c.score || c.score === '' || isUnevaluatedScore(c.score))) c.score = '未评估';
+      }
+    });
+    (scorePack.passing || []).forEach((g) => apply(g.courses));
+    (scorePack.schemes || []).forEach((g) => apply(g.courses));
+    return scorePack;
+  }
+
   async function loadScores() {
     const out = { passing: [], schemes: [], error: '', majorIdx: 0 };
     try {
@@ -13799,6 +14055,19 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       }
       out.majorIdx = pickMajorSchemeIndex(out.schemes, state.profile && state.profile.majorPlan);
       if (!allPass.length && !out.schemes.length) out.error = '成绩 callback 无数据';
+      try {
+        const evalMap = await loadEvaluationMap();
+        attachEvaluationLinks(out, evalMap);
+        out.evalMap = evalMap;
+      } catch (e) {
+        console.warn('[URP++] attach evaluation', e);
+      }
+      // 重算汇总：排除未评估
+      if (out.passing[0]) out.passing[0].summary = summarizeCoursesPreferOfficial(out.passing[0].courses);
+      out.schemes = out.schemes.map((g) => {
+        g.summary = summarizeCoursesPreferOfficial(g.courses);
+        return g;
+      });
     } catch (e) {
       out.error = String(e && e.message || e);
     }
@@ -13806,41 +14075,101 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // ---- classroom: 页面内嵌 xqList/jxlList JSON，再拼路径 ----
+  function parseJsonArrayLoose(raw) {
+    if (!raw) return [];
+    let s = String(raw).trim();
+    if (!s) return [];
+    // 处理 HTML entity / 多余引号
+    s = s.replace(/^['"]|['"]$/g, '');
+    try { return JSON.parse(s); } catch (_) {}
+    try { return JSON.parse(s.replace(/&quot;/g, '"').replace(/&#34;/g, '"')); } catch (_) {}
+    return [];
+  }
+
+  function extractBalancedArray(html, needle) {
+    const i = html.indexOf(needle);
+    if (i < 0) return '';
+    const start = html.indexOf('[', i);
+    if (start < 0) return '';
+    let depth = 0;
+    for (let k = start; k < html.length && k < start + 300000; k++) {
+      const ch = html[k];
+      if (ch === '[') depth++;
+      else if (ch === ']') {
+        depth--;
+        if (depth === 0) return html.slice(start, k + 1);
+      }
+    }
+    return '';
+  }
+
   async function loadClassroomCatalog() {
     const html = await fetchText('/student/teachingResources/classroomUseStatus/index');
-    // 真实结构：脚本里有 campusName/campusNumber 与 teachingBuildingName 数组
+    // 会话失效时会回到登录页
+    if (/欢迎登录|name=["']j_username["']|loginEn/i.test(html) && !/jxlList|teachingBuildingName|classroomUseStatus/i.test(html)) {
+      throw new Error('登录已失效，请刷新页面后重试');
+    }
     let xqList = [];
     let jxlList = [];
     try {
-      const xqM = html.match(/xqList\s*=\s*(\[\{[\s\S]*?\}\])\s*;/);
-      const jxlM = html.match(/jxlList\s*=\s*(\[\{[\s\S]*?\}\])\s*;/);
-      // 宽松：从首次 campusName 数组截取
-      if (!xqM) {
-        const m = html.match(/\[\{"campusName":"望江"[\s\S]*?\}\]/);
-        if (m) xqList = JSON.parse(m[0]);
-      } else xqList = JSON.parse(xqM[1]);
-      if (!jxlM) {
-        const m = html.match(/\[\{"id":\{"campusNumber":"01"[\s\S]*?\}\]\s*[,;]/);
-        if (m) {
-          const raw = m[0].replace(/[,;]\s*$/, '');
-          jxlList = JSON.parse(raw);
-        } else {
-          // 再试 teachingBuildingName 数组
-          const i = html.indexOf('"teachingBuildingName"');
-          const start = html.lastIndexOf('[', i);
-          if (start >= 0) {
-            let depth = 0, end = -1;
-            for (let k = start; k < html.length && k < start + 200000; k++) {
-              if (html[k] === '[') depth++;
-              else if (html[k] === ']') { depth--; if (depth === 0) { end = k + 1; break; } }
-            }
-            if (end > start) jxlList = JSON.parse(html.slice(start, end));
-          }
-        }
-      } else jxlList = JSON.parse(jxlM[1]);
+      // 1) hidden input value
+      const xqVal = (html.match(/id=["']xqList["'][^>]*value=["']([^"']*)["']/i) || html.match(/name=["']xqList["'][^>]*value=["']([^"']*)["']/i) || [])[1];
+      const jxlVal = (html.match(/id=["']jxlList["'][^>]*value=["']([^"']*)["']/i) || html.match(/name=["']jxlList["'][^>]*value=["']([^"']*)["']/i) || [])[1];
+      if (xqVal) xqList = parseJsonArrayLoose(xqVal);
+      if (jxlVal) jxlList = parseJsonArrayLoose(jxlVal);
+
+      // 2) JS 赋值：xqList = [...] / jxlList = [...]
+      if (!xqList.length) {
+        const xqM = html.match(/(?:var\s+)?xqList\s*=\s*(\[[\s\S]*?\])\s*;/);
+        if (xqM) xqList = parseJsonArrayLoose(xqM[1]);
+      }
+      if (!jxlList.length) {
+        const jxlM = html.match(/(?:var\s+)?jxlList\s*=\s*(\[[\s\S]*?\])\s*;/);
+        if (jxlM) jxlList = parseJsonArrayLoose(jxlM[1]);
+      }
+
+      // 3) JSON.parse($("#jxlList").val()) 场景：值在 input
+      if (!jxlList.length) {
+        const bal = extractBalancedArray(html, 'teachingBuildingName');
+        if (bal) jxlList = parseJsonArrayLoose(bal);
+      }
+      if (!xqList.length) {
+        const bal = extractBalancedArray(html, 'campusName');
+        if (bal) xqList = parseJsonArrayLoose(bal);
+      }
     } catch (e) {
       console.warn('[URP++] classroom json parse', e);
     }
+
+    // 4) 兜底：教室课表接口 teachingBuildingJson
+    if (!jxlList.length) {
+      const campuses = [
+        { campusNumber: '01', campusName: '望江' },
+        { campusNumber: '02', campusName: '华西' },
+        { campusNumber: '03', campusName: '江安' }
+      ];
+      xqList = campuses;
+      const all = [];
+      for (const c of campuses) {
+        try {
+          const raw = await fetchText('/student/teachingResources/classroomCurriculum/' + c.campusNumber + '/teachingBuildingJson');
+          const arr = parseJsonArrayLoose(raw);
+          arr.forEach((b) => {
+            all.push({
+              id: {
+                campusNumber: c.campusNumber,
+                teachingBuildingNumber: String((b.id && b.id.teachingBuildingNumber) || b.teachingBuildingNumber || '')
+              },
+              teachingBuildingName: b.teachingBuildingName || b.name || ''
+            });
+          });
+        } catch (e) {
+          console.warn('[URP++] building json', c.campusNumber, e);
+        }
+      }
+      jxlList = all;
+    }
+
     // campus map
     if (!xqList.length) {
       xqList = [
@@ -13851,30 +14180,28 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }
     const groups = xqList.map((xq) => ({
       campus: xq.campusName || xq.campusNumber,
-      campusNumber: String(xq.campusNumber || ''),
+      campusNumber: String(xq.campusNumber || (xq.id && xq.id.campusNumber) || ''),
       buildings: []
     }));
     jxlList.forEach((j) => {
-      const cn = String((j.id && j.id.campusNumber) || '');
-      const bn = String((j.id && j.id.teachingBuildingNumber) || '');
-      const name = j.teachingBuildingName || bn;
+      const cn = String((j.id && j.id.campusNumber) || j.campusNumber || '');
+      const bn = String((j.id && j.id.teachingBuildingNumber) || j.teachingBuildingNumber || '');
+      const name = j.teachingBuildingName || j.name || bn;
       if (!cn || !bn || !name) return;
       let g = groups.find((x) => x.campusNumber === cn);
       if (!g) {
         g = { campus: cn, campusNumber: cn, buildings: [] };
         groups.push(g);
       }
-      // 页面：encodeURI(encodeURI(Pargs))
-      // 站点：location="/student/teachingResources/classroomUseStatus/"+ encodeURI(encodeURI(Pargs))
-      // Pargs = campusNumber/buildingNumber/campusName/buildingName
-      // 数字段不编码，中文双重 encodeURI
       const path = '/student/teachingResources/classroomUseStatus/' +
         cn + '/' + bn + '/' +
         encodeURI(encodeURI(g.campus || cn)) + '/' +
         encodeURI(encodeURI(name));
       g.buildings.push({ name, path, campusNumber: cn, buildingNumber: bn });
     });
-    return groups.filter((g) => g.buildings.length);
+    const out = groups.filter((g) => g.buildings.length);
+    if (!out.length) throw new Error('未解析到教学楼，请刷新后重试');
+    return out;
   }
 
   function parseOccupancyDoc(doc) {
@@ -13909,10 +14236,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return { rooms, dateLabel };
   }
 
-  function occupancyReason(ct) {
+  function occupancyTypeLabel(ct) {
     // 站点 classroomStatusLayout 着色：
     // 06 有课(#7be0f6) 07 考试(#fbb9e1) 14 实验(#f5f67b) room 借用(#90feaa)
-    // jasInfo 不返回课程名/考试名，只能展示类型首字；详情同理
     const mod = String((ct && ct.occupancymoduleId) || '');
     const map = { '06': '有课', '07': '考试', '14': '实验', 'room': '借用' };
     if (map[mod]) return map[mod];
@@ -13922,6 +14248,119 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }
     return '占用';
   }
+  function occupancyReason(ct) {
+    if (ct && ct.contentName) return String(ct.contentName).trim();
+    if (ct && ct.remark) {
+      const r = String(ct.remark).trim();
+      if (r) return r;
+    }
+    return occupancyTypeLabel(ct);
+  }
+
+  async function fetchClassroomCurriculum(planNumber, campusNumber, buildingNumber, classroomNumber) {
+    const q = new URLSearchParams({
+      planNumber: String(planNumber || ''),
+      campusNumber: String(campusNumber || ''),
+      teachingBuildingNumber: String(buildingNumber || ''),
+      classroomNumber: String(classroomNumber || '')
+    });
+    const raw = await fetchText('/student/teachingResources/classroomCurriculum/searchCurriculum/callback?' + q.toString());
+    try {
+      const data = JSON.parse(raw);
+      if (Array.isArray(data)) {
+        if (data.length && Array.isArray(data[0])) return data[0];
+        return data.filter((x) => x && typeof x === 'object' && (x.kcm || (x.id && x.id.kch)));
+      }
+      if (data && Array.isArray(data.list)) return data.list;
+      return [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function matchCurriculumCourse(courses, slotMeta, jxzc) {
+    const list = courses || [];
+    const xq = Number(slotMeta.xq) || 0;
+    const start = Number(slotMeta.start) || 0;
+    const week = Number(jxzc) || 0;
+    const hits = [];
+    list.forEach((c) => {
+      const id = c.id || {};
+      const cxq = Number(id.skxq != null ? id.skxq : c.skxq) || 0;
+      const skjc = Number(id.skjc != null ? id.skjc : c.skjc) || 0;
+      const cxjc = Math.max(1, Number(c.cxjc) || 1);
+      const skzc = id.skzc || c.skzc || '';
+      if (xq && cxq && xq !== cxq) return;
+      if (start && (start < skjc || start >= skjc + cxjc)) return;
+      if (week && skzc && !weekBitmapActive(skzc, week)) return;
+      hits.push(c);
+    });
+    if (!hits.length) return null;
+    hits.sort((a, b) => {
+      const aw = weekBitmapActive((a.id && a.id.skzc) || a.skzc, week) ? 0 : 1;
+      const bw = weekBitmapActive((b.id && b.id.skzc) || b.skzc, week) ? 0 : 1;
+      return aw - bw;
+    });
+    return hits[0];
+  }
+
+  async function enrichOccupancyWithCurriculum(pack, building, planNumber) {
+    if (!pack || !pack.rooms || !pack.rooms.length) return pack;
+    const xqh = String(building.campusNumber || '');
+    const jxlh = String(building.buildingNumber || '');
+    const plan = planNumber || pack.planNumber || '';
+    if (!xqh || !jxlh || !plan) return pack;
+    const busyRooms = pack.rooms.filter((r) => (r.slots || []).some((s) => s.busy));
+    const cache = {};
+    const queue = async (roomName) => {
+      if (cache[roomName]) return cache[roomName];
+      try {
+        cache[roomName] = await fetchClassroomCurriculum(plan, xqh, jxlh, roomName);
+      } catch (_) {
+        cache[roomName] = [];
+      }
+      return cache[roomName];
+    };
+    const concurrency = 4;
+    let idx = 0;
+    const workers = new Array(Math.min(concurrency, Math.max(busyRooms.length, 1))).fill(0).map(async () => {
+      while (idx < busyRooms.length) {
+        const i = idx++;
+        const room = busyRooms[i];
+        const courses = await queue(room.name);
+        (room.slots || []).forEach((slot) => {
+          if (!slot.busy) return;
+          const meta = {
+            xq: (slot.detail && slot.detail.xq) || slot.xq || 0,
+            start: slot.section,
+            week: pack.jxzc
+          };
+          if (slot.detail && slot.detail.xq != null) meta.xq = slot.detail.xq;
+          const hit = matchCurriculumCourse(courses, meta, pack.jxzc);
+          if (hit && hit.kcm) {
+            const content = String(hit.kcm).trim();
+            slot.contentName = content;
+            slot.reason = content;
+            slot.displayChar = firstContentChar(content);
+            if (slot.detail) {
+              slot.detail.contentName = content;
+              slot.detail.reason = content;
+              slot.detail.teacher = hit.jsm || '';
+              slot.detail.weeks = hit.zcsm || '';
+              slot.detail.courseNo = (hit.id && hit.id.kch) || '';
+              slot.detail.typeLabel = occupancyTypeLabel({ occupancymoduleId: slot.module });
+            }
+          } else {
+            slot.displayChar = firstContentChar(slot.reason || '占用');
+            if (slot.detail) slot.detail.typeLabel = occupancyTypeLabel({ occupancymoduleId: slot.module });
+          }
+        });
+      }
+    });
+    await Promise.all(workers);
+    return pack;
+  }
+
   function occupancyKindClass(reason) {
     if (reason === '有课') return 'kind-course';
     if (reason === '考试') return 'kind-exam';
@@ -13944,8 +14383,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       if (m) { xqh = m[1]; jxlh = m[2]; }
     }
     if (!xqh || !jxlh) throw new Error('缺少校区/楼栋编号');
-    const today = new Date();
-    const date = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+    const offset = Number(building && building.dateOffset != null ? building.dateOffset : state.roomDateOffset) || 0;
+    const date = formatLocalDate(addDays(new Date(), offset));
     // 与页面 $("#searchCondition").serialize() 对齐
     const body = 'xqh=' + encodeURIComponent(xqh)
       + '&jxlh=' + encodeURIComponent(jxlh)
@@ -13988,6 +14427,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const cont = Math.max(1, Number(ct.continuingsession) || 1);
       const room = byName[rname];
       if (!room) return;
+      const typeLabel = occupancyTypeLabel(ct);
       const reason = occupancyReason(ct);
       for (let s = start; s < start + cont && s <= 12; s++) {
         const slot = room.slots.find((x) => x.section === s);
@@ -13996,25 +14436,68 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           slot.kind = ct.timestatenumber || ct.occupancymoduleId || '';
           slot.module = ct.occupancymoduleId || '';
           slot.reason = reason;
+          slot.typeLabel = typeLabel;
+          slot.displayChar = firstContentChar(reason);
+          slot.xq = id.xq;
+          slot.weekBitmap = id.week || '';
           slot.detail = {
             room: rname,
             section: s,
             start,
             span: cont,
             reason,
-            week: (ct.id && ct.id.week) || '',
-            xq: (ct.id && ct.id.xq) || '',
+            typeLabel,
+            week: id.week || '',
+            xq: id.xq || '',
             state: ct.timestatenumber || '',
             module: ct.occupancymoduleId || ''
           };
         }
       }
     });
+    let plan = '';
+    try {
+      const rawPlan = data.jhZxjxjhb;
+      if (typeof rawPlan === 'string' && /\d{4}-\d{4}-\d-\d/.test(rawPlan)) plan = rawPlan;
+      else if (rawPlan && typeof rawPlan === 'object') {
+        plan = String(rawPlan.zxjxjhh || rawPlan.jhxnxq || rawPlan.executiveEducationPlanNumber || rawPlan.planNumber || '');
+      }
+    } catch (_) {}
+    if (!plan && data.classrooms && data.classrooms[0] && data.classrooms[0].id) {
+      plan = data.classrooms[0].id.executiveEducationPlanNumber || '';
+    }
+    if (data.jxzc != null && Number(data.jxzc) >= 1) {
+      const tw = Number(data.jxzc);
+      state._termWeek = Math.max(state._termWeek || 0, tw);
+      if (!state.weekLocked) state.viewWeek = state._termWeek;
+    }
+    const weekNames = ['日', '一', '二', '三', '四', '五', '六'];
+    const dObj = parseLocalDate(data.date || date) || addDays(new Date(), offset);
+    const weekday = data.week != null ? Number(data.week) : dObj.getDay();
+    const dayTag = offset === 1 ? '明天' : (offset === 2 ? '后天' : '今天');
     return {
       rooms,
-      dateLabel: (data.date || date) + (data.week != null ? ('（周' + data.week + '）') : ''),
-      jxzc: data.jxzc
+      dateLabel: (data.date || date) + '（周' + (weekNames[weekday] || weekday) + ' · ' + dayTag + '）',
+      jxzc: data.jxzc,
+      planNumber: plan,
+      week: data.week != null ? data.week : weekday,
+      searchDate: data.date || date,
+      dateOffset: offset
     };
+  }
+
+  function addDays(base, days) {
+    const d = new Date(base.getFullYear(), base.getMonth(), base.getDate());
+    d.setDate(d.getDate() + (Number(days) || 0));
+    return d;
+  }
+  function formatLocalDate(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function parseLocalDate(str) {
+    const m = String(str || '').match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (!m) return null;
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
   }
 
   // ---- icons ----
@@ -14023,13 +14506,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     exit: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 6H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/><path d="M14 12H8"/><path d="m14 8 4 4-4 4"/></svg>',
     refresh: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.2-5.5"/><path d="M20 4v5h-5"/></svg>',
     schedule: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3.5v4M16 3.5v4"/></svg>',
-    score: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M7 3.5h10v17H7z"/><path d="M10 8h4M10 12h4M10 16h3"/></svg>',
-    room: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 20V8l8-4 8 4v12"/><path d="M9 20v-7h6v7"/><path d="M9 10h.01M15 10h.01"/></svg>',
+    score: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M7 3.5h10v17H7z"/><path d="M10 8h4M10 12h4M10 16h3"/></svg>',
+    room: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 20V8l8-4 8 4v12"/><path d="M9 20v-7h6v7"/><path d="M9 10h.01M15 10h.01"/></svg>',
     eval: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 7h11M8 12h11M8 17h8"/><path d="M5 7h.01M5 12h.01M5 17h.01"/></svg>',
     plan: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M7 3.5h8l3 3V20.5H7z"/><path d="M15 3.5V7h3M10 12h5M10 16h5"/></svg>',
     apply: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="6" y="3.5" width="12" height="17" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>',
-    home: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="m4 11 8-7 8 7"/><path d="M7 10.5V20h10v-9.5"/></svg>',
-    more: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="6" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18" cy="12" r="1.4"/></svg>',
+    home: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="m4 11 8-7 8 7"/><path d="M7 10.5V20h10v-9.5"/></svg>',
+    more: '<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg>',
     close: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>'
   };
   function ico(n) { return ICO[n] || ICO.more; }
@@ -14044,8 +14527,14 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     occupancy: null,
     currentBuilding: null,
     loading: { profile: false, schedule: false, scores: false, room: false },
+    roomError: '',
+    roomDateOffset: 0, // 0今天 1明天 2后天
     selected: { passing: new Set(), scheme: new Set() },
-    activeSchemeIdx: 0
+    activeSchemeIdx: 0,
+    viewWeek: 0, // 0 = 跟随系统当前周
+    weekLocked: false, // 用户手动切周后锁定
+    _termWeek: 0,
+    uiReady: false
   };
 
   function ensureStyle() {
@@ -14054,19 +14543,28 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     st = document.createElement('style');
     st.id = 'urppp-clean-style';
     st.textContent = `
-#urppp-clean-root{position:fixed;inset:0;z-index:12000;display:none;background:var(--bg,#F4F6F9);color:var(--text,#111);font-family:inherit}
-#urppp-clean-root.open{display:flex;flex-direction:column}
+#urppp-clean-root{position:fixed;inset:0;z-index:12000;display:none;background:var(--bg,#F4F6F9);color:var(--text,#111);font-family:inherit;opacity:0;transform:translateY(8px);transition:opacity .28s ease,transform .32s cubic-bezier(.22,1,.36,1)}
+#urppp-clean-root.open{display:flex;flex-direction:column;opacity:1;transform:none}
 #urppp-clean-root *{box-sizing:border-box}
-#urppp-clean-root .uc-top{flex:0 0 60px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--border);background:var(--surface,#fff)}
+#urppp-clean-root .uc-top{flex:0 0 60px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--border);background:var(--surface,#fff);animation:ucTopIn .36s cubic-bezier(.22,1,.36,1) both}
 #urppp-clean-root .uc-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px}
 #urppp-clean-root .uc-top-actions{display:flex;gap:8px}
-#urppp-clean-root .uc-btn{height:32px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg,#f7f7f8);color:var(--text);font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+#urppp-clean-root .uc-btn{height:32px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg,#f7f7f8);color:var(--text);font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:transform .18s ease,box-shadow .18s ease,background .18s ease,border-color .18s ease,color .18s ease}
+#urppp-clean-root .uc-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.06)}
+#urppp-clean-root .uc-btn:active{transform:translateY(0) scale(.98);box-shadow:none}
 #urppp-clean-root .uc-btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
 #urppp-clean-root .uc-shell{flex:1;min-height:0;overflow:auto;padding:20px 28px 28px;display:flex;align-items:center;justify-content:center}
 #urppp-clean-root .uc-shell-inner{max-width:1520px;margin:0 auto;width:100%;max-height:100%;overflow:auto}
 #urppp-clean-root .uc-desktop{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr;gap:16px;min-height:640px}
 #urppp-clean-root .uc-col{display:flex;flex-direction:column;gap:16px;min-height:0}
-#urppp-clean-root .uc-card{background:var(--surface,#fff);border:1px solid var(--border,#e7e7ea);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+#urppp-clean-root .uc-card{background:var(--surface,#fff);border:1px solid var(--border,#e7e7ea);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04);opacity:0;transform:translateY(14px) scale(.985);animation:ucCardIn .42s cubic-bezier(.22,1,.36,1) forwards;transition:box-shadow .22s ease,transform .22s ease,border-color .22s ease}
+#urppp-clean-root .uc-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.06),0 0 0 1px color-mix(in srgb,var(--primary) 8%,var(--border))}
+#urppp-clean-root .uc-desktop > .uc-col:first-child > .uc-card:nth-child(1){animation-delay:.04s}
+#urppp-clean-root .uc-desktop > .uc-col:first-child > .uc-card:nth-child(2){animation-delay:.1s}
+#urppp-clean-root .uc-desktop > .uc-col:last-child > .uc-card:nth-child(1){animation-delay:.07s}
+#urppp-clean-root .uc-desktop > .uc-col:last-child > .uc-card:nth-child(2){animation-delay:.13s}
+#urppp-clean-root .uc-mobile > .uc-card{animation-delay:.05s}
+#urppp-clean-root .uc-mobile > .uc-card:nth-child(2){animation-delay:.1s}
 #urppp-clean-root .uc-card.grow{flex:1;min-height:0;display:flex;flex-direction:column}
 #urppp-clean-root .uc-hd{padding:12px 14px;border-bottom:1px solid var(--border);font-weight:700;font-size:16px;display:flex;justify-content:space-between;align-items:center}
 #urppp-clean-root .uc-bd{padding:14px}
@@ -14086,13 +14584,36 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 #urppp-clean-root .uc-grid-cell{position:absolute;left:0;right:0;height:52px;border-radius:10px;background:var(--input-bg);border:1px solid color-mix(in srgb,var(--border) 65%,transparent)}
 #urppp-clean-root .uc-grid-cell:nth-child(n){/* placed via top below in inline? use sequential */}
 #urppp-clean-root .uc-day-col .uc-grid-cell{width:100%}
-#urppp-clean-root .uc-lesson{position:absolute;left:0;right:0;z-index:2;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:10px;padding:6px 7px 16px;cursor:pointer;overflow:hidden;box-sizing:border-box}
+#urppp-clean-root .uc-lesson{position:absolute;left:0;right:0;z-index:2;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:10px;padding:6px 7px 16px;cursor:pointer;overflow:hidden;box-sizing:border-box;transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;will-change:transform}
+#urppp-clean-root .uc-lesson:hover{transform:translateY(-1px) scale(1.01);box-shadow:0 6px 16px rgba(0,0,0,.08);z-index:12!important}
+#urppp-clean-root .uc-lesson:active{transform:scale(.99)}
 #urppp-clean-root .uc-lesson.is-fade{filter:saturate(.4);z-index:2!important}
 #urppp-clean-root .uc-lesson:not(.is-fade){z-index:8}
 #urppp-clean-root .uc-lesson b{display:block;font-size:12px;line-height:1.25;font-weight:700}
 #urppp-clean-root .uc-lesson i{display:block;font-style:normal;font-size:10px;color:var(--text-secondary);margin-top:3px}
+#urppp-clean-root .uc-course-detail{position:relative;padding:4px 2px 8px}
+#urppp-clean-root .uc-course-detail .uc-cd-name{font-size:16px;font-weight:700;line-height:1.35;margin:0 0 8px;color:var(--text)}
+#urppp-clean-root .uc-course-detail .uc-cd-meta{font-size:13px;color:var(--text-secondary);line-height:1.55;margin:0 0 6px}
+#urppp-clean-root .uc-course-detail .uc-cd-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--input-bg);border:1px solid var(--border);font-size:12px;color:var(--text-secondary);margin-top:4px}
+#urppp-clean-root .uc-course-sub{margin-top:10px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--input-bg)}
+#urppp-clean-root .uc-course-sub .uc-cd-name{font-size:14px;margin-bottom:4px}
+#urppp-clean-root .uc-course-sub.is-fade{opacity:.72}
+#urppp-clean-root .uc-week-nav{display:inline-flex;align-items:center;gap:6px}
+#urppp-clean-root .uc-week-nav .uc-btn{height:28px;padding:0 10px;font-size:12px}
+#urppp-clean-root .uc-week-nav .uc-week-label{min-width:64px;text-align:center;font-size:13px;font-weight:700;color:var(--text)}
+#urppp-clean-root .uc-week-nav .uc-week-cur{font-size:11px;color:var(--text-muted);font-weight:500}
 #urppp-clean-root .uc-badge{position:absolute;right:5px;bottom:4px;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--primary);color:#fff;font-size:10px;line-height:16px;text-align:center;font-weight:700}
 #urppp-clean-root .uc-part-line{position:absolute;left:0;right:0;height:0;border-top:2px dashed color-mix(in srgb,var(--primary) 35%,var(--border));z-index:1;pointer-events:none;opacity:.9}
+#urppp-clean-root .uc-score-cell{display:inline-flex;align-items:center;justify-content:center;min-width:52px;padding:3px 8px;border-radius:8px;font-weight:700;line-height:1.3}
+#urppp-clean-root .uc-score-cell.pass{background:rgba(34,197,94,.18);color:#15803d}
+#urppp-clean-root .uc-score-cell.fail{background:rgba(239,68,68,.16);color:#b91c1c}
+#urppp-clean-root .uc-score-cell.uneval{background:rgba(59,130,246,.18);color:#1d4ed8;cursor:pointer;text-decoration:none}
+#urppp-clean-root .uc-score-cell.uneval-fail{background:rgba(249,115,22,.18);color:#c2410c;cursor:pointer}
+#urppp-clean-root .uc-score-cell.uneval:hover,#urppp-clean-root .uc-score-cell.uneval-fail:hover{filter:brightness(1.05);box-shadow:0 0 0 1px color-mix(in srgb,currentColor 35%,transparent)}
+html.urppp-theme-dark #urppp-clean-root .uc-score-cell.pass,body.urppp-dark #urppp-clean-root .uc-score-cell.pass{background:rgba(34,197,94,.28);color:#86efac}
+html.urppp-theme-dark #urppp-clean-root .uc-score-cell.fail,body.urppp-dark #urppp-clean-root .uc-score-cell.fail{background:rgba(239,68,68,.28);color:#fca5a5}
+html.urppp-theme-dark #urppp-clean-root .uc-score-cell.uneval,body.urppp-dark #urppp-clean-root .uc-score-cell.uneval{background:rgba(59,130,246,.28);color:#93c5fd}
+html.urppp-theme-dark #urppp-clean-root .uc-score-cell.uneval-fail,body.urppp-dark #urppp-clean-root .uc-score-cell.uneval-fail{background:rgba(249,115,22,.28);color:#fdba74}
 #urppp-clean-root .uc-namecell{position:relative;padding-left:22px!important}
 #urppp-clean-root .uc-selmark{position:absolute;left:6px;top:50%;transform:translateY(-50%);width:14px;height:14px;line-height:14px;text-align:center;font-size:12px;font-weight:700;color:var(--primary);opacity:0}
 #urppp-clean-root table.uc-table tbody tr.is-on .uc-selmark{opacity:1}
@@ -14109,9 +14630,6 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-lab,body.urppp-dark #urppp
 html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #urppp-clean-root .uc-slot.kind-borrow{background:#4ade80;border-color:#22c55e;color:#052e16}
 #urppp-clean-root .uc-modal-stack-hint{font-size:12px;color:var(--text-muted)}
 
-#urppp-clean-root .uc-svc{min-height:92px}
-#urppp-clean-root .uc-svc svg{width:24px;height:24px}
-#urppp-clean-root .uc-svc strong{font-size:12px}
 #urppp-clean-root .uc-card.grow.services{flex:0 0 auto}
 #urppp-clean-root .uc-top-theme{display:inline-flex;align-items:center;gap:8px;margin-left:12px}
 #urppp-clean-root .uc-top-theme .urppp-nav-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);padding:0;cursor:pointer}
@@ -14120,37 +14638,64 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
 #urppp-clean-root .uc-top-theme .urppp-nav-settings svg{width:16px;height:16px}
 #urppp-clean-root .uc-top-left{display:flex;align-items:center;gap:10px}
 #urppp-clean-root .uc-score-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-#urppp-clean-root .uc-score-pane{border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;background:var(--input-bg)}
-#urppp-clean-root .uc-score-pane:hover{border-color:var(--primary)}
+#urppp-clean-root .uc-score-pane{border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;background:var(--input-bg);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease}
+#urppp-clean-root .uc-score-pane:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.06);background:color-mix(in srgb,var(--primary) 5%,var(--input-bg))}
+#urppp-clean-root .uc-score-pane:active{transform:translateY(0) scale(.99)}
 #urppp-clean-root .uc-score-pane h5{margin:0 0 10px;font-size:16px;font-weight:700}
-#urppp-clean-root .uc-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-#urppp-clean-root .uc-metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px}
+#urppp-clean-root .uc-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#urppp-clean-root .uc-metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+#urppp-clean-root .uc-metric:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--primary) 30%,var(--border));box-shadow:0 4px 12px rgba(0,0,0,.04)}
 #urppp-clean-root .uc-metric em{display:block;font-style:normal;font-size:13px;color:var(--text-muted);margin-bottom:3px}
-#urppp-clean-root .uc-metric b{font-size:20px}
-#urppp-clean-root .uc-services{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-#urppp-clean-root .uc-svc{aspect-ratio:1/1;border-radius:14px;border:1px solid var(--border);background:var(--input-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;color:var(--text);padding:8px;text-align:center;min-height:88px}
-#urppp-clean-root .uc-svc:hover{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 8%,var(--input-bg))}
-#urppp-clean-root .uc-svc svg{width:24px;height:24px;color:var(--primary)}
-#urppp-clean-root .uc-svc strong{font-size:12px;line-height:1.25;font-weight:700}
+#urppp-clean-root .uc-metric b{font-size:20px;display:inline-block;transition:transform .2s ease}
+#urppp-clean-root .uc-metric:hover b{transform:scale(1.04)}
+#urppp-clean-root .uc-services{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:stretch}
+#urppp-clean-root .uc-svc{width:100%;min-width:0;aspect-ratio:1/1;height:auto;border-radius:12px;border:1px solid var(--border);background:var(--input-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:var(--text);padding:8px 4px;text-align:center;margin:0;box-sizing:border-box;opacity:0;transform:translateY(10px) scale(.96);animation:ucSvcIn .36s cubic-bezier(.22,1,.36,1) forwards;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease}
+#urppp-clean-root .uc-svc:nth-child(1){animation-delay:.12s}
+#urppp-clean-root .uc-svc:nth-child(2){animation-delay:.15s}
+#urppp-clean-root .uc-svc:nth-child(3){animation-delay:.18s}
+#urppp-clean-root .uc-svc:nth-child(4){animation-delay:.21s}
+#urppp-clean-root .uc-svc:nth-child(5){animation-delay:.24s}
+#urppp-clean-root .uc-svc:nth-child(6){animation-delay:.27s}
+#urppp-clean-root .uc-svc:nth-child(7){animation-delay:.3s}
+#urppp-clean-root .uc-svc:hover{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 8%,var(--input-bg));transform:translateY(-3px) scale(1.03);box-shadow:0 10px 22px rgba(0,0,0,.08)}
+#urppp-clean-root .uc-svc:active{transform:translateY(-1px) scale(.98)}
+#urppp-clean-root .uc-svc svg{width:26px;height:26px;color:var(--primary);flex:0 0 auto;transition:transform .2s ease}
+#urppp-clean-root .uc-svc:hover svg{transform:scale(1.08) rotate(-3deg)}
+#urppp-clean-root .uc-svc strong{font-size:12px;line-height:1.15;font-weight:700;max-width:100%;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
 #urppp-clean-root .uc-empty,#urppp-clean-root .uc-loading{padding:18px;text-align:center;color:var(--text-secondary);font-size:13px}
 #urppp-clean-root .uc-note{font-size:12px;color:var(--text-muted);margin-top:8px;line-height:1.55}
 #urppp-clean-root .uc-mobile{display:none}
 #urppp-clean-root .uc-tabbar{display:none}
-#urppp-clean-root .uc-mask{position:fixed;inset:0;background:rgba(15,23,42,.36);z-index:12010;display:none}
-#urppp-clean-root .uc-mask.open{display:block}
-#urppp-clean-root .uc-modal{position:fixed;z-index:12020;left:50%;top:50%;transform:translate(-50%,-50%);width:min(980px,92vw);max-height:86vh;background:var(--surface);border:1px solid var(--border);border-radius:16px;display:none;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.2)}
-#urppp-clean-root .uc-modal.open{display:flex}
-#urppp-clean-root .uc-modal-hd{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:17px}
-#urppp-clean-root .uc-modal-bd{padding:12px 14px;overflow:auto;flex:1}
-#urppp-clean-root .uc-modal-ft{padding:10px 14px;border-top:1px solid var(--border);background:var(--input-bg);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}
-#urppp-clean-root table.uc-table{width:100%;border-collapse:collapse;font-size:12px;background:transparent}
-#urppp-clean-root table.uc-table th,#urppp-clean-root table.uc-table td{padding:8px 6px;border-bottom:1px solid var(--border);text-align:left;background:transparent;color:var(--text)}
-#urppp-clean-root table.uc-table th{position:sticky;top:0;background:var(--surface)!important;color:var(--text-secondary)}
-#urppp-clean-root table.uc-table tbody tr{cursor:pointer;user-select:none}
-#urppp-clean-root table.uc-table tbody tr:hover td{background:var(--input-bg)!important}
-#urppp-clean-root table.uc-table tbody tr.is-on td{background:color-mix(in srgb,var(--primary) 16%,var(--surface))!important}
+#urppp-clean-root .uc-mask{position:fixed;inset:0;background:rgba(15,23,42,.36);z-index:12010;display:block;opacity:0;pointer-events:none;transition:opacity .22s ease;backdrop-filter:blur(0px)}
+#urppp-clean-root .uc-mask.open{opacity:1;pointer-events:auto;backdrop-filter:blur(2px)}
+#urppp-clean-root .uc-modal{position:fixed;z-index:12020;left:50%;top:50%;transform:translate(-50%,-46%) scale(.96);width:min(980px,92vw);max-height:86vh;background:var(--surface);border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .24s cubic-bezier(.22,1,.36,1),transform .28s cubic-bezier(.22,1,.36,1)}
+#urppp-clean-root .uc-modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
+#urppp-clean-root .uc-modal-hd{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:17px;flex:0 0 auto}
+#urppp-clean-root .uc-modal-bd{padding:12px 14px;overflow:auto;flex:1 1 auto;min-height:0}
+#urppp-clean-root .uc-modal-ft{padding:10px 14px;border-top:1px solid var(--border);background:var(--input-bg);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;flex:0 0 auto;position:relative;z-index:2}
+#urppp-clean-root .uc-modal-ft #uc-calc{flex:1 1 auto;min-width:0;font-size:14px}
+#urppp-clean-root .uc-modal-ft #uc-clear{flex:0 0 auto}
+#urppp-clean-root #uc-score-wrap{position:relative!important;isolation:isolate;overflow:auto;max-height:min(46vh,420px);margin-top:10px;border:1px solid var(--border);border-radius:14px;background:var(--surface);box-shadow:inset 0 1px 0 color-mix(in srgb,var(--border) 50%,transparent)}
+#urppp-clean-root #uc-score-wrap table.uc-table{position:relative;width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px;background:transparent}
+#urppp-clean-root table.uc-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12.5px;background:transparent}
+#urppp-clean-root table.uc-table th,#urppp-clean-root table.uc-table td{padding:10px 12px;border-bottom:1px solid color-mix(in srgb,var(--border) 85%,transparent);text-align:left;vertical-align:middle;background:var(--surface);color:var(--text);line-height:1.45;white-space:normal;word-break:break-word}
+#urppp-clean-root table.uc-table thead th{position:sticky;top:0;z-index:6;background:color-mix(in srgb,var(--input-bg) 88%,var(--surface))!important;color:var(--text-secondary);font-weight:700;font-size:12px;letter-spacing:.02em;box-shadow:0 1px 0 var(--border)}
+#urppp-clean-root table.uc-table tbody td{background:var(--surface)}
+#urppp-clean-root table.uc-table tbody tr{cursor:pointer;user-select:none;transition:background .12s ease}
+#urppp-clean-root table.uc-table tbody tr:nth-child(even) td{background:color-mix(in srgb,var(--input-bg) 45%,var(--surface))}
+#urppp-clean-root table.uc-table tbody tr:hover td{background:color-mix(in srgb,var(--primary) 8%,var(--surface))!important}
+#urppp-clean-root table.uc-table tbody tr.is-on td{background:color-mix(in srgb,var(--primary) 14%,var(--surface))!important}
 #urppp-clean-root table.uc-table tbody tr.is-on{box-shadow:inset 3px 0 0 var(--primary)}
-#urppp-clean-root #uc-score-wrap{position:relative!important}
+#urppp-clean-root table.uc-table tbody tr:last-child td{border-bottom:0}
+#urppp-clean-root table.uc-table th:nth-child(2),#urppp-clean-root table.uc-table td:nth-child(2){width:72px;text-align:center;white-space:nowrap}
+#urppp-clean-root table.uc-table th:nth-child(3),#urppp-clean-root table.uc-table td:nth-child(3){width:56px;text-align:center;font-variant-numeric:tabular-nums}
+#urppp-clean-root table.uc-table th:nth-child(4),#urppp-clean-root table.uc-table td:nth-child(4){width:88px;text-align:center}
+#urppp-clean-root table.uc-table th:nth-child(5),#urppp-clean-root table.uc-table td:nth-child(5){width:64px;text-align:center;font-variant-numeric:tabular-nums;font-weight:600;color:var(--text-secondary)}
+#urppp-clean-root .uc-namecell{padding-left:28px!important;position:relative}
+#urppp-clean-root .uc-cname{display:inline;position:relative;z-index:0;font-weight:600}
+#urppp-clean-root .uc-selmark{z-index:1;left:8px}
+#urppp-clean-root .uc-attr-pill{display:inline-flex;align-items:center;justify-content:center;min-width:40px;padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--primary) 10%,var(--input-bg));color:var(--text-secondary);font-size:11px;font-weight:600;line-height:1.4}
+#urppp-clean-root .uc-score-cell{min-width:48px;padding:3px 9px;border-radius:999px;font-size:12px}
 #urppp-clean-root .uc-select-box{position:absolute;border:1.5px solid var(--primary);background:color-mix(in srgb,var(--primary) 16%,transparent);pointer-events:none;z-index:20;display:none;border-radius:6px;box-sizing:border-box}
 html.urppp-theme-dark #urppp-clean-root table.uc-table th,
 html.urppp-theme-dark #urppp-clean-root table.uc-table td,
@@ -14166,6 +14711,8 @@ body.urppp-dark #urppp-clean-root table.uc-table tbody tr.is-on td{background:co
 #urppp-clean-root .uc-occ{overflow:auto;border:1px solid var(--border);border-radius:14px;background:var(--surface);padding:8px}
 #urppp-clean-root .uc-occ-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
 #urppp-clean-root .uc-occ-title{font-size:16px;font-weight:700}
+#urppp-clean-root .uc-room-days{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+#urppp-clean-root .uc-room-days .uc-btn{height:28px;padding:0 10px;font-size:12px}
 #urppp-clean-root .uc-occ-table{border-collapse:separate;border-spacing:4px;font-size:11px;min-width:760px}
 #urppp-clean-root .uc-occ-table th{background:var(--input-bg);color:var(--text);z-index:1;padding:6px 8px;text-align:left;white-space:nowrap;border-radius:8px}
 #urppp-clean-root .uc-occ-table th.sticky{position:sticky;left:0;z-index:3}
@@ -14191,6 +14738,32 @@ body.urppp-dark #urppp-clean-root .uc-occ{background:var(--surface);border-color
 html.urppp-theme-dark #urppp-clean-root .uc-occ-table th,
 body.urppp-dark #urppp-clean-root .uc-occ-table th{background:var(--input-bg);color:var(--text)}
 html.urppp-clean-lock,html.urppp-clean-lock body{overflow:hidden!important}
+#urppp-clean-root .uc-loading{position:relative}
+#urppp-clean-root .uc-loading::after{content:'';display:inline-block;width:1.1em;margin-left:2px;animation:ucDots 1s steps(4,end) infinite}
+#urppp-clean-root .uc-week-label.uc-pop{animation:ucPop .28s cubic-bezier(.22,1,.36,1)}
+#urppp-clean-root .uc-build-grid button{transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,background .16s ease}
+#urppp-clean-root .uc-build-grid button:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.05)}
+#urppp-clean-root .uc-slot.busy{transition:transform .15s ease,filter .15s ease}
+#urppp-clean-root .uc-avatar{transition:transform .22s ease,box-shadow .22s ease}
+#urppp-clean-root .uc-card:hover .uc-avatar{transform:scale(1.02)}
+#urppp-clean-root.uc-settled .uc-top,
+#urppp-clean-root.uc-settled .uc-card,
+#urppp-clean-root.uc-settled .uc-svc{animation:none!important;opacity:1!important;transform:none!important}
+#urppp-clean-root.uc-settled .uc-svc:hover{transform:translateY(-3px) scale(1.03)!important}
+#urppp-clean-root.uc-settled .uc-card:hover{transform:none}
+@keyframes ucTopIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+@keyframes ucCardIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes ucSvcIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes ucPop{0%{transform:scale(.92);opacity:.7}60%{transform:scale(1.06)}100%{transform:scale(1);opacity:1}}
+@keyframes ucDots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+@media (prefers-reduced-motion:reduce){
+  #urppp-clean-root,#urppp-clean-root *{animation:none!important;transition:none!important}
+  #urppp-clean-root,#urppp-clean-root .uc-card,#urppp-clean-root .uc-svc,#urppp-clean-root .uc-top,#urppp-clean-root .uc-mask,#urppp-clean-root .uc-modal{opacity:1!important;transform:none!important;pointer-events:auto}
+  #urppp-clean-root .uc-mask{display:none}
+  #urppp-clean-root .uc-mask.open{display:block}
+  #urppp-clean-root .uc-modal{display:none}
+  #urppp-clean-root .uc-modal.open{display:flex}
+}
 html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#urppp-nav-clean{
   margin-left:8px!important;height:28px!important;min-height:28px!important;max-height:28px!important;
   padding:0 10px!important;border-radius:8px!important;border:1px solid var(--border)!important;
@@ -14200,15 +14773,48 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
 }
 #urppp-nav-clean svg{width:14px!important;height:14px!important;display:block!important}
 @media (max-width:900px){
-  #urppp-clean-root .uc-shell{padding:12px 12px 76px;align-items:stretch;justify-content:flex-start}
+  #urppp-clean-root .uc-top{flex:0 0 52px;padding:0 12px}
+  #urppp-clean-root .uc-top-actions .uc-btn span{display:none}
+  #urppp-clean-root .uc-top-actions .uc-btn{width:34px;padding:0;justify-content:center}
+  #urppp-clean-root .uc-shell{padding:10px 10px 90px;align-items:stretch;justify-content:flex-start}
   #urppp-clean-root .uc-desktop{display:none}
   #urppp-clean-root .uc-mobile{display:block}
-  #urppp-clean-root .uc-tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;height:56px;background:var(--surface);border-top:1px solid var(--border);z-index:12005;padding-bottom:env(safe-area-inset-bottom)}
-  #urppp-clean-root .uc-tabbar button{flex:1;border:0;background:transparent;color:var(--text-secondary);font-size:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+  #urppp-clean-root .uc-tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;height:68px;background:var(--surface);border-top:1px solid var(--border);z-index:12005;padding:4px 0 calc(4px + env(safe-area-inset-bottom))}
+  #urppp-clean-root .uc-tabbar button{flex:1;border:0;background:transparent;color:var(--text-secondary);font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+  #urppp-clean-root .uc-tabbar button svg{width:28px!important;height:28px!important;display:block;flex:0 0 auto}
   #urppp-clean-root .uc-tabbar button.ac{color:var(--primary);font-weight:700}
   #urppp-clean-root .uc-score-grid{grid-template-columns:1fr}
-  #urppp-clean-root .uc-services{grid-template-columns:repeat(2,1fr)}
-  #urppp-clean-root .uc-modal{inset:0;width:100vw;height:100vh;max-height:100vh;left:0;top:0;transform:none;border-radius:0}
+  #urppp-clean-root .uc-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+  #urppp-clean-root .uc-services{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+  #urppp-clean-root .uc-svc{width:100%;height:auto}
+  #urppp-clean-root .uc-modal{inset:0;left:0;top:0;right:0;bottom:0;width:100%;height:100%;max-height:none;border-radius:0;transform:translateY(16px)}
+  #urppp-clean-root .uc-modal.open{transform:translateY(0) scale(1)}
+  #urppp-clean-root .uc-modal-hd{padding:12px 12px;padding-top:calc(12px + env(safe-area-inset-top))}
+  #urppp-clean-root .uc-modal-bd{padding:10px 12px;flex:1 1 auto;min-height:0}
+  #urppp-clean-root .uc-modal-ft{padding:10px 12px;padding-bottom:calc(12px + env(safe-area-inset-bottom));position:sticky;bottom:0;background:var(--input-bg);box-shadow:0 -6px 16px rgba(0,0,0,.06)}
+  #urppp-clean-root .uc-modal-ft #uc-calc{font-size:13px;line-height:1.4}
+  #urppp-clean-root #uc-score-wrap{max-height:none;flex:1 1 auto;min-height:180px}
+  #urppp-clean-root .uc-modal-bd{display:flex;flex-direction:column}
+  #urppp-clean-root .uc-modal-bd > #uc-score-wrap{flex:1 1 auto}
+  /* 小屏课表：更紧凑 */
+  #urppp-clean-root .uc-week{min-width:0;width:100%}
+  #urppp-clean-root .uc-week-head{grid-template-columns:24px repeat(7,minmax(0,1fr));gap:3px;margin-bottom:4px}
+  #urppp-clean-root .uc-week-head .h{font-size:10px}
+  #urppp-clean-root .uc-week-body{grid-template-columns:24px repeat(7,minmax(0,1fr));gap:3px}
+  #urppp-clean-root .uc-sec-col .s{font-size:9px}
+  #urppp-clean-root .uc-grid-cell{border-radius:7px}
+  #urppp-clean-root .uc-lesson{padding:3px 3px 12px;border-radius:7px}
+  #urppp-clean-root .uc-lesson b{font-size:10px;line-height:1.15}
+  #urppp-clean-root .uc-lesson i{font-size:8px;margin-top:1px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  #urppp-clean-root .uc-badge{right:2px;bottom:2px;min-width:14px;height:14px;font-size:9px;line-height:14px;padding:0 3px}
+  #urppp-clean-root .uc-week-nav{gap:4px;flex-wrap:wrap;justify-content:flex-end}
+  #urppp-clean-root .uc-week-nav .uc-btn{height:26px;padding:0 8px;font-size:11px}
+  #urppp-clean-root .uc-week-nav .uc-week-label{min-width:52px;font-size:12px}
+  #urppp-clean-root .uc-card .uc-hd{padding:10px 10px;font-size:14px}
+  #urppp-clean-root .uc-card .uc-bd{padding:10px}
+  #urppp-clean-root .uc-profile{gap:10px}
+  #urppp-clean-root .uc-avatar,#urppp-clean-root .uc-avatar img{height:56px;max-width:72px}
+  #urppp-clean-root .uc-name{font-size:16px}
 }
 `;
     (document.head || document.documentElement).appendChild(st);
@@ -14225,7 +14831,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     el.innerHTML = `
       <div class="uc-top">
         <div class="uc-top-left">
-          <div class="uc-brand">${ico('clean')}<span>清爽模式</span></div>
           <div class="uc-top-theme" id="uc-top-theme">
             <button type="button" class="urppp-nav-dot" data-theme="default" title="简约白" style="background:#F1F5F9"></button>
             <button type="button" class="urppp-nav-dot" data-theme="dark" title="深邃暗" style="background:#0B0F17"></button>
@@ -14295,21 +14900,60 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         state.mobileTab = btn.dataset.tab;
         el.querySelectorAll('#uc-tabbar button').forEach((b) => b.classList.toggle('ac', b === btn));
         render();
+        // 小屏「教室」页需要主动拉 catalog；桌面是弹窗路径才加载
+        if (state.mobileTab === 'room') ensureRoomCatalogLoaded();
       };
     });
     return el;
   }
 
+  async function ensureRoomCatalogLoaded(force) {
+    if (!force && state.catalog && state.catalog.length) return state.catalog;
+    if (state.loading.room) return state.catalog;
+    state.loading.room = true;
+    try { render(); } catch (_) {}
+    try {
+      state.catalog = await loadClassroomCatalog();
+      state.roomError = '';
+    } catch (e) {
+      state.catalog = state.catalog || [];
+      state.roomError = String(e && e.message || e);
+      console.warn('[URP++] room catalog', e);
+    } finally {
+      state.loading.room = false;
+      try { render(); } catch (_) {}
+    }
+    return state.catalog;
+  }
+
   function metricHtml(s) {
     s = s || summarizeCourses([]);
-    const items = [['总学分', s.totalCredit], ['平均绩点', s.avgGpa], ['平均成绩', s.avgScore], ['必修学分', s.requiredCredit], ['必修绩点', s.requiredGpa], ['必修平均', s.requiredAvg]];
+    // 与教务成绩单习惯对齐：学分 → 成绩 → 绩点；必修同序
+    const items = [
+      ['总学分', s.totalCredit],
+      ['平均成绩', s.avgScore],
+      ['平均绩点', s.avgGpa],
+      ['必修学分', s.requiredCredit],
+      ['必修平均', s.requiredAvg],
+      ['必修绩点', s.requiredGpa]
+    ];
     return `<div class="uc-metrics">${items.map(([k, v]) => `<div class="uc-metric"><em>${k}</em><b>${v}</b></div>`).join('')}</div>`;
   }
 
+  function getScheduleRowHeight() {
+    try {
+      // 手机/窄屏用更矮行高，整表更紧凑
+      if (window.matchMedia && window.matchMedia('(max-width:900px)').matches) return 40;
+    } catch (_) {}
+    return 56;
+  }
+
   function renderScheduleBoard(courses) {
-    const weekNo = getCurrentWeekNumber();
+    const weekNo = getViewWeekNumber();
+    const ROW = getScheduleRowHeight();
+    const CELL = Math.max(ROW - 4, 28);
     const list = (courses || []).map((c) => Object.assign({}, c, {
-      thisWeek: c.thisWeek || weekBitActive(c.classWeek, weekNo),
+      thisWeek: weekBitActive(c.classWeek, weekNo) || (!c.classWeek && String(c.week || '').indexOf(String(weekNo)) >= 0),
       span: Math.max(1, c.span || 1),
       color: c.color || courseColor(c.name)
     }));
@@ -14320,22 +14964,22 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       (byStart[k] || (byStart[k] = [])).push(c);
     });
     // mark cells that are only continuations (for empty look still show grid)
-    let html = `<div class="uc-week" data-week="${weekNo}">`;
+    let html = `<div class="uc-week" data-week="${weekNo}" data-row="${ROW}">`;
     html += '<div class="uc-week-head"><div class="h"></div>';
     for (let d = 0; d < 7; d++) html += `<div class="h">${DAY_NAMES[d]}</div>`;
     html += '</div><div class="uc-week-body">';
     // left section labels
     html += '<div class="uc-sec-col">';
-    for (let s = 1; s <= 12; s++) html += `<div class="s" style="height:56px">${s}</div>`;
+    for (let s = 1; s <= 12; s++) html += `<div class="s" style="height:${ROW}px">${s}</div>`;
     html += '</div>';
     // 7 day columns
     for (let d = 0; d < 7; d++) {
-      html += `<div class="uc-day-col" data-day="${d}" style="height:${56*12}px">`;
+      html += `<div class="uc-day-col" data-day="${d}" style="height:${ROW * 12}px">`;
       // background grid cells: fixed equal height, full column width
-      for (let s = 1; s <= 12; s++) html += `<div class="uc-grid-cell" data-sec="${s}" style="top:${(s-1)*56}px;height:52px"></div>`;
+      for (let s = 1; s <= 12; s++) html += `<div class="uc-grid-cell" data-sec="${s}" style="top:${(s - 1) * ROW}px;height:${CELL}px"></div>`;
       // 4|5 与 9|10 之间分割线（上午/下午/晚上）
-      html += `<div class="uc-part-line" style="top:${4*56 - 2}px"></div>`;
-      html += `<div class="uc-part-line" style="top:${9*56 - 2}px"></div>`;
+      html += `<div class="uc-part-line" style="top:${4 * ROW - 2}px"></div>`;
+      html += `<div class="uc-part-line" style="top:${9 * ROW - 2}px"></div>`;
       // place courses absolutely
       for (let s = 1; s <= 12; s++) {
         const starters = (byStart[d + '_' + s] || []).slice().sort((a, b) => {
@@ -14349,9 +14993,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         const primary = weekOnes[0] || starters[0];
         const rest = starters.filter((c) => c !== primary);
         const span = primary.span;
-        const ROW = 56; // 格距（含上下间隔）
-        const top = (s - 1) * ROW + 2;
-        const height = span * ROW - 8;
+        const top = (s - 1) * ROW + 1;
+        const height = span * ROW - 6;
         const z = primary.thisWeek ? 8 : 2;
         const style = primary.thisWeek
           ? `top:${top}px;height:${height}px;z-index:${z};background:${primary.color}33;border-color:${primary.color}99`
@@ -14378,7 +15021,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     const items = [
       { t: '空闲教室', i: 'room', a: 'room' },
       { t: '教学评估', i: 'eval', h: '/student/teachingEvaluation/newEvaluation/index' },
-      { t: '培养方案', i: 'plan', h: '/student/comprehensiveQuery/search/trainProgram/index' },
+      { t: '培养方案', i: 'plan', h: '/student/integratedQuery/planCompletion/index' },
       { t: '补办学生证', i: 'apply', h: '/student/application/index' },
       { t: '免修申请', i: 'apply', h: '/student/application/index' },
       { t: '替代课申请', i: 'apply', h: '/student/application/index' },
@@ -14408,8 +15051,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         : `<div class="uc-score-grid">
             <div class="uc-score-pane" data-score="passing"><h5>全部及格成绩</h5>${metricHtml(pass.summary)}</div>
             <div class="uc-score-pane" data-score="scheme"><h5>${escapeHtml((scheme.title || '方案成绩').split(/通过|获得|不通过/)[0].trim() || '方案成绩')}</h5>${metricHtml(scheme.summary)}</div>
-          </div>
-          <div class="uc-note">绩点按川大现行对照表（95–100→4.0 … 60→0.5）。点击卡片查看明细并勾选计算。</div>`);
+          </div>`);
 
     return `<div class="uc-desktop">
       <div class="uc-col">
@@ -14422,7 +15064,16 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           </div>
         </div></div></div>
         <div class="uc-card grow">
-          <div class="uc-hd"><span>课表</span><span class="uc-sub">${getCurrentWeekNumber() ? ('第' + getCurrentWeekNumber() + '周 · ') : ''}${courses.length ? courses.length + ' 个课次' : (state.schedule && state.schedule.error) || ''}</span></div>
+          <div class="uc-hd">
+            <span>课表</span>
+            <div class="uc-week-nav">
+              <button type="button" class="uc-btn" data-week-delta="-1" title="上一周">‹</button>
+              <span class="uc-week-label">第${getViewWeekNumber()}周</span>
+              <button type="button" class="uc-btn" data-week-delta="1" title="下一周">›</button>
+              <button type="button" class="uc-btn" data-week-reset="1" title="回到当前周">本周</button>
+              <span class="uc-week-cur">${courses.length ? (courses.length + ' 课次') : ((state.schedule && state.schedule.error) || '')}</span>
+            </div>
+          </div>
           <div class="uc-bd">${state.loading.schedule ? '<div class="uc-loading">课表加载中…</div>' : (courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${escapeHtml((state.schedule && state.schedule.error) || '暂无课表数据')}</div>`)}</div>
         </div>
       </div>
@@ -14457,8 +15108,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     if (state.mobileTab === 'more') {
       return `<div class="uc-mobile"><div class="uc-card"><div class="uc-bd">${servicesHtml()}</div></div></div>`;
     }
-    const today = new Date().getDay();
-    const todayList = courses.filter((c) => c.day === today).sort((a, b) => a.section - b.section);
     return `<div class="uc-mobile">
       <div class="uc-card" style="margin-bottom:12px"><div class="uc-bd"><div class="uc-profile">
         <div class="uc-avatar">${av}</div>
@@ -14466,9 +15115,15 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         <div class="uc-sub">${escapeHtml(p.majorPlan || '')}</div>
         <div class="uc-gpa">主修必修绩点 ${escapeHtml(String(p.majorGpa || '—'))}</div></div>
       </div></div></div>
-      <div class="uc-card"><div class="uc-hd">今日课表</div><div class="uc-bd">
-        ${todayList.length ? todayList.map((c) => `<div class="uc-lesson" style="margin-bottom:8px;padding:10px"><b style="font-size:14px">第${c.section}节 · ${escapeHtml(c.name)}</b><i>${escapeHtml([c.place, c.teacher].filter(Boolean).join(' · '))}</i></div>`).join('') : '<div class="uc-empty">今日暂无课程</div>'}
-        <div style="margin-top:12px;overflow:auto">${renderScheduleBoard(courses)}</div>
+      <div class="uc-card"><div class="uc-hd"><span>课表</span>
+        <div class="uc-week-nav">
+          <button type="button" class="uc-btn" data-week-delta="-1">‹</button>
+          <span class="uc-week-label">第${getViewWeekNumber()}周</span>
+          <button type="button" class="uc-btn" data-week-delta="1">›</button>
+          <button type="button" class="uc-btn" data-week-reset="1">本周</button>
+        </div>
+      </div><div class="uc-bd">
+        <div style="overflow:auto">${state.loading.schedule ? '<div class="uc-loading">课表加载中…</div>' : (courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${escapeHtml((state.schedule && state.schedule.error) || '暂无课表数据')}</div>`)}</div>
       </div></div>
     </div>`;
   }
@@ -14476,7 +15131,9 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   function roomPickerHtml() {
     if (state.loading.room) return '<div class="uc-loading">教学楼加载中…</div>';
     const groups = state.catalog || [];
-    if (!groups.length) return '<div class="uc-empty">未读到教学楼列表</div>';
+    if (!groups.length) {
+      return `<div class="uc-empty">${escapeHtml(state.roomError || '未读到教学楼列表')}<div style="margin-top:10px"><button type="button" class="uc-btn" data-room-reload="1">重新加载</button></div></div>`;
+    }
     // prefer 江安 first
     const ordered = groups.slice().sort((a, b) => (/江安/.test(a.campus) ? -1 : 0) - (/江安/.test(b.campus) ? -1 : 0));
     return ordered.map((g) => `
@@ -14498,21 +15155,35 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       for (let i = 1; i <= 12; i++) {
         const slot = (r.slots || []).find((s) => s.section === i) || { busy: false };
         if (slot.busy) {
-          const reason = slot.reason || '占用';
-          const ch = reason.charAt(0);
-          const detail = escapeHtml(JSON.stringify(slot.detail || { room: r.name, section: i, reason }));
-          row += `<td><button type="button" class="uc-slot busy ${occupancyKindClass(reason)}" data-occ='${detail}' title="${escapeHtml(r.name)} 第${i}节 · ${escapeHtml(reason)}">${escapeHtml(ch)}</button></td>`;
+          const reason = slot.reason || slot.typeLabel || '占用';
+          const typeLabel = slot.typeLabel || occupancyTypeLabel({ occupancymoduleId: slot.module });
+          const ch = slot.displayChar || firstContentChar(reason) || firstContentChar(typeLabel) || '占';
+          const detailObj = Object.assign({}, slot.detail || { room: r.name, section: i, reason }, {
+            reason,
+            typeLabel,
+            contentName: slot.contentName || (slot.detail && slot.detail.contentName) || ''
+          });
+          const detail = escapeHtml(JSON.stringify(detailObj));
+          row += `<td><button type="button" class="uc-slot busy ${occupancyKindClass(typeLabel)}" data-occ='${detail}' title="${escapeHtml(r.name)} 第${i}节 · ${escapeHtml(reason)}">${escapeHtml(ch)}</button></td>`;
         } else {
           row += `<td><div class="uc-slot free" title="${escapeHtml(r.name)} 第${i}节 · 空闲"></div></td>`;
         }
       }
       return row + '</tr>';
     }).join('');
+    const off = Number(pack.dateOffset != null ? pack.dateOffset : state.roomDateOffset) || 0;
+    const dayBtn = (v, label) =>
+      `<button type="button" class="uc-btn${off === v ? ' primary' : ''}" data-room-day="${v}">${label}</button>`;
     return `
       <div class="uc-occ-head">
         <div>
           <div class="uc-occ-title">${escapeHtml(buildingName || '')}</div>
           <div class="uc-sub">${escapeHtml(pack.dateLabel || '')}${pack.jxzc ? (' · 教学第' + pack.jxzc + '周') : ''}</div>
+          <div class="uc-room-days">
+            ${dayBtn(0, '今天')}
+            ${dayBtn(1, '明天')}
+            ${dayBtn(2, '后天')}
+          </div>
         </div>
         <button type="button" class="uc-btn" id="uc-room-back">返回楼栋</button>
       </div>
@@ -14522,7 +15193,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         <span><i class="lg-lab"></i>实验</span>
         <span><i class="lg-borrow"></i>借用</span>
         <span><i class="lg-free"></i>空闲</span>
-        <span class="uc-sub">色块字母为占用原因首字，点击查看详情</span>
+        <span class="uc-sub">色块为首字：有课/考试显示课程或考试名首字，点击查看详情</span>
       </div>
       <div class="uc-occ"><table class="uc-occ-table">${head}${body}</table></div>`;
   }
@@ -14531,7 +15202,21 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     const el = ensureRoot();
     const body = el.querySelector('#uc-body');
     const mobile = window.matchMedia && window.matchMedia('(max-width:900px)').matches;
+    // 渲染前同步系统教学周，防止小屏首屏误落第1周
+    getViewWeekNumber();
+    // 仅首次进入播放卡片入场；后续数据刷新不再重播，避免闪烁
+    const firstPaint = !state.uiReady;
     body.innerHTML = mobile ? renderMobile() : renderDesktop();
+    if (!firstPaint) {
+      el.classList.add('uc-settled');
+    } else {
+      state.uiReady = true;
+      el.classList.remove('uc-settled');
+      clearTimeout(el.__ucSettleTimer);
+      el.__ucSettleTimer = setTimeout(() => {
+        if (state.open) el.classList.add('uc-settled');
+      }, 480);
+    }
     bindUI(body);
   }
 
@@ -14545,23 +15230,54 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       closeCleanMode();
       location.href = href;
     }));
+    scope.querySelectorAll('[data-eval-url]').forEach((n) => n.addEventListener('click', (e) => {
+      const href = n.getAttribute('data-eval-url');
+      if (!href) return;
+      e.preventDefault();
+      e.stopPropagation();
+      closeCleanMode();
+      location.href = href;
+    }));
     scope.querySelectorAll('[data-action="room"]').forEach((n) => n.addEventListener('click', () => openRoomModal()));
+    scope.querySelectorAll('[data-room-reload]').forEach((n) => n.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      ensureRoomCatalogLoaded(true);
+    }));
     scope.querySelectorAll('[data-build-path]').forEach((n) => n.addEventListener('click', async () => {
       const path = n.getAttribute('data-build-path');
       const name = (n.textContent || '').trim();
       const cn = n.getAttribute('data-cn') || '';
       const bn = n.getAttribute('data-bn') || '';
-      await showBuilding({ path, name, campusNumber: cn, buildingNumber: bn }, name);
+      // 优先在按钮所在面板渲染，避免小屏教室页写到隐藏的 modal body
+      const host = n.closest('#uc-room-panel') || n.closest('#uc-modal-body') || null;
+      state.roomDateOffset = 0; // 新选楼栋默认今天
+      await showBuilding({ path, name, campusNumber: cn, buildingNumber: bn, dateOffset: 0 }, name, host);
+    }));
+    scope.querySelectorAll('[data-room-day]').forEach((n) => n.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const off = parseInt(n.getAttribute('data-room-day') || '0', 10) || 0;
+      if (!state.currentBuilding) return;
+      state.roomDateOffset = off;
+      const b = Object.assign({}, state.currentBuilding, { dateOffset: off });
+      const host = n.closest('#uc-room-panel') || n.closest('#uc-modal-body') || null;
+      await showBuilding(b, b.name || '', host);
     }));
     const back = scope.querySelector('#uc-room-back');
     if (back) back.onclick = () => {
       state.occupancy = null;
       state.currentBuilding = null;
-      const panel = document.querySelector('#uc-modal-body') || document.querySelector('#uc-room-panel');
+      const panel = back.closest('#uc-room-panel') || document.querySelector('#uc-room-panel') || document.querySelector('#uc-modal-body');
       if (panel && panel.id === 'uc-modal-body') {
         panel.innerHTML = roomPickerHtml();
         bindUI(panel);
-      } else render();
+      } else if (panel && panel.id === 'uc-room-panel') {
+        panel.innerHTML = roomPickerHtml();
+        bindUI(panel);
+      } else {
+        render();
+      }
     };
     // 教室占用详情
     scope.querySelectorAll('.uc-slot.busy[data-occ]').forEach((el) => {
@@ -14574,31 +15290,75 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
             <div class="uc-occ-detail">
               <div class="uc-name">${escapeHtml(d.room || '')}</div>
               <div class="uc-sub" style="margin-top:8px">节次：第${escapeHtml(String(d.section || d.start || ''))}${(d.span > 1) ? ('-' + (Number(d.start || d.section) + Number(d.span) - 1)) : ''}节</div>
-              <div class="uc-sub">占用类型：${escapeHtml(d.reason || '占用')}</div>
-              <div class="uc-note" style="margin-top:10px">说明：URP 教室占用接口只返回类型码（有课/考试/实验/借用），不返回具体课程名或考试名，故首字取类型首字。</div>
+              <div class="uc-sub">占用类型：${escapeHtml(d.typeLabel || d.reason || '占用')}</div>
+              <div class="uc-sub">具体内容：${escapeHtml(d.contentName || d.reason || '—')}</div>
+              ${d.teacher ? `<div class="uc-sub">教师：${escapeHtml(d.teacher)}</div>` : ''}
+              ${d.weeks ? `<div class="uc-sub">周次：${escapeHtml(d.weeks)}</div>` : ''}
+              ${d.courseNo ? `<div class="uc-sub">课程号：${escapeHtml(d.courseNo)}</div>` : ''}
             </div>
           `, '', { stack: true });
         } catch (_) {}
       });
     });
-    // 课表：点击看详情
+    // 课表：点击看详情（勿复用 .uc-lesson 绝对定位样式，否则弹窗叠字）
     scope.querySelectorAll('.uc-lesson[data-course]').forEach((el) => {
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         try {
           const data = JSON.parse(el.getAttribute('data-course') || '{}');
+          const secText = `第${data.section || '?'}${data.span > 1 ? '-' + (Number(data.section) + Number(data.span) - 1) : ''}节`;
           const others = (data.others || []).map((o) =>
-            `<div class="uc-lesson ${o.thisWeek ? '' : 'is-fade'}" style="margin-top:8px"><b>${escapeHtml(o.name)}</b><i>${escapeHtml([o.place, o.week, o.teacher].filter(Boolean).join(' · '))}${o.thisWeek ? ' · 本周' : ' · 非本周'}</i></div>`
+            `<div class="uc-course-sub ${o.thisWeek ? '' : 'is-fade'}">
+              <div class="uc-cd-name">${escapeHtml(o.name || '')}</div>
+              <div class="uc-cd-meta">${escapeHtml([o.place, o.week, o.teacher].filter(Boolean).join(' · ')) || '—'}</div>
+              <div class="uc-cd-chip">${o.thisWeek ? '当前周有课' : '当前周无课'}</div>
+            </div>`
           ).join('');
           openModal('课程详情', `
-            <div class="uc-lesson" style="padding:12px;min-height:auto">
-              <b style="font-size:15px">${escapeHtml(data.name || '')}</b>
-              <i style="font-size:12px;margin-top:6px;display:block">${escapeHtml([data.place, data.teacher, data.week].filter(Boolean).join(' · '))}</i>
-              <div class="uc-note">${data.thisWeek ? '本周有课' : '本周无课（淡显）'} · 第${data.section || '?'}${data.span > 1 ? '-' + (data.section + data.span - 1) : ''}节 · ${DAY_NAMES[data.day] || ''}</div>
+            <div class="uc-course-detail">
+              <div class="uc-cd-name">${escapeHtml(data.name || '')}</div>
+              <div class="uc-cd-meta">${escapeHtml([data.place, data.teacher, data.week].filter(Boolean).join(' · ')) || '—'}</div>
+              <div class="uc-cd-chip">${data.thisWeek ? '当前周有课' : '当前周无课'} · ${escapeHtml(secText)} · ${escapeHtml(DAY_NAMES[data.day] || '')}</div>
             </div>
-            ${others ? '<div class="uc-hd" style="border:0;padding:12px 0 6px">同时段其他课程</div>' + others : ''}
+            ${others ? '<div class="uc-hd" style="border:0;padding:14px 0 6px">同时段其他课程</div>' + others : ''}
           `, '');
         } catch (_) {}
+      });
+    });
+    // 课表周次切换
+    scope.querySelectorAll('[data-week-delta]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const delta = parseInt(btn.getAttribute('data-week-delta') || '0', 10) || 0;
+        const courses = (state.schedule && state.schedule.courses) || [];
+        const maxW = inferMaxWeek(courses);
+        const cur = getViewWeekNumber();
+        state.weekLocked = true; // 手动切周后锁定，避免后续渲染被系统周覆盖
+        state.viewWeek = Math.min(maxW, Math.max(1, cur + delta));
+        render();
+        const label = document.querySelector('#urppp-clean-root .uc-week-label');
+        if (label) {
+          label.classList.remove('uc-pop');
+          void label.offsetWidth;
+          label.classList.add('uc-pop');
+        }
+      });
+    });
+    scope.querySelectorAll('[data-week-reset]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        state.weekLocked = false; // 回本周：重新跟随系统教学周
+        const sys = getCurrentWeekNumber() || state._termWeek || 1;
+        state.viewWeek = sys;
+        render();
+        const label = document.querySelector('#urppp-clean-root .uc-week-label');
+        if (label) {
+          label.classList.remove('uc-pop');
+          void label.offsetWidth;
+          label.classList.add('uc-pop');
+        }
       });
     });
   }
@@ -14658,19 +15418,41 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">${schemes.map((s, i) =>
         `<button type="button" class="uc-btn ${i === state.activeSchemeIdx ? 'primary' : ''}" data-scheme-idx="${i}">${escapeHtml((s.title || '方案').slice(0, 28))}</button>`).join('')}</div>`
       : '';
+    const scoreCellHtml = (c) => {
+      const uneval = !!(c && (c.unevaluated || isUnevaluatedScore(c.score)));
+      const sc = scoreToNumber(c && c.score);
+      let cls = '';
+      if (uneval) {
+        cls = (sc != null && sc < 60) ? 'uneval-fail' : 'uneval';
+      } else if (sc != null) {
+        cls = sc >= 60 ? 'pass' : 'fail';
+      } else if (/不及格|不合格|不通过/.test(String(c && c.score || ''))) {
+        cls = 'fail';
+      } else if (c && c.score) {
+        cls = 'pass';
+      }
+      const label = escapeHtml((c && c.score) || '—');
+      const jump = uneval ? (c.evalUrl || '/student/teachingEvaluation/newEvaluation/index') : '';
+      if (jump) {
+        return `<span class="uc-score-cell ${cls}" data-eval-url="${escapeHtml(jump)}" title="未评教，点击前往评教">${label}</span>`;
+      }
+      return `<span class="uc-score-cell ${cls}">${label}</span>`;
+    };
     const rows = (pack.courses || []).map((c, idx) => {
       const on = state.selected[key].has(idx);
-      const gp = (c.officialGpa != null) ? c.officialGpa : scoreToGpa(c.score);
-      return `<tr class="${on ? 'is-on' : ''}" data-idx="${idx}">
+      const gp = (isValidOfficialGpa(c.officialGpa) ? c.officialGpa : scoreToGpa(c.score));
+      const uneval = !!(c.unevaluated || isUnevaluatedScore(c.score));
+      return `<tr class="${on ? 'is-on' : ''}${uneval ? ' is-uneval' : ''}" data-idx="${idx}">
         <td class="uc-namecell"><span class="uc-selmark" aria-hidden="true">${on ? '✓' : ''}</span><span class="uc-cname">${escapeHtml(c.name)}</span></td>
-        <td>${escapeHtml(c.attr || '')}</td><td>${c.credit}</td>
-        <td>${escapeHtml(c.score)}</td><td>${gp == null ? '—' : gp}</td>
+        <td><span class="uc-attr-pill">${escapeHtml(c.attr || '—')}</span></td>
+        <td>${c.credit}</td>
+        <td>${scoreCellHtml(c)}</td>
+        <td>${uneval || gp == null ? '—' : gp}</td>
       </tr>`;
     }).join('');
     openModal(kind === 'scheme' ? ('方案成绩 · ' + (scheme.title || '')) : '全部及格成绩', `
       ${switcher}${metricHtml(pack.summary)}
-      <div class="uc-note">点击行选择/取消；按住拖拽可框选。底部实时计算学分/均分/绩点。</div>
-      <div style="margin-top:10px;overflow:auto;max-height:46vh;position:relative" id="uc-score-wrap">
+      <div id="uc-score-wrap">
         <table class="uc-table" id="uc-score-table"><thead><tr><th>课程</th><th>属性</th><th>学分</th><th>成绩</th><th>绩点</th></tr></thead>
         <tbody>${rows || '<tr><td colspan="5">暂无数据</td></tr>'}</tbody></table>
         <div class="uc-select-box" id="uc-select-box"></div>
@@ -14789,31 +15571,70 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   async function openRoomModal() {
     openModal('空闲教室', '<div class="uc-loading">加载教学楼…</div>', '');
     try {
-      if (!state.catalog) {
-        state.loading.room = true;
-        state.catalog = await loadClassroomCatalog();
-        state.loading.room = false;
-      }
+      await ensureRoomCatalogLoaded(false);
       openModal('空闲教室', roomPickerHtml(), `<span class="uc-sub">选择楼栋查看教室×节次占用（对齐教室使用状况）</span>`);
     } catch (e) {
       openModal('空闲教室', `<div class="uc-empty">${escapeHtml(e && e.message || e)}</div>`, '');
     }
   }
 
-  async function showBuilding(building, name) {
-    const body = document.querySelector('#uc-modal-body') || document.querySelector('#uc-room-panel');
-    if (body) body.innerHTML = '<div class="uc-loading">加载占用网格…</div>';
+  function getRoomHost(preferred) {
+    // 小屏教室页优先 #uc-room-panel；桌面弹窗用 #uc-modal-body
+    if (preferred && preferred.isConnected) return preferred;
+    const panel = document.querySelector('#uc-room-panel');
+    if (panel && panel.offsetParent !== null) return panel;
+    if (panel && state.mobileTab === 'room') return panel;
+    const modalBody = document.querySelector('#uc-modal-body');
+    const modal = document.querySelector('#uc-modal');
+    if (modal && modal.classList.contains('open') && modalBody) return modalBody;
+    return panel || modalBody || null;
+  }
+
+  async function showBuilding(building, name, preferredHost) {
+    const body = getRoomHost(preferredHost);
+    if (!body) {
+      console.warn('[URP++] no room host');
+      return;
+    }
+    body.innerHTML = '<div class="uc-loading">加载占用网格…</div>';
     try {
-      const pack = await loadBuildingOccupancy(building);
-      state.occupancy = pack;
-      state.currentBuilding = typeof building === 'object' ? building : { path: building, name };
-      name = name || (building && building.name) || '';
-      if (body) {
-        body.innerHTML = occupancyHtml(pack, name);
-        bindUI(body);
+      let pack = await loadBuildingOccupancy(building);
+      body.innerHTML = '<div class="uc-loading">匹配课程名称…</div>';
+      let plan = pack.planNumber || '';
+      if (!plan) {
+        try {
+          const raw = await fetchText('/student/courseSelect/thisSemesterCurriculum/ajaxStudentSchedule/callback');
+          const j = JSON.parse(raw);
+          plan = (j && (j.zxjxjhh || j.xnxq || (j.dateList && j.dateList[0] && j.dateList[0].zxjxjhh))) || '';
+          if (!plan && j && j.xkxx && j.xkxx[0]) {
+            const k = Object.keys(j.xkxx[0] || {})[0];
+            const one = k ? j.xkxx[0][k] : null;
+            plan = (one && (one.zxjxjhh || one.executiveEducationPlanNumber)) || '';
+          }
+        } catch (_) {}
       }
+      if (!plan) plan = '2025-2026-2-1';
+      pack.planNumber = plan;
+      try {
+        pack = await enrichOccupancyWithCurriculum(pack, typeof building === 'object' ? building : {}, plan);
+      } catch (e) {
+        console.warn('[URP++] enrich occupancy', e);
+      }
+      state.occupancy = pack;
+      state.roomDateOffset = Number(pack.dateOffset != null ? pack.dateOffset : state.roomDateOffset) || 0;
+      const baseBuilding = typeof building === 'object' ? building : { path: building, name };
+      state.currentBuilding = Object.assign({}, baseBuilding, {
+        name: name || baseBuilding.name || '',
+        dateOffset: state.roomDateOffset
+      });
+      name = name || (building && building.name) || '';
+      // 加载过程中 host 可能被 render 重建，重新取一次
+      const host = getRoomHost(body) || body;
+      host.innerHTML = occupancyHtml(pack, name);
+      bindUI(host);
     } catch (e) {
-      if (body) body.innerHTML = `<div class="uc-empty">${escapeHtml(e && e.message || e)}</div>`;
+      const host = getRoomHost(body) || body;
+      if (host) host.innerHTML = `<div class="uc-empty">${escapeHtml(e && e.message || e)}</div>`;
     }
   }
 
@@ -14822,6 +15643,11 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       state.profile = null; state.schedule = null; state.scores = null; state.catalog = null; state.occupancy = null;
     }
     state.loading.profile = state.loading.schedule = state.loading.scores = true;
+    // 先解析教学周，再画界面，避免小屏首帧落到第1周
+    try {
+      const tw = await ensureTermWeekResolved();
+      if (!state.weekLocked && tw >= 1) state.viewWeek = tw;
+    } catch (_) {}
     render();
     await Promise.all([
       (async () => {
@@ -14832,7 +15658,15 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       (async () => {
         try { if (!(state.schedule && !force)) state.schedule = await loadSchedule(); }
         catch (e) { state.schedule = { courses: [], error: String(e && e.message || e) }; }
-        finally { state.loading.schedule = false; render(); }
+        finally {
+          state.loading.schedule = false;
+          // 课表加载后若周次仍可疑，再纠一次
+          if (!state.weekLocked) {
+            const tw = getCurrentWeekNumber() || readRememberedTermWeek();
+            if (tw >= 1) state.viewWeek = tw;
+          }
+          render();
+        }
       })(),
       (async () => {
         try {
@@ -14845,23 +15679,39 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         finally { state.loading.scores = false; render(); }
       })()
     ]);
+    if (!state.weekLocked) {
+      const tw = getCurrentWeekNumber() || readRememberedTermWeek();
+      if (tw >= 1) state.viewWeek = tw;
+    }
     render();
   }
 
   function openCleanMode(force) {
     ensureRoot();
     state.open = true;
+    state.uiReady = false;
+    state.weekLocked = false;
+    const curWeek = getCurrentWeekNumber() || readRememberedTermWeek();
+    // 每次进入都按教学周重置；读不到时先用缓存，别默认 1
+    state.viewWeek = curWeek >= 1 ? curWeek : (state.viewWeek >= 1 ? state.viewWeek : 0);
     document.documentElement.classList.add('urppp-clean-lock', CLEAN_FLAG);
-    rootEl().classList.add('open');
-    try { if (rootEl().__syncCleanThemeDots) rootEl().__syncCleanThemeDots(); } catch (_) {}
+    const el = rootEl();
+    el.classList.remove('uc-settled', 'open');
+    void el.offsetWidth; // 重触发根层进入动画
+    el.classList.add('open');
+    try { if (el.__syncCleanThemeDots) el.__syncCleanThemeDots(); } catch (_) {}
     loadAll(!!force);
   }
   function closeCleanMode() {
     state.open = false;
+    state.uiReady = false;
     closeModal();
     document.documentElement.classList.remove('urppp-clean-lock', CLEAN_FLAG);
     const el = rootEl();
-    if (el) el.classList.remove('open');
+    if (el) {
+      el.classList.remove('open', 'uc-settled');
+      clearTimeout(el.__ucSettleTimer);
+    }
   }
 
   function injectCleanEntry() {
