@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SCU URP++教务系统美化
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.0.6
+// @version      1.0.7
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Chao_Lan,Hanako
 // @license      MIT
@@ -24,7 +24,7 @@
   'use strict';
 
   // 与脚本头 @version 保持同步
-  const URPPP_VERSION = '1.0.6';
+  const URPPP_VERSION = '1.0.7';
   const URPPP_UPDATE = {
     mainRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js',
     assistRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js',
@@ -12750,18 +12750,20 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   function ensureUpdateToastStyles() {
-    if (document.getElementById('urppp-update-toast-style')) return;
+    // 允许热更新样式（开发迭代时覆盖旧 style 节点）
+    const old = document.getElementById('urppp-update-toast-style');
+    if (old) old.remove();
     const st = document.createElement('style');
     st.id = 'urppp-update-toast-style';
     st.textContent = `
       #urppp-update-toast{
-        position:fixed;left:16px;bottom:16px;z-index:14080;
-        width:min(360px,calc(100vw - 32px));
-        background:var(--surface,#fff);color:var(--text,#0f172a);
-        border:1px solid var(--border,#e2e8f0);border-radius:14px;
-        box-shadow:0 16px 40px rgba(15,23,42,.18);
-        padding:14px 14px 12px;box-sizing:border-box;
-        font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;
+        position:fixed!important;left:16px!important;bottom:16px!important;z-index:14080!important;
+        width:min(360px,calc(100vw - 32px))!important;
+        background:var(--surface,#fff)!important;color:var(--text,#0f172a)!important;
+        border:1px solid var(--border,#e2e8f0)!important;border-radius:14px!important;
+        box-shadow:0 16px 40px rgba(15,23,42,.18)!important;
+        padding:14px 14px 12px!important;box-sizing:border-box!important;
+        font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif!important;
         opacity:0;transform:translateY(18px) scale(.96);
         pointer-events:none;visibility:hidden;
         transition:
@@ -12782,58 +12784,163 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         opacity:0;transform:translateY(14px) scale(.97);
         pointer-events:none;visibility:visible;
       }
-      #urppp-update-toast .uut-title{font-weight:700;font-size:14px;margin:0 0 4px;padding-right:28px}
-      #urppp-update-toast .uut-sub{color:var(--text-muted,#64748b);font-size:12px;margin:0 0 10px}
-      #urppp-update-toast .uut-actions{display:flex;gap:8px;flex-wrap:wrap}
-      #urppp-update-toast .uut-btn{
-        border:1px solid var(--border,#e2e8f0);background:var(--input-bg,#f8fafc);
-        color:var(--text,#0f172a);border-radius:10px;padding:7px 10px;cursor:pointer;
-        font-size:12px;font-weight:600;transition:transform .15s ease,opacity .15s ease;
+      #urppp-update-toast .uut-title{font-weight:700!important;font-size:14px!important;margin:0 0 4px!important;padding-right:28px!important;color:var(--text)!important}
+      #urppp-update-toast .uut-sub{color:var(--text-muted,#64748b)!important;font-size:12px!important;margin:0 0 10px!important}
+      #urppp-update-toast .uut-actions{display:flex!important;gap:8px!important;flex-wrap:wrap!important}
+      #urppp-update-toast .uut-btn,
+      #urppp-update-changelog .uut-btn{
+        appearance:none!important;-webkit-appearance:none!important;
+        border:1px solid var(--border,#e2e8f0)!important;
+        background:var(--input-bg,#f8fafc)!important;
+        color:var(--text,#0f172a)!important;
+        border-radius:10px!important;padding:7px 12px!important;cursor:pointer!important;
+        font-size:12px!important;font-weight:600!important;line-height:1.2!important;
+        box-shadow:none!important;margin:0!important;min-height:0!important;
+        transition:transform .15s ease,opacity .15s ease,background .15s ease,border-color .15s ease!important;
       }
-      #urppp-update-toast .uut-btn:hover{transform:translateY(-1px)}
-      #urppp-update-toast .uut-btn.primary{
-        background:var(--primary,#b53434);border-color:var(--primary,#b53434);color:#fff;
+      #urppp-update-toast .uut-btn:hover,
+      #urppp-update-changelog .uut-btn:hover{
+        transform:translateY(-1px);border-color:var(--primary,#b53434)!important;
       }
-      #urppp-update-toast .uut-btn.ghost{background:transparent}
+      #urppp-update-toast .uut-btn.primary,
+      #urppp-update-changelog .uut-btn.primary{
+        background:var(--primary,#b53434)!important;border-color:var(--primary,#b53434)!important;color:#fff!important;
+      }
+      #urppp-update-toast .uut-btn.ghost,
+      #urppp-update-changelog .uut-btn.ghost{
+        background:transparent!important;
+      }
       #urppp-update-toast .uut-close{
-        position:absolute;top:8px;right:8px;width:28px;height:28px;border:none;
-        background:transparent;color:var(--text-muted,#64748b);border-radius:8px;cursor:pointer;font-size:16px;
+        position:absolute!important;top:8px!important;right:8px!important;width:28px!important;height:28px!important;border:none!important;
+        background:transparent!important;color:var(--text-muted,#64748b)!important;border-radius:8px!important;cursor:pointer!important;font-size:16px!important;
       }
-      #urppp-update-toast .uut-close:hover{background:var(--input-bg,#f8fafc);color:var(--text,#0f172a)}
+      #urppp-update-toast .uut-close:hover{background:var(--input-bg,#f8fafc)!important;color:var(--text,#0f172a)!important}
       #urppp-update-changelog{
-        position:fixed;inset:0;z-index:14090;display:flex;align-items:center;justify-content:center;
-        background:rgba(15,23,42,0);padding:16px;box-sizing:border-box;
+        position:fixed!important;inset:0!important;z-index:14090!important;
+        display:flex!important;align-items:center!important;justify-content:center!important;
+        background:rgba(15,23,42,0)!important;padding:16px!important;box-sizing:border-box!important;
         opacity:0;pointer-events:none;visibility:hidden;
-        transition:opacity .24s ease,background .24s ease,visibility 0s linear .24s;
+        transition:opacity .26s ease,background .26s ease,visibility 0s linear .26s;
       }
       #urppp-update-changelog.open{
-        opacity:1;pointer-events:auto;visibility:visible;background:rgba(15,23,42,.42);
-        transition:opacity .24s ease,background .24s ease,visibility 0s linear 0s;
+        opacity:1;pointer-events:auto;visibility:visible;background:rgba(15,23,42,.42)!important;
+        transition:opacity .26s ease,background .26s ease,visibility 0s linear 0s;
+      }
+      #urppp-update-changelog.closing{
+        opacity:0;pointer-events:none;visibility:visible;background:rgba(15,23,42,0)!important;
       }
       #urppp-update-changelog .uuc-panel{
-        width:min(520px,100%);max-height:min(72vh,640px);overflow:auto;
-        background:var(--surface,#fff);color:var(--text,#0f172a);
-        border:1px solid var(--border,#e2e8f0);border-radius:14px;
-        box-shadow:0 20px 50px rgba(15,23,42,.24);padding:16px;box-sizing:border-box;
-        transform:translateY(12px) scale(.97);opacity:.96;
-        transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .24s ease;
+        width:min(520px,100%)!important;max-height:min(72vh,640px)!important;overflow:auto!important;
+        background:var(--surface,#fff)!important;color:var(--text,#0f172a)!important;
+        border:1px solid var(--border,#e2e8f0)!important;border-radius:14px!important;
+        box-shadow:0 20px 50px rgba(15,23,42,.24)!important;padding:16px!important;box-sizing:border-box!important;
+        transform:translateY(16px) scale(.96);opacity:0;
+        transition:transform .32s cubic-bezier(.22,1,.36,1),opacity .26s ease;
       }
-      #urppp-update-changelog.open .uuc-panel{transform:none;opacity:1}
+      #urppp-update-changelog.open .uuc-panel{transform:translateY(0) scale(1);opacity:1}
+      #urppp-update-changelog.closing .uuc-panel{transform:translateY(12px) scale(.97);opacity:0}
       #urppp-update-changelog .uuc-head{
-        display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;
+        display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;margin-bottom:12px!important;
+        position:sticky!important;top:0!important;background:var(--surface,#fff)!important;z-index:1!important;padding-bottom:8px!important;
+        border-bottom:1px solid var(--border,#e2e8f0)!important;
       }
-      #urppp-update-changelog .uuc-head h3{margin:0;font-size:15px}
+      #urppp-update-changelog .uuc-head h3{margin:0!important;font-size:15px!important;font-weight:700!important;color:var(--text)!important}
       #urppp-update-changelog .uuc-body{
-        white-space:pre-wrap;font-size:13px;line-height:1.55;color:var(--text,#0f172a);
+        font-size:13px!important;line-height:1.6!important;color:var(--text,#0f172a)!important;
+        white-space:normal!important;
       }
-      #urppp-update-changelog .uuc-body a{color:var(--primary,#b53434)}
+      #urppp-update-changelog .uuc-body h2{
+        margin:0 0 10px!important;font-size:16px!important;font-weight:700!important;color:var(--text)!important;
+        border:none!important;padding:0!important;
+      }
+      #urppp-update-changelog .uuc-body h3{
+        margin:14px 0 8px!important;font-size:13px!important;font-weight:700!important;
+        color:var(--primary,#b53434)!important;letter-spacing:.02em!important;
+      }
+      #urppp-update-changelog .uuc-body p{
+        margin:0 0 8px!important;color:var(--text)!important;
+      }
+      #urppp-update-changelog .uuc-body ul{
+        margin:0 0 10px!important;padding:0 0 0 1.15em!important;list-style:disc!important;
+      }
+      #urppp-update-changelog .uuc-body li{
+        margin:0 0 6px!important;color:var(--text)!important;
+      }
+      #urppp-update-changelog .uuc-body code{
+        font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;
+        font-size:12px!important;background:var(--input-bg,#f1f5f9)!important;
+        border:1px solid var(--border,#e2e8f0)!important;border-radius:6px!important;
+        padding:1px 5px!important;color:var(--text)!important;
+      }
+      #urppp-update-changelog .uuc-body a{color:var(--primary,#b53434)!important;text-decoration:underline!important}
+      #urppp-update-changelog .uuc-body .uuc-meta{
+        color:var(--text-muted,#64748b)!important;font-size:12px!important;margin-bottom:12px!important;
+      }
       @media (prefers-reduced-motion: reduce) {
         #urppp-update-toast,#urppp-update-toast.open,#urppp-update-toast.closing,
-        #urppp-update-changelog,#urppp-update-changelog.open,
+        #urppp-update-changelog,#urppp-update-changelog.open,#urppp-update-changelog.closing,
         #urppp-update-changelog .uuc-panel{transition:none!important;transform:none!important}
       }
     `;
     document.documentElement.appendChild(st);
+  }
+
+  // 轻量 Markdown → HTML（仅覆盖 CHANGELOG 常用语法）
+  function renderChangelogMarkdown(md) {
+    const src = String(md || '').replace(/\r\n/g, '\n').trim();
+    if (!src) return '<p class="uuc-meta">暂无更新日志</p>';
+
+    const inline = (s) => {
+      let t = escapeHtml(s);
+      // code
+      t = t.replace(/`([^`]+)`/g, '<code>$1</code>');
+      // bold
+      t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      // links [text](url)
+      t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,
+        '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+      // bare path-ish backticks already handled; auto-link plain http
+      t = t.replace(/(^|[^"'>])(https?:\/\/[^\s<]+)/g,
+        '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>');
+      return t;
+    };
+
+    const lines = src.split('\n');
+    const out = [];
+    let listOpen = false;
+    const closeList = () => {
+      if (listOpen) { out.push('</ul>'); listOpen = false; }
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const raw = lines[i];
+      const line = raw.replace(/\s+$/, '');
+      if (!line.trim()) {
+        closeList();
+        continue;
+      }
+      // heading ## / ###
+      let hm = line.match(/^(#{2,3})\s+(.+)$/);
+      if (hm) {
+        closeList();
+        const level = hm[1].length; // 2 or 3
+        const text = hm[2].replace(/^\[|\]$/g, '');
+        out.push(level === 2 ? `<h2>${inline(text)}</h2>` : `<h3>${inline(text)}</h3>`);
+        continue;
+      }
+      // list item
+      let lm = line.match(/^[-*]\s+(.+)$/);
+      if (lm) {
+        if (!listOpen) { out.push('<ul>'); listOpen = true; }
+        out.push(`<li>${inline(lm[1])}</li>`);
+        continue;
+      }
+      // paragraph
+      closeList();
+      out.push(`<p>${inline(line)}</p>`);
+    }
+    closeList();
+    return out.join('') || '<p class="uuc-meta">暂无更新日志</p>';
   }
 
   function hideUpdateToast(toast) {
@@ -12863,6 +12970,28 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     setTimeout(done, 380);
   }
 
+  function hideChangelogModal(wrap) {
+    const el = wrap || document.getElementById('urppp-update-changelog');
+    if (!el) return;
+    if (!el.classList.contains('open') && !el.classList.contains('closing')) return;
+    if (el.__closing) return;
+    el.__closing = true;
+    el.classList.add('closing');
+    el.classList.remove('open');
+    const done = () => {
+      el.classList.remove('closing');
+      el.__closing = false;
+      el.removeEventListener('transitionend', onEnd);
+    };
+    const onEnd = (e) => {
+      if (e && e.target !== el) return;
+      if (e && e.propertyName && e.propertyName !== 'opacity' && e.propertyName !== 'background-color' && e.propertyName !== 'background') return;
+      done();
+    };
+    el.addEventListener('transitionend', onEnd);
+    setTimeout(done, 360);
+  }
+
   function openChangelogModal(title, bodyHtml) {
     ensureUpdateToastStyles();
     let wrap = document.getElementById('urppp-update-changelog');
@@ -12870,7 +12999,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       wrap = document.createElement('div');
       wrap.id = 'urppp-update-changelog';
       wrap.innerHTML = `
-        <div class="uuc-panel" role="dialog" aria-label="更新日志">
+        <div class="uuc-panel" role="dialog" aria-modal="true" aria-label="更新日志">
           <div class="uuc-head">
             <h3></h3>
             <button type="button" class="uut-btn ghost" data-close="1">关闭</button>
@@ -12879,17 +13008,20 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         </div>`;
       wrap.addEventListener('click', (e) => {
         if (e.target === wrap || (e.target && e.target.getAttribute && e.target.getAttribute('data-close') === '1')) {
-          wrap.classList.remove('open');
+          hideChangelogModal(wrap);
         }
       });
       document.documentElement.appendChild(wrap);
     }
     wrap.querySelector('h3').textContent = title || '更新日志';
-    wrap.querySelector('.uuc-body').innerHTML = bodyHtml || '暂无更新日志';
-    // 重触发入场
-    wrap.classList.remove('open');
+    wrap.querySelector('.uuc-body').innerHTML = bodyHtml || '<p class="uuc-meta">暂无更新日志</p>';
+    // 重触发入场动效
+    wrap.__closing = false;
+    wrap.classList.remove('open', 'closing');
     void wrap.offsetWidth;
-    requestAnimationFrame(() => wrap.classList.add('open'));
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => wrap.classList.add('open'));
+    });
   }
 
   function showUpdateToast(info) {
@@ -12934,12 +13066,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
             }
             const range = extractChangelogRange(md, pack.local, pack.remote);
             const pretty = range
-              ? escapeHtml(range)
-              : ('未找到区间日志。可查看完整 <a href="' + URPPP_UPDATE.changelogPage + '" target="_blank" rel="noopener noreferrer">CHANGELOG</a>');
+              ? renderChangelogMarkdown(range)
+              : ('<p class="uuc-meta">未找到区间日志。</p><p><a href="' + URPPP_UPDATE.changelogPage + '" target="_blank" rel="noopener noreferrer">打开完整 CHANGELOG</a></p>');
             openChangelogModal('更新日志 ' + pack.local + ' → ' + pack.remote, pretty);
           } catch (err) {
-            openChangelogModal('更新日志', '加载失败：' + escapeHtml(err && err.message || err) +
-              '<br><a href="' + URPPP_UPDATE.changelogPage + '" target="_blank" rel="noopener noreferrer">打开 GitHub CHANGELOG</a>');
+            openChangelogModal('更新日志',
+              '<p>加载失败：' + escapeHtml(err && err.message || err) + '</p>' +
+              '<p><a href="' + URPPP_UPDATE.changelogPage + '" target="_blank" rel="noopener noreferrer">打开 GitHub CHANGELOG</a></p>');
           } finally {
             btn.disabled = false;
             btn.textContent = '更新日志';
