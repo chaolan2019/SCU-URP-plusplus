@@ -6,3 +6,5 @@ dist/
 .gh-token.tmp
 *.tmp
 release-notes-v*.md
+
+Design/
