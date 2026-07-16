@@ -1086,12 +1086,23 @@
           // 首页「开放的可申请」等可能是 .infobox / 自定义卡
           'html[data-urppp-skin="flat"] .infobox,html[data-urppp-skin="flat"] .infobox-container .infobox,html[data-urppp-skin="flat"] .page-content .infobox,html[data-urppp-skin="flat"] #urppp-dashboard .infobox{border:2px solid var(--text)!important;border-radius:0!important;box-shadow:none!important;}',
           // 漏网按钮：侧栏折叠、菜单切换、顶栏清爽、header 操作钮、分页
-          'html[data-urppp-skin="flat"] #menu-toggler,html[data-urppp-skin="flat"] .menu-toggler,html[data-urppp-skin="flat"] .navbar-toggle,html[data-urppp-skin="flat"] .sidebar-toggle,html[data-urppp-skin="flat"] .sidebar-collapse,html[data-urppp-skin="flat"] .sidebar-expand,html[data-urppp-skin="flat"] button.menu-toggler,html[data-urppp-skin="flat"] .ace-nav>li>a,html[data-urppp-skin="flat"] .navbar .btn,html[data-urppp-skin="flat"] .navbar button,html[data-urppp-skin="flat"] .header .right_top_oper .btn,html[data-urppp-skin="flat"] .header .right_top_oper a,html[data-urppp-skin="flat"] h4.header .right_top_oper .btn,html[data-urppp-skin="flat"] h4.header .right_top_oper a,html[data-urppp-skin="flat"] .pagination>li>a,html[data-urppp-skin="flat"] .pagination>li>span,html[data-urppp-skin="flat"] .pagebar a,html[data-urppp-skin="flat"] .pagebar button,html[data-urppp-skin="flat"] .urppp-pagebar a,html[data-urppp-skin="flat"] .urppp-pagebar button,html[data-urppp-skin="flat"] .widget-toolbar a,html[data-urppp-skin="flat"] .widget-toolbar button,html[data-urppp-skin="flat"] a.btn-link,html[data-urppp-skin="flat"] .btn-link{border-radius:0!important;box-shadow:none!important;}',
+          'html[data-urppp-skin="flat"] #menu-toggler,html[data-urppp-skin="flat"] .menu-toggler,html[data-urppp-skin="flat"] .navbar-toggle,html[data-urppp-skin="flat"] button.menu-toggler,html[data-urppp-skin="flat"] .ace-nav>li>a,html[data-urppp-skin="flat"] .navbar .btn,html[data-urppp-skin="flat"] .navbar button,html[data-urppp-skin="flat"] .header .right_top_oper .btn,html[data-urppp-skin="flat"] .header .right_top_oper a,html[data-urppp-skin="flat"] h4.header .right_top_oper .btn,html[data-urppp-skin="flat"] h4.header .right_top_oper a,html[data-urppp-skin="flat"] .pagination>li>a,html[data-urppp-skin="flat"] .pagination>li>span,html[data-urppp-skin="flat"] .pagebar a,html[data-urppp-skin="flat"] .pagebar button,html[data-urppp-skin="flat"] .urppp-pagebar a,html[data-urppp-skin="flat"] .urppp-pagebar button,html[data-urppp-skin="flat"] .widget-toolbar a,html[data-urppp-skin="flat"] .widget-toolbar button,html[data-urppp-skin="flat"] a.btn-link,html[data-urppp-skin="flat"] .btn-link{border-radius:0!important;box-shadow:none!important;}',
           'html[data-urppp-skin="flat"] #menu-toggler,html[data-urppp-skin="flat"] .menu-toggler,html[data-urppp-skin="flat"] .navbar-toggle,html[data-urppp-skin="flat"] .header .right_top_oper .btn,html[data-urppp-skin="flat"] .header .right_top_oper a.btn,html[data-urppp-skin="flat"] h4.header .right_top_oper .btn,html[data-urppp-skin="flat"] .pagination>li>a,html[data-urppp-skin="flat"] .pagination>li>span,html[data-urppp-skin="flat"] .widget-toolbar a,html[data-urppp-skin="flat"] .widget-toolbar button{border:2px solid var(--text)!important;background:var(--surface)!important;color:var(--text)!important;}',
           // 顶栏清爽入口（文本按钮）
           'html[data-urppp-skin="flat"] #navbar a,html[data-urppp-skin="flat"] .navbar a.btn,html[data-urppp-skin="flat"] .ace-nav>li>a.btn,html[data-urppp-skin="flat"] #urppp-nav-theme + button,html[data-urppp-skin="flat"] button[title*="清爽"],html[data-urppp-skin="flat"] a[title*="清爽"]{border-radius:0!important;}',
           // 侧栏折叠图标按钮
-          'html[data-urppp-skin="flat"] .sidebar .sidebar-toggle,html[data-urppp-skin="flat"] .sidebar .nav-wrap + button,html[data-urppp-skin="flat"] #urppp-menus + button,html[data-urppp-skin="flat"] .urppp-sidebar-toggle,html[data-urppp-skin="flat"] button[title*="收起"],html[data-urppp-skin="flat"] button[title*="展开"]{border-radius:0!important;border:2px solid var(--text)!important;background:var(--surface)!important;}',
+          'html[data-urppp-skin="flat"] .urppp-sidebar-toggle,html[data-urppp-skin="flat"] button.urppp-sidebar-toggle,html[data-urppp-skin="flat"] button[title*="收起侧边栏"],html[data-urppp-skin="flat"] button[title*="展开侧边栏"]{border-radius:0!important;border:1px solid var(--border)!important;background:var(--input-bg)!important;color:var(--text-secondary)!important;box-shadow:none!important;}',
+          // 红框强制：搜索 / 可申请 / 课表工具（最高优先级）
+          'html[data-urppp-skin="flat"] input#search-input.nav-search-input,html[data-urppp-skin="flat"] #form-search input.nav-search-input,html[data-urppp-skin="flat"] #form-search.nav-search .nav-search-input{border-radius:0!important;border:2px solid #000!important;box-shadow:none!important;background:#fff!important;color:#000!important;height:32px!important;}',
+          'html.urppp-theme-dark[data-urppp-skin="flat"] input#search-input.nav-search-input,html.urppp-theme-dark[data-urppp-skin="flat"] #form-search.nav-search .nav-search-input{border-color:var(--text)!important;background:var(--input-bg)!important;color:var(--text)!important;}',
+          'html[data-urppp-skin="flat"] a.btn.btn-app.btn-info,html[data-urppp-skin="flat"] button.btn.btn-app.btn-info,html[data-urppp-skin="flat"] .btn.btn-app.btn-info,html[data-urppp-skin="flat"] a.btn-app,html[data-urppp-skin="flat"] .btn-app{border-radius:0!important;border:2px solid #000!important;box-shadow:none!important;background:#fff!important;color:#000!important;transform:none!important;}',
+          'html.urppp-theme-dark[data-urppp-skin="flat"] a.btn.btn-app.btn-info,html.urppp-theme-dark[data-urppp-skin="flat"] .btn-app{border-color:var(--text)!important;background:var(--surface)!important;color:var(--text)!important;}',
+          'html[data-urppp-skin="flat"] a.btn.btn-app.btn-info:hover,html[data-urppp-skin="flat"] .btn-app:hover{background:#000!important;color:#fff!important;border-color:#000!important;transform:none!important;box-shadow:none!important;}',
+          'html[data-urppp-skin="flat"] a.btn.btn-app.btn-info:hover .fa,html[data-urppp-skin="flat"] .btn-app:hover .fa,html[data-urppp-skin="flat"] .btn-app:hover .ace-icon{color:#fff!important;}',
+          'html[data-urppp-skin="flat"] #urppp-left .fc-toolbar h2,html[data-urppp-skin="flat"] #urppp-left .fc .fc-toolbar h2,html[data-urppp-skin="flat"] #urppp-left h2.fc-center,html[data-urppp-skin="flat"] .fc-toolbar h2{border-radius:0!important;border:2px solid #000!important;box-shadow:none!important;background:#fff!important;color:#000!important;padding:6px 14px!important;}',
+          'html.urppp-theme-dark[data-urppp-skin="flat"] #urppp-left .fc-toolbar h2,html.urppp-theme-dark[data-urppp-skin="flat"] .fc-toolbar h2{border-color:var(--text)!important;background:var(--surface)!important;color:var(--text)!important;}',
+          'html[data-urppp-skin="flat"] #urppp-left .fc-button,html[data-urppp-skin="flat"] #urppp-left button.fc-button,html[data-urppp-skin="flat"] #urppp-left .fc-state-default,html[data-urppp-skin="flat"] #urppp-left .fc-prev-button,html[data-urppp-skin="flat"] #urppp-left .fc-next-button,html[data-urppp-skin="flat"] #urppp-left .fc-today-button,html[data-urppp-skin="flat"] .fc .fc-button,html[data-urppp-skin="flat"] .fc button{border-radius:0!important;border:2px solid #000!important;box-shadow:none!important;background:#fff!important;color:#000!important;}'
+,
           // 红框漏网：搜索框、可申请 btn-app、课表日期块与工具条按钮（蓝框折叠钮不强制）
           'html[data-urppp-skin="flat"] #form-search.nav-search .nav-search-input,html[data-urppp-skin="flat"] #search-input,html[data-urppp-skin="flat"] input.nav-search-input,html[data-urppp-skin="flat"] .nav-search .nav-search-input{border-radius:0!important;border:2px solid var(--text)!important;box-shadow:none!important;background:var(--surface)!important;color:var(--text)!important;}',
           'html[data-urppp-skin="flat"] #form-search.nav-search .nav-search-input:focus,html[data-urppp-skin="flat"] #search-input:focus{box-shadow:none!important;border-color:var(--text)!important;outline:2px solid var(--primary)!important;outline-offset:0!important;}',
@@ -5644,7 +5655,8 @@
         border: none !important;
         box-shadow: none !important;
       }
-      #form-search.nav-search .nav-search-input {
+      #form-search.nav-search .nav-search-input,
+      input#search-input.nav-search-input {
         background: var(--input-bg) !important;
         border: 1px solid var(--border) !important;
         color: var(--text) !important;
@@ -5774,7 +5786,7 @@
       .urppp-sidebar-toggle {
         width: 30px;
         height: 30px;
-        border-radius: 8px;
+        border-radius: var(--radius-sm);
         background: var(--input-bg);
         border: 1px solid var(--border);
         color: var(--text-secondary);
