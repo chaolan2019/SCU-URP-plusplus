@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SCU URP++教务系统美化
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.0.2
+// @version      1.0.3
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Chao_Lan,Hanako
 // @license      MIT
@@ -24,7 +24,7 @@
   'use strict';
 
   // 与脚本头 @version 保持同步
-  const URPPP_VERSION = '1.0.2';
+  const URPPP_VERSION = '1.0.3';
   const URPPP_UPDATE = {
     mainRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js',
     assistRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js',
@@ -4747,16 +4747,19 @@
         top: 56px !important;
         left: 18px !important;
         right: auto !important;
+        bottom: auto !important;
         width: min(420px, calc(100vw - 24px)) !important;
         max-height: calc(100vh - 80px) !important;
-        overflow: auto !important;
+        max-height: calc(100dvh - 80px) !important;
+        overflow: hidden !important; /* 仅 body 滚动，避免移动端滚不全 */
+        display: flex !important;
+        flex-direction: column !important;
         background: var(--surface) !important;
         color: var(--text) !important;
         border: 1px solid var(--border) !important;
         border-radius: 16px !important;
         box-shadow: 0 18px 48px rgba(15,23,42,0.18) !important;
         z-index: 13060 !important; /* 高于清爽层，清爽内也可打开设置 */
-        display: block !important;
         box-sizing: border-box !important;
         opacity: 0 !important;
         pointer-events: none !important;
@@ -4770,6 +4773,21 @@
         transform: translateY(0) scale(1) !important;
         box-shadow: 0 22px 56px rgba(15,23,42,0.22) !important;
       }
+      @media (max-width: 640px) {
+        #urppp-settings-panel {
+          top: max(10px, env(safe-area-inset-top, 0px)) !important;
+          left: 10px !important;
+          right: 10px !important;
+          bottom: max(10px, env(safe-area-inset-bottom, 0px)) !important;
+          width: auto !important;
+          max-height: none !important;
+          height: auto !important;
+          transform-origin: center center !important;
+        }
+        #urppp-settings-panel:not(.open) {
+          /* 关闭时仍不占交互 */
+        }
+      }
       @media (prefers-reduced-motion: reduce) {
         #urppp-settings-mask, #urppp-settings-panel {
           transition: none !important;
@@ -4780,9 +4798,13 @@
           display: none !important;
           opacity: 0 !important;
         }
-        #urppp-settings-mask.open,
-        #urppp-settings-panel.open {
+        #urppp-settings-mask.open {
           display: block !important;
+          opacity: 1 !important;
+          pointer-events: auto !important;
+        }
+        #urppp-settings-panel.open {
+          display: flex !important;
           opacity: 1 !important;
           pointer-events: auto !important;
         }
@@ -4793,8 +4815,8 @@
         justify-content: space-between !important;
         padding: 14px 16px 10px !important;
         border-bottom: 1px solid var(--border) !important;
-        position: sticky !important;
-        top: 0 !important;
+        position: relative !important;
+        flex: 0 0 auto !important;
         background: var(--surface) !important;
         z-index: 1 !important;
       }
@@ -4819,7 +4841,22 @@
         color: var(--text) !important;
       }
       #urppp-settings-panel .urppp-set-body {
-        padding: 12px 16px 18px !important;
+        padding: 12px 16px 24px !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        overscroll-behavior: contain !important;
+        padding-bottom: max(28px, calc(16px + env(safe-area-inset-bottom, 0px))) !important;
+      }
+      #urppp-settings-panel #urppp-set-check-update {
+        width: 100% !important;
+        min-height: 36px !important;
+      }
+      #urppp-settings-panel #urppp-set-update-status a {
+        color: var(--primary) !important;
+        text-decoration: underline !important;
       }
       #urppp-settings-panel .urppp-set-sec {
         margin: 0 0 18px !important;
@@ -12378,12 +12415,18 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const mask = document.getElementById('urppp-settings-mask');
     if (!panel || !mask) return;
     syncSettingsPanelUI();
+    try { refreshUpdateStatusHint(); } catch (_) {}
     // 强制重触发过渡：先关再开
     mask.classList.remove('open');
     panel.classList.remove('open');
     void panel.offsetWidth;
     mask.classList.add('open');
     panel.classList.add('open');
+    // 打开时把 body 滚回顶部，避免上次位置残留
+    try {
+      const body = panel.querySelector('.urppp-set-body');
+      if (body) body.scrollTop = 0;
+    } catch (_) {}
   }
 
   function closeSettingsPanel() {
@@ -12422,10 +12465,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '    <p class="urppp-set-tip" style="margin-top:8px">开启后按系统浅色/深色自动切换。浅色可选用下方动态配色，深色固定深邃暗。</p>',
       '    <button type="button" class="urppp-set-follow" id="urppp-set-clean-default" aria-pressed="false" style="margin-top:10px;width:100%">默认进入清爽模式：关</button>',
       '    <p class="urppp-set-tip" style="margin-top:8px">开启后，仅在首页自动打开清爽模式（其它页面不自动进入，可随时退出）。</p>',
-      '    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">',
-      '      <button type="button" class="urppp-set-btn" id="urppp-set-check-update">检查更新</button>',
-      '    </div>',
-      '    <div id="urppp-set-update-status" class="urppp-set-tip" style="margin-top:8px">当前主插件版本：' + String(URPPP_VERSION) + '</div>',
+      '    <button type="button" class="urppp-set-btn" id="urppp-set-check-update" style="margin-top:12px;width:100%">检查更新</button>',
+      '    <div id="urppp-set-update-status" class="urppp-set-tip" style="margin-top:8px"></div>',
       '  </section>',
       '  <section class="urppp-set-sec" id="urppp-set-dynamic">',
       '    <h3>种子色</h3>',
@@ -12628,6 +12669,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   function setUpdateStatus(html, type) {
     const el = document.getElementById('urppp-set-update-status');
     if (!el) return;
+    el.dataset.locked = html ? '1' : '';
     el.innerHTML = html || '';
     el.style.color = type === 'err'
       ? '#b91c1c'
@@ -12717,7 +12759,24 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }
   }
 
-  // 给辅助插件扩展：registerChecker({ id, name, check: async () => result })
+  function refreshUpdateStatusHint() {
+    const el = document.getElementById('urppp-set-update-status');
+    if (!el || el.dataset.locked === '1') return;
+    const extras = (__urpppUpdateCheckers || []).map((c) => c && (c.name || c.id)).filter(Boolean);
+    let text = '当前主插件：' + URPPP_VERSION;
+    if (extras.length) {
+      // 辅助插件本地版本由副脚本写入 data 属性
+      const assistVer = el.getAttribute('data-assist-version') || '';
+      const assistPart = assistVer ? ('辅助插件：' + assistVer) : ('已检测到：' + extras.join('、'));
+      text += '；' + assistPart;
+    } else {
+      text += '（未检测到辅助插件）';
+    }
+    el.textContent = text;
+    el.style.color = 'var(--text-muted)';
+  }
+
+  // 给辅助插件扩展：registerChecker({ id, name, check: async () => result, localVersion? })
   function registerUpdateChecker(checker) {
     if (!checker || typeof checker.check !== 'function') return false;
     const id = String(checker.id || checker.name || '').trim();
@@ -12726,24 +12785,40 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const item = {
       id,
       name: checker.name || id,
-      check: checker.check
+      check: checker.check,
+      localVersion: checker.localVersion || ''
     };
     if (idx >= 0) __urpppUpdateCheckers[idx] = item;
     else __urpppUpdateCheckers.push(item);
+    try {
+      const el = document.getElementById('urppp-set-update-status');
+      if (el && item.localVersion && id === 'assist') {
+        el.setAttribute('data-assist-version', String(item.localVersion));
+      }
+    } catch (_) {}
+    try { refreshUpdateStatusHint(); } catch (_) {}
     return true;
   }
 
-  try {
-    window.__urpppUpdate = {
+  function publishUpdateApi() {
+    const api = {
       version: URPPP_VERSION,
       urls: URPPP_UPDATE,
       check: checkForUpdates,
       checkMain: checkMainUpdate,
       registerChecker: registerUpdateChecker,
       compareVersions,
-      parseUserscriptVersion
+      parseUserscriptVersion,
+      listCheckers: () => __urpppUpdateCheckers.slice()
     };
-  } catch (_) {}
+    try { window.__urpppUpdate = api; } catch (_) {}
+    // @grant 沙箱：副脚本读页面 window 时需要挂到 unsafeWindow
+    try {
+      if (typeof unsafeWindow !== 'undefined' && unsafeWindow) unsafeWindow.__urpppUpdate = api;
+    } catch (_) {}
+    return api;
+  }
+  publishUpdateApi();
 
   function injectNavbarThemeSwitch() {
     try {

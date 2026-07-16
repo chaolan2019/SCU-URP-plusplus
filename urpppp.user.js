@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SCU URP++教务系统辅助插件
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.2.7
+// @version      1.2.8
 // @description  URP++ 扩展：登录验证码识别 + 评教自动填写/到时自动保存 + 列表页全自动评教。设置挂到 URP++ 设置面板。
 // @author       Chao_Lan,Hanako
 // @license      MIT
@@ -16,6 +16,7 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_registerMenuCommand
+// @grant        unsafeWindow
 // @connect      *
 // @run-at       document-idle
 // ==/UserScript==
@@ -33,7 +34,7 @@
   'use strict';
 
   // 与脚本头 @version 保持同步
-  const URPPPP_VERSION = '1.2.7';
+  const URPPPP_VERSION = '1.2.8';
   const URPPPP_RAW_URL = 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js';
 
   // ===================== 公共工具 =====================
@@ -1417,8 +1418,10 @@
   function compareSemver(a, b) {
     // 优先复用主插件比较器
     try {
-      if (window.__urpppUpdate && typeof window.__urpppUpdate.compareVersions === 'function') {
-        return window.__urpppUpdate.compareVersions(a, b);
+      const api = (typeof unsafeWindow !== 'undefined' && unsafeWindow && unsafeWindow.__urpppUpdate)
+        || window.__urpppUpdate;
+      if (api && typeof api.compareVersions === 'function') {
+        return api.compareVersions(a, b);
       }
     } catch (_) {}
     const pa = String(a || '0').replace(/^v/i, '').split(/[.+\-]/).map((x) => (/^\d+$/.test(x) ? +x : x));
@@ -1450,13 +1453,30 @@
     };
   }
 
+  function getMainUpdateApi() {
+    // 主/副都有 @grant 沙箱：优先页面真实 window（unsafeWindow）
+    try {
+      if (typeof unsafeWindow !== 'undefined' && unsafeWindow && unsafeWindow.__urpppUpdate) {
+        return unsafeWindow.__urpppUpdate;
+      }
+    } catch (_) {}
+    try {
+      if (window.top && window.top !== window && window.top.__urpppUpdate) return window.top.__urpppUpdate;
+    } catch (_) {}
+    try {
+      if (window.__urpppUpdate) return window.__urpppUpdate;
+    } catch (_) {}
+    return null;
+  }
+
   function registerAssistUpdateChecker() {
     try {
-      const api = window.__urpppUpdate;
+      const api = getMainUpdateApi();
       if (!api || typeof api.registerChecker !== 'function') return false;
       return api.registerChecker({
         id: 'assist',
         name: '辅助插件',
+        localVersion: URPPPP_VERSION,
         check: checkAssistUpdate
       });
     } catch (_) {
@@ -1464,15 +1484,23 @@
     }
   }
 
-  // 主插件可能稍晚就绪：轮询注册几次
+  // 主插件可能稍晚就绪：轮询注册；打开设置时再补一次
   (function waitRegisterUpdate() {
     let tries = 0;
     const tick = () => {
       if (registerAssistUpdateChecker()) return;
       tries += 1;
-      if (tries < 40) setTimeout(tick, 250);
+      if (tries < 80) setTimeout(tick, 250);
     };
     tick();
+    document.addEventListener('click', (e) => {
+      const t = e.target;
+      if (!t || !t.closest) return;
+      if (t.closest('#urppp-nav-settings') || t.closest('#uc-settings') || t.closest('.urppp-nav-settings')) {
+        setTimeout(() => { try { registerAssistUpdateChecker(); } catch (_) {} }, 30);
+        setTimeout(() => { try { registerAssistUpdateChecker(); } catch (_) {} }, 200);
+      }
+    }, true);
   })();
 
   watchSettingsPanel();
