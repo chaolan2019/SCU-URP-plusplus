@@ -5262,13 +5262,15 @@
         gap: 10px !important;
       }
       #urppp-settings-panel .urppp-about-logo {
-        width: min(280px, 88%) !important;
+        width: min(320px, 92%) !important;
         max-width: 100% !important;
         height: auto !important;
         display: block !important;
-        border-radius: 14px !important;
+        border-radius: 0 !important;
         object-fit: contain !important;
         background: transparent !important;
+        image-rendering: pixelated !important;
+        image-rendering: crisp-edges !important;
       }
       #urppp-settings-panel .urppp-about-ver {
         margin: 4px 0 0 !important;
