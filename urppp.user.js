@@ -36,8 +36,8 @@
   const AUTO_UPDATE_KEY = 'urppp_auto_update_check_v1';
   const SKIN_KEY = 'urppp_skin_v1';
   const SKIN_CATALOG = [
-    { id: 'apple', name: 'Apple 风格', desc: '系统灰底、链接蓝、大圆角与轻阴影，默认精修方向。', ready: true },
-    { id: 'flat', name: '极简扁平', desc: '无阴影、硬边与纯色层次，冷硬清晰。', ready: false },
+    { id: 'apple', name: '类Apple风格', desc: '系统灰底、链接蓝、大圆角与轻阴影，默认精修方向。', ready: true },
+    { id: 'flat', name: '极简扁平', desc: '无阴影、硬边与纯色层次，冷硬清晰。', ready: true },
     { id: 'organic', name: '自然有机', desc: '奶油底与大地色，温暖大圆角。', ready: false },
     { id: 'brutal', name: '新野兽派', desc: '直角粗边与硬阴影，高对比冲击。', ready: false },
     { id: 'editorial', name: '编辑杂志', desc: '衬线标题与细线留白，安静阅读向。', ready: false },
@@ -462,8 +462,9 @@
         '--border': '#D2D2D7', '--border-focus': '#0071E3',
         '--input-bg': '#F5F5F7', '--primary': '#0071E3', '--primary-hover': '#0077ED',
         '--ring': 'rgba(0,113,227,0.28)',
-        '--shadow': '0 4px 12px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)',
+        '--shadow': '0 4px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)',
         '--radius': '18px', '--radius-sm': '12px',
+        '--border-w': '0px',
       },
       font: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif',
     },
@@ -972,6 +973,7 @@
         document.body.classList.toggle('urppp-theme-follow', isThemeFollowSystem());
       }
     } catch (_) {}
+    try { applySkinAttr(); } catch (_) {}
     try { syncNavbarThemeUI(); } catch (_) {}
     try { syncSettingsPanelUI(); } catch (_) {}
     try { scrubNoticeInlineBg(); } catch (_) {}
@@ -986,15 +988,164 @@
     const id = GM_getValue(SKIN_KEY, 'apple');
     return SKIN_CATALOG.some((s) => s.id === id) ? id : 'apple';
   }
+
+  /** 界面风格对形状/边框/阴影等 token 的覆盖（不改配色主题本身） */
+  function getSkinShapeOverrides(skinId) {
+    const id = skinId || getSkin();
+    if (id === 'flat') {
+      return {
+        '--radius': '0px',
+        '--radius-sm': '0px',
+        '--shadow': 'none',
+        '--border-w': '2px',
+        // flat 用主色/强对比边；具体色在 CSS 里再压一层
+      };
+    }
+    // apple / default：轻阴影、大圆角；卡片几乎无描边
+    return {
+      '--radius': '18px',
+      '--radius-sm': '12px',
+      '--shadow': '0 4px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)',
+      '--border-w': '0px',
+    };
+  }
+
+  function applySkinAttr() {
+    const id = getSkin();
+    try { document.documentElement.setAttribute('data-urppp-skin', id); } catch (_) {}
+    try {
+      if (document.body) document.body.setAttribute('data-urppp-skin', id);
+    } catch (_) {}
+    // 写入形状 token 到独立 style，避免被主题色整表覆盖冲掉语义
+    try {
+      const el = document.getElementById('urppp-skin-vars') || (() => {
+        const e = document.createElement('style');
+        e.id = 'urppp-skin-vars';
+        (document.head || document.documentElement).appendChild(e);
+        return e;
+      })();
+      const o = getSkinShapeOverrides(id);
+      let css = ':root, html[data-urppp-skin] {';
+      Object.keys(o).forEach((k) => { css += k + ':' + o[k] + ';'; });
+      css += '}';
+      // 皮肤级组件规则
+      if (id === 'apple') {
+        css += `
+html[data-urppp-skin="apple"] .page-content .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not(#billContainer):not([id$="_scroll"]),
+html[data-urppp-skin="apple"] #page-content-template .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not(#billContainer):not([id$="_scroll"]),
+html[data-urppp-skin="apple"] .page-content .profile-user-info,
+html[data-urppp-skin="apple"] .page-content .profile-user-info-striped,
+html[data-urppp-skin="apple"] html body .page-content .profile-user-info.setLabelWidth,
+html[data-urppp-skin="apple"] .modal-content,
+html[data-urppp-skin="apple"] .panel,
+html[data-urppp-skin="apple"] .well,
+html[data-urppp-skin="apple"] .infobox {
+  border-color: transparent !important;
+  border-width: 0 !important;
+  box-shadow: var(--shadow) !important;
+}
+html[data-urppp-skin="apple"] .page-content .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not(#billContainer):not([id$="_scroll"]),
+html[data-urppp-skin="apple"] #page-content-template .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not([id$="_scroll"]) {
+  border: none !important;
+  box-shadow: var(--shadow) !important;
+}
+/* 登录卡同理 */
+html[data-urppp-skin="apple"] #urppp-root .uc {
+  border: none !important;
+  box-shadow: var(--shadow) !important;
+}
+`;
+      } else if (id === 'flat') {
+        css += `
+html[data-urppp-skin="flat"] {
+  --radius: 0px;
+  --radius-sm: 0px;
+  --shadow: none;
+}
+html[data-urppp-skin="flat"] .page-content .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not(#billContainer):not([id$="_scroll"]),
+html[data-urppp-skin="flat"] #page-content-template .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not(#billContainer):not([id$="_scroll"]),
+html[data-urppp-skin="flat"] .page-content .profile-user-info,
+html[data-urppp-skin="flat"] .page-content .profile-user-info-striped,
+html[data-urppp-skin="flat"] html body .page-content .profile-user-info.setLabelWidth,
+html[data-urppp-skin="flat"] .modal-content,
+html[data-urppp-skin="flat"] .panel,
+html[data-urppp-skin="flat"] .well,
+html[data-urppp-skin="flat"] .infobox {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: 2px solid var(--text) !important;
+}
+html[data-urppp-skin="flat"] .btn,
+html[data-urppp-skin="flat"] .btn-primary,
+html[data-urppp-skin="flat"] .btn-info,
+html[data-urppp-skin="flat"] .btn-success,
+html[data-urppp-skin="flat"] .btn-warning,
+html[data-urppp-skin="flat"] .btn-danger,
+html[data-urppp-skin="flat"] .btn-default,
+html[data-urppp-skin="flat"] .btn-white,
+html[data-urppp-skin="flat"] #urppp-root .ubtn {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+html[data-urppp-skin="flat"] .btn-primary,
+html[data-urppp-skin="flat"] .btn-info {
+  border: 2px solid var(--text) !important;
+}
+html[data-urppp-skin="flat"] .btn-default,
+html[data-urppp-skin="flat"] .btn-white {
+  border: 2px solid var(--text) !important;
+  background: var(--surface) !important;
+}
+html[data-urppp-skin="flat"] #urppp-root .uc {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: 2px solid var(--text) !important;
+}
+html[data-urppp-skin="flat"] #urppp-root .ui,
+html[data-urppp-skin="flat"] input.form-control,
+html[data-urppp-skin="flat"] select.form-control,
+html[data-urppp-skin="flat"] textarea.form-control {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border-width: 2px !important;
+  border-color: var(--text) !important;
+}
+html[data-urppp-skin="flat"] #urppp-settings-panel,
+html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-scheme,
+html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-mode,
+html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-follow,
+html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-btn {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+html[data-urppp-skin="flat"] #urppp-settings-panel {
+  border: 2px solid var(--text) !important;
+}
+html[data-urppp-skin="flat"] table,
+html[data-urppp-skin="flat"] .table {
+  box-shadow: none !important;
+}
+`;
+      }
+      el.textContent = css;
+    } catch (_) {}
+  }
+
   function setSkin(id) {
     const hit = SKIN_CATALOG.find((s) => s.id === id && s.ready);
     if (!hit) return false;
     GM_setValue(SKIN_KEY, hit.id);
-    try { document.documentElement.setAttribute('data-urppp-skin', hit.id); } catch (_) {}
+    applySkinAttr();
+    // 刷新主题以带动依赖 radius/shadow 的内联与组件
+    try {
+      if (isThemeFollowSystem()) applyTheme(resolveFollowThemeName(), { system: true, skipPersist: true });
+      else applyTheme(getCurrent(), { skipPersist: true });
+    } catch (_) {
+      try { applySkinAttr(); } catch (__) {}
+    }
+    try { syncSettingsPanelUI(); } catch (_) {}
+    try { syncNavbarThemeUI(); } catch (_) {}
     return true;
-  }
-  function applySkinAttr() {
-    try { document.documentElement.setAttribute('data-urppp-skin', getSkin()); } catch (_) {}
   }
 
   function bindSystemThemeListener() {
@@ -1017,6 +1168,7 @@
     if (isThemeFollowSystem()) applyTheme(resolveFollowThemeName(), { system: true });
     else applyTheme(getCurrent());
   } catch (_) {}
+  try { applySkinAttr(); } catch (_) {}
   try { bindSystemThemeListener(); } catch (_) {}
 
   // ============================================================
@@ -5161,7 +5313,11 @@
         box-shadow: 0 10px 28px rgba(0,0,0,.08) !important;
       }
       #urppp-settings-panel .urppp-skin-card.is-active {
-        box-shadow: 0 0 0 2px var(--primary) !important;
+        box-shadow: 0 0 0 2px var(--primary), 0 10px 28px rgba(0,0,0,.08) !important;
+      }
+      html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-skin-card.is-active {
+        box-shadow: none !important;
+        outline: 2px solid var(--primary) !important;
       }
       #urppp-settings-panel .urppp-skin-name {
         font-size: 15px !important;
@@ -5202,11 +5358,11 @@
       }
       /* skin previews */
       #urppp-settings-panel .urppp-skin-card[data-skin="apple"] {
-        background: linear-gradient(160deg, #f5f5f7 0%, #ffffff 55%) !important;
+        background: #f5f5f7 !important;
         color: #1d1d1f !important;
-        border-color: #d2d2d7 !important;
+        border: none !important;
         border-radius: 18px !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,.06) !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.04) !important;
       }
       #urppp-settings-panel .urppp-skin-card[data-skin="apple"] .urppp-skin-apply:not(.is-current) {
         border-color: #0071e3 !important;
@@ -6047,9 +6203,9 @@
       html body .page-content .profile-user-info-striped.setLabelWidth,
       html body .page-content .self.profile-user-info.setLabelWidth {
         background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
+        border: none !important;
         border-radius: var(--radius) !important;
-        box-shadow: none !important;
+        box-shadow: var(--shadow) !important;
         overflow: hidden !important;
         margin: 0 0 16px !important;
         width: 100% !important;
@@ -6297,9 +6453,9 @@
       .dd,
       fieldset {
         background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
+        border: none !important;
         border-radius: var(--radius) !important;
-        box-shadow: none !important;
+        box-shadow: var(--shadow) !important;
         overflow: hidden !important;
       }
       .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not(#billContainer):not([id$="_scroll"]) {
@@ -7232,7 +7388,7 @@
       .page-content .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not(#billContainer):not([id$="_scroll"]),
       #page-content-template .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not(#billContainer):not([id$="_scroll"]) {
         background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
+        border: none !important;
         border-radius: var(--radius) !important;
         box-shadow: var(--shadow) !important;
         overflow: visible !important; /* Chosen 下拉 */
@@ -12826,7 +12982,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '  <div class="urppp-set-pane" data-pane="skin">',
       '    <section class="urppp-set-sec">',
       '      <h3>界面风格</h3>',
-      '      <p class="urppp-set-tip">在同一布局上切换视觉气质。当前仅 Apple 风格可用，其余开发中。</p>',
+      '      <p class="urppp-set-tip">在同一布局上切换视觉气质。已启用：类Apple风格、极简扁平。其余风格开发中。</p>',
       '      <div class="urppp-skin-list" id="urppp-skin-list"></div>',
       '    </section>',
       '  </div>',
