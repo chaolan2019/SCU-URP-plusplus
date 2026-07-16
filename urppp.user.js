@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SCU URP++教务系统美化
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.0.5
+// @version      1.0.6
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Chao_Lan,Hanako
 // @license      MIT
@@ -24,7 +24,7 @@
   'use strict';
 
   // 与脚本头 @version 保持同步
-  const URPPP_VERSION = '1.0.5';
+  const URPPP_VERSION = '1.0.6';
   const URPPP_UPDATE = {
     mainRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js',
     assistRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js',
@@ -12762,18 +12762,35 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         box-shadow:0 16px 40px rgba(15,23,42,.18);
         padding:14px 14px 12px;box-sizing:border-box;
         font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;
-        opacity:0;transform:translateY(12px);pointer-events:none;
-        transition:opacity .22s ease,transform .24s cubic-bezier(.22,1,.36,1);
+        opacity:0;transform:translateY(18px) scale(.96);
+        pointer-events:none;visibility:hidden;
+        transition:
+          opacity .28s cubic-bezier(.22,1,.36,1),
+          transform .34s cubic-bezier(.22,1,.36,1),
+          visibility 0s linear .34s;
+        will-change:opacity,transform;
       }
-      #urppp-update-toast.open{opacity:1;transform:none;pointer-events:auto}
-      #urppp-update-toast .uut-title{font-weight:700;font-size:14px;margin:0 0 4px}
+      #urppp-update-toast.open{
+        opacity:1;transform:translateY(0) scale(1);
+        pointer-events:auto;visibility:visible;
+        transition:
+          opacity .28s cubic-bezier(.22,1,.36,1),
+          transform .34s cubic-bezier(.22,1,.36,1),
+          visibility 0s linear 0s;
+      }
+      #urppp-update-toast.closing{
+        opacity:0;transform:translateY(14px) scale(.97);
+        pointer-events:none;visibility:visible;
+      }
+      #urppp-update-toast .uut-title{font-weight:700;font-size:14px;margin:0 0 4px;padding-right:28px}
       #urppp-update-toast .uut-sub{color:var(--text-muted,#64748b);font-size:12px;margin:0 0 10px}
       #urppp-update-toast .uut-actions{display:flex;gap:8px;flex-wrap:wrap}
       #urppp-update-toast .uut-btn{
         border:1px solid var(--border,#e2e8f0);background:var(--input-bg,#f8fafc);
         color:var(--text,#0f172a);border-radius:10px;padding:7px 10px;cursor:pointer;
-        font-size:12px;font-weight:600;
+        font-size:12px;font-weight:600;transition:transform .15s ease,opacity .15s ease;
       }
+      #urppp-update-toast .uut-btn:hover{transform:translateY(-1px)}
       #urppp-update-toast .uut-btn.primary{
         background:var(--primary,#b53434);border-color:var(--primary,#b53434);color:#fff;
       }
@@ -12782,17 +12799,26 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         position:absolute;top:8px;right:8px;width:28px;height:28px;border:none;
         background:transparent;color:var(--text-muted,#64748b);border-radius:8px;cursor:pointer;font-size:16px;
       }
+      #urppp-update-toast .uut-close:hover{background:var(--input-bg,#f8fafc);color:var(--text,#0f172a)}
       #urppp-update-changelog{
-        position:fixed;inset:0;z-index:14090;display:none;align-items:center;justify-content:center;
-        background:rgba(15,23,42,.42);padding:16px;box-sizing:border-box;
+        position:fixed;inset:0;z-index:14090;display:flex;align-items:center;justify-content:center;
+        background:rgba(15,23,42,0);padding:16px;box-sizing:border-box;
+        opacity:0;pointer-events:none;visibility:hidden;
+        transition:opacity .24s ease,background .24s ease,visibility 0s linear .24s;
       }
-      #urppp-update-changelog.open{display:flex}
+      #urppp-update-changelog.open{
+        opacity:1;pointer-events:auto;visibility:visible;background:rgba(15,23,42,.42);
+        transition:opacity .24s ease,background .24s ease,visibility 0s linear 0s;
+      }
       #urppp-update-changelog .uuc-panel{
         width:min(520px,100%);max-height:min(72vh,640px);overflow:auto;
         background:var(--surface,#fff);color:var(--text,#0f172a);
         border:1px solid var(--border,#e2e8f0);border-radius:14px;
         box-shadow:0 20px 50px rgba(15,23,42,.24);padding:16px;box-sizing:border-box;
+        transform:translateY(12px) scale(.97);opacity:.96;
+        transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .24s ease;
       }
+      #urppp-update-changelog.open .uuc-panel{transform:none;opacity:1}
       #urppp-update-changelog .uuc-head{
         display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;
       }
@@ -12801,8 +12827,40 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         white-space:pre-wrap;font-size:13px;line-height:1.55;color:var(--text,#0f172a);
       }
       #urppp-update-changelog .uuc-body a{color:var(--primary,#b53434)}
+      @media (prefers-reduced-motion: reduce) {
+        #urppp-update-toast,#urppp-update-toast.open,#urppp-update-toast.closing,
+        #urppp-update-changelog,#urppp-update-changelog.open,
+        #urppp-update-changelog .uuc-panel{transition:none!important;transform:none!important}
+      }
     `;
     document.documentElement.appendChild(st);
+  }
+
+  function hideUpdateToast(toast) {
+    const el = toast || document.getElementById('urppp-update-toast');
+    if (!el || !el.classList.contains('open')) {
+      if (el) {
+        el.classList.remove('open', 'closing');
+      }
+      return;
+    }
+    if (el.__closing) return;
+    el.__closing = true;
+    el.classList.add('closing');
+    el.classList.remove('open');
+    const done = () => {
+      el.classList.remove('closing');
+      el.__closing = false;
+      el.removeEventListener('transitionend', onEnd);
+    };
+    const onEnd = (e) => {
+      if (e && e.target !== el) return;
+      if (e && e.propertyName && e.propertyName !== 'opacity' && e.propertyName !== 'transform') return;
+      done();
+    };
+    el.addEventListener('transitionend', onEnd);
+    // 兜底：无 transition / 被打断时也能收干净
+    setTimeout(done, 380);
   }
 
   function openChangelogModal(title, bodyHtml) {
@@ -12828,7 +12886,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }
     wrap.querySelector('h3').textContent = title || '更新日志';
     wrap.querySelector('.uuc-body').innerHTML = bodyHtml || '暂无更新日志';
-    wrap.classList.add('open');
+    // 重触发入场
+    wrap.classList.remove('open');
+    void wrap.offsetWidth;
+    requestAnimationFrame(() => wrap.classList.add('open'));
   }
 
   function showUpdateToast(info) {
@@ -12846,14 +12907,14 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           <button type="button" class="uut-btn primary" data-act="go">去更新</button>
           <button type="button" class="uut-btn ghost" data-act="later">稍后</button>
         </div>`;
-      toast.querySelector('.uut-close').addEventListener('click', () => toast.classList.remove('open'));
+      toast.querySelector('.uut-close').addEventListener('click', () => hideUpdateToast(toast));
       toast.addEventListener('click', async (e) => {
         const btn = e.target && e.target.closest ? e.target.closest('[data-act]') : null;
         if (!btn) return;
         const act = btn.getAttribute('data-act');
         const pack = toast.__pack || {};
         if (act === 'later') {
-          toast.classList.remove('open');
+          hideUpdateToast(toast);
           return;
         }
         if (act === 'go') {
@@ -12888,25 +12949,25 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       document.documentElement.appendChild(toast);
     }
     toast.__pack = info || {};
-    toast.querySelector('.uut-title').textContent = '发现新版本 ' + (info.remote || '');
-    toast.querySelector('.uut-sub').textContent = '当前 ' + (info.local || '') + ' · 主插件可更新';
-    toast.classList.add('open');
+    toast.querySelector('.uut-title').textContent = '发现新版本 ' + (info && info.remote || '');
+    toast.querySelector('.uut-sub').textContent = '当前 ' + (info && info.local || '') + ' · 主插件可更新';
+    // 每次显示都重播入场动效
+    toast.__closing = false;
+    toast.classList.remove('open', 'closing');
+    void toast.offsetWidth;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => toast.classList.add('open'));
+    });
   }
 
   async function maybeAutoCheckUpdate() {
     if (!isAutoUpdateCheck()) return;
-    // 同页只跑一次
+    // 仅限制“同一次页面生命周期”不重复请求；刷新 / 重新进入会再检再弹
     if (window.__urpppAutoUpdateTried) return;
     window.__urpppAutoUpdateTried = true;
     try {
       const r = await checkMainUpdate();
       if (r && r.status === 'update') {
-        // 同一远程版本本会话只弹一次
-        const key = 'urppp_toast_shown_' + r.remote;
-        try {
-          if (sessionStorage.getItem(key) === '1') return;
-          sessionStorage.setItem(key, '1');
-        } catch (_) {}
         showUpdateToast(r);
       }
     } catch (e) {
