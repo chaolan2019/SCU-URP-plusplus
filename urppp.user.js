@@ -1010,6 +1010,17 @@
     };
   }
 
+
+  function urpppCardBorderValue() {
+    // 类Apple：卡片无描边；极简扁平：硬边；其它默认浅边
+    try {
+      const skin = getSkin();
+      if (skin === 'apple') return 'none';
+      if (skin === 'flat') return '2px solid var(--text)';
+    } catch (_) {}
+    return '1px solid var(--border)';
+  }
+
   function applySkinAttr() {
     const id = getSkin();
     try { document.documentElement.setAttribute('data-urppp-skin', id); } catch (_) {}
@@ -1053,6 +1064,29 @@ html[data-urppp-skin="apple"] #page-content-template .widget-box:not(#curriculum
 html[data-urppp-skin="apple"] #urppp-root .uc {
   border: none !important;
   box-shadow: var(--shadow) !important;
+}
+html[data-urppp-skin="apple"] .widget-box,
+html[data-urppp-skin="apple"] .panel,
+html[data-urppp-skin="apple"] .well,
+html[data-urppp-skin="apple"] .thumbnail,
+html[data-urppp-skin="apple"] .infobox,
+html[data-urppp-skin="apple"] .profile-user-info,
+html[data-urppp-skin="apple"] .profile-user-info-striped,
+html[data-urppp-skin="apple"] .modal-content,
+html[data-urppp-skin="apple"] fieldset {
+  border: none !important;
+  box-shadow: var(--shadow) !important;
+}
+html[data-urppp-skin="apple"] .page-content table,
+html[data-urppp-skin="apple"] .page-content .table,
+html[data-urppp-skin="apple"] .table-bordered {
+  border-color: rgba(0,0,0,0.06) !important;
+  box-shadow: none !important;
+}
+html[data-urppp-skin="apple"] .btn-default,
+html[data-urppp-skin="apple"] .btn-white {
+  border-color: transparent !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
 }
 `;
       } else if (id === 'flat') {
@@ -1770,7 +1804,7 @@ html[data-urppp-skin="flat"] .table {
       card.style.setProperty('padding', '0', 'important');
       card.style.setProperty('overflow', 'hidden', 'important');
       card.style.setProperty('background', 'var(--surface)', 'important');
-      card.style.setProperty('border', '1px solid var(--border)', 'important');
+      card.style.setProperty('border', urpppCardBorderValue(), 'important');
       card.style.setProperty('border-radius', '12px', 'important');
       card.style.setProperty('box-shadow', 'none', 'important');
     });
@@ -1857,7 +1891,7 @@ html[data-urppp-skin="flat"] .table {
       card.style.setProperty('background', 'var(--surface)', 'important');
       card.style.setProperty('border-radius', '12px', 'important');
       card.style.setProperty('overflow', 'hidden', 'important');
-      card.style.setProperty('border', '1px solid var(--border)', 'important');
+      card.style.setProperty('border', urpppCardBorderValue(), 'important');
       card.style.setProperty('box-shadow', 'none', 'important');
       card.style.setProperty('width', '100%', 'important');
       card.style.setProperty('max-width', '100%', 'important');
@@ -2372,7 +2406,7 @@ html[data-urppp-skin="flat"] .table {
       root.style.setProperty('float', 'none', 'important');
       root.style.setProperty('display', 'block', 'important');
       root.style.setProperty('background', 'var(--surface)', 'important');
-      root.style.setProperty('border', '1px solid var(--border)', 'important');
+      root.style.setProperty('border', urpppCardBorderValue(), 'important');
       root.style.setProperty('border-radius', '12px', 'important');
       root.style.setProperty('box-shadow', 'none', 'important');
       root.style.setProperty('margin', '0 0 16px 0', 'important');
@@ -2415,7 +2449,7 @@ html[data-urppp-skin="flat"] .table {
     }
     // 与 h4.header 同一套卡片语言：surface + 1px border + 12px 圆角
     root.style.setProperty('background', 'var(--surface)', 'important');
-    root.style.setProperty('border', '1px solid var(--border)', 'important');
+    root.style.setProperty('border', urpppCardBorderValue(), 'important');
     root.style.setProperty('border-radius', '12px', 'important');
     root.style.setProperty('box-shadow', 'none', 'important');
     root.style.setProperty('margin', '0 0 18px 0', 'important');
@@ -2961,7 +2995,7 @@ html[data-urppp-skin="flat"] .table {
         tabs.style.setProperty('padding', '8px 10px', 'important');
         tabs.style.setProperty('background', 'var(--surface)', 'important');
         tabs.style.setProperty('background-color', 'var(--surface)', 'important');
-        tabs.style.setProperty('border', '1px solid var(--border)', 'important');
+        tabs.style.setProperty('border', urpppCardBorderValue(), 'important');
         tabs.style.setProperty('border-radius', '12px', 'important');
         tabs.style.setProperty('box-sizing', 'border-box', 'important');
       }
@@ -3732,7 +3766,7 @@ html[data-urppp-skin="flat"] .table {
       if (treeBox) {
         treeBox.style.setProperty('width', '100%', 'important');
         treeBox.style.setProperty('margin', '0', 'important');
-        treeBox.style.setProperty('border', '1px solid var(--border)', 'important');
+        treeBox.style.setProperty('border', urpppCardBorderValue(), 'important');
         treeBox.style.setProperty('border-radius', '12px', 'important');
         treeBox.style.setProperty('overflow', 'hidden', 'important');
         treeBox.style.setProperty('background', 'var(--surface)', 'important');
@@ -12894,6 +12928,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         schemes.appendChild(card);
       });
     }
+
+    try { renderSkinCards(panel); } catch (e) { try { console.warn('[URP++] renderSkinCards', e); } catch (_) {} }
+    try {
+      const ver = panel.querySelector('.urppp-about-ver');
+      if (ver) ver.textContent = 'SCU URP++ v' + URPPP_VERSION;
+    } catch (_) {}
+    try { ensureAboutLogo(panel); } catch (_) {}
   }
 
   function openSettingsPanel() {
@@ -12924,6 +12965,22 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (mask) mask.classList.remove('open');
   }
 
+
+  const URPPP_ABOUT_LOGO_DATA = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAACSQAAAC0CAYAAACHK7BeAAAIfklEQVR42u3c0Y2DMBBAwecTJbkL6qUL98RVcD/RRXLITAWIrBcFPTHazDXnHbzoXGu4C9g/2D847+bZ/JgfsH/sH8yP+TE/OF/YP9g/7gJ8x3523sF5Z08/bgEAAAAAAAAAAJAgCQAAAAAAAAAASJAEAAAAAAAAAAAkSAIAAAAAAAAAAEiQBAAAAAAAAAAAJEgCAAAAAAAAAAASJAEAAAAAAAAAAAmSAAAAAAAAAAAAEiQBAAAAAAAAAAAJkgAAAAAAAAAAgARJAAAAAAAAAAAACZIAAAAAAAAAAIAESQAAAAAAAAAAQIIkAAAAAAAAAAAgQRIAAAAAAAAAAECCJAAAAAAAAAAAIEESAAAAAAAAAACQIAkAAAAAAAAAACBBEgAAAAAAAAAAkCAJAAAAAAAAAABIkAQAAAAAAAAAACRIAgAAAAAAAAAASJAEAAAAAAAAAAAkSAIAAAAAAAAAABIkAQAAAAAAAAAACZIAAAAAAAAAAAASJAEAAAAAAAAAAAmSAAAAAAAAAACABEkAAAAAAAAAAAAJkgAAAAAAAAAAgARJAAAAAAAAAABAgiQAAAAAAAAAACBBEgAAAAAAAAAAQIIkAAAAAAAAAAAgQRIAAAAAAAAAAPAMxzXn7Tb87VxruAvwHvaP/QMAAAD+v+f9j/kB82P/mB8AIF9IAgAAAAAAAAAASJAEAAAAAAAAAAAkSAIAAAAAAAAAABIkAQAAAAAAAAAACZIAAAAAAAAAAAASJAEAAAAAAAAAAAmSAAAAAAAAAACABEkAAAAAAAAAAAAJkgAAAAAAAAAAgARJAAAAAAAAAABAgiQAAAAAAAAAACBBEgAAAAAAAAAAQIIkAAAAAAAAAAAgQRIAAAAAAAAAAJAgCQAAAAAAAAAASJAEAAAAAAAAAACQIAkAAAAAAAAAAEiQBAAAAAAAAAAAJEgCAAAAAAAAAABIkAQAAAAAAAAAACRIAgAAAAAAAAAAEiQBAAAAAAAAAAAJkgAAAAAAAAAAABIkAQAAAAAAAAAACZIAAAAAAAAAAIAESQAAAAAAAAAAAAmSAAAAAAAAAACABEkAAAAAAAAAAECCJAAAAAAAAAAAIEESAAAAAAAAAABAgiQAAAAAAAAAACBBEgAAAAAAAAAAkCAJAAAAAAAAAACgEiQBAAAAAAAAAAAJkgAAAAAAAAAAgA0d51pjpwu65rxdD6/abZ4BAAAAeDbvD/O+Duwf+wfnC7+XfWh+8Hs57/lCEgAAAAAAAAAAkCAJAAAAAAAAAABIkAQAAAAAAAAAACRIAgAAAAAAAAAASJAEAAAAAAAAAAAkSAIAAAAAAAAAABIkAQAAAAAAAAAAVIIkAAAAAAAAAAAgQRIAAAAAAAAAAJAgCQAAAAAAAAAASJAEAAAAAAAAAACQIAkAAAAAAAAAAEiQBAAAAAAAAAAAJEgCAAAAAAAAAAASJAEAAAAAAAAAACRIAgAAAAAAAAAAEiQBAAAAAAAAAAAJkgAAAAAAAAAAABIkAQAAAAAAAAAACZIAAAAAAAAAAIAESQAAAAAAAAAAQIIkAAAAAAAAAACABEkAAAAAAAAAAECCJAAAAAAAAAAAIEESAAAAAAAAAABAgiQAAAAAAAAAACBBEgAAAAAAAAAAkCAJAAAAAAAAAABIkAQAAAAAAAAAAJAgCQAAAAAAAAAASJAEAAAAAAAAAAAkSAIAAAAAAAAAABIkAQAAAAAAAAAAJEgCAAAAAAAAAAASJAEAAAAAAAAAAI907HZB51rDz/I5rjlv12OeAQAAAL7Vbu9/vK/zvg77B3C+PN/B/Djv5AtJAAAAAAAAAABAgiQAAAAAAAAAAIAESQAAAAAAAAAAQIIkAAAAAAAAAAAgQRIAAAAAAAAAAJAgCQAAAAAAAAAAIEESAAAAAAAAAACQIAkAAAAAAAAAAEiQBAAAAAAAAAAAkCAJAAAAAAAAAABIkAQAAAAAAAAAACRIAgAAAAAAAAAAEiQBAAAAAAAAAAAkSAIAAAAAAAAAABIkAQAAAAAAAAAACZIAAAAAAAAAAIAESQAAAAAAAAAAAAmSAAAAAAAAAACABEkAAAAAAAAAAECCJAAAAAAAAAAAgARJAAAAAAAAAABAgiQAAAAAAAAAACBBEgAAAAAAAAAAkCAJAAAAAAAAAAAgQRIAAAAAAAAAAJAgCQAAAAAAAAAASJAEAAAAAAAAAACQIAkAAAAAAAAAAEiQBAAAAAAAAAAAJEgCAAAAAAAAAAASJAEAAAAAAAAAACRIAgAAAAAAAAAAEiQBAAAAAAAAAAAJkgAAAAAAAAAAAARJAAAAAAAAAADAvxnXnLfbwFOcaw13gVfZh9g/2D/YPwCeX3h+4bybZ/NjfsyP+QH4rP1sH4LzTr6QBAAAAAAAAAAAJEgCAAAAAAAAAABIkAQAAAAAAAAAACRIAgAAAAAAAAAAEiQBAAAAAAAAAAAJkgAAAAAAAAAAABIkAQAAAAAAAAAACZIAAAAAAAAAAIAESQAAAAAAAAAAAAmSAAAAAAAAAACABEkAAAAAAAAAAECCJAAAAAAAAAAAIEESAAAAAAAAAABAgiQAAAAAAAAAACBBEgAAAAAAAAAAkCAJAAAAAAAAAAAgQRIAAAAAAAAAAJAgCQAAAAAAAAAASJAEAAAAAAAAAAAkSAIAAAAAAAAAAEiQBAAAAAAAAAAAJEgCAAAAAAAAAAASJAEAAAAAAAAAAAiSAAAAAAAAAACABEkAAAAAAAAAAECCJAAAAAAAAAAAIEESAAAAAAAAAABAgiQAAAAAAAAAACBBEgAAAAAAAAAAkCAJAAAAAAAAAABIkAQAAAAAAAAAAJAgCQAAAAAAAAAASJAEAAAAAAAAAAAkSAIAAAAAAAAAAEiQBAAAAAAAAAAAvNEvT/CbGdNA7ngAAAAASUVORK5CYII=';
+  function ensureAboutLogo(panel) {
+    const img = panel && panel.querySelector ? panel.querySelector('#urppp-about-logo') : document.getElementById('urppp-about-logo');
+    if (!img) return;
+    // 教务页常拦外链图：直接用内嵌 data URI，不依赖 GitHub/CDN
+    if (img.getAttribute('src') !== URPPP_ABOUT_LOGO_DATA) {
+      img.setAttribute('src', URPPP_ABOUT_LOGO_DATA);
+    }
+    img.removeAttribute('referrerpolicy');
+    img.alt = 'SCU URP++';
+    img.style.maxWidth = '100%';
+    img.style.height = 'auto';
+    img.style.display = 'block';
+  }
+
   function ensureSettingsPanel() {
     if (document.getElementById('urppp-settings-panel')) return;
     try { applySkinAttr(); } catch (_) {}
@@ -12934,9 +12991,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     panel.id = 'urppp-settings-panel';
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', 'URP++ 设置');
-    // 关于页 Logo：优先 raw，失败回退 jsDelivr（同源缓存/拦截时更稳）
-    const logoRaw = 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/docs/scu-urppp-logo.png';
-    const logoCdn = 'https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/docs/scu-urppp-logo.png';
+    const logoRaw = URPPP_ABOUT_LOGO_DATA;
+    const logoCdn = URPPP_ABOUT_LOGO_DATA;
     panel.innerHTML = [
       '<div class="urppp-set-head">',
       '  <div class="urppp-set-title">设置</div>',
@@ -13028,6 +13084,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     panel.__urpppSwitchTab = switchTab;
 
     panel.querySelector('#urppp-set-close').addEventListener('click', closeSettingsPanel);
+    try { ensureAboutLogo(panel); } catch (_) {}
     const aboutLogo = panel.querySelector('#urppp-about-logo');
     if (aboutLogo && !aboutLogo.__urpppFallback) {
       aboutLogo.__urpppFallback = true;
@@ -13152,10 +13209,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   function renderSkinCards(panel) {
+    if (!panel) return;
     const list = panel.querySelector('#urppp-skin-list');
     if (!list) return;
     const cur = getSkin();
     list.innerHTML = '';
+    if (!SKIN_CATALOG || !SKIN_CATALOG.length) {
+      list.innerHTML = '<p class="urppp-set-tip">暂无可用风格</p>';
+      return;
+    }
     SKIN_CATALOG.forEach((skin) => {
       const card = document.createElement('div');
       card.className = 'urppp-skin-card' + (skin.id === cur ? ' is-active' : '');
