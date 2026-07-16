@@ -1091,7 +1091,16 @@
           // 顶栏清爽入口（文本按钮）
           'html[data-urppp-skin="flat"] #navbar a,html[data-urppp-skin="flat"] .navbar a.btn,html[data-urppp-skin="flat"] .ace-nav>li>a.btn,html[data-urppp-skin="flat"] #urppp-nav-theme + button,html[data-urppp-skin="flat"] button[title*="清爽"],html[data-urppp-skin="flat"] a[title*="清爽"]{border-radius:0!important;}',
           // 侧栏折叠图标按钮
-          'html[data-urppp-skin="flat"] .sidebar .sidebar-toggle,html[data-urppp-skin="flat"] .sidebar .nav-wrap + button,html[data-urppp-skin="flat"] #urppp-menus + button,html[data-urppp-skin="flat"] .urppp-sidebar-toggle,html[data-urppp-skin="flat"] button[title*="收起"],html[data-urppp-skin="flat"] button[title*="展开"]{border-radius:0!important;border:2px solid var(--text)!important;background:var(--surface)!important;}'
+          'html[data-urppp-skin="flat"] .sidebar .sidebar-toggle,html[data-urppp-skin="flat"] .sidebar .nav-wrap + button,html[data-urppp-skin="flat"] #urppp-menus + button,html[data-urppp-skin="flat"] .urppp-sidebar-toggle,html[data-urppp-skin="flat"] button[title*="收起"],html[data-urppp-skin="flat"] button[title*="展开"]{border-radius:0!important;border:2px solid var(--text)!important;background:var(--surface)!important;}',
+          // 红框漏网：搜索框、可申请 btn-app、课表日期块与工具条按钮（蓝框折叠钮不强制）
+          'html[data-urppp-skin="flat"] #form-search.nav-search .nav-search-input,html[data-urppp-skin="flat"] #search-input,html[data-urppp-skin="flat"] input.nav-search-input,html[data-urppp-skin="flat"] .nav-search .nav-search-input{border-radius:0!important;border:2px solid var(--text)!important;box-shadow:none!important;background:var(--surface)!important;color:var(--text)!important;}',
+          'html[data-urppp-skin="flat"] #form-search.nav-search .nav-search-input:focus,html[data-urppp-skin="flat"] #search-input:focus{box-shadow:none!important;border-color:var(--text)!important;outline:2px solid var(--primary)!important;outline-offset:0!important;}',
+          'html[data-urppp-skin="flat"] .btn-app,html[data-urppp-skin="flat"] .btn.btn-app,html[data-urppp-skin="flat"] a.btn-app,html[data-urppp-skin="flat"] button.btn-app,html[data-urppp-skin="flat"] .btn.btn-app.btn-info,html[data-urppp-skin="flat"] .btn.btn-app.btn-primary,html[data-urppp-skin="flat"] a.btn.btn-app.btn-info,html[data-urppp-skin="flat"] a.btn.btn-app.btn-primary,html[data-urppp-skin="flat"] button.btn.btn-app.btn-info{border-radius:0!important;border:2px solid var(--text)!important;box-shadow:none!important;background:var(--surface)!important;color:var(--text)!important;transform:none!important;}',
+          'html[data-urppp-skin="flat"] .btn-app:hover,html[data-urppp-skin="flat"] .btn.btn-app:hover,html[data-urppp-skin="flat"] a.btn-app:hover,html[data-urppp-skin="flat"] .btn.btn-app.btn-info:hover{background:var(--text)!important;color:var(--surface)!important;border-color:var(--text)!important;transform:none!important;box-shadow:none!important;}',
+          'html[data-urppp-skin="flat"] .btn-app:hover > .ace-icon,html[data-urppp-skin="flat"] .btn-app:hover > .fa,html[data-urppp-skin="flat"] .btn.btn-app:hover > .fa{color:var(--surface)!important;}',
+          'html[data-urppp-skin="flat"] #urppp-left .fc-toolbar .fc-center h2,html[data-urppp-skin="flat"] #urppp-left .fc-toolbar h2,html[data-urppp-skin="flat"] .fc .fc-toolbar h2,html[data-urppp-skin="flat"] .fc-toolbar h2{border-radius:0!important;border:2px solid var(--text)!important;box-shadow:none!important;background:var(--surface)!important;}',
+          'html[data-urppp-skin="flat"] .fc-button,html[data-urppp-skin="flat"] .fc-state-default,html[data-urppp-skin="flat"] .fc-button-group > *,html[data-urppp-skin="flat"] #urppp-left .fc-button,html[data-urppp-skin="flat"] #urppp-left .fc-state-default,html[data-urppp-skin="flat"] #urppp-left .fc-toolbar button,html[data-urppp-skin="flat"] #urppp-left .fc-toolbar .fc-button,html[data-urppp-skin="flat"] .fc-prev-button,html[data-urppp-skin="flat"] .fc-next-button,html[data-urppp-skin="flat"] .fc-today-button,html[data-urppp-skin="flat"] button.fc-button{border-radius:0!important;border:2px solid var(--text)!important;box-shadow:none!important;background:var(--surface)!important;color:var(--text)!important;}'
+
 
         ].join('');
       }
@@ -8972,7 +8981,7 @@
         background: var(--surface) !important;
         border: 1px solid var(--border) !important;
         color: var(--text) !important;
-        border-radius: var(--radius) !important;
+        border-radius: var(--radius-sm) !important;
         box-shadow: none !important;
         text-shadow: none !important;
       }
