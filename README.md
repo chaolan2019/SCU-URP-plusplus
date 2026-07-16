@@ -4,7 +4,7 @@
 
 | 脚本 | 文件 | 当前版本 |
 |------|------|----------|
-| 主脚本 | `urppp.user.js` | **1.0.3** |
+| 主脚本 | `urppp.user.js` | **1.0.4** |
 
 作者：`Chao_Lan, Hanako`
 
@@ -87,6 +87,7 @@ URP++/
 ├── README.md                  # 主脚本说明
 ├── README_.md                 # 辅助插件说明与风险声明
 ├── LICENSE                    # MIT 开源协议
+├── CHANGELOG.md               # 主脚本更新日志
 └── docs/
     ├── scu-urppp-logo.png     # 标题 Logo
     ├── Main-Page.jpg          # 效果：主站美化
@@ -123,6 +124,12 @@ URP++/
 ```bash
 node --check urppp.user.js
 ```
+
+---
+
+## 更新日志
+
+见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ---
 

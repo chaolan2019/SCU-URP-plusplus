@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SCU URP++教务系统美化
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.0.3
+// @version      1.0.4
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Chao_Lan,Hanako
 // @license      MIT
@@ -24,13 +24,16 @@
   'use strict';
 
   // 与脚本头 @version 保持同步
-  const URPPP_VERSION = '1.0.3';
+  const URPPP_VERSION = '1.0.4';
   const URPPP_UPDATE = {
     mainRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js',
     assistRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js',
+    changelogRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/CHANGELOG.md',
     repo: 'https://github.com/chaolan2019/SCU-URP-plusplus',
+    changelogPage: 'https://github.com/chaolan2019/SCU-URP-plusplus/blob/main/CHANGELOG.md',
     greasySearch: 'https://greasyfork.org/zh-CN/scripts?q=SCU+URP%2B%2B'
   };
+  const AUTO_UPDATE_KEY = 'urppp_auto_update_check_v1';
 
   // 最早阶段：最高优先级遮罩盖住未美化界面，完成后淡入
   GM_addStyle(`
@@ -849,6 +852,13 @@
   }
   function setCleanDefault(on) {
     GM_setValue(CLEAN_DEFAULT_KEY, !!on);
+    return !!on;
+  }
+  function isAutoUpdateCheck() {
+    try { return !!GM_getValue(AUTO_UPDATE_KEY, false); } catch (_) { return false; }
+  }
+  function setAutoUpdateCheck(on) {
+    GM_setValue(AUTO_UPDATE_KEY, !!on);
     return !!on;
   }
   // 清爽模式自动进入仅首页；其它业务页不自动弹出
@@ -12353,6 +12363,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       cleanDefBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
       cleanDefBtn.textContent = on ? '默认进入清爽模式：开' : '默认进入清爽模式：关';
     }
+    const autoUpBtn = panel.querySelector('#urppp-set-auto-update');
+    if (autoUpBtn) {
+      const on = isAutoUpdateCheck();
+      autoUpBtn.classList.toggle('ac', on);
+      autoUpBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      autoUpBtn.textContent = on ? '自动检测更新：开' : '自动检测更新：关';
+    }
     // 跟随系统时动态区仍可配置（浅色会用到）
     const dyn = panel.querySelector('#urppp-set-dynamic');
     if (dyn) dyn.style.opacity = '1';
@@ -12465,6 +12482,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '    <p class="urppp-set-tip" style="margin-top:8px">开启后按系统浅色/深色自动切换。浅色可选用下方动态配色，深色固定深邃暗。</p>',
       '    <button type="button" class="urppp-set-follow" id="urppp-set-clean-default" aria-pressed="false" style="margin-top:10px;width:100%">默认进入清爽模式：关</button>',
       '    <p class="urppp-set-tip" style="margin-top:8px">开启后，仅在首页自动打开清爽模式（其它页面不自动进入，可随时退出）。</p>',
+      '    <button type="button" class="urppp-set-follow" id="urppp-set-auto-update" aria-pressed="false" style="margin-top:10px;width:100%">自动检测更新：关</button>',
+      '    <p class="urppp-set-tip" style="margin-top:8px">开启后，每次进入教务页会静默检查主插件更新；有新版本时在左下角提示。</p>',
       '    <button type="button" class="urppp-set-btn" id="urppp-set-check-update" style="margin-top:12px;width:100%">检查更新</button>',
       '    <div id="urppp-set-update-status" class="urppp-set-tip" style="margin-top:8px"></div>',
       '  </section>',
@@ -12523,6 +12542,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (cleanDefBtn) {
       cleanDefBtn.addEventListener('click', () => {
         setCleanDefault(!isCleanDefault());
+        syncSettingsPanelUI();
+      });
+    }
+    const autoUpBtn = panel.querySelector('#urppp-set-auto-update');
+    if (autoUpBtn) {
+      autoUpBtn.addEventListener('click', () => {
+        setAutoUpdateCheck(!isAutoUpdateCheck());
         syncSettingsPanelUI();
       });
     }
@@ -12693,6 +12719,199 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     };
   }
 
+  // 从 CHANGELOG.md 截取 local(不含) → remote(含) 的更新日志
+  function extractChangelogRange(md, fromVer, toVer) {
+    const text = String(md || '').replace(/\r\n/g, '\n');
+    if (!text.trim()) return '';
+    // 支持 ## [1.0.4] 或 ## 1.0.4
+    const re = /^##\s*\[?v?([0-9]+(?:\.[0-9]+){0,3}[\w\-]*)\]?[^\n]*$/gim;
+    const hits = [];
+    let m;
+    while ((m = re.exec(text)) !== null) {
+      hits.push({ ver: m[1], index: m.index, headEnd: re.lastIndex });
+    }
+    if (!hits.length) return '';
+    // 段落结束到下一条 heading 或文末
+    for (let i = 0; i < hits.length; i++) {
+      const end = i + 1 < hits.length ? hits[i + 1].index : text.length;
+      hits[i].body = text.slice(hits[i].index, end).trim();
+    }
+    const parts = [];
+    for (const h of hits) {
+      // 取 <= toVer 且 > fromVer 的条目
+      if (compareVersions(h.ver, toVer) > 0) continue;
+      if (compareVersions(h.ver, fromVer) <= 0) continue;
+      parts.push(h.body);
+    }
+    return parts.join('\n\n').trim();
+  }
+
+  function ensureUpdateToastStyles() {
+    if (document.getElementById('urppp-update-toast-style')) return;
+    const st = document.createElement('style');
+    st.id = 'urppp-update-toast-style';
+    st.textContent = `
+      #urppp-update-toast{
+        position:fixed;left:16px;bottom:16px;z-index:14080;
+        width:min(360px,calc(100vw - 32px));
+        background:var(--surface,#fff);color:var(--text,#0f172a);
+        border:1px solid var(--border,#e2e8f0);border-radius:14px;
+        box-shadow:0 16px 40px rgba(15,23,42,.18);
+        padding:14px 14px 12px;box-sizing:border-box;
+        font:13px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;
+        opacity:0;transform:translateY(12px);pointer-events:none;
+        transition:opacity .22s ease,transform .24s cubic-bezier(.22,1,.36,1);
+      }
+      #urppp-update-toast.open{opacity:1;transform:none;pointer-events:auto}
+      #urppp-update-toast .uut-title{font-weight:700;font-size:14px;margin:0 0 4px}
+      #urppp-update-toast .uut-sub{color:var(--text-muted,#64748b);font-size:12px;margin:0 0 10px}
+      #urppp-update-toast .uut-actions{display:flex;gap:8px;flex-wrap:wrap}
+      #urppp-update-toast .uut-btn{
+        border:1px solid var(--border,#e2e8f0);background:var(--input-bg,#f8fafc);
+        color:var(--text,#0f172a);border-radius:10px;padding:7px 10px;cursor:pointer;
+        font-size:12px;font-weight:600;
+      }
+      #urppp-update-toast .uut-btn.primary{
+        background:var(--primary,#b53434);border-color:var(--primary,#b53434);color:#fff;
+      }
+      #urppp-update-toast .uut-btn.ghost{background:transparent}
+      #urppp-update-toast .uut-close{
+        position:absolute;top:8px;right:8px;width:28px;height:28px;border:none;
+        background:transparent;color:var(--text-muted,#64748b);border-radius:8px;cursor:pointer;font-size:16px;
+      }
+      #urppp-update-changelog{
+        position:fixed;inset:0;z-index:14090;display:none;align-items:center;justify-content:center;
+        background:rgba(15,23,42,.42);padding:16px;box-sizing:border-box;
+      }
+      #urppp-update-changelog.open{display:flex}
+      #urppp-update-changelog .uuc-panel{
+        width:min(520px,100%);max-height:min(72vh,640px);overflow:auto;
+        background:var(--surface,#fff);color:var(--text,#0f172a);
+        border:1px solid var(--border,#e2e8f0);border-radius:14px;
+        box-shadow:0 20px 50px rgba(15,23,42,.24);padding:16px;box-sizing:border-box;
+      }
+      #urppp-update-changelog .uuc-head{
+        display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px;
+      }
+      #urppp-update-changelog .uuc-head h3{margin:0;font-size:15px}
+      #urppp-update-changelog .uuc-body{
+        white-space:pre-wrap;font-size:13px;line-height:1.55;color:var(--text,#0f172a);
+      }
+      #urppp-update-changelog .uuc-body a{color:var(--primary,#b53434)}
+    `;
+    document.documentElement.appendChild(st);
+  }
+
+  function openChangelogModal(title, bodyHtml) {
+    ensureUpdateToastStyles();
+    let wrap = document.getElementById('urppp-update-changelog');
+    if (!wrap) {
+      wrap = document.createElement('div');
+      wrap.id = 'urppp-update-changelog';
+      wrap.innerHTML = `
+        <div class="uuc-panel" role="dialog" aria-label="更新日志">
+          <div class="uuc-head">
+            <h3></h3>
+            <button type="button" class="uut-btn ghost" data-close="1">关闭</button>
+          </div>
+          <div class="uuc-body"></div>
+        </div>`;
+      wrap.addEventListener('click', (e) => {
+        if (e.target === wrap || (e.target && e.target.getAttribute && e.target.getAttribute('data-close') === '1')) {
+          wrap.classList.remove('open');
+        }
+      });
+      document.documentElement.appendChild(wrap);
+    }
+    wrap.querySelector('h3').textContent = title || '更新日志';
+    wrap.querySelector('.uuc-body').innerHTML = bodyHtml || '暂无更新日志';
+    wrap.classList.add('open');
+  }
+
+  function showUpdateToast(info) {
+    ensureUpdateToastStyles();
+    let toast = document.getElementById('urppp-update-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'urppp-update-toast';
+      toast.innerHTML = `
+        <button type="button" class="uut-close" aria-label="关闭">×</button>
+        <div class="uut-title"></div>
+        <div class="uut-sub"></div>
+        <div class="uut-actions">
+          <button type="button" class="uut-btn" data-act="log">更新日志</button>
+          <button type="button" class="uut-btn primary" data-act="go">去更新</button>
+          <button type="button" class="uut-btn ghost" data-act="later">稍后</button>
+        </div>`;
+      toast.querySelector('.uut-close').addEventListener('click', () => toast.classList.remove('open'));
+      toast.addEventListener('click', async (e) => {
+        const btn = e.target && e.target.closest ? e.target.closest('[data-act]') : null;
+        if (!btn) return;
+        const act = btn.getAttribute('data-act');
+        const pack = toast.__pack || {};
+        if (act === 'later') {
+          toast.classList.remove('open');
+          return;
+        }
+        if (act === 'go') {
+          // 优先油猴安装/更新地址（@downloadURL / raw），新窗口打开便于 Tampermonkey 接管
+          const url = pack.updateUrl || URPPP_UPDATE.mainRaw;
+          try { window.open(url, '_blank', 'noopener,noreferrer'); } catch (_) { location.href = url; }
+          return;
+        }
+        if (act === 'log') {
+          btn.disabled = true;
+          btn.textContent = '加载中…';
+          try {
+            let md = pack.changelogMd;
+            if (!md) {
+              md = await fetchTextForUpdate(URPPP_UPDATE.changelogRaw);
+              pack.changelogMd = md;
+            }
+            const range = extractChangelogRange(md, pack.local, pack.remote);
+            const pretty = range
+              ? escapeHtml(range)
+              : ('未找到区间日志。可查看完整 <a href="' + URPPP_UPDATE.changelogPage + '" target="_blank" rel="noopener noreferrer">CHANGELOG</a>');
+            openChangelogModal('更新日志 ' + pack.local + ' → ' + pack.remote, pretty);
+          } catch (err) {
+            openChangelogModal('更新日志', '加载失败：' + escapeHtml(err && err.message || err) +
+              '<br><a href="' + URPPP_UPDATE.changelogPage + '" target="_blank" rel="noopener noreferrer">打开 GitHub CHANGELOG</a>');
+          } finally {
+            btn.disabled = false;
+            btn.textContent = '更新日志';
+          }
+        }
+      });
+      document.documentElement.appendChild(toast);
+    }
+    toast.__pack = info || {};
+    toast.querySelector('.uut-title').textContent = '发现新版本 ' + (info.remote || '');
+    toast.querySelector('.uut-sub').textContent = '当前 ' + (info.local || '') + ' · 主插件可更新';
+    toast.classList.add('open');
+  }
+
+  async function maybeAutoCheckUpdate() {
+    if (!isAutoUpdateCheck()) return;
+    // 同页只跑一次
+    if (window.__urpppAutoUpdateTried) return;
+    window.__urpppAutoUpdateTried = true;
+    try {
+      const r = await checkMainUpdate();
+      if (r && r.status === 'update') {
+        // 同一远程版本本会话只弹一次
+        const key = 'urppp_toast_shown_' + r.remote;
+        try {
+          if (sessionStorage.getItem(key) === '1') return;
+          sessionStorage.setItem(key, '1');
+        } catch (_) {}
+        showUpdateToast(r);
+      }
+    } catch (e) {
+      // 静默失败，不打扰
+      try { console.debug('[URP++] auto update check failed', e); } catch (_) {}
+    }
+  }
+
   async function checkForUpdates() {
     if (__urpppUpdateBusy) return;
     __urpppUpdateBusy = true;
@@ -12803,6 +13022,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       registerChecker: registerUpdateChecker,
       compareVersions,
       parseUserscriptVersion,
+      extractChangelogRange,
+      showUpdateToast,
+      maybeAutoCheckUpdate,
       listCheckers: () => __urpppUpdateCheckers.slice()
     };
     try { window.__urpppUpdate = api; } catch (_) {}
@@ -15345,10 +15567,11 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       { t: '空闲教室', i: 'room', a: 'room' },
       { t: '教学评估', i: 'eval', h: '/student/teachingEvaluation/newEvaluation/index' },
       { t: '培养方案', i: 'plan', h: '/student/integratedQuery/planCompletion/index' },
-      { t: '补办学生证', i: 'apply', h: '/student/application/index' },
-      { t: '免修申请', i: 'apply', h: '/student/application/index' },
-      { t: '替代课申请', i: 'apply', h: '/student/application/index' },
-      { t: '火车票优惠卡', i: 'apply', h: '/student/application/index' }
+      // 路径以首页 #personalApplication 真实 a[href] 为准
+      { t: '补办学生证', i: 'apply', h: '/student/personalManagement/individualApplication/routineWork/busSection/index?ywid=11082' },
+      { t: '免修申请', i: 'apply', h: '/student/personalManagement/individualApplication/exemptionApplication/index' },
+      { t: '替代课申请', i: 'apply', h: '/student/personalManagement/personalApplication/curriculumReplacement/index' },
+      { t: '火车票优惠卡', i: 'apply', h: '/student/personalManagement/individualApplication/routineWork/busSection/index?ywid=11083' }
     ];
     return `<div class="uc-services">${items.map((it) => `
       <button type="button" class="uc-svc" data-action="${it.a || ''}" data-href="${it.h || ''}">
@@ -16202,7 +16425,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
   global.urppp = {
-    version: '0.7.2',
+    version: URPPP_VERSION,
     showLogo(show) {
       const el = document.querySelector('#urppp-brand .ub-logo');
       if (el) el.classList.toggle('show', show);
@@ -16214,12 +16437,27 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       getCurrent,
       list: () => Object.entries(THEMES).map(([k, v]) => ({ name: k, displayName: v.name, current: k === getCurrent() })),
     },
+    update: {
+      check: checkForUpdates,
+      auto: maybeAutoCheckUpdate,
+      showToast: showUpdateToast
+    }
   };
 
+  // 自动检测更新：进入页面后延迟触发，避免抢首屏
+  function scheduleAutoUpdateCheck() {
+    setTimeout(() => { try { maybeAutoCheckUpdate(); } catch (_) {} }, 1800);
+  }
+
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => { init(); watchRouteChanges(); });
+    document.addEventListener('DOMContentLoaded', () => {
+      init();
+      watchRouteChanges();
+      scheduleAutoUpdateCheck();
+    });
   } else {
     init();
     watchRouteChanges();
+    scheduleAutoUpdateCheck();
   }
 })();
