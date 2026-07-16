@@ -1101,7 +1101,14 @@
           'html[data-urppp-skin="flat"] a.btn.btn-app.btn-info:hover .fa,html[data-urppp-skin="flat"] .btn-app:hover .fa,html[data-urppp-skin="flat"] .btn-app:hover .ace-icon{color:#fff!important;}',
           'html[data-urppp-skin="flat"] #urppp-left .fc-toolbar h2,html[data-urppp-skin="flat"] #urppp-left .fc .fc-toolbar h2,html[data-urppp-skin="flat"] #urppp-left h2.fc-center,html[data-urppp-skin="flat"] .fc-toolbar h2{border-radius:0!important;border:2px solid #000!important;box-shadow:none!important;background:#fff!important;color:#000!important;padding:6px 14px!important;}',
           'html.urppp-theme-dark[data-urppp-skin="flat"] #urppp-left .fc-toolbar h2,html.urppp-theme-dark[data-urppp-skin="flat"] .fc-toolbar h2{border-color:var(--text)!important;background:var(--surface)!important;color:var(--text)!important;}',
-          'html[data-urppp-skin="flat"] #urppp-left .fc-button,html[data-urppp-skin="flat"] #urppp-left button.fc-button,html[data-urppp-skin="flat"] #urppp-left .fc-state-default,html[data-urppp-skin="flat"] #urppp-left .fc-prev-button,html[data-urppp-skin="flat"] #urppp-left .fc-next-button,html[data-urppp-skin="flat"] #urppp-left .fc-today-button,html[data-urppp-skin="flat"] .fc .fc-button,html[data-urppp-skin="flat"] .fc button{border-radius:0!important;border:2px solid #000!important;box-shadow:none!important;background:#fff!important;color:#000!important;}'
+          'html[data-urppp-skin="flat"] #urppp-left .fc-button,html[data-urppp-skin="flat"] #urppp-left button.fc-button,html[data-urppp-skin="flat"] #urppp-left .fc-state-default,html[data-urppp-skin="flat"] #urppp-left .fc-prev-button,html[data-urppp-skin="flat"] #urppp-left .fc-next-button,html[data-urppp-skin="flat"] #urppp-left .fc-today-button,html[data-urppp-skin="flat"] .fc .fc-button,html[data-urppp-skin="flat"] .fc button{border-radius:0!important;border:2px solid #000!important;box-shadow:none!important;background:#fff!important;color:#000!important;}',
+          // 最终压过：dashboard btn-app / 搜索 / 卡片标题栏刷新（蓝框）
+          'html[data-urppp-skin="flat"] #urppp-dashboard .btn-app,html[data-urppp-skin="flat"] #urppp-dashboard a.btn-app,html[data-urppp-skin="flat"] #urppp-dashboard button.btn-app,html[data-urppp-skin="flat"] #urppp-dashboard a.btn.btn-app.btn-info,html[data-urppp-skin="flat"] #personalApplication .btn-app,html[data-urppp-skin="flat"] #personalApplication a.btn-app,html[data-urppp-skin="flat"] body #urppp-dashboard .btn.btn-app{border-radius:0!important;border:2px solid #000!important;background:#fff!important;color:#000!important;box-shadow:none!important;transform:none!important;}',
+          'html[data-urppp-skin="flat"] #urppp-dashboard .btn-app:hover,html[data-urppp-skin="flat"] #urppp-dashboard a.btn-app:hover,html[data-urppp-skin="flat"] #personalApplication .btn-app:hover{background:#000!important;color:#fff!important;border-color:#000!important;transform:none!important;box-shadow:none!important;}',
+          'html[data-urppp-skin="flat"] #urppp-dashboard .btn-app:hover .fa,html[data-urppp-skin="flat"] #urppp-dashboard .btn-app:hover .ace-icon,html[data-urppp-skin="flat"] #personalApplication .btn-app:hover .fa{color:#fff!important;}',
+          'html[data-urppp-skin="flat"] #form-search.nav-search input#search-input,html[data-urppp-skin="flat"] #form-search.nav-search input.nav-search-input,html[data-urppp-skin="flat"] input#search-input.nav-search-input{border-radius:0!important;border:2px solid #000!important;box-shadow:none!important;background:#fff!important;}',
+          'html[data-urppp-skin="flat"] .urppp-card-tools .widget-toolbar a,html[data-urppp-skin="flat"] .urppp-card-header .widget-toolbar a,html[data-urppp-skin="flat"] .urppp-card .widget-toolbar a,html[data-urppp-skin="flat"] #urppp-dashboard .widget-toolbar a,html[data-urppp-skin="flat"] #urppp-dashboard .urppp-card-tools a,html[data-urppp-skin="flat"] .widget-header .widget-toolbar a,html[data-urppp-skin="flat"] .widget-toolbar > a{border:none!important;box-shadow:none!important;background:transparent!important;border-radius:0!important;outline:none!important;}'
+
 ,
           // 红框漏网：搜索框、可申请 btn-app、课表日期块与工具条按钮（蓝框折叠钮不强制）
           'html[data-urppp-skin="flat"] #form-search.nav-search .nav-search-input,html[data-urppp-skin="flat"] #search-input,html[data-urppp-skin="flat"] input.nav-search-input,html[data-urppp-skin="flat"] .nav-search .nav-search-input{border-radius:0!important;border:2px solid var(--text)!important;box-shadow:none!important;background:var(--surface)!important;color:var(--text)!important;}',
@@ -8820,7 +8827,7 @@
         width: auto !important;
         height: auto !important;
       }
-      .btn {
+      .btn:not(.btn-app) {
         border-radius: 999px !important;
         font-weight: 500 !important;
         letter-spacing: -0.01em !important;
@@ -8834,7 +8841,7 @@
         transform: scale(0.98) !important;
         outline: none !important;
       }
-      .btn-primary, .btn-info {
+      .btn-primary:not(.btn-app), .btn-info:not(.btn-app) {
         background: var(--primary) !important;
         border-color: var(--primary) !important;
         color: #fff !important;
@@ -12575,7 +12582,7 @@ fo-striped.setLabelWidth,
         min-height: 92px !important;
         max-height: none !important;
         margin: 0 !important;
-        border-radius: 10px !important;
+        border-radius: var(--radius-sm) !important;
         background: var(--input-bg) !important;
         border: 1px solid var(--border) !important;
         color: var(--text) !important;
