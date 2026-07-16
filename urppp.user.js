@@ -1067,7 +1067,7 @@
           'html[data-urppp-skin="flat"] #urppp-clean-root .uc-lesson{border:1px solid color-mix(in srgb,var(--primary) 35%,var(--text))!important;}',
           // 按钮/输入矩形
           'html[data-urppp-skin="flat"] .btn,html[data-urppp-skin="flat"] .btn-default,html[data-urppp-skin="flat"] .btn-white,html[data-urppp-skin="flat"] .btn-primary,html[data-urppp-skin="flat"] .btn-info,html[data-urppp-skin="flat"] .btn-success,html[data-urppp-skin="flat"] .btn-warning,html[data-urppp-skin="flat"] .btn-danger,html[data-urppp-skin="flat"] .btn-purple,html[data-urppp-skin="flat"] .btn-app,html[data-urppp-skin="flat"] a.btn,html[data-urppp-skin="flat"] button.btn,html[data-urppp-skin="flat"] input.btn,html[data-urppp-skin="flat"] .btn-group>.btn,html[data-urppp-skin="flat"] .btn-xs,html[data-urppp-skin="flat"] .btn-sm,html[data-urppp-skin="flat"] .btn-minier,html[data-urppp-skin="flat"] #urppp-root .ubtn,html[data-urppp-skin="flat"] #urppp-root .ut button,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-btn,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-mode,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-follow,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-scheme,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-tab,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-close,html[data-urppp-skin="flat"] #urppp-nav-theme .urppp-nav-settings,html[data-urppp-skin="flat"] #uc-settings,html[data-urppp-skin="flat"] #uc-exit,html[data-urppp-skin="flat"] #uc-refresh,html[data-urppp-skin="flat"] #urppp-clean-entry,html[data-urppp-skin="flat"] button.urppp-clean-entry,html[data-urppp-skin="flat"] .urppp-clean-entry,html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn,html[data-urppp-skin="flat"] #urppp-clean-root .uc-top-actions .uc-btn,html[data-urppp-skin="flat"] #urppp-clean-root .uc-tabbar button,html[data-urppp-skin="flat"] #urppp-clean-root button.uc-btn,html[data-urppp-skin="flat"] .chosen-container-single .chosen-single,html[data-urppp-skin="flat"] .chosen-container-multi .chosen-choices,html[data-urppp-skin="flat"] .form-control,html[data-urppp-skin="flat"] input[type="text"],html[data-urppp-skin="flat"] input[type="password"],html[data-urppp-skin="flat"] input[type="number"],html[data-urppp-skin="flat"] input[type="search"],html[data-urppp-skin="flat"] select,html[data-urppp-skin="flat"] textarea,html[data-urppp-skin="flat"] #urppp-root .ui{border-radius:0!important;box-shadow:none!important;border:2px solid var(--text)!important;}',
-          'html[data-urppp-skin="flat"] #navbar button:not(.urppp-nav-dot),html[data-urppp-skin="flat"] .navbar button:not(.urppp-nav-dot),html[data-urppp-skin="flat"] #urppp-nav-theme button:not(.urppp-nav-dot),html[data-urppp-skin="flat"] #urppp-nav-theme .urppp-nav-settings{border-radius:0!important;box-shadow:none!important;border:2px solid var(--text)!important;background:var(--surface)!important;color:var(--text)!important;}',
+          'html[data-urppp-skin="flat"] #navbar button:not(.urppp-nav-dot),html[data-urppp-skin="flat"] .navbar button:not(.urppp-nav-dot),html[data-urppp-skin="flat"] #urppp-nav-theme button:not(.urppp-nav-dot),html[data-urppp-skin="flat"] #urppp-nav-theme .urppp-nav-settings,html[data-urppp-skin="flat"] #urppp-nav-clean{border-radius:0!important;box-shadow:none!important;border:2px solid var(--text)!important;background:var(--surface)!important;color:var(--text)!important;}',
           'html[data-urppp-skin="flat"] .btn-primary,html[data-urppp-skin="flat"] .btn-info,html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn.primary,html[data-urppp-skin="flat"] #urppp-root .ubtn{background:var(--primary)!important;color:#fff!important;border:2px solid var(--text)!important;}',
           'html[data-urppp-skin="flat"] .btn-default,html[data-urppp-skin="flat"] .btn-white,html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn:not(.primary){background:var(--surface)!important;color:var(--text)!important;border:2px solid var(--text)!important;}',
           'html[data-urppp-skin="flat"] .btn:hover,html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn:hover{transform:none!important;box-shadow:none!important;}',
@@ -1077,7 +1077,22 @@
           'html[data-urppp-skin="flat"] .nav-tabs>li>a,html[data-urppp-skin="flat"] .nav-tabs,html[data-urppp-skin="flat"] .urppp-nav-link,html[data-urppp-skin="flat"] .urppp-nav-item{border-radius:0!important;}',
           'html[data-urppp-skin="flat"] #urppp-clean-root .uc-card:hover,html[data-urppp-skin="flat"] #urppp-clean-root .uc-svc:hover,html[data-urppp-skin="flat"] #urppp-clean-root .uc-lesson:hover,html[data-urppp-skin="flat"] .urppp-stat-card:hover{transform:none!important;box-shadow:none!important;}',
           // 主题点保持圆形
-          'html[data-urppp-skin="flat"] .urppp-nav-dot,html[data-urppp-skin="flat"] #urppp-nav-theme .urppp-nav-dot,html[data-urppp-skin="flat"] #urppp-clean-root .uc-top-theme .urppp-nav-dot,html[data-urppp-skin="flat"] .urppp-set-swatch,html[data-urppp-skin="flat"] .nav-user-photo,html[data-urppp-skin="flat"] #urppp-dots span{border-radius:50%!important;border-width:2px!important;box-shadow:none!important;}'
+          'html[data-urppp-skin="flat"] .urppp-nav-dot,html[data-urppp-skin="flat"] #urppp-nav-theme .urppp-nav-dot,html[data-urppp-skin="flat"] #urppp-clean-root .uc-top-theme .urppp-nav-dot,html[data-urppp-skin="flat"] .urppp-set-swatch,html[data-urppp-skin="flat"] .nav-user-photo,html[data-urppp-skin="flat"] #urppp-dots span{border-radius:50%!important;border-width:2px!important;box-shadow:none!important;}',
+          // 首页/清爽 内层卡片与漏网按钮：外框加粗加黑
+          'html[data-urppp-skin="flat"] .urppp-card,html[data-urppp-skin="flat"] .urppp-card-header,html[data-urppp-skin="flat"] #urppp-dashboard .urppp-card,html[data-urppp-skin="flat"] #urppp-left .fc-toolbar .fc-center h2,html[data-urppp-skin="flat"] #urppp-left .fc-toolbar h2,html[data-urppp-skin="flat"] #urppp-clean-root .uc-score-pane,html[data-urppp-skin="flat"] #urppp-clean-root #uc-score-wrap,html[data-urppp-skin="flat"] #urppp-clean-root .uc-score-grid > *,html[data-urppp-skin="flat"] #urppp-clean-root .uc-metric,html[data-urppp-skin="flat"] #urppp-clean-root .uc-profile,html[data-urppp-skin="flat"] #urppp-clean-root .uc-bd > div,html[data-urppp-skin="flat"] #urppp-clean-root .uc-hd{border-radius:0!important;box-shadow:none!important;}',
+          'html[data-urppp-skin="flat"] .urppp-card,html[data-urppp-skin="flat"] #urppp-dashboard .urppp-card,html[data-urppp-skin="flat"] #urppp-left .fc-toolbar .fc-center h2,html[data-urppp-skin="flat"] #urppp-left .fc-toolbar h2,html[data-urppp-skin="flat"] #urppp-clean-root .uc-score-pane,html[data-urppp-skin="flat"] #urppp-clean-root #uc-score-wrap{border:2px solid var(--text)!important;background:var(--surface)!important;}',
+          // 成绩总览小卡（全部及格/方案）强制 2px 黑框
+          'html[data-urppp-skin="flat"] #urppp-clean-root .uc-score-pane,html[data-urppp-skin="flat"] #urppp-clean-root [data-score]{border:2px solid var(--text)!important;border-radius:0!important;box-shadow:none!important;}',
+          // 首页「开放的可申请」等可能是 .infobox / 自定义卡
+          'html[data-urppp-skin="flat"] .infobox,html[data-urppp-skin="flat"] .infobox-container .infobox,html[data-urppp-skin="flat"] .page-content .infobox,html[data-urppp-skin="flat"] #urppp-dashboard .infobox{border:2px solid var(--text)!important;border-radius:0!important;box-shadow:none!important;}',
+          // 漏网按钮：侧栏折叠、菜单切换、顶栏清爽、header 操作钮、分页
+          'html[data-urppp-skin="flat"] #menu-toggler,html[data-urppp-skin="flat"] .menu-toggler,html[data-urppp-skin="flat"] .navbar-toggle,html[data-urppp-skin="flat"] .sidebar-toggle,html[data-urppp-skin="flat"] .sidebar-collapse,html[data-urppp-skin="flat"] .sidebar-expand,html[data-urppp-skin="flat"] button.menu-toggler,html[data-urppp-skin="flat"] .ace-nav>li>a,html[data-urppp-skin="flat"] .navbar .btn,html[data-urppp-skin="flat"] .navbar button,html[data-urppp-skin="flat"] .header .right_top_oper .btn,html[data-urppp-skin="flat"] .header .right_top_oper a,html[data-urppp-skin="flat"] h4.header .right_top_oper .btn,html[data-urppp-skin="flat"] h4.header .right_top_oper a,html[data-urppp-skin="flat"] .pagination>li>a,html[data-urppp-skin="flat"] .pagination>li>span,html[data-urppp-skin="flat"] .pagebar a,html[data-urppp-skin="flat"] .pagebar button,html[data-urppp-skin="flat"] .urppp-pagebar a,html[data-urppp-skin="flat"] .urppp-pagebar button,html[data-urppp-skin="flat"] .widget-toolbar a,html[data-urppp-skin="flat"] .widget-toolbar button,html[data-urppp-skin="flat"] a.btn-link,html[data-urppp-skin="flat"] .btn-link{border-radius:0!important;box-shadow:none!important;}',
+          'html[data-urppp-skin="flat"] #menu-toggler,html[data-urppp-skin="flat"] .menu-toggler,html[data-urppp-skin="flat"] .navbar-toggle,html[data-urppp-skin="flat"] .header .right_top_oper .btn,html[data-urppp-skin="flat"] .header .right_top_oper a.btn,html[data-urppp-skin="flat"] h4.header .right_top_oper .btn,html[data-urppp-skin="flat"] .pagination>li>a,html[data-urppp-skin="flat"] .pagination>li>span,html[data-urppp-skin="flat"] .widget-toolbar a,html[data-urppp-skin="flat"] .widget-toolbar button{border:2px solid var(--text)!important;background:var(--surface)!important;color:var(--text)!important;}',
+          // 顶栏清爽入口（文本按钮）
+          'html[data-urppp-skin="flat"] #navbar a,html[data-urppp-skin="flat"] .navbar a.btn,html[data-urppp-skin="flat"] .ace-nav>li>a.btn,html[data-urppp-skin="flat"] #urppp-nav-theme + button,html[data-urppp-skin="flat"] button[title*="清爽"],html[data-urppp-skin="flat"] a[title*="清爽"]{border-radius:0!important;}',
+          // 侧栏折叠图标按钮
+          'html[data-urppp-skin="flat"] .sidebar .sidebar-toggle,html[data-urppp-skin="flat"] .sidebar .nav-wrap + button,html[data-urppp-skin="flat"] #urppp-menus + button,html[data-urppp-skin="flat"] .urppp-sidebar-toggle,html[data-urppp-skin="flat"] button[title*="收起"],html[data-urppp-skin="flat"] button[title*="展开"]{border-radius:0!important;border:2px solid var(--text)!important;background:var(--surface)!important;}'
+
         ].join('');
       }
       el.textContent = css;
@@ -13191,6 +13206,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         }
         if (setSkin(skin.id)) {
           syncSettingsPanelUI();
+          try { if (window.__urpppCleanMode && window.__urpppCleanMode.inject) window.__urpppCleanMode.inject(); } catch (_) {}
         }
       });
       card.innerHTML = [
@@ -17057,11 +17073,17 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openCleanMode(false); });
         host.appendChild(btn);
       }
+      const skin = (typeof getSkin === 'function' ? getSkin() : 'apple');
+      const isFlat = skin === 'flat';
       Object.entries({
         display: 'inline-flex', 'align-items': 'center', height: '28px', 'min-height': '28px',
-        padding: '0 10px', border: '1px solid var(--border)', 'border-radius': '8px',
-        background: 'var(--input-bg)', color: 'var(--text)', 'font-size': '12px', gap: '6px',
-        width: 'auto', 'box-shadow': 'none', margin: '0 0 0 8px', float: 'none'
+        padding: '0 10px',
+        border: isFlat ? '2px solid var(--text)' : '1px solid transparent',
+        'border-radius': isFlat ? '0' : '999px',
+        background: isFlat ? 'var(--surface)' : 'var(--input-bg)',
+        color: 'var(--text)', 'font-size': '12px', gap: '6px',
+        width: 'auto', 'box-shadow': isFlat ? 'none' : '0 1px 2px rgba(0,0,0,.05)',
+        margin: '0 0 0 8px', float: 'none'
       }).forEach(([k, v]) => btn.style.setProperty(k, v, 'important'));
     } catch (e) {
       console.warn('[URP++] clean entry', e);
