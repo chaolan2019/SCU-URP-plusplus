@@ -12762,16 +12762,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   function refreshUpdateStatusHint() {
     const el = document.getElementById('urppp-set-update-status');
     if (!el || el.dataset.locked === '1') return;
-    const extras = (__urpppUpdateCheckers || []).map((c) => c && (c.name || c.id)).filter(Boolean);
+    // 主插件只展示自己；辅助版本仅在副脚本主动注册后追加，不写“未检测到”
     let text = '当前主插件：' + URPPP_VERSION;
-    if (extras.length) {
-      // 辅助插件本地版本由副脚本写入 data 属性
-      const assistVer = el.getAttribute('data-assist-version') || '';
-      const assistPart = assistVer ? ('辅助插件：' + assistVer) : ('已检测到：' + extras.join('、'));
-      text += '；' + assistPart;
-    } else {
-      text += '（未检测到辅助插件）';
-    }
+    const assistVer = el.getAttribute('data-assist-version') || '';
+    if (assistVer) text += '；辅助插件：' + assistVer;
     el.textContent = text;
     el.style.color = 'var(--text-muted)';
   }
