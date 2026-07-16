@@ -20,13 +20,21 @@
 
 ![主站美化](./docs/Main-Page.jpg)
 
-### 清爽模式（桌面）
+### 清爽模式 · 类Apple（桌面）
 
-![清爽模式桌面](./docs/Clean-Mode.jpg)
+![清爽模式类Apple](./docs/Clean-Mode.jpg)
+
+### 清爽模式 · 极简扁平（桌面）
+
+![清爽模式极简扁平](./docs/Clean-Mode-Flat.jpg)
+
+### 清爽模式 · 自然有机（桌面）
+
+![清爽模式自然有机](./docs/Clean-Mode-Organic.jpg)
 
 ### 清爽模式（手机）
 
-![清爽模式手机](./docs/Clean-Mode-Mobile.png)
+![清爽模式手机](./docs/Clean-Mode-Mobile.jpg)
 
 ---
 
@@ -101,11 +109,13 @@ URP++/
 ├── LICENSE                    # MIT 开源协议
 ├── CHANGELOG.md               # 主脚本更新日志
 └── docs/
-    ├── scu-urppp-logo.png     # 标题 Logo
-    ├── icon.png               # 油猴脚本图标
-    ├── Main-Page.jpg          # 效果：主站美化
-    ├── Clean-Mode.jpg         # 效果：清爽模式桌面
-    └── Clean-Mode-Mobile.png  # 效果：清爽模式手机
+    ├── scu-urppp-logo.png       # 标题 Logo
+    ├── icon.png                 # 油猴脚本图标
+    ├── Main-Page.jpg            # 效果：主站美化
+    ├── Clean-Mode.jpg           # 效果：清爽 · 类Apple
+    ├── Clean-Mode-Flat.jpg      # 效果：清爽 · 极简扁平
+    ├── Clean-Mode-Organic.jpg   # 效果：清爽 · 自然有机
+    └── Clean-Mode-Mobile.jpg    # 效果：清爽 · 手机
 ```
 
 ---
