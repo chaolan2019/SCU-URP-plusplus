@@ -1040,255 +1040,45 @@
       css += '}';
 
       if (id === 'apple') {
-        // 类Apple：卡片/按钮几乎无描边，只靠轻阴影分层；清爽模式同步
-        css += `
-html[data-urppp-skin="apple"] {
-  --shadow: 0 6px 20px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04);
-  --border: rgba(0,0,0,0.04);
-}
-html[data-urppp-skin="apple"].urppp-theme-dark,
-html.urppp-theme-dark[data-urppp-skin="apple"] {
-  --shadow: 0 10px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04);
-  --border: rgba(255,255,255,0.06);
-}
-html[data-urppp-skin="apple"] .widget-box,
-html[data-urppp-skin="apple"] .widget-box.transparent,
-html[data-urppp-skin="apple"] .panel,
-html[data-urppp-skin="apple"] .panel-default,
-html[data-urppp-skin="apple"] .well,
-html[data-urppp-skin="apple"] .thumbnail,
-html[data-urppp-skin="apple"] .infobox,
-html[data-urppp-skin="apple"] .profile-user-info,
-html[data-urppp-skin="apple"] .profile-user-info-striped,
-html[data-urppp-skin="apple"] .modal-content,
-html[data-urppp-skin="apple"] fieldset,
-html[data-urppp-skin="apple"] .urppp-stat-card,
-html[data-urppp-skin="apple"] .urppp-db-card,
-html[data-urppp-skin="apple"] .urppp-db-panel,
-html[data-urppp-skin="apple"] #urppp-dashboard .widget-box,
-html[data-urppp-skin="apple"] #urppp-root .uc,
-html[data-urppp-skin="apple"] #urppp-clean-root .uc-card,
-html[data-urppp-skin="apple"] #urppp-clean-root .uc-modal,
-html[data-urppp-skin="apple"] #urppp-clean-root .uc-top,
-html[data-urppp-skin="apple"] #urppp-clean-root .uc-tabbar {
-  border: none !important;
-  border-color: transparent !important;
-  box-shadow: var(--shadow) !important;
-}
-html[data-urppp-skin="apple"] .page-content .widget-box,
-html[data-urppp-skin="apple"] #page-content-template .widget-box,
-html[data-urppp-skin="apple"] html body .page-content .profile-user-info.setLabelWidth {
-  border: none !important;
-  box-shadow: var(--shadow) !important;
-}
-html[data-urppp-skin="apple"] .btn,
-html[data-urppp-skin="apple"] .btn-default,
-html[data-urppp-skin="apple"] .btn-white,
-html[data-urppp-skin="apple"] .btn-primary,
-html[data-urppp-skin="apple"] .btn-info,
-html[data-urppp-skin="apple"] .btn-success,
-html[data-urppp-skin="apple"] .btn-warning,
-html[data-urppp-skin="apple"] .btn-danger,
-html[data-urppp-skin="apple"] a.btn,
-html[data-urppp-skin="apple"] #urppp-clean-root .uc-btn {
-  border-color: transparent !important;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
-}
-html[data-urppp-skin="apple"] .btn-primary,
-html[data-urppp-skin="apple"] .btn-info,
-html[data-urppp-skin="apple"] #urppp-clean-root .uc-btn.primary {
-  border: none !important;
-}
-html[data-urppp-skin="apple"] .table,
-html[data-urppp-skin="apple"] table,
-html[data-urppp-skin="apple"] .table-bordered,
-html[data-urppp-skin="apple"] .table-bordered > thead > tr > th,
-html[data-urppp-skin="apple"] .table-bordered > tbody > tr > td {
-  border-color: rgba(0,0,0,0.05) !important;
-}
-html[data-urppp-skin="apple"].urppp-theme-dark .table,
-html[data-urppp-skin="apple"].urppp-theme-dark .table-bordered,
-html[data-urppp-skin="apple"].urppp-theme-dark .table-bordered > thead > tr > th,
-html[data-urppp-skin="apple"].urppp-theme-dark .table-bordered > tbody > tr > td {
-  border-color: rgba(255,255,255,0.06) !important;
-}
-html[data-urppp-skin="apple"] .nav-tabs > li > a,
-html[data-urppp-skin="apple"] .nav-tabs {
-  border-color: transparent !important;
-}
-html[data-urppp-skin="apple"] .urppp-nav-link {
-  border: none !important;
-}
-html[data-urppp-skin="apple"] #urppp-clean-root .uc-lesson,
-html[data-urppp-skin="apple"] #urppp-clean-root .uc-grid-cell,
-html[data-urppp-skin="apple"] #urppp-clean-root .uc-svc {
-  border-color: transparent !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
-}
-`;
+        css += [
+          'html[data-urppp-skin="apple"]{--shadow:0 6px 20px rgba(0,0,0,.07),0 1px 3px rgba(0,0,0,.04);--border:rgba(0,0,0,.04);}',
+          'html[data-urppp-skin="apple"].urppp-theme-dark,html.urppp-theme-dark[data-urppp-skin="apple"]{--shadow:0 10px 28px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.04);--border:rgba(255,255,255,.06);}',
+          'html[data-urppp-skin="apple"] .widget-box,html[data-urppp-skin="apple"] .widget-box.transparent,html[data-urppp-skin="apple"] .panel,html[data-urppp-skin="apple"] .panel-default,html[data-urppp-skin="apple"] .well,html[data-urppp-skin="apple"] .thumbnail,html[data-urppp-skin="apple"] .infobox,html[data-urppp-skin="apple"] .profile-user-info,html[data-urppp-skin="apple"] .profile-user-info-striped,html[data-urppp-skin="apple"] .modal-content,html[data-urppp-skin="apple"] fieldset,html[data-urppp-skin="apple"] .urppp-stat-card,html[data-urppp-skin="apple"] .urppp-db-card,html[data-urppp-skin="apple"] .urppp-db-panel,html[data-urppp-skin="apple"] #urppp-dashboard .widget-box,html[data-urppp-skin="apple"] #urppp-root .uc,html[data-urppp-skin="apple"] #urppp-clean-root .uc-card,html[data-urppp-skin="apple"] #urppp-clean-root .uc-modal,html[data-urppp-skin="apple"] #urppp-clean-root .uc-top,html[data-urppp-skin="apple"] #urppp-clean-root .uc-tabbar{border:none!important;border-color:transparent!important;box-shadow:var(--shadow)!important;}',
+          'html[data-urppp-skin="apple"] .page-content .widget-box,html[data-urppp-skin="apple"] #page-content-template .widget-box,html[data-urppp-skin="apple"] html body .page-content .profile-user-info.setLabelWidth{border:none!important;box-shadow:var(--shadow)!important;}',
+          'html[data-urppp-skin="apple"] .btn,html[data-urppp-skin="apple"] .btn-default,html[data-urppp-skin="apple"] .btn-white,html[data-urppp-skin="apple"] .btn-primary,html[data-urppp-skin="apple"] .btn-info,html[data-urppp-skin="apple"] .btn-success,html[data-urppp-skin="apple"] .btn-warning,html[data-urppp-skin="apple"] .btn-danger,html[data-urppp-skin="apple"] a.btn,html[data-urppp-skin="apple"] #urppp-clean-root .uc-btn{border-color:transparent!important;box-shadow:0 1px 2px rgba(0,0,0,.05)!important;}',
+          'html[data-urppp-skin="apple"] .btn-primary,html[data-urppp-skin="apple"] .btn-info,html[data-urppp-skin="apple"] #urppp-clean-root .uc-btn.primary{border:none!important;}',
+          'html[data-urppp-skin="apple"] .table,html[data-urppp-skin="apple"] table,html[data-urppp-skin="apple"] .table-bordered,html[data-urppp-skin="apple"] .table-bordered>thead>tr>th,html[data-urppp-skin="apple"] .table-bordered>tbody>tr>td{border-color:rgba(0,0,0,.05)!important;}',
+          'html[data-urppp-skin="apple"].urppp-theme-dark .table,html[data-urppp-skin="apple"].urppp-theme-dark .table-bordered,html[data-urppp-skin="apple"].urppp-theme-dark .table-bordered>thead>tr>th,html[data-urppp-skin="apple"].urppp-theme-dark .table-bordered>tbody>tr>td{border-color:rgba(255,255,255,.06)!important;}',
+          'html[data-urppp-skin="apple"] .nav-tabs>li>a,html[data-urppp-skin="apple"] .nav-tabs{border-color:transparent!important;}',
+          'html[data-urppp-skin="apple"] .urppp-nav-link{border:none!important;}',
+          'html[data-urppp-skin="apple"] #urppp-clean-root .uc-lesson,html[data-urppp-skin="apple"] #urppp-clean-root .uc-grid-cell,html[data-urppp-skin="apple"] #urppp-clean-root .uc-svc{border-color:transparent!important;box-shadow:0 2px 8px rgba(0,0,0,.05)!important;}',
+          // 主题圆点保护：不能被 .btn 规则弄成直角/透明边
+          'html[data-urppp-skin="apple"] .urppp-nav-dot,html[data-urppp-skin="apple"] #urppp-nav-theme .urppp-nav-dot,html[data-urppp-skin="apple"] #urppp-clean-root .uc-top-theme .urppp-nav-dot,html[data-urppp-skin="apple"] #urppp-dots span{border-radius:50%!important;border:2px solid var(--border)!important;box-shadow:none!important;width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important;padding:0!important;overflow:hidden!important;background-clip:padding-box!important;flex:0 0 auto!important;}',
+          'html[data-urppp-skin="apple"] .urppp-nav-dot.ac,html[data-urppp-skin="apple"] #urppp-nav-theme .urppp-nav-dot.ac,html[data-urppp-skin="apple"] #urppp-clean-root .uc-top-theme .urppp-nav-dot.ac{border-color:var(--primary)!important;box-shadow:0 0 0 3px var(--ring)!important;}',
+          'html[data-urppp-skin="apple"] #urppp-nav-theme .urppp-nav-dot[data-theme="scu-red"],html[data-urppp-skin="apple"] #urppp-clean-root .uc-top-theme .urppp-nav-dot[data-theme="scu-red"],html[data-urppp-skin="apple"] #urppp-dots span[data-theme="scu-red"]{border-radius:50%!important;border:2px solid var(--border)!important;}'
+        ].join('');
       } else if (id === 'flat') {
-        // 极简扁平：直角 + 无阴影 + 硬边；覆盖主站/首页仪表板/清爽模式/按钮
-        css += `
-html[data-urppp-skin="flat"] {
-  --radius: 0px !important;
-  --radius-sm: 0px !important;
-  --shadow: none !important;
-  --border: var(--text) !important;
-}
-html[data-urppp-skin="flat"] *:not(img):not(svg):not(path):not(circle):not(i):not(.fa):not(.ace-icon):not(.glyphicon) {
-  border-radius: 0 !important;
-}
-/* 圆形保留：主题点/头像 */
-html[data-urppp-skin="flat"] .urppp-nav-dot,
-html[data-urppp-skin="flat"] #urppp-nav-theme .urppp-nav-dot,
-html[data-urppp-skin="flat"] .nav-user-photo,
-html[data-urppp-skin="flat"] img.nav-user-photo,
-html[data-urppp-skin="flat"] .urppp-set-swatch {
-  border-radius: 50% !important;
-}
-html[data-urppp-skin="flat"] .widget-box,
-html[data-urppp-skin="flat"] .widget-box.transparent,
-html[data-urppp-skin="flat"] .panel,
-html[data-urppp-skin="flat"] .panel-default,
-html[data-urppp-skin="flat"] .well,
-html[data-urppp-skin="flat"] .thumbnail,
-html[data-urppp-skin="flat"] .infobox,
-html[data-urppp-skin="flat"] .profile-user-info,
-html[data-urppp-skin="flat"] .profile-user-info-striped,
-html[data-urppp-skin="flat"] .modal-content,
-html[data-urppp-skin="flat"] fieldset,
-html[data-urppp-skin="flat"] .urppp-stat-card,
-html[data-urppp-skin="flat"] .urppp-db-card,
-html[data-urppp-skin="flat"] .urppp-db-panel,
-html[data-urppp-skin="flat"] #urppp-dashboard .widget-box,
-html[data-urppp-skin="flat"] #urppp-dashboard [class*="card"],
-html[data-urppp-skin="flat"] .page-content .widget-box,
-html[data-urppp-skin="flat"] #page-content-template .widget-box,
-html[data-urppp-skin="flat"] #urppp-root .uc,
-html[data-urppp-skin="flat"] #urppp-settings-panel,
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-card,
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-modal,
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-top,
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-tabbar,
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-svc,
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-lesson,
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-grid-cell,
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-course-sub,
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-attr-pill {
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  border: 2px solid var(--text) !important;
-}
-html[data-urppp-skin="flat"] .btn,
-html[data-urppp-skin="flat"] .btn-default,
-html[data-urppp-skin="flat"] .btn-white,
-html[data-urppp-skin="flat"] .btn-primary,
-html[data-urppp-skin="flat"] .btn-info,
-html[data-urppp-skin="flat"] .btn-success,
-html[data-urppp-skin="flat"] .btn-warning,
-html[data-urppp-skin="flat"] .btn-danger,
-html[data-urppp-skin="flat"] .btn-purple,
-html[data-urppp-skin="flat"] .btn-app,
-html[data-urppp-skin="flat"] a.btn,
-html[data-urppp-skin="flat"] button.btn,
-html[data-urppp-skin="flat"] input.btn,
-html[data-urppp-skin="flat"] .btn-group > .btn,
-html[data-urppp-skin="flat"] .btn-group-xs > .btn,
-html[data-urppp-skin="flat"] .btn-xs,
-html[data-urppp-skin="flat"] .btn-sm,
-html[data-urppp-skin="flat"] .btn-minier,
-html[data-urppp-skin="flat"] #urppp-root .ubtn,
-html[data-urppp-skin="flat"] #urppp-root .ut button,
-html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-btn,
-html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-mode,
-html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-follow,
-html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-scheme,
-html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-tab,
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn,
-html[data-urppp-skin="flat"] #urppp-clean-root button,
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-tabbar button,
-html[data-urppp-skin="flat"] .chosen-container-single .chosen-single,
-html[data-urppp-skin="flat"] .chosen-container-multi .chosen-choices,
-html[data-urppp-skin="flat"] .form-control,
-html[data-urppp-skin="flat"] input[type="text"],
-html[data-urppp-skin="flat"] input[type="password"],
-html[data-urppp-skin="flat"] input[type="number"],
-html[data-urppp-skin="flat"] input[type="search"],
-html[data-urppp-skin="flat"] select,
-html[data-urppp-skin="flat"] textarea,
-html[data-urppp-skin="flat"] #urppp-root .ui {
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  border: 2px solid var(--text) !important;
-}
-html[data-urppp-skin="flat"] .btn-primary,
-html[data-urppp-skin="flat"] .btn-info,
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn.primary,
-html[data-urppp-skin="flat"] #urppp-root .ubtn {
-  background: var(--primary) !important;
-  color: #fff !important;
-  border: 2px solid var(--text) !important;
-}
-html[data-urppp-skin="flat"] .btn-default,
-html[data-urppp-skin="flat"] .btn-white,
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn:not(.primary) {
-  background: var(--surface) !important;
-  color: var(--text) !important;
-  border: 2px solid var(--text) !important;
-}
-html[data-urppp-skin="flat"] .btn:hover,
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn:hover {
-  transform: none !important;
-  box-shadow: none !important;
-  filter: none !important;
-}
-html[data-urppp-skin="flat"] .btn-primary:hover,
-html[data-urppp-skin="flat"] .btn-info:hover {
-  background: var(--surface) !important;
-  color: var(--text) !important;
-  border: 2px solid var(--text) !important;
-}
-html[data-urppp-skin="flat"] .table,
-html[data-urppp-skin="flat"] table,
-html[data-urppp-skin="flat"] .table-bordered {
-  border: 2px solid var(--text) !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-}
-html[data-urppp-skin="flat"] .table > thead > tr > th,
-html[data-urppp-skin="flat"] .table > tbody > tr > td,
-html[data-urppp-skin="flat"] .table-bordered > thead > tr > th,
-html[data-urppp-skin="flat"] .table-bordered > tbody > tr > td {
-  border-color: var(--text) !important;
-  border-width: 1px !important;
-}
-html[data-urppp-skin="flat"] .nav-tabs > li > a,
-html[data-urppp-skin="flat"] .nav-tabs {
-  border-radius: 0 !important;
-  border-color: var(--text) !important;
-}
-html[data-urppp-skin="flat"] .urppp-nav-link,
-html[data-urppp-skin="flat"] .urppp-nav-item {
-  border-radius: 0 !important;
-}
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-card:hover,
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-svc:hover,
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-lesson:hover,
-html[data-urppp-skin="flat"] .urppp-stat-card:hover {
-  transform: none !important;
-  box-shadow: none !important;
-}
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-avatar,
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-gpa,
-html[data-urppp-skin="flat"] #urppp-clean-root .uc-cd-chip {
-  border-radius: 0 !important;
-  border: 2px solid var(--text) !important;
-  box-shadow: none !important;
-}
-html[data-urppp-skin="flat"] #urppp-boot-loader .urppp-cube-face {
-  border-radius: 0 !important;
-}
-`;
+        css += [
+          'html[data-urppp-skin="flat"]{--radius:0px!important;--radius-sm:0px!important;--shadow:none!important;}',
+          // 大容器：直角硬边
+          'html[data-urppp-skin="flat"] .widget-box,html[data-urppp-skin="flat"] .widget-box.transparent,html[data-urppp-skin="flat"] .panel,html[data-urppp-skin="flat"] .panel-default,html[data-urppp-skin="flat"] .well,html[data-urppp-skin="flat"] .thumbnail,html[data-urppp-skin="flat"] .infobox,html[data-urppp-skin="flat"] .profile-user-info,html[data-urppp-skin="flat"] .profile-user-info-striped,html[data-urppp-skin="flat"] .modal-content,html[data-urppp-skin="flat"] fieldset,html[data-urppp-skin="flat"] .urppp-stat-card,html[data-urppp-skin="flat"] .urppp-db-card,html[data-urppp-skin="flat"] .urppp-db-panel,html[data-urppp-skin="flat"] #urppp-dashboard .widget-box,html[data-urppp-skin="flat"] .page-content .widget-box,html[data-urppp-skin="flat"] #page-content-template .widget-box,html[data-urppp-skin="flat"] #urppp-root .uc,html[data-urppp-skin="flat"] #urppp-settings-panel,html[data-urppp-skin="flat"] #urppp-clean-root .uc-card,html[data-urppp-skin="flat"] #urppp-clean-root .uc-modal,html[data-urppp-skin="flat"] #urppp-clean-root .uc-top,html[data-urppp-skin="flat"] #urppp-clean-root .uc-tabbar,html[data-urppp-skin="flat"] #urppp-clean-root .uc-svc{border-radius:0!important;box-shadow:none!important;border:2px solid var(--text)!important;}',
+          // 课表细控件：轻边，别画满 2px 黑框
+          'html[data-urppp-skin="flat"] #urppp-clean-root .uc-lesson,html[data-urppp-skin="flat"] #urppp-clean-root .uc-grid-cell,html[data-urppp-skin="flat"] #urppp-clean-root .uc-course-sub,html[data-urppp-skin="flat"] #urppp-clean-root .uc-attr-pill,html[data-urppp-skin="flat"] #urppp-clean-root .uc-gpa,html[data-urppp-skin="flat"] #urppp-clean-root .uc-cd-chip,html[data-urppp-skin="flat"] #urppp-clean-root .uc-avatar{border-radius:0!important;box-shadow:none!important;border:1px solid color-mix(in srgb,var(--text) 28%,var(--border))!important;}',
+          'html[data-urppp-skin="flat"] #urppp-clean-root .uc-lesson{border:1px solid color-mix(in srgb,var(--primary) 35%,var(--text))!important;}',
+          // 按钮/输入矩形
+          'html[data-urppp-skin="flat"] .btn,html[data-urppp-skin="flat"] .btn-default,html[data-urppp-skin="flat"] .btn-white,html[data-urppp-skin="flat"] .btn-primary,html[data-urppp-skin="flat"] .btn-info,html[data-urppp-skin="flat"] .btn-success,html[data-urppp-skin="flat"] .btn-warning,html[data-urppp-skin="flat"] .btn-danger,html[data-urppp-skin="flat"] .btn-purple,html[data-urppp-skin="flat"] .btn-app,html[data-urppp-skin="flat"] a.btn,html[data-urppp-skin="flat"] button.btn,html[data-urppp-skin="flat"] input.btn,html[data-urppp-skin="flat"] .btn-group>.btn,html[data-urppp-skin="flat"] .btn-xs,html[data-urppp-skin="flat"] .btn-sm,html[data-urppp-skin="flat"] .btn-minier,html[data-urppp-skin="flat"] #urppp-root .ubtn,html[data-urppp-skin="flat"] #urppp-root .ut button,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-btn,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-mode,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-follow,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-scheme,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-tab,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-close,html[data-urppp-skin="flat"] #urppp-nav-theme .urppp-nav-settings,html[data-urppp-skin="flat"] #uc-settings,html[data-urppp-skin="flat"] #uc-exit,html[data-urppp-skin="flat"] #uc-refresh,html[data-urppp-skin="flat"] #urppp-clean-entry,html[data-urppp-skin="flat"] button.urppp-clean-entry,html[data-urppp-skin="flat"] .urppp-clean-entry,html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn,html[data-urppp-skin="flat"] #urppp-clean-root .uc-top-actions .uc-btn,html[data-urppp-skin="flat"] #urppp-clean-root .uc-tabbar button,html[data-urppp-skin="flat"] #urppp-clean-root button.uc-btn,html[data-urppp-skin="flat"] .chosen-container-single .chosen-single,html[data-urppp-skin="flat"] .chosen-container-multi .chosen-choices,html[data-urppp-skin="flat"] .form-control,html[data-urppp-skin="flat"] input[type="text"],html[data-urppp-skin="flat"] input[type="password"],html[data-urppp-skin="flat"] input[type="number"],html[data-urppp-skin="flat"] input[type="search"],html[data-urppp-skin="flat"] select,html[data-urppp-skin="flat"] textarea,html[data-urppp-skin="flat"] #urppp-root .ui{border-radius:0!important;box-shadow:none!important;border:2px solid var(--text)!important;}',
+          'html[data-urppp-skin="flat"] #navbar button:not(.urppp-nav-dot),html[data-urppp-skin="flat"] .navbar button:not(.urppp-nav-dot),html[data-urppp-skin="flat"] #urppp-nav-theme button:not(.urppp-nav-dot),html[data-urppp-skin="flat"] #urppp-nav-theme .urppp-nav-settings{border-radius:0!important;box-shadow:none!important;border:2px solid var(--text)!important;background:var(--surface)!important;color:var(--text)!important;}',
+          'html[data-urppp-skin="flat"] .btn-primary,html[data-urppp-skin="flat"] .btn-info,html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn.primary,html[data-urppp-skin="flat"] #urppp-root .ubtn{background:var(--primary)!important;color:#fff!important;border:2px solid var(--text)!important;}',
+          'html[data-urppp-skin="flat"] .btn-default,html[data-urppp-skin="flat"] .btn-white,html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn:not(.primary){background:var(--surface)!important;color:var(--text)!important;border:2px solid var(--text)!important;}',
+          'html[data-urppp-skin="flat"] .btn:hover,html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn:hover{transform:none!important;box-shadow:none!important;}',
+          'html[data-urppp-skin="flat"] .btn-primary:hover,html[data-urppp-skin="flat"] .btn-info:hover{background:var(--surface)!important;color:var(--text)!important;}',
+          'html[data-urppp-skin="flat"] .table,html[data-urppp-skin="flat"] table,html[data-urppp-skin="flat"] .table-bordered{border:1px solid var(--text)!important;box-shadow:none!important;border-radius:0!important;}',
+          'html[data-urppp-skin="flat"] .table>thead>tr>th,html[data-urppp-skin="flat"] .table>tbody>tr>td,html[data-urppp-skin="flat"] .table-bordered>thead>tr>th,html[data-urppp-skin="flat"] .table-bordered>tbody>tr>td{border-color:color-mix(in srgb,var(--text) 35%,transparent)!important;border-width:1px!important;}',
+          'html[data-urppp-skin="flat"] .nav-tabs>li>a,html[data-urppp-skin="flat"] .nav-tabs,html[data-urppp-skin="flat"] .urppp-nav-link,html[data-urppp-skin="flat"] .urppp-nav-item{border-radius:0!important;}',
+          'html[data-urppp-skin="flat"] #urppp-clean-root .uc-card:hover,html[data-urppp-skin="flat"] #urppp-clean-root .uc-svc:hover,html[data-urppp-skin="flat"] #urppp-clean-root .uc-lesson:hover,html[data-urppp-skin="flat"] .urppp-stat-card:hover{transform:none!important;box-shadow:none!important;}',
+          // 主题点保持圆形
+          'html[data-urppp-skin="flat"] .urppp-nav-dot,html[data-urppp-skin="flat"] #urppp-nav-theme .urppp-nav-dot,html[data-urppp-skin="flat"] #urppp-clean-root .uc-top-theme .urppp-nav-dot,html[data-urppp-skin="flat"] .urppp-set-swatch,html[data-urppp-skin="flat"] .nav-user-photo,html[data-urppp-skin="flat"] #urppp-dots span{border-radius:50%!important;border-width:2px!important;box-shadow:none!important;}'
+        ].join('');
       }
       el.textContent = css;
     } catch (e) {
@@ -5010,9 +4800,14 @@ html[data-urppp-skin="flat"] #urppp-boot-loader .urppp-cube-face {
         z-index: 20 !important;
         line-height: 1 !important;
       }
-      #urppp-nav-theme .urppp-nav-dot {
+      #urppp-nav-theme .urppp-nav-dot,
+      #urppp-nav-theme button.urppp-nav-dot,
+      #urppp-clean-root .uc-top-theme .urppp-nav-dot,
+      #urppp-clean-root .uc-top-theme button.urppp-nav-dot {
         width: 16px !important;
         height: 16px !important;
+        min-width: 16px !important;
+        min-height: 16px !important;
         border-radius: 50% !important;
         border: 2px solid var(--border) !important;
         box-sizing: border-box !important;
@@ -5023,12 +4818,26 @@ html[data-urppp-skin="flat"] #urppp-boot-loader .urppp-cube-face {
         align-items: center !important;
         justify-content: center !important;
         flex: 0 0 16px !important;
-        box-shadow: 0 0 0 0 transparent !important;
+        box-shadow: none !important;
         transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease !important;
         background-clip: padding-box !important;
+        -webkit-appearance: none !important;
+        appearance: none !important;
         vertical-align: middle !important;
         position: relative !important;
         top: 0 !important;
+        line-height: 0 !important;
+        font-size: 0 !important;
+        overflow: hidden !important;
+        text-indent: 0 !important;
+      }
+      /* 动态配色渐变点：避免被 .btn 全局规则压成胶囊/透明边 */
+      #urppp-nav-theme .urppp-nav-dot[data-theme="scu-red"],
+      #urppp-clean-root .uc-top-theme .urppp-nav-dot[data-theme="scu-red"] {
+        border-radius: 50% !important;
+        border: 2px solid var(--border) !important;
+        background-size: cover !important;
+        background-repeat: no-repeat !important;
       }
       #urppp-nav-theme .urppp-nav-dot:hover {
         transform: scale(1.08) !important;
