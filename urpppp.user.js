@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SCU URP++教务系统辅助插件
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.2.8
+// @version      1.2.9
 // @description  URP++ 扩展：登录验证码识别 + 评教自动填写/到时自动保存 + 列表页全自动评教。设置挂到 URP++ 设置面板。
 // @author       Chao_Lan,Hanako
 // @license      MIT
@@ -34,7 +34,7 @@
   'use strict';
 
   // 与脚本头 @version 保持同步
-  const URPPPP_VERSION = '1.2.8';
+  const URPPPP_VERSION = '1.2.9';
   const URPPPP_RAW_URL = 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js';
 
   // ===================== 公共工具 =====================
@@ -680,7 +680,10 @@
   function injectSettingsPanel() {
     const panel = document.getElementById('urppp-settings-panel');
     if (!panel) return false;
-    const body = panel.querySelector('.urppp-set-body');
+    // 优先挂到系统设置槽；兼容旧版整页 body
+    const body = panel.querySelector('#urppp-set-assist-slot')
+      || panel.querySelector('.urppp-set-pane[data-pane="system"]')
+      || panel.querySelector('.urppp-set-body');
     if (!body) return false;
     settingsStyles();
     // 旧版直接塞进主设置的大段配置：清理掉，改入口按钮
@@ -689,8 +692,15 @@
     if (oldLogin && oldLogin.closest('#urppp-settings-panel')) oldLogin.remove();
     if (oldEval && oldEval.closest('#urppp-settings-panel')) oldEval.remove();
 
+    // 若入口曾挂在 body 底部，迁到系统设置槽
+    let entry = document.getElementById('urpppp-entry-sec');
+    if (entry && body.id === 'urppp-set-assist-slot' && entry.parentElement !== body) {
+      entry.remove();
+      entry = null;
+    }
+
     if (!document.getElementById('urpppp-entry-sec')) {
-      const entry = document.createElement('section');
+      entry = document.createElement('section');
       entry.className = 'urppp-set-sec urpppp-entry-sec';
       entry.id = 'urpppp-entry-sec';
       entry.innerHTML = `
@@ -699,6 +709,7 @@
           <button type="button" class="urppp-set-btn" id="urpppp-open-login">登录助手</button>
           <button type="button" class="urppp-set-btn" id="urpppp-open-eval">评教助手</button>
         </div>
+        <p class="urpppp-tip">辅助插件 v${URPPPP_VERSION}</p>
       `;
       body.appendChild(entry);
       entry.querySelector('#urpppp-open-login').onclick = () => openSubPanel('login');
