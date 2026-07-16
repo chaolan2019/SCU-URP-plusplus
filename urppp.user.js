@@ -36,12 +36,12 @@
   const AUTO_UPDATE_KEY = 'urppp_auto_update_check_v1';
   const SKIN_KEY = 'urppp_skin_v1';
   const SKIN_CATALOG = [
-    { id: 'apple', name: '类Apple风格', desc: '系统灰底、链接蓝、大圆角与轻阴影，默认精修方向。', ready: true },
-    { id: 'flat', name: '极简扁平', desc: '无阴影、硬边与纯色层次，冷硬清晰。', ready: true },
-    { id: 'organic', name: '自然有机', desc: '奶油底与大地色，温暖大圆角；优先完整适配清爽模式。', ready: true },
-    { id: 'brutal', name: '新野兽派', desc: '直角粗边与硬阴影，高对比冲击。', ready: false },
-    { id: 'editorial', name: '编辑杂志', desc: '衬线标题与细线留白，安静阅读向。', ready: false },
-    { id: 'neu', name: '新拟物', desc: '同色双阴影凸起/内凹，立体柔和。', ready: false },
+    { id: 'apple', name: '类Apple风格', desc: '系统灰底、链接蓝、大圆角与轻阴影，默认精修方向。', ready: true, dynamic: true },
+    { id: 'flat', name: '极简扁平', desc: '无阴影、硬边与纯色层次，冷硬清晰。不支持动态配色。', ready: true, dynamic: false },
+    { id: 'organic', name: '自然有机', desc: '奶油底与大地色，温暖大圆角。不支持动态配色。', ready: true, dynamic: false },
+    { id: 'brutal', name: '新野兽派', desc: '直角粗边与硬阴影，高对比冲击。不支持动态配色。', ready: false, dynamic: false },
+    { id: 'editorial', name: '编辑杂志', desc: '衬线标题与细线留白，安静阅读向。不支持动态配色。', ready: false, dynamic: false },
+    { id: 'neu', name: '新拟物', desc: '同色双阴影凸起/内凹，立体柔和。不支持动态配色。', ready: false, dynamic: false },
   ];
 
   // 最早阶段：最高优先级遮罩盖住未美化界面，完成后淡入
@@ -1000,6 +1000,11 @@
     const id = GM_getValue(SKIN_KEY, 'apple');
     return SKIN_CATALOG.some((s) => s.id === id) ? id : 'apple';
   }
+  function skinSupportsDynamic(skinId) {
+    const id = skinId || getSkin();
+    const hit = SKIN_CATALOG.find((s) => s.id === id);
+    return !!(hit && hit.dynamic);
+  }
 
   /** 界面风格对形状/边框/阴影等 token 的覆盖（不改配色主题本身） */
   function getSkinShapeOverrides(skinId) {
@@ -1197,6 +1202,16 @@
     const hit = SKIN_CATALOG.find((s) => s.id === id && s.ready);
     if (!hit) return false;
     GM_setValue(SKIN_KEY, hit.id);
+    // 切到不支持动态配色的风格时，若当前是动态配色则退回简约白
+    try {
+      if (!hit.dynamic && getCurrent() === 'scu-red') {
+        if (isThemeFollowSystem()) {
+          setFollowUseDynamic(false);
+        } else {
+          applyTheme('default', { manual: true, skipPersist: false });
+        }
+      }
+    } catch (_) {}
     applySkinAttr();
     // 刷新主题以带动依赖 radius/shadow 的内联与组件
     try {
@@ -5191,6 +5206,22 @@
       }
       #urppp-settings-panel .urppp-set-follow:disabled {
         cursor: not-allowed !important;
+      }
+      #urppp-settings-panel .urppp-dyn-disabled,
+      #urppp-settings-panel .urppp-dyn-disabled * {
+        text-decoration: line-through !important;
+        opacity: 0.55 !important;
+        pointer-events: none !important;
+        cursor: not-allowed !important;
+        user-select: none !important;
+      }
+      #urppp-settings-panel .urppp-set-mode.urppp-dyn-disabled,
+      #urppp-settings-panel .urppp-set-follow.urppp-dyn-disabled,
+      #urppp-settings-panel .urppp-set-btn.urppp-dyn-disabled {
+        text-decoration: line-through !important;
+        opacity: 0.5 !important;
+        pointer-events: none !important;
+        filter: grayscale(0.4) !important;
       }
       #urppp-settings-panel .urppp-set-presets {
         display: flex !important;
@@ -12888,10 +12919,20 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (colorInput) colorInput.value = seed;
     if (hexInput) hexInput.value = seed;
 
-    // 主题模式高亮
+    // 主题模式高亮 + 动态配色可用性
+    const dynOk = skinSupportsDynamic();
     panel.querySelectorAll('.urppp-set-mode').forEach((btn) => {
+      const isDynMode = btn.dataset.theme === 'scu-red';
       const on = !follow && btn.dataset.theme === ct;
-      btn.classList.toggle('ac', on);
+      btn.classList.toggle('ac', on && !(isDynMode && !dynOk));
+      btn.classList.toggle('urppp-dyn-disabled', isDynMode && !dynOk);
+      if (isDynMode && !dynOk) {
+        btn.setAttribute('aria-disabled', 'true');
+        btn.title = '当前界面风格不支持动态配色';
+      } else {
+        btn.removeAttribute('aria-disabled');
+        if (isDynMode) btn.removeAttribute('title');
+      }
     });
     const followBtn = panel.querySelector('#urppp-set-follow');
     if (followBtn) {
@@ -12902,11 +12943,33 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const dynFollowBtn = panel.querySelector('#urppp-set-follow-dynamic');
     const useDyn = isFollowUseDynamic();
     if (dynFollowBtn) {
-      dynFollowBtn.classList.toggle('ac', useDyn);
-      dynFollowBtn.setAttribute('aria-pressed', useDyn ? 'true' : 'false');
+      dynFollowBtn.classList.toggle('ac', useDyn && dynOk);
+      dynFollowBtn.setAttribute('aria-pressed', (useDyn && dynOk) ? 'true' : 'false');
       dynFollowBtn.textContent = useDyn ? '浅色用动态配色：开' : '浅色用动态配色：关';
-      dynFollowBtn.disabled = !follow;
-      dynFollowBtn.style.opacity = follow ? '1' : '0.5';
+      dynFollowBtn.disabled = !follow || !dynOk;
+      dynFollowBtn.classList.toggle('urppp-dyn-disabled', !dynOk);
+      dynFollowBtn.style.opacity = (!dynOk) ? '0.5' : (follow ? '1' : '0.5');
+      dynFollowBtn.title = dynOk ? '' : '当前界面风格不支持动态配色';
+    }
+    // 种子色 / 配色方案整区：无动态能力时划线禁用
+    const dynSec = panel.querySelector('#urppp-set-dynamic');
+    if (dynSec) {
+      dynSec.classList.toggle('urppp-dyn-disabled', !dynOk);
+      dynSec.querySelectorAll('button, input, .urppp-set-scheme, .urppp-set-swatch').forEach((el) => {
+        if (!dynOk) {
+          el.setAttribute('disabled', 'disabled');
+          el.classList.add('urppp-dyn-disabled');
+        } else {
+          // 不要误伤：color/hex 仅在 dynOk 时启用
+          if (el.id === 'urppp-set-color' || el.id === 'urppp-set-hex' || el.id === 'urppp-set-gen' || el.id === 'urppp-set-save' || el.classList.contains('urppp-set-swatch') || el.classList.contains('urppp-set-scheme') || el.classList.contains('urppp-set-btn')) {
+            el.removeAttribute('disabled');
+            el.classList.remove('urppp-dyn-disabled');
+          }
+        }
+      });
+      dynSec.querySelectorAll('h3, .urppp-set-tip, label').forEach((el) => {
+        el.classList.toggle('urppp-dyn-disabled', !dynOk);
+      });
     }
     const cleanDefBtn = panel.querySelector('#urppp-set-clean-default');
     if (cleanDefBtn) {
@@ -13159,6 +13222,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }
     panel.querySelectorAll('.urppp-set-mode').forEach((btn) => {
       btn.addEventListener('click', () => {
+        if (btn.dataset.theme === 'scu-red' && !skinSupportsDynamic()) return;
         applyTheme(btn.dataset.theme, { manual: true });
         syncSettingsPanelUI();
       });
