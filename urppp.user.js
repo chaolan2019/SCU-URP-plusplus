@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SCU URP++教务系统美化
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.0.4
+// @version      1.0.5
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Chao_Lan,Hanako
 // @license      MIT
@@ -24,7 +24,7 @@
   'use strict';
 
   // 与脚本头 @version 保持同步
-  const URPPP_VERSION = '1.0.4';
+  const URPPP_VERSION = '1.0.5';
   const URPPP_UPDATE = {
     mainRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js',
     assistRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js',
@@ -12482,10 +12482,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '    <p class="urppp-set-tip" style="margin-top:8px">开启后按系统浅色/深色自动切换。浅色可选用下方动态配色，深色固定深邃暗。</p>',
       '    <button type="button" class="urppp-set-follow" id="urppp-set-clean-default" aria-pressed="false" style="margin-top:10px;width:100%">默认进入清爽模式：关</button>',
       '    <p class="urppp-set-tip" style="margin-top:8px">开启后，仅在首页自动打开清爽模式（其它页面不自动进入，可随时退出）。</p>',
-      '    <button type="button" class="urppp-set-follow" id="urppp-set-auto-update" aria-pressed="false" style="margin-top:10px;width:100%">自动检测更新：关</button>',
-      '    <p class="urppp-set-tip" style="margin-top:8px">开启后，每次进入教务页会静默检查主插件更新；有新版本时在左下角提示。</p>',
-      '    <button type="button" class="urppp-set-btn" id="urppp-set-check-update" style="margin-top:12px;width:100%">检查更新</button>',
-      '    <div id="urppp-set-update-status" class="urppp-set-tip" style="margin-top:8px"></div>',
       '  </section>',
       '  <section class="urppp-set-sec" id="urppp-set-dynamic">',
       '    <h3>种子色</h3>',
@@ -12499,6 +12495,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '    </div>',
       '    <h3 style="margin-top:16px">配色方案</h3>',
       '    <div class="urppp-set-schemes" id="urppp-set-schemes"></div>',
+      '  </section>',
+      '  <section class="urppp-set-sec" id="urppp-set-update">',
+      '    <h3>更新</h3>',
+      '    <button type="button" class="urppp-set-follow" id="urppp-set-auto-update" aria-pressed="false" style="width:100%">自动检测更新：关</button>',
+      '    <p class="urppp-set-tip" style="margin-top:8px">开启后，每次进入教务页会静默检查主插件更新；有新版本时在左下角提示。</p>',
+      '    <button type="button" class="urppp-set-btn" id="urppp-set-check-update" style="margin-top:12px;width:100%">检查更新</button>',
+      '    <div id="urppp-set-update-status" class="urppp-set-tip" style="margin-top:8px"></div>',
       '  </section>',
       '</div>'
     ].join('');
