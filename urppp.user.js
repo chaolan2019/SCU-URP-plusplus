@@ -397,6 +397,7 @@
   const SCHEME_KEY = 'urppp_scheme_v1';
   const THEME_FOLLOW_KEY = 'urppp_theme_follow_system_v1';
   const CLEAN_DEFAULT_KEY = 'urppp_clean_default_v1';
+  const APPLE_EDGE_KEY = 'urppp_apple_edge_line_v1';
   const FOLLOW_DYNAMIC_KEY = 'urppp_follow_use_dynamic_v1';
   const DEFAULT_ACCENT_PRESETS = ['#1E3A5F', '#B53434', '#0F766E', '#7C3AED', '#C2410C', '#0369A1', '#BE185D', '#365314'];
   const DEFAULT_SEED = '#B53434';
@@ -866,6 +867,17 @@
     GM_setValue(CLEAN_DEFAULT_KEY, !!on);
     return !!on;
   }
+  /** 类Apple 卡片淡边线：默认开 */
+  function isAppleEdgeLine() {
+    try {
+      const v = GM_getValue(APPLE_EDGE_KEY, true);
+      return v !== false && v !== 0 && v !== '0';
+    } catch (_) { return true; }
+  }
+  function setAppleEdgeLine(on) {
+    GM_setValue(APPLE_EDGE_KEY, !!on);
+    return !!on;
+  }
   function isAutoUpdateCheck() {
     try { return !!GM_getValue(AUTO_UPDATE_KEY, false); } catch (_) { return false; }
   }
@@ -1012,10 +1024,14 @@
 
 
   function urpppCardBorderValue() {
-    // 类Apple：卡片无描边；极简扁平：硬边；其它默认浅边
+    // 类Apple：可选淡边线；极简扁平：硬边；其它默认浅边
     try {
       const skin = getSkin();
-      if (skin === 'apple') return 'none';
+      if (skin === 'apple') {
+        return isAppleEdgeLine()
+          ? '1px solid rgba(0,0,0,0.08)'
+          : 'none';
+      }
       if (skin === 'flat') return '2px solid var(--text)';
     } catch (_) {}
     return '1px solid var(--border)';
@@ -1026,6 +1042,11 @@
     try { document.documentElement.setAttribute('data-urppp-skin', id); } catch (_) {}
     try {
       if (document.body) document.body.setAttribute('data-urppp-skin', id);
+    } catch (_) {}
+    try {
+      const edgeOn = id === 'apple' && isAppleEdgeLine();
+      document.documentElement.setAttribute('data-urppp-apple-edge', edgeOn ? '1' : '0');
+      if (document.body) document.body.setAttribute('data-urppp-apple-edge', edgeOn ? '1' : '0');
     } catch (_) {}
     try {
       const el = document.getElementById('urppp-skin-vars') || (() => {
@@ -1040,19 +1061,30 @@
       css += '}';
 
       if (id === 'apple') {
+        const edge = isAppleEdgeLine();
+        const cardBorder = edge
+          ? '1px solid rgba(0,0,0,0.08)'
+          : 'none';
+        const cardBorderDark = edge
+          ? '1px solid rgba(255,255,255,0.10)'
+          : 'none';
+        const softBorder = edge
+          ? '1px solid rgba(0,0,0,0.06)'
+          : 'none';
         css += [
-          'html[data-urppp-skin="apple"]{--shadow:0 6px 20px rgba(0,0,0,.07),0 1px 3px rgba(0,0,0,.04);--border:rgba(0,0,0,.04);}',
-          'html[data-urppp-skin="apple"].urppp-theme-dark,html.urppp-theme-dark[data-urppp-skin="apple"]{--shadow:0 10px 28px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.04);--border:rgba(255,255,255,.06);}',
-          'html[data-urppp-skin="apple"] .widget-box,html[data-urppp-skin="apple"] .widget-box.transparent,html[data-urppp-skin="apple"] .panel,html[data-urppp-skin="apple"] .panel-default,html[data-urppp-skin="apple"] .well,html[data-urppp-skin="apple"] .thumbnail,html[data-urppp-skin="apple"] .infobox,html[data-urppp-skin="apple"] .profile-user-info,html[data-urppp-skin="apple"] .profile-user-info-striped,html[data-urppp-skin="apple"] .modal-content,html[data-urppp-skin="apple"] fieldset,html[data-urppp-skin="apple"] .urppp-stat-card,html[data-urppp-skin="apple"] .urppp-db-card,html[data-urppp-skin="apple"] .urppp-db-panel,html[data-urppp-skin="apple"] #urppp-dashboard .widget-box,html[data-urppp-skin="apple"] #urppp-root .uc,html[data-urppp-skin="apple"] #urppp-clean-root .uc-card,html[data-urppp-skin="apple"] #urppp-clean-root .uc-modal,html[data-urppp-skin="apple"] #urppp-clean-root .uc-top,html[data-urppp-skin="apple"] #urppp-clean-root .uc-tabbar{border:none!important;border-color:transparent!important;box-shadow:var(--shadow)!important;}',
-          'html[data-urppp-skin="apple"] .page-content .widget-box,html[data-urppp-skin="apple"] #page-content-template .widget-box,html[data-urppp-skin="apple"] html body .page-content .profile-user-info.setLabelWidth{border:none!important;box-shadow:var(--shadow)!important;}',
+          'html[data-urppp-skin="apple"]{--shadow:0 6px 20px rgba(0,0,0,.07),0 1px 3px rgba(0,0,0,.04);--border:' + (edge ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.04)') + ';}',
+          'html[data-urppp-skin="apple"].urppp-theme-dark,html.urppp-theme-dark[data-urppp-skin="apple"]{--shadow:0 10px 28px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.04);--border:' + (edge ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.06)') + ';}',
+          'html[data-urppp-skin="apple"] .widget-box,html[data-urppp-skin="apple"] .widget-box.transparent,html[data-urppp-skin="apple"] .panel,html[data-urppp-skin="apple"] .panel-default,html[data-urppp-skin="apple"] .well,html[data-urppp-skin="apple"] .thumbnail,html[data-urppp-skin="apple"] .infobox,html[data-urppp-skin="apple"] .profile-user-info,html[data-urppp-skin="apple"] .profile-user-info-striped,html[data-urppp-skin="apple"] .modal-content,html[data-urppp-skin="apple"] fieldset,html[data-urppp-skin="apple"] .urppp-stat-card,html[data-urppp-skin="apple"] .urppp-db-card,html[data-urppp-skin="apple"] .urppp-db-panel,html[data-urppp-skin="apple"] #urppp-dashboard .widget-box,html[data-urppp-skin="apple"] #urppp-root .uc,html[data-urppp-skin="apple"] #urppp-clean-root .uc-card,html[data-urppp-skin="apple"] #urppp-clean-root .uc-modal,html[data-urppp-skin="apple"] #urppp-clean-root .uc-top,html[data-urppp-skin="apple"] #urppp-clean-root .uc-tabbar,html[data-urppp-skin="apple"] .urppp-card,html[data-urppp-skin="apple"] #urppp-dashboard .urppp-card,html[data-urppp-skin="apple"] #urppp-clean-root .uc-score-pane,html[data-urppp-skin="apple"] #urppp-clean-root .uc-svc{border:' + cardBorder + '!important;box-shadow:var(--shadow)!important;}',
+          'html[data-urppp-skin="apple"].urppp-theme-dark .widget-box,html[data-urppp-skin="apple"].urppp-theme-dark .panel,html[data-urppp-skin="apple"].urppp-theme-dark .profile-user-info,html[data-urppp-skin="apple"].urppp-theme-dark .modal-content,html[data-urppp-skin="apple"].urppp-theme-dark .urppp-card,html[data-urppp-skin="apple"].urppp-theme-dark #urppp-clean-root .uc-card,html[data-urppp-skin="apple"].urppp-theme-dark #urppp-clean-root .uc-score-pane,html[data-urppp-skin="apple"].urppp-theme-dark #urppp-root .uc{border:' + cardBorderDark + '!important;}',
+          'html[data-urppp-skin="apple"] .page-content .widget-box,html[data-urppp-skin="apple"] #page-content-template .widget-box,html[data-urppp-skin="apple"] html body .page-content .profile-user-info.setLabelWidth{border:' + cardBorder + '!important;box-shadow:var(--shadow)!important;}',
           'html[data-urppp-skin="apple"] .btn,html[data-urppp-skin="apple"] .btn-default,html[data-urppp-skin="apple"] .btn-white,html[data-urppp-skin="apple"] .btn-primary,html[data-urppp-skin="apple"] .btn-info,html[data-urppp-skin="apple"] .btn-success,html[data-urppp-skin="apple"] .btn-warning,html[data-urppp-skin="apple"] .btn-danger,html[data-urppp-skin="apple"] a.btn,html[data-urppp-skin="apple"] #urppp-clean-root .uc-btn{border-color:transparent!important;box-shadow:0 1px 2px rgba(0,0,0,.05)!important;}',
           'html[data-urppp-skin="apple"] .btn-primary,html[data-urppp-skin="apple"] .btn-info,html[data-urppp-skin="apple"] #urppp-clean-root .uc-btn.primary{border:none!important;}',
           'html[data-urppp-skin="apple"] .table,html[data-urppp-skin="apple"] table,html[data-urppp-skin="apple"] .table-bordered,html[data-urppp-skin="apple"] .table-bordered>thead>tr>th,html[data-urppp-skin="apple"] .table-bordered>tbody>tr>td{border-color:rgba(0,0,0,.05)!important;}',
           'html[data-urppp-skin="apple"].urppp-theme-dark .table,html[data-urppp-skin="apple"].urppp-theme-dark .table-bordered,html[data-urppp-skin="apple"].urppp-theme-dark .table-bordered>thead>tr>th,html[data-urppp-skin="apple"].urppp-theme-dark .table-bordered>tbody>tr>td{border-color:rgba(255,255,255,.06)!important;}',
           'html[data-urppp-skin="apple"] .nav-tabs>li>a,html[data-urppp-skin="apple"] .nav-tabs{border-color:transparent!important;}',
           'html[data-urppp-skin="apple"] .urppp-nav-link{border:none!important;}',
-          'html[data-urppp-skin="apple"] #urppp-clean-root .uc-lesson,html[data-urppp-skin="apple"] #urppp-clean-root .uc-grid-cell,html[data-urppp-skin="apple"] #urppp-clean-root .uc-svc{border-color:transparent!important;box-shadow:0 2px 8px rgba(0,0,0,.05)!important;}',
-          // 主题圆点保护：不能被 .btn 规则弄成直角/透明边
+          'html[data-urppp-skin="apple"] #urppp-clean-root .uc-lesson,html[data-urppp-skin="apple"] #urppp-clean-root .uc-grid-cell{border-color:' + (edge ? 'rgba(0,0,0,0.06)' : 'transparent') + '!important;box-shadow:0 2px 8px rgba(0,0,0,.05)!important;}',
+          'html[data-urppp-skin="apple"] #urppp-clean-root .uc-svc{border:' + softBorder + '!important;box-shadow:0 2px 8px rgba(0,0,0,.05)!important;}',
           'html[data-urppp-skin="apple"] .urppp-nav-dot,html[data-urppp-skin="apple"] #urppp-nav-theme .urppp-nav-dot,html[data-urppp-skin="apple"] #urppp-clean-root .uc-top-theme .urppp-nav-dot,html[data-urppp-skin="apple"] #urppp-dots span{border-radius:50%!important;border:2px solid var(--border)!important;box-shadow:none!important;width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important;padding:0!important;overflow:hidden!important;background-clip:padding-box!important;flex:0 0 auto!important;}',
           'html[data-urppp-skin="apple"] .urppp-nav-dot.ac,html[data-urppp-skin="apple"] #urppp-nav-theme .urppp-nav-dot.ac,html[data-urppp-skin="apple"] #urppp-clean-root .uc-top-theme .urppp-nav-dot.ac{border-color:var(--primary)!important;box-shadow:0 0 0 3px var(--ring)!important;}',
           'html[data-urppp-skin="apple"] #urppp-nav-theme .urppp-nav-dot[data-theme="scu-red"],html[data-urppp-skin="apple"] #urppp-clean-root .uc-top-theme .urppp-nav-dot[data-theme="scu-red"],html[data-urppp-skin="apple"] #urppp-dots span[data-theme="scu-red"]{border-radius:50%!important;border:2px solid var(--border)!important;}'
@@ -12850,6 +12882,19 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       cleanDefBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
       cleanDefBtn.textContent = on ? '默认进入清爽模式：开' : '默认进入清爽模式：关';
     }
+    const appleEdgeBtn = panel.querySelector('#urppp-set-apple-edge');
+    const appleEdgeTip = panel.querySelector('#urppp-set-apple-edge-tip');
+    if (appleEdgeBtn) {
+      const isApple = getSkin() === 'apple';
+      appleEdgeBtn.style.display = isApple ? '' : 'none';
+      if (appleEdgeTip) appleEdgeTip.style.display = isApple ? '' : 'none';
+      if (isApple) {
+        const on = isAppleEdgeLine();
+        appleEdgeBtn.classList.toggle('ac', on);
+        appleEdgeBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        appleEdgeBtn.textContent = on ? '类Apple边缘线条：开' : '类Apple边缘线条：关';
+      }
+    }
     const autoUpBtn = panel.querySelector('#urppp-set-auto-update');
     if (autoUpBtn) {
       const on = isAutoUpdateCheck();
@@ -13003,6 +13048,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '      <p class="urppp-set-tip" style="margin-top:8px">开启后按系统浅色/深色自动切换。浅色可选用下方动态配色，深色固定深邃暗。</p>',
       '      <button type="button" class="urppp-set-follow" id="urppp-set-clean-default" aria-pressed="false" style="margin-top:12px;width:100%">默认进入清爽模式：关</button>',
       '      <p class="urppp-set-tip" style="margin-top:8px">开启后，仅在首页自动打开清爽模式（其它页面不自动进入，可随时退出）。</p>',
+      '      <button type="button" class="urppp-set-follow" id="urppp-set-apple-edge" aria-pressed="true" style="margin-top:12px;width:100%">类Apple边缘线条：开</button>',
+      '      <p class="urppp-set-tip" id="urppp-set-apple-edge-tip" style="margin-top:8px">仅类Apple风格生效。开启后卡片/面板带淡细边线，提升层次可读性。</p>',
       '    </section>',
       '    <section class="urppp-set-sec" id="urppp-set-dynamic">',
       '      <h3>种子色</h3>',
@@ -13112,6 +13159,14 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (cleanDefBtn) {
       cleanDefBtn.addEventListener('click', () => {
         setCleanDefault(!isCleanDefault());
+        syncSettingsPanelUI();
+      });
+    }
+    const appleEdgeBtn = panel.querySelector('#urppp-set-apple-edge');
+    if (appleEdgeBtn) {
+      appleEdgeBtn.addEventListener('click', () => {
+        setAppleEdgeLine(!isAppleEdgeLine());
+        try { applySkinAttr(); } catch (_) {}
         syncSettingsPanelUI();
       });
     }
