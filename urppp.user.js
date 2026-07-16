@@ -1,11 +1,13 @@
 // ==UserScript==
 // @name         SCU URP++教务系统美化
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.0.1
+// @version      1.0.2
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Chao_Lan,Hanako
 // @license      MIT
 // @icon         https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/docs/icon.png
+// @updateURL    https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js
+// @downloadURL  https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js
 // @match        http://zhjw.scu.edu.cn/*
 // @match        http://202.115.47.141/*
 // @grant        GM_addStyle
@@ -13,11 +15,22 @@
 // @grant        GM_setValue
 // @grant        unsafeWindow
 // @grant        GM_xmlhttpRequest
+// @connect      raw.githubusercontent.com
+// @connect      github.com
 // @run-at       document-start
 // ==/UserScript==
 
 (function () {
   'use strict';
+
+  // 与脚本头 @version 保持同步
+  const URPPP_VERSION = '1.0.2';
+  const URPPP_UPDATE = {
+    mainRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js',
+    assistRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js',
+    repo: 'https://github.com/chaolan2019/SCU-URP-plusplus',
+    greasySearch: 'https://greasyfork.org/zh-CN/scripts?q=SCU+URP%2B%2B'
+  };
 
   // 最早阶段：最高优先级遮罩盖住未美化界面，完成后淡入
   GM_addStyle(`
@@ -12409,6 +12422,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '    <p class="urppp-set-tip" style="margin-top:8px">开启后按系统浅色/深色自动切换。浅色可选用下方动态配色，深色固定深邃暗。</p>',
       '    <button type="button" class="urppp-set-follow" id="urppp-set-clean-default" aria-pressed="false" style="margin-top:10px;width:100%">默认进入清爽模式：关</button>',
       '    <p class="urppp-set-tip" style="margin-top:8px">开启后，仅在首页自动打开清爽模式（其它页面不自动进入，可随时退出）。</p>',
+      '    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">',
+      '      <button type="button" class="urppp-set-btn" id="urppp-set-check-update">检查更新</button>',
+      '    </div>',
+      '    <div id="urppp-set-update-status" class="urppp-set-tip" style="margin-top:8px">当前主插件版本：' + String(URPPP_VERSION) + '</div>',
       '  </section>',
       '  <section class="urppp-set-sec" id="urppp-set-dynamic">',
       '    <h3>种子色</h3>',
@@ -12467,6 +12484,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         setCleanDefault(!isCleanDefault());
         syncSettingsPanelUI();
       });
+    }
+    const checkUpdateBtn = panel.querySelector('#urppp-set-check-update');
+    if (checkUpdateBtn && !checkUpdateBtn.__urpppBound) {
+      checkUpdateBtn.__urpppBound = true;
+      checkUpdateBtn.addEventListener('click', () => { checkForUpdates(); });
     }
     const colorInput = panel.querySelector('#urppp-set-color');
     const hexInput = panel.querySelector('#urppp-set-hex');
@@ -12533,6 +12555,195 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       });
     });
   }
+
+  // ===================== 检查更新（主插件 + 可扩展） =====================
+  const __urpppUpdateCheckers = [];
+  let __urpppUpdateBusy = false;
+
+  function parseUserscriptVersion(source) {
+    const m = String(source || '').match(/@version\s+([0-9]+(?:\.[0-9]+){0,3}[\w\-]*)/i);
+    return m ? m[1] : '';
+  }
+
+  function normalizeVerParts(v) {
+    return String(v || '0')
+      .replace(/^v/i, '')
+      .split(/[.+\-]/)
+      .filter(Boolean)
+      .map((p) => (/^\d+$/.test(p) ? parseInt(p, 10) : p));
+  }
+
+  function compareVersions(a, b) {
+    const pa = normalizeVerParts(a);
+    const pb = normalizeVerParts(b);
+    const n = Math.max(pa.length, pb.length);
+    for (let i = 0; i < n; i++) {
+      const x = pa[i] == null ? 0 : pa[i];
+      const y = pb[i] == null ? 0 : pb[i];
+      const nx = typeof x === 'number';
+      const ny = typeof y === 'number';
+      if (nx && ny) {
+        if (x > y) return 1;
+        if (x < y) return -1;
+        continue;
+      }
+      const sx = String(x);
+      const sy = String(y);
+      if (sx > sy) return 1;
+      if (sx < sy) return -1;
+    }
+    return 0;
+  }
+
+  function fetchTextForUpdate(url) {
+    return new Promise((resolve, reject) => {
+      const done = (ok, val) => (ok ? resolve(val) : reject(new Error(val || 'fetch failed')));
+      try {
+        if (typeof GM_xmlhttpRequest === 'function') {
+          GM_xmlhttpRequest({
+            method: 'GET',
+            url,
+            timeout: 15000,
+            headers: { 'Cache-Control': 'no-cache' },
+            onload: (r) => {
+              if (r.status >= 200 && r.status < 400) done(true, r.responseText || '');
+              else done(false, 'HTTP ' + r.status);
+            },
+            onerror: () => done(false, 'network error'),
+            ontimeout: () => done(false, 'timeout')
+          });
+          return;
+        }
+      } catch (_) {}
+      fetch(url, { cache: 'no-store' })
+        .then((r) => {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.text();
+        })
+        .then((t) => done(true, t))
+        .catch((e) => done(false, e && e.message));
+    });
+  }
+
+  function setUpdateStatus(html, type) {
+    const el = document.getElementById('urppp-set-update-status');
+    if (!el) return;
+    el.innerHTML = html || '';
+    el.style.color = type === 'err'
+      ? '#b91c1c'
+      : (type === 'ok' ? '#15803d' : 'var(--text-muted)');
+  }
+
+  async function checkMainUpdate() {
+    const local = URPPP_VERSION;
+    const remoteSource = await fetchTextForUpdate(URPPP_UPDATE.mainRaw);
+    const remote = parseUserscriptVersion(remoteSource);
+    if (!remote) throw new Error('无法解析远程主插件版本');
+    const cmp = compareVersions(remote, local);
+    return {
+      id: 'main',
+      name: '主插件',
+      local,
+      remote,
+      status: cmp > 0 ? 'update' : (cmp === 0 ? 'latest' : 'ahead'),
+      updateUrl: URPPP_UPDATE.mainRaw,
+      pageUrl: URPPP_UPDATE.greasySearch
+    };
+  }
+
+  async function checkForUpdates() {
+    if (__urpppUpdateBusy) return;
+    __urpppUpdateBusy = true;
+    const btn = document.getElementById('urppp-set-check-update');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '检查中…';
+    }
+    setUpdateStatus('正在从 GitHub 检查更新…');
+    try {
+      const jobs = [checkMainUpdate()];
+      // 副插件注册的额外检查项
+      (__urpppUpdateCheckers || []).forEach((c) => {
+        if (c && typeof c.check === 'function') {
+          jobs.push(Promise.resolve().then(() => c.check()).then((r) => r || {
+            id: c.id || 'extra',
+            name: c.name || '扩展',
+            status: 'err',
+            message: '无结果'
+          }).catch((e) => ({
+            id: c.id || 'extra',
+            name: c.name || '扩展',
+            status: 'err',
+            message: String(e && e.message || e)
+          })));
+        }
+      });
+      const results = await Promise.all(jobs);
+      const lines = results.map((r) => {
+        if (!r) return '';
+        if (r.status === 'err') {
+          return `• <b>${escapeHtml(r.name || r.id)}</b>：检查失败（${escapeHtml(r.message || 'unknown')}）`;
+        }
+        if (r.status === 'update') {
+          const link = r.updateUrl
+            ? ` <a href="${escapeHtml(r.updateUrl)}" target="_blank" rel="noopener noreferrer">打开更新源</a>`
+            : '';
+          const page = r.pageUrl
+            ? ` <a href="${escapeHtml(r.pageUrl)}" target="_blank" rel="noopener noreferrer">Greasy Fork</a>`
+            : '';
+          return `• <b>${escapeHtml(r.name)}</b>：发现新版本 <b>${escapeHtml(r.remote)}</b>（当前 ${escapeHtml(r.local)}）${link}${page}`;
+        }
+        if (r.status === 'ahead') {
+          return `• <b>${escapeHtml(r.name)}</b>：本地 ${escapeHtml(r.local)} 新于远程 ${escapeHtml(r.remote)}`;
+        }
+        return `• <b>${escapeHtml(r.name)}</b>：已是最新（${escapeHtml(r.local)}）`;
+      }).filter(Boolean);
+
+      const hasUpdate = results.some((r) => r && r.status === 'update');
+      const hasErr = results.some((r) => r && r.status === 'err');
+      const head = hasUpdate ? '检查完成：发现更新' : (hasErr ? '检查完成：部分失败' : '检查完成：全部最新');
+      setUpdateStatus(
+        `${head}<br>${lines.join('<br>')}<br><span style="opacity:.85">仓库：<a href="${URPPP_UPDATE.repo}" target="_blank" rel="noopener noreferrer">SCU-URP-plusplus</a></span>`,
+        hasErr ? 'err' : (hasUpdate ? 'ok' : 'ok')
+      );
+    } catch (e) {
+      setUpdateStatus('检查失败：' + escapeHtml(e && e.message || e), 'err');
+    } finally {
+      __urpppUpdateBusy = false;
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '检查更新';
+      }
+    }
+  }
+
+  // 给辅助插件扩展：registerChecker({ id, name, check: async () => result })
+  function registerUpdateChecker(checker) {
+    if (!checker || typeof checker.check !== 'function') return false;
+    const id = String(checker.id || checker.name || '').trim();
+    if (!id) return false;
+    const idx = __urpppUpdateCheckers.findIndex((c) => c && c.id === id);
+    const item = {
+      id,
+      name: checker.name || id,
+      check: checker.check
+    };
+    if (idx >= 0) __urpppUpdateCheckers[idx] = item;
+    else __urpppUpdateCheckers.push(item);
+    return true;
+  }
+
+  try {
+    window.__urpppUpdate = {
+      version: URPPP_VERSION,
+      urls: URPPP_UPDATE,
+      check: checkForUpdates,
+      checkMain: checkMainUpdate,
+      registerChecker: registerUpdateChecker,
+      compareVersions,
+      parseUserscriptVersion
+    };
+  } catch (_) {}
 
   function injectNavbarThemeSwitch() {
     try {

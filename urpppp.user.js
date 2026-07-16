@@ -1,11 +1,13 @@
 // ==UserScript==
 // @name         SCU URP++教务系统辅助插件
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.2.6
+// @version      1.2.7
 // @description  URP++ 扩展：登录验证码识别 + 评教自动填写/到时自动保存 + 列表页全自动评教。设置挂到 URP++ 设置面板。
 // @author       Chao_Lan,Hanako
 // @license      MIT
 // @icon         https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/docs/icon.png
+// @updateURL    https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js
+// @downloadURL  https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js
 // @match        http://zhjw.scu.edu.cn/*
 // @match        http://202.115.47.141/*
 // @match        https://*.scu.edu.cn/*
@@ -29,6 +31,10 @@
 
 (function () {
   'use strict';
+
+  // 与脚本头 @version 保持同步
+  const URPPPP_VERSION = '1.2.7';
+  const URPPPP_RAW_URL = 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js';
 
   // ===================== 公共工具 =====================
   const NS = 'urpppp_assist_v1';
@@ -1370,6 +1376,7 @@
 
   try {
     window.__urppppAssist = {
+      version: URPPPP_VERSION,
       loginConf,
       evalConf,
       runLogin: mainLogin,
@@ -1379,6 +1386,94 @@
       injectSettings: injectSettingsPanel
     };
   } catch (_) {}
+
+  // 挂到主插件「检查更新」：只在主插件提供扩展点时注册
+  function fetchAssistRemoteVersion() {
+    return new Promise((resolve, reject) => {
+      try {
+        GM_xmlhttpRequest({
+          method: 'GET',
+          url: URPPPP_RAW_URL,
+          timeout: 15000,
+          headers: { 'Cache-Control': 'no-cache' },
+          onload: (r) => {
+            if (r.status >= 200 && r.status < 400) resolve(r.responseText || '');
+            else reject(new Error('HTTP ' + r.status));
+          },
+          onerror: () => reject(new Error('network error')),
+          ontimeout: () => reject(new Error('timeout'))
+        });
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
+  function parseVersionFromSource(src) {
+    const m = String(src || '').match(/@version\s+([0-9]+(?:\.[0-9]+){0,3}[\w\-]*)/i);
+    return m ? m[1] : '';
+  }
+
+  function compareSemver(a, b) {
+    // 优先复用主插件比较器
+    try {
+      if (window.__urpppUpdate && typeof window.__urpppUpdate.compareVersions === 'function') {
+        return window.__urpppUpdate.compareVersions(a, b);
+      }
+    } catch (_) {}
+    const pa = String(a || '0').replace(/^v/i, '').split(/[.+\-]/).map((x) => (/^\d+$/.test(x) ? +x : x));
+    const pb = String(b || '0').replace(/^v/i, '').split(/[.+\-]/).map((x) => (/^\d+$/.test(x) ? +x : x));
+    const n = Math.max(pa.length, pb.length);
+    for (let i = 0; i < n; i++) {
+      const x = pa[i] == null ? 0 : pa[i];
+      const y = pb[i] == null ? 0 : pb[i];
+      if (x === y) continue;
+      if (typeof x === 'number' && typeof y === 'number') return x > y ? 1 : -1;
+      return String(x) > String(y) ? 1 : -1;
+    }
+    return 0;
+  }
+
+  async function checkAssistUpdate() {
+    const local = URPPPP_VERSION;
+    const remoteSource = await fetchAssistRemoteVersion();
+    const remote = parseVersionFromSource(remoteSource);
+    if (!remote) throw new Error('无法解析远程辅助插件版本');
+    const cmp = compareSemver(remote, local);
+    return {
+      id: 'assist',
+      name: '辅助插件',
+      local,
+      remote,
+      status: cmp > 0 ? 'update' : (cmp === 0 ? 'latest' : 'ahead'),
+      updateUrl: URPPPP_RAW_URL
+    };
+  }
+
+  function registerAssistUpdateChecker() {
+    try {
+      const api = window.__urpppUpdate;
+      if (!api || typeof api.registerChecker !== 'function') return false;
+      return api.registerChecker({
+        id: 'assist',
+        name: '辅助插件',
+        check: checkAssistUpdate
+      });
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // 主插件可能稍晚就绪：轮询注册几次
+  (function waitRegisterUpdate() {
+    let tries = 0;
+    const tick = () => {
+      if (registerAssistUpdateChecker()) return;
+      tries += 1;
+      if (tries < 40) setTimeout(tick, 250);
+    };
+    tick();
+  })();
 
   watchSettingsPanel();
 
