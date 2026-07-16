@@ -1027,7 +1027,6 @@
     try {
       if (document.body) document.body.setAttribute('data-urppp-skin', id);
     } catch (_) {}
-    // 写入形状 token 到独立 style，避免被主题色整表覆盖冲掉语义
     try {
       const el = document.getElementById('urppp-skin-vars') || (() => {
         const e = document.createElement('style');
@@ -1039,130 +1038,262 @@
       let css = ':root, html[data-urppp-skin] {';
       Object.keys(o).forEach((k) => { css += k + ':' + o[k] + ';'; });
       css += '}';
-      // 皮肤级组件规则
+
       if (id === 'apple') {
+        // 类Apple：卡片/按钮几乎无描边，只靠轻阴影分层；清爽模式同步
         css += `
-html[data-urppp-skin="apple"] .page-content .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not(#billContainer):not([id$="_scroll"]),
-html[data-urppp-skin="apple"] #page-content-template .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not(#billContainer):not([id$="_scroll"]),
-html[data-urppp-skin="apple"] .page-content .profile-user-info,
-html[data-urppp-skin="apple"] .page-content .profile-user-info-striped,
-html[data-urppp-skin="apple"] html body .page-content .profile-user-info.setLabelWidth,
-html[data-urppp-skin="apple"] .modal-content,
-html[data-urppp-skin="apple"] .panel,
-html[data-urppp-skin="apple"] .well,
-html[data-urppp-skin="apple"] .infobox {
-  border-color: transparent !important;
-  border-width: 0 !important;
-  box-shadow: var(--shadow) !important;
+html[data-urppp-skin="apple"] {
+  --shadow: 0 6px 20px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04);
+  --border: rgba(0,0,0,0.04);
 }
-html[data-urppp-skin="apple"] .page-content .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not(#billContainer):not([id$="_scroll"]),
-html[data-urppp-skin="apple"] #page-content-template .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not([id$="_scroll"]) {
-  border: none !important;
-  box-shadow: var(--shadow) !important;
-}
-/* 登录卡同理 */
-html[data-urppp-skin="apple"] #urppp-root .uc {
-  border: none !important;
-  box-shadow: var(--shadow) !important;
+html[data-urppp-skin="apple"].urppp-theme-dark,
+html.urppp-theme-dark[data-urppp-skin="apple"] {
+  --shadow: 0 10px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04);
+  --border: rgba(255,255,255,0.06);
 }
 html[data-urppp-skin="apple"] .widget-box,
+html[data-urppp-skin="apple"] .widget-box.transparent,
 html[data-urppp-skin="apple"] .panel,
+html[data-urppp-skin="apple"] .panel-default,
 html[data-urppp-skin="apple"] .well,
 html[data-urppp-skin="apple"] .thumbnail,
 html[data-urppp-skin="apple"] .infobox,
 html[data-urppp-skin="apple"] .profile-user-info,
 html[data-urppp-skin="apple"] .profile-user-info-striped,
 html[data-urppp-skin="apple"] .modal-content,
-html[data-urppp-skin="apple"] fieldset {
+html[data-urppp-skin="apple"] fieldset,
+html[data-urppp-skin="apple"] .urppp-stat-card,
+html[data-urppp-skin="apple"] .urppp-db-card,
+html[data-urppp-skin="apple"] .urppp-db-panel,
+html[data-urppp-skin="apple"] #urppp-dashboard .widget-box,
+html[data-urppp-skin="apple"] #urppp-root .uc,
+html[data-urppp-skin="apple"] #urppp-clean-root .uc-card,
+html[data-urppp-skin="apple"] #urppp-clean-root .uc-modal,
+html[data-urppp-skin="apple"] #urppp-clean-root .uc-top,
+html[data-urppp-skin="apple"] #urppp-clean-root .uc-tabbar {
+  border: none !important;
+  border-color: transparent !important;
+  box-shadow: var(--shadow) !important;
+}
+html[data-urppp-skin="apple"] .page-content .widget-box,
+html[data-urppp-skin="apple"] #page-content-template .widget-box,
+html[data-urppp-skin="apple"] html body .page-content .profile-user-info.setLabelWidth {
   border: none !important;
   box-shadow: var(--shadow) !important;
 }
-html[data-urppp-skin="apple"] .page-content table,
-html[data-urppp-skin="apple"] .page-content .table,
-html[data-urppp-skin="apple"] .table-bordered {
-  border-color: rgba(0,0,0,0.06) !important;
-  box-shadow: none !important;
-}
+html[data-urppp-skin="apple"] .btn,
 html[data-urppp-skin="apple"] .btn-default,
-html[data-urppp-skin="apple"] .btn-white {
+html[data-urppp-skin="apple"] .btn-white,
+html[data-urppp-skin="apple"] .btn-primary,
+html[data-urppp-skin="apple"] .btn-info,
+html[data-urppp-skin="apple"] .btn-success,
+html[data-urppp-skin="apple"] .btn-warning,
+html[data-urppp-skin="apple"] .btn-danger,
+html[data-urppp-skin="apple"] a.btn,
+html[data-urppp-skin="apple"] #urppp-clean-root .uc-btn {
   border-color: transparent !important;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+}
+html[data-urppp-skin="apple"] .btn-primary,
+html[data-urppp-skin="apple"] .btn-info,
+html[data-urppp-skin="apple"] #urppp-clean-root .uc-btn.primary {
+  border: none !important;
+}
+html[data-urppp-skin="apple"] .table,
+html[data-urppp-skin="apple"] table,
+html[data-urppp-skin="apple"] .table-bordered,
+html[data-urppp-skin="apple"] .table-bordered > thead > tr > th,
+html[data-urppp-skin="apple"] .table-bordered > tbody > tr > td {
+  border-color: rgba(0,0,0,0.05) !important;
+}
+html[data-urppp-skin="apple"].urppp-theme-dark .table,
+html[data-urppp-skin="apple"].urppp-theme-dark .table-bordered,
+html[data-urppp-skin="apple"].urppp-theme-dark .table-bordered > thead > tr > th,
+html[data-urppp-skin="apple"].urppp-theme-dark .table-bordered > tbody > tr > td {
+  border-color: rgba(255,255,255,0.06) !important;
+}
+html[data-urppp-skin="apple"] .nav-tabs > li > a,
+html[data-urppp-skin="apple"] .nav-tabs {
+  border-color: transparent !important;
+}
+html[data-urppp-skin="apple"] .urppp-nav-link {
+  border: none !important;
+}
+html[data-urppp-skin="apple"] #urppp-clean-root .uc-lesson,
+html[data-urppp-skin="apple"] #urppp-clean-root .uc-grid-cell,
+html[data-urppp-skin="apple"] #urppp-clean-root .uc-svc {
+  border-color: transparent !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
 }
 `;
       } else if (id === 'flat') {
+        // 极简扁平：直角 + 无阴影 + 硬边；覆盖主站/首页仪表板/清爽模式/按钮
         css += `
 html[data-urppp-skin="flat"] {
-  --radius: 0px;
-  --radius-sm: 0px;
-  --shadow: none;
+  --radius: 0px !important;
+  --radius-sm: 0px !important;
+  --shadow: none !important;
+  --border: var(--text) !important;
 }
-html[data-urppp-skin="flat"] .page-content .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not(#billContainer):not([id$="_scroll"]),
-html[data-urppp-skin="flat"] #page-content-template .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not(#billContainer):not([id$="_scroll"]),
-html[data-urppp-skin="flat"] .page-content .profile-user-info,
-html[data-urppp-skin="flat"] .page-content .profile-user-info-striped,
-html[data-urppp-skin="flat"] html body .page-content .profile-user-info.setLabelWidth,
-html[data-urppp-skin="flat"] .modal-content,
+html[data-urppp-skin="flat"] *:not(img):not(svg):not(path):not(circle):not(i):not(.fa):not(.ace-icon):not(.glyphicon) {
+  border-radius: 0 !important;
+}
+/* 圆形保留：主题点/头像 */
+html[data-urppp-skin="flat"] .urppp-nav-dot,
+html[data-urppp-skin="flat"] #urppp-nav-theme .urppp-nav-dot,
+html[data-urppp-skin="flat"] .nav-user-photo,
+html[data-urppp-skin="flat"] img.nav-user-photo,
+html[data-urppp-skin="flat"] .urppp-set-swatch {
+  border-radius: 50% !important;
+}
+html[data-urppp-skin="flat"] .widget-box,
+html[data-urppp-skin="flat"] .widget-box.transparent,
 html[data-urppp-skin="flat"] .panel,
+html[data-urppp-skin="flat"] .panel-default,
 html[data-urppp-skin="flat"] .well,
-html[data-urppp-skin="flat"] .infobox {
+html[data-urppp-skin="flat"] .thumbnail,
+html[data-urppp-skin="flat"] .infobox,
+html[data-urppp-skin="flat"] .profile-user-info,
+html[data-urppp-skin="flat"] .profile-user-info-striped,
+html[data-urppp-skin="flat"] .modal-content,
+html[data-urppp-skin="flat"] fieldset,
+html[data-urppp-skin="flat"] .urppp-stat-card,
+html[data-urppp-skin="flat"] .urppp-db-card,
+html[data-urppp-skin="flat"] .urppp-db-panel,
+html[data-urppp-skin="flat"] #urppp-dashboard .widget-box,
+html[data-urppp-skin="flat"] #urppp-dashboard [class*="card"],
+html[data-urppp-skin="flat"] .page-content .widget-box,
+html[data-urppp-skin="flat"] #page-content-template .widget-box,
+html[data-urppp-skin="flat"] #urppp-root .uc,
+html[data-urppp-skin="flat"] #urppp-settings-panel,
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-card,
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-modal,
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-top,
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-tabbar,
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-svc,
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-lesson,
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-grid-cell,
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-course-sub,
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-attr-pill {
   border-radius: 0 !important;
   box-shadow: none !important;
   border: 2px solid var(--text) !important;
 }
 html[data-urppp-skin="flat"] .btn,
+html[data-urppp-skin="flat"] .btn-default,
+html[data-urppp-skin="flat"] .btn-white,
 html[data-urppp-skin="flat"] .btn-primary,
 html[data-urppp-skin="flat"] .btn-info,
 html[data-urppp-skin="flat"] .btn-success,
 html[data-urppp-skin="flat"] .btn-warning,
 html[data-urppp-skin="flat"] .btn-danger,
-html[data-urppp-skin="flat"] .btn-default,
-html[data-urppp-skin="flat"] .btn-white,
-html[data-urppp-skin="flat"] #urppp-root .ubtn {
-  border-radius: 0 !important;
-  box-shadow: none !important;
-}
-html[data-urppp-skin="flat"] .btn-primary,
-html[data-urppp-skin="flat"] .btn-info {
-  border: 2px solid var(--text) !important;
-}
-html[data-urppp-skin="flat"] .btn-default,
-html[data-urppp-skin="flat"] .btn-white {
-  border: 2px solid var(--text) !important;
-  background: var(--surface) !important;
-}
-html[data-urppp-skin="flat"] #urppp-root .uc {
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  border: 2px solid var(--text) !important;
-}
-html[data-urppp-skin="flat"] #urppp-root .ui,
-html[data-urppp-skin="flat"] input.form-control,
-html[data-urppp-skin="flat"] select.form-control,
-html[data-urppp-skin="flat"] textarea.form-control {
-  border-radius: 0 !important;
-  box-shadow: none !important;
-  border-width: 2px !important;
-  border-color: var(--text) !important;
-}
-html[data-urppp-skin="flat"] #urppp-settings-panel,
-html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-scheme,
+html[data-urppp-skin="flat"] .btn-purple,
+html[data-urppp-skin="flat"] .btn-app,
+html[data-urppp-skin="flat"] a.btn,
+html[data-urppp-skin="flat"] button.btn,
+html[data-urppp-skin="flat"] input.btn,
+html[data-urppp-skin="flat"] .btn-group > .btn,
+html[data-urppp-skin="flat"] .btn-group-xs > .btn,
+html[data-urppp-skin="flat"] .btn-xs,
+html[data-urppp-skin="flat"] .btn-sm,
+html[data-urppp-skin="flat"] .btn-minier,
+html[data-urppp-skin="flat"] #urppp-root .ubtn,
+html[data-urppp-skin="flat"] #urppp-root .ut button,
+html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-btn,
 html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-mode,
 html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-follow,
-html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-btn {
+html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-scheme,
+html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-tab,
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn,
+html[data-urppp-skin="flat"] #urppp-clean-root button,
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-tabbar button,
+html[data-urppp-skin="flat"] .chosen-container-single .chosen-single,
+html[data-urppp-skin="flat"] .chosen-container-multi .chosen-choices,
+html[data-urppp-skin="flat"] .form-control,
+html[data-urppp-skin="flat"] input[type="text"],
+html[data-urppp-skin="flat"] input[type="password"],
+html[data-urppp-skin="flat"] input[type="number"],
+html[data-urppp-skin="flat"] input[type="search"],
+html[data-urppp-skin="flat"] select,
+html[data-urppp-skin="flat"] textarea,
+html[data-urppp-skin="flat"] #urppp-root .ui {
   border-radius: 0 !important;
   box-shadow: none !important;
-}
-html[data-urppp-skin="flat"] #urppp-settings-panel {
   border: 2px solid var(--text) !important;
 }
-html[data-urppp-skin="flat"] table,
-html[data-urppp-skin="flat"] .table {
+html[data-urppp-skin="flat"] .btn-primary,
+html[data-urppp-skin="flat"] .btn-info,
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn.primary,
+html[data-urppp-skin="flat"] #urppp-root .ubtn {
+  background: var(--primary) !important;
+  color: #fff !important;
+  border: 2px solid var(--text) !important;
+}
+html[data-urppp-skin="flat"] .btn-default,
+html[data-urppp-skin="flat"] .btn-white,
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn:not(.primary) {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border: 2px solid var(--text) !important;
+}
+html[data-urppp-skin="flat"] .btn:hover,
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn:hover {
+  transform: none !important;
   box-shadow: none !important;
+  filter: none !important;
+}
+html[data-urppp-skin="flat"] .btn-primary:hover,
+html[data-urppp-skin="flat"] .btn-info:hover {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border: 2px solid var(--text) !important;
+}
+html[data-urppp-skin="flat"] .table,
+html[data-urppp-skin="flat"] table,
+html[data-urppp-skin="flat"] .table-bordered {
+  border: 2px solid var(--text) !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+html[data-urppp-skin="flat"] .table > thead > tr > th,
+html[data-urppp-skin="flat"] .table > tbody > tr > td,
+html[data-urppp-skin="flat"] .table-bordered > thead > tr > th,
+html[data-urppp-skin="flat"] .table-bordered > tbody > tr > td {
+  border-color: var(--text) !important;
+  border-width: 1px !important;
+}
+html[data-urppp-skin="flat"] .nav-tabs > li > a,
+html[data-urppp-skin="flat"] .nav-tabs {
+  border-radius: 0 !important;
+  border-color: var(--text) !important;
+}
+html[data-urppp-skin="flat"] .urppp-nav-link,
+html[data-urppp-skin="flat"] .urppp-nav-item {
+  border-radius: 0 !important;
+}
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-card:hover,
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-svc:hover,
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-lesson:hover,
+html[data-urppp-skin="flat"] .urppp-stat-card:hover {
+  transform: none !important;
+  box-shadow: none !important;
+}
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-avatar,
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-gpa,
+html[data-urppp-skin="flat"] #urppp-clean-root .uc-cd-chip {
+  border-radius: 0 !important;
+  border: 2px solid var(--text) !important;
+  box-shadow: none !important;
+}
+html[data-urppp-skin="flat"] #urppp-boot-loader .urppp-cube-face {
+  border-radius: 0 !important;
 }
 `;
       }
       el.textContent = css;
-    } catch (_) {}
+    } catch (e) {
+      try { console.warn('[URP++] applySkinAttr', e); } catch (_) {}
+    }
   }
 
   function setSkin(id) {
@@ -16274,6 +16405,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       try { openSettingsPanel(); } catch (_) {}
     });
     el.__syncCleanThemeDots = syncCleanThemeDots;
+    try { applySkinAttr(); } catch (_) {}
     syncCleanThemeDots();
     el.querySelectorAll('#uc-tabbar button').forEach((btn) => {
       btn.onclick = () => {
