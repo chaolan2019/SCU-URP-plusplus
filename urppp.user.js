@@ -5262,10 +5262,13 @@
         gap: 10px !important;
       }
       #urppp-settings-panel .urppp-about-logo {
-        width: min(220px, 72%) !important;
+        width: min(280px, 88%) !important;
+        max-width: 100% !important;
         height: auto !important;
         display: block !important;
-        border-radius: 16px !important;
+        border-radius: 14px !important;
+        object-fit: contain !important;
+        background: transparent !important;
       }
       #urppp-settings-panel .urppp-about-ver {
         margin: 4px 0 0 !important;
@@ -12773,7 +12776,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     panel.id = 'urppp-settings-panel';
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', 'URP++ 设置');
-    const logoUrl = 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/docs/scu-urppp-logo.png';
+    // 关于页 Logo：优先 raw，失败回退 jsDelivr（同源缓存/拦截时更稳）
+    const logoRaw = 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/docs/scu-urppp-logo.png';
+    const logoCdn = 'https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/docs/scu-urppp-logo.png';
     panel.innerHTML = [
       '<div class="urppp-set-head">',
       '  <div class="urppp-set-title">设置</div>',
@@ -12799,6 +12804,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '        <button type="button" class="urppp-set-follow" id="urppp-set-follow-dynamic" aria-pressed="false">浅色用动态配色：关</button>',
       '      </div>',
       '      <p class="urppp-set-tip" style="margin-top:8px">开启后按系统浅色/深色自动切换。浅色可选用下方动态配色，深色固定深邃暗。</p>',
+      '      <button type="button" class="urppp-set-follow" id="urppp-set-clean-default" aria-pressed="false" style="margin-top:12px;width:100%">默认进入清爽模式：关</button>',
+      '      <p class="urppp-set-tip" style="margin-top:8px">开启后，仅在首页自动打开清爽模式（其它页面不自动进入，可随时退出）。</p>',
       '    </section>',
       '    <section class="urppp-set-sec" id="urppp-set-dynamic">',
       '      <h3>种子色</h3>',
@@ -12822,11 +12829,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '    </section>',
       '  </div>',
       '  <div class="urppp-set-pane" data-pane="system">',
-      '    <section class="urppp-set-sec">',
-      '      <h3>清爽模式</h3>',
-      '      <button type="button" class="urppp-set-follow" id="urppp-set-clean-default" aria-pressed="false" style="width:100%">默认进入清爽模式：关</button>',
-      '      <p class="urppp-set-tip" style="margin-top:8px">开启后，仅在首页自动打开清爽模式（其它页面不自动进入，可随时退出）。</p>',
-      '    </section>',
       '    <section class="urppp-set-sec" id="urppp-set-update">',
       '      <h3>更新</h3>',
       '      <button type="button" class="urppp-set-follow" id="urppp-set-auto-update" aria-pressed="false" style="width:100%">自动检测更新：关</button>',
@@ -12838,7 +12840,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '  </div>',
       '  <div class="urppp-set-pane" data-pane="about">',
       '    <div class="urppp-about">',
-      '      <img class="urppp-about-logo" src="' + logoUrl + '" alt="SCU URP++" />',
+      '      <img class="urppp-about-logo" id="urppp-about-logo" src="' + logoRaw + '" alt="SCU URP++" referrerpolicy="no-referrer" />',
       '      <p class="urppp-about-ver">SCU URP++ v' + URPPP_VERSION + '</p>',
       '      <p class="urppp-about-author">作者：Chao_Lan · Hanako</p>',
       '    </div>',
@@ -12868,6 +12870,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     panel.__urpppSwitchTab = switchTab;
 
     panel.querySelector('#urppp-set-close').addEventListener('click', closeSettingsPanel);
+    const aboutLogo = panel.querySelector('#urppp-about-logo');
+    if (aboutLogo && !aboutLogo.__urpppFallback) {
+      aboutLogo.__urpppFallback = true;
+      aboutLogo.addEventListener('error', () => {
+        if (aboutLogo.dataset.fallback === '1') return;
+        aboutLogo.dataset.fallback = '1';
+        aboutLogo.src = logoCdn;
+      });
+    }
     panel.querySelectorAll('.urppp-set-mode').forEach((btn) => {
       btn.addEventListener('click', () => {
         applyTheme(btn.dataset.theme, { manual: true });
