@@ -125,6 +125,25 @@ URP++/
 node --check urppp.user.js
 ```
 
+### 自动 Release（GitHub Actions）
+
+推送到 `main` 且主脚本 `@version` **升高**时，工作流会：
+
+1. 读取 `urppp.user.js` 的 `@version`（如 `1.0.7`）
+2. 创建 tag `v1.0.7`
+3. 发布 GitHub Release  
+   - **正文**：从 `CHANGELOG.md` 截取该版本段落  
+   - **Assets**：仅 `urppp.user.js`、`urpppp.user.js`（说明不进附件）
+
+同一版本 tag 已存在时默认跳过，避免重复发版。可在 Actions 页手动 **Run workflow** 并勾选 force 覆盖说明/附件。
+
+发版检查清单：
+
+1. 改代码  
+2. 升高主脚本 `@version` 与 `URPPP_VERSION`  
+3. 在 `CHANGELOG.md` 顶部写 `## [x.y.z]` 段落  
+4. `git push origin master:main`
+
 ---
 
 ## 更新日志

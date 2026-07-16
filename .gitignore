@@ -1,0 +1,8 @@
+.claude/
+node_modules/
+dist/
+*.zip
+.DS_Store
+.gh-token.tmp
+*.tmp
+release-notes-v*.md

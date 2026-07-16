@@ -1,0 +1,159 @@
+name: Release on version bump
+
+# 主脚本 @version 升高并推到 main 时，自动创建 GitHub Release
+# - 正文：从 CHANGELOG.md 截取该版本段落（不是 Assets）
+# - Assets：仅 urppp.user.js、urpppp.user.js
+#
+# 手动触发：Actions → Release on version bump → Run workflow
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "urppp.user.js"
+      - "urpppp.user.js"
+      - "CHANGELOG.md"
+      - ".github/workflows/release.yml"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "已有同名 tag 时仍尝试更新 Release 说明与附件"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read versions and build notes
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          main_ver="$(grep -m1 -E '^// @version' urppp.user.js | sed -E 's/^\/\/ @version[[:space:]]+//')"
+          assist_ver="$(grep -m1 -E '^// @version' urpppp.user.js | sed -E 's/^\/\/ @version[[:space:]]+//')"
+
+          if [[ -z "${main_ver}" ]]; then
+            echo "无法从 urppp.user.js 解析 @version" >&2
+            exit 1
+          fi
+
+          tag="v${main_ver}"
+          echo "main_ver=${main_ver}" >> "$GITHUB_OUTPUT"
+          echo "assist_ver=${assist_ver}" >> "$GITHUB_OUTPUT"
+          echo "tag=${tag}" >> "$GITHUB_OUTPUT"
+
+          # 是否已有 tag
+          if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then
+            echo "tag_exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag_exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          # 从 CHANGELOG 截取 ## [x.y.z] 段落
+          python3 - <<'PY'
+          from pathlib import Path
+          import os, re
+
+          main_ver = open("urppp.user.js", encoding="utf-8").read()
+          m = re.search(r"^// @version\s+(\S+)", main_ver, re.M)
+          ver = m.group(1) if m else ""
+          assist_src = open("urpppp.user.js", encoding="utf-8").read()
+          am = re.search(r"^// @version\s+(\S+)", assist_src, re.M)
+          assist = am.group(1) if am else "unknown"
+
+          md = Path("CHANGELOG.md").read_text(encoding="utf-8") if Path("CHANGELOG.md").exists() else ""
+          # 匹配 ## [1.0.7] 或 ## 1.0.7
+          pattern = re.compile(rf"^##\s*\[?v?{re.escape(ver)}\]?[^\n]*$", re.M)
+          hit = pattern.search(md)
+          section = ""
+          if hit:
+              start = hit.start()
+              nxt = re.search(r"^##\s+", md[hit.end():], re.M)
+              end = hit.end() + nxt.start() if nxt else len(md)
+              section = md[start:end].strip()
+
+          notes = []
+          notes.append(f"## SCU URP++ {ver}")
+          notes.append("")
+          notes.append("### 包含文件")
+          notes.append(f"- `urppp.user.js` — 主脚本 **{ver}**")
+          notes.append(f"- `urpppp.user.js` — 辅助插件 **{assist}**（可选，本地安装）")
+          notes.append("")
+          notes.append("### 安装")
+          notes.append("- 主脚本：Greasy Fork 搜索 `SCU URP++`，或下载本页附件 `urppp.user.js` 安装到 Tampermonkey")
+          notes.append("- 辅助插件：下载 `urpppp.user.js` 本地安装（需已启用主脚本；风险自负）")
+          notes.append("")
+          if section:
+              notes.append("### 本版本更新日志")
+              notes.append("")
+              notes.append(section)
+          else:
+              notes.append("### 本版本更新日志")
+              notes.append("")
+              notes.append(f"_CHANGELOG.md 中未找到 `{ver}` 段落，请查看完整 [CHANGELOG](https://github.com/{os.environ.get('GITHUB_REPOSITORY','')}/blob/main/CHANGELOG.md)。_")
+          notes.append("")
+          notes.append(f"完整日志：https://github.com/{os.environ.get('GITHUB_REPOSITORY','')}/blob/main/CHANGELOG.md")
+
+          Path("release-body.md").write_text("\n".join(notes) + "\n", encoding="utf-8")
+          print("notes written for", ver)
+          PY
+
+          echo "---- release body preview ----"
+          head -n 40 release-body.md || true
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          TAG_EXISTS: ${{ steps.meta.outputs.tag_exists }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force || false }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${TAG_EXISTS}" == "true" && "${FORCE}" != "true" ]]; then
+            echo "Tag ${TAG} 已存在，跳过发布（避免重复）。"
+            echo "如需覆盖说明/附件：Actions 手动运行并勾选 force。"
+            exit 0
+          fi
+
+          if [[ "${TAG_EXISTS}" != "true" ]]; then
+            git tag "${TAG}"
+            git push origin "${TAG}"
+          fi
+
+          # 说明进 --notes（Release 正文），不作为 asset
+          # 附件仅两个脚本
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "Release ${TAG} 已存在，更新 notes 与 assets..."
+            gh release edit "${TAG}" \
+              --title "SCU URP++ ${{ steps.meta.outputs.main_ver }}" \
+              --notes-file release-body.md
+            gh release upload "${TAG}" \
+              urppp.user.js \
+              urpppp.user.js \
+              --clobber
+          else
+            gh release create "${TAG}" \
+              urppp.user.js \
+              urpppp.user.js \
+              --title "SCU URP++ ${{ steps.meta.outputs.main_ver }}" \
+              --notes-file release-body.md \
+              --latest
+          fi
+
+          echo "Released: https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
