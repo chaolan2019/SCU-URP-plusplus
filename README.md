@@ -100,7 +100,6 @@ URP++/
 ├── README_.md                 # 辅助插件说明与风险声明
 ├── LICENSE                    # MIT 开源协议
 ├── CHANGELOG.md               # 主脚本更新日志
-│   ├── README.md
 └── docs/
     ├── scu-urppp-logo.png     # 标题 Logo
     ├── icon.png               # 油猴脚本图标
