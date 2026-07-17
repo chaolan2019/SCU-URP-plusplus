@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SCU URP++教务系统美化
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.0.9
+// @version      1.1.0
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Chao_Lan,Hanako
 // @license      MIT
@@ -24,7 +24,7 @@
   'use strict';
 
   // 与脚本头 @version 保持同步
-  const URPPP_VERSION = '1.0.9';
+  const URPPP_VERSION = '1.1.0';
   const URPPP_UPDATE = {
     mainRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js',
     assistRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js',
@@ -1165,7 +1165,9 @@
           'html[data-urppp-skin="flat"] .fc-button,html[data-urppp-skin="flat"] .fc-state-default,html[data-urppp-skin="flat"] .fc-button-group > *,html[data-urppp-skin="flat"] #urppp-left .fc-button,html[data-urppp-skin="flat"] #urppp-left .fc-state-default,html[data-urppp-skin="flat"] #urppp-left .fc-toolbar button,html[data-urppp-skin="flat"] #urppp-left .fc-toolbar .fc-button,html[data-urppp-skin="flat"] .fc-prev-button,html[data-urppp-skin="flat"] .fc-next-button,html[data-urppp-skin="flat"] .fc-today-button,html[data-urppp-skin="flat"] button.fc-button{border-radius:0!important;border:2px solid var(--text)!important;box-shadow:none!important;background:var(--surface)!important;color:var(--text)!important;}'
 
 
-        ].join('');
+        ,
+          'html[data-urppp-skin="flat"] #urppp-clean-root .uc-build-grid button,html[data-urppp-skin="flat"] #urppp-clean-root .uc-build-grid > button{border-radius:0!important;border:2px solid var(--text)!important;box-shadow:none!important;background:var(--surface)!important;color:var(--text)!important;transform:none!important;}',
+          'html[data-urppp-skin="flat"] #urppp-clean-root .uc-build-grid button:hover{background:var(--text)!important;color:var(--surface)!important;border-color:var(--text)!important;transform:none!important;box-shadow:none!important;}'].join('');
       }
       else if (id === 'organic') {
         // 自然有机：奶油底/大地色/大圆角；完整适配清爽模式
@@ -1191,7 +1193,8 @@
           'html[data-urppp-skin="organic"] input.form-control,html[data-urppp-skin="organic"] select.form-control,html[data-urppp-skin="organic"] textarea.form-control,html[data-urppp-skin="organic"] #urppp-root .ui,html[data-urppp-skin="organic"] #form-search .nav-search-input,html[data-urppp-skin="organic"] input#search-input{border-radius:999px!important;border:1px solid var(--border)!important;background:var(--input-bg)!important;color:var(--text)!important;}',
           'html[data-urppp-skin="organic"] h1,html[data-urppp-skin="organic"] h2,html[data-urppp-skin="organic"] h3,html[data-urppp-skin="organic"] h4,html[data-urppp-skin="organic"] .page-header,html[data-urppp-skin="organic"] #urppp-clean-root .uc-brand,html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-set-title{font-family:Georgia,"Noto Serif SC","Songti SC","Times New Roman",serif!important;}',
           'html[data-urppp-skin="organic"] .urppp-nav-dot,html[data-urppp-skin="organic"] #urppp-nav-theme .urppp-nav-dot,html[data-urppp-skin="organic"] #urppp-clean-root .uc-top-theme .urppp-nav-dot{border-radius:50%!important;}'
-        ].join('');
+        ,
+          'html[data-urppp-skin="organic"] #urppp-clean-root .uc-build-grid button{border-radius:14px!important;border:1px solid var(--border)!important;box-shadow:none!important;background:var(--input-bg)!important;color:var(--text)!important;}'].join('');
       }
       el.textContent = css;
     } catch (e) {
@@ -5541,16 +5544,35 @@
         image-rendering: pixelated !important;
         image-rendering: crisp-edges !important;
       }
-      #urppp-settings-panel .urppp-about-ver {
+      #urppp-settings-panel .urppp-about-ver,
+      #urppp-settings-panel a.urppp-about-ver {
         margin: 4px 0 0 !important;
         font-size: 13px !important;
         font-weight: 700 !important;
         color: var(--text) !important;
+        text-decoration: none !important;
+        cursor: pointer !important;
+      }
+      #urppp-settings-panel a.urppp-about-ver:hover {
+        color: var(--primary) !important;
+        text-decoration: underline !important;
       }
       #urppp-settings-panel .urppp-about-author {
         margin: 0 !important;
         font-size: 12px !important;
         color: var(--text-secondary) !important;
+      }
+      #urppp-settings-panel .urppp-about-contact {
+        margin: 0 !important;
+        font-size: 12px !important;
+        color: var(--text-secondary) !important;
+      }
+      #urppp-settings-panel .urppp-about-msg {
+        margin: 8px 0 0 !important;
+        font-size: 12px !important;
+        line-height: 1.65 !important;
+        color: var(--text-secondary) !important;
+        white-space: pre-line !important;
       }
       #urppp-settings-panel #urppp-set-assist-slot:empty {
         display: none !important;
@@ -13056,8 +13078,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     try { renderSkinCards(panel); } catch (e) { try { console.warn('[URP++] renderSkinCards', e); } catch (_) {} }
     try {
-      const ver = panel.querySelector('.urppp-about-ver');
-      if (ver) ver.textContent = 'SCU URP++ v' + URPPP_VERSION;
+      const ver = panel.querySelector('.urppp-about-ver, #urppp-about-ver');
+      if (ver) {
+        ver.textContent = 'SCU URP++ v' + URPPP_VERSION;
+        if (ver.tagName === 'A') {
+          ver.setAttribute('href', URPPP_UPDATE.repo);
+          ver.setAttribute('target', '_blank');
+          ver.setAttribute('rel', 'noopener noreferrer');
+        }
+      }
     } catch (_) {}
     try { ensureAboutLogo(panel); } catch (_) {}
   }
@@ -13182,8 +13211,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '  <div class="urppp-set-pane" data-pane="about">',
       '    <div class="urppp-about">',
       '      <img class="urppp-about-logo" id="urppp-about-logo" src="' + logoRaw + '" alt="SCU URP++" referrerpolicy="no-referrer" />',
-      '      <p class="urppp-about-ver">SCU URP++ v' + URPPP_VERSION + '</p>',
+      '      <a class="urppp-about-ver" id="urppp-about-ver" href="' + URPPP_UPDATE.repo + '" target="_blank" rel="noopener noreferrer">SCU URP++ v' + URPPP_VERSION + '</a>',
       '      <p class="urppp-about-author">作者：Chao_Lan · Hanako</p>',
+      '      <p class="urppp-about-contact">QQ：2718748334</p>',
+      '      <p class="urppp-about-msg">有任何问题欢迎及时反馈！\n半夜Vibe有点爽怎么回事。</p>',
       '    </div>',
       '  </div>',
       '</div>'
