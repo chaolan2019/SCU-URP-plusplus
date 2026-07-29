@@ -5749,35 +5749,18 @@
       #urppp-settings-panel .urppp-skin-list {
         display: flex !important;
         flex-direction: column !important;
-        gap: 12px !important;
+        gap: 20px !important;
+        padding: 4px 10px 12px 4px !important;
       }
       #urppp-settings-panel .urppp-skin-card {
         position: relative !important;
         min-height: 118px !important;
-        border-radius: 16px !important;
-        border: 1px solid var(--border) !important;
         padding: 14px 14px 48px !important;
         box-sizing: border-box !important;
-        overflow: hidden !important;
-        transition: transform .18s ease, filter .18s ease, box-shadow .18s ease, opacity .18s ease !important;
-        filter: grayscale(1) !important;
-        opacity: .78 !important;
-      }
-      #urppp-settings-panel .urppp-skin-card.is-active,
-      #urppp-settings-panel .urppp-skin-card:hover {
+        overflow: visible !important;
         filter: none !important;
         opacity: 1 !important;
-      }
-      #urppp-settings-panel .urppp-skin-card:hover {
-        transform: scale(1.015) !important;
-        box-shadow: 0 10px 28px rgba(0,0,0,.08) !important;
-      }
-      #urppp-settings-panel .urppp-skin-card.is-active {
-        box-shadow: 0 0 0 2px var(--primary), 0 10px 28px rgba(0,0,0,.08) !important;
-      }
-      html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-skin-card.is-active {
-        box-shadow: none !important;
-        outline: 2px solid var(--primary) !important;
+        transition: transform 180ms ease-out, box-shadow 180ms ease-out, background-color 180ms ease-out, border-color 180ms ease-out !important;
       }
       #urppp-settings-panel .urppp-skin-name {
         font-size: 15px !important;
@@ -5790,44 +5773,67 @@
         font-size: 12px !important;
         line-height: 1.5 !important;
         max-width: 72% !important;
+        color: inherit !important;
         opacity: .88 !important;
       }
-      #urppp-settings-panel .urppp-skin-apply {
+      #urppp-settings-panel .urppp-skin-card > .urppp-skin-apply {
         position: absolute !important;
         right: 12px !important;
         bottom: 12px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
         height: 30px !important;
         padding: 0 12px !important;
-        border-radius: 999px !important;
-        border: 1px solid currentColor !important;
-        background: rgba(255,255,255,.72) !important;
-        color: inherit !important;
         font-size: 12px !important;
-        font-weight: 600 !important;
+        font-weight: 700 !important;
         cursor: pointer !important;
-      }
-      #urppp-settings-panel .urppp-skin-apply.is-disabled {
-        text-decoration: line-through !important;
-        opacity: .7 !important;
-      }
-      #urppp-settings-panel .urppp-skin-apply.is-current {
-        background: var(--primary) !important;
-        border-color: var(--primary) !important;
-        color: #fff !important;
         text-decoration: none !important;
+        transition: transform 150ms ease-out, box-shadow 150ms ease-out, color 150ms ease-out, background-color 150ms ease-out !important;
       }
-      /* skin previews */
+      #urppp-settings-panel .urppp-skin-card > .urppp-skin-apply.is-disabled {
+        text-decoration: line-through !important;
+        opacity: .62 !important;
+      }
+      #urppp-settings-panel .urppp-skin-card > .urppp-skin-apply.is-current {
+        cursor: default !important;
+        opacity: 1 !important;
+      }
+
+      /* 类 Apple：系统灰、链接蓝、胶囊按钮、柔和悬浮 */
       #urppp-settings-panel .urppp-skin-card[data-skin="apple"] {
         background: #f5f5f7 !important;
         color: #1d1d1f !important;
-        border: none !important;
+        border: 1px solid rgba(0,0,0,.06) !important;
         border-radius: 18px !important;
         box-shadow: 0 8px 24px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.04) !important;
       }
-      #urppp-settings-panel .urppp-skin-card[data-skin="apple"] .urppp-skin-apply:not(.is-current) {
-        border-color: #0071e3 !important;
-        color: #0071e3 !important;
+      #urppp-settings-panel .urppp-skin-card[data-skin="apple"]:hover {
+        background: #fff !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 14px 32px rgba(0,0,0,.12), 0 3px 8px rgba(0,0,0,.05) !important;
       }
+      #urppp-settings-panel .urppp-skin-card[data-skin="apple"].is-active {
+        box-shadow: 0 0 0 2px #0071e3, 0 12px 30px rgba(0,113,227,.14) !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply {
+        border: 1px solid #0071e3 !important;
+        border-radius: 999px !important;
+        background: rgba(255,255,255,.86) !important;
+        color: #0071e3 !important;
+        box-shadow: none !important;
+        transform: none !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply:not(:disabled):hover,
+      #urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply.is-current {
+        background: #0071e3 !important;
+        border-color: #0071e3 !important;
+        color: #fff !important;
+        box-shadow: none !important;
+        transform: none !important;
+      }
+
+      /* 极简扁平：纯黑白、无阴影、整卡反相 */
       #urppp-settings-panel .urppp-skin-card[data-skin="flat"] {
         background: #fff !important;
         color: #000 !important;
@@ -5835,39 +5841,191 @@
         border-radius: 0 !important;
         box-shadow: none !important;
       }
+      #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover {
+        background: #000 !important;
+        color: #fff !important;
+        border-color: #000 !important;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="flat"].is-active {
+        outline: 3px solid #000 !important;
+        outline-offset: 2px !important;
+        box-shadow: none !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="flat"] > .urppp-skin-apply {
+        border: 2px solid #000 !important;
+        border-radius: 0 !important;
+        background: #fff !important;
+        color: #000 !important;
+        box-shadow: none !important;
+        transform: none !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="flat"] > .urppp-skin-apply:not(:disabled):hover,
+      #urppp-settings-panel .urppp-skin-card[data-skin="flat"] > .urppp-skin-apply.is-current {
+        background: #000 !important;
+        color: #fff !important;
+        box-shadow: none !important;
+        transform: none !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover > .urppp-skin-apply {
+        border-color: #fff !important;
+      }
+
+      /* 自然有机：奶油大地色、柔和圆角与克制浮起 */
       #urppp-settings-panel .urppp-skin-card[data-skin="organic"] {
         background: #faf6f1 !important;
         color: #5c4033 !important;
         border: 1px solid #e7e0d6 !important;
         border-radius: 22px !important;
+        box-shadow: 0 3px 12px rgba(92,64,51,.06) !important;
       }
+      #urppp-settings-panel .urppp-skin-card[data-skin="organic"]:hover {
+        background: #f2e8dc !important;
+        border-color: #8b9d77 !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 8px 20px rgba(92,64,51,.12) !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="organic"].is-active {
+        box-shadow: 0 0 0 2px #8b9d77, 0 8px 20px rgba(92,64,51,.1) !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="organic"] > .urppp-skin-apply {
+        border: 1px solid #8b9d77 !important;
+        border-radius: 999px !important;
+        background: #fffcf7 !important;
+        color: #5c4033 !important;
+        box-shadow: none !important;
+        transform: none !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="organic"] > .urppp-skin-apply:not(:disabled):hover,
+      #urppp-settings-panel .urppp-skin-card[data-skin="organic"] > .urppp-skin-apply.is-current {
+        background: #5c4033 !important;
+        border-color: #5c4033 !important;
+        color: #fff !important;
+        box-shadow: none !important;
+        transform: none !important;
+      }
+
+      /* 新野兽派：粗黑边、硬阴影、高能粉到酸性绿的硬切换 */
       #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] {
         background: #fff !important;
         color: #000 !important;
         border: 3px solid #000 !important;
         border-radius: 0 !important;
         box-shadow: 5px 5px 0 #000 !important;
+        transition-duration: 150ms !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="brutal"]:hover {
+        background: #ccff00 !important;
+        color: #000 !important;
+        transform: translate(-2px,-2px) !important;
+        box-shadow: 8px 8px 0 #000 !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="brutal"].is-active {
+        outline: 4px solid #ff006e !important;
+        outline-offset: 3px !important;
+        box-shadow: 7px 7px 0 #000 !important;
       }
       #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-skin-name {
+        font-family: "Arial Black", "Microsoft YaHei UI", sans-serif !important;
         font-weight: 900 !important;
       }
+      #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] > .urppp-skin-apply {
+        border: 3px solid #000 !important;
+        border-radius: 0 !important;
+        background: #ff006e !important;
+        color: #000 !important;
+        box-shadow: 3px 3px 0 #000 !important;
+        transform: none !important;
+        transition-duration: 150ms !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] > .urppp-skin-apply:not(:disabled):hover {
+        background: #00d9ff !important;
+        color: #000 !important;
+        box-shadow: 5px 5px 0 #000 !important;
+        transform: translate(-2px,-2px) !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] > .urppp-skin-apply:not(:disabled):active {
+        background: #ccff00 !important;
+        box-shadow: none !important;
+        transform: translate(3px,3px) !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] > .urppp-skin-apply.is-current {
+        background: #ff006e !important;
+        border-color: #000 !important;
+        color: #000 !important;
+        box-shadow: 3px 3px 0 #000 !important;
+        transform: none !important;
+      }
+
+      /* 编辑杂志：纸张底、衬线标题、黑白编辑反差 */
       #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] {
         background: #f9f8f6 !important;
         color: #1c1c1c !important;
-        border: 1px solid rgba(28,28,28,.14) !important;
+        border: 1px solid rgba(28,28,28,.22) !important;
         border-radius: 0 !important;
         box-shadow: none !important;
       }
-      #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] .urppp-skin-name {
-        font-family: "Noto Serif SC", "Songti SC", "Times New Roman", serif !important;
-        font-weight: 600 !important;
+      #urppp-settings-panel .urppp-skin-card[data-skin="editorial"]:hover {
+        background: #fff !important;
+        border-color: #1c1c1c !important;
+        transform: none !important;
+        box-shadow: inset 6px 0 0 #1c1c1c !important;
       }
+      #urppp-settings-panel .urppp-skin-card[data-skin="editorial"].is-active {
+        outline: 2px solid #1c1c1c !important;
+        outline-offset: 2px !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] .urppp-skin-name,
+      #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply {
+        font-family: "Noto Serif SC", "Songti SC", "Times New Roman", serif !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply {
+        border: 1px solid #1c1c1c !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        color: #1c1c1c !important;
+        box-shadow: none !important;
+        transform: none !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply:not(:disabled):hover,
+      #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply.is-current {
+        background: #1c1c1c !important;
+        color: #fff !important;
+        box-shadow: none !important;
+        transform: none !important;
+      }
+
+      /* 新拟物：同色浮雕，悬停时内凹 */
       #urppp-settings-panel .urppp-skin-card[data-skin="neu"] {
         background: #e0e5ec !important;
         color: #3d4450 !important;
         border: none !important;
         border-radius: 20px !important;
-        box-shadow: 8px 8px 16px #b8bcc2, -8px -8px 16px #ffffff !important;
+        box-shadow: 8px 8px 16px #b8bcc2, -8px -8px 16px #fff !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="neu"]:hover {
+        background: #e0e5ec !important;
+        transform: none !important;
+        box-shadow: inset 5px 5px 10px #b8bcc2, inset -5px -5px 10px #fff !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="neu"].is-active {
+        box-shadow: inset 4px 4px 8px #b8bcc2, inset -4px -4px 8px #fff, 0 0 0 2px #6b7789 !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="neu"] > .urppp-skin-apply {
+        border: none !important;
+        border-radius: 14px !important;
+        background: #e0e5ec !important;
+        color: #3d4450 !important;
+        box-shadow: 4px 4px 8px #b8bcc2, -4px -4px 8px #fff !important;
+        transform: none !important;
+      }
+      #urppp-settings-panel .urppp-skin-card[data-skin="neu"] > .urppp-skin-apply:not(:disabled):hover,
+      #urppp-settings-panel .urppp-skin-card[data-skin="neu"] > .urppp-skin-apply.is-current {
+        background: #e0e5ec !important;
+        color: #263142 !important;
+        box-shadow: inset 3px 3px 6px #b8bcc2, inset -3px -3px 6px #fff !important;
+        transform: none !important;
       }
       #urppp-settings-panel .urppp-about {
         display: flex !important;
