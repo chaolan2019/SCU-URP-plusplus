@@ -16725,7 +16725,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     const scheme = schemes[state.activeSchemeIdx] || schemes[0] || { summary: summarizeCourses([]), title: '方案成绩' };
     const av = p.avatar ? `<img src="${escapeHtml(p.avatar)}" alt="">` : `<span>${escapeHtml((p.name || '同')[0])}</span>`;
     const scoreBody = state.loading.scores
-      ? '<div class="uc-loading">成绩加载中…</div>'
+      ? '<div class="uc-loading">成绩加载中</div>'
       : (state.scores && state.scores.error
         ? `<div class="uc-empty">${escapeHtml(state.scores.error)}</div>`
         : `<div class="uc-score-grid">
