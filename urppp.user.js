@@ -1441,7 +1441,13 @@
           html[data-urppp-skin="brutal"] #urppp-settings-panel #urppp-set-clean-default{
             margin-bottom:10px!important;
           }
-          html[data-urppp-skin="brutal"] #urppp-settings-panel #urppp-set-clean-default + .urppp-set-tip{
+          html[data-urppp-skin="brutal"] #urppp-settings-panel #urppp-set-clean-default + .urppp-set-tip,
+          html[data-urppp-skin="brutal"] #urppp-settings-panel #urppp-set-auto-update + .urppp-set-tip,
+          html[data-urppp-skin="brutal"] #urppp-settings-panel #urppp-set-check-update + #urppp-set-update-status,
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urpppp-entry-grid + .urpppp-tip,
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urpppp-actions + .urpppp-status,
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urpppp-switches + .urpppp-sub,
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urpppp-switches + .urpppp-grid{
             margin-top:14px!important;
           }
           html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-tabs{
