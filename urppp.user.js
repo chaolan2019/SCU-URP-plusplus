@@ -12908,9 +12908,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 顶栏重建（JS 强制对齐）
   // ============================================================
 
-  let navbarClickBound = false;
-
-
   function syncNavbarThemeUI() {
     const wrap = document.getElementById('urppp-nav-theme');
     if (!wrap) return;
@@ -14190,8 +14187,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const clicki = document.getElementById('clicki');
       if (clicki) force(clicki, { color: 'var(--text-secondary)', 'margin-top': '0' });
 
-      if (!navbarClickBound) {
-        navbarClickBound = true;
+      if (!clickDiv.__urpppNavbarClickBound) {
+        clickDiv.__urpppNavbarClickBound = true;
         clickDiv.addEventListener('mouseenter', () => clickDiv.style.setProperty('background-color', 'var(--input-bg)', 'important'));
         clickDiv.addEventListener('mouseleave', () => clickDiv.style.setProperty('background-color', 'transparent', 'important'));
 
@@ -14210,12 +14207,18 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
             if (searchInput) setTimeout(() => searchInput.focus(), 50);
           }
         });
+      }
 
+      if (!window.__urpppNavbarOutsideClickBound) {
+        window.__urpppNavbarOutsideClickBound = true;
         document.addEventListener('click', (e) => {
-          if (!clickDiv.contains(e.target) && !formSearch.contains(e.target) && formSearch.dataset.open === '1') {
-            formSearch.style.width = '0px';
-            formSearch.style.opacity = '0';
-            formSearch.dataset.open = '0';
+          const activeClickDiv = document.getElementById('clickdiv');
+          const activeFormSearch = document.getElementById('form-search');
+          if (!activeClickDiv || !activeFormSearch || activeFormSearch.dataset.open !== '1') return;
+          if (!activeClickDiv.contains(e.target) && !activeFormSearch.contains(e.target)) {
+            activeFormSearch.style.width = '0px';
+            activeFormSearch.style.opacity = '0';
+            activeFormSearch.dataset.open = '0';
           }
         });
       }
@@ -14339,6 +14342,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const origMenus = document.getElementById('menus');
     if (!sidebar || !origMenus) return;
 
+    if (window.__urpppSidebarMenuObserver) {
+      try { window.__urpppSidebarMenuObserver.disconnect(); } catch (_) {}
+      window.__urpppSidebarMenuObserver = null;
+    }
+
     // 先清理旧的（可能从 PJAX 残留）
     const oldMenus = document.getElementById('urppp-menus');
     const oldHeader = sidebar.querySelector('.urppp-sidebar-header');
@@ -14421,6 +14429,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     });
     observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
     observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
+    window.__urpppSidebarMenuObserver = observer;
 
     const newMenus = document.createElement('ul');
     newMenus.id = 'urppp-menus';
@@ -15107,17 +15116,18 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const w = Number(n) || 0;
     if (w < 1 || w > 30) return 0;
     state._termWeek = w;
+    state._termWeekResolved = true;
     try { GM_setValue(TERM_WEEK_KEY, w); } catch (_) {}
     return w;
   }
   function readRememberedTermWeek() {
-    if (state && state._termWeek >= 1) return state._termWeek;
+    if (state && state._termWeek >= 1) {
+      state._termWeekResolved = true;
+      return state._termWeek;
+    }
     try {
       const w = Number(GM_getValue(TERM_WEEK_KEY, 0)) || 0;
-      if (w >= 1 && w <= 30) {
-        state._termWeek = w;
-        return w;
-      }
+      if (w >= 1 && w <= 30) return rememberTermWeek(w);
     } catch (_) {}
     return 0;
   }
@@ -15143,6 +15153,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   function getCurrentWeekNumber() {
+    if (state._termWeekResolved && state._termWeek >= 1 && state._termWeek <= 30) {
+      return state._termWeek;
+    }
     try {
       // 1) 顶栏/页头：同时扫 text + HTML（小屏时 text 可能被折叠，HTML 仍在）
       const headNodes = [
@@ -16082,13 +16095,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     viewWeek: 0, // 0 = 跟随系统当前周
     weekLocked: false, // 用户手动切周后锁定
     _termWeek: 0,
+    _termWeekResolved: false,
     uiReady: false
   };
 
   function ensureStyle() {
-    let st = document.getElementById('urppp-clean-style');
-    if (st) st.remove();
-    st = document.createElement('style');
+    if (document.getElementById('urppp-clean-style')) return;
+    const st = document.createElement('style');
     st.id = 'urppp-clean-style';
     st.textContent = `
 #urppp-clean-root{position:fixed;inset:0;z-index:12000;display:none;background:var(--bg,#F4F6F9);color:var(--text,#111);font-family:inherit;opacity:0;transform:translateY(8px);transition:opacity .28s ease,transform .32s cubic-bezier(.22,1,.36,1)}
@@ -16470,7 +16483,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       console.warn('[URP++] room catalog', e);
     } finally {
       state.loading.room = false;
-      try { render(); } catch (_) {}
+      try { scheduleRender(); } catch (_) {}
     }
     return state.catalog;
   }
@@ -16748,6 +16761,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       <div class="uc-occ"><table class="uc-occ-table">${head}${body}</table></div>`;
   }
 
+  let cleanRenderFrame = 0;
+
   function render() {
     const el = ensureRoot();
     const body = el.querySelector('#uc-body');
@@ -16768,6 +16783,17 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       }, 480);
     }
     bindUI(body);
+  }
+
+  function scheduleRender() {
+    if (!state.open || cleanRenderFrame) return;
+    const run = () => {
+      cleanRenderFrame = 0;
+      if (state.open) render();
+    };
+    cleanRenderFrame = typeof requestAnimationFrame === 'function'
+      ? requestAnimationFrame(run)
+      : setTimeout(run, 0);
   }
 
   function bindUI(scope) {
@@ -17191,6 +17217,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   async function loadAll(force) {
     if (force) {
       state.profile = null; state.schedule = null; state.scores = null; state.catalog = null; state.occupancy = null;
+      state._termWeekResolved = false;
     }
     state.loading.profile = state.loading.schedule = state.loading.scores = true;
     // 先解析教学周，再画界面，避免小屏首帧落到第1周
@@ -17203,7 +17230,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       (async () => {
         try { if (!(state.profile && !force)) state.profile = await loadProfile(); }
         catch (e) { state.profile = { name: '同学', majorPlan: '主修方案', majorGpa: '—', avatar: '' }; console.warn(e); }
-        finally { state.loading.profile = false; render(); }
+        finally { state.loading.profile = false; scheduleRender(); }
       })(),
       (async () => {
         try { if (!(state.schedule && !force)) state.schedule = await loadSchedule(); }
@@ -17215,7 +17242,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
             const tw = getCurrentWeekNumber() || readRememberedTermWeek();
             if (tw >= 1) state.viewWeek = tw;
           }
-          render();
+          scheduleRender();
         }
       })(),
       (async () => {
@@ -17226,14 +17253,14 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
             state._schemeInited = true;
           }
         } catch (e) { state.scores = { passing: [], schemes: [], error: String(e && e.message || e) }; }
-        finally { state.loading.scores = false; render(); }
+        finally { state.loading.scores = false; scheduleRender(); }
       })()
     ]);
     if (!state.weekLocked) {
       const tw = getCurrentWeekNumber() || readRememberedTermWeek();
       if (tw >= 1) state.viewWeek = tw;
     }
-    render();
+    scheduleRender();
   }
 
   function openCleanMode(force) {
@@ -17396,8 +17423,11 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     }
   }
   function watchRouteChanges() {
+    let routeRefreshTimer = 0;
     const run = () => {
-      setTimeout(() => {
+      clearTimeout(routeRefreshTimer);
+      routeRefreshTimer = setTimeout(() => {
+        state._termWeekResolved = false;
         const sidebar = document.getElementById('sidebar');
         if (!sidebar) return;
         syncSidebarUnderNavbar();
