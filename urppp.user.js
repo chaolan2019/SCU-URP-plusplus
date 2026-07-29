@@ -1396,16 +1396,17 @@
           html[data-urppp-skin="brutal"] .nav-tabs,
           html[data-urppp-skin="brutal"] .nav-tabs>li>a,
           html[data-urppp-skin="brutal"] .pagination>li>a,
-          html[data-urppp-skin="brutal"] .pagination>li>span,
-          html[data-urppp-skin="brutal"] .label,
-          html[data-urppp-skin="brutal"] .badge{
+          html[data-urppp-skin="brutal"] .pagination>li>span{
             border:2px solid #000!important;border-radius:0!important;background:#fff!important;color:#000!important;box-shadow:none!important;
           }
           html[data-urppp-skin="brutal"] .nav-tabs>li.active>a,
-          html[data-urppp-skin="brutal"] .pagination>.active>a,
-          html[data-urppp-skin="brutal"] .label-info,
-          html[data-urppp-skin="brutal"] .badge-info{
+          html[data-urppp-skin="brutal"] .pagination>.active>a{
             background:var(--brutal-accent)!important;color:#000!important;
+          }
+          html[data-urppp-skin="brutal"] .label,
+          html[data-urppp-skin="brutal"] .badge,
+          html[data-urppp-skin="brutal"] .urppp-stat-card .label{
+            border:0!important;border-radius:0!important;background:transparent!important;color:#000!important;box-shadow:none!important;padding:0!important;
           }
           html[data-urppp-skin="brutal"] .nav-list>li>a{
             background:#fff!important;color:#000!important;border-bottom:2px solid #000!important;border-radius:0!important;
@@ -1435,24 +1436,36 @@
           html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-sec{
             border-bottom:3px solid #000!important;padding-bottom:20px!important;
           }
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-modes,
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-follow-row{
+            gap:12px!important;margin-bottom:8px!important;
+          }
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-schemes{
+            gap:14px!important;padding:0 6px 6px 0!important;
+          }
           html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-scheme{
             border:3px solid #000!important;border-radius:0!important;background:#fff!important;box-shadow:4px 4px 0 #000!important;
           }
           html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-scheme.ac{
-            background:var(--brutal-accent)!important;outline:3px solid #000!important;outline-offset:-7px!important;
+            background:var(--brutal-accent)!important;outline:none!important;
           }
           html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-scheme-preview span{
             border:2px solid #000!important;border-radius:0!important;
           }
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-lesson,
-          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-grid-cell,
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-course-sub,
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-attr-pill,
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-cd-chip,
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-score-cell{
             border:2px solid #000!important;border-radius:0!important;box-shadow:none!important;background:#fff!important;color:#000!important;
           }
-          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-lesson{border-left:8px solid var(--brutal-accent)!important;}
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-grid-cell{
+            border:1px solid #E7E7E7!important;border-radius:0!important;box-shadow:none!important;background:#FCFCFC!important;
+          }
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-lesson{
+            background:color-mix(in srgb,var(--uc-course-color,var(--brutal-accent)) 11%,#fff)!important;
+            border-left:7px solid var(--uc-course-color,var(--brutal-accent))!important;
+          }
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-gpa{
             border:3px solid #000!important;border-radius:0!important;background:var(--brutal-secondary)!important;color:#000!important;box-shadow:4px 4px 0 #000!important;
           }
@@ -1526,6 +1539,10 @@
     }
     try { syncSettingsPanelUI(); } catch (_) {}
     try { syncNavbarThemeUI(); } catch (_) {}
+    try {
+      const clean = document.getElementById('urppp-clean-root');
+      if (clean && typeof clean.__syncCleanThemeDots === 'function') clean.__syncCleanThemeDots();
+    } catch (_) {}
     return true;
   }
 
@@ -17047,8 +17064,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         const height = span * ROW - 6;
         const z = primary.thisWeek ? 8 : 2;
         const style = primary.thisWeek
-          ? `top:${top}px;height:${height}px;z-index:${z};background:${primary.color}33;border-color:${primary.color}99`
-          : `top:${top}px;height:${height}px;z-index:${z};background:color-mix(in srgb,${primary.color} 10%,var(--input-bg));border-color:var(--border);opacity:.48`;
+          ? `--uc-course-color:${primary.color};top:${top}px;height:${height}px;z-index:${z};background:${primary.color}26;border-color:${primary.color}80`
+          : `--uc-course-color:${primary.color};top:${top}px;height:${height}px;z-index:${z};background:color-mix(in srgb,${primary.color} 8%,var(--input-bg));border-color:var(--border);opacity:.48`;
         const badge = rest.length ? `<span class="uc-badge">+${rest.length}</span>` : '';
         const payload = escapeHtml(JSON.stringify({
           name: primary.name, teacher: primary.teacher, place: primary.place, week: primary.week,
