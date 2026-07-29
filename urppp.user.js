@@ -1240,6 +1240,116 @@
         ,
           'html[data-urppp-skin="flat"] #urppp-clean-root .uc-build-grid button,html[data-urppp-skin="flat"] #urppp-clean-root .uc-build-grid > button{border-radius:0!important;border:2px solid var(--text)!important;box-shadow:none!important;background:var(--surface)!important;color:var(--text)!important;transform:none!important;}',
           'html[data-urppp-skin="flat"] #urppp-clean-root .uc-build-grid button:hover{background:var(--text)!important;color:var(--surface)!important;border-color:var(--text)!important;transform:none!important;box-shadow:none!important;}'].join('');
+        css += `
+          html[data-urppp-skin="flat"] .widget-header,
+          html[data-urppp-skin="flat"] .panel-heading,
+          html[data-urppp-skin="flat"] .urppp-card-header,
+          html[data-urppp-skin="flat"] #urppp-clean-root .uc-hd{
+            background:var(--surface)!important;color:var(--text)!important;
+            border-bottom:2px solid var(--text)!important;
+          }
+          html[data-urppp-skin="flat"] .widget-title,
+          html[data-urppp-skin="flat"] .urppp-card-title,
+          html[data-urppp-skin="flat"] #urppp-clean-root .uc-brand,
+          html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-title{
+            color:var(--text)!important;font-weight:800!important;letter-spacing:0!important;
+          }
+          html[data-urppp-skin="flat"] .btn:not(.btn-link):not(:disabled),
+          html[data-urppp-skin="flat"] a.btn,
+          html[data-urppp-skin="flat"] .btn-app,
+          html[data-urppp-skin="flat"] #navbar button:not(.urppp-nav-dot):not(:disabled),
+          html[data-urppp-skin="flat"] #urppp-nav-clean,
+          html[data-urppp-skin="flat"] #urppp-settings-panel button:not(.urppp-nav-dot):not(.urppp-skin-apply):not(.urppp-set-swatch):not(:disabled),
+          html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn:not(:disabled),
+          html[data-urppp-skin="flat"] #urppp-clean-root .uc-build-grid button:not(:disabled),
+          html[data-urppp-skin="flat"] .fc-button:not(.fc-state-disabled),
+          html[data-urppp-skin="flat"] .pagination>li>a,
+          html[data-urppp-skin="flat"] .nav-list>li>a,
+          html[data-urppp-skin="flat"] .urppp-nav-link,
+          html[data-urppp-skin="flat"] .urppp-stat-card,
+          html[data-urppp-skin="flat"] #urppp-clean-root .uc-svc{
+            transition:background-color 150ms ease-out,color 150ms ease-out,border-color 150ms ease-out,outline-color 150ms ease-out!important;
+            box-shadow:none!important;transform:none!important;
+          }
+          html[data-urppp-skin="flat"] .btn:not(.btn-link):not(:disabled):hover,
+          html[data-urppp-skin="flat"] a.btn:hover,
+          html[data-urppp-skin="flat"] .btn-app:hover,
+          html[data-urppp-skin="flat"] #navbar button:not(.urppp-nav-dot):not(:disabled):hover,
+          html[data-urppp-skin="flat"] #urppp-nav-clean:hover,
+          html[data-urppp-skin="flat"] #urppp-settings-panel button:not(.urppp-nav-dot):not(.urppp-skin-apply):not(.urppp-set-swatch):not(:disabled):hover,
+          html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn:not(:disabled):hover,
+          html[data-urppp-skin="flat"] #urppp-clean-root .uc-build-grid button:not(:disabled):hover,
+          html[data-urppp-skin="flat"] .fc-button:not(.fc-state-disabled):hover,
+          html[data-urppp-skin="flat"] .pagination>li>a:hover,
+          html[data-urppp-skin="flat"] .nav-list>li>a:hover,
+          html[data-urppp-skin="flat"] .urppp-nav-link:hover,
+          html[data-urppp-skin="flat"] .urppp-stat-card:hover,
+          html[data-urppp-skin="flat"] #urppp-clean-root .uc-svc:hover{
+            background:var(--text)!important;color:var(--surface)!important;
+            border-color:var(--text)!important;box-shadow:none!important;transform:none!important;
+          }
+          html[data-urppp-skin="flat"] .btn:not(.btn-link):hover *,
+          html[data-urppp-skin="flat"] a.btn:hover *,
+          html[data-urppp-skin="flat"] .btn-app:hover *,
+          html[data-urppp-skin="flat"] #navbar button:not(.urppp-nav-dot):hover *,
+          html[data-urppp-skin="flat"] #urppp-settings-panel button:not(.urppp-skin-apply):not(.urppp-set-swatch):hover *,
+          html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn:hover *,
+          html[data-urppp-skin="flat"] #urppp-clean-root .uc-build-grid button:hover *,
+          html[data-urppp-skin="flat"] .fc-button:hover *,
+          html[data-urppp-skin="flat"] .pagination>li>a:hover *,
+          html[data-urppp-skin="flat"] .nav-list>li>a:hover *,
+          html[data-urppp-skin="flat"] .urppp-nav-link:hover *,
+          html[data-urppp-skin="flat"] .urppp-stat-card:hover *,
+          html[data-urppp-skin="flat"] #urppp-clean-root .uc-svc:hover *{
+            color:var(--surface)!important;
+          }
+          html[data-urppp-skin="flat"] #urppp-clean-root .uc-svc:hover svg{
+            color:var(--surface)!important;transform:none!important;
+          }
+          html[data-urppp-skin="flat"] #urppp-dashboard .btn-app,
+          html[data-urppp-skin="flat"] #personalApplication .btn-app,
+          html[data-urppp-skin="flat"] body #urppp-dashboard .btn.btn-app{
+            background:var(--surface)!important;color:var(--text)!important;
+            border-color:var(--text)!important;box-shadow:none!important;transform:none!important;
+          }
+          html[data-urppp-skin="flat"] #urppp-dashboard .btn-app:hover,
+          html[data-urppp-skin="flat"] #personalApplication .btn-app:hover,
+          html[data-urppp-skin="flat"] body #urppp-dashboard .btn.btn-app:hover{
+            background:var(--text)!important;color:var(--surface)!important;
+            border-color:var(--text)!important;box-shadow:none!important;transform:none!important;
+          }
+          html[data-urppp-skin="flat"] #urppp-dashboard .btn-app:hover *,
+          html[data-urppp-skin="flat"] #personalApplication .btn-app:hover *{
+            color:var(--surface)!important;
+          }
+          html[data-urppp-skin="flat"] #urppp-left .fc-button,
+          html[data-urppp-skin="flat"] #urppp-left button.fc-button,
+          html[data-urppp-skin="flat"] #urppp-left .fc-state-default{
+            background:var(--surface)!important;color:var(--text)!important;
+            border-color:var(--text)!important;box-shadow:none!important;
+          }
+          html[data-urppp-skin="flat"] #urppp-left .fc-button:not(.fc-state-disabled):hover,
+          html[data-urppp-skin="flat"] #urppp-left button.fc-button:not(.fc-state-disabled):hover,
+          html[data-urppp-skin="flat"] #urppp-left .fc-state-default:not(.fc-state-disabled):hover{
+            background:var(--text)!important;color:var(--surface)!important;
+            border-color:var(--text)!important;box-shadow:none!important;
+          }
+          html[data-urppp-skin="flat"] .btn:focus-visible,
+          html[data-urppp-skin="flat"] a.btn:focus-visible,
+          html[data-urppp-skin="flat"] button:focus-visible,
+          html[data-urppp-skin="flat"] .urppp-stat-card:focus-visible,
+          html[data-urppp-skin="flat"] #urppp-clean-root .uc-svc:focus-visible,
+          html[data-urppp-skin="flat"] .nav-list>li>a:focus-visible{
+            outline:2px solid var(--primary)!important;outline-offset:2px!important;
+          }
+          @media (prefers-reduced-motion:reduce){
+            html[data-urppp-skin="flat"] .btn,
+            html[data-urppp-skin="flat"] button,
+            html[data-urppp-skin="flat"] a,
+            html[data-urppp-skin="flat"] .urppp-stat-card,
+            html[data-urppp-skin="flat"] #urppp-clean-root .uc-svc{transition:none!important;}
+          }
+        `;
       }
       else if (id === 'brutal') {
         const palette = getBrutalActivePalette();
