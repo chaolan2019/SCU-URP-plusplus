@@ -5562,11 +5562,18 @@
       #urppp-settings-panel .urppp-set-close {
         width: 28px !important;
         height: 28px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex: 0 0 28px !important;
+        padding: 0 !important;
+        box-sizing: border-box !important;
         border: none !important;
         border-radius: var(--radius-sm) !important;
         background: transparent !important;
         color: var(--text-muted) !important;
-        font-size: 18px !important;
+        font-family: Arial, sans-serif !important;
+        font-size: 20px !important;
         cursor: pointer !important;
         line-height: 1 !important;
       }
