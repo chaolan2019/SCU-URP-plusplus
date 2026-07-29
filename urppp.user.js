@@ -15000,53 +15000,111 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // ---- profile ----
+  function normalizeProfileValue(value) {
+    return String(value || '')
+      .replace(/\u00a0/g, ' ')
+      .replace(/\s+/g, ' ')
+      .replace(/^[\s:：]+|[\s:：]+$/g, '')
+      .trim();
+  }
+
+  function readLabeledProfileValue(root, labels) {
+    if (!root || !root.querySelectorAll) return '';
+    const keys = (labels || []).map((label) => normalizeProfileValue(label).replace(/[：:]/g, ''));
+    const rows = root.querySelectorAll('.profile-info-row, tr');
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const labelEl = row.querySelector('.profile-info-name, th, label');
+      const valueEl = row.querySelector('.profile-info-value, td:last-child');
+      if (!labelEl || !valueEl || labelEl === valueEl) continue;
+      const label = normalizeProfileValue(labelEl.textContent).replace(/[：:]/g, '');
+      if (!keys.some((key) => label === key || label.endsWith(key))) continue;
+      const value = normalizeProfileValue(valueEl.textContent);
+      if (value && value !== '—' && value !== '-') return value;
+    }
+    return '';
+  }
+
+  function cleanMajorPlanName(value) {
+    return normalizeProfileValue(value)
+      .replace(/^主修为\s*/, '')
+      .replace(/培养方案概况.*$/, '')
+      .replace(/…+/g, '')
+      .split(/主修必修GPA|GPA算法|已修读|尚不及格|本学期/)[0]
+      .trim();
+  }
+
+  function extractAcademicOverview(root) {
+    const result = { majorPlan: '', majorGpa: '' };
+    if (!root || !root.querySelectorAll) return result;
+    root.querySelectorAll('.infobox, .widget-box, .urppp-stat-card').forEach((box) => {
+      const raw = (box.innerText || box.textContent || '').trim();
+      const text = normalizeProfileValue(raw);
+      if (/主修必修GPA/.test(text)) {
+        const match = text.match(/(-?\d+(?:\.\d+)?)\s*主修必修GPA/)
+          || text.match(/主修必修GPA[^\d-]{0,20}(-?\d+(?:\.\d+)?)/);
+        if (match) {
+          const gpa = Number(match[1]);
+          const current = Number(result.majorGpa);
+          if (Number.isFinite(gpa) && gpa >= 0 && gpa <= 5
+            && (!result.majorGpa || current === 0 || gpa > 0)) {
+            result.majorGpa = match[1];
+          }
+        }
+      }
+      if (/主修为|培养方案/.test(text)) {
+        const match = text.match(/([\u4e00-\u9fa5A-Za-z0-9（）()·+\-]{2,60}(?:培养方案|教学计划))/)
+          || text.match(/^(.{2,60}?)\s*主修为/)
+          || text.match(/主修为\s*(.{2,60})$/);
+        const plan = cleanMajorPlanName(match && match[1]);
+        if (plan && !/GPA|已修读|尚不及格|本学期/.test(plan)) {
+          const detailed = /培养方案|教学计划/.test(plan);
+          if (!result.majorPlan || detailed) result.majorPlan = plan;
+        }
+      }
+    });
+    return result;
+  }
+
   async function loadProfile() {
     const profile = { name: '', avatar: '', majorPlan: '', majorGpa: '', studentId: '' };
     try {
       const user = document.querySelector('#navbar .user-info, .ace-nav .user-info, .user-info');
       if (user) {
-        // 真实 DOM: <small>欢迎您，</small>\n刘冠博  —— 只读 clone，不改 live DOM
+        // 真实 DOM: <small>欢迎您，</small>\n姓名 —— 只读 clone，不改 live DOM
         const raw = (user.innerText || user.textContent || '').replace(/\s+/g, ' ').trim();
         let m = raw.match(/欢迎您[，,]\s*([\u4e00-\u9fa5·]{2,12})/);
         if (!m) {
           const clone = user.cloneNode(true);
           clone.querySelectorAll('small, i, img, b, .badge').forEach((n) => n.remove());
-          let t = (clone.textContent || '').replace(/\s+/g, ' ').trim();
-          t = t.replace(/^欢迎您[，,]\s*/g, '').replace(/\d{8,}/g, '').trim();
-          m = t.match(/([\u4e00-\u9fa5·]{2,12})/);
+          let text = (clone.textContent || '').replace(/\s+/g, ' ').trim();
+          text = text.replace(/^欢迎您[，,]\s*/g, '').replace(/\d{8,}/g, '').trim();
+          m = text.match(/([\u4e00-\u9fa5·]{2,12})/);
         }
         if (m && m[1] && !/欢迎|同学|首页|反馈|密码|注销/.test(m[1])) profile.name = m[1];
       }
       const img = document.querySelector('#navbar img.nav-user-photo, .ace-nav img.nav-user-photo');
       if (img && img.src) profile.avatar = img.src;
-      const bodyText = (document.body && document.body.innerText) || '';
-      const gpaM = bodyText.match(/(\d+\.\d+)\s*主修必修GPA/) || bodyText.match(/主修必修GPA[^\d]*(\d+\.\d+)/);
-      if (gpaM) profile.majorGpa = gpaM[1];
-      document.querySelectorAll('.infobox, .widget-box, .urppp-stat-card').forEach((box) => {
-        const tx = (box.textContent || '').replace(/\s+/g, ' ');
-        if (/主修必修GPA|GPA算法/.test(tx)) {
-          const n = tx.match(/(\d+\.\d+)/);
-          if (n) profile.majorGpa = n[1];
-        }
-        if (/主修为|培养方案/.test(tx) && !profile.majorPlan) {
-          const m = tx.match(/主修为\s*([^\n]{2,40})/) || tx.match(/([\u4e00-\u9fa5A-Za-z0-9（）()]{4,40}培养方案)/);
-          if (m) profile.majorPlan = m[1].replace(/…+/g, '').trim();
-        }
-      });
+      const overview = extractAcademicOverview(document);
+      profile.majorPlan = overview.majorPlan;
+      profile.majorGpa = overview.majorGpa;
     } catch (_) {}
 
     try {
       const html = await fetchText('/student/rollManagement/rollInfo/index');
       const doc = parseHtml(html);
-      const text = (doc.body && doc.body.innerText) || '';
+      const text = (doc.body && (doc.body.innerText || doc.body.textContent)) || '';
       if (!profile.name) {
-        const nm = text.match(/姓名\s*([^\s]{2,20})/);
-        if (nm) profile.name = nm[1].trim();
+        profile.name = readLabeledProfileValue(doc, ['姓名']);
+        if (!profile.name) {
+          const match = text.match(/姓名\s*[：:]?\s*([\u4e00-\u9fa5·]{2,20})/);
+          if (match) profile.name = match[1].trim();
+        }
       }
-      if (!profile.majorPlan) {
-        const mp = text.match(/主修方案名称\s*([^\n]+)/) || text.match(/专业\s*([^\n]{2,40})/);
-        if (mp) profile.majorPlan = mp[1].trim();
-      }
+      const plan = readLabeledProfileValue(doc, ['主修方案名称']);
+      const major = readLabeledProfileValue(doc, ['专业']);
+      if (plan) profile.majorPlan = cleanMajorPlanName(plan);
+      else if (!profile.majorPlan && major) profile.majorPlan = cleanMajorPlanName(major);
       const photo = doc.querySelector('.profile-picture img, img[src*="photo" i], img[src*="Photo"]');
       if (photo && photo.getAttribute('src') && !profile.avatar) {
         const src = photo.getAttribute('src');
@@ -15054,9 +15112,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       }
     } catch (_) {}
 
+    const gpa = Number(profile.majorGpa);
     if (!profile.name) profile.name = '同学';
     if (!profile.majorPlan) profile.majorPlan = '主修方案';
-    if (!profile.majorGpa) profile.majorGpa = '—';
+    // 首页学业信息异步加载期间会短暂出现 0.0，交给方案成绩完成后确认。
+    if (!Number.isFinite(gpa) || gpa <= 0 || gpa > 5) profile.majorGpa = '—';
     return profile;
   }
 
@@ -15471,25 +15531,35 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return groups;
   }
 
+  function schemePlanName(group) {
+    return cleanMajorPlanName((group && group.meta && group.meta.famc) || (group && group.title) || '');
+  }
+
   function pickMajorSchemeIndex(schemes, majorPlan) {
     if (!schemes || !schemes.length) return 0;
-    const plan = String(majorPlan || '');
-    // 1) 标题含「培养方案」且不含微专业/辅修
-    let idx = schemes.findIndex((g) => /培养方案/.test(g.title || '') && !/微专业|辅修|双学位/.test(g.title || ''));
-    if (idx >= 0) return idx;
-    // 2) 与资料卡主修方案名匹配
+    const plan = cleanMajorPlanName(majorPlan);
+    // 1) 标题或接口 famc 含「培养方案」，且不是微专业/辅修。
+    let idx = schemes.findIndex((group) => {
+      const name = schemePlanName(group);
+      return /培养方案/.test(name) && !/微专业|辅修|双学位/.test(name);
+    });
+    if (idx >= 0 && (!plan || schemePlanName(schemes[idx]).includes(plan.slice(0, 4)))) return idx;
+    // 2) 与资料卡主修方案名匹配。
     if (plan) {
-      idx = schemes.findIndex((g) => (g.title || '').indexOf(plan.replace(/培养方案.*/, '培养方案')) >= 0 || plan.indexOf((g.title || '').slice(0, 4)) >= 0);
-      if (idx >= 0) return idx;
-      idx = schemes.findIndex((g) => (g.title || '').indexOf(plan.slice(0, 4)) >= 0);
+      idx = schemes.findIndex((group) => {
+        const name = schemePlanName(group);
+        return name.includes(plan.replace(/培养方案.*/, '培养方案'))
+          || plan.includes(name.slice(0, 4))
+          || name.includes(plan.slice(0, 4));
+      });
       if (idx >= 0) return idx;
     }
-    // 3) 课程数最多的非微专业
+    // 3) 课程数最多的非微专业。
     let best = 0, bestN = -1;
-    schemes.forEach((g, i) => {
-      if (/微专业|辅修/.test(g.title || '')) return;
-      const n = (g.courses || []).length;
-      if (n > bestN) { bestN = n; best = i; }
+    schemes.forEach((group, i) => {
+      if (/微专业|辅修/.test(schemePlanName(group))) return;
+      const count = (group.courses || []).length;
+      if (count > bestN) { bestN = count; best = i; }
     });
     return best;
   }
@@ -15592,43 +15662,89 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return scorePack;
   }
 
+  function refreshScoreSummaries(scorePack) {
+    if (!scorePack) return scorePack;
+    if (scorePack.passing && scorePack.passing[0]) {
+      scorePack.passing[0].summary = summarizeCoursesPreferOfficial(scorePack.passing[0].courses);
+    }
+    scorePack.schemes = (scorePack.schemes || []).map((group) => {
+      group.summary = summarizeCoursesPreferOfficial(group.courses);
+      return group;
+    });
+    return scorePack;
+  }
+
+  async function enrichScoresWithEvaluation(scorePack) {
+    if (!scorePack || scorePack.evaluationLoading) return scorePack;
+    scorePack.evaluationLoading = true;
+    try {
+      const evalMap = await loadEvaluationMap();
+      attachEvaluationLinks(scorePack, evalMap);
+      scorePack.evalMap = evalMap;
+      scorePack.evaluationReady = true;
+      return refreshScoreSummaries(scorePack);
+    } finally {
+      scorePack.evaluationLoading = false;
+    }
+  }
+
+  function reconcileProfileAndScores() {
+    if (!state.scores || !state.scores.schemes) return;
+    const schemes = state.scores.schemes;
+    const majorPlan = state.profile && state.profile.majorPlan;
+    const majorIdx = pickMajorSchemeIndex(schemes, majorPlan);
+    state.scores.majorIdx = majorIdx;
+    if (!state._schemeUserSelected) {
+      state.activeSchemeIdx = majorIdx;
+      state._schemeInited = true;
+    }
+
+    const scheme = schemes[majorIdx];
+    if (!scheme || !state.profile) return;
+    const plan = schemePlanName(scheme);
+    const currentPlan = cleanMajorPlanName(state.profile.majorPlan);
+    if (/培养方案|教学计划/.test(plan)
+      && (!/培养方案|教学计划/.test(currentPlan) || currentPlan === '主修方案')) {
+      state.profile.majorPlan = plan;
+    }
+
+    const summary = scheme.summary || {};
+    const requiredCredit = Number(summary.requiredCredit);
+    const requiredGpa = Number(summary.requiredGpa);
+    const currentGpa = Number(state.profile.majorGpa);
+    if (requiredCredit > 0 && Number.isFinite(requiredGpa) && requiredGpa >= 0 && requiredGpa <= 5
+      && (!Number.isFinite(currentGpa) || currentGpa <= 0)) {
+      state.profile.majorGpa = String(round2(requiredGpa));
+    }
+  }
+
   async function loadScores() {
-    const out = { passing: [], schemes: [], error: '', majorIdx: 0 };
+    const out = {
+      passing: [], schemes: [], error: '', majorIdx: 0,
+      evaluationReady: false, evaluationLoading: false
+    };
     try {
       const [passGroups, schemeGroups] = await Promise.all([
         loadScoreByIndex('/student/integratedQuery/scoreQuery/allPassingScores/index', 'allPassingScores/callback'),
         loadScoreByIndex('/student/integratedQuery/scoreQuery/schemeScores/index', 'schemeScores/callback')
       ]);
       const allPass = [];
-      passGroups.forEach((g) => g.courses.forEach((c) => allPass.push(Object.assign({ term: g.title }, c))));
+      passGroups.forEach((group) => group.courses.forEach((course) => {
+        allPass.push(Object.assign({ term: group.title }, course));
+      }));
       out.passing = [{
         title: '全部及格成绩',
         courses: allPass,
         summary: summarizeCoursesPreferOfficial(allPass),
         groups: passGroups
       }];
-      out.schemes = schemeGroups.map((g) => {
-        g.summary = summarizeCoursesPreferOfficial(g.courses);
-        return g;
-      });
+      out.schemes = schemeGroups;
       if (!out.schemes.length && allPass.length) {
         out.schemes = [{ title: '方案成绩', courses: allPass, summary: summarizeCoursesPreferOfficial(allPass) }];
       }
+      refreshScoreSummaries(out);
       out.majorIdx = pickMajorSchemeIndex(out.schemes, state.profile && state.profile.majorPlan);
       if (!allPass.length && !out.schemes.length) out.error = '成绩 callback 无数据';
-      try {
-        const evalMap = await loadEvaluationMap();
-        attachEvaluationLinks(out, evalMap);
-        out.evalMap = evalMap;
-      } catch (e) {
-        console.warn('[URP++] attach evaluation', e);
-      }
-      // 重算汇总：排除未评估
-      if (out.passing[0]) out.passing[0].summary = summarizeCoursesPreferOfficial(out.passing[0].courses);
-      out.schemes = out.schemes.map((g) => {
-        g.summary = summarizeCoursesPreferOfficial(g.courses);
-        return g;
-      });
     } catch (e) {
       out.error = String(e && e.message || e);
     }
@@ -16092,6 +16208,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     roomDateOffset: 0, // 0今天 1明天 2后天
     selected: { passing: new Set(), scheme: new Set() },
     activeSchemeIdx: 0,
+    _schemeUserSelected: false,
     viewWeek: 0, // 0 = 跟随系统当前周
     weekLocked: false, // 用户手动切周后锁定
     _termWeek: 0,
@@ -17137,6 +17254,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
 
     body.querySelectorAll('[data-scheme-idx]').forEach((btn) => btn.addEventListener('click', () => {
       state.activeSchemeIdx = parseInt(btn.getAttribute('data-scheme-idx'), 10) || 0;
+      state._schemeUserSelected = true;
       openScoreModal('scheme');
     }));
     const clear = document.getElementById('uc-clear');
@@ -17218,6 +17336,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     if (force) {
       state.profile = null; state.schedule = null; state.scores = null; state.catalog = null; state.occupancy = null;
       state._termWeekResolved = false;
+      state._schemeUserSelected = false;
+      state._schemeInited = false;
     }
     state.loading.profile = state.loading.schedule = state.loading.scores = true;
     // 先解析教学周，再画界面，避免小屏首帧落到第1周
@@ -17228,9 +17348,16 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     render();
     await Promise.all([
       (async () => {
-        try { if (!(state.profile && !force)) state.profile = await loadProfile(); }
-        catch (e) { state.profile = { name: '同学', majorPlan: '主修方案', majorGpa: '—', avatar: '' }; console.warn(e); }
-        finally { state.loading.profile = false; scheduleRender(); }
+        try {
+          if (!(state.profile && !force)) state.profile = await loadProfile();
+          reconcileProfileAndScores();
+        } catch (e) {
+          state.profile = { name: '同学', majorPlan: '主修方案', majorGpa: '—', avatar: '' };
+          console.warn(e);
+        } finally {
+          state.loading.profile = false;
+          scheduleRender();
+        }
       })(),
       (async () => {
         try { if (!(state.schedule && !force)) state.schedule = await loadSchedule(); }
@@ -17246,16 +17373,29 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         }
       })(),
       (async () => {
+        let scorePack = null;
         try {
-          if (!(state.scores && !force)) {
-            state.scores = await loadScores();
-            state.activeSchemeIdx = (state.scores && state.scores.majorIdx) || 0;
-            state._schemeInited = true;
+          if (!(state.scores && !force)) state.scores = await loadScores();
+          scorePack = state.scores;
+          reconcileProfileAndScores();
+          if (scorePack && !scorePack.error && !scorePack.evaluationReady) {
+            enrichScoresWithEvaluation(scorePack).then(() => {
+              if (state.scores !== scorePack) return;
+              reconcileProfileAndScores();
+              scheduleRender();
+            }).catch((e) => {
+              console.warn('[URP++] attach evaluation', e);
+            });
           }
-        } catch (e) { state.scores = { passing: [], schemes: [], error: String(e && e.message || e) }; }
-        finally { state.loading.scores = false; scheduleRender(); }
+        } catch (e) {
+          state.scores = { passing: [], schemes: [], error: String(e && e.message || e) };
+        } finally {
+          state.loading.scores = false;
+          scheduleRender();
+        }
       })()
     ]);
+    reconcileProfileAndScores();
     if (!state.weekLocked) {
       const tw = getCurrentWeekNumber() || readRememberedTermWeek();
       if (tw >= 1) state.viewWeek = tw;
