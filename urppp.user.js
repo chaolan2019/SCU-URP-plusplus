@@ -36,12 +36,12 @@
   const AUTO_UPDATE_KEY = 'urppp_auto_update_check_v1';
   const SKIN_KEY = 'urppp_skin_v1';
   const SKIN_CATALOG = [
-    { id: 'apple', name: '类Apple风格', desc: '系统灰底、链接蓝、大圆角与轻阴影，默认精修方向。', ready: true, dynamic: true },
-    { id: 'flat', name: '极简扁平', desc: '无阴影、硬边与纯色层次，冷硬清晰。', ready: true, dynamic: true },
-    { id: 'organic', name: '自然有机', desc: '奶油底与大地色，温暖圆角。不支持动态配色。', ready: true, dynamic: false },
-    { id: 'brutal', name: '新野兽派', desc: '直角粗边与硬阴影，高对比冲击。不支持动态配色。', ready: false, dynamic: false },
-    { id: 'editorial', name: '编辑杂志', desc: '衬线标题与细线留白，安静阅读向。不支持动态配色。', ready: false, dynamic: false },
-    { id: 'neu', name: '新拟物', desc: '同色双阴影凸起/内凹，立体柔和。不支持动态配色。', ready: false, dynamic: false },
+    { id: 'apple', name: '类Apple风格', desc: '系统灰底、链接蓝、大圆角与轻阴影，默认精修方向。', ready: true, dark: true, dynamic: true },
+    { id: 'flat', name: '极简扁平', desc: '无阴影、硬边与纯色层次，冷硬清晰。', ready: true, dark: true, dynamic: true },
+    { id: 'organic', name: '自然有机', desc: '奶油底与大地色，温暖圆角。不支持动态配色。', ready: true, dark: true, dynamic: false },
+    { id: 'brutal', name: '新野兽派', desc: '粗黑边框、硬阴影与预设高对比配色。不支持暗色和动态配色。', ready: true, dark: false, dynamic: false, palettes: true },
+    { id: 'editorial', name: '编辑杂志', desc: '衬线标题与细线留白，安静阅读向。不支持动态配色。', ready: false, dark: false, dynamic: false },
+    { id: 'neu', name: '新拟物', desc: '同色双阴影凸起/内凹，立体柔和。不支持动态配色。', ready: false, dark: false, dynamic: false },
   ];
 
   // 最早阶段：最高优先级遮罩盖住未美化界面，完成后淡入
@@ -399,8 +399,17 @@
   const CLEAN_DEFAULT_KEY = 'urppp_clean_default_v1';
   const APPLE_EDGE_KEY = 'urppp_apple_edge_line_v1';
   const FOLLOW_DYNAMIC_KEY = 'urppp_follow_use_dynamic_v1';
+  const BRUTAL_PALETTE_KEY = 'urppp_brutal_palette_v1';
+  const BRUTAL_ACTIVE_PALETTE_KEY = 'urppp_brutal_active_palette_v1';
   const DEFAULT_ACCENT_PRESETS = ['#1E3A5F', '#B53434', '#0F766E', '#7C3AED', '#C2410C', '#0369A1', '#BE185D', '#365314'];
   const DEFAULT_SEED = '#B53434';
+  const BRUTAL_DEFAULT_PALETTE = 'pink';
+  const BRUTAL_PALETTES = [
+    { id: 'pink', name: '高能粉', desc: '默认配色，热粉强调与酸性绿辅助', accent: '#FF006E', secondary: '#CCFF00', info: '#00D9FF', warning: '#FF9500' },
+    { id: 'acid', name: '酸性绿', desc: '酸性绿强调与热粉辅助', accent: '#CCFF00', secondary: '#FF006E', info: '#00D9FF', warning: '#FF9500' },
+    { id: 'cyan', name: '电子蓝', desc: '电子蓝强调与亮橙辅助', accent: '#00D9FF', secondary: '#FF9500', info: '#CCFF00', warning: '#FF006E' },
+    { id: 'orange', name: '亮橙', desc: '亮橙强调与电子蓝辅助', accent: '#FF9500', secondary: '#00D9FF', info: '#CCFF00', warning: '#FF006E' },
+  ];
   const DEFAULT_SCHEME = 'tonal'; // 默认就有可见卡片染色；要白卡选 paper
 
   // Material You 风格方案：同一 seed 派生多套角色色
@@ -912,15 +921,23 @@
     }
   }
 
-  // 跟随系统时的实际主题：
-  // 深色 → 深邃暗；浅色 → 可选「动态配色」或「简约白」
+  // 跟随系统时的实际主题：仅在当前风格支持对应模式时启用。
   function resolveFollowThemeName() {
-    if (systemPrefersDark()) return 'dark';
-    return isFollowUseDynamic() ? 'scu-red' : 'default';
+    if (systemPrefersDark() && skinSupportsDark()) return 'dark';
+    if (isFollowUseDynamic() && skinSupportsDynamic()) return 'scu-red';
+    return 'default';
+  }
+
+  function isThemeModeAvailable(name, skinId) {
+    if (name === 'dark') return skinSupportsDark(skinId);
+    if (name === 'scu-red') return skinSupportsDynamic(skinId);
+    return name === 'default';
   }
 
   function applyTheme(name, opts) {
     opts = opts || {};
+    if (!skinSupportsDark() && isThemeFollowSystem()) setThemeFollowSystem(false);
+    if (!skinSupportsDynamic() && isFollowUseDynamic()) setFollowUseDynamic(false);
     // manual: 用户点击主题模式 → 关闭跟随并应用所选
     // system: 跟随系统刷新
     if (opts.manual) setThemeFollowSystem(false);
@@ -931,6 +948,7 @@
       finalName = THEMES[name] ? name : (getCurrent() || 'default');
       if (!THEMES[finalName]) finalName = 'default';
     }
+    if (!isThemeModeAvailable(finalName)) finalName = 'default';
     const t = THEMES[finalName] || THEMES['default'];
     if (!opts.skipPersist) GM_setValue(THEME_KEY, finalName);
     clearInlinePrimaryOverrides();
@@ -998,12 +1016,47 @@
 
   function getSkin() {
     const id = GM_getValue(SKIN_KEY, 'apple');
-    return SKIN_CATALOG.some((s) => s.id === id) ? id : 'apple';
+    const hit = SKIN_CATALOG.find((s) => s.id === id);
+    return hit && hit.ready ? id : 'apple';
   }
-  function skinSupportsDynamic(skinId) {
+  function getSkinCapability(skinId, key) {
     const id = skinId || getSkin();
     const hit = SKIN_CATALOG.find((s) => s.id === id);
-    return !!(hit && hit.dynamic);
+    return !!(hit && hit[key]);
+  }
+  function skinSupportsDark(skinId) {
+    return getSkinCapability(skinId, 'dark');
+  }
+  function skinSupportsDynamic(skinId) {
+    return getSkinCapability(skinId, 'dynamic');
+  }
+  function skinSupportsFixedPalettes(skinId) {
+    return getSkinCapability(skinId, 'palettes');
+  }
+  function getBrutalPaletteById(id) {
+    return BRUTAL_PALETTES.find((item) => item.id === id) || BRUTAL_PALETTES[0];
+  }
+  function getBrutalSelectedPalette() {
+    const raw = String(GM_getValue(BRUTAL_PALETTE_KEY, 'acid') || 'acid');
+    const palette = getBrutalPaletteById(raw);
+    return palette.id === BRUTAL_DEFAULT_PALETTE ? getBrutalPaletteById('acid') : palette;
+  }
+  function getBrutalActivePalette() {
+    const raw = String(GM_getValue(BRUTAL_ACTIVE_PALETTE_KEY, BRUTAL_DEFAULT_PALETTE) || BRUTAL_DEFAULT_PALETTE);
+    return getBrutalPaletteById(raw);
+  }
+  function setBrutalPalette(paletteId, options) {
+    const opts = options || {};
+    const palette = getBrutalPaletteById(paletteId);
+    if (opts.select && palette.id !== BRUTAL_DEFAULT_PALETTE) GM_setValue(BRUTAL_PALETTE_KEY, palette.id);
+    GM_setValue(BRUTAL_ACTIVE_PALETTE_KEY, palette.id);
+    try { applySkinAttr(); } catch (_) {}
+    try { syncNavbarThemeUI(); } catch (_) {}
+    try { syncSettingsPanelUI(); } catch (_) {}
+    try {
+      const clean = document.getElementById('urppp-clean-root');
+      if (clean && typeof clean.__syncCleanThemeDots === 'function') clean.__syncCleanThemeDots();
+    } catch (_) {}
   }
 
   /** 界面风格对形状/边框/阴影等 token 的覆盖（不改配色主题本身） */
@@ -1015,6 +1068,8 @@
         '--radius-sm': '0px',
         '--shadow': 'none',
         '--border-w': '2px',
+        '--urppp-card-border': '2px solid var(--text)',
+        '--urppp-input-border': '2px solid var(--text)',
       };
     }
     if (id === 'organic') {
@@ -1023,6 +1078,18 @@
         '--radius-sm': '14px',
         '--shadow': '0 2px 10px rgba(92,64,51,0.06)',
         '--border-w': '1px',
+        '--urppp-card-border': '1px solid #E7E0D6',
+        '--urppp-input-border': '1px solid var(--border)',
+      };
+    }
+    if (id === 'brutal') {
+      return {
+        '--radius': '0px',
+        '--radius-sm': '0px',
+        '--shadow': '6px 6px 0 #000',
+        '--border-w': '3px',
+        '--urppp-card-border': '3px solid #000',
+        '--urppp-input-border': '2px solid #000',
       };
     }
     // apple / default：轻阴影、大圆角；卡片几乎无描边
@@ -1031,6 +1098,8 @@
       '--radius-sm': '12px',
       '--shadow': '0 4px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)',
       '--border-w': '0px',
+      '--urppp-card-border': id === 'apple' && isAppleEdgeLine() ? '1px solid rgba(0,0,0,0.08)' : 'none',
+      '--urppp-input-border': '1px solid var(--border)',
     };
   }
 
@@ -1046,6 +1115,7 @@
       }
       if (skin === 'flat') return '2px solid var(--text)';
       if (skin === 'organic') return '1px solid #E7E0D6';
+      if (skin === 'brutal') return '3px solid #000';
     } catch (_) {}
     return '1px solid var(--border)';
   }
@@ -1072,6 +1142,7 @@
       let css = ':root, html[data-urppp-skin] {';
       Object.keys(o).forEach((k) => { css += k + ':' + o[k] + ';'; });
       css += '}';
+      css += '.urppp-nav-dot.urppp-theme-disabled{opacity:.42!important;cursor:not-allowed!important;box-shadow:none!important;filter:grayscale(1)!important;transform:none!important;}';
 
       if (id === 'apple') {
         const edge = isAppleEdgeLine();
@@ -1109,6 +1180,7 @@
           'html[data-urppp-skin="flat"] .widget-box,html[data-urppp-skin="flat"] .widget-box.transparent,html[data-urppp-skin="flat"] .panel,html[data-urppp-skin="flat"] .panel-default,html[data-urppp-skin="flat"] .well,html[data-urppp-skin="flat"] .thumbnail,html[data-urppp-skin="flat"] .infobox,html[data-urppp-skin="flat"] .profile-user-info,html[data-urppp-skin="flat"] .profile-user-info-striped,html[data-urppp-skin="flat"] .modal-content,html[data-urppp-skin="flat"] fieldset,html[data-urppp-skin="flat"] .urppp-stat-card,html[data-urppp-skin="flat"] .urppp-db-card,html[data-urppp-skin="flat"] .urppp-db-panel,html[data-urppp-skin="flat"] #urppp-dashboard .widget-box,html[data-urppp-skin="flat"] .page-content .widget-box,html[data-urppp-skin="flat"] #page-content-template .widget-box,html[data-urppp-skin="flat"] #urppp-root .uc,html[data-urppp-skin="flat"] #urppp-settings-panel,html[data-urppp-skin="flat"] #urppp-clean-root .uc-card,html[data-urppp-skin="flat"] #urppp-clean-root .uc-modal,html[data-urppp-skin="flat"] #urppp-clean-root .uc-top,html[data-urppp-skin="flat"] #urppp-clean-root .uc-tabbar,html[data-urppp-skin="flat"] #urppp-clean-root .uc-svc{border-radius:0!important;box-shadow:none!important;border:2px solid var(--text)!important;}',
           // 课表细控件：轻边，别画满 2px 黑框
           'html[data-urppp-skin="flat"] #urppp-clean-root .uc-lesson,html[data-urppp-skin="flat"] #urppp-clean-root .uc-grid-cell,html[data-urppp-skin="flat"] #urppp-clean-root .uc-course-sub,html[data-urppp-skin="flat"] #urppp-clean-root .uc-attr-pill,html[data-urppp-skin="flat"] #urppp-clean-root .uc-gpa,html[data-urppp-skin="flat"] #urppp-clean-root .uc-cd-chip,html[data-urppp-skin="flat"] #urppp-clean-root .uc-avatar{border-radius:0!important;box-shadow:none!important;border:1px solid color-mix(in srgb,var(--text) 28%,var(--border))!important;}',
+          'html[data-urppp-skin="flat"] #urppp-clean-root .uc-avatar img{border-radius:0!important;}',
           'html[data-urppp-skin="flat"] #urppp-clean-root .uc-lesson{border:1px solid color-mix(in srgb,var(--primary) 35%,var(--text))!important;}',
           // 按钮/输入矩形
           'html[data-urppp-skin="flat"] .btn,html[data-urppp-skin="flat"] .btn-default,html[data-urppp-skin="flat"] .btn-white,html[data-urppp-skin="flat"] .btn-primary,html[data-urppp-skin="flat"] .btn-info,html[data-urppp-skin="flat"] .btn-success,html[data-urppp-skin="flat"] .btn-warning,html[data-urppp-skin="flat"] .btn-danger,html[data-urppp-skin="flat"] .btn-purple,html[data-urppp-skin="flat"] .btn-app,html[data-urppp-skin="flat"] a.btn,html[data-urppp-skin="flat"] button.btn,html[data-urppp-skin="flat"] input.btn,html[data-urppp-skin="flat"] .btn-group>.btn,html[data-urppp-skin="flat"] .btn-xs,html[data-urppp-skin="flat"] .btn-sm,html[data-urppp-skin="flat"] .btn-minier,html[data-urppp-skin="flat"] #urppp-root .ubtn,html[data-urppp-skin="flat"] #urppp-root .ut button,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-btn,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-mode,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-follow,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-scheme,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-tab,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-close,html[data-urppp-skin="flat"] #urppp-nav-theme .urppp-nav-settings,html[data-urppp-skin="flat"] #uc-settings,html[data-urppp-skin="flat"] #uc-exit,html[data-urppp-skin="flat"] #uc-refresh,html[data-urppp-skin="flat"] #urppp-clean-entry,html[data-urppp-skin="flat"] button.urppp-clean-entry,html[data-urppp-skin="flat"] .urppp-clean-entry,html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn,html[data-urppp-skin="flat"] #urppp-clean-root .uc-top-actions .uc-btn,html[data-urppp-skin="flat"] #urppp-clean-root .uc-tabbar button,html[data-urppp-skin="flat"] #urppp-clean-root button.uc-btn,html[data-urppp-skin="flat"] .chosen-container-single .chosen-single,html[data-urppp-skin="flat"] .chosen-container-multi .chosen-choices,html[data-urppp-skin="flat"] .form-control,html[data-urppp-skin="flat"] input[type="text"],html[data-urppp-skin="flat"] input[type="password"],html[data-urppp-skin="flat"] input[type="number"],html[data-urppp-skin="flat"] input[type="search"],html[data-urppp-skin="flat"] select,html[data-urppp-skin="flat"] textarea,html[data-urppp-skin="flat"] #urppp-root .ui{border-radius:0!important;box-shadow:none!important;border:2px solid var(--text)!important;}',
@@ -1169,6 +1241,239 @@
           'html[data-urppp-skin="flat"] #urppp-clean-root .uc-build-grid button,html[data-urppp-skin="flat"] #urppp-clean-root .uc-build-grid > button{border-radius:0!important;border:2px solid var(--text)!important;box-shadow:none!important;background:var(--surface)!important;color:var(--text)!important;transform:none!important;}',
           'html[data-urppp-skin="flat"] #urppp-clean-root .uc-build-grid button:hover{background:var(--text)!important;color:var(--surface)!important;border-color:var(--text)!important;transform:none!important;box-shadow:none!important;}'].join('');
       }
+      else if (id === 'brutal') {
+        const palette = getBrutalActivePalette();
+        css += `
+          html[data-urppp-skin="brutal"]{
+            --radius:0px!important;--radius-sm:0px!important;--shadow:6px 6px 0 #000!important;
+            --bg:#fff!important;--surface:#fff!important;--input-bg:#fff!important;
+            --text:#000!important;--text-secondary:#000!important;--text-muted:#000!important;
+            --border:#000!important;--border-focus:#000!important;
+            --primary:${palette.accent}!important;--primary-hover:${palette.secondary}!important;
+            --ring:transparent!important;--success:${palette.secondary}!important;
+            --info:${palette.info}!important;--warning:${palette.warning}!important;--danger:#FF006E!important;
+            --brutal-accent:${palette.accent};--brutal-secondary:${palette.secondary};
+            --brutal-info:${palette.info};--brutal-warning:${palette.warning};
+          }
+          html[data-urppp-skin="brutal"] body,
+          html[data-urppp-skin="brutal"] #urppp-clean-root{
+            background:#fff!important;background-image:none!important;color:#000!important;
+            font-family:"JetBrains Mono","Cascadia Mono","Microsoft YaHei UI",monospace!important;
+          }
+          html[data-urppp-skin="brutal"] h1,html[data-urppp-skin="brutal"] h2,
+          html[data-urppp-skin="brutal"] h3,html[data-urppp-skin="brutal"] h4,
+          html[data-urppp-skin="brutal"] h5,html[data-urppp-skin="brutal"] .page-header,
+          html[data-urppp-skin="brutal"] .widget-title,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-brand,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-name,
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-title{
+            font-family:"Arial Black","Microsoft YaHei UI",sans-serif!important;font-weight:900!important;letter-spacing:0!important;color:#000!important;
+          }
+          html[data-urppp-skin="brutal"] #navbar,
+          html[data-urppp-skin="brutal"] .navbar{
+            background:#fff!important;border-bottom:3px solid #000!important;box-shadow:none!important;
+          }
+          html[data-urppp-skin="brutal"] #sidebar,
+          html[data-urppp-skin="brutal"] .sidebar{
+            background:#fff!important;border-right:3px solid #000!important;box-shadow:none!important;
+          }
+          html[data-urppp-skin="brutal"] .widget-box,
+          html[data-urppp-skin="brutal"] .panel,
+          html[data-urppp-skin="brutal"] .well,
+          html[data-urppp-skin="brutal"] .thumbnail,
+          html[data-urppp-skin="brutal"] .infobox,
+          html[data-urppp-skin="brutal"] .profile-user-info,
+          html[data-urppp-skin="brutal"] .profile-user-info-striped,
+          html[data-urppp-skin="brutal"] .modal-content,
+          html[data-urppp-skin="brutal"] fieldset,
+          html[data-urppp-skin="brutal"] .urppp-stat-card,
+          html[data-urppp-skin="brutal"] .urppp-db-card,
+          html[data-urppp-skin="brutal"] .urppp-db-panel,
+          html[data-urppp-skin="brutal"] .urppp-card,
+          html[data-urppp-skin="brutal"] #urppp-dashboard .widget-box,
+          html[data-urppp-skin="brutal"] #urppp-root .uc,
+          html[data-urppp-skin="brutal"] #urppp-settings-panel,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-card,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-modal,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-top,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-tabbar,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-score-pane,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-svc{
+            border:3px solid #000!important;border-radius:0!important;background:#fff!important;
+            box-shadow:6px 6px 0 #000!important;box-sizing:border-box!important;
+          }
+          html[data-urppp-skin="brutal"] .widget-header,
+          html[data-urppp-skin="brutal"] .page-content .widget-box .widget-header,
+          html[data-urppp-skin="brutal"] .panel-heading,
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-head,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-hd,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-modal-hd{
+            background:var(--brutal-accent)!important;color:#000!important;border:0!important;border-bottom:3px solid #000!important;border-radius:0!important;
+          }
+          html[data-urppp-skin="brutal"] .btn,
+          html[data-urppp-skin="brutal"] a.btn,
+          html[data-urppp-skin="brutal"] button.btn,
+          html[data-urppp-skin="brutal"] .btn-app,
+          html[data-urppp-skin="brutal"] #urppp-root .ubtn,
+          html[data-urppp-skin="brutal"] #urppp-nav-clean,
+          html[data-urppp-skin="brutal"] #urppp-nav-theme button:not(.urppp-nav-dot),
+          html[data-urppp-skin="brutal"] #urppp-settings-panel button:not(.urppp-nav-dot),
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-btn,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-tabbar button,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-build-grid button{
+            border:3px solid #000!important;border-radius:0!important;background:#fff!important;color:#000!important;
+            box-shadow:4px 4px 0 #000!important;transform:none!important;
+            transition:background-color 150ms ease-out,box-shadow 150ms ease-out,transform 150ms ease-out!important;
+          }
+          html[data-urppp-skin="brutal"] .btn-primary,
+          html[data-urppp-skin="brutal"] button.btn.btn-primary,
+          html[data-urppp-skin="brutal"] a.btn.btn-primary,
+          html[data-urppp-skin="brutal"] .btn-info,
+          html[data-urppp-skin="brutal"] button.btn.btn-info,
+          html[data-urppp-skin="brutal"] a.btn.btn-info,
+          html[data-urppp-skin="brutal"] .btn-success,
+          html[data-urppp-skin="brutal"] button.btn.btn-success,
+          html[data-urppp-skin="brutal"] #urppp-root .ubtn,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-btn.primary,
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-btn:not(.ghost){
+            background:var(--brutal-accent)!important;color:#000!important;border-color:#000!important;
+          }
+          html[data-urppp-skin="brutal"] .btn:hover,
+          html[data-urppp-skin="brutal"] a.btn:hover,
+          html[data-urppp-skin="brutal"] button.btn:hover,
+          html[data-urppp-skin="brutal"] .btn-app:hover,
+          html[data-urppp-skin="brutal"] #urppp-root .ubtn:hover,
+          html[data-urppp-skin="brutal"] #urppp-nav-clean:hover,
+          html[data-urppp-skin="brutal"] #urppp-settings-panel button:hover:not(:disabled),
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-btn:hover,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-tabbar button:hover,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-build-grid button:hover{
+            background:var(--brutal-secondary)!important;color:#000!important;box-shadow:6px 6px 0 #000!important;transform:translate(-2px,-2px)!important;
+          }
+          html[data-urppp-skin="brutal"] .btn:active,
+          html[data-urppp-skin="brutal"] a.btn:active,
+          html[data-urppp-skin="brutal"] button.btn:active,
+          html[data-urppp-skin="brutal"] .btn-app:active,
+          html[data-urppp-skin="brutal"] #urppp-root .ubtn:active,
+          html[data-urppp-skin="brutal"] #urppp-settings-panel button:active:not(:disabled),
+          html[data-urppp-skin="brutal"] #urppp-clean-root button:active{
+            box-shadow:none!important;transform:translate(4px,4px)!important;
+          }
+          html[data-urppp-skin="brutal"] input.form-control,
+          html[data-urppp-skin="brutal"] select.form-control,
+          html[data-urppp-skin="brutal"] textarea.form-control,
+          html[data-urppp-skin="brutal"] input[type="text"],
+          html[data-urppp-skin="brutal"] input[type="search"],
+          html[data-urppp-skin="brutal"] input[type="number"],
+          html[data-urppp-skin="brutal"] select,
+          html[data-urppp-skin="brutal"] textarea,
+          html[data-urppp-skin="brutal"] #urppp-root .ui,
+          html[data-urppp-skin="brutal"] .chosen-container-single .chosen-single{
+            border:2px solid #000!important;border-radius:0!important;background:#fff!important;color:#000!important;box-shadow:none!important;
+          }
+          html[data-urppp-skin="brutal"] input:focus,
+          html[data-urppp-skin="brutal"] select:focus,
+          html[data-urppp-skin="brutal"] textarea:focus{
+            border-color:#000!important;outline:3px solid var(--brutal-accent)!important;outline-offset:0!important;box-shadow:none!important;
+          }
+          html[data-urppp-skin="brutal"] .table,
+          html[data-urppp-skin="brutal"] table,
+          html[data-urppp-skin="brutal"] .table-bordered{
+            border:2px solid #000!important;border-radius:0!important;border-collapse:collapse!important;box-shadow:none!important;background:#fff!important;color:#000!important;
+          }
+          html[data-urppp-skin="brutal"] .table>thead>tr>th,
+          html[data-urppp-skin="brutal"] .table>tbody>tr>td,
+          html[data-urppp-skin="brutal"] .table-bordered>thead>tr>th,
+          html[data-urppp-skin="brutal"] .table-bordered>tbody>tr>td,
+          html[data-urppp-skin="brutal"] table th,
+          html[data-urppp-skin="brutal"] table td{
+            border:2px solid #000!important;background:#fff!important;color:#000!important;
+          }
+          html[data-urppp-skin="brutal"] .table>thead>tr>th,
+          html[data-urppp-skin="brutal"] table thead th{
+            background:var(--brutal-accent)!important;font-weight:900!important;text-transform:uppercase!important;
+          }
+          html[data-urppp-skin="brutal"] .nav-tabs,
+          html[data-urppp-skin="brutal"] .nav-tabs>li>a,
+          html[data-urppp-skin="brutal"] .pagination>li>a,
+          html[data-urppp-skin="brutal"] .pagination>li>span,
+          html[data-urppp-skin="brutal"] .label,
+          html[data-urppp-skin="brutal"] .badge{
+            border:2px solid #000!important;border-radius:0!important;background:#fff!important;color:#000!important;box-shadow:none!important;
+          }
+          html[data-urppp-skin="brutal"] .nav-tabs>li.active>a,
+          html[data-urppp-skin="brutal"] .pagination>.active>a,
+          html[data-urppp-skin="brutal"] .label-info,
+          html[data-urppp-skin="brutal"] .badge-info{
+            background:var(--brutal-accent)!important;color:#000!important;
+          }
+          html[data-urppp-skin="brutal"] .nav-list>li>a{
+            background:#fff!important;color:#000!important;border-bottom:2px solid #000!important;border-radius:0!important;
+          }
+          html[data-urppp-skin="brutal"] .nav-list>li.active>a,
+          html[data-urppp-skin="brutal"] .nav-list>li>a:hover{
+            background:var(--brutal-accent)!important;color:#000!important;
+          }
+          html[data-urppp-skin="brutal"] .urppp-nav-dot,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-top-theme .urppp-nav-dot{
+            width:18px!important;height:18px!important;min-width:18px!important;min-height:18px!important;
+            padding:0!important;border:3px solid #000!important;border-radius:50%!important;box-shadow:none!important;
+          }
+          html[data-urppp-skin="brutal"] .urppp-nav-dot.ac,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-top-theme .urppp-nav-dot.ac{
+            outline:3px solid var(--brutal-accent)!important;outline-offset:2px!important;
+          }
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-tabs{
+            background:#fff!important;border-bottom:3px solid #000!important;gap:6px!important;
+          }
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-tab.ac,
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-mode.ac,
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-follow.ac{
+            background:var(--brutal-accent)!important;color:#000!important;
+          }
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-tab.ac::after{display:none!important;}
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-sec{
+            border-bottom:3px solid #000!important;padding-bottom:20px!important;
+          }
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-scheme{
+            border:3px solid #000!important;border-radius:0!important;background:#fff!important;box-shadow:4px 4px 0 #000!important;
+          }
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-scheme.ac{
+            background:var(--brutal-accent)!important;outline:3px solid #000!important;outline-offset:-7px!important;
+          }
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-scheme-preview span{
+            border:2px solid #000!important;border-radius:0!important;
+          }
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-lesson,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-grid-cell,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-course-sub,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-attr-pill,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-cd-chip,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-score-cell{
+            border:2px solid #000!important;border-radius:0!important;box-shadow:none!important;background:#fff!important;color:#000!important;
+          }
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-lesson{border-left:8px solid var(--brutal-accent)!important;}
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-gpa{
+            border:3px solid #000!important;border-radius:0!important;background:var(--brutal-secondary)!important;color:#000!important;box-shadow:4px 4px 0 #000!important;
+          }
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-avatar,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-avatar img{
+            border-radius:0!important;
+          }
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-avatar{
+            border:3px solid #000!important;box-shadow:4px 4px 0 #000!important;
+          }
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-score-pane:nth-child(3n+1),
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-svc:nth-child(4n+1){background:var(--brutal-secondary)!important;}
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-score-pane:nth-child(3n+2),
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-svc:nth-child(4n+2){background:var(--brutal-info)!important;}
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-score-pane:nth-child(3n),
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-svc:nth-child(4n+3){background:var(--brutal-warning)!important;}
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-sub,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-score-pane h5,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-svc *{color:#000!important;}
+        `;
+      }
       else if (id === 'organic') {
         // 自然有机：奶油底/大地色/大圆角；完整适配清爽模式
         css += [
@@ -1197,6 +1502,8 @@
           'html[data-urppp-skin="organic"] #urppp-clean-root .uc-build-grid button{border-radius:14px!important;border:1px solid var(--border)!important;box-shadow:none!important;background:var(--input-bg)!important;color:var(--text)!important;}'].join('');
       }
       el.textContent = css;
+      const host = document.head || document.documentElement;
+      if (el.parentNode === host && host.lastElementChild !== el) host.appendChild(el);
     } catch (e) {
       try { console.warn('[URP++] applySkinAttr', e); } catch (_) {}
     }
@@ -1206,21 +1513,14 @@
     const hit = SKIN_CATALOG.find((s) => s.id === id && s.ready);
     if (!hit) return false;
     GM_setValue(SKIN_KEY, hit.id);
-    // 切到不支持动态配色的风格时，若当前是动态配色则退回简约白
     try {
-      if (!hit.dynamic && getCurrent() === 'scu-red') {
-        if (isThemeFollowSystem()) {
-          setFollowUseDynamic(false);
-        } else {
-          applyTheme('default', { manual: true, skipPersist: false });
-        }
-      }
-    } catch (_) {}
-    applySkinAttr();
-    // 刷新主题以带动依赖 radius/shadow 的内联与组件
-    try {
-      if (isThemeFollowSystem()) applyTheme(resolveFollowThemeName(), { system: true, skipPersist: true });
-      else applyTheme(getCurrent(), { skipPersist: true });
+      if (!hit.dynamic) setFollowUseDynamic(false);
+      if (!hit.dark && isThemeFollowSystem()) setThemeFollowSystem(false);
+      const following = isThemeFollowSystem();
+      const requested = following ? resolveFollowThemeName() : getCurrent();
+      const theme = isThemeModeAvailable(requested, hit.id) ? requested : 'default';
+      applySkinAttr();
+      applyTheme(theme, { system: following });
     } catch (_) {
       try { applySkinAttr(); } catch (__) {}
     }
@@ -6339,7 +6639,7 @@
       html body .page-content .profile-user-info-striped.setLabelWidth,
       html body .page-content .self.profile-user-info.setLabelWidth {
         background: var(--surface) !important;
-        border: none !important;
+        border: var(--urppp-card-border, none) !important;
         border-radius: var(--radius) !important;
         box-shadow: var(--shadow) !important;
         overflow: hidden !important;
@@ -6589,7 +6889,7 @@
       .dd,
       fieldset {
         background: var(--surface) !important;
-        border: none !important;
+        border: var(--urppp-card-border, none) !important;
         border-radius: var(--radius) !important;
         box-shadow: var(--shadow) !important;
         overflow: hidden !important;
@@ -7524,7 +7824,7 @@
       .page-content .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not(#billContainer):not([id$="_scroll"]),
       #page-content-template .widget-box:not(#curriculumInfo-divcon):not(#curriculumInfo-divcon1):not(#curriculumInfo-divcon2):not(#calssInfo-divcon):not(#classroomInfo-divcon):not(#billContainer):not([id$="_scroll"]) {
         background: var(--surface) !important;
-        border: none !important;
+        border: var(--urppp-card-border, none) !important;
         border-radius: var(--radius) !important;
         box-shadow: var(--shadow) !important;
         overflow: visible !important; /* Chosen 下拉 */
@@ -9218,7 +9518,7 @@
       .editable-input input,
       .editable-input textarea {
         background: var(--input-bg) !important;
-        border: 1px solid var(--border) !important;
+        border: var(--urppp-input-border, 1px solid var(--border)) !important;
         color: var(--text) !important;
         border-radius: var(--radius-sm) !important;
         padding: 6px 12px !important;
@@ -9233,7 +9533,7 @@
       select.form-control,
       .editable-input select {
         background-color: var(--input-bg) !important;
-        border: 1px solid var(--border) !important;
+        border: var(--urppp-input-border, 1px solid var(--border)) !important;
         color: var(--text) !important;
         border-radius: var(--radius-sm) !important;
         padding: 4px 8px !important;
@@ -12735,6 +13035,7 @@ fo-striped.setLabelWidth,
       }
     `;
     }
+    try { applySkinAttr(); } catch (_) {}
 
     // 给表格包一层 wrapper：圆角 + 完整外框，绕过 Bootstrap thead border-top:0 和 overflow 裁剪
     cleanupStuckModals();
@@ -12908,23 +13209,96 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 顶栏重建（JS 强制对齐）
   // ============================================================
 
-  function syncNavbarThemeUI() {
-    const wrap = document.getElementById('urppp-nav-theme');
+  function syncThemeDotGroup(wrap) {
     if (!wrap) return;
-    const ct = getCurrent();
-    wrap.querySelectorAll('.urppp-nav-dot[data-theme]').forEach((d) => {
-      d.classList.toggle('ac', d.dataset.theme === ct);
-    });
-    const last = wrap.querySelector('.urppp-nav-dot[data-theme="scu-red"]');
-    if (last) {
-      const seed = getAccent() || DEFAULT_SEED;
-      try {
-        const prev = buildSchemePreview(seed, getScheme());
-        last.style.background = 'linear-gradient(135deg, ' + prev.primary + ' 0 55%, ' + prev.surface + ' 55% 100%)';
-      } catch (_) {
-        last.style.background = seed;
+    const skinId = getSkin();
+    const brutal = skinSupportsFixedPalettes(skinId);
+    const currentTheme = getCurrent();
+    const brutalActive = brutal ? getBrutalActivePalette() : null;
+    const brutalSelected = brutal ? getBrutalSelectedPalette() : null;
+    wrap.querySelectorAll('.urppp-nav-dot[data-theme]').forEach((dot) => {
+      const theme = dot.dataset.theme;
+      const isDark = theme === 'dark';
+      const isDynamic = theme === 'scu-red';
+      const disabled = (isDark && !skinSupportsDark(skinId)) || (isDynamic && !skinSupportsDynamic(skinId) && !brutal);
+      let active = theme === currentTheme;
+      if (brutal) {
+        active = (theme === 'default' && brutalActive.id === BRUTAL_DEFAULT_PALETTE)
+          || (isDynamic && brutalActive.id !== BRUTAL_DEFAULT_PALETTE);
       }
+      dot.disabled = disabled;
+      dot.classList.toggle('urppp-theme-disabled', disabled);
+      dot.classList.toggle('ac', active && !disabled);
+      dot.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+      if (theme === 'default') {
+        dot.style.background = brutal ? getBrutalPaletteById(BRUTAL_DEFAULT_PALETTE).accent : '#F1F3F5';
+        dot.title = brutal ? '默认高能粉' : '简约白';
+      } else if (isDark) {
+        dot.style.background = disabled ? '#A7A7A7' : '#0B0F14';
+        dot.title = disabled ? '当前界面风格不支持暗色模式' : '深邃暗';
+      } else if (isDynamic) {
+        if (disabled) {
+          dot.style.background = '#A7A7A7';
+          dot.title = '当前界面风格不支持动态配色';
+        } else if (brutal) {
+          dot.style.background = brutalSelected.accent;
+          dot.title = '高对比配色：' + brutalSelected.name;
+        } else {
+          const seed = getAccent() || DEFAULT_SEED;
+          try {
+            const prev = buildSchemePreview(seed, getScheme());
+            dot.style.background = 'linear-gradient(135deg, ' + prev.primary + ' 0 55%, ' + prev.surface + ' 55% 100%)';
+          } catch (_) {
+            dot.style.background = seed;
+          }
+          dot.title = '动态配色';
+        }
+      }
+    });
+  }
+
+  function handleThemeDotClick(theme) {
+    const skinId = getSkin();
+    if (skinSupportsFixedPalettes(skinId)) {
+      if (theme === 'dark') return;
+      if (getCurrent() !== 'default') applyTheme('default', { manual: true });
+      if (theme === 'default') setBrutalPalette(BRUTAL_DEFAULT_PALETTE);
+      if (theme === 'scu-red') setBrutalPalette(getBrutalSelectedPalette().id);
+      return;
     }
+    if (!isThemeModeAvailable(theme, skinId)) return;
+    applyTheme(theme, { manual: true });
+  }
+
+  function syncNavbarThemeUI() {
+    syncThemeDotGroup(document.getElementById('urppp-nav-theme'));
+  }
+
+  function renderBrutalPaletteCards(panel) {
+    if (!panel) return;
+    const list = panel.querySelector('#urppp-set-brutal-palettes');
+    if (!list) return;
+    const selected = getBrutalSelectedPalette();
+    list.innerHTML = '';
+    BRUTAL_PALETTES.filter((palette) => palette.id !== BRUTAL_DEFAULT_PALETTE).forEach((palette) => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'urppp-set-scheme' + (palette.id === selected.id ? ' ac' : '');
+      card.dataset.palette = palette.id;
+      card.innerHTML = [
+        '<div class="urppp-set-scheme-preview">',
+        '  <span style="background:#000"></span>',
+        '  <span style="background:' + palette.accent + '"></span>',
+        '  <span style="background:' + palette.secondary + '"></span>',
+        '</div>',
+        '<div class="urppp-set-scheme-meta">',
+        '  <strong>' + palette.name + '</strong>',
+        '  <em>' + palette.desc + '</em>',
+        '</div>'
+      ].join('');
+      card.addEventListener('click', () => setBrutalPalette(palette.id, { select: true }));
+      list.appendChild(card);
+    });
   }
 
   function syncSettingsPanelUI() {
@@ -12939,26 +13313,34 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (colorInput) colorInput.value = seed;
     if (hexInput) hexInput.value = seed;
 
-    // 主题模式高亮 + 动态配色可用性
-    const dynOk = skinSupportsDynamic();
+    const skinId = getSkin();
+    const darkOk = skinSupportsDark(skinId);
+    const dynOk = skinSupportsDynamic(skinId);
+    const hasFixedPalettes = skinSupportsFixedPalettes(skinId);
     panel.querySelectorAll('.urppp-set-mode').forEach((btn) => {
-      const isDynMode = btn.dataset.theme === 'scu-red';
-      const on = !follow && btn.dataset.theme === ct;
-      btn.classList.toggle('ac', on && !(isDynMode && !dynOk));
-      btn.classList.toggle('urppp-dyn-disabled', isDynMode && !dynOk);
-      if (isDynMode && !dynOk) {
-        btn.setAttribute('aria-disabled', 'true');
-        btn.title = '当前界面风格不支持动态配色';
+      const theme = btn.dataset.theme;
+      const available = isThemeModeAvailable(theme, skinId);
+      const on = !follow && theme === ct && available;
+      btn.disabled = !available;
+      btn.classList.toggle('ac', on);
+      btn.classList.toggle('urppp-dyn-disabled', !available);
+      btn.setAttribute('aria-disabled', available ? 'false' : 'true');
+      if (!available) {
+        btn.title = theme === 'dark'
+          ? '当前界面风格不支持暗色模式'
+          : '当前界面风格不支持动态配色';
       } else {
-        btn.removeAttribute('aria-disabled');
-        if (isDynMode) btn.removeAttribute('title');
+        btn.removeAttribute('title');
       }
     });
     const followBtn = panel.querySelector('#urppp-set-follow');
     if (followBtn) {
-      followBtn.classList.toggle('ac', follow);
-      followBtn.setAttribute('aria-pressed', follow ? 'true' : 'false');
-      followBtn.textContent = follow ? '跟随系统：开' : '跟随系统：关';
+      followBtn.disabled = !darkOk;
+      followBtn.classList.toggle('ac', follow && darkOk);
+      followBtn.classList.toggle('urppp-dyn-disabled', !darkOk);
+      followBtn.setAttribute('aria-pressed', follow && darkOk ? 'true' : 'false');
+      followBtn.textContent = follow && darkOk ? '跟随系统：开' : '跟随系统：关';
+      followBtn.title = darkOk ? '' : '当前界面风格不支持暗色模式';
     }
     const dynFollowBtn = panel.querySelector('#urppp-set-follow-dynamic');
     const useDyn = isFollowUseDynamic();
@@ -12971,26 +13353,21 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       dynFollowBtn.style.opacity = (!dynOk) ? '0.5' : (follow ? '1' : '0.5');
       dynFollowBtn.title = dynOk ? '' : '当前界面风格不支持动态配色';
     }
-    // 种子色 / 配色方案整区：无动态能力时划线禁用
     const dynSec = panel.querySelector('#urppp-set-dynamic');
     if (dynSec) {
+      dynSec.style.display = hasFixedPalettes ? 'none' : '';
       dynSec.classList.toggle('urppp-dyn-disabled', !dynOk);
       dynSec.querySelectorAll('button, input, .urppp-set-scheme, .urppp-set-swatch').forEach((el) => {
-        if (!dynOk) {
-          el.setAttribute('disabled', 'disabled');
-          el.classList.add('urppp-dyn-disabled');
-        } else {
-          // 不要误伤：color/hex 仅在 dynOk 时启用
-          if (el.id === 'urppp-set-color' || el.id === 'urppp-set-hex' || el.id === 'urppp-set-gen' || el.id === 'urppp-set-save' || el.classList.contains('urppp-set-swatch') || el.classList.contains('urppp-set-scheme') || el.classList.contains('urppp-set-btn')) {
-            el.removeAttribute('disabled');
-            el.classList.remove('urppp-dyn-disabled');
-          }
-        }
+        el.disabled = !dynOk;
+        el.classList.toggle('urppp-dyn-disabled', !dynOk);
       });
       dynSec.querySelectorAll('h3, .urppp-set-tip, label').forEach((el) => {
         el.classList.toggle('urppp-dyn-disabled', !dynOk);
       });
     }
+    const brutalSec = panel.querySelector('#urppp-set-brutal');
+    if (brutalSec) brutalSec.style.display = hasFixedPalettes ? '' : 'none';
+    if (hasFixedPalettes) renderBrutalPaletteCards(panel);
     const cleanDefBtn = panel.querySelector('#urppp-set-clean-default');
     if (cleanDefBtn) {
       const on = isCleanDefault();
@@ -13187,6 +13564,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '      <h3 style="margin-top:16px">配色方案</h3>',
       '      <div class="urppp-set-schemes" id="urppp-set-schemes"></div>',
       '    </section>',
+      '    <section class="urppp-set-sec" id="urppp-set-brutal" style="display:none">',
+      '      <h3>高对比配色</h3>',
+      '      <p class="urppp-set-tip">默认圆点使用高能粉；选择一种备用配色后，可由左上第三个圆点快速切换。</p>',
+      '      <div class="urppp-set-schemes" id="urppp-set-brutal-palettes"></div>',
+      '    </section>',
       '  </div>',
       '  <div class="urppp-set-pane" data-pane="skin">',
       '    <section class="urppp-set-sec">',
@@ -13251,7 +13633,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }
     panel.querySelectorAll('.urppp-set-mode').forEach((btn) => {
       btn.addEventListener('click', () => {
-        if (btn.dataset.theme === 'scu-red' && !skinSupportsDynamic()) return;
+        if (!isThemeModeAvailable(btn.dataset.theme)) return;
         applyTheme(btn.dataset.theme, { manual: true });
         syncSettingsPanelUI();
       });
@@ -13259,6 +13641,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const followBtn = panel.querySelector('#urppp-set-follow');
     if (followBtn) {
       followBtn.addEventListener('click', () => {
+        if (!skinSupportsDark()) return;
         const next = !isThemeFollowSystem();
         setThemeFollowSystem(next);
         if (next) applyTheme(resolveFollowThemeName(), { system: true });
@@ -13270,6 +13653,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const dynFollowBtn = panel.querySelector('#urppp-set-follow-dynamic');
     if (dynFollowBtn) {
       dynFollowBtn.addEventListener('click', () => {
+        if (!skinSupportsDynamic()) return;
         if (!isThemeFollowSystem()) {
           setThemeFollowSystem(true);
           setFollowUseDynamic(true);
@@ -13727,7 +14111,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       if (hm) {
         closeList();
         const level = hm[1].length; // 2 or 3
-        const text = hm[2].replace(/^\[|\]$/g, '');
+        const text = hm[2];
         out.push(level === 2 ? `<h2>${inline(text)}</h2>` : `<h3>${inline(text)}</h3>`);
         continue;
       }
@@ -14078,7 +14462,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
       wrap.querySelectorAll('.urppp-nav-dot[data-theme]').forEach((dot) => {
         dot.addEventListener('click', () => {
-          applyTheme(dot.dataset.theme, { manual: true });
+          handleThemeDotClick(dot.dataset.theme);
           syncNavbarThemeUI();
           try { syncSettingsPanelUI(); } catch (_) {}
         });
@@ -16542,24 +16926,11 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     el.querySelector('#uc-mask').onclick = closeModal;
     el.querySelector('#uc-modal-close').onclick = closeModal;
     const syncCleanThemeDots = () => {
-      const ct = getCurrent();
-      el.querySelectorAll('#uc-top-theme .urppp-nav-dot[data-theme]').forEach((d) => {
-        d.classList.toggle('ac', d.dataset.theme === ct);
-      });
-      const last = el.querySelector('#uc-top-theme .urppp-nav-dot[data-theme="scu-red"]');
-      if (last) {
-        try {
-          const seed = getAccent() || DEFAULT_SEED;
-          const prev = buildSchemePreview(seed, getScheme());
-          last.style.background = 'linear-gradient(135deg, ' + prev.primary + ' 0 55%, ' + prev.surface + ' 55% 100%)';
-        } catch (_) {
-          last.style.background = getAccent() || '#B53434';
-        }
-      }
+      syncThemeDotGroup(el.querySelector('#uc-top-theme'));
     };
     el.querySelectorAll('#uc-top-theme .urppp-nav-dot[data-theme]').forEach((dot) => {
       dot.addEventListener('click', () => {
-        applyTheme(dot.dataset.theme, { manual: true });
+        handleThemeDotClick(dot.dataset.theme);
         syncCleanThemeDots();
         try { syncNavbarThemeUI(); } catch (_) {}
         try { syncSettingsPanelUI(); } catch (_) {}
