@@ -2103,8 +2103,8 @@
           html[data-urppp-skin="editorial"] .urppp-nav-link:hover{
             background:var(--editorial-hover)!important;color:var(--text)!important;
           }
-          html[data-urppp-skin="editorial"] .urppp-stat-card{
-            border:0!important;border-bottom:1px solid var(--editorial-line)!important;
+          html[data-urppp-skin="editorial"] #urppp-dashboard .urppp-stat-card{
+            background:transparent!important;border:0!important;border-bottom:1px solid var(--editorial-line)!important;
             padding-top:18px!important;padding-bottom:18px!important;
           }
           html[data-urppp-skin="editorial"] .urppp-stat-card:hover{
