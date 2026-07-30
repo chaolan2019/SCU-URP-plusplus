@@ -898,6 +898,21 @@
     Array.from(new Set(inputs.filter(Boolean))).forEach((el) => setInputValue(el, code));
   }
 
+  function refreshLoginCaptchaImage(captchaImg) {
+    if (!captchaImg || !captchaImg.src) return;
+    let refreshed = captchaImg.src;
+    try {
+      const url = new URL(captchaImg.src, location.href);
+      url.searchParams.set('_urpppp', String(Date.now()));
+      refreshed = url.href;
+    } catch (_) {
+      refreshed += (refreshed.includes('?') ? '&' : '?') + '_urpppp=' + Date.now();
+    }
+    captchaImg.src = refreshed;
+    const visibleImg = document.getElementById('urppp-capimg');
+    if (visibleImg) visibleImg.src = refreshed;
+  }
+
   function ensureLoginGuardStyles() {
     if (document.getElementById('urpppp-login-guard-style')) return;
     const style = document.createElement('style');
@@ -980,6 +995,7 @@
     showLoginGuardNotice(guard);
     if (guard.paused) return true;
     if (!c.ocrUrl) { log('未配置 OCR，已填充账密并等待手动登录'); return true; }
+    if (guard.failures > 0) refreshLoginCaptchaImage(captchaImg);
     fillLoginCaptcha(captchaInput, '');
     if (!captchaImg.complete) await new Promise((r) => { captchaImg.onload = r; setTimeout(r, 2000); });
     const code = await recognizeCaptcha(getBase64FromImage(captchaImg), c.ocrUrl);
@@ -1701,7 +1717,13 @@
   watchSettingsPanel();
 
   // 登录
+  const hasZhjwLoginForm = !!(
+    document.getElementById('input_username')
+    && document.getElementById('input_password')
+    && document.getElementById('input_checkcode')
+  );
   const maybeLogin =
+    hasZhjwLoginForm ||
     /\/login/i.test(location.pathname || '') ||
     /login/i.test(location.href) ||
     /统一身份认证|frontend\/login/i.test(document.title + location.href);
