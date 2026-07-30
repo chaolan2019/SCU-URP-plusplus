@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SCU URP++教务系统美化
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.4.1
+// @version      1.4.2
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Chao_Lan,Hanako
 // @license      MIT
@@ -24,7 +24,7 @@
   'use strict';
 
   // 与脚本头 @version 保持同步
-  const URPPP_VERSION = '1.4.1';
+  const URPPP_VERSION = '1.4.2';
   const URPPP_UPDATE = {
     mainRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js',
     assistRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js',
@@ -3202,15 +3202,35 @@
   // 登录页重建
   // ============================================================
 
+  function extractLoginErrorMessage(scope) {
+    const text = String((document.body && document.body.innerText) || (scope && scope.innerText) || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const patterns = [
+      /token\s*校验失败[！!]?/i,
+      /令牌\s*校验失败[！!]?/i,
+      /验证码.{0,12}(?:错误|失败|过期)[！!]?/i,
+      /(?:用户名|账号|学号).{0,12}(?:密码).{0,12}(?:错误|失败)[！!]?/i,
+      /登录.{0,12}(?:错误|失败)[！!]?/i
+    ];
+    for (const pattern of patterns) {
+      const hit = text.match(pattern);
+      if (hit) return hit[0].trim();
+    }
+    return '';
+  }
+
   function rebuild() {
     const path = location.pathname;
-    if (!['/login', '/loginEn', '/'].includes(path) && path !== '') return;
-
     const formContent = document.getElementById('formContent');
     const originalForm = document.querySelector('.form-signin');
     if (!formContent || !originalForm) {
       setTimeout(rebuild, 50); return;
     }
+    if (formContent.querySelector(':scope > #urppp-root')) return;
+
+    const loginErrorMessage = extractLoginErrorMessage(formContent);
+    const originalForgotLink = originalForm.querySelector('a[onclick*="toModifyPwd"]');
 
     // 提取原始校徽 SVG
     const originalSvg = (() => {
@@ -3288,6 +3308,14 @@
           font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.05);
         }
         .ut button:hover:not(.ac){color:var(--text)}
+
+        #urppp-root .urppp-login-error{
+          margin:-16px 0 22px;padding:11px 13px;
+          border:1px solid color-mix(in srgb,var(--danger,#b42318) 34%,var(--border));
+          border-radius:var(--radius-sm);
+          background:color-mix(in srgb,var(--danger,#b42318) 8%,var(--surface));
+          color:var(--danger,#b42318);font-size:13px;line-height:1.5;text-align:center;
+        }
 
         /* === Form === */
         .ufg{margin-bottom:20px}
@@ -3405,6 +3433,8 @@
           <button data-mode="sso">${t('统一认证','SSO')}</button>
         </div>
 
+        ${loginErrorMessage ? `<div class="urppp-login-error" role="alert">${escapeHtml(loginErrorMessage)}</div>` : ''}
+
         <div class="ufb" id="urppp-form">
           <div class="ufg">
             <label class="ufl" for="urppp-user">${t('学号','Student ID')}</label>
@@ -3491,9 +3521,17 @@
     // 登录
     const submitBtn = root.querySelector('#urppp-submit');
     submitBtn.addEventListener('click', () => {
+      if (submitBtn.dataset.submitting === '1') return;
+      submitBtn.dataset.submitting = '1';
+      submitBtn.disabled = true;
       const origBtn = document.getElementById('loginButton');
       if (origBtn) origBtn.click();
-      originalForm.submit();
+      else if (typeof originalForm.requestSubmit === 'function') originalForm.requestSubmit();
+      else originalForm.submit();
+      setTimeout(() => {
+        submitBtn.dataset.submitting = '0';
+        submitBtn.disabled = false;
+      }, 1500);
     });
     root.querySelectorAll('.ui').forEach(i => {
       i.addEventListener('keydown', e => { if (e.key === 'Enter') submitBtn.click(); });
@@ -3502,10 +3540,7 @@
     // 忘记密码
     root.querySelector('#urppp-forgot').addEventListener('click', e => {
       e.preventDefault();
-      const links = document.querySelectorAll('a');
-      for (const a of links) {
-        if (a.textContent.includes('忘记') || a.textContent.includes('Forgot')) { a.click(); break; }
-      }
+      if (originalForgotLink) originalForgotLink.click();
     });
 
     // 主题：仅三圆点（简约白 / 深邃暗 / 动态配色），登录页不提供设置入口
