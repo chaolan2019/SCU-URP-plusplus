@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SCU URP++教务系统辅助插件
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.2.9
+// @version      1.3.0
 // @description  URP++ 扩展：登录验证码识别 + 评教自动填写/到时自动保存 + 列表页全自动评教。设置挂到 URP++ 设置面板。
 // @author       Chao_Lan,Hanako
 // @license      MIT
@@ -34,7 +34,7 @@
   'use strict';
 
   // 与脚本头 @version 保持同步
-  const URPPPP_VERSION = '1.2.9';
+  const URPPPP_VERSION = '1.3.0';
   const URPPPP_RAW_URL = 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js';
 
   // ===================== 公共工具 =====================
@@ -135,9 +135,12 @@
     casUser: NS + '_login_cas_user',
     casPass: NS + '_login_cas_pass',
     shareCred: NS + '_login_share_cred',
-    submitDelay: NS + '_login_submit_delay'
+    submitDelay: NS + '_login_submit_delay',
+    guardState: NS + '_login_guard_state'
   };
-  const DEFAULT_OCR_EXAMPLE = 'https://ocr.example.com/api/ocr';
+  const LOGIN_FAILURE_LIMIT = 4;
+  const LOGIN_PENDING_TTL = 10 * 60 * 1000;
+  const DEFAULT_OCR_EXAMPLE = 'https://ocr.yanjiangrd.site/api/ocr';
 
   // ===================== 评教助手配置 =====================
   const EVAL = {
@@ -186,6 +189,87 @@
       shareCred: getBool(LOGIN.shareCred, true),
       submitDelay: Math.max(0, getNum(LOGIN.submitDelay, 300))
     };
+  }
+
+  function emptyLoginGuardState(identity) {
+    return {
+      identity: String(identity || ''),
+      failures: 0,
+      paused: false,
+      pending: null,
+      updatedAt: Date.now()
+    };
+  }
+
+  function getLoginGuardState() {
+    const raw = getJSON(LOGIN.guardState, {}) || {};
+    const failures = Math.max(0, Math.min(LOGIN_FAILURE_LIMIT, Number(raw.failures) || 0));
+    const pending = raw.pending && typeof raw.pending === 'object'
+      ? {
+        kind: String(raw.pending.kind || ''),
+        identity: String(raw.pending.identity || ''),
+        createdAt: Number(raw.pending.createdAt) || 0
+      }
+      : null;
+    return {
+      identity: String(raw.identity || ''),
+      failures,
+      paused: failures >= LOGIN_FAILURE_LIMIT || !!raw.paused,
+      pending,
+      updatedAt: Number(raw.updatedAt) || 0
+    };
+  }
+
+  function saveLoginGuardState(state) {
+    const next = Object.assign(emptyLoginGuardState(''), state || {}, { updatedAt: Date.now() });
+    setJSON(LOGIN.guardState, next);
+    return next;
+  }
+
+  function resetLoginGuardState(identity) {
+    return saveLoginGuardState(emptyLoginGuardState(identity));
+  }
+
+  function loginIdentity(_kind, username) {
+    return String(username || '').trim();
+  }
+
+  function ensureLoginGuardIdentity(kind, username) {
+    const identity = loginIdentity(kind, username);
+    const state = getLoginGuardState();
+    if (state.identity && state.identity !== identity) return resetLoginGuardState(identity);
+    if (!state.identity) return saveLoginGuardState(Object.assign(state, { identity }));
+    return state;
+  }
+
+  function consumePendingLoginFailure() {
+    const state = getLoginGuardState();
+    const pending = state.pending;
+    if (!pending) return state;
+    const fresh = pending.createdAt > 0 && Date.now() - pending.createdAt <= LOGIN_PENDING_TTL;
+    const sameIdentity = !state.identity || state.identity === pending.identity;
+    state.pending = null;
+    if (fresh) {
+      state.identity = pending.identity;
+      state.failures = sameIdentity ? Math.min(LOGIN_FAILURE_LIMIT, state.failures + 1) : 1;
+      state.paused = state.failures >= LOGIN_FAILURE_LIMIT;
+    }
+    return saveLoginGuardState(state);
+  }
+
+  function markPendingAutoLogin(kind, username) {
+    const state = ensureLoginGuardIdentity(kind, username);
+    state.pending = {
+      kind: String(kind || ''),
+      identity: state.identity,
+      createdAt: Date.now()
+    };
+    return saveLoginGuardState(state);
+  }
+
+  function clearLoginGuardAfterSuccess() {
+    const state = getLoginGuardState();
+    if (state.failures || state.paused || state.pending) resetLoginGuardState('');
   }
 
   function evalConf() {
@@ -365,12 +449,16 @@
 
   function buildLoginSection() {
     const c = loginConf();
+    const guard = getLoginGuardState();
+    const guardText = guard.paused
+      ? `自动登录已暂停（${guard.failures}/${LOGIN_FAILURE_LIMIT}），当前由手动接管`
+      : `连续自动登录失败：${guard.failures}/${LOGIN_FAILURE_LIMIT}`;
     const sec = document.createElement('section');
     sec.className = 'urppp-set-sec urpppp-sec';
     sec.id = 'urpppp-login-sec';
     sec.innerHTML = `
       <h3>登录助手</h3>
-      <p class="urppp-set-tip">自动填写账号密码、OCR 识别验证码。OCR 地址需手动填写。</p>
+      <p class="urppp-set-tip">自动填写账号密码、OCR 识别验证码。连续自动登录失败 ${LOGIN_FAILURE_LIMIT} 次后暂停提交，由用户手动填写验证码并接管登录。</p>
       <div class="urpppp-switches">
         <button type="button" class="urppp-set-follow" id="urpppp-login-enabled">功能：${c.enabled ? '开' : '关'}</button>
         <button type="button" class="urppp-set-follow" id="urpppp-login-auto">识别后自动登录：${c.autoSubmit ? '开' : '关'}</button>
@@ -384,12 +472,14 @@
         <div class="urpppp-row urpppp-cas-user"><label>统一认证账号</label><input type="text" id="urpppp-login-cas-user" value="${escapeAttr(c.casUser)}" /></div>
         <div class="urpppp-row urpppp-cas-pass"><label>统一认证密码</label><input type="password" id="urpppp-login-cas-pass" value="${escapeAttr(c.casPass)}" /></div>
       </div>
-      <p class="urpppp-tip">OCR 示例：<code>${DEFAULT_OCR_EXAMPLE}</code> · POST <code>{"image":"base64"}</code> → <code>{"status":"success","code":"..."}</code></p>
+      <p class="urpppp-tip">可选 OCR：<code>${DEFAULT_OCR_EXAMPLE}</code> · POST <code>{"image":"base64"}</code> → <code>{"status":"success","code":"..."}</code></p>
+      <p class="urpppp-tip">告示：OCR 服务会接收验证码图片，但插件不会向 OCR 服务发送学号或密码。该服务并非学校官方服务，请自行判断并承担使用风险。</p>
       <div class="urpppp-actions">
         <button type="button" class="urppp-set-btn" id="urpppp-login-save">保存登录设置</button>
+        <button type="button" class="urppp-set-btn ghost" id="urpppp-login-resume">恢复自动登录</button>
         <button type="button" class="urppp-set-btn ghost" id="urpppp-login-clear">清除账密</button>
       </div>
-      <div class="urpppp-status" id="urpppp-login-status"></div>
+      <div class="urpppp-status${guard.paused ? ' err' : ''}" id="urpppp-login-status">${guardText}</div>
     `;
     return sec;
   }
@@ -413,6 +503,7 @@
 
     enabledBtn.onclick = () => {
       enabled = !enabled; setVal(LOGIN.enabled, enabled);
+      if (enabled) resetLoginGuardState('');
       syncToggle(enabledBtn, enabled, '功能：开', '功能：关');
     };
     autoBtn.onclick = () => {
@@ -434,7 +525,12 @@
       setVal(LOGIN.enabled, enabled);
       setVal(LOGIN.autoSubmit, autoSubmit);
       setVal(LOGIN.shareCred, shareCred);
-      setStatus('urpppp-login-status', '登录设置已保存', 'ok');
+      resetLoginGuardState('');
+      setStatus('urpppp-login-status', '登录设置已保存，连续失败计数已清零', 'ok');
+    };
+    sec.querySelector('#urpppp-login-resume').onclick = () => {
+      resetLoginGuardState('');
+      setStatus('urpppp-login-status', '已恢复自动登录，连续失败计数已清零', 'ok');
     };
     sec.querySelector('#urpppp-login-clear').onclick = () => {
       setVal(LOGIN.zhjwUser, ''); setVal(LOGIN.zhjwPass, '');
@@ -443,7 +539,8 @@
       sec.querySelector('#urpppp-login-zhjw-pass').value = '';
       sec.querySelector('#urpppp-login-cas-user').value = '';
       sec.querySelector('#urpppp-login-cas-pass').value = '';
-      setStatus('urpppp-login-status', '已清除账密', 'ok');
+      resetLoginGuardState('');
+      setStatus('urpppp-login-status', '已清除账密和连续失败计数', 'ok');
     };
   }
 
@@ -773,9 +870,10 @@
         onload(response) {
           try {
             const result = JSON.parse(response.responseText || '{}');
-            const code = result.code || result.data || result.text || result.result;
-            if ((result.status === 'success' && result.code != null) || code) resolve(String(code).trim());
-            else reject(new Error(result.message || result.msg || 'OCR 识别失败'));
+            const code = String(result.code || result.data || result.text || result.result || '').trim();
+            if (!code) return reject(new Error(result.message || result.msg || 'OCR 识别失败'));
+            if (!/^[A-Za-z0-9]{4,8}$/.test(code)) return reject(new Error('OCR 返回的验证码格式无效'));
+            resolve(code);
           } catch (_) { reject(new Error('OCR 响应解析失败')); }
         },
         onerror() { reject(new Error('OCR 服务请求失败')); },
@@ -792,30 +890,116 @@
   function ensureReadyForLogin(kind) {
     const c = loginConf();
     if (!c.enabled) return null;
-    if (!c.ocrUrl) { log('未配置 OCR，跳过登录识别'); return null; }
     const cred = credFor(kind, c);
     if (!cred.username || !cred.password) { log('未配置账密，请到设置 → 登录助手'); return null; }
     return { conf: c, cred };
+  }
+
+  function fillLoginCredentials(usernameInput, passwordInput, cred) {
+    const users = [usernameInput, document.getElementById('urppp-user')];
+    const passwords = [passwordInput, document.getElementById('urppp-pass')];
+    Array.from(new Set(users.filter(Boolean))).forEach((el) => setInputValue(el, cred.username));
+    Array.from(new Set(passwords.filter(Boolean))).forEach((el) => setInputValue(el, cred.password));
+  }
+
+  function fillLoginCaptcha(captchaInput, code) {
+    const inputs = [captchaInput, document.getElementById('urppp-cap')];
+    Array.from(new Set(inputs.filter(Boolean))).forEach((el) => setInputValue(el, code));
+  }
+
+  function ensureLoginGuardStyles() {
+    if (document.getElementById('urpppp-login-guard-style')) return;
+    const style = document.createElement('style');
+    style.id = 'urpppp-login-guard-style';
+    style.textContent = `
+#urpppp-login-guard-notice{
+  margin:10px 0;padding:10px 12px;border-radius:10px;
+  border:1px solid color-mix(in srgb,var(--warning,#b7791f) 45%,var(--border,#e5e7eb));
+  background:color-mix(in srgb,var(--warning,#b7791f) 10%,var(--surface,#fff));
+  color:var(--text,#1f2937);font-size:12px;line-height:1.55
+}
+#urpppp-login-guard-notice strong{display:block;margin-bottom:3px;color:var(--warning,#9a6700)}
+#urpppp-login-guard-notice button{
+  margin-top:8px;height:30px;padding:0 12px;border-radius:8px;cursor:pointer;
+  border:1px solid var(--border,#e5e7eb);background:var(--surface,#fff);color:var(--text,#1f2937);font-size:12px
+}
+#urpppp-login-guard-notice button:hover{border-color:var(--primary,#3b82f6);color:var(--primary,#3b82f6)}
+`;
+    (document.head || document.documentElement).appendChild(style);
+  }
+
+  function removeLoginGuardNotice() {
+    const notice = document.getElementById('urpppp-login-guard-notice');
+    if (notice) notice.remove();
+  }
+
+  function resumeAutoLogin() {
+    resetLoginGuardState('');
+    removeLoginGuardNotice();
+    setTimeout(() => { mainLogin(); }, 0);
+  }
+
+  function showLoginGuardNotice(state) {
+    if (!state || (!state.failures && !state.paused)) {
+      removeLoginGuardNotice();
+      return;
+    }
+    const host = document.getElementById('urppp-form')
+      || document.querySelector('.form-signin')
+      || document.querySelector('form');
+    if (!host) return;
+    ensureLoginGuardStyles();
+    let notice = document.getElementById('urpppp-login-guard-notice');
+    if (!notice) {
+      notice = document.createElement('div');
+      notice.id = 'urpppp-login-guard-notice';
+      notice.setAttribute('role', 'status');
+    }
+    notice.innerHTML = '';
+    const title = document.createElement('strong');
+    const text = document.createElement('span');
+    title.textContent = state.paused ? '自动登录已暂停' : `自动登录失败 ${state.failures}/${LOGIN_FAILURE_LIMIT}`;
+    text.textContent = state.paused
+      ? '连续登录失败已达上限。学号和密码已填好，请手动输入验证码后登录。'
+      : `正在重新识别验证码；达到 ${LOGIN_FAILURE_LIMIT} 次后将改为手动接管。`;
+    notice.append(title, text);
+    if (state.paused) {
+      const resume = document.createElement('button');
+      resume.type = 'button';
+      resume.textContent = '恢复自动登录';
+      resume.addEventListener('click', resumeAutoLogin);
+      notice.appendChild(resume);
+    }
+    host.insertBefore(notice, host.firstChild);
   }
 
   async function handleZhjwLogin() {
     const usernameInput = document.getElementById('input_username');
     const passwordInput = document.getElementById('input_password');
     const captchaInput = document.getElementById('input_checkcode');
-    const captchaImg = document.getElementById('captchaImg');
+    const captchaImg = document.getElementById('captchaImg') || document.querySelector('.form-signin img');
     const loginButton = document.getElementById('loginButton');
     if (!usernameInput || !passwordInput || !captchaInput || !captchaImg) return false;
     log('教务登录页');
+    consumePendingLoginFailure();
     const ready = ensureReadyForLogin('zhjw');
     if (!ready) return true;
     const { conf: c, cred } = ready;
-    setInputValue(usernameInput, cred.username);
-    setInputValue(passwordInput, cred.password);
+    fillLoginCredentials(usernameInput, passwordInput, cred);
+    const guard = ensureLoginGuardIdentity('zhjw', cred.username);
+    showLoginGuardNotice(guard);
+    if (guard.paused) return true;
+    if (!c.ocrUrl) { log('未配置 OCR，已填充账密并等待手动登录'); return true; }
+    fillLoginCaptcha(captchaInput, '');
     if (!captchaImg.complete) await new Promise((r) => { captchaImg.onload = r; setTimeout(r, 2000); });
     const code = await recognizeCaptcha(getBase64FromImage(captchaImg), c.ocrUrl);
-    setInputValue(captchaInput, code);
+    fillLoginCaptcha(captchaInput, code);
     log('教务验证码：', code);
-    if (c.autoSubmit && loginButton) { await sleep(c.submitDelay); loginButton.click(); }
+    if (c.autoSubmit && loginButton) {
+      await sleep(c.submitDelay);
+      markPendingAutoLogin('zhjw', cred.username);
+      loginButton.click();
+    }
     return true;
   }
 
@@ -826,7 +1010,7 @@
       inputs.find((i) => i.type === 'text' && !/验证码|captcha|check/i.test(i.placeholder || i.name || i.id || ''));
     const passwordInput = inputs.find((i) => i.type === 'password');
     const captchaInput =
-      inputs.find((i) => /验证码|captcha|checkcode|check/i.test(i.placeholder || i.name || i.id || '')) ||
+      inputs.find((i) => /验证码|captcha|checkcode|verifycode|verification/i.test(i.placeholder || i.name || i.id || '')) ||
       inputs.find((i) => i.type === 'text' && i.maxLength > 0 && i.maxLength <= 8);
     const captchaImg =
       document.querySelector('img.captcha-img') ||
@@ -849,16 +1033,25 @@
     const els = findCasElements();
     if (!els.usernameInput || !els.passwordInput || !els.captchaInput || !els.captchaImg) return false;
     log('统一认证页');
+    consumePendingLoginFailure();
     const ready = ensureReadyForLogin('cas');
     if (!ready) return true;
     const { conf: c, cred } = ready;
-    setInputValue(els.usernameInput, cred.username);
-    setInputValue(els.passwordInput, cred.password);
+    fillLoginCredentials(els.usernameInput, els.passwordInput, cred);
+    const guard = ensureLoginGuardIdentity('cas', cred.username);
+    showLoginGuardNotice(guard);
+    if (guard.paused) return true;
+    if (!c.ocrUrl) { log('未配置 OCR，已填充账密并等待手动登录'); return true; }
+    fillLoginCaptcha(els.captchaInput, '');
     if (!els.captchaImg.complete) await new Promise((r) => { els.captchaImg.onload = r; setTimeout(r, 2000); });
     const code = await recognizeCaptcha(getBase64FromImage(els.captchaImg), c.ocrUrl);
-    setInputValue(els.captchaInput, code);
+    fillLoginCaptcha(els.captchaInput, code);
     log('统一认证验证码：', code);
-    if (c.autoSubmit && els.loginButton) { await sleep(c.submitDelay); els.loginButton.click(); }
+    if (c.autoSubmit && els.loginButton) {
+      await sleep(c.submitDelay);
+      markPendingAutoLogin('cas', cred.username);
+      els.loginButton.click();
+    }
     return true;
   }
 
@@ -1380,7 +1573,7 @@
     GM_registerMenuCommand('URP++辅助：打开设置说明', () => {
       alert('请启用 URP++ 主脚本，点击顶栏齿轮，在设置底部配置「登录助手」「评教助手」。');
     });
-    GM_registerMenuCommand('URP++辅助：立即识别登录验证码', () => { mainLogin(); });
+    GM_registerMenuCommand('URP++辅助：恢复并立即识别登录验证码', () => { resumeAutoLogin(); });
     GM_registerMenuCommand('URP++辅助：立即处理当前评教页', () => { runEvaluationAssist({ force: true, forceSave: true }); });
     GM_registerMenuCommand('URP++辅助：启动全自动评教', () => { startFullAutoEvaluation(); });
     GM_registerMenuCommand('URP++辅助：停止全自动评教', () => { clearBatchState(); updateBatchHud(); });
@@ -1390,6 +1583,8 @@
     window.__urppppAssist = {
       version: URPPPP_VERSION,
       loginConf,
+      loginGuardState: getLoginGuardState,
+      resumeLoginAuto: resumeAutoLogin,
       evalConf,
       runLogin: mainLogin,
       runEval: runEvaluationAssist,
@@ -1524,6 +1719,8 @@
   if (maybeLogin) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mainLogin);
     else mainLogin();
+  } else {
+    clearLoginGuardAfterSuccess();
   }
 
   // 评教填写页：自动填 +（批量/开启时）到时保存
