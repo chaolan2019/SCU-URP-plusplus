@@ -401,6 +401,22 @@
   const FOLLOW_DYNAMIC_KEY = 'urppp_follow_use_dynamic_v1';
   const BRUTAL_PALETTE_KEY = 'urppp_brutal_palette_v1';
   const BRUTAL_ACTIVE_PALETTE_KEY = 'urppp_brutal_active_palette_v1';
+  const PRIVACY_SETTINGS_KEY = 'urppp_privacy_v1';
+  const CUSTOM_IDENTITY_KEY = 'urppp_custom_identity_v1';
+  const SCHEDULE_FIRST_MONDAY_KEY = 'urppp_schedule_first_monday_v1';
+  const PRIVACY_MASK_TEXT = '••••••';
+  const CUSTOM_AVATAR_MAX_LENGTH = 3 * 1024 * 1024;
+  const PRIVACY_FIELD_DEFAULTS = {
+    name: { enabled: false, replacement: '同学' },
+    identity: { enabled: true, replacement: '已隐藏' },
+    organization: { enabled: true, replacement: '已隐藏' },
+    contact: { enabled: true, replacement: '已隐藏' },
+    grade: { enabled: true, replacement: '已隐藏' },
+    gpa: { enabled: true, replacement: '••••••' },
+    credit: { enabled: true, replacement: '••••••' },
+    avatar: { enabled: true, replacement: '' },
+    schedule: { enabled: false, replacement: '课表已隐藏' }
+  };
   const DEFAULT_ACCENT_PRESETS = ['#1E3A5F', '#B53434', '#0F766E', '#7C3AED', '#C2410C', '#0369A1', '#BE185D', '#365314'];
   const DEFAULT_SEED = '#B53434';
   const BRUTAL_DEFAULT_PALETTE = 'pink';
@@ -894,6 +910,79 @@
     GM_setValue(AUTO_UPDATE_KEY, !!on);
     return !!on;
   }
+
+  function readJsonSetting(key, fallback) {
+    try {
+      const raw = GM_getValue(key, '');
+      if (raw && typeof raw === 'object') return raw;
+      if (typeof raw === 'string' && raw.trim()) return JSON.parse(raw);
+    } catch (_) {}
+    return fallback;
+  }
+
+  function writeJsonSetting(key, value) {
+    GM_setValue(key, JSON.stringify(value));
+    return value;
+  }
+
+  function normalizePrivacySettings(value) {
+    const raw = value && typeof value === 'object' ? value : {};
+    const mode = ['off', 'one', 'custom'].includes(raw.mode) ? raw.mode : 'off';
+    const fields = {};
+    const rawFields = raw.fields && typeof raw.fields === 'object' ? raw.fields : {};
+    const legacyScore = rawFields.score && typeof rawFields.score === 'object' ? rawFields.score : null;
+    Object.keys(PRIVACY_FIELD_DEFAULTS).forEach((key) => {
+      const base = PRIVACY_FIELD_DEFAULTS[key];
+      const migrated = ['grade', 'gpa', 'credit'].includes(key) ? legacyScore : null;
+      const item = rawFields[key] && typeof rawFields[key] === 'object' ? rawFields[key] : (migrated || {});
+      fields[key] = {
+        enabled: key === 'name' ? false : (item.enabled == null ? base.enabled : !!item.enabled),
+        replacement: String(item.replacement == null ? base.replacement : item.replacement).slice(0, 80)
+      };
+    });
+    return { mode, mask: PRIVACY_MASK_TEXT, fields };
+  }
+
+  function getPrivacySettings() {
+    return normalizePrivacySettings(readJsonSetting(PRIVACY_SETTINGS_KEY, null));
+  }
+
+  function setPrivacySettings(value) {
+    return writeJsonSetting(PRIVACY_SETTINGS_KEY, normalizePrivacySettings(value));
+  }
+
+  function normalizeCustomIdentity(value) {
+    const raw = value && typeof value === 'object' ? value : {};
+    const avatar = String(raw.avatar || '').trim();
+    return {
+      nameEnabled: !!raw.nameEnabled,
+      name: String(raw.name || '').trim().slice(0, 40),
+      avatarEnabled: !!raw.avatarEnabled,
+      avatar: avatar.length <= CUSTOM_AVATAR_MAX_LENGTH ? avatar : '',
+      avatarName: String(raw.avatarName || '').trim().slice(0, 120)
+    };
+  }
+
+  function getCustomIdentity() {
+    return normalizeCustomIdentity(readJsonSetting(CUSTOM_IDENTITY_KEY, null));
+  }
+
+  function setCustomIdentity(value) {
+    return writeJsonSetting(CUSTOM_IDENTITY_KEY, normalizeCustomIdentity(value));
+  }
+
+  function getScheduleFirstMondayMap() {
+    const raw = readJsonSetting(SCHEDULE_FIRST_MONDAY_KEY, {});
+    return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  }
+
+  function rememberScheduleFirstMonday(planCode, isoDate) {
+    if (!planCode || !/^\d{4}-\d{2}-\d{2}$/.test(String(isoDate || ''))) return;
+    const map = getScheduleFirstMondayMap();
+    map[String(planCode)] = String(isoDate);
+    writeJsonSetting(SCHEDULE_FIRST_MONDAY_KEY, map);
+  }
+
   // 清爽模式自动进入仅首页；其它业务页不自动弹出
   function isHomePage() {
     try {
@@ -15156,6 +15245,171 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     });
   }
 
+  function syncPrivacySettingsUI(panel) {
+    if (!panel) return;
+    const privacy = getPrivacySettings();
+    panel.querySelectorAll('[data-privacy-mode]').forEach((button) => {
+      const on = button.getAttribute('data-privacy-mode') === privacy.mode;
+      button.classList.toggle('ac', on);
+      button.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    const customBox = panel.querySelector('#urppp-set-privacy-custom');
+    if (customBox) customBox.style.display = privacy.mode === 'custom' ? 'grid' : 'none';
+    Object.keys(privacy.fields).forEach((field) => {
+      const item = privacy.fields[field];
+      const toggle = panel.querySelector('[data-privacy-field="' + field + '"]');
+      const input = panel.querySelector('[data-privacy-value="' + field + '"]');
+      if (toggle) toggle.checked = !!item.enabled;
+      if (input) {
+        input.value = item.replacement || '';
+        input.disabled = !item.enabled;
+      }
+    });
+    const identity = getCustomIdentity();
+    const nameEnabled = panel.querySelector('#urppp-set-name-enabled');
+    const nameInput = panel.querySelector('#urppp-set-custom-name');
+    const avatarEnabled = panel.querySelector('#urppp-set-avatar-enabled');
+    const avatarUrl = panel.querySelector('#urppp-set-custom-avatar-url');
+    const preview = panel.querySelector('#urppp-set-avatar-preview');
+    if (nameEnabled) nameEnabled.checked = identity.nameEnabled;
+    if (nameInput) { nameInput.value = identity.name; nameInput.disabled = !identity.nameEnabled; }
+    if (avatarEnabled) avatarEnabled.checked = identity.avatarEnabled;
+    if (avatarUrl) {
+      avatarUrl.value = /^data:image\//i.test(identity.avatar) ? '' : identity.avatar;
+      avatarUrl.disabled = !identity.avatarEnabled;
+    }
+    panel.__urpppAvatarSource = identity.avatar;
+    if (preview) {
+      const src = validCustomAvatar(identity.avatar);
+      preview.style.display = src ? 'block' : 'none';
+      if (src) preview.src = src;
+      else preview.removeAttribute('src');
+    }
+  }
+
+  function collectPrivacySettings(panel) {
+    const next = getPrivacySettings();
+    Object.keys(next.fields).forEach((field) => {
+      const toggle = panel.querySelector('[data-privacy-field="' + field + '"]');
+      const input = panel.querySelector('[data-privacy-value="' + field + '"]');
+      if (toggle) next.fields[field].enabled = !!toggle.checked;
+      if (input) next.fields[field].replacement = String(input.value || '').trim().slice(0, 80);
+    });
+    return next;
+  }
+
+  function setPrivacySettingsStatus(panel, message, error) {
+    const status = panel && panel.querySelector('#urppp-set-privacy-status');
+    if (!status) return;
+    status.textContent = message || '';
+    status.style.color = error ? '#b91c1c' : 'var(--text-muted)';
+  }
+
+  function readAvatarFile(file) {
+    return new Promise((resolve, reject) => {
+      if (!file || !/^image\/(png|jpeg|webp|gif)$/i.test(file.type || '')) return reject(new Error('请选择 PNG、JPG、WebP 或 GIF 图片'));
+      if (file.size > 2 * 1024 * 1024) return reject(new Error('本地头像不能超过 2MB'));
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(new Error('读取头像失败'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function bindPrivacySettingsUI(panel) {
+    if (!panel || panel.__urpppPrivacyBound) return;
+    panel.__urpppPrivacyBound = true;
+    panel.querySelectorAll('[data-privacy-mode]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const next = getPrivacySettings();
+        next.mode = button.getAttribute('data-privacy-mode') || 'off';
+        setPrivacySettings(next);
+        syncPrivacySettingsUI(panel);
+        applyPersonalDisplay(document);
+      });
+    });
+    panel.querySelectorAll('[data-privacy-field]').forEach((toggle) => {
+      toggle.addEventListener('change', () => {
+        const field = toggle.getAttribute('data-privacy-field');
+        const input = panel.querySelector('[data-privacy-value="' + field + '"]');
+        if (input) input.disabled = !toggle.checked;
+      });
+    });
+    const nameEnabled = panel.querySelector('#urppp-set-name-enabled');
+    const avatarEnabled = panel.querySelector('#urppp-set-avatar-enabled');
+    if (nameEnabled) nameEnabled.addEventListener('change', () => {
+      const input = panel.querySelector('#urppp-set-custom-name');
+      if (input) input.disabled = !nameEnabled.checked;
+    });
+    if (avatarEnabled) avatarEnabled.addEventListener('change', () => {
+      const input = panel.querySelector('#urppp-set-custom-avatar-url');
+      if (input) input.disabled = !avatarEnabled.checked;
+    });
+    const fileInput = panel.querySelector('#urppp-set-custom-avatar-file');
+    if (fileInput) fileInput.addEventListener('change', async () => {
+      try {
+        const source = await readAvatarFile(fileInput.files && fileInput.files[0]);
+        panel.__urpppAvatarSource = source;
+        const preview = panel.querySelector('#urppp-set-avatar-preview');
+        if (preview) { preview.src = source; preview.style.display = 'block'; }
+        if (avatarEnabled) avatarEnabled.checked = true;
+        setPrivacySettingsStatus(panel, '本地头像已读取，点击保存后生效');
+      } catch (e) {
+        setPrivacySettingsStatus(panel, e && e.message || String(e), true);
+      }
+    });
+    const clearAvatar = panel.querySelector('#urppp-set-avatar-clear');
+    if (clearAvatar) clearAvatar.addEventListener('click', () => {
+      try {
+        const identity = getCustomIdentity();
+        identity.avatarEnabled = false;
+        identity.avatar = '';
+        identity.avatarName = '';
+        setCustomIdentity(identity);
+        panel.__urpppAvatarSource = '';
+        syncPrivacySettingsUI(panel);
+        applyPersonalDisplay(document);
+        refreshCleanPersonalDisplay();
+        setPrivacySettingsStatus(panel, '已清除自定义头像');
+      } catch (e) {
+        setPrivacySettingsStatus(panel, e && e.message || '清除自定义头像失败', true);
+      }
+    });
+    const save = panel.querySelector('#urppp-set-privacy-save');
+    if (save) save.addEventListener('click', () => {
+      const previousPrivacy = getPrivacySettings();
+      const previousIdentity = getCustomIdentity();
+      try {
+        const draftPrivacy = collectPrivacySettings(panel);
+        const current = previousIdentity;
+        const urlInput = panel.querySelector('#urppp-set-custom-avatar-url');
+        const typedUrl = String(urlInput && urlInput.value || '').trim();
+        const source = typedUrl || panel.__urpppAvatarSource || '';
+        const draftIdentity = normalizeCustomIdentity({
+          nameEnabled: !!(nameEnabled && nameEnabled.checked),
+          name: String(panel.querySelector('#urppp-set-custom-name')?.value || '').trim(),
+          avatarEnabled: !!(avatarEnabled && avatarEnabled.checked),
+          avatar: source,
+          avatarName: current.avatarName
+        });
+        if (draftIdentity.avatarEnabled && !validCustomAvatar(draftIdentity.avatar)) throw new Error('头像地址必须是 http(s) 图片或已选择的本地图片');
+        try {
+          setCustomIdentity(draftIdentity);
+          setPrivacySettings(draftPrivacy);
+        } catch (writeError) {
+          try { setCustomIdentity(previousIdentity); setPrivacySettings(previousPrivacy); } catch (_) {}
+          throw writeError;
+        }
+        applyPersonalDisplay(document);
+        refreshCleanPersonalDisplay();
+        syncPrivacySettingsUI(panel);
+        setPrivacySettingsStatus(panel, '隐私与显示设置已保存');
+      } catch (e) {
+        setPrivacySettingsStatus(panel, e && e.message || String(e), true);
+      }
+    });
+  }
+
   function syncSettingsPanelUI() {
     const panel = document.getElementById('urppp-settings-panel');
     if (!panel) return;
@@ -15250,6 +15504,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       autoUpBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
       autoUpBtn.textContent = on ? '自动检测更新：开' : '自动检测更新：关';
     }
+    try { syncPrivacySettingsUI(panel); } catch (_) {}
     // 跟随系统时动态区仍可配置（浅色会用到）
     const dyn = panel.querySelector('#urppp-set-dynamic');
     if (dyn) dyn.style.opacity = '1';
@@ -15433,6 +15688,37 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '    </section>',
       '  </div>',
       '  <div class="urppp-set-pane" data-pane="system">',
+      '    <section class="urppp-set-sec" id="urppp-set-privacy">',
+      '      <h3>隐私模式</h3>',
+      '      <p class="urppp-set-tip">只遮挡页面显示，不修改教务数据。一键隐私统一显示遮罩；自定义模式可分别控制字段。</p>',
+      '      <div class="urppp-set-modes" id="urppp-set-privacy-modes">',
+      '        <button type="button" class="urppp-set-follow urppp-privacy-mode" data-privacy-mode="off">关闭</button>',
+      '        <button type="button" class="urppp-set-follow urppp-privacy-mode" data-privacy-mode="one">一键隐私</button>',
+      '        <button type="button" class="urppp-set-follow urppp-privacy-mode" data-privacy-mode="custom">自定义</button>',
+      '      </div>',
+      '      <div class="urppp-feature-grid" id="urppp-set-privacy-custom">',
+      '        <div class="urppp-privacy-field"><input type="checkbox" data-privacy-field="identity" aria-label="隐藏学号和证件"><span>学号/证件</span><input class="urppp-feature-input" data-privacy-value="identity" maxlength="40" aria-label="学号和证件替换内容"></div>',
+      '        <div class="urppp-privacy-field"><input type="checkbox" data-privacy-field="organization" aria-label="隐藏学院和专业"><span>学院/专业</span><input class="urppp-feature-input" data-privacy-value="organization" maxlength="40" aria-label="学院和专业替换内容"></div>',
+      '        <div class="urppp-privacy-field"><input type="checkbox" data-privacy-field="contact" aria-label="隐藏联系和个人信息"><span>联系/个人信息</span><input class="urppp-feature-input" data-privacy-value="contact" maxlength="40" aria-label="联系和个人信息替换内容"></div>',
+      '        <div class="urppp-privacy-field"><input type="checkbox" data-privacy-field="grade" aria-label="隐藏成绩"><span>成绩</span><input class="urppp-feature-input" data-privacy-value="grade" maxlength="40" aria-label="成绩替换内容"></div>',
+      '        <div class="urppp-privacy-field"><input type="checkbox" data-privacy-field="gpa" aria-label="隐藏绩点"><span>绩点</span><input class="urppp-feature-input" data-privacy-value="gpa" maxlength="40" aria-label="绩点替换内容"></div>',
+      '        <div class="urppp-privacy-field"><input type="checkbox" data-privacy-field="credit" aria-label="隐藏学分"><span>学分</span><input class="urppp-feature-input" data-privacy-value="credit" maxlength="40" aria-label="学分替换内容"></div>',
+      '        <div class="urppp-privacy-field"><input type="checkbox" data-privacy-field="schedule" aria-label="隐藏课表"><span>课表</span><input class="urppp-feature-input" data-privacy-value="schedule" maxlength="40" aria-label="课表替换内容"></div>',
+      '        <div class="urppp-privacy-field"><input type="checkbox" data-privacy-field="avatar" aria-label="隐藏头像"><span>头像</span><span class="urppp-set-tip">使用统一遮罩</span></div>',
+      '      </div>',
+      '    </section>',
+      '    <section class="urppp-set-sec" id="urppp-set-identity">',
+      '      <h3>自定义姓名与头像</h3>',
+      '      <p class="urppp-set-tip">独立的显示美化。隐私模式开启时优先显示隐私遮罩，关闭后恢复这里的自定义内容。</p>',
+      '      <div class="urppp-feature-grid">',
+      '        <div class="urppp-feature-row"><label><input type="checkbox" id="urppp-set-name-enabled"> 自定义姓名</label><input class="urppp-feature-input" id="urppp-set-custom-name" maxlength="40" placeholder="输入显示姓名"></div>',
+      '        <div class="urppp-feature-row"><label><input type="checkbox" id="urppp-set-avatar-enabled"> 自定义头像</label><input class="urppp-feature-input" id="urppp-set-custom-avatar-url" placeholder="https://... 图片地址"></div>',
+      '        <div class="urppp-feature-row"><label>本地图片</label><input class="urppp-feature-input" type="file" id="urppp-set-custom-avatar-file" accept="image/png,image/jpeg,image/webp,image/gif"></div>',
+      '        <div class="urppp-feature-row"><label>预览</label><img class="urppp-avatar-preview" id="urppp-set-avatar-preview" alt="自定义头像预览"></div>',
+      '      </div>',
+      '      <div class="urppp-feature-actions"><button type="button" class="urppp-set-btn" id="urppp-set-privacy-save">保存隐私与显示设置</button><button type="button" class="urppp-set-btn ghost" id="urppp-set-avatar-clear">清除自定义头像</button></div>',
+      '      <div class="urppp-set-tip" id="urppp-set-privacy-status" style="margin-top:8px"></div>',
+      '    </section>',
       '    <section class="urppp-set-sec" id="urppp-set-update">',
       '      <h3>更新</h3>',
       '      <button type="button" class="urppp-set-follow" id="urppp-set-auto-update" aria-pressed="false" style="width:100%">自动检测更新：关</button>',
@@ -15476,6 +15762,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     panel.__urpppSwitchTab = switchTab;
 
     panel.querySelector('#urppp-set-close').addEventListener('click', closeSettingsPanel);
+    try { bindPrivacySettingsUI(panel); } catch (e) { console.warn('[URP++] privacy settings', e); }
     try { ensureAboutLogo(panel); } catch (_) {}
     const aboutLogo = panel.querySelector('#urppp-about-logo');
     if (aboutLogo && !aboutLogo.__urpppFallback) {
@@ -16999,7 +17286,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           card.style.textDecoration = 'none';
         }
         card.className = 'urppp-stat-card';
-        card.innerHTML = `<div class="${valueClass}">${value}</div><div class="label">${label}</div>`;
+        const privacyMarkup = statCardPrivacyMarkup(value, label);
+        card.innerHTML = `<div class="${valueClass}">${privacyMarkup.valueHtml}</div><div class="label">${privacyMarkup.labelHtml}</div>`;
         statsGrid.appendChild(card);
       });
     }
@@ -17238,6 +17526,1033 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
+  function ensureFeatureStyles() {
+    if (document.getElementById('urppp-feature-style')) return;
+    const style = document.createElement('style');
+    style.id = 'urppp-feature-style';
+    style.textContent = `
+      #urppp-settings-panel .urppp-feature-grid{display:grid;gap:10px;margin-top:12px}
+      #urppp-settings-panel .urppp-feature-row{display:grid;grid-template-columns:minmax(92px,.8fr) minmax(0,1.4fr);gap:10px;align-items:center}
+      #urppp-settings-panel .urppp-feature-row>label{margin:0;color:var(--text-secondary);font-size:12px;font-weight:600}
+      #urppp-settings-panel .urppp-feature-input{width:100%;height:34px;border:1px solid var(--border);border-radius:9px;background:var(--input-bg);color:var(--text);padding:0 10px;outline:none;box-sizing:border-box}
+      #urppp-settings-panel .urppp-feature-input:focus{border-color:var(--primary);box-shadow:0 0 0 2px color-mix(in srgb,var(--primary) 16%,transparent)}
+      #urppp-settings-panel .urppp-privacy-field{display:grid;grid-template-columns:auto minmax(76px,.7fr) minmax(0,1.3fr);gap:8px;align-items:center}
+      #urppp-settings-panel .urppp-privacy-field>input[type="checkbox"]{width:16px;height:16px;margin:0;accent-color:var(--primary)}
+      #urppp-settings-panel .urppp-privacy-field>span{font-size:12px;color:var(--text-secondary)}
+      #urppp-settings-panel .urppp-feature-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+      #urppp-settings-panel .urppp-avatar-preview{width:48px;height:48px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);object-fit:cover;display:none}
+      .urppp-private-text{position:relative!important;font-size:0!important;color:transparent!important;text-shadow:none!important;user-select:none!important;pointer-events:none!important;min-height:1em}
+      .urppp-private-text>*{visibility:hidden!important}
+      .urppp-private-text::after{content:attr(data-urppp-private-mask)!important;visibility:visible!important;display:inline!important;color:var(--text,#1d1d1f)!important;font:600 12px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif!important;letter-spacing:0!important;white-space:nowrap!important}
+      .urppp-private-avatar{visibility:hidden!important}
+      .urppp-private-avatar-host{position:relative!important}
+      .urppp-private-avatar-host::after{content:attr(data-urppp-private-mask)!important;position:absolute!important;inset:auto!important;left:var(--urppp-avatar-left,0)!important;top:var(--urppp-avatar-top,0)!important;width:var(--urppp-avatar-width,40px)!important;height:var(--urppp-avatar-height,40px)!important;display:flex!important;align-items:center!important;justify-content:center!important;color:var(--text-muted,#7c8491)!important;background:var(--input-bg,#eef1f5)!important;border-radius:var(--urppp-avatar-radius,50%)!important;font:700 8px/1 sans-serif!important;letter-spacing:0!important;white-space:nowrap!important;overflow:hidden!important;z-index:4!important;pointer-events:none!important}
+      #urppp-clean-root .uc-avatar.urppp-private-avatar-host::after,.profile-picture.urppp-private-avatar-host::after{font-size:12px!important}
+      .urppp-private-avatar-block{position:relative!important;overflow:hidden!important;background:var(--input-bg,#eef1f5)!important}
+      .urppp-private-avatar-block>*{visibility:hidden!important}
+      .urppp-private-avatar-block::after{content:attr(data-urppp-private-mask)!important;position:absolute!important;inset:0!important;display:flex!important;align-items:center!important;justify-content:center!important;color:var(--text-muted,#7c8491)!important;background:var(--input-bg,#eef1f5)!important;font:700 12px/1 sans-serif!important;letter-spacing:0!important;z-index:4!important}
+      .urppp-private-block{position:relative!important;isolation:isolate!important;min-height:84px!important;overflow:hidden!important}
+      .urppp-private-block>*{visibility:hidden!important}
+      .urppp-private-block::after{content:attr(data-urppp-private-mask)!important;position:absolute!important;inset:0!important;display:flex!important;align-items:center!important;justify-content:center!important;color:var(--text-muted,#7c8491)!important;background:var(--input-bg,#eef1f5)!important;border:1px solid var(--border,#dfe3e8)!important;border-radius:inherit!important;font:650 13px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif!important;letter-spacing:0!important;z-index:8!important;pointer-events:none!important}
+      #urppp-clean-root .uc-hd-title{display:inline-flex!important;align-items:center!important;min-width:0!important}
+      .urppp-export-wrap{position:relative!important;display:inline-flex!important;align-items:center!important;margin-left:7px!important;font-weight:400!important;vertical-align:middle!important}
+      .urppp-export-trigger{height:28px!important;min-width:28px!important;padding:0 9px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;border:1px solid var(--border,#dfe3e8)!important;border-radius:8px!important;background:var(--input-bg,#f7f8fa)!important;color:var(--text,#1d1d1f)!important;font-size:12px!important;line-height:1!important;cursor:pointer!important;box-shadow:none!important;transform:none!important}
+      .urppp-export-trigger:hover{border-color:var(--primary,#b53434)!important;color:var(--primary,#b53434)!important;background:var(--surface,#fff)!important}
+      .urppp-export-trigger i{font-size:12px!important;margin:0!important;color:inherit!important}
+      .urppp-export-menu{position:absolute!important;top:calc(100% + 7px)!important;left:0!important;z-index:14040!important;width:220px!important;padding:6px!important;box-sizing:border-box!important;border:1px solid var(--border,#dfe3e8)!important;border-radius:10px!important;background:var(--surface,#fff)!important;box-shadow:0 14px 34px rgba(15,23,42,.16)!important;display:none!important}
+      #urppp-native-schedule-export>.urppp-export-menu{left:auto!important;right:0!important}
+      .urppp-export-fallback{display:flex!important;justify-content:flex-end!important;margin:0 0 10px!important}
+      .urppp-export-wrap.open>.urppp-export-menu{display:block!important}
+      .urppp-export-option{width:100%!important;min-height:38px!important;padding:7px 9px!important;display:grid!important;grid-template-columns:20px minmax(0,1fr)!important;gap:8px!important;align-items:center!important;border:0!important;border-radius:7px!important;background:transparent!important;color:var(--text,#1d1d1f)!important;text-align:left!important;cursor:pointer!important;box-shadow:none!important;transform:none!important}
+      .urppp-export-option:hover:not(:disabled){background:var(--input-bg,#f5f6f8)!important;color:var(--primary,#b53434)!important}
+      .urppp-export-option:disabled{opacity:.45!important;cursor:not-allowed!important}
+      .urppp-export-option i{width:18px!important;text-align:center!important;color:inherit!important}
+      .urppp-export-option strong{display:block!important;font-size:12px!important;font-weight:650!important;line-height:1.2!important}
+      .urppp-export-option small{display:block!important;margin-top:2px!important;color:var(--text-muted,#7c8491)!important;font-size:10px!important;line-height:1.3!important;white-space:normal!important}
+      .urppp-export-guide{margin:5px 5px 2px!important;padding-top:6px!important;border-top:1px solid var(--border,#e2e5e9)!important;color:var(--text-muted,#7c8491)!important;font-size:10px!important;line-height:1.4!important}
+      .urppp-export-guide button{display:block!important;margin-top:5px!important;padding:0!important;border:0!important;background:transparent!important;color:var(--primary,#b53434)!important;font-size:10px!important;font-weight:650!important;cursor:pointer!important;box-shadow:none!important}
+      html[data-urppp-skin="apple"] .urppp-export-trigger{border-radius:999px!important}
+      html[data-urppp-skin="flat"] .urppp-export-trigger{border:2px solid var(--text)!important;border-radius:0!important;background:var(--surface)!important;color:var(--text)!important}
+      html[data-urppp-skin="flat"] .urppp-export-trigger:hover{background:var(--text)!important;color:var(--surface)!important}
+      html[data-urppp-skin="flat"] .urppp-export-menu{border:2px solid var(--text)!important;border-radius:0!important;box-shadow:none!important}
+      html[data-urppp-skin="flat"] .urppp-export-option{border-radius:0!important}
+      html[data-urppp-skin="flat"] .urppp-export-option:hover:not(:disabled){background:var(--text)!important;color:var(--surface)!important}
+      html[data-urppp-skin="brutal"] .urppp-export-trigger{border:3px solid #000!important;border-radius:0!important;background:#fff!important;color:#000!important;box-shadow:3px 3px 0 #000!important}
+      html[data-urppp-skin="brutal"] .urppp-export-trigger:hover{background:var(--brutal-accent,#ff006e)!important;color:#000!important}
+      html[data-urppp-skin="brutal"] .urppp-export-trigger:active{box-shadow:none!important;transform:none!important}
+      html[data-urppp-skin="brutal"] .urppp-export-menu{border:3px solid #000!important;border-radius:0!important;background:#fff!important;color:#000!important;box-shadow:6px 6px 0 #000!important}
+      html[data-urppp-skin="brutal"] .urppp-export-option{border-radius:0!important;color:#000!important}
+      html[data-urppp-skin="brutal"] .urppp-export-option:hover:not(:disabled){background:var(--brutal-accent,#ff006e)!important;color:#000!important}
+      html[data-urppp-skin="editorial"] .urppp-export-trigger{border:0!important;border-bottom:1px solid var(--border)!important;border-radius:0!important;background:transparent!important;color:var(--text)!important;padding-inline:4px!important}
+      html[data-urppp-skin="editorial"] .urppp-export-trigger:hover{border-color:var(--text)!important;background:transparent!important;color:var(--text)!important}
+      html[data-urppp-skin="editorial"] .urppp-export-menu{border:1px solid var(--border)!important;border-radius:0!important;box-shadow:none!important}
+      html[data-urppp-skin="editorial"] .urppp-export-option{border-radius:0!important}
+      html[data-urppp-skin="organic"] .urppp-export-trigger{border-radius:999px!important;background:var(--input-bg)!important}
+      html[data-urppp-skin="organic"] .urppp-export-menu{border-radius:18px!important}
+      html[data-urppp-skin="organic"] .urppp-export-option{border-radius:12px!important}
+      html[data-urppp-skin="neu"] .urppp-export-trigger{border:0!important;border-radius:10px!important;background:var(--neu-base,var(--surface))!important;color:var(--text)!important;box-shadow:var(--neu-raised-xs,3px 3px 7px rgba(0,0,0,.16),-3px -3px 7px rgba(255,255,255,.65))!important}
+      html[data-urppp-skin="neu"] .urppp-export-trigger:hover{background:var(--neu-base,var(--surface))!important;color:var(--primary)!important;box-shadow:var(--neu-hover,var(--neu-raised-xs))!important}
+      html[data-urppp-skin="neu"] .urppp-export-trigger:active{box-shadow:var(--neu-inset-soft,inset 2px 2px 5px rgba(0,0,0,.14),inset -2px -2px 5px rgba(255,255,255,.55))!important;transform:none!important}
+      html[data-urppp-skin="neu"] .urppp-export-menu{border:0!important;border-radius:12px!important;background:var(--neu-base,var(--surface))!important;box-shadow:var(--neu-raised-sm,var(--shadow))!important}
+      html[data-urppp-skin="neu"] .urppp-export-option{border-radius:8px!important}
+      #urppp-feature-toast{position:fixed!important;left:50%!important;top:22px!important;z-index:14200!important;max-width:min(420px,calc(100vw - 32px))!important;padding:9px 14px!important;border:1px solid var(--border,#dfe3e8)!important;border-radius:9px!important;background:var(--surface,#fff)!important;color:var(--text,#1d1d1f)!important;box-shadow:0 12px 30px rgba(15,23,42,.16)!important;font:600 12px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif!important;opacity:0!important;transform:translate(-50%,-10px)!important;transition:opacity .2s ease,transform .2s ease!important;pointer-events:none!important}
+      #urppp-feature-toast.open{opacity:1!important;transform:translate(-50%,0)!important}
+      #urppp-feature-toast.error{border-color:#FCA5A5!important;color:#B91C1C!important;background:#FEF2F2!important}
+      .urppp-dialog-mask{position:fixed!important;inset:0!important;z-index:14100!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:18px!important;background:rgba(15,23,42,.44)!important}
+      .urppp-dialog{width:min(420px,100%)!important;padding:18px!important;border:1px solid var(--border,#dfe3e8)!important;border-radius:12px!important;background:var(--surface,#fff)!important;color:var(--text,#1d1d1f)!important;box-shadow:0 22px 60px rgba(15,23,42,.24)!important}
+      .urppp-dialog h3{margin:0 0 8px!important;font-size:15px!important;color:var(--text)!important}
+      .urppp-dialog p{margin:0 0 14px!important;color:var(--text-secondary)!important;font-size:12px!important;line-height:1.55!important}
+      .urppp-dialog input{width:100%!important;height:38px!important;border:1px solid var(--border)!important;border-radius:8px!important;background:var(--input-bg)!important;color:var(--text)!important;padding:0 10px!important;box-sizing:border-box!important}
+      .urppp-dialog-actions{display:flex!important;justify-content:flex-end!important;gap:8px!important;margin-top:16px!important}
+      @media(max-width:700px){#urppp-settings-panel .urppp-feature-row{grid-template-columns:1fr}}
+    `;
+    (document.head || document.documentElement).appendChild(style);
+  }
+
+  function ensureNavNameTarget(root) {
+    const scope = root && root.querySelector ? root : document;
+    const user = scope.querySelector('#navbar .user-info, .ace-nav .user-info, .user-info');
+    if (!user) return null;
+    const existing = user.querySelector('.urppp-user-name-value');
+    if (existing) return existing;
+    const clone = user.cloneNode(true);
+    clone.querySelectorAll('small, i, img, b, .badge').forEach((node) => node.remove());
+    const original = (clone.textContent || '').replace(/^\s*欢迎您[，,]?\s*/g, '').replace(/\s+/g, ' ').trim();
+    Array.from(user.childNodes).forEach((node) => {
+      if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) node.remove();
+    });
+    const target = document.createElement('span');
+    target.className = 'urppp-user-name-value';
+    target.textContent = original || '同学';
+    target.__urpppOriginalText = target.textContent;
+    user.appendChild(target);
+    return target;
+  }
+
+  function classifyPrivacyLabel(label) {
+    const text = String(label || '').replace(/[\s:：]/g, '');
+    if (!text) return '';
+    if (/姓名|英文姓名|姓名拼音/.test(text)) return 'name';
+    if (/学号|证件|身份证|护照|证书编号|考生号|录取号|学籍号/.test(text)) return 'identity';
+    if (/学院|院系|专业|班级|年级|主修方案|培养方案|专业方向|分流方向|毕业中学/.test(text)) return 'organization';
+    if (/电话|手机|电子邮件|邮箱|QQ|地址|家长|个人主页|出生日期|入学日期|乘车区间|性别|籍贯|民族|政治面貌|国籍|户口|户籍|生源|出生地|健康|宗教|血型|婚姻|联系人|家庭/.test(text)) return 'contact';
+    if (/绩点|GPA/.test(text)) return 'gpa';
+    if (/学分/.test(text)) return 'credit';
+    if (/成绩|分数|高考总分|均分|平均分|必修平均|课程门数|及格课程|不及格课程|待修读课程|已修读课程/.test(text)) return 'grade';
+    if (/课表|日程安排/.test(text)) return 'schedule';
+    return '';
+  }
+
+  function statCardPrivacyMarkup(value, label) {
+    const safeValue = escapeHtml(value);
+    const safeLabel = escapeHtml(label);
+    const field = classifyPrivacyLabel(String(value || '') + ' ' + String(label || ''));
+    if (field === 'organization') {
+      return label
+        ? { valueHtml: safeValue, labelHtml: `<span data-urppp-private="organization">${safeLabel}</span>` }
+        : { valueHtml: `<span data-urppp-private="organization">${safeValue}</span>`, labelHtml: safeLabel };
+    }
+    if (!['grade', 'gpa', 'credit'].includes(field)) return { valueHtml: safeValue, labelHtml: safeLabel };
+    const numericLabel = String(label || '').match(/-?\d+(?:\.\d+)?/);
+    const valueIsDirect = /^-?\d+(?:\.\d+)?$/.test(String(value || '').trim()) || /^(优秀|良好|中等|及格|不及格|合格|不合格)$/.test(String(value || '').trim());
+    if (!valueIsDirect && numericLabel) {
+      const index = numericLabel.index || 0;
+      const before = String(label).slice(0, index);
+      const after = String(label).slice(index + numericLabel[0].length);
+      return {
+        valueHtml: safeValue,
+        labelHtml: `${escapeHtml(before)}<span data-urppp-private="${field}">${escapeHtml(numericLabel[0])}</span>${escapeHtml(after)}`
+      };
+    }
+    return { valueHtml: `<span data-urppp-private="${field}">${safeValue}</span>`, labelHtml: safeLabel };
+  }
+
+  function privacyReplacement(config, field) {
+    if (!config || config.mode === 'off') return '';
+    if (config.mode === 'one') return config.mask || PRIVACY_MASK_TEXT;
+    if (field === 'name') return '';
+    const item = config.fields && config.fields[field];
+    if (!item || !item.enabled) return '';
+    return String(item.replacement || config.mask || PRIVACY_MASK_TEXT);
+  }
+
+  function markPrivateText(element, replacement) {
+    if (!element || !replacement) return;
+    if (element.querySelector && element.querySelector('input,select,textarea,button')) return;
+    element.classList.add('urppp-private-text');
+    element.setAttribute('data-urppp-private-mask', replacement);
+  }
+
+  function markPrivateAvatar(image, replacement) {
+    if (!image || !image.parentElement) return;
+    const host = image.parentElement;
+    image.classList.add('urppp-private-avatar');
+    host.classList.add('urppp-private-avatar-host');
+    host.setAttribute('data-urppp-private-mask', replacement || PRIVACY_MASK_TEXT);
+    const rect = image.getBoundingClientRect();
+    host.style.setProperty('--urppp-avatar-left', image.offsetLeft + 'px');
+    host.style.setProperty('--urppp-avatar-top', image.offsetTop + 'px');
+    host.style.setProperty('--urppp-avatar-width', Math.max(1, rect.width) + 'px');
+    host.style.setProperty('--urppp-avatar-height', Math.max(1, rect.height) + 'px');
+    host.style.setProperty('--urppp-avatar-radius', getComputedStyle(image).borderRadius || '50%');
+  }
+
+  function markPrivateBlock(element, replacement) {
+    if (!element || !replacement) return;
+    const host = element.matches('table') ? (element.closest('.table-responsive, .urppp-table-wrap') || element) : element;
+    host.classList.add('urppp-private-block');
+    host.setAttribute('data-urppp-private-mask', replacement);
+  }
+
+  function clearPrivacyDisplay(root) {
+    const scope = root && root.querySelectorAll ? root : document;
+    scope.querySelectorAll('.urppp-private-text').forEach((el) => {
+      el.classList.remove('urppp-private-text');
+      el.removeAttribute('data-urppp-private-mask');
+    });
+    scope.querySelectorAll('.urppp-private-avatar').forEach((el) => el.classList.remove('urppp-private-avatar'));
+    scope.querySelectorAll('.urppp-private-avatar-host').forEach((el) => {
+      el.classList.remove('urppp-private-avatar-host');
+      el.removeAttribute('data-urppp-private-mask');
+      ['--urppp-avatar-left', '--urppp-avatar-top', '--urppp-avatar-width', '--urppp-avatar-height', '--urppp-avatar-radius'].forEach((name) => el.style.removeProperty(name));
+    });
+    scope.querySelectorAll('.urppp-private-avatar-block').forEach((el) => {
+      el.classList.remove('urppp-private-avatar-block');
+      el.removeAttribute('data-urppp-private-mask');
+    });
+    scope.querySelectorAll('.urppp-private-block').forEach((el) => {
+      el.classList.remove('urppp-private-block');
+      el.removeAttribute('data-urppp-private-mask');
+    });
+  }
+
+  function applyCustomText(element, enabled, value) {
+    if (!element || element.matches?.('input,select,textarea,button') || element.querySelector?.('input,select,textarea,button')) return;
+    if (element.__urpppOriginalText == null) {
+      if (!enabled) return;
+      element.__urpppOriginalText = element.textContent || '';
+    }
+    const next = enabled && value ? value : element.__urpppOriginalText;
+    if (element.textContent !== next) element.textContent = next;
+  }
+
+  function validCustomAvatar(value) {
+    const src = String(value || '').trim();
+    if (src.length > CUSTOM_AVATAR_MAX_LENGTH) return '';
+    return /^(https?:\/\/|data:image\/(?:png|jpe?g|gif|webp);base64,)/i.test(src) ? src : '';
+  }
+
+  function applyCustomIdentityDisplay(root) {
+    const scope = root && root.querySelectorAll ? root : document;
+    const custom = getCustomIdentity();
+    const existingNavName = scope.querySelector?.('.urppp-user-name-value');
+    const navName = existingNavName || (custom.nameEnabled ? ensureNavNameTarget(scope) : null);
+    applyCustomText(navName, custom.nameEnabled, custom.name);
+    scope.querySelectorAll('.profile-info-row').forEach((row) => {
+      const label = row.querySelector('.profile-info-name');
+      const value = row.querySelector('.profile-info-value');
+      if (!label || !value || String(label.textContent || '').replace(/[\s:：]/g, '') !== '姓名') return;
+      applyCustomText(value, custom.nameEnabled, custom.name);
+    });
+    const avatar = validCustomAvatar(custom.avatar);
+    const avatarActive = custom.avatarEnabled && !!avatar;
+    scope.querySelectorAll('#navbar img.nav-user-photo, img#avatar, .profile-picture img').forEach((img) => {
+      const current = img.getAttribute('src') || '';
+      if (current && current !== img.__urpppAppliedCustomSrc) img.__urpppOriginalSrc = current;
+      if (avatarActive) {
+        if (img.__urpppOriginalSrc == null) img.__urpppOriginalSrc = current;
+        if (current !== avatar) img.setAttribute('src', avatar);
+        img.__urpppAppliedCustomSrc = avatar;
+      } else if (img.__urpppAppliedCustomSrc != null) {
+        if (img.__urpppOriginalSrc) img.setAttribute('src', img.__urpppOriginalSrc);
+        delete img.__urpppAppliedCustomSrc;
+      }
+    });
+  }
+
+  function applyProfilePrivacy(root, config) {
+    root.querySelectorAll('.profile-info-row').forEach((row) => {
+      const label = row.querySelector('.profile-info-name, th, label');
+      const value = row.querySelector('.profile-info-value, td:last-child');
+      if (!label || !value || label === value) return;
+      const field = classifyPrivacyLabel(label.textContent);
+      const replacement = privacyReplacement(config, field);
+      if (replacement) markPrivateText(value, replacement);
+    });
+  }
+
+  function applyScoreTablePrivacy(root, config) {
+    root.querySelectorAll('table').forEach((table) => {
+      const headers = Array.from(table.querySelectorAll('thead th, thead td, tr:first-child th, tr:first-child td'));
+      if (!headers.length) return;
+      const fields = headers.map((header) => {
+        const field = classifyPrivacyLabel(header.textContent);
+        return ['grade', 'gpa', 'credit'].includes(field) ? field : '';
+      });
+      if (!fields.some(Boolean)) return;
+      table.querySelectorAll('tbody tr').forEach((row) => {
+        const cells = row.querySelectorAll('td');
+        fields.forEach((field, index) => {
+          const replacement = privacyReplacement(config, field);
+          if (field && replacement) markPrivateText(cells[index], replacement);
+        });
+      });
+    });
+  }
+
+  function applyPrivacyDisplay(root) {
+    const scope = root && root.querySelectorAll ? root : document;
+    const config = getPrivacySettings();
+    if (config.mode === 'off') return;
+    const nameMask = privacyReplacement(config, 'name');
+    const avatarMask = privacyReplacement(config, 'avatar');
+    const scheduleMask = privacyReplacement(config, 'schedule');
+    const navName = nameMask ? ensureNavNameTarget(scope) : scope.querySelector?.('.urppp-user-name-value');
+    if (nameMask) markPrivateText(navName, nameMask);
+    const directAcademicTargets = [
+      ['#courseNum, #coursePas, #xy_kcms', 'grade'],
+      ['#gpa', 'gpa'],
+      ['#bottom', 'organization']
+    ];
+    directAcademicTargets.forEach(([selector, field]) => {
+      const replacement = privacyReplacement(config, field);
+      if (replacement) scope.querySelectorAll(selector).forEach((el) => markPrivateText(el, replacement));
+    });
+    applyScoreTablePrivacy(scope, config);
+    scope.querySelectorAll('[data-urppp-private]').forEach((el) => {
+      const field = el.getAttribute('data-urppp-private');
+      const replacement = privacyReplacement(config, field);
+      if (!['avatar', 'schedule'].includes(field) && replacement) markPrivateText(el, replacement);
+    });
+    applyProfilePrivacy(scope, config);
+    if (avatarMask) {
+      scope.querySelectorAll('[data-urppp-private="avatar"]').forEach((el) => {
+        const image = el.matches('img') ? el : el.querySelector('img');
+        if (image) markPrivateAvatar(image, avatarMask);
+        else {
+          el.classList.add('urppp-private-avatar-block');
+          el.setAttribute('data-urppp-private-mask', avatarMask);
+        }
+      });
+      scope.querySelectorAll('#navbar img.nav-user-photo, img#avatar, .profile-picture img, .uc-avatar img').forEach((img) => markPrivateAvatar(img, avatarMask));
+    }
+    if (scheduleMask) {
+      const targets = Array.from(scope.querySelectorAll('[data-urppp-private="schedule"], #main-calendar, #courseTable'));
+      targets.filter((target) => !targets.some((other) => other !== target && other.contains(target))).forEach((target) => markPrivateBlock(target, scheduleMask));
+    }
+  }
+
+  let personalDisplayTimer = 0;
+  let personalObserverEntries = [];
+
+  function personalDisplayIsEnabled() {
+    const privacy = getPrivacySettings();
+    const custom = getCustomIdentity();
+    return privacy.mode !== 'off' || custom.nameEnabled || custom.avatarEnabled;
+  }
+
+  function resumePersonalDisplayObservers() {
+    personalObserverEntries = personalObserverEntries.filter(({ root }) => root && root.isConnected);
+    personalObserverEntries.forEach(({ root, observer }) => observer.observe(root, { childList: true, subtree: true }));
+  }
+
+  function applyPersonalDisplay(root) {
+    const scope = root || document;
+    personalObserverEntries.forEach(({ observer }) => observer.disconnect());
+    try { ensureFeatureStyles(); } catch (_) {}
+    try { clearPrivacyDisplay(scope); } catch (_) {}
+    try { applyCustomIdentityDisplay(scope); } catch (e) { console.warn('[URP++] custom identity', e); }
+    try { applyPrivacyDisplay(scope); } catch (e) { console.warn('[URP++] privacy', e); }
+    if (personalDisplayIsEnabled()) {
+      resumePersonalDisplayObservers();
+      bindPersonalDisplayObservers();
+    }
+  }
+
+  function schedulePersonalDisplay(root) {
+    clearTimeout(personalDisplayTimer);
+    personalDisplayTimer = setTimeout(() => applyPersonalDisplay(root || document), 140);
+  }
+
+  function refreshCleanPersonalDisplay() {
+    try { if (state && state.open) render(); } catch (_) {}
+  }
+
+  function bindPersonalDisplayObservers() {
+    if (!personalDisplayIsEnabled()) {
+      personalObserverEntries.forEach(({ observer }) => observer.disconnect());
+      return;
+    }
+    [document.getElementById('navbar'), document.getElementById('page-content-template'), document.getElementById('urppp-clean-root')]
+      .filter(Boolean)
+      .forEach((root) => {
+        if (personalObserverEntries.some((entry) => entry.root === root)) return;
+        const observer = new MutationObserver(() => schedulePersonalDisplay(document));
+        personalObserverEntries.push({ root, observer });
+        observer.observe(root, { childList: true, subtree: true });
+      });
+  }
+
+  function personalizedProfile(profile) {
+    const result = Object.assign({}, profile || {});
+    const custom = getCustomIdentity();
+    if (custom.nameEnabled && custom.name) result.name = custom.name;
+    const avatar = validCustomAvatar(custom.avatar);
+    if (custom.avatarEnabled && avatar) result.avatar = avatar;
+    return result;
+  }
+
+  const SCHEDULE_EXPORT_API = '/student/courseSelect/thisSemesterCurriculum/ajaxStudentSchedule/callback';
+  const SCHEDULE_RESULT_API = '/student/courseSelect/thisSemesterCurriculum/callback';
+  const SCHEDULE_PAGE_URL = '/student/courseSelect/thisSemesterCurriculum/index';
+
+  function firstScheduleCourse(data) {
+    const packs = data && Array.isArray(data.xkxx) ? data.xkxx : [];
+    for (const pack of packs) {
+      const values = Object.values(pack || {});
+      if (values.length) return values[0];
+    }
+    return null;
+  }
+
+  function schedulePlanCodeFromData(data) {
+    const course = firstScheduleCourse(data);
+    if (!course) return '';
+    const firstTime = Array.isArray(course.timeAndPlaceList) ? course.timeAndPlaceList[0] : null;
+    return String(course.zxjxjhh || course.executiveEducationPlanNumber || course.id && (course.id.zxjxjhh || course.id.executiveEducationPlanNumber) || firstTime && (firstTime.zxjxjhh || firstTime.executiveEducationPlanNumber) || '').trim();
+  }
+
+  function semesterLabelFromPlanCode(planCode) {
+    const match = String(planCode || '').match(/^(\d{4})-(\d{4})-(\d)/);
+    if (!match) return '学生课表';
+    const term = match[3] === '1' ? '秋季学期' : (match[3] === '2' ? '春季学期' : '学期');
+    return match[1] + '-' + match[2] + '学年' + term;
+  }
+
+  function scheduleWeeksFromDescription(value) {
+    const text = String(value || '').replace(/[—–]/g, '-');
+    const parity = /单周|单数周|[（(]单[）)]/.test(text) ? 1 : (/双周|双数周|[（(]双[）)]/.test(text) ? 0 : -1);
+    const weeks = new Set();
+    const add = (week) => {
+      const value = Number(week);
+      if (value >= 1 && value <= 30 && (parity < 0 || value % 2 === parity)) weeks.add(value);
+    };
+    text.replace(/(\d{1,2})\s*[-~至到]\s*(\d{1,2})/g, (_, start, end) => {
+      const from = Math.min(Number(start), Number(end));
+      const to = Math.max(Number(start), Number(end));
+      for (let week = from; week <= to; week++) add(week);
+      return _;
+    });
+    (text.match(/\d{1,2}/g) || []).forEach(add);
+    return Array.from(weeks).sort((a, b) => a - b);
+  }
+
+  function scheduleWeeks(classWeek, weekDescription) {
+    const bits = String(classWeek || '').trim();
+    if (/^[01]+$/.test(bits)) {
+      const weeks = [];
+      for (let i = 0; i < bits.length; i++) if (bits.charAt(i) === '1') weeks.push(i + 1);
+      return weeks;
+    }
+    return scheduleWeeksFromDescription(weekDescription || bits);
+  }
+
+  function normalizeSectionTime(value) {
+    const text = String(value || '').replace(/\D/g, '').padStart(4, '0').slice(-4);
+    const normalized = text.slice(0, 2) + ':' + text.slice(2);
+    return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(normalized) ? normalized : '';
+  }
+
+  function normalizeScheduleExportData(data, requestedPlanCode, source) {
+    const planCode = requestedPlanCode || schedulePlanCodeFromData(data);
+    const sections = (Array.isArray(data && data.jcsjbs) ? data.jcsjbs : []).map((item) => ({
+      section: Number(item.jc) || 0,
+      start: normalizeSectionTime(item.kssj),
+      end: normalizeSectionTime(item.jssj)
+    })).filter((item) => item.section >= 1 && item.section <= 20 && item.start && item.end).sort((a, b) => a.section - b.section);
+    const courses = [];
+    (Array.isArray(data && data.xkxx) ? data.xkxx : []).forEach((pack) => {
+      Object.keys(pack || {}).forEach((key) => {
+        const course = pack[key];
+        if (!course) return;
+        const id = course.id || {};
+        const arrangements = (course.timeAndPlaceList || []).map((time) => ({
+          day: Number(time.classDay) || 0,
+          startSection: Number(time.classSessions) || 1,
+          endSection: Math.min(12, (Number(time.classSessions) || 1) + Math.max(1, Number(time.continuingSession) || 1) - 1),
+          weeks: scheduleWeeks(time.classWeek, time.weekDescription || course.skzcs),
+          weekDescription: String(time.weekDescription || course.skzcs || '').trim(),
+          campus: String(time.campusName || '').trim(),
+          building: String(time.teachingBuildingName || '').trim(),
+          classroom: String(time.classroomName || '').trim()
+        })).filter((item) => item.day >= 1 && item.day <= 7 && item.startSection >= 1 && item.startSection <= 12);
+        courses.push({
+          code: String(id.coureNumber || course.zkch || '').trim(),
+          sequence: String(id.coureSequenceNumber || course.zkxh || '').trim(),
+          name: String(course.courseName || course.englishCourseName || key).trim(),
+          englishName: String(course.englishCourseName || '').trim(),
+          teacher: String(course.attendClassTeacher || '').trim(),
+          attribute: String(course.coursePropertiesName || '').trim(),
+          category: String(course.courseCategoryName || '').trim(),
+          credit: Number(course.unit) || 0,
+          status: String(course.selectCourseStatusName || '').trim(),
+          arrangements
+        });
+      });
+    });
+    const knownFirstMonday = deriveCurrentSemesterMonday(planCode) || getScheduleFirstMondayMap()[planCode] || '';
+    return {
+      schemaVersion: 1,
+      exportedAt: new Date().toISOString(),
+      source: source || 'SCU URP++',
+      semester: { planCode, label: semesterLabelFromPlanCode(planCode), firstMonday: parseLocalIsoDate(knownFirstMonday) ? knownFirstMonday : '' },
+      sections,
+      courses
+    };
+  }
+
+  async function resolveSchedulePlanCode() {
+    const select = document.querySelector('#planCode, #zxjxjhh');
+    if (select && select.value && select.value !== 'no') return String(select.value);
+    try {
+      const params = new URLSearchParams(location.search);
+      const queryPlan = params.get('planCode') || params.get('zxjxjhh');
+      if (queryPlan) return queryPlan;
+    } catch (_) {}
+    if (state && state.schedule && state.schedule.exportData) {
+      const cached = state.schedule.exportData.semester && state.schedule.exportData.semester.planCode;
+      if (cached) return cached;
+    }
+    if (/\/student\/courseSelect\/courseSelectResult\//.test(location.pathname)) {
+      try {
+        const resultRaw = await fetchText(SCHEDULE_RESULT_API);
+        const resultData = JSON.parse(resultRaw);
+        const resultPlan = schedulePlanCodeFromData(resultData);
+        if (resultPlan) return resultPlan;
+      } catch (_) {}
+    }
+    return '';
+  }
+
+  async function loadScheduleExportData(source) {
+    let planCode = await resolveSchedulePlanCode();
+    const options = planCode ? {
+      method: 'POST',
+      data: 'planCode=' + encodeURIComponent(planCode),
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }
+    } : null;
+    const raw = await fetchText(SCHEDULE_EXPORT_API, options);
+    let data;
+    try { data = JSON.parse(raw); }
+    catch (_) { throw new Error('课表接口返回了非 JSON 内容，请刷新教务页面后重试'); }
+    if (!planCode) planCode = schedulePlanCodeFromData(data);
+    if ((!data.jcsjbs || !data.jcsjbs.length) && planCode) {
+      data = JSON.parse(await fetchText(SCHEDULE_EXPORT_API, {
+        method: 'POST',
+        data: 'planCode=' + encodeURIComponent(planCode),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }
+      }));
+    }
+    const normalized = normalizeScheduleExportData(data, planCode, source);
+    if (!normalized.courses.length) throw new Error('没有读取到可导出的课表数据');
+    return normalized;
+  }
+
+  function safeScheduleFilename(value) {
+    return String(value || '学生课表').replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, '').slice(0, 80) || '学生课表';
+  }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1200);
+  }
+
+  function exportScheduleJson(data) {
+    const text = JSON.stringify(data, null, 2) + '\n';
+    downloadBlob(new Blob([text], { type: 'application/json;charset=utf-8' }), safeScheduleFilename(data.semester.label) + '.json');
+  }
+
+  function localDateIso(date) {
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
+  }
+
+  function parseLocalIsoDate(value) {
+    const match = String(value || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return null;
+    const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    return Number.isNaN(date.getTime()) || localDateIso(date) !== String(value) ? null : date;
+  }
+
+  function mondayOfDate(date) {
+    const result = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const day = result.getDay();
+    result.setDate(result.getDate() - (day === 0 ? 6 : day - 1));
+    return result;
+  }
+
+  function deriveCurrentSemesterMonday(planCode) {
+    const text = (Array.from(document.querySelectorAll('.span_bbzx')).map((el) => el.textContent || '').join(' ') + ' ' + (document.querySelector('#navbar')?.textContent || '')).replace(/\s+/g, ' ');
+    const match = text.match(/(\d{4})-(\d{4})\s*(春|秋).*?第\s*(\d{1,2})\s*周/);
+    if (!match) return '';
+    const expectedTerm = match[3] === '秋' ? '1' : '2';
+    if (planCode && !String(planCode).startsWith(match[1] + '-' + match[2] + '-' + expectedTerm)) return '';
+    const currentWeek = Number(match[4]);
+    if (currentWeek < 1 || currentWeek > 30) return '';
+    const monday = mondayOfDate(new Date());
+    monday.setDate(monday.getDate() - (currentWeek - 1) * 7);
+    return localDateIso(monday);
+  }
+
+  function defaultSemesterMonday(planCode) {
+    const match = String(planCode || '').match(/^(\d{4})-(\d{4})-(\d)/);
+    if (!match) return localDateIso(mondayOfDate(new Date()));
+    const year = match[3] === '1' ? Number(match[1]) : Number(match[2]);
+    const month = match[3] === '1' ? 8 : 2;
+    const date = new Date(year, month, 1);
+    while (date.getDay() !== 1) date.setDate(date.getDate() + 1);
+    return localDateIso(date);
+  }
+
+  function requestScheduleFirstMonday(data) {
+    const planCode = data.semester.planCode;
+    const stored = getScheduleFirstMondayMap()[planCode];
+    const derived = deriveCurrentSemesterMonday(planCode);
+    if (derived) {
+      rememberScheduleFirstMonday(planCode, derived);
+      return Promise.resolve(derived);
+    }
+    if (parseLocalIsoDate(stored)) return Promise.resolve(stored);
+    return new Promise((resolve, reject) => {
+      document.querySelector('.urppp-dialog-mask[data-dialog="schedule-date"]')?.remove();
+      const mask = document.createElement('div');
+      mask.className = 'urppp-dialog-mask';
+      mask.dataset.dialog = 'schedule-date';
+      mask.innerHTML = `<div class="urppp-dialog" role="dialog" aria-modal="true"><h3>确认第一教学周周一</h3><p>${escapeHtml(data.semester.label)}没有可可靠推导的起始日期。该日期决定 ICS 中每节课的实际日历时间；预填值仅为估算，请对照校历核对。</p><input type="date" value="${escapeHtml(stored || defaultSemesterMonday(planCode))}"><div class="urppp-dialog-actions"><button type="button" class="urppp-set-btn ghost" data-action="cancel">取消</button><button type="button" class="urppp-set-btn" data-action="ok">确认并导出</button></div></div>`;
+      document.documentElement.appendChild(mask);
+      const close = (error, value) => { mask.remove(); error ? reject(error) : resolve(value); };
+      mask.querySelector('[data-action="cancel"]').addEventListener('click', () => close(new Error('已取消导出')));
+      mask.querySelector('[data-action="ok"]').addEventListener('click', () => {
+        const value = mask.querySelector('input').value;
+        if (!parseLocalIsoDate(value)) return;
+        rememberScheduleFirstMonday(planCode, value);
+        close(null, value);
+      });
+      mask.addEventListener('click', (event) => { if (event.target === mask) close(new Error('已取消导出')); });
+    });
+  }
+
+  function formatIcsLocal(date) {
+    return date.getFullYear() + String(date.getMonth() + 1).padStart(2, '0') + String(date.getDate()).padStart(2, '0') + 'T' + String(date.getHours()).padStart(2, '0') + String(date.getMinutes()).padStart(2, '0') + '00';
+  }
+
+  function escapeIcsText(value) {
+    return String(value || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  }
+
+  function foldIcsLine(line) {
+    if (typeof TextEncoder !== 'function') return line;
+    const encoder = new TextEncoder();
+    const parts = [];
+    let current = '';
+    let limit = 73;
+    for (const char of String(line)) {
+      if (encoder.encode(current + char).length > limit && current) {
+        parts.push(current);
+        current = ' ' + char;
+        limit = 74;
+      } else {
+        current += char;
+      }
+    }
+    if (current) parts.push(current);
+    return parts.join('\r\n');
+  }
+
+  function scheduleUid(value) {
+    let hash = 2166136261;
+    const text = String(value || '');
+    for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 16777619);
+    return (hash >>> 0).toString(16) + '@scu-urppp';
+  }
+
+  function scheduleSectionMap(data) {
+    const map = new Map();
+    data.sections.forEach((item) => map.set(item.section, item));
+    return map;
+  }
+
+  function buildScheduleIcs(data, firstMondayIso) {
+    const firstMonday = parseLocalIsoDate(firstMondayIso);
+    if (!firstMonday) throw new Error('第一教学周日期无效');
+    const sectionMap = scheduleSectionMap(data);
+    if (!sectionMap.size) throw new Error('教务接口没有返回节次时间，无法生成 ICS');
+    let eventCount = 0;
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//SCU URP++//Schedule Export//CN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:' + escapeIcsText(data.semester.label + '课表'), 'X-WR-TIMEZONE:Asia/Shanghai', 'BEGIN:VTIMEZONE', 'TZID:Asia/Shanghai', 'X-LIC-LOCATION:Asia/Shanghai', 'BEGIN:STANDARD', 'TZOFFSETFROM:+0800', 'TZOFFSETTO:+0800', 'TZNAME:CST', 'DTSTART:19700101T000000', 'END:STANDARD', 'END:VTIMEZONE'];
+    data.courses.forEach((course) => course.arrangements.forEach((arrangement) => {
+      const startInfo = sectionMap.get(arrangement.startSection);
+      const endInfo = sectionMap.get(arrangement.endSection);
+      if (!startInfo || !endInfo) return;
+      arrangement.weeks.forEach((week) => {
+        const date = new Date(firstMonday);
+        date.setDate(firstMonday.getDate() + (week - 1) * 7 + arrangement.day - 1);
+        const start = new Date(date);
+        const end = new Date(date);
+        const startParts = startInfo.start.split(':').map(Number);
+        const endParts = endInfo.end.split(':').map(Number);
+        start.setHours(startParts[0], startParts[1], 0, 0);
+        end.setHours(endParts[0], endParts[1], 0, 0);
+        const locationText = [arrangement.campus, arrangement.building, arrangement.classroom].filter(Boolean).join(' ');
+        const description = ['教师：' + course.teacher, '周次：' + arrangement.weekDescription, '课程号：' + course.code + (course.sequence ? '_' + course.sequence : ''), '学分：' + course.credit, '课程属性：' + course.attribute].filter((item) => !/[：:]$/.test(item)).join('\n');
+        const key = [data.semester.planCode, course.code, course.sequence, arrangement.day, arrangement.startSection, arrangement.endSection, week, arrangement.campus, arrangement.building, arrangement.classroom].join('|');
+        eventCount += 1;
+        lines.push('BEGIN:VEVENT', 'UID:' + scheduleUid(key), 'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''), 'SUMMARY:' + escapeIcsText(course.name), 'LOCATION:' + escapeIcsText(locationText), 'DESCRIPTION:' + escapeIcsText(description), 'DTSTART;TZID=Asia/Shanghai:' + formatIcsLocal(start), 'DTEND;TZID=Asia/Shanghai:' + formatIcsLocal(end), 'END:VEVENT');
+      });
+    }));
+    if (!eventCount) throw new Error('课表中没有已安排时间的课程，无法生成 ICS');
+    lines.push('END:VCALENDAR');
+    return lines.map(foldIcsLine).join('\r\n') + '\r\n';
+  }
+
+  function scheduleIcsOmissionStats(data) {
+    const sectionMap = scheduleSectionMap(data);
+    let missingWeeks = 0;
+    let missingTimes = 0;
+    data.courses.forEach((course) => course.arrangements.forEach((arrangement) => {
+      if (!arrangement.weeks.length) missingWeeks += 1;
+      if (!sectionMap.has(arrangement.startSection) || !sectionMap.has(arrangement.endSection)) missingTimes += 1;
+    }));
+    return { missingWeeks, missingTimes };
+  }
+
+  async function exportScheduleIcs(data) {
+    const firstMonday = await requestScheduleFirstMonday(data);
+    const ics = buildScheduleIcs(data, firstMonday);
+    downloadBlob(new Blob([ics], { type: 'text/calendar;charset=utf-8' }), safeScheduleFilename(data.semester.label) + '.ics');
+    return scheduleIcsOmissionStats(data);
+  }
+
+  const EXPORT_COURSE_PALETTE = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED', '#0891B2', '#DB2777', '#4D7C0F', '#EA580C', '#4F46E5'];
+
+  function exportCourseColor(name) {
+    let hash = 0;
+    const text = String(name || '');
+    for (let i = 0; i < text.length; i++) hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
+    return EXPORT_COURSE_PALETTE[hash % EXPORT_COURSE_PALETTE.length];
+  }
+
+  function assignScheduleLanes(component) {
+    const laneEnds = [];
+    component.forEach((item) => {
+      let lane = laneEnds.findIndex((end) => end < item.startSection);
+      if (lane < 0) { lane = laneEnds.length; laneEnds.push(0); }
+      laneEnds[lane] = item.endSection;
+      item.lane = lane;
+    });
+    component.forEach((item) => { item.laneCount = Math.max(1, laneEnds.length); });
+  }
+
+  function layoutScheduleDay(items) {
+    const sorted = items.slice().sort((a, b) => a.startSection - b.startSection || a.endSection - b.endSection || a.course.name.localeCompare(b.course.name));
+    let component = [];
+    let componentEnd = 0;
+    sorted.forEach((item) => {
+      if (component.length && item.startSection > componentEnd) {
+        assignScheduleLanes(component);
+        component = [];
+        componentEnd = 0;
+      }
+      component.push(item);
+      componentEnd = Math.max(componentEnd, item.endSection);
+    });
+    if (component.length) assignScheduleLanes(component);
+    return sorted;
+  }
+
+  function scheduleSvgLines(item, maxChars) {
+    const textRows = [item.course.name, item.course.teacher, item.arrangement.weekDescription, [item.arrangement.campus, item.arrangement.building, item.arrangement.classroom].filter(Boolean).join(' ')].filter(Boolean);
+    const lines = [];
+    textRows.forEach((text, rowIndex) => {
+      let rest = String(text);
+      const limit = rowIndex === 0 ? Math.max(5, maxChars) : Math.max(6, maxChars + 2);
+      while (rest && lines.length < 5) {
+        lines.push(rest.slice(0, limit));
+        rest = rest.slice(limit);
+      }
+    });
+    return lines.slice(0, 5);
+  }
+
+  function scheduleExportEvents(data) {
+    const events = [];
+    data.courses.forEach((course) => course.arrangements.forEach((arrangement) => {
+      events.push({ course, arrangement, startSection: arrangement.startSection, endSection: arrangement.endSection, day: arrangement.day });
+    }));
+    return events;
+  }
+
+  function wrapScheduleFooter(text, limit) {
+    const lines = [];
+    let rest = String(text || '');
+    while (rest) { lines.push(rest.slice(0, limit)); rest = rest.slice(limit); }
+    return lines;
+  }
+
+  function buildScheduleSvg(data) {
+    const width = 1960;
+    const left = 100;
+    const top = 176;
+    const rowHeight = 132;
+    const columnWidth = (width - left - 28) / 7;
+    const unscheduledNames = data.courses.filter((course) => !course.arrangements.length).map((course) => course.name);
+    const unscheduledLines = wrapScheduleFooter(unscheduledNames.join('、'), 78);
+    const footerHeight = unscheduledLines.length ? 78 + unscheduledLines.length * 28 : 54;
+    const height = top + rowHeight * 12 + footerHeight;
+    const dayNames = ['星期一', '星期二', '星期三', '星期四', '星期五', '星期六', '星期日'];
+    const parts = [`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`, '<rect width="100%" height="100%" fill="#F8FAFC"/>', `<text x="${left}" y="58" fill="#0F172A" font-size="34" font-weight="700" font-family="Microsoft YaHei,Segoe UI,sans-serif">${escapeHtml(data.semester.label)}课表</text>`, `<text x="${left}" y="98" fill="#64748B" font-size="18" font-family="Microsoft YaHei,Segoe UI,sans-serif">由 SCU URP++ 导出 · ${escapeHtml(new Date().toLocaleString('zh-CN', { hour12: false }))}</text>`];
+    parts.push(`<rect x="${left}" y="${top - 52}" width="${width - left - 28}" height="${rowHeight * 12 + 52}" rx="12" fill="#FFFFFF" stroke="#CBD5E1"/>`);
+    dayNames.forEach((name, index) => {
+      const x = left + index * columnWidth;
+      parts.push(`<rect x="${x}" y="${top - 52}" width="${columnWidth}" height="52" fill="#F1F5F9" stroke="#CBD5E1"/>`, `<text x="${x + columnWidth / 2}" y="${top - 19}" text-anchor="middle" fill="#334155" font-size="18" font-weight="600" font-family="Microsoft YaHei,Segoe UI,sans-serif">${name}</text>`);
+    });
+    for (let section = 1; section <= 12; section++) {
+      const y = top + (section - 1) * rowHeight;
+      parts.push(`<rect x="18" y="${y}" width="68" height="${rowHeight}" rx="8" fill="#F1F5F9"/>`, `<text x="52" y="${y + rowHeight / 2 + 7}" text-anchor="middle" fill="#64748B" font-size="18" font-weight="600" font-family="Segoe UI,sans-serif">${section}</text>`, `<line x1="${left}" y1="${y}" x2="${width - 28}" y2="${y}" stroke="#E2E8F0"/>`);
+    }
+    for (let day = 1; day <= 7; day++) {
+      const dayEvents = layoutScheduleDay(scheduleExportEvents(data).filter((item) => item.day === day));
+      dayEvents.forEach((item, index) => {
+        const gap = 5;
+        const laneWidth = columnWidth / item.laneCount;
+        const x = left + (day - 1) * columnWidth + item.lane * laneWidth + gap;
+        const y = top + (item.startSection - 1) * rowHeight + gap;
+        const cardWidth = laneWidth - gap * 2;
+        const cardHeight = Math.max(42, (item.endSection - item.startSection + 1) * rowHeight - gap * 2);
+        const color = exportCourseColor(item.course.name);
+        const clipId = 'course-clip-' + day + '-' + index;
+        const maxLines = Math.max(1, Math.floor((cardHeight - 20) / 24));
+        const lines = scheduleSvgLines(item, Math.floor(cardWidth / 18)).slice(0, maxLines);
+        parts.push(`<defs><clipPath id="${clipId}"><rect x="${x + 8}" y="${y + 7}" width="${Math.max(10, cardWidth - 16)}" height="${Math.max(18, cardHeight - 14)}" rx="7"/></clipPath></defs>`, `<rect x="${x}" y="${y}" width="${cardWidth}" height="${cardHeight}" rx="9" fill="${color}" fill-opacity=".12" stroke="${color}" stroke-opacity=".58"/>`, `<g clip-path="url(#${clipId})">`);
+        lines.forEach((line, lineIndex) => {
+          const strong = lineIndex === 0;
+          parts.push(`<text x="${x + 11}" y="${y + 27 + lineIndex * 24}" fill="${strong ? '#0F172A' : '#475569'}" font-size="${strong ? 17 : 14}" font-weight="${strong ? 700 : 500}" font-family="Microsoft YaHei,Segoe UI,sans-serif">${escapeHtml(line)}</text>`);
+        });
+        parts.push('</g>');
+      });
+    }
+    const gridBottom = top + rowHeight * 12;
+    parts.push(`<line x1="${left}" y1="${gridBottom}" x2="${width - 28}" y2="${gridBottom}" stroke="#CBD5E1"/>`);
+    if (unscheduledLines.length) {
+      parts.push(`<text x="${left}" y="${gridBottom + 38}" fill="#475569" font-size="16" font-weight="600" font-family="Microsoft YaHei,Segoe UI,sans-serif">未排定时间的课程</text>`);
+      unscheduledLines.forEach((line, index) => parts.push(`<text x="${left}" y="${gridBottom + 68 + index * 28}" fill="#64748B" font-size="15" font-family="Microsoft YaHei,Segoe UI,sans-serif">${escapeHtml(line)}</text>`));
+    }
+    parts.push('</svg>');
+    return { svg: parts.join(''), width, height };
+  }
+
+  function svgToPngBlob(svgInfo) {
+    return new Promise((resolve, reject) => {
+      const source = new Blob([svgInfo.svg], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(source);
+      const image = new Image();
+      image.onload = () => {
+        try {
+          const maxPixels = 15 * 1000 * 1000;
+          const scale = Math.min(2, Math.sqrt(maxPixels / (svgInfo.width * svgInfo.height)));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.floor(svgInfo.width * scale);
+          canvas.height = Math.floor(svgInfo.height * scale);
+          const context = canvas.getContext('2d');
+          context.scale(canvas.width / svgInfo.width, canvas.height / svgInfo.height);
+          context.fillStyle = '#F8FAFC';
+          context.fillRect(0, 0, svgInfo.width, svgInfo.height);
+          context.drawImage(image, 0, 0, svgInfo.width, svgInfo.height);
+          canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('无法生成课表图片')), 'image/png');
+        } catch (e) {
+          reject(e);
+        } finally {
+          URL.revokeObjectURL(url);
+        }
+      };
+      image.onerror = () => { URL.revokeObjectURL(url); reject(new Error('课表图片渲染失败')); };
+      image.src = url;
+    });
+  }
+
+  async function exportSchedulePng(data) {
+    const blob = await svgToPngBlob(buildScheduleSvg(data));
+    downloadBlob(blob, safeScheduleFilename(data.semester.label) + '.png');
+  }
+
+  function showFeatureToast(message, error) {
+    document.getElementById('urppp-feature-toast')?.remove();
+    const toast = document.createElement('div');
+    toast.id = 'urppp-feature-toast';
+    toast.textContent = String(message || '');
+    toast.className = error ? 'error' : '';
+    document.documentElement.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('open'));
+    setTimeout(() => { toast.classList.remove('open'); setTimeout(() => toast.remove(), 220); }, error ? 4200 : 2400);
+  }
+
+  function exportOptionHtml(type, icon, title, description, disabled) {
+    return `<button type="button" class="urppp-export-option" role="menuitem" data-export-type="${type}"${disabled ? ' disabled' : ''}><i class="fa ${icon}" aria-hidden="true"></i><span><strong>${title}</strong><small>${description}</small></span></button>`;
+  }
+
+  function closeScheduleExportMenu(menu) {
+    if (!menu) return;
+    menu.classList.remove('open');
+    menu.querySelector('.urppp-export-trigger')?.setAttribute('aria-expanded', 'false');
+  }
+
+  function bindExportDismiss() {
+    if (window.__urpppExportDismissBound) return;
+    window.__urpppExportDismissBound = true;
+    document.addEventListener('click', (event) => {
+      document.querySelectorAll('.urppp-export-wrap.open').forEach((menu) => {
+        if (!menu.contains(event.target)) closeScheduleExportMenu(menu);
+      });
+    }, true);
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') document.querySelectorAll('.urppp-export-wrap.open').forEach(closeScheduleExportMenu);
+    });
+  }
+
+  async function runScheduleExport(type, source, pdfHandler, trigger) {
+    if (trigger && trigger.disabled) return;
+    const original = trigger && trigger.innerHTML;
+    try {
+      if (trigger) {
+        trigger.disabled = true;
+        trigger.innerHTML = '<i class="fa fa-spinner fa-spin"></i> 准备中';
+      }
+      if (type === 'pdf') {
+        if (typeof pdfHandler !== 'function') throw new Error('当前页面不提供原生 PDF 导出');
+        pdfHandler();
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        return;
+      }
+      const data = await loadScheduleExportData(source);
+      let icsStats = null;
+      if (type === 'json') exportScheduleJson(data);
+      else if (type === 'ics') icsStats = await exportScheduleIcs(data);
+      else if (type === 'png') await exportSchedulePng(data);
+      else throw new Error('未知导出格式');
+      const notes = [];
+      const unscheduledCount = type === 'ics' ? data.courses.filter((course) => !course.arrangements.length).length : 0;
+      if (unscheduledCount) notes.push(unscheduledCount + ' 门未排定时间的课程未写入日历');
+      if (icsStats && icsStats.missingWeeks) notes.push(icsStats.missingWeeks + ' 个上课安排缺少周次');
+      if (icsStats && icsStats.missingTimes) notes.push(icsStats.missingTimes + ' 个上课安排缺少节次时间');
+      showFeatureToast('课表已导出：' + type.toUpperCase() + (notes.length ? '；' + notes.join('，') : ''));
+    } catch (e) {
+      if (e && e.message === '已取消导出') return;
+      console.warn('[URP++] schedule export', e);
+      showFeatureToast(e && e.message || String(e), true);
+    } finally {
+      if (trigger) { trigger.disabled = false; trigger.innerHTML = original; }
+    }
+  }
+
+  function createScheduleExportMenu(options) {
+    const source = options && options.source || 'native';
+    const pdfHandler = options && options.pdfHandler;
+    const pdfAvailable = typeof pdfHandler === 'function';
+    const wrap = document.createElement('span');
+    const triggerLabel = source === 'native' ? '导出课表' : '导出';
+    wrap.className = 'urppp-export-wrap';
+    wrap.innerHTML = `<button type="button" class="urppp-export-trigger" aria-haspopup="menu" aria-expanded="false" title="导出课表"><i class="fa fa-cloud-download" aria-hidden="true"></i><span>${triggerLabel}</span><i class="fa fa-angle-down" aria-hidden="true"></i></button><div class="urppp-export-menu" role="menu">${exportOptionHtml('ics', 'fa-calendar', 'ICS 日历', '导入系统日历或日历应用', false)}${exportOptionHtml('json', 'fa-code', 'JSON 数据', '结构化课程与时间数据', false)}${exportOptionHtml('png', 'fa-image', 'PNG 图片', '完整学期课表高清图片', false)}${exportOptionHtml('pdf', 'fa-file-pdf-o', 'PDF', pdfAvailable ? '使用教务系统原生导出' : '仅原教务课表页面可用', !pdfAvailable)}${pdfAvailable ? '' : '<div class="urppp-export-guide">PDF 依赖原教务课表页面。<button type="button" data-export-native="1">前往本学期课表</button></div>'}</div>`;
+    const trigger = wrap.querySelector('.urppp-export-trigger');
+    trigger.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const open = !wrap.classList.contains('open');
+      document.querySelectorAll('.urppp-export-wrap.open').forEach(closeScheduleExportMenu);
+      wrap.classList.toggle('open', open);
+      trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    wrap.querySelectorAll('[data-export-type]:not(:disabled)').forEach((button) => {
+      button.addEventListener('click', () => {
+        closeScheduleExportMenu(wrap);
+        runScheduleExport(button.getAttribute('data-export-type'), source, pdfHandler, trigger);
+      });
+    });
+    const nativeLink = wrap.querySelector('[data-export-native]');
+    if (nativeLink) nativeLink.addEventListener('click', () => { location.href = SCHEDULE_PAGE_URL; });
+    bindExportDismiss();
+    return wrap;
+  }
+
+  function pagePdfExportHandler(button) {
+    if (!button) return null;
+    return () => {
+      try { button.click(); } catch (e) { showFeatureToast(e && e.message || '原生 PDF 导出失败', true); }
+    };
+  }
+
+  function isPersonalSchedulePage() {
+    return /\/(?:student\/courseSelect\/(?:thisSemesterCurriculum|courseSelectResult|calendarSemesterCurriculum)|student\/personalSenate\/giveLessonInfo\/thisSemesterSchedule)\//.test(location.pathname);
+  }
+
+  function patchNativeScheduleExport() {
+    if (!isPersonalSchedulePage()) return;
+    if (document.getElementById('urppp-native-schedule-export')) return;
+    const heading = document.querySelector('#h4_id1')?.closest('h4') || document.querySelector('h4.header');
+    const actionHost = heading?.querySelector('.right_top_oper') || document.querySelector('#mainDIV .right_top_oper, .page-content .right_top_oper');
+    const buttons = Array.from((actionHost || document).querySelectorAll('button, a'));
+    const original = buttons.find((button) => {
+      const signature = [button.textContent, button.getAttribute('title'), button.getAttribute('onclick')].filter(Boolean).join(' ').replace(/\s+/g, ' ');
+      return /导出.*(?:课表|PDF)|exportTableToPdf|\bdc\s*\(/i.test(signature);
+    });
+    const menu = createScheduleExportMenu({ source: 'native', pdfHandler: pagePdfExportHandler(original) });
+    menu.id = 'urppp-native-schedule-export';
+    if (original && original.parentElement) {
+      original.style.setProperty('display', 'none', 'important');
+      original.setAttribute('aria-hidden', 'true');
+      original.setAttribute('tabindex', '-1');
+      original.parentElement.insertBefore(menu, original.nextSibling);
+      return;
+    }
+    if (actionHost) actionHost.appendChild(menu);
+    else if (heading) heading.appendChild(menu);
+    else {
+      const content = document.getElementById('page-content-template') || document.querySelector('.page-content');
+      if (content) {
+        const fallback = document.createElement('div');
+        fallback.className = 'urppp-export-fallback';
+        fallback.appendChild(menu);
+        content.prepend(fallback);
+      }
+    }
+  }
+
+  const nativeScheduleObservedRoots = new WeakSet();
+  let nativeSchedulePatchTimer = 0;
+  function bindNativeScheduleExportObserver() {
+    if (!isPersonalSchedulePage()) return;
+    const root = document.getElementById('page-content-template') || document.querySelector('.page-content') || document.body;
+    if (!root || nativeScheduleObservedRoots.has(root)) return;
+    nativeScheduleObservedRoots.add(root);
+    const observer = new MutationObserver(() => {
+      clearTimeout(nativeSchedulePatchTimer);
+      nativeSchedulePatchTimer = setTimeout(() => patchNativeScheduleExport(), 80);
+    });
+    observer.observe(root, { childList: true, subtree: true });
+  }
+
+  function bindScheduleExportHosts(scope) {
+    const root = scope && scope.querySelectorAll ? scope : document;
+    root.querySelectorAll('[data-schedule-export-host]').forEach((host) => {
+      if (host.querySelector('.urppp-export-wrap')) return;
+      host.appendChild(createScheduleExportMenu({ source: host.getAttribute('data-schedule-export-host') || 'clean' }));
+    });
+  }
+
   // ---- profile ----
   function normalizeProfileValue(value) {
     return String(value || '')
@@ -17311,9 +18626,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const user = document.querySelector('#navbar .user-info, .ace-nav .user-info, .user-info');
       if (user) {
         // 真实 DOM: <small>欢迎您，</small>\n姓名 —— 只读 clone，不改 live DOM
+        const customTarget = user.querySelector('.urppp-user-name-value');
+        const originalName = customTarget && customTarget.__urpppOriginalText;
+        if (originalName) profile.name = String(originalName).trim();
         const raw = (user.innerText || user.textContent || '').replace(/\s+/g, ' ').trim();
-        let m = raw.match(/欢迎您[，,]\s*([\u4e00-\u9fa5·]{2,12})/);
-        if (!m) {
+        let m = profile.name ? null : raw.match(/欢迎您[，,]\s*([\u4e00-\u9fa5·]{2,12})/);
+        if (!profile.name && !m) {
           const clone = user.cloneNode(true);
           clone.querySelectorAll('small, i, img, b, .badge').forEach((n) => n.remove());
           let text = (clone.textContent || '').replace(/\s+/g, ' ').trim();
@@ -17323,7 +18641,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         if (m && m[1] && !/欢迎|同学|首页|反馈|密码|注销/.test(m[1])) profile.name = m[1];
       }
       const img = document.querySelector('#navbar img.nav-user-photo, .ace-nav img.nav-user-photo');
-      if (img && img.src) profile.avatar = img.src;
+      if (img) profile.avatar = img.__urpppOriginalSrc || img.src || img.getAttribute('src') || '';
       const overview = extractAcademicOverview(document);
       profile.majorPlan = overview.majorPlan;
       profile.majorGpa = overview.majorGpa;
@@ -17342,9 +18660,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       }
       const plan = readLabeledProfileValue(doc, ['主修方案名称']);
       const major = readLabeledProfileValue(doc, ['专业']);
+      profile.studentId = readLabeledProfileValue(doc, ['学号']);
       if (plan) profile.majorPlan = cleanMajorPlanName(plan);
       else if (!profile.majorPlan && major) profile.majorPlan = cleanMajorPlanName(major);
-      const photo = doc.querySelector('.profile-picture img, img[src*="photo" i], img[src*="Photo"]');
+      const photo = doc.querySelector('.profile-picture img, img#avatar, img[src*="photo" i], img[src*="Photo"]');
       if (photo && photo.getAttribute('src') && !profile.avatar) {
         const src = photo.getAttribute('src');
         profile.avatar = /^https?:/i.test(src) ? src : absUrl(src);
@@ -17612,8 +18931,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       // 优先 JSON（与页面 $.get 一致）
       const raw = await fetchText('/student/courseSelect/thisSemesterCurriculum/ajaxStudentSchedule/callback');
       let courses = [];
+      let data = null;
       try {
-        const data = JSON.parse(raw);
+        data = JSON.parse(raw);
         // 部分学期接口会带当前教学周
         const tw = Number(data && (data.jxzc || data.zc || data.currentWeek));
         // 注意：data.week 在教室接口里常是星期，不能当教学周
@@ -17629,7 +18949,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         // 兜底：已渲染页的 DOM（用户若已打开过课表页）
         courses = parseScheduleFromDoc(document);
       }
-      return { courses, rawOk: courses.length > 0, error: courses.length ? '' : '课表 JSON 无 timeAndPlaceList' };
+      const exportData = data ? normalizeScheduleExportData(data, schedulePlanCodeFromData(data), 'clean') : null;
+      return { courses, exportData, rawOk: courses.length > 0, error: courses.length ? '' : '课表 JSON 无 timeAndPlaceList' };
     } catch (e) {
       try {
         const courses = parseScheduleFromDoc(document);
@@ -18842,7 +20163,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       ['必修平均', s.requiredAvg],
       ['必修绩点', s.requiredGpa]
     ];
-    return `<div class="uc-metrics">${items.map(([k, v]) => `<div class="uc-metric"><em>${k}</em><b>${v}</b></div>`).join('')}</div>`;
+    return `<div class="uc-metrics">${items.map(([k, v]) => {
+      const field = classifyPrivacyLabel(k) || 'grade';
+      return `<div class="uc-metric"><em>${k}</em><b data-urppp-private="${field}">${v}</b></div>`;
+    }).join('')}</div>`;
   }
 
   function getScheduleRowHeight() {
@@ -18869,7 +20193,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       (byStart[k] || (byStart[k] = [])).push(c);
     });
     // mark cells that are only continuations (for empty look still show grid)
-    let html = `<div class="uc-week" data-week="${weekNo}" data-row="${ROW}">`;
+    let html = `<div class="uc-week" data-urppp-private="schedule" data-week="${weekNo}" data-row="${ROW}">`;
     html += '<div class="uc-week-head"><div class="h"></div>';
     for (let d = 0; d < 7; d++) html += `<div class="h">${DAY_NAMES[d]}</div>`;
     html += '</div><div class="uc-week-body">';
@@ -18940,7 +20264,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   }
 
   function renderDesktop() {
-    const p = state.profile || {};
+    const p = personalizedProfile(state.profile || {});
     const courses = (state.schedule && state.schedule.courses) || [];
     const pass = (state.scores && state.scores.passing && state.scores.passing[0]) || { summary: summarizeCourses([]) };
     const schemes = (state.scores && state.scores.schemes) || [];
@@ -18962,16 +20286,16 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     return `<div class="uc-desktop">
       <div class="uc-col">
         <div class="uc-card"><div class="uc-bd"><div class="uc-profile">
-          <div class="uc-avatar">${av}</div>
+          <div class="uc-avatar" data-urppp-private="avatar">${av}</div>
           <div>
-            <div class="uc-name">${escapeHtml(p.name || '同学')}</div>
-            <div class="uc-sub">主修方案：${escapeHtml(p.majorPlan || '—')}</div>
-            <div class="uc-gpa">主修必修绩点 ${escapeHtml(String(p.majorGpa || '—'))}</div>
+            <div class="uc-name" data-urppp-private="name">${escapeHtml(p.name || '同学')}</div>
+            <div class="uc-sub">主修方案：<span data-urppp-private="organization">${escapeHtml(p.majorPlan || '—')}</span></div>
+            <div class="uc-gpa">主修必修绩点 <span data-urppp-private="gpa">${escapeHtml(String(p.majorGpa || '—'))}</span></div>
           </div>
         </div></div></div>
         <div class="uc-card grow">
           <div class="uc-hd">
-            <span>课表</span>
+            <span class="uc-hd-title">课表<span data-schedule-export-host="clean"></span></span>
             <div class="uc-week-nav">
               <button type="button" class="uc-btn" data-week-delta="-1" title="上一周">‹</button>
               <span class="uc-week-label">第${getViewWeekNumber()}周</span>
@@ -18997,7 +20321,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   }
 
   function renderMobile() {
-    const p = state.profile || {};
+    const p = personalizedProfile(state.profile || {});
     const courses = (state.schedule && state.schedule.courses) || [];
     const pass = (state.scores && state.scores.passing && state.scores.passing[0]) || { summary: summarizeCourses([]) };
     const scheme = ((state.scores && state.scores.schemes) || [])[state.activeSchemeIdx] || { summary: summarizeCourses([]) };
@@ -19016,12 +20340,12 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     }
     return `<div class="uc-mobile">
       <div class="uc-card" style="margin-bottom:12px"><div class="uc-bd"><div class="uc-profile">
-        <div class="uc-avatar">${av}</div>
-        <div><div class="uc-name">${escapeHtml(p.name || '同学')}</div>
-        <div class="uc-sub">${escapeHtml(p.majorPlan || '')}</div>
-        <div class="uc-gpa">主修必修绩点 ${escapeHtml(String(p.majorGpa || '—'))}</div></div>
+        <div class="uc-avatar" data-urppp-private="avatar">${av}</div>
+        <div><div class="uc-name" data-urppp-private="name">${escapeHtml(p.name || '同学')}</div>
+        <div class="uc-sub">主修方案：<span data-urppp-private="organization">${escapeHtml(p.majorPlan || '—')}</span></div>
+        <div class="uc-gpa">主修必修绩点 <span data-urppp-private="gpa">${escapeHtml(String(p.majorGpa || '—'))}</span></div></div>
       </div></div></div>
-      <div class="uc-card"><div class="uc-hd"><span>课表</span>
+      <div class="uc-card"><div class="uc-hd"><span class="uc-hd-title">课表<span data-schedule-export-host="clean"></span></span>
         <div class="uc-week-nav">
           <button type="button" class="uc-btn" data-week-delta="-1">‹</button>
           <span class="uc-week-label">第${getViewWeekNumber()}周</span>
@@ -19126,6 +20450,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       }, 480);
     }
     bindUI(body);
+    applyPersonalDisplay(body);
+    bindPersonalDisplayObservers();
   }
 
   function scheduleRender() {
@@ -19141,6 +20467,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
 
   function bindUI(scope) {
     if (!scope) return;
+    try { bindScheduleExportHosts(scope); } catch (e) { console.warn('[URP++] schedule export menu', e); }
     scope.querySelectorAll('[data-score]').forEach((n) => n.addEventListener('click', () => openScoreModal(n.getAttribute('data-score'))));
     scope.querySelectorAll('[data-href]').forEach((n) => n.addEventListener('click', (e) => {
       const href = n.getAttribute('data-href');
@@ -19305,6 +20632,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     el.querySelector('#uc-modal-ft').innerHTML = ft || '';
     bindUI(el.querySelector('#uc-modal-body'));
     bindUI(el.querySelector('#uc-modal-ft'));
+    applyPersonalDisplay(el.querySelector('#uc-modal'));
   }
   function closeModal() {
     const el = rootEl();
@@ -19335,7 +20663,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     if (!state.selected[key]) state.selected[key] = new Set();
     const switcher = kind === 'scheme' && schemes.length > 1
       ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">${schemes.map((s, i) =>
-        `<button type="button" class="uc-btn ${i === state.activeSchemeIdx ? 'primary' : ''}" data-scheme-idx="${i}">${escapeHtml((s.title || '方案').slice(0, 28))}</button>`).join('')}</div>`
+        `<button type="button" class="uc-btn ${i === state.activeSchemeIdx ? 'primary' : ''}" data-scheme-idx="${i}"><span data-urppp-private="organization">${escapeHtml((s.title || '方案').slice(0, 28))}</span></button>`).join('')}</div>`
       : '';
     const scoreCellHtml = (c) => {
       const uneval = !!(c && (c.unevaluated || isUnevaluatedScore(c.score)));
@@ -19364,9 +20692,9 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       return `<tr class="${on ? 'is-on' : ''}${uneval ? ' is-uneval' : ''}" data-idx="${idx}">
         <td class="uc-namecell"><span class="uc-selmark" aria-hidden="true">${on ? '✓' : ''}</span><span class="uc-cname">${escapeHtml(c.name)}</span></td>
         <td><span class="uc-attr-pill">${escapeHtml(c.attr || '—')}</span></td>
-        <td>${c.credit}</td>
-        <td>${scoreCellHtml(c)}</td>
-        <td>${uneval || gp == null ? '—' : gp}</td>
+        <td data-urppp-private="credit">${c.credit}</td>
+        <td data-urppp-private="grade">${scoreCellHtml(c)}</td>
+        <td data-urppp-private="gpa">${uneval || gp == null ? '—' : gp}</td>
       </tr>`;
     }).join('');
     openModal(kind === 'scheme' ? ('方案成绩 · ' + (scheme.title || '')) : '全部及格成绩', `
@@ -19376,6 +20704,12 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         <tbody>${rows || '<tr><td colspan="5">暂无数据</td></tr>'}</tbody></table>
         <div class="uc-select-box" id="uc-select-box"></div>
       </div>`, `<div id="uc-calc">已选 0 门</div><button type="button" class="uc-btn" id="uc-clear">清空</button>`);
+    const modalTitle = document.querySelector('#uc-modal-title');
+    if (modalTitle) {
+      if (kind === 'scheme') modalTitle.setAttribute('data-urppp-private', 'organization');
+      else modalTitle.removeAttribute('data-urppp-private');
+      applyPersonalDisplay(modalTitle.parentElement || modalTitle);
+    }
     const body = document.querySelector('#uc-modal-body');
     const calc = document.getElementById('uc-calc');
     const table = document.getElementById('uc-score-table');
@@ -19396,7 +20730,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       if (calc) {
         calc.className = 'uc-calc';
         calc.innerHTML = selected.length
-          ? `已选 <b>${selected.length}</b> 门 · 学分 <b>${sum.totalCredit}</b> · 均分 <b>${sum.avgScore}</b> · 绩点 <b>${sum.avgGpa}</b>`
+          ? `已选 <b>${selected.length}</b> 门 · 学分 <b data-urppp-private="credit">${sum.totalCredit}</b> · 均分 <b data-urppp-private="grade">${sum.avgScore}</b> · 绩点 <b data-urppp-private="gpa">${sum.avgGpa}</b>`
           : '已选 0 门';
       }
     };
@@ -19699,6 +21033,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     open: openCleanMode,
     close: closeCleanMode,
     inject: injectCleanEntry,
+    refresh: refreshCleanPersonalDisplay,
     scoreToGpa,
     summarizeCourses
   };
@@ -19741,6 +21076,13 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       rebuild();
     } else {
       beautifyInternal();
+      try { ensureFeatureStyles(); } catch (_) {}
+      try { patchNativeScheduleExport(); bindNativeScheduleExportObserver(); } catch (e) { console.warn('[URP++] native schedule export', e); }
+      try { applyPersonalDisplay(document); bindPersonalDisplayObservers(); } catch (_) {}
+      ;[350, 900, 1800].forEach((ms) => setTimeout(() => {
+        try { patchNativeScheduleExport(); bindNativeScheduleExportObserver(); } catch (_) {}
+        try { applyPersonalDisplay(document); bindPersonalDisplayObservers(); } catch (_) {}
+      }, ms));
       try { if (window.__urpppCleanMode) window.__urpppCleanMode.inject(); } catch (_) {}
       ;[400, 1200, 2500].forEach((ms) => setTimeout(() => {
         try { if (window.__urpppCleanMode) window.__urpppCleanMode.inject(); } catch (_) {}
@@ -19818,6 +21160,12 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         beautifyPlanTree();
         setTimeout(() => beautifyPlanTree(), 500);
         beautifyBreadcrumbs();
+        try { patchNativeScheduleExport(); bindNativeScheduleExportObserver(); } catch (_) {}
+        try { applyPersonalDisplay(document); bindPersonalDisplayObservers(); } catch (_) {}
+        setTimeout(() => {
+          try { patchNativeScheduleExport(); bindNativeScheduleExportObserver(); } catch (_) {}
+          try { applyPersonalDisplay(document); bindPersonalDisplayObservers(); } catch (_) {}
+        }, 500);
       }, 100);
     };
     window.addEventListener('popstate', run);
@@ -19847,6 +21195,17 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       check: checkForUpdates,
       auto: maybeAutoCheckUpdate,
       showToast: showUpdateToast
+    },
+    privacy: {
+      get: getPrivacySettings,
+      set(value) { setPrivacySettings(value); applyPersonalDisplay(document); return getPrivacySettings(); },
+      apply: () => applyPersonalDisplay(document),
+      identity: { get: getCustomIdentity, set(value) { setCustomIdentity(value); applyPersonalDisplay(document); refreshCleanPersonalDisplay(); return getCustomIdentity(); } }
+    },
+    scheduleExport: {
+      load: () => loadScheduleExportData('api'),
+      run: (format) => runScheduleExport(format, 'api', null, null),
+      patch: patchNativeScheduleExport
     }
   };
 
