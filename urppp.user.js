@@ -3238,6 +3238,9 @@
     } catch (e) {
       try { console.warn('[URP++] applySkinAttr', e); } catch (_) {}
     }
+    setTimeout(() => {
+      try { applyPersonalDisplay(document); } catch (_) {}
+    }, 0);
   }
 
   function setSkin(id) {
@@ -15696,25 +15699,45 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '        <button type="button" class="urppp-set-follow urppp-privacy-mode" data-privacy-mode="one">一键隐私</button>',
       '        <button type="button" class="urppp-set-follow urppp-privacy-mode" data-privacy-mode="custom">自定义</button>',
       '      </div>',
-      '      <div class="urppp-feature-grid" id="urppp-set-privacy-custom">',
-      '        <div class="urppp-privacy-field"><input type="checkbox" data-privacy-field="identity" aria-label="隐藏学号和证件"><span>学号/证件</span><input class="urppp-feature-input" data-privacy-value="identity" maxlength="40" aria-label="学号和证件替换内容"></div>',
-      '        <div class="urppp-privacy-field"><input type="checkbox" data-privacy-field="organization" aria-label="隐藏学院和专业"><span>学院/专业</span><input class="urppp-feature-input" data-privacy-value="organization" maxlength="40" aria-label="学院和专业替换内容"></div>',
-      '        <div class="urppp-privacy-field"><input type="checkbox" data-privacy-field="contact" aria-label="隐藏联系和个人信息"><span>联系/个人信息</span><input class="urppp-feature-input" data-privacy-value="contact" maxlength="40" aria-label="联系和个人信息替换内容"></div>',
-      '        <div class="urppp-privacy-field"><input type="checkbox" data-privacy-field="grade" aria-label="隐藏成绩"><span>成绩</span><input class="urppp-feature-input" data-privacy-value="grade" maxlength="40" aria-label="成绩替换内容"></div>',
-      '        <div class="urppp-privacy-field"><input type="checkbox" data-privacy-field="gpa" aria-label="隐藏绩点"><span>绩点</span><input class="urppp-feature-input" data-privacy-value="gpa" maxlength="40" aria-label="绩点替换内容"></div>',
-      '        <div class="urppp-privacy-field"><input type="checkbox" data-privacy-field="credit" aria-label="隐藏学分"><span>学分</span><input class="urppp-feature-input" data-privacy-value="credit" maxlength="40" aria-label="学分替换内容"></div>',
-      '        <div class="urppp-privacy-field"><input type="checkbox" data-privacy-field="schedule" aria-label="隐藏课表"><span>课表</span><input class="urppp-feature-input" data-privacy-value="schedule" maxlength="40" aria-label="课表替换内容"></div>',
-      '        <div class="urppp-privacy-field"><input type="checkbox" data-privacy-field="avatar" aria-label="隐藏头像"><span>头像</span><span class="urppp-set-tip">使用统一遮罩</span></div>',
+      '      <div class="urppp-privacy-groups" id="urppp-set-privacy-custom">',
+      '        <div class="urppp-privacy-group">',
+      '          <div class="urppp-privacy-group-title">身份信息</div>',
+      '          <div class="urppp-privacy-group-fields">',
+      '            <div class="urppp-privacy-field"><input id="urppp-privacy-identity" type="checkbox" data-privacy-field="identity" aria-label="隐藏学号和证件"><label for="urppp-privacy-identity">学号/证件</label><input class="urppp-feature-input" data-privacy-value="identity" maxlength="40" aria-label="学号和证件替换内容"></div>',
+      '            <div class="urppp-privacy-field"><input id="urppp-privacy-organization" type="checkbox" data-privacy-field="organization" aria-label="隐藏学院和专业"><label for="urppp-privacy-organization">学院/专业</label><input class="urppp-feature-input" data-privacy-value="organization" maxlength="40" aria-label="学院和专业替换内容"></div>',
+      '            <div class="urppp-privacy-field"><input id="urppp-privacy-contact" type="checkbox" data-privacy-field="contact" aria-label="隐藏联系和个人信息"><label for="urppp-privacy-contact">联系/个人信息</label><input class="urppp-feature-input" data-privacy-value="contact" maxlength="40" aria-label="联系和个人信息替换内容"></div>',
+      '          </div>',
+      '        </div>',
+      '        <div class="urppp-privacy-group">',
+      '          <div class="urppp-privacy-group-title">学业信息</div>',
+      '          <div class="urppp-privacy-group-fields">',
+      '            <div class="urppp-privacy-field"><input id="urppp-privacy-grade" type="checkbox" data-privacy-field="grade" aria-label="隐藏成绩"><label for="urppp-privacy-grade">成绩</label><input class="urppp-feature-input" data-privacy-value="grade" maxlength="40" aria-label="成绩替换内容"></div>',
+      '            <div class="urppp-privacy-field"><input id="urppp-privacy-gpa" type="checkbox" data-privacy-field="gpa" aria-label="隐藏绩点"><label for="urppp-privacy-gpa">绩点</label><input class="urppp-feature-input" data-privacy-value="gpa" maxlength="40" aria-label="绩点替换内容"></div>',
+      '            <div class="urppp-privacy-field"><input id="urppp-privacy-credit" type="checkbox" data-privacy-field="credit" aria-label="隐藏学分"><label for="urppp-privacy-credit">学分</label><input class="urppp-feature-input" data-privacy-value="credit" maxlength="40" aria-label="学分替换内容"></div>',
+      '          </div>',
+      '        </div>',
+      '        <div class="urppp-privacy-group">',
+      '          <div class="urppp-privacy-group-title">页面内容</div>',
+      '          <div class="urppp-privacy-group-fields">',
+      '            <div class="urppp-privacy-field"><input id="urppp-privacy-schedule" type="checkbox" data-privacy-field="schedule" aria-label="隐藏课表"><label for="urppp-privacy-schedule">课表</label><input class="urppp-feature-input" data-privacy-value="schedule" maxlength="40" aria-label="课表替换内容"></div>',
+      '            <div class="urppp-privacy-field urppp-privacy-field-static"><input id="urppp-privacy-avatar" type="checkbox" data-privacy-field="avatar" aria-label="隐藏头像"><label for="urppp-privacy-avatar">头像</label><span class="urppp-privacy-note">使用统一遮罩</span></div>',
+      '          </div>',
+      '        </div>',
       '      </div>',
       '    </section>',
       '    <section class="urppp-set-sec" id="urppp-set-identity">',
       '      <h3>自定义姓名与头像</h3>',
       '      <p class="urppp-set-tip">独立的显示美化。隐私模式开启时优先显示隐私遮罩，关闭后恢复这里的自定义内容。</p>',
-      '      <div class="urppp-feature-grid">',
-      '        <div class="urppp-feature-row"><label><input type="checkbox" id="urppp-set-name-enabled"> 自定义姓名</label><input class="urppp-feature-input" id="urppp-set-custom-name" maxlength="40" placeholder="输入显示姓名"></div>',
-      '        <div class="urppp-feature-row"><label><input type="checkbox" id="urppp-set-avatar-enabled"> 自定义头像</label><input class="urppp-feature-input" id="urppp-set-custom-avatar-url" placeholder="https://... 图片地址"></div>',
-      '        <div class="urppp-feature-row"><label>本地图片</label><input class="urppp-feature-input" type="file" id="urppp-set-custom-avatar-file" accept="image/png,image/jpeg,image/webp,image/gif"></div>',
-      '        <div class="urppp-feature-row"><label>预览</label><img class="urppp-avatar-preview" id="urppp-set-avatar-preview" alt="自定义头像预览"></div>',
+      '      <div class="urppp-identity-editor">',
+      '        <div class="urppp-identity-fields">',
+      '          <div class="urppp-feature-row"><label><input type="checkbox" id="urppp-set-name-enabled"> 自定义姓名</label><input class="urppp-feature-input" id="urppp-set-custom-name" maxlength="40" placeholder="输入显示姓名"></div>',
+      '          <div class="urppp-feature-row"><label><input type="checkbox" id="urppp-set-avatar-enabled"> 自定义头像</label><input class="urppp-feature-input" id="urppp-set-custom-avatar-url" placeholder="https://... 图片地址"></div>',
+      '          <div class="urppp-feature-row"><label for="urppp-set-custom-avatar-file">本地图片</label><input class="urppp-feature-input" type="file" id="urppp-set-custom-avatar-file" accept="image/png,image/jpeg,image/webp,image/gif"></div>',
+      '        </div>',
+      '        <div class="urppp-identity-preview">',
+      '          <span class="urppp-identity-preview-label">头像预览</span>',
+      '          <div class="urppp-avatar-preview-shell"><span>未设置</span><img class="urppp-avatar-preview" id="urppp-set-avatar-preview" alt="自定义头像预览"></div>',
+      '        </div>',
       '      </div>',
       '      <div class="urppp-feature-actions"><button type="button" class="urppp-set-btn" id="urppp-set-privacy-save">保存隐私与显示设置</button><button type="button" class="urppp-set-btn ghost" id="urppp-set-avatar-clear">清除自定义头像</button></div>',
       '      <div class="urppp-set-tip" id="urppp-set-privacy-status" style="margin-top:8px"></div>',
@@ -17532,18 +17555,46 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     style.id = 'urppp-feature-style';
     style.textContent = `
       #urppp-settings-panel .urppp-feature-grid{display:grid;gap:10px;margin-top:12px}
-      #urppp-settings-panel .urppp-feature-row{display:grid;grid-template-columns:minmax(92px,.8fr) minmax(0,1.4fr);gap:10px;align-items:center}
-      #urppp-settings-panel .urppp-feature-row>label{margin:0;color:var(--text-secondary);font-size:12px;font-weight:600}
-      #urppp-settings-panel .urppp-feature-input{width:100%;height:34px;border:1px solid var(--border);border-radius:9px;background:var(--input-bg);color:var(--text);padding:0 10px;outline:none;box-sizing:border-box}
+      #urppp-settings-panel .urppp-feature-row{display:grid;grid-template-columns:minmax(98px,.72fr) minmax(0,1.5fr);gap:12px;align-items:center;min-width:0}
+      #urppp-settings-panel .urppp-feature-row>label{margin:0;color:var(--text-secondary);font-size:12px;font-weight:650;line-height:1.35;cursor:pointer}
+      #urppp-settings-panel .urppp-feature-row>label input{margin:0 5px 0 0;vertical-align:-2px;accent-color:var(--primary)}
+      #urppp-settings-panel .urppp-feature-input{width:100%;min-width:0;height:36px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text);padding:0 10px;outline:none;box-sizing:border-box;letter-spacing:0}
+      #urppp-settings-panel .urppp-feature-input[type="file"]{height:auto;min-height:36px;padding:6px 8px;font-size:11px}
       #urppp-settings-panel .urppp-feature-input:focus{border-color:var(--primary);box-shadow:0 0 0 2px color-mix(in srgb,var(--primary) 16%,transparent)}
-      #urppp-settings-panel .urppp-privacy-field{display:grid;grid-template-columns:auto minmax(76px,.7fr) minmax(0,1.3fr);gap:8px;align-items:center}
-      #urppp-settings-panel .urppp-privacy-field>input[type="checkbox"]{width:16px;height:16px;margin:0;accent-color:var(--primary)}
-      #urppp-settings-panel .urppp-privacy-field>span{font-size:12px;color:var(--text-secondary)}
+      #urppp-settings-panel .urppp-privacy-groups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;margin-top:14px;border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb,var(--surface) 78%,var(--input-bg));overflow:hidden}
+      #urppp-settings-panel .urppp-privacy-group{min-width:0;padding:11px}
+      #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left:1px solid var(--border)}
+      #urppp-settings-panel .urppp-privacy-group-title{margin:0 0 7px;color:var(--text);font-size:12px;font-weight:750;line-height:1.4}
+      #urppp-settings-panel .urppp-privacy-group-fields{display:grid;gap:3px}
+      #urppp-settings-panel .urppp-privacy-field{display:grid;grid-template-columns:18px minmax(0,1fr);gap:5px 6px;align-items:center;min-width:0;padding:2px 0 7px}
+      #urppp-settings-panel .urppp-privacy-field>input[type="checkbox"]{width:16px;height:16px;margin:0;accent-color:var(--primary);cursor:pointer}
+      #urppp-settings-panel .urppp-privacy-field>label{min-width:0;margin:0;color:var(--text-secondary);font-size:12px;font-weight:600;line-height:1.35;cursor:pointer;white-space:normal}
+      #urppp-settings-panel .urppp-privacy-field>.urppp-feature-input{grid-column:1/-1;height:32px;padding:0 8px;font-size:12px}
+      #urppp-settings-panel .urppp-privacy-note{grid-column:1/-1;padding-left:24px;font-size:10px;color:var(--text-muted);line-height:1.4}
+      #urppp-settings-panel .urppp-identity-editor{display:grid;grid-template-columns:minmax(0,1fr) 76px;gap:16px;align-items:start;margin-top:14px;padding:13px;border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb,var(--surface) 78%,var(--input-bg))}
+      #urppp-settings-panel .urppp-identity-fields{display:grid;gap:10px;min-width:0}
+      #urppp-settings-panel .urppp-identity-preview{display:grid;justify-items:center;gap:7px;min-width:0}
+      #urppp-settings-panel .urppp-identity-preview-label{color:var(--text-muted);font-size:10px;font-weight:650;line-height:1.3;white-space:nowrap}
+      #urppp-settings-panel .urppp-avatar-preview-shell{position:relative;width:64px;height:64px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:10px;background:var(--input-bg);color:var(--text-muted);font-size:10px;overflow:hidden}
+      #urppp-settings-panel .urppp-avatar-preview{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:inherit;background:var(--input-bg);object-fit:cover;display:none}
       #urppp-settings-panel .urppp-feature-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-      #urppp-settings-panel .urppp-avatar-preview{width:48px;height:48px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg);object-fit:cover;display:none}
+      html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-privacy-groups,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-identity-editor{border:2px solid var(--text);border-radius:0;background:var(--surface)}
+      html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left:2px solid var(--text)}
+      html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-feature-input,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-avatar-preview-shell{border:2px solid var(--text);border-radius:0;background:var(--surface)}
+      html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-privacy-groups,html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-identity-editor{border-radius:18px}
+      html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-feature-input,html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-avatar-preview-shell{border-radius:12px}
+      html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-privacy-groups,html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-identity-editor{border:3px solid #000;border-radius:0;background:var(--surface)}
+      html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left:3px solid #000}
+      html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-feature-input,html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-avatar-preview-shell{border:2px solid #000;border-radius:0;background:var(--surface)}
+      html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-privacy-groups,html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-identity-editor{border-width:1px 0;border-radius:0;background:transparent}
+      html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-feature-input,html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-avatar-preview-shell{border-width:0 0 1px;border-radius:0;background:transparent}
+      html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-privacy-groups,html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-identity-editor{border:0;border-radius:16px;background:var(--neu-base);box-shadow:var(--neu-inset-soft)}
+      html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left-color:var(--neu-edge-soft)}
+      html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-feature-input,html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-avatar-preview-shell{border:0;background:var(--neu-base);box-shadow:var(--neu-inset-soft)}
+      @media(max-width:520px){#urppp-settings-panel .urppp-privacy-groups{grid-template-columns:1fr}#urppp-settings-panel .urppp-privacy-group{padding:10px}#urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left:0;border-top:1px solid var(--border)}#urppp-settings-panel .urppp-privacy-field{grid-template-columns:18px minmax(92px,.72fr) minmax(0,1.28fr);min-height:44px;gap:7px;padding:0}#urppp-settings-panel .urppp-privacy-field>.urppp-feature-input{grid-column:auto;height:36px;font-size:12px}#urppp-settings-panel .urppp-privacy-note{grid-column:auto;padding-left:0;font-size:11px}html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-top:2px solid var(--text)}html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-top:3px solid #000}#urppp-settings-panel .urppp-identity-editor{grid-template-columns:1fr;padding:11px}#urppp-settings-panel .urppp-identity-preview{grid-template-columns:auto 64px;justify-content:start;align-items:center}#urppp-settings-panel .urppp-feature-row{grid-template-columns:minmax(96px,.72fr) minmax(0,1.28fr);gap:8px}#urppp-settings-panel .urppp-feature-actions>.urppp-set-btn{flex:1 1 100%}}
       .urppp-private-text{position:relative!important;font-size:0!important;color:transparent!important;text-shadow:none!important;user-select:none!important;pointer-events:none!important;min-height:1em}
       .urppp-private-text>*{visibility:hidden!important}
-      .urppp-private-text::after{content:attr(data-urppp-private-mask)!important;visibility:visible!important;display:inline!important;color:var(--text,#1d1d1f)!important;font:600 12px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif!important;letter-spacing:0!important;white-space:nowrap!important}
+      .urppp-private-text::after{content:attr(data-urppp-private-mask)!important;visibility:visible!important;display:inline!important;color:var(--text,#1d1d1f)!important;font-family:inherit!important;font-size:var(--urppp-private-font-size,12px)!important;font-weight:inherit!important;font-style:inherit!important;font-stretch:inherit!important;line-height:inherit!important;font-variant-numeric:inherit!important;letter-spacing:0!important;text-transform:inherit!important;white-space:nowrap!important}
       .urppp-private-avatar{visibility:hidden!important}
       .urppp-private-avatar-host{position:relative!important}
       .urppp-private-avatar-host::after{content:attr(data-urppp-private-mask)!important;position:absolute!important;inset:auto!important;left:var(--urppp-avatar-left,0)!important;top:var(--urppp-avatar-top,0)!important;width:var(--urppp-avatar-width,40px)!important;height:var(--urppp-avatar-height,40px)!important;display:flex!important;align-items:center!important;justify-content:center!important;color:var(--text-muted,#7c8491)!important;background:var(--input-bg,#eef1f5)!important;border-radius:var(--urppp-avatar-radius,50%)!important;font:700 8px/1 sans-serif!important;letter-spacing:0!important;white-space:nowrap!important;overflow:hidden!important;z-index:4!important;pointer-events:none!important}
@@ -17679,6 +17730,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   function markPrivateText(element, replacement) {
     if (!element || !replacement) return;
     if (element.querySelector && element.querySelector('input,select,textarea,button')) return;
+    if (!element.classList.contains('urppp-private-text')) {
+      const fontSize = getComputedStyle(element).fontSize;
+      if (fontSize && fontSize !== '0px') element.style.setProperty('--urppp-private-font-size', fontSize);
+    }
     element.classList.add('urppp-private-text');
     element.setAttribute('data-urppp-private-mask', replacement);
   }
@@ -17709,6 +17764,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     scope.querySelectorAll('.urppp-private-text').forEach((el) => {
       el.classList.remove('urppp-private-text');
       el.removeAttribute('data-urppp-private-mask');
+      el.style.removeProperty('--urppp-private-font-size');
     });
     scope.querySelectorAll('.urppp-private-avatar').forEach((el) => el.classList.remove('urppp-private-avatar'));
     scope.querySelectorAll('.urppp-private-avatar-host').forEach((el) => {
