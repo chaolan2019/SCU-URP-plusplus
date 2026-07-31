@@ -414,9 +414,17 @@
     grade: { enabled: true, replacement: '已隐藏' },
     gpa: { enabled: true, replacement: '••••••' },
     credit: { enabled: true, replacement: '••••••' },
+    other: { enabled: true, replacement: '已隐藏' },
     avatar: { enabled: true, replacement: '' },
     schedule: { enabled: false, replacement: '课表已隐藏' }
   };
+  const HOME_DATA_CATALOG = [
+    { key: 'completedCourses', label: '已修课程' },
+    { key: 'failedCourses', label: '未及格课程' },
+    { key: 'majorGpa', label: '主修绩点' },
+    { key: 'majorPlan', label: '主修方案' },
+    { key: 'remainingCourses', label: '待修课程' }
+  ];
   const DEFAULT_ACCENT_PRESETS = ['#1E3A5F', '#B53434', '#0F766E', '#7C3AED', '#C2410C', '#0369A1', '#BE185D', '#365314'];
   const DEFAULT_SEED = '#B53434';
   const BRUTAL_DEFAULT_PALETTE = 'pink';
@@ -933,14 +941,26 @@
     const legacyScore = rawFields.score && typeof rawFields.score === 'object' ? rawFields.score : null;
     Object.keys(PRIVACY_FIELD_DEFAULTS).forEach((key) => {
       const base = PRIVACY_FIELD_DEFAULTS[key];
-      const migrated = ['grade', 'gpa', 'credit'].includes(key) ? legacyScore : null;
-      const item = rawFields[key] && typeof rawFields[key] === 'object' ? rawFields[key] : (migrated || {});
+      const migratedScore = ['grade', 'gpa', 'credit'].includes(key) ? legacyScore : null;
+      const migratedOther = key === 'other' && rawFields.grade && typeof rawFields.grade === 'object' ? rawFields.grade : null;
+      const item = rawFields[key] && typeof rawFields[key] === 'object' ? rawFields[key] : (migratedScore || migratedOther || {});
       fields[key] = {
         enabled: key === 'name' ? false : (item.enabled == null ? base.enabled : !!item.enabled),
         replacement: String(item.replacement == null ? base.replacement : item.replacement).slice(0, 80)
       };
     });
-    return { mode, mask: PRIVACY_MASK_TEXT, fields };
+    const rawHomepage = raw.homepage && typeof raw.homepage === 'object' ? raw.homepage : {};
+    const rawHomepageValues = rawHomepage.values && typeof rawHomepage.values === 'object' ? rawHomepage.values : {};
+    const homepageValues = {};
+    HOME_DATA_CATALOG.forEach(({ key }) => {
+      homepageValues[key] = String(rawHomepageValues[key] == null ? '' : rawHomepageValues[key]).trim().slice(0, 80);
+    });
+    return {
+      mode,
+      mask: PRIVACY_MASK_TEXT,
+      fields,
+      homepage: { enabled: !!rawHomepage.enabled, values: homepageValues }
+    };
   }
 
   function getPrivacySettings() {
@@ -15248,6 +15268,36 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     });
   }
 
+  function detectedHomeDataValue(key) {
+    const target = document.querySelector('[data-urppp-home-data="' + key + '"]');
+    return String(target && target.textContent || '').trim();
+  }
+
+  function syncHomepagePrivacyUI(panel, privacy) {
+    const customMode = privacy.mode === 'custom';
+    const enabled = customMode && privacy.homepage.enabled;
+    const control = panel.querySelector('.urppp-home-data-control');
+    const button = panel.querySelector('#urppp-set-home-data-toggle');
+    const editor = panel.querySelector('#urppp-set-home-data-editor');
+    if (control) control.style.display = customMode ? 'flex' : 'none';
+    if (button) {
+      button.dataset.enabled = privacy.homepage.enabled ? '1' : '0';
+      button.classList.toggle('ac', privacy.homepage.enabled);
+      button.setAttribute('aria-pressed', privacy.homepage.enabled ? 'true' : 'false');
+      button.textContent = '自由修改：' + (privacy.homepage.enabled ? '开' : '关');
+    }
+    if (editor) editor.style.display = enabled ? 'grid' : 'none';
+    HOME_DATA_CATALOG.forEach(({ key }) => {
+      const input = panel.querySelector('[data-home-data-value="' + key + '"]');
+      const current = panel.querySelector('[data-home-data-current="' + key + '"]');
+      if (input) input.value = privacy.homepage.values[key] || '';
+      if (current) {
+        const value = detectedHomeDataValue(key);
+        current.textContent = value ? '当前：' + value : '当前页未探测';
+      }
+    });
+  }
+
   function syncPrivacySettingsUI(panel) {
     if (!panel) return;
     const privacy = getPrivacySettings();
@@ -15268,6 +15318,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         input.disabled = !item.enabled;
       }
     });
+    syncHomepagePrivacyUI(panel, privacy);
     const identity = getCustomIdentity();
     const nameEnabled = panel.querySelector('#urppp-set-name-enabled');
     const nameInput = panel.querySelector('#urppp-set-custom-name');
@@ -15297,6 +15348,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const input = panel.querySelector('[data-privacy-value="' + field + '"]');
       if (toggle) next.fields[field].enabled = !!toggle.checked;
       if (input) next.fields[field].replacement = String(input.value || '').trim().slice(0, 80);
+    });
+    const homepageToggle = panel.querySelector('#urppp-set-home-data-toggle');
+    next.homepage.enabled = !!(homepageToggle && homepageToggle.dataset.enabled === '1');
+    HOME_DATA_CATALOG.forEach(({ key }) => {
+      const input = panel.querySelector('[data-home-data-value="' + key + '"]');
+      if (input) next.homepage.values[key] = String(input.value || '').trim().slice(0, 80);
     });
     return next;
   }
@@ -15337,6 +15394,16 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         const input = panel.querySelector('[data-privacy-value="' + field + '"]');
         if (input) input.disabled = !toggle.checked;
       });
+    });
+    const homepageToggle = panel.querySelector('#urppp-set-home-data-toggle');
+    if (homepageToggle) homepageToggle.addEventListener('click', () => {
+      const enabled = homepageToggle.dataset.enabled !== '1';
+      homepageToggle.dataset.enabled = enabled ? '1' : '0';
+      homepageToggle.classList.toggle('ac', enabled);
+      homepageToggle.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+      homepageToggle.textContent = '自由修改：' + (enabled ? '开' : '关');
+      const editor = panel.querySelector('#urppp-set-home-data-editor');
+      if (editor) editor.style.display = enabled ? 'grid' : 'none';
     });
     const nameEnabled = panel.querySelector('#urppp-set-name-enabled');
     const avatarEnabled = panel.querySelector('#urppp-set-avatar-enabled');
@@ -15719,10 +15786,22 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '        <div class="urppp-privacy-group">',
       '          <div class="urppp-privacy-group-title">页面内容</div>',
       '          <div class="urppp-privacy-group-fields">',
+      '            <div class="urppp-privacy-field"><input id="urppp-privacy-other" type="checkbox" data-privacy-field="other" aria-label="隐藏其他数据"><label for="urppp-privacy-other">其他数据</label><input class="urppp-feature-input" data-privacy-value="other" maxlength="40" aria-label="其他数据替换内容"></div>',
       '            <div class="urppp-privacy-field"><input id="urppp-privacy-schedule" type="checkbox" data-privacy-field="schedule" aria-label="隐藏课表"><label for="urppp-privacy-schedule">课表</label><input class="urppp-feature-input" data-privacy-value="schedule" maxlength="40" aria-label="课表替换内容"></div>',
       '            <div class="urppp-privacy-field urppp-privacy-field-static"><input id="urppp-privacy-avatar" type="checkbox" data-privacy-field="avatar" aria-label="隐藏头像"><label for="urppp-privacy-avatar">头像</label><span class="urppp-privacy-note">使用统一遮罩</span></div>',
       '          </div>',
       '        </div>',
+      '      </div>',
+      '      <div class="urppp-home-data-control">',
+      '        <div><strong>首页数据</strong><span>按探测项目分别修改，留空保持原值</span></div>',
+      '        <button type="button" class="urppp-set-follow" id="urppp-set-home-data-toggle" aria-pressed="false">自由修改：关</button>',
+      '      </div>',
+      '      <div class="urppp-home-data-editor" id="urppp-set-home-data-editor">',
+      '        <label class="urppp-home-data-item"><span><b>已修课程</b><small data-home-data-current="completedCourses"></small></span><input class="urppp-feature-input" data-home-data-value="completedCourses" maxlength="40" aria-label="已修课程替换内容" placeholder="保持原值"></label>',
+      '        <label class="urppp-home-data-item"><span><b>未及格课程</b><small data-home-data-current="failedCourses"></small></span><input class="urppp-feature-input" data-home-data-value="failedCourses" maxlength="40" aria-label="未及格课程替换内容" placeholder="保持原值"></label>',
+      '        <label class="urppp-home-data-item"><span><b>主修绩点</b><small data-home-data-current="majorGpa"></small></span><input class="urppp-feature-input" data-home-data-value="majorGpa" maxlength="40" aria-label="主修绩点替换内容" placeholder="保持原值"></label>',
+      '        <label class="urppp-home-data-item"><span><b>主修方案</b><small data-home-data-current="majorPlan"></small></span><input class="urppp-feature-input" data-home-data-value="majorPlan" maxlength="40" aria-label="主修方案替换内容" placeholder="保持原值"></label>',
+      '        <label class="urppp-home-data-item"><span><b>待修课程</b><small data-home-data-current="remainingCourses"></small></span><input class="urppp-feature-input" data-home-data-value="remainingCourses" maxlength="40" aria-label="待修课程替换内容" placeholder="保持原值"></label>',
       '      </div>',
       '    </section>',
       '    <section class="urppp-set-sec" id="urppp-set-identity">',
@@ -17571,6 +17650,17 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       #urppp-settings-panel .urppp-privacy-field>label{min-width:0;margin:0;color:var(--text-secondary);font-size:12px;font-weight:600;line-height:1.35;cursor:pointer;white-space:normal}
       #urppp-settings-panel .urppp-privacy-field>.urppp-feature-input{grid-column:1/-1;height:32px;padding:0 8px;font-size:12px}
       #urppp-settings-panel .urppp-privacy-note{grid-column:1/-1;padding-left:24px;font-size:10px;color:var(--text-muted);line-height:1.4}
+      #urppp-settings-panel .urppp-home-data-control{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:10px 2px 0;border-top:1px solid var(--border)}
+      #urppp-settings-panel .urppp-home-data-control>div{display:grid;gap:2px;min-width:0}
+      #urppp-settings-panel .urppp-home-data-control strong{color:var(--text);font-size:12px;line-height:1.35}
+      #urppp-settings-panel .urppp-home-data-control span{color:var(--text-muted);font-size:10px;line-height:1.4}
+      #urppp-settings-panel #urppp-set-home-data-toggle{flex:0 0 auto;width:auto!important;min-width:100px;margin:0!important}
+      #urppp-settings-panel .urppp-home-data-editor{display:none;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 14px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+      #urppp-settings-panel .urppp-home-data-item{display:grid;gap:5px;min-width:0;margin:0}
+      #urppp-settings-panel .urppp-home-data-item>span{display:flex;align-items:baseline;justify-content:space-between;gap:6px;min-width:0}
+      #urppp-settings-panel .urppp-home-data-item b{color:var(--text-secondary);font-size:11px;font-weight:650;line-height:1.35;white-space:nowrap}
+      #urppp-settings-panel .urppp-home-data-item small{min-width:0;overflow:hidden;color:var(--text-muted);font-size:9px;font-weight:400;line-height:1.35;text-overflow:ellipsis;white-space:nowrap}
+      #urppp-settings-panel .urppp-home-data-item>.urppp-feature-input{height:32px;font-size:11px}
       #urppp-settings-panel .urppp-identity-editor{display:grid;grid-template-columns:minmax(0,1fr) 76px;gap:16px;align-items:start;margin-top:14px;padding:13px;border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb,var(--surface) 78%,var(--input-bg))}
       #urppp-settings-panel .urppp-identity-fields{display:grid;gap:10px;min-width:0}
       #urppp-settings-panel .urppp-identity-preview{display:grid;justify-items:center;gap:7px;min-width:0}
@@ -17591,7 +17681,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-privacy-groups,html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-identity-editor{border:0;border-radius:16px;background:var(--neu-base);box-shadow:var(--neu-inset-soft)}
       html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left-color:var(--neu-edge-soft)}
       html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-feature-input,html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-avatar-preview-shell{border:0;background:var(--neu-base);box-shadow:var(--neu-inset-soft)}
-      @media(max-width:520px){#urppp-settings-panel .urppp-privacy-groups{grid-template-columns:1fr}#urppp-settings-panel .urppp-privacy-group{padding:10px}#urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left:0;border-top:1px solid var(--border)}#urppp-settings-panel .urppp-privacy-field{grid-template-columns:18px minmax(92px,.72fr) minmax(0,1.28fr);min-height:44px;gap:7px;padding:0}#urppp-settings-panel .urppp-privacy-field>.urppp-feature-input{grid-column:auto;height:36px;font-size:12px}#urppp-settings-panel .urppp-privacy-note{grid-column:auto;padding-left:0;font-size:11px}html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-top:2px solid var(--text)}html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-top:3px solid #000}#urppp-settings-panel .urppp-identity-editor{grid-template-columns:1fr;padding:11px}#urppp-settings-panel .urppp-identity-preview{grid-template-columns:auto 64px;justify-content:start;align-items:center}#urppp-settings-panel .urppp-feature-row{grid-template-columns:minmax(96px,.72fr) minmax(0,1.28fr);gap:8px}#urppp-settings-panel .urppp-feature-actions>.urppp-set-btn{flex:1 1 100%}}
+      @media(max-width:520px){#urppp-settings-panel .urppp-privacy-groups{grid-template-columns:1fr}#urppp-settings-panel .urppp-privacy-group{padding:10px}#urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left:0;border-top:1px solid var(--border)}#urppp-settings-panel .urppp-privacy-field{grid-template-columns:18px minmax(92px,.72fr) minmax(0,1.28fr);min-height:44px;gap:7px;padding:0}#urppp-settings-panel .urppp-privacy-field>.urppp-feature-input{grid-column:auto;height:36px;font-size:12px}#urppp-settings-panel .urppp-privacy-note{grid-column:auto;padding-left:0;font-size:11px}html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-top:2px solid var(--text)}html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-top:3px solid #000}#urppp-settings-panel .urppp-home-data-control{align-items:flex-start}#urppp-settings-panel .urppp-home-data-control span{max-width:180px}#urppp-settings-panel .urppp-home-data-editor{grid-template-columns:1fr}#urppp-settings-panel .urppp-identity-editor{grid-template-columns:1fr;padding:11px}#urppp-settings-panel .urppp-identity-preview{grid-template-columns:auto 64px;justify-content:start;align-items:center}#urppp-settings-panel .urppp-feature-row{grid-template-columns:minmax(96px,.72fr) minmax(0,1.28fr);gap:8px}#urppp-settings-panel .urppp-feature-actions>.urppp-set-btn{flex:1 1 100%}}
       .urppp-private-value{font-family:inherit!important;font-size:inherit!important;font-weight:inherit!important;font-style:inherit!important;line-height:inherit!important;letter-spacing:0!important;color:inherit!important}
       .urppp-private-text{position:relative!important;font-size:0!important;text-shadow:none!important;user-select:none!important;pointer-events:none!important;min-height:1em}
       .urppp-private-text>*{visibility:hidden!important}
@@ -17695,16 +17785,39 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return '';
   }
 
+  function classifyHomeDataKey(value, label) {
+    const text = String(value || '') + ' ' + String(label || '');
+    if (/绩点|GPA/.test(text)) return 'majorGpa';
+    if (/主修为|培养方案|方案/.test(text)) return 'majorPlan';
+    if (/尚不及格|未及格/.test(text)) return 'failedCourses';
+    if (/待修读课程/.test(text)) return 'remainingCourses';
+    if (/已修读课程/.test(text)) return 'completedCourses';
+    return '';
+  }
+
+  function homePrivateValueSpan(field, homeKey, content) {
+    const homeAttr = homeKey ? ` data-urppp-home-data="${homeKey}"` : '';
+    return `<span class="urppp-private-value" data-urppp-private="${field}"${homeAttr}>${content}</span>`;
+  }
+
   function statCardPrivacyMarkup(value, label) {
     const safeValue = escapeHtml(value);
     const safeLabel = escapeHtml(label);
-    const field = classifyPrivacyLabel(String(value || '') + ' ' + String(label || ''));
+    const homeKey = classifyHomeDataKey(value, label);
+    const homeField = {
+      completedCourses: 'other',
+      failedCourses: 'other',
+      majorGpa: 'gpa',
+      majorPlan: 'organization',
+      remainingCourses: 'other'
+    }[homeKey];
+    const field = homeField || classifyPrivacyLabel(String(value || '') + ' ' + String(label || ''));
     if (field === 'organization') {
       return label
-        ? { valueHtml: safeValue, labelHtml: `<span class="urppp-private-value" data-urppp-private="organization">${safeLabel}</span>` }
-        : { valueHtml: `<span class="urppp-private-value" data-urppp-private="organization">${safeValue}</span>`, labelHtml: safeLabel };
+        ? { valueHtml: safeValue, labelHtml: homePrivateValueSpan('organization', homeKey, safeLabel) }
+        : { valueHtml: homePrivateValueSpan('organization', homeKey, safeValue), labelHtml: safeLabel };
     }
-    if (!['grade', 'gpa', 'credit'].includes(field)) return { valueHtml: safeValue, labelHtml: safeLabel };
+    if (!['grade', 'gpa', 'credit', 'other'].includes(field)) return { valueHtml: safeValue, labelHtml: safeLabel };
     const numericLabel = String(label || '').match(/-?\d+(?:\.\d+)?/);
     const valueIsDirect = /^-?\d+(?:\.\d+)?$/.test(String(value || '').trim()) || /^(优秀|良好|中等|及格|不及格|合格|不合格)$/.test(String(value || '').trim());
     if (!valueIsDirect && numericLabel) {
@@ -17713,10 +17826,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const after = String(label).slice(index + numericLabel[0].length);
       return {
         valueHtml: safeValue,
-        labelHtml: `${escapeHtml(before)}<span class="urppp-private-value" data-urppp-private="${field}">${escapeHtml(numericLabel[0])}</span>${escapeHtml(after)}`
+        labelHtml: `${escapeHtml(before)}${homePrivateValueSpan(field, homeKey, escapeHtml(numericLabel[0]))}${escapeHtml(after)}`
       };
     }
-    return { valueHtml: `<span class="urppp-private-value" data-urppp-private="${field}">${safeValue}</span>`, labelHtml: safeLabel };
+    return { valueHtml: homePrivateValueSpan(field, homeKey, safeValue), labelHtml: safeLabel };
   }
 
   function privacyReplacement(config, field) {
@@ -17867,7 +17980,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const navName = nameMask ? ensureNavNameTarget(scope) : scope.querySelector?.('.urppp-user-name-value');
     if (nameMask) markPrivateText(navName, nameMask);
     const directAcademicTargets = [
-      ['#courseNum, #coursePas, #xy_kcms', 'grade'],
+      ['#courseNum, #coursePas, #xy_kcms', 'other'],
       ['#gpa', 'gpa'],
       ['#bottom', 'organization']
     ];
@@ -17878,6 +17991,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     applyScoreTablePrivacy(scope, config);
     scope.querySelectorAll('[data-urppp-private]').forEach((el) => {
       const field = el.getAttribute('data-urppp-private');
+      const homeKey = el.getAttribute('data-urppp-home-data');
+      if (config.mode === 'custom' && config.homepage.enabled && homeKey) {
+        const replacement = String(config.homepage.values[homeKey] || '').trim();
+        if (replacement) markPrivateText(el, replacement);
+        return;
+      }
       const replacement = privacyReplacement(config, field);
       if (!['avatar', 'schedule'].includes(field) && replacement) markPrivateText(el, replacement);
     });
