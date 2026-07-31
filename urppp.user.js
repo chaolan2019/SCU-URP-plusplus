@@ -17592,9 +17592,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left-color:var(--neu-edge-soft)}
       html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-feature-input,html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-avatar-preview-shell{border:0;background:var(--neu-base);box-shadow:var(--neu-inset-soft)}
       @media(max-width:520px){#urppp-settings-panel .urppp-privacy-groups{grid-template-columns:1fr}#urppp-settings-panel .urppp-privacy-group{padding:10px}#urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left:0;border-top:1px solid var(--border)}#urppp-settings-panel .urppp-privacy-field{grid-template-columns:18px minmax(92px,.72fr) minmax(0,1.28fr);min-height:44px;gap:7px;padding:0}#urppp-settings-panel .urppp-privacy-field>.urppp-feature-input{grid-column:auto;height:36px;font-size:12px}#urppp-settings-panel .urppp-privacy-note{grid-column:auto;padding-left:0;font-size:11px}html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-top:2px solid var(--text)}html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-top:3px solid #000}#urppp-settings-panel .urppp-identity-editor{grid-template-columns:1fr;padding:11px}#urppp-settings-panel .urppp-identity-preview{grid-template-columns:auto 64px;justify-content:start;align-items:center}#urppp-settings-panel .urppp-feature-row{grid-template-columns:minmax(96px,.72fr) minmax(0,1.28fr);gap:8px}#urppp-settings-panel .urppp-feature-actions>.urppp-set-btn{flex:1 1 100%}}
-      .urppp-private-text{position:relative!important;font-size:0!important;color:transparent!important;text-shadow:none!important;user-select:none!important;pointer-events:none!important;min-height:1em}
+      .urppp-private-value{font-family:inherit!important;font-size:inherit!important;font-weight:inherit!important;font-style:inherit!important;line-height:inherit!important;letter-spacing:0!important;color:inherit!important}
+      .urppp-private-text{position:relative!important;font-size:0!important;text-shadow:none!important;user-select:none!important;pointer-events:none!important;min-height:1em}
       .urppp-private-text>*{visibility:hidden!important}
-      .urppp-private-text::after{content:attr(data-urppp-private-mask)!important;visibility:visible!important;display:inline!important;color:var(--text,#1d1d1f)!important;font-family:inherit!important;font-size:var(--urppp-private-font-size,12px)!important;font-weight:inherit!important;font-style:inherit!important;font-stretch:inherit!important;line-height:inherit!important;font-variant-numeric:inherit!important;letter-spacing:0!important;text-transform:inherit!important;white-space:nowrap!important}
+      .urppp-private-text::after{content:attr(data-urppp-private-mask)!important;visibility:visible!important;display:inline!important;color:inherit!important;font-family:inherit!important;font-size:var(--urppp-private-font-size,12px)!important;font-weight:inherit!important;font-style:inherit!important;font-stretch:inherit!important;line-height:inherit!important;font-variant-numeric:inherit!important;letter-spacing:0!important;text-transform:inherit!important;white-space:nowrap!important}
       .urppp-private-avatar{visibility:hidden!important}
       .urppp-private-avatar-host{position:relative!important}
       .urppp-private-avatar-host::after{content:attr(data-urppp-private-mask)!important;position:absolute!important;inset:auto!important;left:var(--urppp-avatar-left,0)!important;top:var(--urppp-avatar-top,0)!important;width:var(--urppp-avatar-width,40px)!important;height:var(--urppp-avatar-height,40px)!important;display:flex!important;align-items:center!important;justify-content:center!important;color:var(--text-muted,#7c8491)!important;background:var(--input-bg,#eef1f5)!important;border-radius:var(--urppp-avatar-radius,50%)!important;font:700 8px/1 sans-serif!important;letter-spacing:0!important;white-space:nowrap!important;overflow:hidden!important;z-index:4!important;pointer-events:none!important}
@@ -17700,8 +17701,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const field = classifyPrivacyLabel(String(value || '') + ' ' + String(label || ''));
     if (field === 'organization') {
       return label
-        ? { valueHtml: safeValue, labelHtml: `<span data-urppp-private="organization">${safeLabel}</span>` }
-        : { valueHtml: `<span data-urppp-private="organization">${safeValue}</span>`, labelHtml: safeLabel };
+        ? { valueHtml: safeValue, labelHtml: `<span class="urppp-private-value" data-urppp-private="organization">${safeLabel}</span>` }
+        : { valueHtml: `<span class="urppp-private-value" data-urppp-private="organization">${safeValue}</span>`, labelHtml: safeLabel };
     }
     if (!['grade', 'gpa', 'credit'].includes(field)) return { valueHtml: safeValue, labelHtml: safeLabel };
     const numericLabel = String(label || '').match(/-?\d+(?:\.\d+)?/);
@@ -17712,10 +17713,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const after = String(label).slice(index + numericLabel[0].length);
       return {
         valueHtml: safeValue,
-        labelHtml: `${escapeHtml(before)}<span data-urppp-private="${field}">${escapeHtml(numericLabel[0])}</span>${escapeHtml(after)}`
+        labelHtml: `${escapeHtml(before)}<span class="urppp-private-value" data-urppp-private="${field}">${escapeHtml(numericLabel[0])}</span>${escapeHtml(after)}`
       };
     }
-    return { valueHtml: `<span data-urppp-private="${field}">${safeValue}</span>`, labelHtml: safeLabel };
+    return { valueHtml: `<span class="urppp-private-value" data-urppp-private="${field}">${safeValue}</span>`, labelHtml: safeLabel };
   }
 
   function privacyReplacement(config, field) {
