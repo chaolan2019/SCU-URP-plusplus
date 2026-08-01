@@ -404,7 +404,7 @@
   const PRIVACY_SETTINGS_KEY = 'urppp_privacy_v1';
   const CUSTOM_IDENTITY_KEY = 'urppp_custom_identity_v1';
   const SCHEDULE_FIRST_MONDAY_KEY = 'urppp_schedule_first_monday_v1';
-  const PRIVACY_MASK_TEXT = '••••••';
+  const PRIVACY_MASK_TEXT = '••••';
   const CUSTOM_AVATAR_MAX_LENGTH = 3 * 1024 * 1024;
   const PRIVACY_FIELD_DEFAULTS = {
     name: { enabled: false, replacement: '同学' },
@@ -412,8 +412,8 @@
     organization: { enabled: true, replacement: '已隐藏' },
     contact: { enabled: true, replacement: '已隐藏' },
     grade: { enabled: true, replacement: '已隐藏' },
-    gpa: { enabled: true, replacement: '••••••' },
-    credit: { enabled: true, replacement: '••••••' },
+    gpa: { enabled: true, replacement: '••••' },
+    credit: { enabled: true, replacement: '••••' },
     other: { enabled: true, replacement: '已隐藏' },
     avatar: { enabled: true, replacement: '' },
     schedule: { enabled: false, replacement: '课表已隐藏' }
