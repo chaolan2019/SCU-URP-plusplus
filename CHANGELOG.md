@@ -5,6 +5,11 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循语义化版本。
 
+## [Unreleased]
+
+### Changed
+- JSON 课表导出改为小爱课程导入兼容结构，并可在系统设置中自定义输出路径与字段映射
+
 ## [1.5.0] - 2026-08-01
 
 ### Added

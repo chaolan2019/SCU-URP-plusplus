@@ -404,6 +404,7 @@
   const PRIVACY_SETTINGS_KEY = 'urppp_privacy_v1';
   const CUSTOM_IDENTITY_KEY = 'urppp_custom_identity_v1';
   const SCHEDULE_FIRST_MONDAY_KEY = 'urppp_schedule_first_monday_v1';
+  const SCHEDULE_JSON_FORMAT_KEY = 'urppp_schedule_json_format_v1';
   const PRIVACY_MASK_TEXT = '••••';
   const CUSTOM_AVATAR_MAX_LENGTH = 3 * 1024 * 1024;
   const PRIVACY_FIELD_DEFAULTS = {
@@ -433,6 +434,24 @@
     schemeTotalCredit: '方案总学分', schemeAvgScore: '方案平均成绩', schemeAvgGpa: '方案平均绩点',
     schemeRequiredCredit: '方案必修学分', schemeRequiredAvg: '方案必修平均', schemeRequiredGpa: '方案必修绩点'
   };
+  const DEFAULT_SCHEDULE_JSON_MAPPING = {
+    base: {},
+    coursesPath: 'courses',
+    schedulePath: 'schedule',
+    courseFields: {
+      name: 'name', teacher: 'teacher', position: 'position', day: 'day', sections: 'sections', weeks: 'weeks'
+    },
+    scheduleFields: {
+      morningNum: 'morningNum', afternoonNum: 'afternoonNum', nightNum: 'nightNum', sections: 'sections'
+    }
+  };
+  const SCHEDULE_JSON_COURSE_FIELDS = [
+    'name', 'teacher', 'position', 'day', 'sections', 'weeks', 'code', 'sequence', 'englishName',
+    'attribute', 'category', 'credit', 'status', 'campus', 'building', 'classroom',
+    'startSection', 'endSection', 'weekList'
+  ];
+  const SCHEDULE_JSON_SCHEDULE_FIELDS = ['morningNum', 'afternoonNum', 'nightNum', 'sections', 'sectionList'];
+  let scheduleJsonFormatRecoveryMessage = '';
   const DEFAULT_ACCENT_PRESETS = ['#1E3A5F', '#B53434', '#0F766E', '#7C3AED', '#C2410C', '#0369A1', '#BE185D', '#365314'];
   const DEFAULT_SEED = '#B53434';
   const BRUTAL_DEFAULT_PALETTE = 'pink';
@@ -1010,6 +1029,107 @@
     const map = getScheduleFirstMondayMap();
     map[String(planCode)] = String(isoDate);
     writeJsonSetting(SCHEDULE_FIRST_MONDAY_KEY, map);
+  }
+
+  function cloneJsonValue(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function scheduleJsonPathsOverlap(first, second) {
+    return first === second || first.startsWith(second + '.') || second.startsWith(first + '.');
+  }
+
+  function validateScheduleJsonPath(value, optional) {
+    const path = String(value == null ? '' : value).trim();
+    if (!path) {
+      if (optional) return '';
+      throw new Error('课程数组输出路径不能为空');
+    }
+    if (path.length > 120) throw new Error('JSON 输出路径不能超过 120 个字符');
+    const segments = path.split('.');
+    const forbidden = new Set(['__proto__', 'prototype', 'constructor']);
+    if (segments.some((part) => !part || /^\d+$/.test(part) || /[\[\]\x00-\x1f]/.test(part) || forbidden.has(part))) {
+      throw new Error('JSON 输出路径包含无效片段：' + path);
+    }
+    return segments.join('.');
+  }
+
+  function validateScheduleJsonTargetPaths(paths, label) {
+    for (let i = 0; i < paths.length; i += 1) {
+      for (let j = i + 1; j < paths.length; j += 1) {
+        if (scheduleJsonPathsOverlap(paths[i], paths[j])) throw new Error(label + '目标路径不能重叠：' + paths[i] + ' / ' + paths[j]);
+      }
+    }
+  }
+
+  function validateScheduleJsonBasePath(base, path, label) {
+    const segments = path.split('.');
+    let cursor = base;
+    for (let index = 0; index < segments.length; index += 1) {
+      const part = segments[index];
+      if (!Object.prototype.hasOwnProperty.call(cursor, part)) return;
+      if (index === segments.length - 1) throw new Error(label + '输出路径与 base 字段重叠：' + path);
+      cursor = cursor[part];
+      if (!cursor || typeof cursor !== 'object' || Array.isArray(cursor)) {
+        throw new Error(label + '输出路径无法穿过 base 中的非对象字段：' + segments.slice(0, index + 1).join('.'));
+      }
+    }
+  }
+
+  function validateScheduleJsonFieldMap(value, allowedFields, label) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(label + '字段映射必须是对象');
+    const output = {};
+    Object.entries(value).forEach(([source, target]) => {
+      if (!allowedFields.includes(source)) throw new Error(label + '不支持源字段：' + source);
+      const path = validateScheduleJsonPath(target, true);
+      if (path) output[source] = path;
+    });
+    validateScheduleJsonTargetPaths(Object.values(output), label + '字段');
+    return output;
+  }
+
+  function validateScheduleJsonMapping(value) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('自定义 JSON 映射必须是对象');
+    const base = value.base == null ? {} : value.base;
+    if (!base || typeof base !== 'object' || Array.isArray(base)) throw new Error('base 必须是 JSON 对象');
+    const mapping = {
+      base: cloneJsonValue(base),
+      coursesPath: validateScheduleJsonPath(value.coursesPath, false),
+      schedulePath: validateScheduleJsonPath(value.schedulePath, true),
+      courseFields: validateScheduleJsonFieldMap(value.courseFields, SCHEDULE_JSON_COURSE_FIELDS, '课程'),
+      scheduleFields: validateScheduleJsonFieldMap(value.scheduleFields || {}, SCHEDULE_JSON_SCHEDULE_FIELDS, '时间表')
+    };
+    if (!Object.keys(mapping.courseFields).length) throw new Error('至少保留一个课程字段映射');
+    if (mapping.schedulePath && scheduleJsonPathsOverlap(mapping.schedulePath, mapping.coursesPath)) {
+      throw new Error('课程与时间表输出路径不能重叠');
+    }
+    validateScheduleJsonBasePath(mapping.base, mapping.coursesPath, '课程');
+    if (mapping.schedulePath) validateScheduleJsonBasePath(mapping.base, mapping.schedulePath, '时间表');
+    return mapping;
+  }
+
+  function getScheduleJsonFormatSettings() {
+    let stored = '';
+    try { stored = GM_getValue(SCHEDULE_JSON_FORMAT_KEY, ''); } catch (_) {}
+    const hasStored = !!(stored && (typeof stored !== 'string' || stored.trim()));
+    const raw = readJsonSetting(SCHEDULE_JSON_FORMAT_KEY, null);
+    try {
+      if (hasStored && (!raw || typeof raw !== 'object' || Array.isArray(raw))) throw new Error('配置不是 JSON 对象');
+      const input = raw && typeof raw === 'object' ? raw : {};
+      const settings = { enabled: !!input.enabled, mapping: validateScheduleJsonMapping(input.mapping || DEFAULT_SCHEDULE_JSON_MAPPING) };
+      scheduleJsonFormatRecoveryMessage = '';
+      return settings;
+    } catch (_) {
+      scheduleJsonFormatRecoveryMessage = hasStored ? 'JSON 映射配置损坏，已回退小爱课程兼容格式' : '';
+      return { enabled: false, mapping: validateScheduleJsonMapping(DEFAULT_SCHEDULE_JSON_MAPPING) };
+    }
+  }
+
+  function setScheduleJsonFormatSettings(value) {
+    const input = value && typeof value === 'object' ? value : {};
+    const normalized = { enabled: !!input.enabled, mapping: validateScheduleJsonMapping(input.mapping || DEFAULT_SCHEDULE_JSON_MAPPING) };
+    scheduleJsonFormatRecoveryMessage = '';
+    return writeJsonSetting(SCHEDULE_JSON_FORMAT_KEY, normalized);
   }
 
   // 清爽模式自动进入仅首页；其它业务页不自动弹出
@@ -15468,6 +15588,73 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     });
   }
 
+  function setScheduleJsonSettingsStatus(panel, message, error) {
+    const status = panel && panel.querySelector('#urppp-set-json-status');
+    if (!status) return;
+    status.textContent = message || '';
+    status.classList.toggle('urppp-status-error', !!error);
+    status.style.color = error ? 'var(--danger,#b91c1c)' : 'var(--text-muted)';
+  }
+
+  function syncScheduleJsonSettingsUI(panel, force) {
+    if (!panel) return;
+    const settings = getScheduleJsonFormatSettings();
+    const toggle = panel.querySelector('#urppp-set-json-custom');
+    const editor = panel.querySelector('#urppp-set-json-editor');
+    const textarea = panel.querySelector('#urppp-set-json-mapping');
+    if (toggle) {
+      toggle.classList.toggle('ac', settings.enabled);
+      toggle.setAttribute('aria-pressed', settings.enabled ? 'true' : 'false');
+      toggle.textContent = '自定义 JSON：' + (settings.enabled ? '开' : '关');
+    }
+    if (editor) editor.style.display = settings.enabled ? 'grid' : 'none';
+    if (textarea && (force || (!panel.__urpppJsonMappingDirty && document.activeElement !== textarea))) {
+      textarea.value = JSON.stringify(settings.mapping, null, 2);
+      panel.__urpppJsonMappingDirty = false;
+    }
+    if (scheduleJsonFormatRecoveryMessage) setScheduleJsonSettingsStatus(panel, scheduleJsonFormatRecoveryMessage, true);
+  }
+
+  function bindScheduleJsonSettingsUI(panel) {
+    if (!panel || panel.__urpppJsonSettingsBound) return;
+    panel.__urpppJsonSettingsBound = true;
+    const toggle = panel.querySelector('#urppp-set-json-custom');
+    const textarea = panel.querySelector('#urppp-set-json-mapping');
+    const save = panel.querySelector('#urppp-set-json-save');
+    const reset = panel.querySelector('#urppp-set-json-reset');
+    if (textarea) textarea.addEventListener('input', () => { panel.__urpppJsonMappingDirty = true; });
+    if (toggle) toggle.addEventListener('click', () => {
+      const settings = getScheduleJsonFormatSettings();
+      settings.enabled = !settings.enabled;
+      const hadDraft = !!panel.__urpppJsonMappingDirty;
+      setScheduleJsonFormatSettings(settings);
+      syncScheduleJsonSettingsUI(panel, false);
+      const message = settings.enabled ? '已启用自定义 JSON 格式' : '已恢复小爱课程兼容格式';
+      setScheduleJsonSettingsStatus(panel, hadDraft ? message + '；未保存草稿已保留' : message);
+    });
+    if (save) save.addEventListener('click', () => {
+      try {
+        const parsed = JSON.parse(String(textarea && textarea.value || '').trim());
+        const settings = getScheduleJsonFormatSettings();
+        settings.mapping = validateScheduleJsonMapping(parsed);
+        setScheduleJsonFormatSettings(settings);
+        panel.__urpppJsonMappingDirty = false;
+        syncScheduleJsonSettingsUI(panel, true);
+        setScheduleJsonSettingsStatus(panel, '自定义 JSON 映射已保存');
+      } catch (error) {
+        setScheduleJsonSettingsStatus(panel, error && error.message || String(error), true);
+      }
+    });
+    if (reset) reset.addEventListener('click', () => {
+      const settings = getScheduleJsonFormatSettings();
+      settings.mapping = validateScheduleJsonMapping(DEFAULT_SCHEDULE_JSON_MAPPING);
+      setScheduleJsonFormatSettings(settings);
+      panel.__urpppJsonMappingDirty = false;
+      syncScheduleJsonSettingsUI(panel, true);
+      setScheduleJsonSettingsStatus(panel, '已恢复默认字段映射');
+    });
+  }
+
   function syncSettingsPanelUI() {
     const panel = document.getElementById('urppp-settings-panel');
     if (!panel) return;
@@ -15563,6 +15750,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       autoUpBtn.textContent = on ? '自动检测更新：开' : '自动检测更新：关';
     }
     try { syncPrivacySettingsUI(panel); } catch (_) {}
+    try { syncScheduleJsonSettingsUI(panel); } catch (_) {}
     // 跟随系统时动态区仍可配置（浅色会用到）
     const dyn = panel.querySelector('#urppp-set-dynamic');
     if (dyn) dyn.style.opacity = '1';
@@ -15802,6 +15990,18 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       '      <div class="urppp-feature-actions"><button type="button" class="urppp-set-btn" id="urppp-set-privacy-save">保存隐私与显示设置</button><button type="button" class="urppp-set-btn ghost" id="urppp-set-avatar-clear">清除自定义头像</button></div>',
       '      <div class="urppp-set-tip" id="urppp-set-privacy-status" style="margin-top:8px"></div>',
       '    </section>',
+      '    <section class="urppp-set-sec" id="urppp-set-json-export">',
+      '      <h3>JSON 导出格式</h3>',
+      '      <p class="urppp-set-tip">默认导出小爱课程导入格式。开启自定义后，可用声明式字段映射调整根节点、字段名和层级，不执行脚本代码。</p>',
+      '      <button type="button" class="urppp-set-follow" id="urppp-set-json-custom" aria-pressed="false" style="width:100%">自定义 JSON：关</button>',
+      '      <div class="urppp-json-mapping-editor" id="urppp-set-json-editor">',
+      '        <label for="urppp-set-json-mapping">字段映射</label>',
+      '        <textarea id="urppp-set-json-mapping" spellcheck="false" aria-label="自定义 JSON 字段映射"></textarea>',
+      '        <p class="urppp-set-tip">源字段包括 name、teacher、position、day、sections、weeks、code、credit、campus、building、classroom、weekList 等；目标值支持 data.courses 形式的嵌套路径。</p>',
+      '        <div class="urppp-feature-actions"><button type="button" class="urppp-set-btn" id="urppp-set-json-save">保存映射</button><button type="button" class="urppp-set-btn ghost" id="urppp-set-json-reset">恢复默认映射</button></div>',
+      '      </div>',
+      '      <div class="urppp-set-tip" id="urppp-set-json-status" style="margin-top:8px"></div>',
+      '    </section>',
       '    <section class="urppp-set-sec" id="urppp-set-update">',
       '      <h3>更新</h3>',
       '      <button type="button" class="urppp-set-follow" id="urppp-set-auto-update" aria-pressed="false" style="width:100%">自动检测更新：关</button>',
@@ -15846,6 +16046,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     panel.querySelector('#urppp-set-close').addEventListener('click', closeSettingsPanel);
     try { bindPrivacySettingsUI(panel); } catch (e) { console.warn('[URP++] privacy settings', e); }
+    try { bindScheduleJsonSettingsUI(panel); } catch (e) { console.warn('[URP++] JSON settings', e); }
     try { ensureAboutLogo(panel); } catch (_) {}
     const aboutLogo = panel.querySelector('#urppp-about-logo');
     if (aboutLogo && !aboutLogo.__urpppFallback) {
@@ -17636,6 +17837,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       #urppp-settings-panel .urppp-direct-edit-control strong{color:var(--text);font-size:12px;line-height:1.35}
       #urppp-settings-panel .urppp-direct-edit-control span{color:var(--text-muted);font-size:10px;line-height:1.4}
       #urppp-settings-panel #urppp-set-direct-edit-toggle{flex:0 0 auto;width:auto!important;min-width:116px;margin:0!important}
+      #urppp-settings-panel .urppp-json-mapping-editor{display:none;gap:8px;margin-top:12px}
+      #urppp-settings-panel .urppp-json-mapping-editor>label{margin:0;color:var(--text-secondary);font-size:12px;font-weight:650}
+      #urppp-settings-panel #urppp-set-json-mapping{width:100%!important;min-width:0!important;min-height:260px!important;max-height:460px!important;margin:0!important;padding:10px 12px!important;box-sizing:border-box!important;resize:vertical!important;border:1px solid var(--border)!important;border-radius:8px!important;background:var(--input-bg)!important;color:var(--text)!important;outline:0!important;font-family:"JetBrains Mono","Cascadia Mono","Microsoft YaHei UI",monospace!important;font-size:11px!important;font-weight:400!important;line-height:1.55!important;letter-spacing:0!important;white-space:pre!important;overflow:auto!important}
+      #urppp-settings-panel #urppp-set-json-mapping:focus{border-color:var(--primary)!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--primary) 16%,transparent)!important}
+      #urppp-settings-panel #urppp-set-json-status.urppp-status-error{color:color-mix(in srgb,var(--danger,#b91c1c) 60%,var(--text))!important}
       #urppp-settings-panel .urppp-identity-editor{display:grid;grid-template-columns:minmax(0,1fr) 76px;gap:16px;align-items:start;margin-top:14px;padding:13px;border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb,var(--surface) 78%,var(--input-bg))}
       #urppp-settings-panel .urppp-identity-fields{display:grid;gap:10px;min-width:0}
       #urppp-settings-panel .urppp-identity-preview{display:grid;justify-items:center;gap:7px;min-width:0}
@@ -17646,16 +17852,20 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-privacy-groups,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-identity-editor{border:2px solid var(--text);border-radius:0;background:var(--surface)}
       html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left:2px solid var(--text)}
       html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-feature-input,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-avatar-preview-shell{border:2px solid var(--text);border-radius:0;background:var(--surface)}
+      html[data-urppp-skin="flat"] #urppp-settings-panel #urppp-set-json-mapping{border:2px solid var(--text)!important;border-radius:0!important;background:var(--surface)!important}
       html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-privacy-groups,html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-identity-editor{border-radius:18px}
       html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-feature-input,html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-avatar-preview-shell{border-radius:12px}
       html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-privacy-groups,html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-identity-editor{border:3px solid #000;border-radius:0;background:var(--surface)}
       html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left:3px solid #000}
       html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-feature-input,html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-avatar-preview-shell{border:2px solid #000;border-radius:0;background:var(--surface)}
+      html[data-urppp-skin="brutal"] #urppp-settings-panel #urppp-set-json-mapping{border:2px solid #000!important;border-radius:0!important;background:var(--surface)!important}
       html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-privacy-groups,html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-identity-editor{border-width:1px 0;border-radius:0;background:transparent}
       html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-feature-input,html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-avatar-preview-shell{border-width:0 0 1px;border-radius:0;background:transparent}
+      html[data-urppp-skin="editorial"] #urppp-settings-panel #urppp-set-json-mapping{border-width:1px 0!important;border-radius:0!important;background:transparent!important}
       html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-privacy-groups,html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-identity-editor{border:0;border-radius:16px;background:var(--neu-base);box-shadow:var(--neu-inset-soft)}
       html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left-color:var(--neu-edge-soft)}
       html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-feature-input,html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-avatar-preview-shell{border:0;background:var(--neu-base);box-shadow:var(--neu-inset-soft)}
+      html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border:0!important;background:var(--neu-base)!important;box-shadow:var(--neu-inset-soft)!important}
       @media(max-width:520px){#urppp-settings-panel .urppp-privacy-groups{grid-template-columns:1fr}#urppp-settings-panel .urppp-privacy-group{padding:10px}#urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left:0;border-top:1px solid var(--border)}#urppp-settings-panel .urppp-privacy-field{grid-template-columns:18px minmax(92px,.72fr) minmax(0,1.28fr);min-height:44px;gap:7px;padding:0}#urppp-settings-panel .urppp-privacy-field>.urppp-feature-input{grid-column:auto;height:36px;font-size:12px}#urppp-settings-panel .urppp-privacy-note{grid-column:auto;padding-left:0;font-size:11px}html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-top:2px solid var(--text)}html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-top:3px solid #000}#urppp-settings-panel .urppp-direct-edit-control{align-items:flex-start}#urppp-settings-panel .urppp-direct-edit-control span{max-width:170px}#urppp-settings-panel .urppp-identity-editor{grid-template-columns:1fr;padding:11px}#urppp-settings-panel .urppp-identity-preview{grid-template-columns:auto 64px;justify-content:start;align-items:center}#urppp-settings-panel .urppp-feature-row{grid-template-columns:minmax(96px,.72fr) minmax(0,1.28fr);gap:8px}#urppp-settings-panel .urppp-feature-actions>.urppp-set-btn{flex:1 1 100%}}
       .urppp-private-value{font-family:inherit!important;font-size:inherit!important;font-weight:inherit!important;font-style:inherit!important;line-height:inherit!important;letter-spacing:0!important;color:inherit!important}
       .urppp-private-text{position:relative!important;font-size:0!important;text-shadow:none!important;user-select:none!important;pointer-events:none!important;min-height:1em}
@@ -18337,9 +18547,144 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     setTimeout(() => URL.revokeObjectURL(url), 1200);
   }
 
+  function setScheduleJsonPath(target, path, value) {
+    const parts = validateScheduleJsonPath(path, false).split('.');
+    let cursor = target;
+    parts.forEach((part, index) => {
+      if (index === parts.length - 1) {
+        cursor[part] = value;
+        return;
+      }
+      if (!cursor[part] || typeof cursor[part] !== 'object' || Array.isArray(cursor[part])) cursor[part] = {};
+      cursor = cursor[part];
+    });
+  }
+
+  function mappedScheduleJsonObject(source, fieldMap) {
+    const output = {};
+    Object.entries(fieldMap || {}).forEach(([sourceField, targetPath]) => {
+      if (!Object.prototype.hasOwnProperty.call(source, sourceField) || source[sourceField] === undefined) return;
+      setScheduleJsonPath(output, targetPath, cloneJsonValue(source[sourceField]));
+    });
+    return output;
+  }
+
+  function scheduleJsonPosition(arrangement) {
+    return [arrangement.campus, arrangement.building, arrangement.classroom].map((item) => String(item || '').trim()).filter(Boolean).join(' ');
+  }
+
+  function scheduleJsonSectionString(arrangement) {
+    const start = Number(arrangement.startSection) || 0;
+    const end = Number(arrangement.endSection) || start;
+    if (start < 1 || end < start) return '';
+    return Array.from({ length: end - start + 1 }, (_, index) => start + index).join(',');
+  }
+
+  function scheduleJsonCourseRecord(course, arrangement) {
+    const day = Number(arrangement.day) || 0;
+    const sections = scheduleJsonSectionString(arrangement);
+    const weekList = Array.from(new Set((arrangement.weeks || []).map(Number)
+      .filter((week) => Number.isInteger(week) && week >= 1 && week <= 60))).sort((a, b) => a - b);
+    if (day < 1 || day > 7 || !sections) return { error: 'invalid' };
+    if (!weekList.length) return { error: 'weeks' };
+    return { value: {
+      name: course.name, teacher: course.teacher, position: scheduleJsonPosition(arrangement), day, sections,
+      weeks: weekList.join(','), code: course.code, sequence: course.sequence, englishName: course.englishName,
+      attribute: course.attribute, category: course.category, credit: course.credit, status: course.status,
+      campus: arrangement.campus, building: arrangement.building, classroom: arrangement.classroom,
+      startSection: arrangement.startSection, endSection: arrangement.endSection, weekList
+    } };
+  }
+
+  function buildScheduleJsonCourses(data, stats) {
+    const output = [];
+    data.courses.forEach((course) => {
+      if (!course.arrangements.length) {
+        stats.unscheduledCourses += 1;
+        return;
+      }
+      course.arrangements.forEach((arrangement) => {
+        const record = scheduleJsonCourseRecord(course, arrangement);
+        if (record.error === 'weeks') stats.missingWeeks += 1;
+        else if (record.error) stats.invalidArrangements += 1;
+        else output.push(record.value);
+      });
+    });
+    return output;
+  }
+
+  function buildScheduleJsonSections(sections) {
+    const sectionMap = new Map();
+    (sections || []).forEach((item) => {
+      const section = Number(item.section);
+      const start = normalizeSectionTime(item.start);
+      const end = normalizeSectionTime(item.end);
+      if (!Number.isInteger(section) || section < 1 || section > 20 || !start || !end) return;
+      sectionMap.set(section, { i: section, s: start, e: end });
+    });
+    return Array.from(sectionMap.values()).sort((a, b) => a.i - b.i);
+  }
+
+  function buildScheduleJsonSchedule(sections) {
+    const sectionList = buildScheduleJsonSections(sections);
+    if (!sectionList.length) return {};
+    const schedule = { sections: JSON.stringify(sectionList), sectionList };
+    if (!sectionList.every((item, index) => item.i === index + 1)) return schedule;
+    const counts = { morningNum: 0, afternoonNum: 0, nightNum: 0 };
+    sectionList.forEach((item) => {
+      const [hour, minute] = item.s.split(':').map(Number);
+      const startMinutes = hour * 60 + minute;
+      if (startMinutes < 12 * 60) counts.morningNum += 1;
+      else if (startMinutes >= 18 * 60) counts.nightNum += 1;
+      else counts.afternoonNum += 1;
+    });
+    return counts.morningNum && counts.afternoonNum && counts.nightNum ? Object.assign(schedule, counts) : schedule;
+  }
+
+  function buildScheduleJsonSource(data) {
+    const stats = { unscheduledCourses: 0, missingWeeks: 0, invalidArrangements: 0 };
+    const courses = buildScheduleJsonCourses(data, stats);
+    if (!courses.length) throw new Error('没有符合导入格式的已排课课程');
+    return { courses, schedule: buildScheduleJsonSchedule(data.sections), stats };
+  }
+
+  function buildXiaoAiScheduleJson(source) {
+    const output = {
+      courses: source.courses.map((course) => ({
+        name: course.name,
+        teacher: course.teacher,
+        position: course.position,
+        day: course.day,
+        sections: course.sections,
+        weeks: course.weeks
+      }))
+    };
+    const schedule = {};
+    ['morningNum', 'afternoonNum', 'nightNum', 'sections'].forEach((field) => {
+      if (Object.prototype.hasOwnProperty.call(source.schedule, field)) schedule[field] = source.schedule[field];
+    });
+    if (Object.keys(schedule).length) output.schedule = schedule;
+    return output;
+  }
+
+  function buildCustomScheduleJson(source, mapping) {
+    const output = cloneJsonValue(mapping.base || {});
+    const courses = source.courses.map((course) => mappedScheduleJsonObject(course, mapping.courseFields));
+    setScheduleJsonPath(output, mapping.coursesPath, courses);
+    if (mapping.schedulePath && Object.keys(source.schedule).length) {
+      const schedule = mappedScheduleJsonObject(source.schedule, mapping.scheduleFields);
+      if (Object.keys(schedule).length) setScheduleJsonPath(output, mapping.schedulePath, schedule);
+    }
+    return output;
+  }
+
   function exportScheduleJson(data) {
-    const text = JSON.stringify(data, null, 2) + '\n';
+    const source = buildScheduleJsonSource(data);
+    const settings = getScheduleJsonFormatSettings();
+    const payload = settings.enabled ? buildCustomScheduleJson(source, settings.mapping) : buildXiaoAiScheduleJson(source);
+    const text = JSON.stringify(payload, null, 2) + '\n';
     downloadBlob(new Blob([text], { type: 'application/json;charset=utf-8' }), safeScheduleFilename(data.semester.label) + '.json');
+    return Object.assign({ customFormat: settings.enabled }, source.stats);
   }
 
   function localDateIso(date) {
@@ -18703,13 +19048,17 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       }
       const data = await loadScheduleExportData(source);
       let icsStats = null;
-      if (type === 'json') exportScheduleJson(data);
+      let jsonStats = null;
+      if (type === 'json') jsonStats = exportScheduleJson(data);
       else if (type === 'ics') icsStats = await exportScheduleIcs(data);
       else if (type === 'png') await exportSchedulePng(data);
       else throw new Error('未知导出格式');
       const notes = [];
       const unscheduledCount = type === 'ics' ? data.courses.filter((course) => !course.arrangements.length).length : 0;
       if (unscheduledCount) notes.push(unscheduledCount + ' 门未排定时间的课程未写入日历');
+      if (jsonStats && jsonStats.unscheduledCourses) notes.push(jsonStats.unscheduledCourses + ' 门未排定时间的课程未写入 JSON');
+      if (jsonStats && jsonStats.missingWeeks) notes.push(jsonStats.missingWeeks + ' 个上课安排缺少周次');
+      if (jsonStats && jsonStats.invalidArrangements) notes.push(jsonStats.invalidArrangements + ' 个上课安排缺少日期或节次');
       if (icsStats && icsStats.missingWeeks) notes.push(icsStats.missingWeeks + ' 个上课安排缺少周次');
       if (icsStats && icsStats.missingTimes) notes.push(icsStats.missingTimes + ' 个上课安排缺少节次时间');
       showFeatureToast('课表已导出：' + type.toUpperCase() + (notes.length ? '；' + notes.join('，') : ''));
@@ -18729,7 +19078,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const wrap = document.createElement('span');
     const triggerLabel = source === 'native' ? '导出课表' : '导出';
     wrap.className = 'urppp-export-wrap';
-    wrap.innerHTML = `<button type="button" class="urppp-export-trigger" aria-haspopup="menu" aria-expanded="false" title="导出课表"><i class="fa fa-cloud-download" aria-hidden="true"></i><span>${triggerLabel}</span><i class="fa fa-angle-down" aria-hidden="true"></i></button><div class="urppp-export-menu" role="menu">${exportOptionHtml('ics', 'fa-calendar', 'ICS 日历', '导入系统日历或日历应用', false)}${exportOptionHtml('json', 'fa-code', 'JSON 数据', '结构化课程与时间数据', false)}${exportOptionHtml('png', 'fa-image', 'PNG 图片', '完整学期课表高清图片', false)}${exportOptionHtml('pdf', 'fa-file-pdf-o', 'PDF', pdfAvailable ? '使用教务系统原生导出' : '仅原教务课表页面可用', !pdfAvailable)}${pdfAvailable ? '' : '<div class="urppp-export-guide">PDF 依赖原教务课表页面。<button type="button" data-export-native="1">前往本学期课表</button></div>'}</div>`;
+    wrap.innerHTML = `<button type="button" class="urppp-export-trigger" aria-haspopup="menu" aria-expanded="false" title="导出课表"><i class="fa fa-cloud-download" aria-hidden="true"></i><span>${triggerLabel}</span><i class="fa fa-angle-down" aria-hidden="true"></i></button><div class="urppp-export-menu" role="menu">${exportOptionHtml('ics', 'fa-calendar', 'ICS 日历', '导入系统日历或日历应用', false)}${exportOptionHtml('json', 'fa-code', 'JSON 数据', '兼容小爱课程导入，可自定义格式', false)}${exportOptionHtml('png', 'fa-image', 'PNG 图片', '完整学期课表高清图片', false)}${exportOptionHtml('pdf', 'fa-file-pdf-o', 'PDF', pdfAvailable ? '使用教务系统原生导出' : '仅原教务课表页面可用', !pdfAvailable)}${pdfAvailable ? '' : '<div class="urppp-export-guide">PDF 依赖原教务课表页面。<button type="button" data-export-native="1">前往本学期课表</button></div>'}</div>`;
     const trigger = wrap.querySelector('.urppp-export-trigger');
     trigger.addEventListener('click', (event) => {
       event.preventDefault();
@@ -21469,7 +21818,21 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     scheduleExport: {
       load: () => loadScheduleExportData('api'),
       run: (format) => runScheduleExport(format, 'api', null, null),
-      patch: patchNativeScheduleExport
+      patch: patchNativeScheduleExport,
+      jsonFormat: {
+        get: getScheduleJsonFormatSettings,
+        set: setScheduleJsonFormatSettings,
+        validate: validateScheduleJsonMapping,
+        build(data, mapping) {
+          const source = buildScheduleJsonSource(data);
+          if (mapping) return buildCustomScheduleJson(source, validateScheduleJsonMapping(mapping));
+          const settings = getScheduleJsonFormatSettings();
+          return settings.enabled ? buildCustomScheduleJson(source, settings.mapping) : buildXiaoAiScheduleJson(source);
+        },
+        buildDefault(data) {
+          return buildXiaoAiScheduleJson(buildScheduleJsonSource(data));
+        }
+      }
     }
   };
 
