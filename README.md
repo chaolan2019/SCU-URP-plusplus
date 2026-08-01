@@ -1,16 +1,41 @@
-![SCU URP++](./docs/scu-urppp-logo.png)
+<div align="center">
+  <img src="./docs/scu-urppp-logo.png" alt="SCU URP++" width="780" height="60">
 
-四川大学 URP 教务系统油猴脚本：全站 UI 美化 + 清爽模式聚合页。
+  <p><strong>四川大学 URP 教务系统油猴脚本</strong></p>
+  <p>全站 UI 美化 · 清爽模式聚合页 · 课表导出 · 隐私显示</p>
 
-| 脚本 | 文件 | 当前版本 |
-|------|------|----------|
-| 主脚本 | `urppp.user.js` | **1.5.0** |
-| 辅助插件（可选） | `urpppp.user.js` | **1.3.1** |
+  <p>
+    <a href="https://github.com/chaolan2019/SCU-URP-plusplus/stargazers"><img src="https://img.shields.io/github/stars/chaolan2019/SCU-URP-plusplus?style=flat-square&amp;logo=github&amp;label=Stars" alt="GitHub Stars"></a>
+    <a href="https://github.com/chaolan2019/SCU-URP-plusplus/releases/latest"><img src="https://img.shields.io/github/v/release/chaolan2019/SCU-URP-plusplus?style=flat-square&amp;logo=github&amp;label=Release" alt="Latest Release"></a>
+    <a href="./LICENSE"><img src="https://img.shields.io/github/license/chaolan2019/SCU-URP-plusplus?style=flat-square&amp;label=License" alt="License"></a>
+    <a href="https://github.com/chaolan2019/SCU-URP-plusplus/commits/main"><img src="https://img.shields.io/github/last-commit/chaolan2019/SCU-URP-plusplus?style=flat-square&amp;logo=github&amp;label=Last%20commit" alt="Last Commit"></a>
+  </p>
 
-作者：`Chao_Lan, Hanako`
+  <p><strong>主脚本 v1.5.0</strong> · 辅助插件 v1.3.1</p>
+  <p>作者：<code>Chao_Lan, Hanako</code></p>
 
-> 可选辅助插件（登录 / 评教）说明见 **[README_.md](./README_.md)**。  
-> 辅助插件可能存在风险，请谨慎安装；使用中出现的一切问题请自负。
+  <p><strong>目录</strong></p>
+  <p>
+    <a href="#效果展示">效果展示</a> ·
+    <a href="#功能概览">功能概览</a> ·
+    <a href="#安装">安装</a> ·
+    <a href="#使用">使用</a>
+  </p>
+  <p>
+    <a href="#json-课表导出">JSON 课表导出</a> ·
+    <a href="#隐私与自定义身份">隐私与自定义身份</a> ·
+    <a href="#特别鸣谢">特别鸣谢</a> ·
+    <a href="#仓库结构">仓库结构</a>
+  </p>
+  <p>
+    <a href="#注意">注意</a> ·
+    <a href="#开发">开发</a> ·
+    <a href="#更新日志">更新日志</a> ·
+    <a href="#许可">许可</a>
+  </p>
+
+  <p><sub>可选辅助插件提供登录与评教功能，详情见 <a href="./README_.md">README_.md</a>。该插件可能存在风险，请谨慎安装；使用中出现的一切问题请自负。</sub></p>
+</div>
 
 ---
 
