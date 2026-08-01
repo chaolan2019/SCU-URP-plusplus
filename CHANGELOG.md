@@ -5,7 +5,7 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循语义化版本。
 
-## [Unreleased]
+## [1.5.0] - 2026-08-01
 
 ### Added
 - 清爽模式与个人课表页面新增统一导出菜单，支持 ICS 日历、JSON 数据和完整学期 PNG 图片
