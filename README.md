@@ -7,7 +7,7 @@
   <p>
     <a href="https://github.com/chaolan2019/SCU-URP-plusplus/stargazers"><img src="https://img.shields.io/github/stars/chaolan2019/SCU-URP-plusplus?style=flat-square&amp;logo=github&amp;label=Stars" alt="GitHub Stars"></a>
     <a href="https://github.com/chaolan2019/SCU-URP-plusplus/releases/latest"><img src="https://img.shields.io/github/v/release/chaolan2019/SCU-URP-plusplus?style=flat-square&amp;logo=github&amp;label=Release" alt="Latest Release"></a>
-    <a href="./LICENSE"><img src="https://img.shields.io/github/license/chaolan2019/SCU-URP-plusplus?style=flat-square&amp;label=License" alt="License"></a>
+    <a href="./LICENSE"><img src="https://img.shields.io/github/license/chaolan2019/SCU-URP-plusplus?style=flat-square&amp;label=License&amp;cacheSeconds=300" alt="License"></a>
     <a href="https://github.com/chaolan2019/SCU-URP-plusplus/commits/main"><img src="https://img.shields.io/github/last-commit/chaolan2019/SCU-URP-plusplus?style=flat-square&amp;logo=github&amp;label=Last%20commit" alt="Last Commit"></a>
   </p>
 
@@ -56,6 +56,10 @@
 ### 清爽模式 · 自然有机（桌面）
 
 ![清爽模式自然有机](./docs/Clean-Mode-Organic.jpg)
+
+### 清爽模式 · 新拟物（桌面）
+
+![清爽模式新拟物](./docs/Clean-Mode-neumorphism.jpg)
 
 ### 清爽模式（手机）
 
@@ -219,6 +223,7 @@ URP++/
     ├── Clean-Mode.jpg           # 效果：清爽 · 类Apple
     ├── Clean-Mode-Flat.jpg      # 效果：清爽 · 极简扁平
     ├── Clean-Mode-Organic.jpg   # 效果：清爽 · 自然有机
+    ├── Clean-Mode-neumorphism.jpg # 效果：清爽 · 新拟物
     └── Clean-Mode-Mobile.jpg    # 效果：清爽 · 手机
 ```
 
