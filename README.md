@@ -168,6 +168,15 @@
 
 ---
 
+## 特别鸣谢
+
+- **AI 支持**：GPT-5.6 Sol、Grok 4.5、Kimi K2.7 Code、DeepSeek V4 Pro/Flash
+- **Agent 支持**：[HanaAgent](https://github.com/liliMozi/openhanako)（原 OpenHanako，由 liliMozi 开发）
+- **功能灵感来源**：[scu-plus](https://github.com/The-Brotherhood-of-SCU/scu-plus)
+- **美化风格支持**：[STYLEKIT](https://www.stylekit.top/zh)
+
+---
+
 ## 仓库结构
 
 ```text
