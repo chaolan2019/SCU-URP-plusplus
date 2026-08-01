@@ -14,7 +14,7 @@
 | 项目 | 内容 |
 |------|------|
 | 文件 | `urpppp.user.js` |
-| 当前版本 | **1.3.1** |
+| 当前版本 | **1.3.2** |
 | 依赖 | 主脚本 `urppp.user.js`（设置入口挂在主脚本 **系统设置** 选项卡） |
 | 作者 | `Chao_Lan, Hanako` |
 
@@ -196,4 +196,4 @@ window.__urppppAssist
 
 ## 许可
 
-MIT（以脚本头 `@license` 为准）。
+从 `v1.3.2` 起采用 GNU General Public License v3.0，机器标识符为 `GPL-3.0-only`；`v1.3.1` 及更早版本仍保留发布时授予的 MIT 许可。以脚本头 `@license` 和仓库根目录 `LICENSE` 为准。

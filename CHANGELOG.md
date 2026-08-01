@@ -7,8 +7,15 @@
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-08-01
+
 ### Changed
 - JSON 课表导出改为小爱课程导入兼容结构，并可在系统设置中自定义输出路径与字段映射
+- README 首屏改为居中布局，新增 Stars、Release、License、最近提交徽章、快捷目录和特别鸣谢
+- 从本版本起，主脚本和仓库改用 GNU General Public License v3.0（`GPL-3.0-only`）；`v1.5.0` 及更早版本仍保留原 MIT 许可
+
+### 辅助插件 [1.3.2]
+- 同步改用 GNU General Public License v3.0（`GPL-3.0-only`）；功能行为保持不变
 
 ## [1.5.0] - 2026-08-01
 

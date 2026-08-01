@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         SCU URP++教务系统辅助插件
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.3.1
+// @version      1.3.2
 // @description  URP++ 扩展：登录验证码识别 + 评教自动填写/到时自动保存 + 列表页全自动评教。设置挂到 URP++ 设置面板。
 // @author       Chao_Lan,Hanako
-// @license      MIT
+// @license      GPL-3.0-only
 // @icon         https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/docs/icon.png
 // @updateURL    https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js
 // @downloadURL  https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js
@@ -21,6 +21,9 @@
 // @run-at       document-idle
 // ==/UserScript==
 
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (C) 2026 Chao_Lan
+
 /**
  * 依赖：URP++ 主脚本（设置面板 DOM）。本文件不修改 urppp.user.js。
  *
@@ -34,7 +37,7 @@
   'use strict';
 
   // 与脚本头 @version 保持同步
-  const URPPPP_VERSION = '1.3.1';
+  const URPPPP_VERSION = '1.3.2';
   const URPPPP_RAW_URL = 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js';
 
   // ===================== 公共工具 =====================

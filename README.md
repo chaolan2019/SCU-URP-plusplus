@@ -11,7 +11,7 @@
     <a href="https://github.com/chaolan2019/SCU-URP-plusplus/commits/main"><img src="https://img.shields.io/github/last-commit/chaolan2019/SCU-URP-plusplus?style=flat-square&amp;logo=github&amp;label=Last%20commit" alt="Last Commit"></a>
   </p>
 
-  <p><strong>主脚本 v1.5.0</strong> · 辅助插件 v1.3.1</p>
+  <p><strong>主脚本 v1.5.1</strong> · 辅助插件 v1.3.2</p>
   <p>作者：<code>Chao_Lan, Hanako</code></p>
 
   <p><strong>目录</strong></p>
@@ -159,7 +159,7 @@
 - 课程、教师、周次、节次和地点来自教务课表接口；导出文件不包含姓名、学号或证件号
 - 官方接口中的每个上课安排独立生成一个课程对象，该安排包含的周次合并为逗号字符串；缺周次和未排时间的课程会跳过并显示提示
 - `schedule.sections` 按目标工具要求保存为转义后的 JSON 字符串；上午、下午、晚上节数仅在真实节次连续、时间完整且三个时段均可判定时生成
-- 该 JSON 可配合课程导入工具写入手机系统课程表，例如小爱课程表；可使用酷安用户 **@Mercury_me** 制作的“小爱课程导入”软件
+- 该 JSON 可配合课程导入工具写入手机系统课程表，例如小爱课程表；可使用酷安大佬 **@Mercury_me** 制作的“小爱课程导入”软件
 - @Mercury_me 后续还制作了操作更直接的新工具，不一定需要手动中转 JSON；JSON 仍适合数据备份、调试及其他导入器
 
 在 **系统设置 → JSON 导出格式** 中可以开启自定义映射。映射只调整输出路径和字段名，不执行 JavaScript：
@@ -210,7 +210,7 @@ URP++/
 ├── urpppp.user.js             # 辅助插件（可选）
 ├── README.md                  # 主脚本说明
 ├── README_.md                 # 辅助插件说明与风险声明
-├── LICENSE                    # MIT 开源协议
+├── LICENSE                    # GNU GPL 3.0 开源协议
 ├── CHANGELOG.md               # 主脚本更新日志
 └── docs/
     ├── scu-urppp-logo.png       # 标题 Logo
@@ -254,6 +254,8 @@ node --check urppp.user.js
 
 ## 许可
 
-本项目采用 [MIT License](./LICENSE)。
+从 `v1.5.1` 起，本项目采用 [GNU General Public License v3.0](./LICENSE)，机器标识符为 `GPL-3.0-only`。分发修改版本时，须在相同许可证下提供对应源码并保留版权与许可证声明。
 
-脚本头中的 `@license MIT` 供 Tampermonkey / Greasy Fork 识别；仓库根目录的 `LICENSE` 文件供 GitHub 显示开源协议。
+`v1.5.0` 及更早版本仍保留发布时授予的 MIT 许可；许可证变更不追溯撤销旧版本的既有授权。
+
+脚本头中的 `@license GPL-3.0-only` 供 Tampermonkey / Greasy Fork 识别；仓库根目录的 `LICENSE` 文件供 GitHub 显示开源协议。
