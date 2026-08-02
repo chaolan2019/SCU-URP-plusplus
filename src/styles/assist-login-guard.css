@@ -1,0 +1,12 @@
+#urpppp-login-guard-notice{
+  margin:10px 0;padding:10px 12px;border-radius:10px;
+  border:1px solid color-mix(in srgb,var(--warning,#b7791f) 45%,var(--border,#e5e7eb));
+  background:color-mix(in srgb,var(--warning,#b7791f) 10%,var(--surface,#fff));
+  color:var(--text,#1f2937);font-size:12px;line-height:1.55
+}
+#urpppp-login-guard-notice strong{display:block;margin-bottom:3px;color:var(--warning,#9a6700)}
+#urpppp-login-guard-notice button{
+  margin-top:8px;height:30px;padding:0 12px;border-radius:8px;cursor:pointer;
+  border:1px solid var(--border,#e5e7eb);background:var(--surface,#fff);color:var(--text,#1f2937);font-size:12px
+}
+#urpppp-login-guard-notice button:hover{border-color:var(--primary,#3b82f6);color:var(--primary,#3b82f6)}

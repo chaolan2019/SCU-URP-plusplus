@@ -28,168 +28,63 @@
   var __defProp = Object.defineProperty;
   var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-  // src/userscripts/urpppp.entry.js
-  (function() {
-    "use strict";
-    const URPPPP_VERSION = "1.3.2";
-    const URPPPP_RAW_URL = "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js";
-    const NS = "urpppp_assist_v1";
-    function log(...args) {
-      console.log("[URP++ 辅助]", ...args);
-    }
-    __name(log, "log");
-    function sleep(ms) {
-      return new Promise((r) => setTimeout(r, ms));
-    }
-    __name(sleep, "sleep");
-    function getBool(key, def) {
-      try {
-        return !!GM_getValue(key, def);
-      } catch (_) {
-        return !!def;
-      }
-    }
-    __name(getBool, "getBool");
-    function getStr(key, def) {
-      try {
-        const v = GM_getValue(key, def == null ? "" : def);
-        return v == null ? "" : String(v);
-      } catch (_) {
-        return def == null ? "" : String(def);
-      }
-    }
-    __name(getStr, "getStr");
-    function getNum(key, def) {
-      const n = Number(getStr(key, String(def)));
-      return Number.isFinite(n) ? n : def;
-    }
-    __name(getNum, "getNum");
-    function getJSON(key, def) {
-      try {
-        const raw = GM_getValue(key, "");
-        if (!raw) return def;
-        return JSON.parse(raw);
-      } catch (_) {
-        return def;
-      }
-    }
-    __name(getJSON, "getJSON");
-    function setVal(key, val) {
-      try {
-        GM_setValue(key, val);
-      } catch (_) {
-      }
-    }
-    __name(setVal, "setVal");
-    function setJSON(key, obj) {
-      setVal(key, JSON.stringify(obj == null ? {} : obj));
-    }
-    __name(setJSON, "setJSON");
-    function escapeAttr(s) {
-      return String(s || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    }
-    __name(escapeAttr, "escapeAttr");
-    function escapeHtml(s) {
-      return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-    }
-    __name(escapeHtml, "escapeHtml");
-    function setInputValue(input, value) {
-      if (!input) return;
-      const desc = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value");
-      if (desc && desc.set) desc.set.call(input, value);
-      else input.value = value;
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      input.dispatchEvent(new Event("change", { bubbles: true }));
-      input.dispatchEvent(new Event("blur", { bubbles: true }));
-    }
-    __name(setInputValue, "setInputValue");
-    function setTextAreaValue(el, value) {
-      if (!el) return;
-      const desc = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value");
-      if (desc && desc.set) desc.set.call(el, value);
-      else el.value = value;
-      el.dispatchEvent(new Event("input", { bubbles: true }));
-      el.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-    __name(setTextAreaValue, "setTextAreaValue");
-    function randInt(min, max) {
-      const a = Math.ceil(Number(min));
-      const b = Math.floor(Number(max));
-      if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
-      if (b <= a) return a;
-      return a + Math.floor(Math.random() * (b - a + 1));
-    }
-    __name(randInt, "randInt");
-    function pickRandom(arr) {
-      if (!arr || !arr.length) return null;
-      return arr[Math.floor(Math.random() * arr.length)];
-    }
-    __name(pickRandom, "pickRandom");
-    function parseLetters(str) {
-      const s = String(str || "").toUpperCase();
-      const set = /* @__PURE__ */ new Set();
-      (s.match(/[A-K]/g) || []).forEach((ch) => set.add(ch));
-      return Array.from(set);
-    }
-    __name(parseLetters, "parseLetters");
-    const LOGIN = {
-      enabled: NS + "_login_enabled",
-      autoSubmit: NS + "_login_auto_submit",
-      ocrUrl: NS + "_login_ocr_url",
-      zhjwUser: NS + "_login_zhjw_user",
-      zhjwPass: NS + "_login_zhjw_pass",
-      casUser: NS + "_login_cas_user",
-      casPass: NS + "_login_cas_pass",
-      shareCred: NS + "_login_share_cred",
-      submitDelay: NS + "_login_submit_delay",
-      guardState: NS + "_login_guard_state"
-    };
-    const LOGIN_FAILURE_LIMIT = 4;
-    const LOGIN_PENDING_TTL = 10 * 60 * 1e3;
-    const DEFAULT_OCR_EXAMPLE = "https://ocr.yanjiangrd.site/api/ocr";
-    const EVAL = {
-      enabled: NS + "_eval_enabled",
-      // 进入页面后等待多久再自动保存（秒）。服务端约 100 秒，不跳过
-      waitSec: NS + "_eval_wait_sec",
-      // score
-      scoreMin: NS + "_eval_score_min",
-      scoreMax: NS + "_eval_score_max",
-      // global single default letters e.g. "A,B"
-      singleLetters: NS + "_eval_single_letters",
-      // per-question single: { "2": "A,B", "3": "A" }
-      singlePerQ: NS + "_eval_single_per_q",
-      // multi
-      multiLetters: NS + "_eval_multi_letters",
-      multiPerQ: NS + "_eval_multi_per_q",
-      multiAvoidNone: NS + "_eval_multi_avoid_none",
-      // subjective
-      commentTemplates: NS + "_eval_comment_templates",
-      // actions
-      autoFill: NS + "_eval_auto_fill",
-      autoSave: NS + "_eval_auto_save",
-      saveDelay: NS + "_eval_save_delay",
-      // full-auto batch
-      batchActive: NS + "_eval_batch_active",
-      batchQueue: NS + "_eval_batch_queue",
-      batchIndex: NS + "_eval_batch_index",
-      batchGapSec: NS + "_eval_batch_gap_sec"
-    };
-    const DEFAULT_COMMENTS = [
-      "老师授课认真负责，讲解清晰，收获很大。",
-      "课堂氛围好，内容充实，希望继续保持。",
-      "课程安排合理，老师答疑及时，总体满意。"
-    ].join("\n");
+  // src/assist/constants.js
+  var ASSIST_NAMESPACE = "urpppp_assist_v1";
+  var LOGIN_KEYS = {
+    enabled: `${ASSIST_NAMESPACE}_login_enabled`,
+    autoSubmit: `${ASSIST_NAMESPACE}_login_auto_submit`,
+    ocrUrl: `${ASSIST_NAMESPACE}_login_ocr_url`,
+    zhjwUser: `${ASSIST_NAMESPACE}_login_zhjw_user`,
+    zhjwPass: `${ASSIST_NAMESPACE}_login_zhjw_pass`,
+    casUser: `${ASSIST_NAMESPACE}_login_cas_user`,
+    casPass: `${ASSIST_NAMESPACE}_login_cas_pass`,
+    shareCred: `${ASSIST_NAMESPACE}_login_share_cred`,
+    submitDelay: `${ASSIST_NAMESPACE}_login_submit_delay`,
+    guardState: `${ASSIST_NAMESPACE}_login_guard_state`
+  };
+  var EVALUATION_KEYS = {
+    enabled: `${ASSIST_NAMESPACE}_eval_enabled`,
+    waitSec: `${ASSIST_NAMESPACE}_eval_wait_sec`,
+    scoreMin: `${ASSIST_NAMESPACE}_eval_score_min`,
+    scoreMax: `${ASSIST_NAMESPACE}_eval_score_max`,
+    singleLetters: `${ASSIST_NAMESPACE}_eval_single_letters`,
+    singlePerQ: `${ASSIST_NAMESPACE}_eval_single_per_q`,
+    multiLetters: `${ASSIST_NAMESPACE}_eval_multi_letters`,
+    multiPerQ: `${ASSIST_NAMESPACE}_eval_multi_per_q`,
+    multiAvoidNone: `${ASSIST_NAMESPACE}_eval_multi_avoid_none`,
+    commentTemplates: `${ASSIST_NAMESPACE}_eval_comment_templates`,
+    autoFill: `${ASSIST_NAMESPACE}_eval_auto_fill`,
+    autoSave: `${ASSIST_NAMESPACE}_eval_auto_save`,
+    saveDelay: `${ASSIST_NAMESPACE}_eval_save_delay`,
+    batchActive: `${ASSIST_NAMESPACE}_eval_batch_active`,
+    batchQueue: `${ASSIST_NAMESPACE}_eval_batch_queue`,
+    batchIndex: `${ASSIST_NAMESPACE}_eval_batch_index`,
+    batchGapSec: `${ASSIST_NAMESPACE}_eval_batch_gap_sec`
+  };
+  var LOGIN_FAILURE_LIMIT = 4;
+  var LOGIN_PENDING_TTL = 10 * 60 * 1e3;
+  var DEFAULT_OCR_EXAMPLE = "https://ocr.yanjiangrd.site/api/ocr";
+  var EVALUATION_LIST_PATH = "/student/teachingEvaluation/newEvaluation/index";
+  var DEFAULT_COMMENTS = [
+    "老师授课认真负责，讲解清晰，收获很大。",
+    "课堂氛围好，内容充实，希望继续保持。",
+    "课程安排合理，老师答疑及时，总体满意。"
+  ].join("\n");
+
+  // src/assist/config.js
+  function createAssistConfig(storage, now = () => Date.now()) {
+    const { getBool, getStr, getNum, getJSON, setVal, setJSON } = storage;
     function loginConf() {
       return {
-        enabled: getBool(LOGIN.enabled, true),
-        autoSubmit: getBool(LOGIN.autoSubmit, true),
-        ocrUrl: getStr(LOGIN.ocrUrl, ""),
-        zhjwUser: getStr(LOGIN.zhjwUser, ""),
-        zhjwPass: getStr(LOGIN.zhjwPass, ""),
-        casUser: getStr(LOGIN.casUser, ""),
-        casPass: getStr(LOGIN.casPass, ""),
-        shareCred: getBool(LOGIN.shareCred, true),
-        submitDelay: Math.max(0, getNum(LOGIN.submitDelay, 300))
+        enabled: getBool(LOGIN_KEYS.enabled, true),
+        autoSubmit: getBool(LOGIN_KEYS.autoSubmit, true),
+        ocrUrl: getStr(LOGIN_KEYS.ocrUrl, ""),
+        zhjwUser: getStr(LOGIN_KEYS.zhjwUser, ""),
+        zhjwPass: getStr(LOGIN_KEYS.zhjwPass, ""),
+        casUser: getStr(LOGIN_KEYS.casUser, ""),
+        casPass: getStr(LOGIN_KEYS.casPass, ""),
+        shareCred: getBool(LOGIN_KEYS.shareCred, true),
+        submitDelay: Math.max(0, getNum(LOGIN_KEYS.submitDelay, 300))
       };
     }
     __name(loginConf, "loginConf");
@@ -199,12 +94,12 @@
         failures: 0,
         paused: false,
         pending: null,
-        updatedAt: Date.now()
+        updatedAt: now()
       };
     }
     __name(emptyLoginGuardState, "emptyLoginGuardState");
     function getLoginGuardState() {
-      const raw = getJSON(LOGIN.guardState, {}) || {};
+      const raw = getJSON(LOGIN_KEYS.guardState, {}) || {};
       const failures = Math.max(0, Math.min(LOGIN_FAILURE_LIMIT, Number(raw.failures) || 0));
       const pending = raw.pending && typeof raw.pending === "object" ? {
         kind: String(raw.pending.kind || ""),
@@ -221,8 +116,8 @@
     }
     __name(getLoginGuardState, "getLoginGuardState");
     function saveLoginGuardState(state) {
-      const next = Object.assign(emptyLoginGuardState(""), state || {}, { updatedAt: Date.now() });
-      setJSON(LOGIN.guardState, next);
+      const next = Object.assign(emptyLoginGuardState(""), state || {}, { updatedAt: now() });
+      setJSON(LOGIN_KEYS.guardState, next);
       return next;
     }
     __name(saveLoginGuardState, "saveLoginGuardState");
@@ -246,7 +141,7 @@
       const identity = loginIdentity(kind, username);
       const state = getLoginGuardState();
       const pending = state.pending;
-      const fresh = pending && pending.createdAt > 0 && Date.now() - pending.createdAt <= LOGIN_PENDING_TTL;
+      const fresh = pending && pending.createdAt > 0 && now() - pending.createdAt <= LOGIN_PENDING_TTL;
       const continuesPreviousAttempt = fresh && pending.identity === identity;
       if (!continuesPreviousAttempt) return resetLoginGuardState(identity);
       state.identity = identity;
@@ -261,7 +156,7 @@
       state.pending = {
         kind: String(kind || ""),
         identity: state.identity,
-        createdAt: Date.now()
+        createdAt: now()
       };
       return saveLoginGuardState(state);
     }
@@ -273,38 +168,37 @@
     __name(clearLoginGuardAfterSuccess, "clearLoginGuardAfterSuccess");
     function evalConf() {
       return {
-        enabled: getBool(EVAL.enabled, true),
-        // 默认等 100 秒再自动保存（与页面/服务端倒计时一致）
-        waitSec: Math.max(0, getNum(EVAL.waitSec, 100)),
-        scoreMin: Math.max(1, Math.min(100, getNum(EVAL.scoreMin, 92))),
-        scoreMax: Math.max(1, Math.min(100, getNum(EVAL.scoreMax, 98))),
-        singleLetters: getStr(EVAL.singleLetters, "A") || "A",
-        singlePerQ: getJSON(EVAL.singlePerQ, {}) || {},
-        multiLetters: getStr(EVAL.multiLetters, "A,B,C") || "A,B,C",
-        multiPerQ: getJSON(EVAL.multiPerQ, {}) || {},
-        multiAvoidNone: getBool(EVAL.multiAvoidNone, true),
-        commentTemplates: getStr(EVAL.commentTemplates, DEFAULT_COMMENTS),
-        autoFill: getBool(EVAL.autoFill, true),
-        autoSave: getBool(EVAL.autoSave, false),
-        saveDelay: Math.max(0, getNum(EVAL.saveDelay, 500)),
-        batchGapSec: Math.max(0, getNum(EVAL.batchGapSec, 2))
+        enabled: getBool(EVALUATION_KEYS.enabled, true),
+        waitSec: Math.max(0, getNum(EVALUATION_KEYS.waitSec, 100)),
+        scoreMin: Math.max(1, Math.min(100, getNum(EVALUATION_KEYS.scoreMin, 92))),
+        scoreMax: Math.max(1, Math.min(100, getNum(EVALUATION_KEYS.scoreMax, 98))),
+        singleLetters: getStr(EVALUATION_KEYS.singleLetters, "A") || "A",
+        singlePerQ: getJSON(EVALUATION_KEYS.singlePerQ, {}) || {},
+        multiLetters: getStr(EVALUATION_KEYS.multiLetters, "A,B,C") || "A,B,C",
+        multiPerQ: getJSON(EVALUATION_KEYS.multiPerQ, {}) || {},
+        multiAvoidNone: getBool(EVALUATION_KEYS.multiAvoidNone, true),
+        commentTemplates: getStr(EVALUATION_KEYS.commentTemplates, DEFAULT_COMMENTS),
+        autoFill: getBool(EVALUATION_KEYS.autoFill, true),
+        autoSave: getBool(EVALUATION_KEYS.autoSave, false),
+        saveDelay: Math.max(0, getNum(EVALUATION_KEYS.saveDelay, 500)),
+        batchGapSec: Math.max(0, getNum(EVALUATION_KEYS.batchGapSec, 2))
       };
     }
     __name(evalConf, "evalConf");
     function getBatchState() {
       return {
-        active: getBool(EVAL.batchActive, false),
-        queue: getJSON(EVAL.batchQueue, []) || [],
-        index: Math.max(0, getNum(EVAL.batchIndex, 0))
+        active: getBool(EVALUATION_KEYS.batchActive, false),
+        queue: getJSON(EVALUATION_KEYS.batchQueue, []) || [],
+        index: Math.max(0, getNum(EVALUATION_KEYS.batchIndex, 0))
       };
     }
     __name(getBatchState, "getBatchState");
     function setBatchState(partial) {
-      const cur = getBatchState();
-      const next = Object.assign({}, cur, partial || {});
-      setVal(EVAL.batchActive, !!next.active);
-      setJSON(EVAL.batchQueue, Array.isArray(next.queue) ? next.queue : []);
-      setVal(EVAL.batchIndex, String(Math.max(0, Number(next.index) || 0)));
+      const current = getBatchState();
+      const next = Object.assign({}, current, partial || {});
+      setVal(EVALUATION_KEYS.batchActive, !!next.active);
+      setJSON(EVALUATION_KEYS.batchQueue, Array.isArray(next.queue) ? next.queue : []);
+      setVal(EVALUATION_KEYS.batchIndex, String(Math.max(0, Number(next.index) || 0)));
       return next;
     }
     __name(setBatchState, "setBatchState");
@@ -312,13 +206,269 @@
       setBatchState({ active: false, queue: [], index: 0 });
     }
     __name(clearBatchState, "clearBatchState");
-    const uiState = { injected: false };
-    function settingsStyles() {
-      if (document.getElementById("urpppp-assist-style")) return;
-      const st = document.createElement("style");
-      st.id = "urpppp-assist-style";
-      st.textContent = `
-#urppp-settings-panel .urpppp-sec h3{margin:0 0 8px}
+    return {
+      loginConf,
+      emptyLoginGuardState,
+      getLoginGuardState,
+      saveLoginGuardState,
+      resetLoginGuardState,
+      ensureLoginGuardIdentity,
+      beginLoginProcess,
+      markPendingAutoLogin,
+      clearLoginGuardAfterSuccess,
+      evalConf,
+      getBatchState,
+      setBatchState,
+      clearBatchState
+    };
+  }
+  __name(createAssistConfig, "createAssistConfig");
+
+  // src/assist/ocr.js
+  function getBase64FromImage(image) {
+    if (!image) throw new Error("验证码图片不存在");
+    if (image.src && image.src.startsWith("data:image")) return image.src.split(",")[1];
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth || image.width || 120;
+    canvas.height = image.naturalHeight || image.height || 40;
+    canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/png").split(",")[1];
+  }
+  __name(getBase64FromImage, "getBase64FromImage");
+  function parseOcrResponse(responseText) {
+    let result;
+    try {
+      result = JSON.parse(responseText || "{}");
+    } catch (_) {
+      throw new Error("OCR 响应解析失败");
+    }
+    const code = String(result.code || result.data || result.text || result.result || "").trim();
+    if (!code) throw new Error(result.message || result.msg || "OCR 识别失败");
+    if (!/^[A-Za-z0-9]{4,8}$/.test(code)) throw new Error("OCR 返回的验证码格式无效");
+    return code;
+  }
+  __name(parseOcrResponse, "parseOcrResponse");
+  function recognizeCaptcha(base64, ocrUrl, request) {
+    return new Promise((resolve, reject) => {
+      const url = String(ocrUrl || "").trim();
+      if (!url) {
+        reject(new Error("未配置 OCR 服务地址"));
+        return;
+      }
+      if (typeof request !== "function") {
+        reject(new Error("不支持 GM_xmlhttpRequest"));
+        return;
+      }
+      request({
+        method: "POST",
+        url,
+        headers: { "Content-Type": "application/json" },
+        data: JSON.stringify({ image: base64 }),
+        timeout: 15e3,
+        onload(response) {
+          try {
+            resolve(parseOcrResponse(response.responseText));
+          } catch (error) {
+            reject(error);
+          }
+        },
+        onerror() {
+          reject(new Error("OCR 服务请求失败"));
+        },
+        ontimeout() {
+          reject(new Error("OCR 服务超时"));
+        }
+      });
+    });
+  }
+  __name(recognizeCaptcha, "recognizeCaptcha");
+
+  // src/assist/storage.js
+  function createAssistStorage(getValue, setValue) {
+    function getBool(key, fallback) {
+      try {
+        return !!getValue(key, fallback);
+      } catch (_) {
+        return !!fallback;
+      }
+    }
+    __name(getBool, "getBool");
+    function getStr(key, fallback) {
+      const defaultValue = fallback == null ? "" : fallback;
+      try {
+        const value = getValue(key, defaultValue);
+        return value == null ? "" : String(value);
+      } catch (_) {
+        return String(defaultValue);
+      }
+    }
+    __name(getStr, "getStr");
+    function getNum(key, fallback) {
+      const value = Number(getStr(key, String(fallback)));
+      return Number.isFinite(value) ? value : fallback;
+    }
+    __name(getNum, "getNum");
+    function getJSON(key, fallback) {
+      try {
+        const raw = getValue(key, "");
+        if (!raw) return fallback;
+        return JSON.parse(raw);
+      } catch (_) {
+        return fallback;
+      }
+    }
+    __name(getJSON, "getJSON");
+    function setVal(key, value) {
+      try {
+        setValue(key, value);
+      } catch (_) {
+      }
+    }
+    __name(setVal, "setVal");
+    function setJSON(key, value) {
+      setVal(key, JSON.stringify(value == null ? {} : value));
+    }
+    __name(setJSON, "setJSON");
+    return { getBool, getStr, getNum, getJSON, setVal, setJSON };
+  }
+  __name(createAssistStorage, "createAssistStorage");
+
+  // src/assist/utils.js
+  function log(...args) {
+    console.log("[URP++ 辅助]", ...args);
+  }
+  __name(log, "log");
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+  __name(sleep, "sleep");
+  function escapeAttr(value) {
+    return String(value || "").replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  __name(escapeAttr, "escapeAttr");
+  function escapeAssistHtml(value) {
+    return String(value || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  __name(escapeAssistHtml, "escapeAssistHtml");
+  function setInputValue(input, value) {
+    if (!input) return;
+    const descriptor = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value");
+    if (descriptor && descriptor.set) descriptor.set.call(input, value);
+    else input.value = value;
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+    input.dispatchEvent(new Event("blur", { bubbles: true }));
+  }
+  __name(setInputValue, "setInputValue");
+  function setTextAreaValue(element, value) {
+    if (!element) return;
+    const descriptor = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value");
+    if (descriptor && descriptor.set) descriptor.set.call(element, value);
+    else element.value = value;
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  __name(setTextAreaValue, "setTextAreaValue");
+  function randInt(min, max) {
+    const lower = Math.ceil(Number(min));
+    const upper = Math.floor(Number(max));
+    if (!Number.isFinite(lower) || !Number.isFinite(upper)) return 0;
+    if (upper <= lower) return lower;
+    return lower + Math.floor(Math.random() * (upper - lower + 1));
+  }
+  __name(randInt, "randInt");
+  function pickRandom(values) {
+    if (!values || !values.length) return null;
+    return values[Math.floor(Math.random() * values.length)];
+  }
+  __name(pickRandom, "pickRandom");
+  function parseLetters(value) {
+    const text = String(value || "").toUpperCase();
+    const letters = /* @__PURE__ */ new Set();
+    (text.match(/[A-K]/g) || []).forEach((letter) => letters.add(letter));
+    return Array.from(letters);
+  }
+  __name(parseLetters, "parseLetters");
+  function parsePerQuestionMap(value) {
+    const map = {};
+    String(value || "").split(/\r?\n/).forEach((line) => {
+      const text = line.trim();
+      if (!text || text.startsWith("#")) return;
+      const match = text.match(/^(\d+)\s*[:：=]\s*(.+)$/);
+      if (match) map[match[1]] = match[2].trim();
+    });
+    return map;
+  }
+  __name(parsePerQuestionMap, "parsePerQuestionMap");
+  function optionLetter(valueOrLabel) {
+    const text = String(valueOrLabel || "");
+    const match = text.match(/^\s*([A-K])\s*[_\.、:：\-\s]/i) || text.match(/^\s*([A-K])\s*$/i);
+    return match ? match[1].toUpperCase() : "";
+  }
+  __name(optionLetter, "optionLetter");
+  function lettersForSingle(questionNumber, config) {
+    const perQuestion = config.singlePerQ && (config.singlePerQ[questionNumber] || config.singlePerQ[String(questionNumber)]) || "";
+    const pool = parseLetters(perQuestion || config.singleLetters || "A");
+    return pool.length ? pool : ["A"];
+  }
+  __name(lettersForSingle, "lettersForSingle");
+  function lettersForMulti(questionNumber, config) {
+    const perQuestion = config.multiPerQ && (config.multiPerQ[questionNumber] || config.multiPerQ[String(questionNumber)]) || "";
+    const pool = parseLetters(perQuestion || config.multiLetters || "A,B,C");
+    return pool.length ? pool : ["A"];
+  }
+  __name(lettersForMulti, "lettersForMulti");
+
+  // src/core/version.js
+  function parseUserscriptVersion(source) {
+    const match = String(source || "").match(/@version\s+([0-9]+(?:\.[0-9]+){0,3}[\w\-]*)/i);
+    return match ? match[1] : "";
+  }
+  __name(parseUserscriptVersion, "parseUserscriptVersion");
+  function normalizeVersionParts(version) {
+    return String(version || "0").replace(/^v/i, "").split(/[.+\-]/).filter(Boolean).map((part) => /^\d+$/.test(part) ? parseInt(part, 10) : part);
+  }
+  __name(normalizeVersionParts, "normalizeVersionParts");
+  function compareVersions(first, second) {
+    const firstParts = normalizeVersionParts(first);
+    const secondParts = normalizeVersionParts(second);
+    const length = Math.max(firstParts.length, secondParts.length);
+    for (let index = 0; index < length; index += 1) {
+      const left = firstParts[index] == null ? 0 : firstParts[index];
+      const right = secondParts[index] == null ? 0 : secondParts[index];
+      const leftIsNumber = typeof left === "number";
+      const rightIsNumber = typeof right === "number";
+      if (leftIsNumber && rightIsNumber) {
+        if (left > right) return 1;
+        if (left < right) return -1;
+        continue;
+      }
+      const leftText = String(left);
+      const rightText = String(right);
+      if (leftText > rightText) return 1;
+      if (leftText < rightText) return -1;
+    }
+    return 0;
+  }
+  __name(compareVersions, "compareVersions");
+
+  // src/styles/assist-login-guard.css
+  var assist_login_guard_default = `#urpppp-login-guard-notice{
+  margin:10px 0;padding:10px 12px;border-radius:10px;
+  border:1px solid color-mix(in srgb,var(--warning,#b7791f) 45%,var(--border,#e5e7eb));
+  background:color-mix(in srgb,var(--warning,#b7791f) 10%,var(--surface,#fff));
+  color:var(--text,#1f2937);font-size:12px;line-height:1.55
+}
+#urpppp-login-guard-notice strong{display:block;margin-bottom:3px;color:var(--warning,#9a6700)}
+#urpppp-login-guard-notice button{
+  margin-top:8px;height:30px;padding:0 12px;border-radius:8px;cursor:pointer;
+  border:1px solid var(--border,#e5e7eb);background:var(--surface,#fff);color:var(--text,#1f2937);font-size:12px
+}
+#urpppp-login-guard-notice button:hover{border-color:var(--primary,#3b82f6);color:var(--primary,#3b82f6)}
+`;
+
+  // src/styles/assist.css
+  var assist_default = `#urppp-settings-panel .urpppp-sec h3{margin:0 0 8px}
 #urppp-settings-panel .urpppp-grid{display:grid;grid-template-columns:1fr;gap:8px}
 #urppp-settings-panel .urpppp-row{display:grid;grid-template-columns:108px 1fr;gap:8px;align-items:center}
 #urppp-settings-panel .urpppp-row label{font-size:12px;color:var(--text-secondary,#667085)}
@@ -429,6 +579,35 @@
 #urpppp-subpanel .urpppp-status.err{color:#b91c1c}
 #urpppp-subpanel .urpppp-sub{font-size:12px;font-weight:700;margin:10px 0 4px;color:var(--text,#111)}
 `;
+
+  // src/userscripts/urpppp.entry.js
+  (function() {
+    "use strict";
+    const URPPPP_VERSION = "1.3.2";
+    const URPPPP_RAW_URL = "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js";
+    const LOGIN = LOGIN_KEYS;
+    const EVAL = EVALUATION_KEYS;
+    const storage = createAssistStorage(GM_getValue, GM_setValue);
+    const { getBool, getNum, getStr, setVal, setJSON } = storage;
+    const config = createAssistConfig(storage);
+    const {
+      beginLoginProcess,
+      clearBatchState,
+      clearLoginGuardAfterSuccess,
+      evalConf,
+      getBatchState,
+      getLoginGuardState,
+      loginConf,
+      markPendingAutoLogin,
+      resetLoginGuardState,
+      setBatchState
+    } = config;
+    const uiState = { injected: false };
+    function settingsStyles() {
+      if (document.getElementById("urpppp-assist-style")) return;
+      const st = document.createElement("style");
+      st.id = "urpppp-assist-style";
+      st.textContent = assist_default;
       (document.head || document.documentElement).appendChild(st);
     }
     __name(settingsStyles, "settingsStyles");
@@ -571,7 +750,7 @@
       <div class="urpppp-sub">单选题</div>
       <div class="urpppp-grid">
         <div class="urpppp-row"><label>默认选项池</label><input type="text" id="urpppp-eval-single" value="${escapeAttr(c.singleLetters)}" placeholder="如 A 或 A,B" /></div>
-        <div class="urpppp-row" style="align-items:start"><label>按题配置</label><textarea id="urpppp-eval-single-per" placeholder="每行：题号:选项池&#10;2:A,B&#10;5:A">${escapeHtml(perSingle)}</textarea></div>
+        <div class="urpppp-row" style="align-items:start"><label>按题配置</label><textarea id="urpppp-eval-single-per" placeholder="每行：题号:选项池&#10;2:A,B&#10;5:A">${escapeAssistHtml(perSingle)}</textarea></div>
       </div>
       <p class="urpppp-tip">不同问卷的部分题目特殊（如国际周课程的第7题），建议在执行自动评教前检查特殊题目并按题配置</p>
       <p class="urpppp-tip">题号为页面「2、3、4…」中的数字。选项池如 <code>A,B</code> 表示在 A/B 中随机。</p>
@@ -579,13 +758,13 @@
       <div class="urpppp-sub">多选题</div>
       <div class="urpppp-grid">
         <div class="urpppp-row"><label>默认勾选池</label><input type="text" id="urpppp-eval-multi" value="${escapeAttr(c.multiLetters)}" placeholder="如 A,B,C" /></div>
-        <div class="urpppp-row" style="align-items:start"><label>按题配置</label><textarea id="urpppp-eval-multi-per" placeholder="每行：题号:选项池&#10;6:A,B,C,F">${escapeHtml(perMulti)}</textarea></div>
+        <div class="urpppp-row" style="align-items:start"><label>按题配置</label><textarea id="urpppp-eval-multi-per" placeholder="每行：题号:选项池&#10;6:A,B,C,F">${escapeAssistHtml(perMulti)}</textarea></div>
       </div>
       <p class="urpppp-tip">会勾选池内全部选项；若开启避开「以上均无」，不会勾选含「以上均无」的项。</p>
 
       <div class="urpppp-sub">主观题模板</div>
       <div class="urpppp-grid">
-        <div class="urpppp-row" style="align-items:start"><label>评语模板</label><textarea id="urpppp-eval-comments" placeholder="每行一条，随机选用">${escapeHtml(c.commentTemplates)}</textarea></div>
+        <div class="urpppp-row" style="align-items:start"><label>评语模板</label><textarea id="urpppp-eval-comments" placeholder="每行一条，随机选用">${escapeAssistHtml(c.commentTemplates)}</textarea></div>
         <div class="urpppp-row"><label>自动保存延迟(ms)</label><input type="number" id="urpppp-eval-save-delay" min="0" step="100" value="${escapeAttr(String(c.saveDelay))}" /></div>
       </div>
       <p class="urpppp-tip">评语模版以回车划分，可以自行添加新模板</p>
@@ -607,18 +786,6 @@
       return sec;
     }
     __name(buildEvalSection, "buildEvalSection");
-    function parsePerQuestionMap(text) {
-      const map = {};
-      String(text || "").split(/\r?\n/).forEach((line) => {
-        const s = line.trim();
-        if (!s || s.startsWith("#")) return;
-        const m = s.match(/^(\d+)\s*[:：=]\s*(.+)$/);
-        if (!m) return;
-        map[m[1]] = m[2].trim();
-      });
-      return map;
-    }
-    __name(parsePerQuestionMap, "parsePerQuestionMap");
     function bindEvalSection(sec) {
       let enabled = getBool(EVAL.enabled, true);
       let autoFill = getBool(EVAL.autoFill, true);
@@ -854,48 +1021,11 @@
       }, true);
     }
     __name(watchSettingsPanel, "watchSettingsPanel");
-    function getBase64FromImage(img) {
-      if (!img) throw new Error("验证码图片不存在");
-      if (img.src && img.src.startsWith("data:image")) return img.src.split(",")[1];
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth || img.width || 120;
-      canvas.height = img.naturalHeight || img.height || 40;
-      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
-      return canvas.toDataURL("image/png").split(",")[1];
-    }
-    __name(getBase64FromImage, "getBase64FromImage");
-    function recognizeCaptcha(base64, ocrUrl) {
-      return new Promise((resolve, reject) => {
-        const url = String(ocrUrl || "").trim();
-        if (!url) return reject(new Error("未配置 OCR 服务地址"));
-        if (typeof GM_xmlhttpRequest !== "function") return reject(new Error("不支持 GM_xmlhttpRequest"));
-        GM_xmlhttpRequest({
-          method: "POST",
-          url,
-          headers: { "Content-Type": "application/json" },
-          data: JSON.stringify({ image: base64 }),
-          timeout: 15e3,
-          onload(response) {
-            try {
-              const result = JSON.parse(response.responseText || "{}");
-              const code = String(result.code || result.data || result.text || result.result || "").trim();
-              if (!code) return reject(new Error(result.message || result.msg || "OCR 识别失败"));
-              if (!/^[A-Za-z0-9]{4,8}$/.test(code)) return reject(new Error("OCR 返回的验证码格式无效"));
-              resolve(code);
-            } catch (_) {
-              reject(new Error("OCR 响应解析失败"));
-            }
-          },
-          onerror() {
-            reject(new Error("OCR 服务请求失败"));
-          },
-          ontimeout() {
-            reject(new Error("OCR 服务超时"));
-          }
-        });
-      });
-    }
-    __name(recognizeCaptcha, "recognizeCaptcha");
+    const recognizeCaptcha2 = /* @__PURE__ */ __name((base64, ocrUrl) => recognizeCaptcha(
+      base64,
+      ocrUrl,
+      typeof GM_xmlhttpRequest === "function" ? GM_xmlhttpRequest : null
+    ), "recognizeCaptcha");
     function credFor(kind, c) {
       if (c.shareCred || kind === "zhjw") return { username: c.zhjwUser, password: c.zhjwPass };
       return { username: c.casUser || c.zhjwUser, password: c.casPass || c.zhjwPass };
@@ -943,20 +1073,7 @@
       if (document.getElementById("urpppp-login-guard-style")) return;
       const style = document.createElement("style");
       style.id = "urpppp-login-guard-style";
-      style.textContent = `
-#urpppp-login-guard-notice{
-  margin:10px 0;padding:10px 12px;border-radius:10px;
-  border:1px solid color-mix(in srgb,var(--warning,#b7791f) 45%,var(--border,#e5e7eb));
-  background:color-mix(in srgb,var(--warning,#b7791f) 10%,var(--surface,#fff));
-  color:var(--text,#1f2937);font-size:12px;line-height:1.55
-}
-#urpppp-login-guard-notice strong{display:block;margin-bottom:3px;color:var(--warning,#9a6700)}
-#urpppp-login-guard-notice button{
-  margin-top:8px;height:30px;padding:0 12px;border-radius:8px;cursor:pointer;
-  border:1px solid var(--border,#e5e7eb);background:var(--surface,#fff);color:var(--text,#1f2937);font-size:12px
-}
-#urpppp-login-guard-notice button:hover{border-color:var(--primary,#3b82f6);color:var(--primary,#3b82f6)}
-`;
+      style.textContent = assist_login_guard_default;
       (document.head || document.documentElement).appendChild(style);
     }
     __name(ensureLoginGuardStyles, "ensureLoginGuardStyles");
@@ -1028,7 +1145,7 @@
         captchaImg.onload = r;
         setTimeout(r, 2e3);
       });
-      const code = await recognizeCaptcha(getBase64FromImage(captchaImg), c.ocrUrl);
+      const code = await recognizeCaptcha2(getBase64FromImage(captchaImg), c.ocrUrl);
       fillLoginCaptcha(captchaInput, code);
       log("教务验证码：", code);
       if (c.autoSubmit && loginButton) {
@@ -1074,7 +1191,7 @@
         els.captchaImg.onload = r;
         setTimeout(r, 2e3);
       });
-      const code = await recognizeCaptcha(getBase64FromImage(els.captchaImg), c.ocrUrl);
+      const code = await recognizeCaptcha2(getBase64FromImage(els.captchaImg), c.ocrUrl);
       fillLoginCaptcha(els.captchaInput, code);
       log("统一认证验证码：", code);
       if (c.autoSubmit && els.loginButton) {
@@ -1170,24 +1287,6 @@
       return "";
     }
     __name(questionIndexNear, "questionIndexNear");
-    function lettersForSingle(qNo, cfg) {
-      const per = cfg.singlePerQ && (cfg.singlePerQ[qNo] || cfg.singlePerQ[String(qNo)]) || "";
-      const pool = parseLetters(per || cfg.singleLetters || "A");
-      return pool.length ? pool : ["A"];
-    }
-    __name(lettersForSingle, "lettersForSingle");
-    function lettersForMulti(qNo, cfg) {
-      const per = cfg.multiPerQ && (cfg.multiPerQ[qNo] || cfg.multiPerQ[String(qNo)]) || "";
-      const pool = parseLetters(per || cfg.multiLetters || "A,B,C");
-      return pool.length ? pool : ["A"];
-    }
-    __name(lettersForMulti, "lettersForMulti");
-    function optionLetter(valueOrLabel) {
-      const s = String(valueOrLabel || "");
-      const m = s.match(/^\s*([A-K])\s*[_\.、:：\-\s]/i) || s.match(/^\s*([A-K])\s*$/i);
-      return m ? m[1].toUpperCase() : "";
-    }
-    __name(optionLetter, "optionLetter");
     function fillScores(cfg) {
       let min = Number(cfg.scoreMin) || 92;
       let max = Number(cfg.scoreMax) || 98;
@@ -1401,7 +1500,7 @@
       }
     }
     __name(runEvaluationAssist, "runEvaluationAssist");
-    const EVAL_LIST_PATH = "/student/teachingEvaluation/newEvaluation/index";
+    const EVAL_LIST_PATH = EVALUATION_LIST_PATH;
     function isEvaluationListPage() {
       const p = String(location.pathname || "");
       return /\/student\/teachingEvaluation\/newEvaluation\/index/i.test(p);
@@ -1431,7 +1530,7 @@
       const item = batch.queue[batch.index];
       hud.innerHTML = `<div class="urpppp-hud-title">全自动评教进行中</div>
       <div class="urpppp-hud-line">进度：${cur}/${total}</div>
-      <div class="urpppp-hud-course">${escapeHtml(item && item.title || "")}</div>
+      <div class="urpppp-hud-course">${escapeAssistHtml(item && item.title || "")}</div>
       <button type="button" id="urpppp-batch-hud-stop">停止</button>`;
       const stop = document.getElementById("urpppp-batch-hud-stop");
       if (stop) stop.onclick = () => {
@@ -1634,11 +1733,6 @@
       });
     }
     __name(fetchAssistRemoteVersion, "fetchAssistRemoteVersion");
-    function parseVersionFromSource(src) {
-      const m = String(src || "").match(/@version\s+([0-9]+(?:\.[0-9]+){0,3}[\w\-]*)/i);
-      return m ? m[1] : "";
-    }
-    __name(parseVersionFromSource, "parseVersionFromSource");
     function compareSemver(a, b) {
       try {
         const api = typeof unsafeWindow !== "undefined" && unsafeWindow && unsafeWindow.__urpppUpdate || window.__urpppUpdate;
@@ -1647,23 +1741,13 @@
         }
       } catch (_) {
       }
-      const pa = String(a || "0").replace(/^v/i, "").split(/[.+\-]/).map((x) => /^\d+$/.test(x) ? +x : x);
-      const pb = String(b || "0").replace(/^v/i, "").split(/[.+\-]/).map((x) => /^\d+$/.test(x) ? +x : x);
-      const n = Math.max(pa.length, pb.length);
-      for (let i = 0; i < n; i++) {
-        const x = pa[i] == null ? 0 : pa[i];
-        const y = pb[i] == null ? 0 : pb[i];
-        if (x === y) continue;
-        if (typeof x === "number" && typeof y === "number") return x > y ? 1 : -1;
-        return String(x) > String(y) ? 1 : -1;
-      }
-      return 0;
+      return compareVersions(a, b);
     }
     __name(compareSemver, "compareSemver");
     async function checkAssistUpdate() {
       const local = URPPPP_VERSION;
       const remoteSource = await fetchAssistRemoteVersion();
-      const remote = parseVersionFromSource(remoteSource);
+      const remote = parseUserscriptVersion(remoteSource);
       if (!remote) throw new Error("无法解析远程辅助插件版本");
       const cmp = compareSemver(remote, local);
       return {

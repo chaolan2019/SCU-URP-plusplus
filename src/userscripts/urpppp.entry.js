@@ -1,3 +1,32 @@
+import { createAssistConfig } from '../assist/config.js';
+import {
+  DEFAULT_COMMENTS,
+  DEFAULT_OCR_EXAMPLE,
+  EVALUATION_KEYS,
+  EVALUATION_LIST_PATH,
+  LOGIN_FAILURE_LIMIT,
+  LOGIN_KEYS,
+} from '../assist/constants.js';
+import { getBase64FromImage, recognizeCaptcha as recognizeCaptchaWithRequest } from '../assist/ocr.js';
+import { createAssistStorage } from '../assist/storage.js';
+import {
+  escapeAssistHtml as escapeHtml,
+  escapeAttr,
+  lettersForMulti,
+  lettersForSingle,
+  log,
+  optionLetter,
+  parsePerQuestionMap,
+  pickRandom,
+  randInt,
+  setInputValue,
+  setTextAreaValue,
+  sleep,
+} from '../assist/utils.js';
+import { compareVersions as compareStandaloneVersions, parseUserscriptVersion as parseVersionFromSource } from '../core/version.js';
+import loginGuardStyles from '../styles/assist-login-guard.css';
+import assistStyles from '../styles/assist.css';
+
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Chao_Lan
 
@@ -17,279 +46,24 @@
   const URPPPP_VERSION = '1.3.2';
   const URPPPP_RAW_URL = 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js';
 
-  // ===================== 公共工具 =====================
-  const NS = 'urpppp_assist_v1';
-
-  function log(...args) { console.log('[URP++ 辅助]', ...args); }
-  function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
-
-  function getBool(key, def) {
-    try { return !!GM_getValue(key, def); } catch (_) { return !!def; }
-  }
-  function getStr(key, def) {
-    try {
-      const v = GM_getValue(key, def == null ? '' : def);
-      return v == null ? '' : String(v);
-    } catch (_) { return def == null ? '' : String(def); }
-  }
-  function getNum(key, def) {
-    const n = Number(getStr(key, String(def)));
-    return Number.isFinite(n) ? n : def;
-  }
-  function getJSON(key, def) {
-    try {
-      const raw = GM_getValue(key, '');
-      if (!raw) return def;
-      return JSON.parse(raw);
-    } catch (_) { return def; }
-  }
-  function setVal(key, val) {
-    try { GM_setValue(key, val); } catch (_) {}
-  }
-  function setJSON(key, obj) {
-    setVal(key, JSON.stringify(obj == null ? {} : obj));
-  }
-
-  function escapeAttr(s) {
-    return String(s || '')
-      .replace(/&/g, '&amp;')
-      .replace(/"/g, '&quot;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-  }
-  function escapeHtml(s) {
-    return String(s || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-
-  function setInputValue(input, value) {
-    if (!input) return;
-    const desc = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
-    if (desc && desc.set) desc.set.call(input, value);
-    else input.value = value;
-    input.dispatchEvent(new Event('input', { bubbles: true }));
-    input.dispatchEvent(new Event('change', { bubbles: true }));
-    input.dispatchEvent(new Event('blur', { bubbles: true }));
-  }
-
-  function setTextAreaValue(el, value) {
-    if (!el) return;
-    const desc = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value');
-    if (desc && desc.set) desc.set.call(el, value);
-    else el.value = value;
-    el.dispatchEvent(new Event('input', { bubbles: true }));
-    el.dispatchEvent(new Event('change', { bubbles: true }));
-  }
-
-  function randInt(min, max) {
-    const a = Math.ceil(Number(min));
-    const b = Math.floor(Number(max));
-    if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
-    if (b <= a) return a;
-    return a + Math.floor(Math.random() * (b - a + 1));
-  }
-
-  function pickRandom(arr) {
-    if (!arr || !arr.length) return null;
-    return arr[Math.floor(Math.random() * arr.length)];
-  }
-
-  function parseLetters(str) {
-    // "A,B,C" / "A B C" / "ABC" → ['A','B','C']
-    const s = String(str || '').toUpperCase();
-    const set = new Set();
-    (s.match(/[A-K]/g) || []).forEach((ch) => set.add(ch));
-    return Array.from(set);
-  }
-
-  // ===================== 登录助手配置 =====================
-  const LOGIN = {
-    enabled: NS + '_login_enabled',
-    autoSubmit: NS + '_login_auto_submit',
-    ocrUrl: NS + '_login_ocr_url',
-    zhjwUser: NS + '_login_zhjw_user',
-    zhjwPass: NS + '_login_zhjw_pass',
-    casUser: NS + '_login_cas_user',
-    casPass: NS + '_login_cas_pass',
-    shareCred: NS + '_login_share_cred',
-    submitDelay: NS + '_login_submit_delay',
-    guardState: NS + '_login_guard_state'
-  };
-  const LOGIN_FAILURE_LIMIT = 4;
-  const LOGIN_PENDING_TTL = 10 * 60 * 1000;
-  const DEFAULT_OCR_EXAMPLE = 'https://ocr.yanjiangrd.site/api/ocr';
-
-  // ===================== 评教助手配置 =====================
-  const EVAL = {
-    enabled: NS + '_eval_enabled',
-    // 进入页面后等待多久再自动保存（秒）。服务端约 100 秒，不跳过
-    waitSec: NS + '_eval_wait_sec',
-    // score
-    scoreMin: NS + '_eval_score_min',
-    scoreMax: NS + '_eval_score_max',
-    // global single default letters e.g. "A,B"
-    singleLetters: NS + '_eval_single_letters',
-    // per-question single: { "2": "A,B", "3": "A" }
-    singlePerQ: NS + '_eval_single_per_q',
-    // multi
-    multiLetters: NS + '_eval_multi_letters',
-    multiPerQ: NS + '_eval_multi_per_q',
-    multiAvoidNone: NS + '_eval_multi_avoid_none',
-    // subjective
-    commentTemplates: NS + '_eval_comment_templates',
-    // actions
-    autoFill: NS + '_eval_auto_fill',
-    autoSave: NS + '_eval_auto_save',
-    saveDelay: NS + '_eval_save_delay',
-    // full-auto batch
-    batchActive: NS + '_eval_batch_active',
-    batchQueue: NS + '_eval_batch_queue',
-    batchIndex: NS + '_eval_batch_index',
-    batchGapSec: NS + '_eval_batch_gap_sec'
-  };
-
-  const DEFAULT_COMMENTS = [
-    '老师授课认真负责，讲解清晰，收获很大。',
-    '课堂氛围好，内容充实，希望继续保持。',
-    '课程安排合理，老师答疑及时，总体满意。'
-  ].join('\n');
-
-  function loginConf() {
-    return {
-      enabled: getBool(LOGIN.enabled, true),
-      autoSubmit: getBool(LOGIN.autoSubmit, true),
-      ocrUrl: getStr(LOGIN.ocrUrl, ''),
-      zhjwUser: getStr(LOGIN.zhjwUser, ''),
-      zhjwPass: getStr(LOGIN.zhjwPass, ''),
-      casUser: getStr(LOGIN.casUser, ''),
-      casPass: getStr(LOGIN.casPass, ''),
-      shareCred: getBool(LOGIN.shareCred, true),
-      submitDelay: Math.max(0, getNum(LOGIN.submitDelay, 300))
-    };
-  }
-
-  function emptyLoginGuardState(identity) {
-    return {
-      identity: String(identity || ''),
-      failures: 0,
-      paused: false,
-      pending: null,
-      updatedAt: Date.now()
-    };
-  }
-
-  function getLoginGuardState() {
-    const raw = getJSON(LOGIN.guardState, {}) || {};
-    const failures = Math.max(0, Math.min(LOGIN_FAILURE_LIMIT, Number(raw.failures) || 0));
-    const pending = raw.pending && typeof raw.pending === 'object'
-      ? {
-        kind: String(raw.pending.kind || ''),
-        identity: String(raw.pending.identity || ''),
-        createdAt: Number(raw.pending.createdAt) || 0
-      }
-      : null;
-    return {
-      identity: String(raw.identity || ''),
-      failures,
-      paused: failures >= LOGIN_FAILURE_LIMIT || !!raw.paused,
-      pending,
-      updatedAt: Number(raw.updatedAt) || 0
-    };
-  }
-
-  function saveLoginGuardState(state) {
-    const next = Object.assign(emptyLoginGuardState(''), state || {}, { updatedAt: Date.now() });
-    setJSON(LOGIN.guardState, next);
-    return next;
-  }
-
-  function resetLoginGuardState(identity) {
-    return saveLoginGuardState(emptyLoginGuardState(identity));
-  }
-
-  function loginIdentity(_kind, username) {
-    return String(username || '').trim();
-  }
-
-  function ensureLoginGuardIdentity(kind, username) {
-    const identity = loginIdentity(kind, username);
-    const state = getLoginGuardState();
-    if (state.identity && state.identity !== identity) return resetLoginGuardState(identity);
-    if (!state.identity) return saveLoginGuardState(Object.assign(state, { identity }));
-    return state;
-  }
-
-  function beginLoginProcess(kind, username) {
-    const identity = loginIdentity(kind, username);
-    const state = getLoginGuardState();
-    const pending = state.pending;
-    const fresh = pending && pending.createdAt > 0
-      && Date.now() - pending.createdAt <= LOGIN_PENDING_TTL;
-    const continuesPreviousAttempt = fresh && pending.identity === identity;
-    if (!continuesPreviousAttempt) return resetLoginGuardState(identity);
-    state.identity = identity;
-    state.pending = null;
-    state.failures = Math.min(LOGIN_FAILURE_LIMIT, state.failures + 1);
-    state.paused = state.failures >= LOGIN_FAILURE_LIMIT;
-    return saveLoginGuardState(state);
-  }
-
-  function markPendingAutoLogin(kind, username) {
-    const state = ensureLoginGuardIdentity(kind, username);
-    state.pending = {
-      kind: String(kind || ''),
-      identity: state.identity,
-      createdAt: Date.now()
-    };
-    return saveLoginGuardState(state);
-  }
-
-  function clearLoginGuardAfterSuccess() {
-    const state = getLoginGuardState();
-    if (state.failures || state.paused || state.pending) resetLoginGuardState('');
-  }
-
-  function evalConf() {
-    return {
-      enabled: getBool(EVAL.enabled, true),
-      // 默认等 100 秒再自动保存（与页面/服务端倒计时一致）
-      waitSec: Math.max(0, getNum(EVAL.waitSec, 100)),
-      scoreMin: Math.max(1, Math.min(100, getNum(EVAL.scoreMin, 92))),
-      scoreMax: Math.max(1, Math.min(100, getNum(EVAL.scoreMax, 98))),
-      singleLetters: getStr(EVAL.singleLetters, 'A') || 'A',
-      singlePerQ: getJSON(EVAL.singlePerQ, {}) || {},
-      multiLetters: getStr(EVAL.multiLetters, 'A,B,C') || 'A,B,C',
-      multiPerQ: getJSON(EVAL.multiPerQ, {}) || {},
-      multiAvoidNone: getBool(EVAL.multiAvoidNone, true),
-      commentTemplates: getStr(EVAL.commentTemplates, DEFAULT_COMMENTS),
-      autoFill: getBool(EVAL.autoFill, true),
-      autoSave: getBool(EVAL.autoSave, false),
-      saveDelay: Math.max(0, getNum(EVAL.saveDelay, 500)),
-      batchGapSec: Math.max(0, getNum(EVAL.batchGapSec, 2))
-    };
-  }
-
-  function getBatchState() {
-    return {
-      active: getBool(EVAL.batchActive, false),
-      queue: getJSON(EVAL.batchQueue, []) || [],
-      index: Math.max(0, getNum(EVAL.batchIndex, 0))
-    };
-  }
-  function setBatchState(partial) {
-    const cur = getBatchState();
-    const next = Object.assign({}, cur, partial || {});
-    setVal(EVAL.batchActive, !!next.active);
-    setJSON(EVAL.batchQueue, Array.isArray(next.queue) ? next.queue : []);
-    setVal(EVAL.batchIndex, String(Math.max(0, Number(next.index) || 0)));
-    return next;
-  }
-  function clearBatchState() {
-    setBatchState({ active: false, queue: [], index: 0 });
-  }
+  // ===================== 公共工具与配置 =====================
+  const LOGIN = LOGIN_KEYS;
+  const EVAL = EVALUATION_KEYS;
+  const storage = createAssistStorage(GM_getValue, GM_setValue);
+  const { getBool, getNum, getStr, setVal, setJSON } = storage;
+  const config = createAssistConfig(storage);
+  const {
+    beginLoginProcess,
+    clearBatchState,
+    clearLoginGuardAfterSuccess,
+    evalConf,
+    getBatchState,
+    getLoginGuardState,
+    loginConf,
+    markPendingAutoLogin,
+    resetLoginGuardState,
+    setBatchState,
+  } = config;
 
   // ===================== 设置面板注入 =====================
   const uiState = { injected: false };
@@ -298,118 +72,7 @@
     if (document.getElementById('urpppp-assist-style')) return;
     const st = document.createElement('style');
     st.id = 'urpppp-assist-style';
-    st.textContent = `
-#urppp-settings-panel .urpppp-sec h3{margin:0 0 8px}
-#urppp-settings-panel .urpppp-grid{display:grid;grid-template-columns:1fr;gap:8px}
-#urppp-settings-panel .urpppp-row{display:grid;grid-template-columns:108px 1fr;gap:8px;align-items:center}
-#urppp-settings-panel .urpppp-row label{font-size:12px;color:var(--text-secondary,#667085)}
-#urppp-settings-panel .urpppp-row input[type="text"],
-#urppp-settings-panel .urpppp-row input[type="password"],
-#urppp-settings-panel .urpppp-row input[type="number"],
-#urppp-settings-panel .urpppp-row input[type="url"],
-#urppp-settings-panel .urpppp-row select,
-#urppp-settings-panel .urpppp-row textarea{
-  width:100%;border:1px solid var(--border,#e5e7eb);border-radius:8px;
-  background:var(--input-bg,#f8fafc);color:var(--text,#111);padding:6px 10px;font-size:12px;box-sizing:border-box
-}
-#urppp-settings-panel .urpppp-row input, #urppp-settings-panel .urpppp-row select{height:32px;padding-top:0;padding-bottom:0}
-#urppp-settings-panel .urpppp-row textarea{min-height:84px;resize:vertical;line-height:1.45}
-#urppp-settings-panel .urpppp-switches{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 8px}
-#urppp-settings-panel .urpppp-switches .urppp-set-follow{width:auto;min-width:0}
-#urppp-settings-panel .urpppp-tip{font-size:12px;color:var(--text-muted,#98a2b3);line-height:1.55;margin:6px 0 0}
-#urppp-settings-panel .urpppp-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-#urppp-settings-panel .urpppp-status{margin-top:8px;font-size:12px;color:var(--text-secondary,#667085)}
-#urpppp-batch-hud{
-  position:fixed;right:12px;bottom:72px;z-index:2147483000;
-  background:var(--surface,#fff);color:var(--text,#111);
-  border:1px solid var(--border,#e5e7eb);border-radius:14px;
-  padding:12px 14px;font-size:12px;line-height:1.5;max-width:280px;
-  box-shadow:0 10px 28px rgba(15,23,42,.12),0 0 0 1px color-mix(in srgb,var(--border,#e5e7eb) 60%,transparent)
-}
-#urpppp-batch-hud .urpppp-hud-title{font-weight:700;margin-bottom:6px;font-size:13px;color:var(--text,#111)}
-#urpppp-batch-hud .urpppp-hud-line{color:var(--text-secondary,#667085)}
-#urpppp-batch-hud .urpppp-hud-course{margin-top:4px;color:var(--text,#111);font-weight:600}
-#urpppp-batch-hud #urpppp-batch-hud-stop{
-  margin-top:10px;height:30px;padding:0 12px;border-radius:10px;cursor:pointer;
-  border:1px solid var(--border,#e5e7eb);background:var(--input-bg,#f8fafc);color:var(--text,#111);font-size:12px
-}
-#urpppp-batch-hud #urpppp-batch-hud-stop:hover{
-  border-color:var(--primary,#3b82f6);background:color-mix(in srgb,var(--primary,#3b82f6) 10%,var(--input-bg,#f8fafc))
-}
-#urpppp-eval-wait-tip{margin-left:10px;font-size:12px;color:var(--text-secondary,#667085)}
-#urppp-settings-panel .urpppp-status.ok{color:#15803d}
-#urppp-settings-panel .urpppp-status.err{color:#b91c1c}
-#urppp-settings-panel .urpppp-sub{font-size:12px;font-weight:700;margin:10px 0 4px;color:var(--text,#111)}
-#urppp-settings-panel .urpppp-entry-sec{margin-top:4px}
-#urppp-settings-panel .urpppp-entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-#urppp-settings-panel .urpppp-entry-grid .urppp-set-btn{
-  width:100%;height:36px;justify-content:center;font-weight:700
-}
-#urpppp-subpanel{
-  position:fixed;z-index:13070;display:none;box-sizing:border-box;
-  background:var(--surface,#fff);color:var(--text,#111);
-  border:1px solid var(--border,#e5e7eb);border-radius:16px;
-  box-shadow:0 18px 48px rgba(15,23,42,.18);overflow:auto
-}
-#urpppp-subpanel.open{display:block}
-#urpppp-subpanel .urpppp-sub-head{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 16px 10px;border-bottom:1px solid var(--border,#e5e7eb);
-  position:sticky;top:0;background:var(--surface,#fff);z-index:2
-}
-#urpppp-subpanel .urpppp-sub-title{font-size:16px;font-weight:700}
-#urpppp-subpanel .urpppp-sub-close{
-  width:30px;height:30px;border:0;border-radius:8px;cursor:pointer;
-  background:transparent;color:var(--text-secondary,#667085);font-size:18px;line-height:1
-}
-#urpppp-subpanel .urpppp-sub-close:hover{background:var(--input-bg,#f8fafc);color:var(--text,#111)}
-#urpppp-subpanel .urpppp-sub-body{padding:12px 16px 16px}
-#urpppp-subpanel .urpppp-sec h3{display:none}
-#urpppp-subpanel .urpppp-grid{display:grid;grid-template-columns:1fr;gap:8px}
-#urpppp-subpanel .urpppp-row{display:grid;grid-template-columns:108px 1fr;gap:8px;align-items:center}
-#urpppp-subpanel .urpppp-row label{font-size:12px;color:var(--text-secondary,#667085)}
-#urpppp-subpanel .urpppp-row input[type="text"],
-#urpppp-subpanel .urpppp-row input[type="password"],
-#urpppp-subpanel .urpppp-row input[type="number"],
-#urpppp-subpanel .urpppp-row input[type="url"],
-#urpppp-subpanel .urpppp-row select,
-#urpppp-subpanel .urpppp-row textarea{
-  width:100%;border:1px solid var(--border,#e5e7eb);border-radius:8px;
-  background:var(--input-bg,#f8fafc);color:var(--text,#111);padding:6px 10px;font-size:12px;box-sizing:border-box
-}
-#urpppp-subpanel .urpppp-row input,#urpppp-subpanel .urpppp-row select{height:32px;padding-top:0;padding-bottom:0}
-#urpppp-subpanel .urpppp-row textarea{min-height:84px;resize:vertical;line-height:1.45}
-#urpppp-subpanel .urpppp-switches{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 8px}
-#urpppp-subpanel .urpppp-switches .urppp-set-follow{
-  width:auto;min-width:0;height:34px;border-radius:10px;
-  border:1px solid var(--border,#e5e7eb)!important;
-  background:var(--input-bg,#f8fafc)!important;
-  color:var(--text,#111)!important;
-  font-size:12px!important;font-weight:600!important;
-  cursor:pointer;padding:0 10px!important;white-space:nowrap
-}
-#urpppp-subpanel .urpppp-switches .urppp-set-follow:hover{
-  border-color:var(--primary,#3b82f6)!important
-}
-#urpppp-subpanel .urpppp-switches .urppp-set-follow.ac{
-  background:var(--primary,#3b82f6)!important;
-  border-color:var(--primary,#3b82f6)!important;
-  color:#fff!important
-}
-#urpppp-subpanel .urppp-set-btn{
-  height:34px;border-radius:10px;border:1px solid var(--border,#e5e7eb);
-  background:var(--input-bg,#f8fafc);color:var(--text,#111);
-  font-size:12px;font-weight:600;cursor:pointer;padding:0 12px
-}
-#urpppp-subpanel .urppp-set-btn:hover{border-color:var(--primary,#3b82f6)}
-#urpppp-subpanel .urppp-set-btn.ghost{background:transparent}
-#urpppp-subpanel .urpppp-tip{font-size:12px;color:var(--text-muted,#98a2b3);line-height:1.55;margin:6px 0 0}
-#urpppp-subpanel .urpppp-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-#urpppp-subpanel .urpppp-status{margin-top:8px;font-size:12px;color:var(--text-secondary,#667085)}
-#urpppp-subpanel .urpppp-status.ok{color:#15803d}
-#urpppp-subpanel .urpppp-status.err{color:#b91c1c}
-#urpppp-subpanel .urpppp-sub{font-size:12px;font-weight:700;margin:10px 0 4px;color:var(--text,#111)}
-`;
+    st.textContent = assistStyles;
     (document.head || document.documentElement).appendChild(st);
   }
 
@@ -582,18 +245,6 @@
       <div class="urpppp-status" id="urpppp-eval-status"></div>
     `;
     return sec;
-  }
-
-  function parsePerQuestionMap(text) {
-    const map = {};
-    String(text || '').split(/\r?\n/).forEach((line) => {
-      const s = line.trim();
-      if (!s || s.startsWith('#')) return;
-      const m = s.match(/^(\d+)\s*[:：=]\s*(.+)$/);
-      if (!m) return;
-      map[m[1]] = m[2].trim();
-    });
-    return map;
   }
 
   function bindEvalSection(sec) {
@@ -833,41 +484,11 @@
   }
 
   // ===================== 登录逻辑 =====================
-  function getBase64FromImage(img) {
-    if (!img) throw new Error('验证码图片不存在');
-    if (img.src && img.src.startsWith('data:image')) return img.src.split(',')[1];
-    const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth || img.width || 120;
-    canvas.height = img.naturalHeight || img.height || 40;
-    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL('image/png').split(',')[1];
-  }
-
-  function recognizeCaptcha(base64, ocrUrl) {
-    return new Promise((resolve, reject) => {
-      const url = String(ocrUrl || '').trim();
-      if (!url) return reject(new Error('未配置 OCR 服务地址'));
-      if (typeof GM_xmlhttpRequest !== 'function') return reject(new Error('不支持 GM_xmlhttpRequest'));
-      GM_xmlhttpRequest({
-        method: 'POST',
-        url,
-        headers: { 'Content-Type': 'application/json' },
-        data: JSON.stringify({ image: base64 }),
-        timeout: 15000,
-        onload(response) {
-          try {
-            const result = JSON.parse(response.responseText || '{}');
-            const code = String(result.code || result.data || result.text || result.result || '').trim();
-            if (!code) return reject(new Error(result.message || result.msg || 'OCR 识别失败'));
-            if (!/^[A-Za-z0-9]{4,8}$/.test(code)) return reject(new Error('OCR 返回的验证码格式无效'));
-            resolve(code);
-          } catch (_) { reject(new Error('OCR 响应解析失败')); }
-        },
-        onerror() { reject(new Error('OCR 服务请求失败')); },
-        ontimeout() { reject(new Error('OCR 服务超时')); }
-      });
-    });
-  }
+  const recognizeCaptcha = (base64, ocrUrl) => recognizeCaptchaWithRequest(
+    base64,
+    ocrUrl,
+    typeof GM_xmlhttpRequest === 'function' ? GM_xmlhttpRequest : null,
+  );
 
   function credFor(kind, c) {
     if (c.shareCred || kind === 'zhjw') return { username: c.zhjwUser, password: c.zhjwPass };
@@ -913,20 +534,7 @@
     if (document.getElementById('urpppp-login-guard-style')) return;
     const style = document.createElement('style');
     style.id = 'urpppp-login-guard-style';
-    style.textContent = `
-#urpppp-login-guard-notice{
-  margin:10px 0;padding:10px 12px;border-radius:10px;
-  border:1px solid color-mix(in srgb,var(--warning,#b7791f) 45%,var(--border,#e5e7eb));
-  background:color-mix(in srgb,var(--warning,#b7791f) 10%,var(--surface,#fff));
-  color:var(--text,#1f2937);font-size:12px;line-height:1.55
-}
-#urpppp-login-guard-notice strong{display:block;margin-bottom:3px;color:var(--warning,#9a6700)}
-#urpppp-login-guard-notice button{
-  margin-top:8px;height:30px;padding:0 12px;border-radius:8px;cursor:pointer;
-  border:1px solid var(--border,#e5e7eb);background:var(--surface,#fff);color:var(--text,#1f2937);font-size:12px
-}
-#urpppp-login-guard-notice button:hover{border-color:var(--primary,#3b82f6);color:var(--primary,#3b82f6)}
-`;
+    style.textContent = loginGuardStyles;
     (document.head || document.documentElement).appendChild(style);
   }
 
@@ -1142,24 +750,6 @@
       node = node.parentElement;
     }
     return '';
-  }
-
-  function lettersForSingle(qNo, cfg) {
-    const per = (cfg.singlePerQ && (cfg.singlePerQ[qNo] || cfg.singlePerQ[String(qNo)])) || '';
-    const pool = parseLetters(per || cfg.singleLetters || 'A');
-    return pool.length ? pool : ['A'];
-  }
-
-  function lettersForMulti(qNo, cfg) {
-    const per = (cfg.multiPerQ && (cfg.multiPerQ[qNo] || cfg.multiPerQ[String(qNo)])) || '';
-    const pool = parseLetters(per || cfg.multiLetters || 'A,B,C');
-    return pool.length ? pool : ['A'];
-  }
-
-  function optionLetter(valueOrLabel) {
-    const s = String(valueOrLabel || '');
-    const m = s.match(/^\s*([A-K])\s*[_\.、:：\-\s]/i) || s.match(/^\s*([A-K])\s*$/i);
-    return m ? m[1].toUpperCase() : '';
   }
 
   function fillScores(cfg) {
@@ -1385,7 +975,7 @@
   }
 
   // ===================== 全自动评教（列表 → 逐份填写 → 保存后继续） =====================
-  const EVAL_LIST_PATH = '/student/teachingEvaluation/newEvaluation/index';
+  const EVAL_LIST_PATH = EVALUATION_LIST_PATH;
 
   function isEvaluationListPage() {
     const p = String(location.pathname || '');
@@ -1617,11 +1207,6 @@
     });
   }
 
-  function parseVersionFromSource(src) {
-    const m = String(src || '').match(/@version\s+([0-9]+(?:\.[0-9]+){0,3}[\w\-]*)/i);
-    return m ? m[1] : '';
-  }
-
   function compareSemver(a, b) {
     // 优先复用主插件比较器
     try {
@@ -1631,17 +1216,7 @@
         return api.compareVersions(a, b);
       }
     } catch (_) {}
-    const pa = String(a || '0').replace(/^v/i, '').split(/[.+\-]/).map((x) => (/^\d+$/.test(x) ? +x : x));
-    const pb = String(b || '0').replace(/^v/i, '').split(/[.+\-]/).map((x) => (/^\d+$/.test(x) ? +x : x));
-    const n = Math.max(pa.length, pb.length);
-    for (let i = 0; i < n; i++) {
-      const x = pa[i] == null ? 0 : pa[i];
-      const y = pb[i] == null ? 0 : pb[i];
-      if (x === y) continue;
-      if (typeof x === 'number' && typeof y === 'number') return x > y ? 1 : -1;
-      return String(x) > String(y) ? 1 : -1;
-    }
-    return 0;
+    return compareStandaloneVersions(a, b);
   }
 
   async function checkAssistUpdate() {
