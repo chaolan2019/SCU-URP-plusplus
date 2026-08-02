@@ -11,6 +11,7 @@ import {
 import { scheduleWeeks } from '../features/schedule-export/weeks.js';
 import featureStyles from '../styles/features.css';
 import internalStyles from '../styles/internal.css';
+import scheduleCardStyles from '../styles/schedule-cards.css';
 
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Chao_Lan
@@ -19,7 +20,7 @@ import internalStyles from '../styles/internal.css';
   'use strict';
 
   // 与脚本头 @version 保持同步
-  const URPPP_VERSION = '1.5.1';
+  const URPPP_VERSION = '1.5.2';
   const URPPP_UPDATE = {
     mainRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js',
     assistRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js',
@@ -6954,6 +6955,13 @@ import internalStyles from '../styles/internal.css';
       const style = styleEl;
       style.textContent = internalStyles;
     }
+    let scheduleCardStyle = document.getElementById('urppp-schedule-card-style');
+    if (!scheduleCardStyle) {
+      scheduleCardStyle = document.createElement('style');
+      scheduleCardStyle.id = 'urppp-schedule-card-style';
+      document.head.appendChild(scheduleCardStyle);
+    }
+    scheduleCardStyle.textContent = scheduleCardStyles;
     try { applySkinAttr(); } catch (_) {}
 
     // 给表格包一层 wrapper：圆角 + 完整外框，绕过 Bootstrap thead border-top:0 和 overflow 裁剪

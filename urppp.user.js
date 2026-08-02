@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SCU URP++教务系统美化
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.5.1
+// @version      1.5.2
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Chao_Lan,Hanako
 // @license      GPL-3.0-only
@@ -8637,10 +8637,121 @@ fo-striped.setLabelWidth,
       }
 `;
 
+  // src/styles/schedule-cards.css
+  var schedule_cards_default = `/* Personal and resource schedule course cards. Keep table cells and table surfaces untouched. */
+#courseTable .class_div.box_font {
+  box-sizing: border-box !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+  opacity: 1 !important;
+  transition: box-shadow 160ms ease-out, filter 160ms ease-out !important;
+}
+
+#courseTable .class_div.box_font::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: rgba(14, 23, 42, 0.12);
+}
+
+#courseTable .class_div.box_font > p {
+  position: relative;
+  z-index: 1;
+  margin: 2px 7px !important;
+  color: rgba(255, 255, 255, 0.94) !important;
+  font-size: 12px !important;
+  line-height: 1.35 !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.42) !important;
+}
+
+#courseTable .class_div.box_font > p[class*="p-kcm-"] {
+  margin-top: 6px !important;
+  margin-bottom: 3px !important;
+  color: #fff !important;
+  font-size: 14px !important;
+  font-weight: 750 !important;
+  line-height: 1.3 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+html[data-urppp-skin="apple"] body #courseTable .class_div.box_font {
+  border: 1px solid rgba(255, 255, 255, 0.36) !important;
+  border-radius: 18px !important;
+  box-shadow:
+    0 5px 14px rgba(15, 23, 42, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+}
+
+html[data-urppp-skin="flat"] body #courseTable .class_div.box_font {
+  border: 2px solid var(--text, #111) !important;
+  border-radius: 0 !important;
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.28) !important;
+}
+
+html[data-urppp-skin="organic"] body #courseTable .class_div.box_font {
+  border: 1px solid rgba(255, 255, 255, 0.32) !important;
+  border-radius: 20px !important;
+  box-shadow:
+    0 6px 13px rgba(92, 64, 51, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24) !important;
+}
+
+html.urppp-theme-dark[data-urppp-skin="organic"] body #courseTable .class_div.box_font {
+  box-shadow:
+    0 6px 14px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16) !important;
+}
+
+html[data-urppp-skin="brutal"] body #courseTable .class_div.box_font {
+  border: 3px solid #000 !important;
+  border-radius: 0 !important;
+  box-shadow: inset -4px -4px 0 rgba(0, 0, 0, 0.32) !important;
+}
+
+html[data-urppp-skin="editorial"] body #courseTable .class_div.box_font {
+  border: 1px solid rgba(255, 255, 255, 0.38) !important;
+  border-left: 4px solid rgba(255, 255, 255, 0.72) !important;
+  border-radius: 0 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+  filter: saturate(0.78) !important;
+}
+
+html[data-urppp-skin="editorial"] body #courseTable .class_div.box_font > p[class*="p-kcm-"] {
+  font-family: Georgia, "Noto Serif SC", "Songti SC", STSong, SimSun, serif !important;
+  letter-spacing: 0 !important;
+}
+
+html[data-urppp-skin="neu"] body #courseTable .class_div.box_font {
+  border: 0 !important;
+  border-radius: 16px !important;
+  box-shadow:
+    inset 2px 2px 4px rgba(255, 255, 255, 0.42),
+    inset -3px -3px 5px rgba(0, 0, 0, 0.25),
+    0 2px 5px rgba(0, 0, 0, 0.12) !important;
+}
+
+html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_font {
+  box-shadow:
+    inset 2px 2px 4px rgba(255, 255, 255, 0.2),
+    inset -3px -3px 5px rgba(0, 0, 0, 0.4),
+    0 2px 6px rgba(0, 0, 0, 0.28) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #courseTable .class_div.box_font {
+    transition: none !important;
+  }
+}
+`;
+
   // src/userscripts/urppp.entry.js
   (function() {
     "use strict";
-    const URPPP_VERSION = "1.5.1";
+    const URPPP_VERSION = "1.5.2";
     const URPPP_UPDATE = {
       mainRaw: "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js",
       assistRaw: "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js",
@@ -15480,6 +15591,13 @@ fo-striped.setLabelWidth,
         const style = styleEl;
         style.textContent = internal_default;
       }
+      let scheduleCardStyle = document.getElementById("urppp-schedule-card-style");
+      if (!scheduleCardStyle) {
+        scheduleCardStyle = document.createElement("style");
+        scheduleCardStyle.id = "urppp-schedule-card-style";
+        document.head.appendChild(scheduleCardStyle);
+      }
+      scheduleCardStyle.textContent = schedule_cards_default;
       try {
         applySkinAttr();
       } catch (_) {
