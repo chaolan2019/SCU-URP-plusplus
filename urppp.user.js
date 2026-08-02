@@ -4595,8 +4595,6 @@
   }
 
   function scheduleBeautifyPagebar() {
-    if (window.__urpppPagebarBound) return;
-    window.__urpppPagebarBound = true;
     const run = () => {
       beautifyPagebar();
       // 分页条可能晚注入：补挂 observer
@@ -4610,6 +4608,11 @@
         obs.observe(host, { childList: true, subtree: true });
       });
     };
+    if (window.__urpppPagebarBound) {
+      setTimeout(run, 0);
+      return;
+    }
+    window.__urpppPagebarBound = true;
     ;[0, 300, 1000, 2500].forEach((ms) => setTimeout(run, ms));
   }
   function beautifyFreeClassroomList() {
@@ -6190,18 +6193,20 @@
     ;[0, 200, 800, 1600].forEach((ms) => setTimeout(() => {
       try { scrubTableHeaderInlineBg(); } catch (_) {}
     }, ms));
-    if (window.__urpppTableScrubObs) return;
-    window.__urpppTableScrubObs = true;
     try {
       const host = document.querySelector('.page-content, #page-content-template, .main-content') || document.body;
       if (!host) return;
-      const obs = new MutationObserver(() => {
+      const current = window.__urpppTableScrubObs;
+      if (current && current.root === host && host.isConnected) return;
+      if (current && current.observer) current.observer.disconnect();
+      const observer = new MutationObserver(() => {
         clearTimeout(window.__urpppTableScrubTimer);
         window.__urpppTableScrubTimer = setTimeout(() => {
           try { scrubTableHeaderInlineBg(); } catch (_) {}
         }, 120);
       });
-      obs.observe(host, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+      observer.observe(host, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+      window.__urpppTableScrubObs = { root: host, observer };
     } catch (_) {}
   }
 
@@ -6761,22 +6766,41 @@
     });
   }
 
+  function bindTableWrapObserver() {
+    const host = document.getElementById('page-content-template')
+      || document.querySelector('.page-content')
+      || document.body;
+    if (!host) return;
+    const currentRoot = window.__urpppTableObsRoot;
+    if (window.__urpppTableObs && currentRoot === host && host.isConnected) return;
+    if (window.__urpppTableObs) window.__urpppTableObs.disconnect();
+    let wrapTimer = 0;
+    window.__urpppTableObs = new MutationObserver(() => {
+      clearTimeout(wrapTimer);
+      wrapTimer = setTimeout(wrapTables, 80);
+    });
+    window.__urpppTableObs.observe(host, { childList: true, subtree: true });
+    window.__urpppTableObsRoot = host;
+  }
+
   function scheduleBeautifyNoticeTables() {
     ;[0, 400, 1500].forEach((ms) => setTimeout(() => {
       try { beautifyNoticeTables(); } catch (_) {}
     }, ms));
-    if (window.__urpppNoticeObs) return;
-    window.__urpppNoticeObs = true;
     try {
       const host = document.getElementById('page-content-template') || document.querySelector('.page-content, .main-content') || document.body;
       if (!host) return;
-      const obs = new MutationObserver(() => {
+      const current = window.__urpppNoticeObs;
+      if (current && current.root === host && host.isConnected) return;
+      if (current && current.observer) current.observer.disconnect();
+      const observer = new MutationObserver(() => {
         clearTimeout(window.__urpppNoticeTimer);
         window.__urpppNoticeTimer = setTimeout(() => {
           try { beautifyNoticeTables(); } catch (_) {}
         }, 180);
       });
-      obs.observe(host, { childList: true, subtree: true });
+      observer.observe(host, { childList: true, subtree: true });
+      window.__urpppNoticeObs = { root: host, observer };
     } catch (_) {}
   }
 
@@ -15160,17 +15184,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     fixWeekScheduleLayout();
     scheduleCurriculumDrawerBeautify();
     beautifyCurriculumDrawer();
-    if (!window.__urpppTableObs) {
-      let wrapTimer = 0;
-      window.__urpppTableObs = new MutationObserver(() => {
-        clearTimeout(wrapTimer);
-        wrapTimer = setTimeout(wrapTables, 80);
-      });
-      const tableHost = document.getElementById('page-content-template')
-        || document.querySelector('.page-content')
-        || document.body;
-      window.__urpppTableObs.observe(tableHost, { childList: true, subtree: true });
-    }
+    bindTableWrapObserver();
     // 首页进行组件级重构
     const pageContent = document.querySelector('.page-content');
     const hasWidgets = pageContent && pageContent.querySelectorAll('.widget-box').length >= 4;
@@ -18342,6 +18356,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (personalDisplayIsEnabled()) {
       resumePersonalDisplayObservers();
       bindPersonalDisplayObservers();
+    } else {
+      clearTimeout(personalDisplayTimer);
+      personalObserverEntries = [];
     }
   }
 
@@ -18357,6 +18374,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   function bindPersonalDisplayObservers() {
     if (!personalDisplayIsEnabled()) {
       personalObserverEntries.forEach(({ observer }) => observer.disconnect());
+      personalObserverEntries = [];
       return;
     }
     [document.getElementById('navbar'), document.getElementById('page-content-template'), document.getElementById('urppp-clean-root')]
@@ -19146,18 +19164,31 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }
   }
 
-  const nativeScheduleObservedRoots = new WeakSet();
+  let nativeScheduleObserverEntry = null;
   let nativeSchedulePatchTimer = 0;
+
+  function disconnectNativeScheduleExportObserver() {
+    clearTimeout(nativeSchedulePatchTimer);
+    nativeSchedulePatchTimer = 0;
+    if (nativeScheduleObserverEntry) nativeScheduleObserverEntry.observer.disconnect();
+    nativeScheduleObserverEntry = null;
+  }
+
   function bindNativeScheduleExportObserver() {
-    if (!isPersonalSchedulePage()) return;
+    if (!isPersonalSchedulePage()) {
+      disconnectNativeScheduleExportObserver();
+      return;
+    }
     const root = document.getElementById('page-content-template') || document.querySelector('.page-content') || document.body;
-    if (!root || nativeScheduleObservedRoots.has(root)) return;
-    nativeScheduleObservedRoots.add(root);
+    if (!root) return;
+    if (nativeScheduleObserverEntry && nativeScheduleObserverEntry.root === root && root.isConnected) return;
+    disconnectNativeScheduleExportObserver();
     const observer = new MutationObserver(() => {
       clearTimeout(nativeSchedulePatchTimer);
       nativeSchedulePatchTimer = setTimeout(() => patchNativeScheduleExport(), 80);
     });
     observer.observe(root, { childList: true, subtree: true });
+    nativeScheduleObserverEntry = { root, observer };
   }
 
   function bindScheduleExportHosts(scope) {
@@ -21067,7 +21098,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     }
     bindUI(body);
     applyPersonalDisplay(body);
-    bindPersonalDisplayObservers();
   }
 
   function scheduleRender() {
@@ -21081,51 +21111,80 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       : setTimeout(run, 0);
   }
 
+  function markCleanUiBound(node, key) {
+    if (!node) return false;
+    if (!node.__urpppCleanUiBindings) node.__urpppCleanUiBindings = new Set();
+    if (node.__urpppCleanUiBindings.has(key)) return false;
+    node.__urpppCleanUiBindings.add(key);
+    return true;
+  }
+
   function bindUI(scope) {
     if (!scope) return;
     try { bindScheduleExportHosts(scope); } catch (e) { console.warn('[URP++] schedule export menu', e); }
-    scope.querySelectorAll('[data-score]').forEach((n) => n.addEventListener('click', () => openScoreModal(n.getAttribute('data-score'))));
-    scope.querySelectorAll('[data-href]').forEach((n) => n.addEventListener('click', (e) => {
-      const href = n.getAttribute('data-href');
-      if (!href) return;
-      e.preventDefault();
-      closeCleanMode();
-      location.href = href;
-    }));
-    scope.querySelectorAll('[data-eval-url]').forEach((n) => n.addEventListener('click', (e) => {
-      const href = n.getAttribute('data-eval-url');
-      if (!href) return;
-      e.preventDefault();
-      e.stopPropagation();
-      closeCleanMode();
-      location.href = href;
-    }));
-    scope.querySelectorAll('[data-action="room"]').forEach((n) => n.addEventListener('click', () => openRoomModal()));
-    scope.querySelectorAll('[data-room-reload]').forEach((n) => n.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      ensureRoomCatalogLoaded(true);
-    }));
-    scope.querySelectorAll('[data-build-path]').forEach((n) => n.addEventListener('click', async () => {
-      const path = n.getAttribute('data-build-path');
-      const name = (n.textContent || '').trim();
-      const cn = n.getAttribute('data-cn') || '';
-      const bn = n.getAttribute('data-bn') || '';
-      // 优先在按钮所在面板渲染，避免小屏教室页写到隐藏的 modal body
-      const host = n.closest('#uc-room-panel') || n.closest('#uc-modal-body') || null;
-      state.roomDateOffset = 0; // 新选楼栋默认今天
-      await showBuilding({ path, name, campusNumber: cn, buildingNumber: bn, dateOffset: 0 }, name, host);
-    }));
-    scope.querySelectorAll('[data-room-day]').forEach((n) => n.addEventListener('click', async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const off = parseInt(n.getAttribute('data-room-day') || '0', 10) || 0;
-      if (!state.currentBuilding) return;
-      state.roomDateOffset = off;
-      const b = Object.assign({}, state.currentBuilding, { dateOffset: off });
-      const host = n.closest('#uc-room-panel') || n.closest('#uc-modal-body') || null;
-      await showBuilding(b, b.name || '', host);
-    }));
+    scope.querySelectorAll('[data-score]').forEach((n) => {
+      if (!markCleanUiBound(n, 'score')) return;
+      n.addEventListener('click', () => openScoreModal(n.getAttribute('data-score')));
+    });
+    scope.querySelectorAll('[data-href]').forEach((n) => {
+      if (!markCleanUiBound(n, 'href')) return;
+      n.addEventListener('click', (e) => {
+        const href = n.getAttribute('data-href');
+        if (!href) return;
+        e.preventDefault();
+        closeCleanMode();
+        location.href = href;
+      });
+    });
+    scope.querySelectorAll('[data-eval-url]').forEach((n) => {
+      if (!markCleanUiBound(n, 'eval')) return;
+      n.addEventListener('click', (e) => {
+        const href = n.getAttribute('data-eval-url');
+        if (!href) return;
+        e.preventDefault();
+        e.stopPropagation();
+        closeCleanMode();
+        location.href = href;
+      });
+    });
+    scope.querySelectorAll('[data-action="room"]').forEach((n) => {
+      if (!markCleanUiBound(n, 'room')) return;
+      n.addEventListener('click', () => openRoomModal());
+    });
+    scope.querySelectorAll('[data-room-reload]').forEach((n) => {
+      if (!markCleanUiBound(n, 'roomReload')) return;
+      n.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        ensureRoomCatalogLoaded(true);
+      });
+    });
+    scope.querySelectorAll('[data-build-path]').forEach((n) => {
+      if (!markCleanUiBound(n, 'building')) return;
+      n.addEventListener('click', async () => {
+        const path = n.getAttribute('data-build-path');
+        const name = (n.textContent || '').trim();
+        const cn = n.getAttribute('data-cn') || '';
+        const bn = n.getAttribute('data-bn') || '';
+        // 优先在按钮所在面板渲染，避免小屏教室页写到隐藏的 modal body
+        const host = n.closest('#uc-room-panel') || n.closest('#uc-modal-body') || null;
+        state.roomDateOffset = 0; // 新选楼栋默认今天
+        await showBuilding({ path, name, campusNumber: cn, buildingNumber: bn, dateOffset: 0 }, name, host);
+      });
+    });
+    scope.querySelectorAll('[data-room-day]').forEach((n) => {
+      if (!markCleanUiBound(n, 'roomDay')) return;
+      n.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const off = parseInt(n.getAttribute('data-room-day') || '0', 10) || 0;
+        if (!state.currentBuilding) return;
+        state.roomDateOffset = off;
+        const b = Object.assign({}, state.currentBuilding, { dateOffset: off });
+        const host = n.closest('#uc-room-panel') || n.closest('#uc-modal-body') || null;
+        await showBuilding(b, b.name || '', host);
+      });
+    });
     const back = scope.querySelector('#uc-room-back');
     if (back) back.onclick = () => {
       state.occupancy = null;
@@ -21143,6 +21202,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     };
     // 教室占用详情
     scope.querySelectorAll('.uc-slot.busy[data-occ]').forEach((el) => {
+      if (!markCleanUiBound(el, 'occupancy')) return;
       el.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -21164,6 +21224,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     });
     // 课表：点击看详情（勿复用 .uc-lesson 绝对定位样式，否则弹窗叠字）
     scope.querySelectorAll('.uc-lesson[data-course]').forEach((el) => {
+      if (!markCleanUiBound(el, 'course')) return;
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         try {
@@ -21189,6 +21250,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     });
     // 课表周次切换
     scope.querySelectorAll('[data-week-delta]').forEach((btn) => {
+      if (!markCleanUiBound(btn, 'weekDelta')) return;
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -21208,6 +21270,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       });
     });
     scope.querySelectorAll('[data-week-reset]').forEach((btn) => {
+      if (!markCleanUiBound(btn, 'weekReset')) return;
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -21694,10 +21757,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       beautifyInternal();
       try { ensureFeatureStyles(); } catch (_) {}
       try { patchNativeScheduleExport(); bindNativeScheduleExportObserver(); } catch (e) { console.warn('[URP++] native schedule export', e); }
-      try { applyPersonalDisplay(document); bindPersonalDisplayObservers(); } catch (_) {}
+      try { applyPersonalDisplay(document); } catch (_) {}
       ;[350, 900, 1800].forEach((ms) => setTimeout(() => {
         try { patchNativeScheduleExport(); bindNativeScheduleExportObserver(); } catch (_) {}
-        try { applyPersonalDisplay(document); bindPersonalDisplayObservers(); } catch (_) {}
+        try { applyPersonalDisplay(document); } catch (_) {}
       }, ms));
       try { if (window.__urpppCleanMode) window.__urpppCleanMode.inject(); } catch (_) {}
       ;[400, 1200, 2500].forEach((ms) => setTimeout(() => {
@@ -21747,6 +21810,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     }
   }
   function watchRouteChanges() {
+    if (window.__urpppRouteWatchBound) return;
+    window.__urpppRouteWatchBound = true;
     let routeRefreshTimer = 0;
     const run = () => {
       clearTimeout(routeRefreshTimer);
@@ -21759,6 +21824,9 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         rebuildNavbar();
         patchSchoolCalendarLink();
         wrapTables();
+        bindTableWrapObserver();
+        scheduleBeautifyNoticeTables();
+        scheduleScrubTableInlineBg();
         document.querySelectorAll('.page-content, #page-content-template').forEach((el) => {
           el.style.setProperty('padding', '16px 64px 40px', 'important');
           el.style.setProperty('box-sizing', 'border-box', 'important');
@@ -21776,11 +21844,12 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         beautifyPlanTree();
         setTimeout(() => beautifyPlanTree(), 500);
         beautifyBreadcrumbs();
+        scheduleBeautifyPagebar();
         try { patchNativeScheduleExport(); bindNativeScheduleExportObserver(); } catch (_) {}
-        try { applyPersonalDisplay(document); bindPersonalDisplayObservers(); } catch (_) {}
+        try { applyPersonalDisplay(document); } catch (_) {}
         setTimeout(() => {
           try { patchNativeScheduleExport(); bindNativeScheduleExportObserver(); } catch (_) {}
-          try { applyPersonalDisplay(document); bindPersonalDisplayObservers(); } catch (_) {}
+          try { applyPersonalDisplay(document); } catch (_) {}
         }, 500);
       }, 100);
     };
@@ -21788,8 +21857,16 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     window.addEventListener('hashchange', run);
     const origPush = history.pushState;
     const origReplace = history.replaceState;
-    history.pushState = function (...args) { origPush.apply(this, args); setTimeout(run, 100); };
-    history.replaceState = function (...args) { origReplace.apply(this, args); setTimeout(run, 100); };
+    history.pushState = function (...args) {
+      const result = origPush.apply(this, args);
+      run();
+      return result;
+    };
+    history.replaceState = function (...args) {
+      const result = origReplace.apply(this, args);
+      run();
+      return result;
+    };
   }
 
   // 全局 API

@@ -825,9 +825,25 @@
   }
 
   function watchSettingsPanel() {
+    if (window.__urppppSettingsWatchBound) return;
+    window.__urppppSettingsWatchBound = true;
     const tryInject = () => { try { injectSettingsPanel(); } catch (e) { console.warn(e); } };
+    let injectTimer = 0;
+    const scheduleInject = (delay) => {
+      clearTimeout(injectTimer);
+      injectTimer = setTimeout(tryInject, delay);
+    };
+    const settingsSelector = '#urppp-settings-panel, #urppp-set-assist-slot, .urppp-set-body';
+    const containsSettingsNode = (node) => {
+      if (!node || ![1, 11].includes(node.nodeType)) return false;
+      if (node.matches && node.matches(settingsSelector)) return true;
+      return Boolean(node.querySelector && node.querySelector(settingsSelector));
+    };
     tryInject();
-    const obs = new MutationObserver(() => tryInject());
+    const obs = new MutationObserver((mutations) => {
+      const relevant = mutations.some((mutation) => Array.from(mutation.addedNodes || []).some(containsSettingsNode));
+      if (relevant) scheduleInject(30);
+    });
     obs.observe(document.documentElement, { childList: true, subtree: true });
     document.addEventListener('click', (e) => {
       const t = e.target;
