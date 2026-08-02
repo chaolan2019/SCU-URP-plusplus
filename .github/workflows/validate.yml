@@ -1,0 +1,42 @@
+name: Validate source and generated userscripts
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "optimize/**"
+      - "refactor/**"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Verify generated userscripts
+        run: npm run build:check
+
+      - name: Check userscript syntax
+        run: |
+          node --check urppp.user.js
+          node --check urpppp.user.js
+
+      - name: Check whitespace
+        run: git diff --check

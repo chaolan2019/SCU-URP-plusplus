@@ -37,6 +37,18 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify generated userscripts
+        run: |
+          npm ci
+          npm test
+          npm run build:check
+
       - name: Read versions and build notes
         id: meta
         shell: bash

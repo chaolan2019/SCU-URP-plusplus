@@ -210,8 +210,12 @@
 
 ```text
 URP++/
-├── urppp.user.js              # 主脚本
-├── urpppp.user.js             # 辅助插件（可选）
+├── src/                       # 模块化源码、功能模块与元数据
+├── tools/build.mjs            # 生成根目录单文件 userscript
+├── tests/                     # Node.js 固定回归测试
+├── urppp.user.js              # 生成的主脚本安装产物
+├── urpppp.user.js             # 生成的辅助插件安装产物
+├── package.json               # 构建、测试与依赖配置
 ├── README.md                  # 主脚本说明
 ├── README_.md                 # 辅助插件说明与风险声明
 ├── LICENSE                    # GNU GPL 3.0 开源协议
@@ -239,15 +243,18 @@ URP++/
 
 ## 开发
 
-本地直接改 `urppp.user.js`，在 Tampermonkey 中指向文件或复制安装后硬刷新验收。
-
-常见调试：
-
-- 清爽模式：`window.__urpppCleanMode`
+根目录 `urppp.user.js` 与 `urpppp.user.js` 是生成的单文件安装产物。源码修改位于 `src/`，构建后仍可直接交给 Tampermonkey、Greasy Fork 和 GitHub Release。
 
 ```bash
-node --check urppp.user.js
+npm ci
+npm test
+npm run build
+npm run build:check
 ```
+
+`npm run build:check` 会重新构建并逐字节核对根目录产物，防止源码与发布文件不同步。正式输出不压缩、不混淆，并保留函数名和许可证声明。
+
+常见调试入口：`window.__urpppCleanMode`、`window.urppp`、`window.__urppppAssist`。
 
 ---
 

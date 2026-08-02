@@ -1,0 +1,19 @@
+{
+  "name": "scu-urp-plusplus",
+  "version": "1.5.1",
+  "private": true,
+  "type": "module",
+  "description": "Modular source and reproducible userscript builds for SCU URP++.",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "build:check": "node tools/build.mjs --check",
+    "test": "node --test tests/*.test.js",
+    "check": "npm test && npm run build:check && node --check urppp.user.js && node --check urpppp.user.js"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.1"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

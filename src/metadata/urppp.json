@@ -1,0 +1,23 @@
+{
+  "name": "SCU URP++教务系统美化",
+  "version": "1.5.1",
+  "description": "四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合",
+  "updateURL": "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js",
+  "downloadURL": "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js",
+  "match": [
+    "http://zhjw.scu.edu.cn/*",
+    "http://202.115.47.141/*"
+  ],
+  "grant": [
+    "GM_addStyle",
+    "GM_getValue",
+    "GM_setValue",
+    "unsafeWindow",
+    "GM_xmlhttpRequest"
+  ],
+  "connect": [
+    "raw.githubusercontent.com",
+    "github.com"
+  ],
+  "run-at": "document-start"
+}
