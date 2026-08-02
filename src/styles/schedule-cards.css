@@ -19,7 +19,7 @@
 #courseTable .class_div.box_font > p {
   position: relative;
   z-index: 1;
-  margin: 2px 7px !important;
+  margin: 1px 6px !important;
   color: rgba(255, 255, 255, 0.94) !important;
   font-size: 12px !important;
   line-height: 1.35 !important;
@@ -29,8 +29,8 @@
 }
 
 #courseTable .class_div.box_font > p[class*="p-kcm-"] {
-  margin-top: 6px !important;
-  margin-bottom: 3px !important;
+  margin-top: 4px !important;
+  margin-bottom: 2px !important;
   color: #fff !important;
   font-size: 14px !important;
   font-weight: 750 !important;

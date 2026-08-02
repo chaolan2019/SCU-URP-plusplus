@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SCU URP++教务系统美化
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.5.2
+// @version      1.5.3
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Chao_Lan,Hanako
 // @license      GPL-3.0-only
@@ -373,6 +373,270 @@
     return output;
   }
   __name(buildCustomScheduleJson, "buildCustomScheduleJson");
+
+  // src/features/schedule-export/image-layout.js
+  function wrapField(text, limit, kind) {
+    const lines = [];
+    let rest = String(text || "");
+    const width = Math.max(4, Number(limit) || 4);
+    while (rest) {
+      lines.push({ text: rest.slice(0, width), kind });
+      rest = rest.slice(width);
+    }
+    return lines;
+  }
+  __name(wrapField, "wrapField");
+  function takeLines(lines, count) {
+    const taken = lines.slice(0, Math.max(0, count)).map((line) => ({ ...line }));
+    if (taken.length && taken.length < lines.length) {
+      const last = taken[taken.length - 1];
+      last.text = last.text.length > 1 ? last.text.slice(0, -1) + "…" : "…";
+    }
+    return taken;
+  }
+  __name(takeLines, "takeLines");
+  function scheduleImageTextLines(item, maxChars, maxLines) {
+    const sectionLabel = item.startSection === item.endSection ? item.startSection + "节" : item.startSection + "-" + item.endSection + "节";
+    const title = wrapField(item.name, Math.max(5, maxChars), "title");
+    const teacher = wrapField(item.teacher, Math.max(6, maxChars + 2), "teacher");
+    const schedule = wrapField([item.weekDescription, sectionLabel].filter(Boolean).join(" · "), Math.max(6, maxChars + 2), "schedule");
+    const location2 = wrapField([item.campus, item.building, item.classroom].filter(Boolean).join(" "), Math.max(6, maxChars + 2), "location");
+    const capacity = Math.max(1, Number(maxLines) || 1);
+    const locationReserve = location2.length && capacity >= 2 ? Math.min(2, location2.length) : 0;
+    const scheduleReserve = schedule.length && capacity >= 3 ? 1 : 0;
+    const teacherReserve = teacher.length && capacity >= 4 ? 1 : 0;
+    const titleBudget = Math.max(1, capacity - locationReserve - scheduleReserve - teacherReserve);
+    const output = takeLines(title, titleBudget);
+    let remaining = capacity - output.length;
+    const teacherBudget = Math.min(teacher.length, Math.max(0, remaining - scheduleReserve - locationReserve));
+    output.push(...takeLines(teacher, teacherBudget));
+    remaining = capacity - output.length;
+    const scheduleBudget = Math.min(schedule.length, Math.max(0, remaining - locationReserve));
+    output.push(...takeLines(schedule, scheduleBudget));
+    remaining = capacity - output.length;
+    output.push(...takeLines(location2, remaining));
+    return output.slice(0, capacity);
+  }
+  __name(scheduleImageTextLines, "scheduleImageTextLines");
+
+  // src/features/schedule-export/layout.js
+  function scheduleCardLaneGeometry(cellWidth, laneCount, laneIndex, leftEdgeOffset = 0) {
+    const width = Math.max(0, Number(cellWidth) || 0);
+    const count = Math.max(1, Math.floor(Number(laneCount) || 1));
+    const index = Math.max(0, Math.min(count - 1, Math.floor(Number(laneIndex) || 0)));
+    const origin = -Math.max(0, Number(leftEdgeOffset) || 0);
+    const left = origin + width * index / count;
+    const right = origin + width * (index + 1) / count;
+    return { left, width: Math.max(0, right - left) };
+  }
+  __name(scheduleCardLaneGeometry, "scheduleCardLaneGeometry");
+
+  // src/features/schedule-export/native-pdf.js
+  var NATIVE_PDF_ID_MAP = {
+    "page-content-template": "urppp-pdf-page",
+    mycoursetable: "urppp-pdf-mycoursetable",
+    courseTable: "urppp-pdf-courseTable",
+    courseTableBody: "urppp-pdf-courseTableBody",
+    h4_id1: "urppp-pdf-h4-1",
+    h4_id2: "urppp-pdf-h4-2",
+    infoTable: "urppp-pdf-info-table",
+    "rwskxxbg-course": "urppp-pdf-rwskxxbg",
+    "other-course": "urppp-pdf-other-course",
+    temp_title: "urppp-pdf-temp-title",
+    temp_subtitle: "urppp-pdf-temp-subtitle"
+  };
+  var NATIVE_PDF_SELECTOR_REWRITES = [
+    ["#page-content-template", "#urppp-pdf-page"],
+    ["#mycoursetable", "#urppp-pdf-mycoursetable"],
+    ["#courseTableBody", "#urppp-pdf-courseTableBody"],
+    ["#courseTable", "#urppp-pdf-courseTable"],
+    ["div.class_div", "div.urppp-pdf-card"],
+    ["div.printDiv", "div.urppp-pdf-card.printDiv"],
+    ["#h4_id1", "#urppp-pdf-h4-1"],
+    ["#h4_id2", "#urppp-pdf-h4-2"],
+    ["#infoTable", "#urppp-pdf-info-table"],
+    [".breadcrumb", ".urppp-pdf-breadcrumb"],
+    ["#rwskxxbg-course", "#urppp-pdf-rwskxxbg"],
+    ["#temp_title", "#urppp-pdf-temp-title"],
+    ["#temp_subtitle", "#urppp-pdf-temp-subtitle"]
+  ];
+  function rewriteNativePdfSelector(selector) {
+    if (typeof selector !== "string") return selector;
+    let rewritten = selector;
+    for (const [from, to] of NATIVE_PDF_SELECTOR_REWRITES) {
+      rewritten = rewritten.split(",").map((part) => {
+        const trimmed = part.trim();
+        if (trimmed === from) return to;
+        if (trimmed.startsWith(from + " ")) return to + trimmed.slice(from.length);
+        return part;
+      }).join(",");
+    }
+    return rewritten;
+  }
+  __name(rewriteNativePdfSelector, "rewriteNativePdfSelector");
+  function sanitizeNativePdfClone(root) {
+    root.querySelectorAll('script, iframe, object, embed, [id^="urppp-"], [data-urppp]').forEach((element) => element.remove());
+    [root, ...root.querySelectorAll("*")].forEach((element) => {
+      Array.from(element.classList || []).forEach((name) => {
+        if (/^urppp(?:-|$)/.test(name)) element.classList.remove(name);
+      });
+      Array.from(element.attributes || []).forEach((attribute) => {
+        if (/^data-urppp(?:-|$)/.test(attribute.name)) element.removeAttribute(attribute.name);
+      });
+      if (!element.style) return;
+      Array.from(element.style).forEach((property) => {
+        if (element.style.getPropertyPriority(property) === "important") element.style.removeProperty(property);
+      });
+    });
+    return root;
+  }
+  __name(sanitizeNativePdfClone, "sanitizeNativePdfClone");
+  function renameNativePdfClone(root) {
+    [root, ...root.querySelectorAll("*")].forEach((element) => {
+      if (element.id && NATIVE_PDF_ID_MAP[element.id]) element.id = NATIVE_PDF_ID_MAP[element.id];
+      if (element.classList.contains("class_div")) {
+        element.classList.remove("class_div");
+        element.classList.remove("box_font");
+        element.classList.add("urppp-pdf-card");
+      }
+      if (element.classList.contains("course")) {
+        element.classList.remove("course");
+        element.classList.add("urppp-pdf-course");
+      }
+    });
+    return root;
+  }
+  __name(renameNativePdfClone, "renameNativePdfClone");
+  function measureNativeScheduleWidth() {
+    const styles = [];
+    document.querySelectorAll('style[id^="urppp-"]').forEach((style) => {
+      if (style.sheet && !style.sheet.disabled) {
+        styles.push(style);
+        style.sheet.disabled = true;
+      }
+    });
+    let width = 0;
+    const host = document.getElementById("mycoursetable");
+    if (host) width = host.getBoundingClientRect().width;
+    styles.forEach((style) => {
+      style.sheet.disabled = false;
+    });
+    return width;
+  }
+  __name(measureNativeScheduleWidth, "measureNativeScheduleWidth");
+  var NATIVE_PDF_RESET_STYLE = `
+  #urppp-pdf-stage table.table,
+  #urppp-pdf-stage table.table-bordered,
+  #urppp-pdf-stage table.table-striped,
+  #urppp-pdf-stage table.table-hover {
+    background: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #000000 !important;
+  }
+  #urppp-pdf-stage .table > thead > tr > th,
+  #urppp-pdf-stage .table-bordered > thead > tr > th,
+  #urppp-pdf-stage .table-striped > thead > tr > th,
+  #urppp-pdf-stage .table-hover > thead > tr > th {
+    background: #dddddd !important;
+    background-color: #dddddd !important;
+    color: #000000 !important;
+    font-weight: normal !important;
+    white-space: normal !important;
+    border: 1px solid #dddddd !important;
+  }
+  #urppp-pdf-stage .table > tbody > tr > td,
+  #urppp-pdf-stage .table > tbody > tr > th,
+  #urppp-pdf-stage .table-bordered > tbody > tr > td,
+  #urppp-pdf-stage .table-bordered > tbody > tr > th,
+  #urppp-pdf-stage .table-striped > tbody > tr > td,
+  #urppp-pdf-stage .table-striped > tbody > tr > th,
+  #urppp-pdf-stage .table-hover > tbody > tr > td,
+  #urppp-pdf-stage .table-hover > tbody > tr > th {
+    background: transparent !important;
+    background-color: transparent !important;
+    color: #000000 !important;
+    border: 1px solid #dddddd !important;
+  }
+  #urppp-pdf-stage .table-striped > tbody > tr:nth-of-type(odd) > td,
+  #urppp-pdf-stage .table-striped > tbody > tr:nth-of-type(odd) > th {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+`;
+  function pinNativePdfHeaderBackgrounds(root) {
+    root.querySelectorAll("th").forEach((cell) => {
+      ["background-color", "background"].forEach((property) => {
+        const value = cell.style.getPropertyValue(property);
+        if (value && cell.style.getPropertyPriority(property) !== "important") {
+          cell.style.setProperty(property, value, "important");
+        }
+      });
+    });
+  }
+  __name(pinNativePdfHeaderBackgrounds, "pinNativePdfHeaderBackgrounds");
+  function cloneNativePdfStage(sourceHost) {
+    const nativeWidth = measureNativeScheduleWidth();
+    const stage = document.createElement("div");
+    stage.id = "urppp-pdf-stage";
+    stage.style.cssText = "position:fixed;left:-20000px;top:0;z-index:-1;pointer-events:none;width:" + (nativeWidth || window.innerWidth || 1440) + "px;";
+    const page = document.createElement("div");
+    page.id = "urppp-pdf-page";
+    page.style.cssText = "position:relative;width:100%;box-sizing:border-box;";
+    const clone = sourceHost.cloneNode(true);
+    sanitizeNativePdfClone(clone);
+    renameNativePdfClone(clone);
+    page.appendChild(clone);
+    stage.appendChild(page);
+    pinNativePdfHeaderBackgrounds(clone);
+    const resetStyle = document.createElement("style");
+    resetStyle.id = "urppp-pdf-reset-style";
+    resetStyle.textContent = NATIVE_PDF_RESET_STYLE;
+    document.head.appendChild(resetStyle);
+    document.body.appendChild(stage);
+    const target = stage.querySelector("#urppp-pdf-mycoursetable");
+    const pageRef = stage.querySelector("#urppp-pdf-page") || stage;
+    if (!target) {
+      stage.remove();
+      throw new Error("无法建立原生课表捕获节点");
+    }
+    return { stage, target, page: pageRef, sourceHost };
+  }
+  __name(cloneNativePdfStage, "cloneNativePdfStage");
+  function runNativeScheduleDivBuild($) {
+    $("div.class_div").removeAttr("style");
+    $("div.class_div").css("position", "absolute");
+    let tdWidth = $("#mycoursetable td").css("width");
+    $("div.class_div").each(function(_, element) {
+      const width = parseFloat(tdWidth) || 0;
+      $(element).css("width", $(element).siblings().size() > 0 ? width / 2 + "px" : tdWidth);
+    });
+    let rowHeight = 0;
+    $("#courseTableBody tr").each(function(_, row) {
+      if ($(row).height() > rowHeight) rowHeight = $(row).height();
+    });
+    $("div.class_div").each(function(_, element) {
+      const span = Number($(element).attr("classNum")) || 1;
+      if ($(element).height() / span > rowHeight) rowHeight = $(element).height() / span;
+    });
+    $("#courseTableBody tr").height(rowHeight + "px");
+    tdWidth = $("#mycoursetable td").css("width");
+    $("div.class_div").each(function(_, element) {
+      const card = $(element);
+      const cell = card.parent("td");
+      const page = $("#page-content-template");
+      const width = parseFloat(tdWidth) || 0;
+      card.css("height", $("#courseTableBody tr").height() * (Number(card.attr("classNum")) || 1) + "px");
+      card.css("top", cell.offset().top - page.offset().top - 12);
+      if (card.siblings().size() > 0) {
+        const left = cell.offset().left - page.offset().left + (card.next().size() > 0 ? 0 : width / 2);
+        card.css("left", left + "px");
+      } else {
+        card.css("left", cell.offset().left - page.offset().left + "px");
+      }
+    });
+  }
+  __name(runNativeScheduleDivBuild, "runNativeScheduleDivBuild");
 
   // src/features/schedule-export/weeks.js
   function scheduleWeeksFromDescription(value) {
@@ -8659,7 +8923,7 @@ fo-striped.setLabelWidth,
 #courseTable .class_div.box_font > p {
   position: relative;
   z-index: 1;
-  margin: 2px 7px !important;
+  margin: 1px 6px !important;
   color: rgba(255, 255, 255, 0.94) !important;
   font-size: 12px !important;
   line-height: 1.35 !important;
@@ -8669,8 +8933,8 @@ fo-striped.setLabelWidth,
 }
 
 #courseTable .class_div.box_font > p[class*="p-kcm-"] {
-  margin-top: 6px !important;
-  margin-bottom: 3px !important;
+  margin-top: 4px !important;
+  margin-bottom: 2px !important;
   color: #fff !important;
   font-size: 14px !important;
   font-weight: 750 !important;
@@ -8751,7 +9015,7 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
   // src/userscripts/urppp.entry.js
   (function() {
     "use strict";
-    const URPPP_VERSION = "1.5.2";
+    const URPPP_VERSION = "1.5.3";
     const URPPP_UPDATE = {
       mainRaw: "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js",
       assistRaw: "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js",
@@ -8770,7 +9034,7 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
       { id: "editorial", name: "编辑杂志", desc: "衬线标题、无框版面与淡分割线。支持暗色，不支持动态配色。", ready: true, dark: true, dynamic: false },
       { id: "neu", name: "新拟物", desc: "同色双阴影凸起/内凹，立体柔和。支持暗色，不支持动态配色。", ready: true, dark: true, dynamic: false }
     ];
-    GM_addStyle(`
+    const earlyStyle = GM_addStyle(`
     html, body { background: var(--bg, #F5F5F7) !important; color: var(--text, #1D1D1F) !important; }
     /* 未就绪时隐藏页面主体，避免 ACE 原样式闪现 */
     html:not(.urppp-ready) body {
@@ -9009,6 +9273,7 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
       gap: 0 !important;
     }
   `);
+    if (earlyStyle) earlyStyle.id = "urppp-early-style";
     const URPPP_LOADER_CUBE = `
     <div class="urppp-cube-scene" aria-hidden="true">
       <div class="urppp-cube">
@@ -14357,19 +14622,26 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
           td.style.setProperty("position", "relative", "important");
           td.style.setProperty("vertical-align", "top", "important");
           td.style.setProperty("overflow", "visible", "important");
-          const half = blocks.length > 1;
-          const tdW = td.clientWidth || td.offsetWidth || 0;
+          const tdWidth = td.getBoundingClientRect().width || td.offsetWidth || td.clientWidth || 0;
+          const tdStyle = getComputedStyle(td);
+          const table = td.closest("table");
+          const tableStyle = table ? getComputedStyle(table) : null;
+          const borderWidth = parseFloat(tdStyle.borderLeftWidth) || 0;
+          const leftEdgeOffset = tableStyle && tableStyle.borderCollapse === "collapse" ? borderWidth / 2 : borderWidth;
+          const laneCount = Math.max(1, blocks.length);
           blocks.forEach((div, idx) => {
             const n = parseInt(div.getAttribute("classNum") || "1", 10) || 1;
-            const w = half ? Math.floor(tdW / 2) : tdW;
-            const left = half && idx > 0 ? w : 0;
+            const geometry = scheduleCardLaneGeometry(tdWidth, laneCount, idx, leftEdgeOffset);
+            const left = geometry.left;
+            const width = geometry.width;
             div.style.setProperty("position", "absolute", "important");
             div.style.setProperty("top", "0px", "important");
             div.style.setProperty("left", left + "px", "important");
             div.style.setProperty("right", "auto", "important");
             div.style.setProperty("bottom", "auto", "important");
             div.style.setProperty("transform", "none", "important");
-            div.style.setProperty("width", Math.max(0, w - 2) + "px", "important");
+            div.style.setProperty("width", width + "px", "important");
+            div.style.setProperty("max-width", "none", "important");
             div.style.setProperty("height", unitH * n + "px", "important");
             div.style.setProperty("margin", "0", "important");
             div.style.setProperty("box-sizing", "border-box", "important");
@@ -14389,6 +14661,7 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
         if (typeof g.divBuild !== "function") return;
         g.__urpppDivBuildPatched = true;
         const orig = g.divBuild;
+        g.__urpppOriginalDivBuild = orig;
         g.divBuild = function() {
           try {
             fixWeekScheduleLayout();
@@ -19002,20 +19275,6 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
       return sorted;
     }
     __name(layoutScheduleDay, "layoutScheduleDay");
-    function scheduleSvgLines(item, maxChars) {
-      const textRows = [item.course.name, item.course.teacher, item.arrangement.weekDescription, [item.arrangement.campus, item.arrangement.building, item.arrangement.classroom].filter(Boolean).join(" ")].filter(Boolean);
-      const lines = [];
-      textRows.forEach((text, rowIndex) => {
-        let rest = String(text);
-        const limit = rowIndex === 0 ? Math.max(5, maxChars) : Math.max(6, maxChars + 2);
-        while (rest && lines.length < 5) {
-          lines.push(rest.slice(0, limit));
-          rest = rest.slice(limit);
-        }
-      });
-      return lines.slice(0, 5);
-    }
-    __name(scheduleSvgLines, "scheduleSvgLines");
     function scheduleExportEvents(data) {
       const events = [];
       data.courses.forEach((course) => course.arrangements.forEach((arrangement) => {
@@ -19034,56 +19293,186 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
       return lines;
     }
     __name(wrapScheduleFooter, "wrapScheduleFooter");
-    function buildScheduleSvg(data) {
+    const SCHEDULE_IMAGE_SKIN_NAMES = {
+      apple: "类 Apple",
+      flat: "极简扁平",
+      organic: "自然有机",
+      brutal: "新野兽派",
+      editorial: "编辑杂志",
+      neu: "新拟物"
+    };
+    function resolvedScheduleImageColor(property, fallback, background) {
+      if (typeof document === "undefined") return normalizeHexColor(fallback) || "#000000";
+      const probe = document.createElement("span");
+      probe.style.cssText = "position:fixed;left:-9999px;visibility:hidden;color:var(" + property + "," + fallback + ")";
+      (document.body || document.documentElement).appendChild(probe);
+      const value = getComputedStyle(probe).color;
+      probe.remove();
+      const components = String(value || "").match(/[\d.]+/g)?.map(Number) || [];
+      if (components.length >= 3) {
+        const color = rgbToHex(components[0], components[1], components[2]);
+        const opacity = components.length > 3 ? Math.max(0, Math.min(1, components[3])) : 1;
+        return opacity < 1 ? mixHex(background || fallback, color, opacity) : color;
+      }
+      return normalizeHexColor(value) || normalizeHexColor(fallback) || "#000000";
+    }
+    __name(resolvedScheduleImageColor, "resolvedScheduleImageColor");
+    function currentScheduleImageTheme() {
+      const themeId = getCurrent();
+      const skinId = getSkin();
+      const dark = themeId === "dark";
+      const fallback = dark ? { bg: "#000000", surface: "#1C1C1E", input: "#2C2C2E", text: "#F5F5F7", secondary: "#A1A1A6", muted: "#8E8E93", border: "#38383A", primary: "#0A84FF" } : { bg: "#F5F5F7", surface: "#FFFFFF", input: "#F5F5F7", text: "#1D1D1F", secondary: "#6E6E73", muted: "#86868B", border: "#D2D2D7", primary: "#0071E3" };
+      const colors = {
+        bg: resolvedScheduleImageColor("--bg", fallback.bg),
+        surface: resolvedScheduleImageColor(skinId === "neu" ? "--neu-base" : "--surface", fallback.surface),
+        input: resolvedScheduleImageColor("--input-bg", fallback.input),
+        text: resolvedScheduleImageColor("--text", fallback.text),
+        secondary: resolvedScheduleImageColor("--text-secondary", fallback.secondary),
+        muted: resolvedScheduleImageColor("--text-muted", fallback.muted),
+        border: resolvedScheduleImageColor("--border", fallback.border, resolvedScheduleImageColor(skinId === "neu" ? "--neu-base" : "--surface", fallback.surface)),
+        primary: resolvedScheduleImageColor("--primary", fallback.primary)
+      };
+      const shapes = {
+        apple: { frameRadius: 24, headerRadius: 13, gridRadius: 10, cardRadius: 12, frameStroke: 1, cardStroke: 1, shadow: "soft" },
+        flat: { frameRadius: 0, headerRadius: 0, gridRadius: 0, cardRadius: 0, frameStroke: 2, cardStroke: 2, shadow: "none" },
+        organic: { frameRadius: 30, headerRadius: 18, gridRadius: 14, cardRadius: 18, frameStroke: 1, cardStroke: 1, shadow: "warm" },
+        brutal: { frameRadius: 0, headerRadius: 0, gridRadius: 0, cardRadius: 0, frameStroke: 3, cardStroke: 3, shadow: "hard" },
+        editorial: { frameRadius: 0, headerRadius: 0, gridRadius: 0, cardRadius: 0, frameStroke: 1, cardStroke: 1, shadow: "none", serif: true },
+        neu: { frameRadius: 22, headerRadius: 14, gridRadius: 10, cardRadius: 14, frameStroke: 0, cardStroke: 0, shadow: "neu" }
+      };
+      return {
+        id: themeId,
+        skin: skinId,
+        dark,
+        label: (SCHEDULE_IMAGE_SKIN_NAMES[skinId] || skinId) + " · " + (THEMES[themeId] && THEMES[themeId].name || themeId),
+        colors,
+        shape: shapes[skinId] || shapes.apple
+      };
+    }
+    __name(currentScheduleImageTheme, "currentScheduleImageTheme");
+    function scheduleImageCourseStyle(theme, name) {
+      const accent = exportCourseColor(name);
+      const colors = theme.colors;
+      const skin = theme.skin;
+      if (skin === "brutal") {
+        return { fill: mixHex(colors.surface, accent, 0.48), stroke: "#000000", text: "#111111", secondary: "#242424", stripe: accent };
+      }
+      if (skin === "flat") {
+        return { fill: mixHex(colors.surface, accent, theme.dark ? 0.24 : 0.16), stroke: colors.text, text: colors.text, secondary: colors.secondary, stripe: accent };
+      }
+      if (skin === "editorial") {
+        return { fill: mixHex(colors.surface, accent, theme.dark ? 0.16 : 0.08), stroke: colors.border, text: colors.text, secondary: colors.secondary, stripe: accent };
+      }
+      return {
+        fill: mixHex(colors.surface, accent, theme.dark ? 0.28 : skin === "organic" ? 0.2 : 0.14),
+        stroke: mixHex(colors.border, accent, theme.dark ? 0.52 : 0.42),
+        text: colors.text,
+        secondary: colors.secondary,
+        stripe: accent
+      };
+    }
+    __name(scheduleImageCourseStyle, "scheduleImageCourseStyle");
+    function buildScheduleSvg(data, themeOverride) {
+      const theme = themeOverride || currentScheduleImageTheme();
+      const colors = theme.colors;
+      const shape = theme.shape;
       const width = 1960;
-      const left = 100;
-      const top = 176;
-      const rowHeight = 132;
-      const columnWidth = (width - left - 28) / 7;
+      const frameX = 40;
+      const frameY = 136;
+      const frameWidth = width - frameX * 2;
+      const innerX = frameX + 24;
+      const sectionWidth = 64;
+      const dayGap = 8;
+      const dayStart = innerX + sectionWidth + 12;
+      const dayRight = frameX + frameWidth - 24;
+      const columnWidth = (dayRight - dayStart - dayGap * 6) / 7;
+      const gridTop = frameY + 88;
+      const rowHeight = 108;
+      const cellHeight = 102;
+      const gridBottom = gridTop + rowHeight * 12;
+      const frameHeight = gridBottom - frameY + 24;
       const unscheduledNames = data.courses.filter((course) => !course.arrangements.length).map((course) => course.name);
-      const unscheduledLines = wrapScheduleFooter(unscheduledNames.join("、"), 78);
-      const footerHeight = unscheduledLines.length ? 78 + unscheduledLines.length * 28 : 54;
-      const height = top + rowHeight * 12 + footerHeight;
+      const unscheduledLines = wrapScheduleFooter(unscheduledNames.join("、"), 92);
+      const footerHeight = unscheduledLines.length ? 74 + unscheduledLines.length * 27 : 44;
+      const height = frameY + frameHeight + footerHeight;
       const dayNames = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"];
-      const parts = [`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`, '<rect width="100%" height="100%" fill="#F8FAFC"/>', `<text x="${left}" y="58" fill="#0F172A" font-size="34" font-weight="700" font-family="Microsoft YaHei,Segoe UI,sans-serif">${escapeHtml(data.semester.label)}课表</text>`, `<text x="${left}" y="98" fill="#64748B" font-size="18" font-family="Microsoft YaHei,Segoe UI,sans-serif">由 SCU URP++ 导出 · ${escapeHtml((/* @__PURE__ */ new Date()).toLocaleString("zh-CN", { hour12: false }))}</text>`];
-      parts.push(`<rect x="${left}" y="${top - 52}" width="${width - left - 28}" height="${rowHeight * 12 + 52}" rx="12" fill="#FFFFFF" stroke="#CBD5E1"/>`);
+      const headingFont = shape.serif ? "Georgia,Noto Serif SC,Songti SC,STSong,SimSun,serif" : "Microsoft YaHei,Segoe UI,sans-serif";
+      const bodyFont = "Microsoft YaHei,Segoe UI,sans-serif";
+      const frameFilter = ["soft", "warm", "neu"].includes(shape.shadow) ? ' filter="url(#schedule-frame-shadow)"' : "";
+      const cardFilter = ["soft", "warm", "neu"].includes(shape.shadow) ? ' filter="url(#schedule-card-shadow)"' : "";
+      const parts = [
+        `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
+        "<defs>",
+        `<filter id="schedule-frame-shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="${theme.dark ? 10 : 7}" stdDeviation="${theme.dark ? 16 : 11}" flood-color="${theme.dark ? "#000000" : colors.text}" flood-opacity="${theme.dark ? 0.48 : 0.1}"/></filter>`,
+        `<filter id="schedule-card-shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="${theme.dark ? "#000000" : colors.text}" flood-opacity="${theme.dark ? 0.34 : 0.1}"/></filter>`,
+        "</defs>",
+        `<rect width="100%" height="100%" fill="${colors.bg}"/>`,
+        `<rect x="${frameX}" y="32" width="142" height="36" rx="${shape.headerRadius}" fill="${colors.primary}"/>`,
+        `<text x="${frameX + 71}" y="56" text-anchor="middle" fill="#FFFFFF" font-size="15" font-weight="700" font-family="${bodyFont}">SCU URP++</text>`,
+        `<text x="${frameX}" y="106" fill="${colors.text}" font-size="36" font-weight="700" font-family="${headingFont}">${escapeHtml(data.semester.label)}课表</text>`,
+        `<text x="${width - frameX}" y="54" text-anchor="end" fill="${colors.secondary}" font-size="16" font-family="${bodyFont}">${escapeHtml(theme.label)}</text>`,
+        `<text x="${width - frameX}" y="83" text-anchor="end" fill="${colors.muted}" font-size="14" font-family="${bodyFont}">${escapeHtml((/* @__PURE__ */ new Date()).toLocaleString("zh-CN", { hour12: false }))}</text>`
+      ];
+      if (shape.shadow === "hard") parts.push(`<rect x="${frameX + 8}" y="${frameY + 8}" width="${frameWidth}" height="${frameHeight}" fill="#000000"/>`);
+      parts.push(`<rect x="${frameX}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" rx="${shape.frameRadius}" fill="${colors.surface}" stroke="${shape.shadow === "hard" ? "#000000" : colors.border}" stroke-width="${shape.frameStroke}"${frameFilter}/>`);
       dayNames.forEach((name, index) => {
-        const x = left + index * columnWidth;
-        parts.push(`<rect x="${x}" y="${top - 52}" width="${columnWidth}" height="52" fill="#F1F5F9" stroke="#CBD5E1"/>`, `<text x="${x + columnWidth / 2}" y="${top - 19}" text-anchor="middle" fill="#334155" font-size="18" font-weight="600" font-family="Microsoft YaHei,Segoe UI,sans-serif">${name}</text>`);
+        const x = dayStart + index * (columnWidth + dayGap);
+        parts.push(`<rect x="${x}" y="${frameY + 22}" width="${columnWidth}" height="48" rx="${shape.headerRadius}" fill="${colors.input}" stroke="${colors.border}" stroke-width="${shape.frameStroke ? 1 : 0}"/>`, `<text x="${x + columnWidth / 2}" y="${frameY + 53}" text-anchor="middle" fill="${colors.secondary}" font-size="17" font-weight="600" font-family="${bodyFont}">${name}</text>`);
       });
       for (let section = 1; section <= 12; section++) {
-        const y = top + (section - 1) * rowHeight;
-        parts.push(`<rect x="18" y="${y}" width="68" height="${rowHeight}" rx="8" fill="#F1F5F9"/>`, `<text x="52" y="${y + rowHeight / 2 + 7}" text-anchor="middle" fill="#64748B" font-size="18" font-weight="600" font-family="Segoe UI,sans-serif">${section}</text>`, `<line x1="${left}" y1="${y}" x2="${width - 28}" y2="${y}" stroke="#E2E8F0"/>`);
+        const y = gridTop + (section - 1) * rowHeight;
+        parts.push(`<rect x="${innerX}" y="${y}" width="${sectionWidth}" height="${cellHeight}" rx="${shape.gridRadius}" fill="${colors.input}" stroke="${colors.border}" stroke-width="${shape.frameStroke ? 1 : 0}"/>`, `<text x="${innerX + sectionWidth / 2}" y="${y + cellHeight / 2 + 6}" text-anchor="middle" fill="${colors.muted}" font-size="16" font-weight="600" font-family="${bodyFont}">${section}</text>`);
+        dayNames.forEach((_, dayIndex) => {
+          const x = dayStart + dayIndex * (columnWidth + dayGap);
+          parts.push(`<rect x="${x}" y="${y}" width="${columnWidth}" height="${cellHeight}" rx="${shape.gridRadius}" fill="${colors.input}" stroke="${colors.border}" stroke-width="${shape.frameStroke ? 1 : 0}"/>`);
+        });
       }
+      [4, 9].forEach((section) => {
+        const y = gridTop + section * rowHeight - 3;
+        parts.push(`<line x1="${dayStart}" y1="${y}" x2="${dayRight}" y2="${y}" stroke="${colors.primary}" stroke-opacity=".42" stroke-width="2" stroke-dasharray="10 9"/>`);
+      });
       for (let day = 1; day <= 7; day++) {
         const dayEvents = layoutScheduleDay(scheduleExportEvents(data).filter((item) => item.day === day));
         dayEvents.forEach((item, index) => {
-          const gap = 5;
           const laneWidth = columnWidth / item.laneCount;
-          const x = left + (day - 1) * columnWidth + item.lane * laneWidth + gap;
-          const y = top + (item.startSection - 1) * rowHeight + gap;
-          const cardWidth = laneWidth - gap * 2;
-          const cardHeight = Math.max(42, (item.endSection - item.startSection + 1) * rowHeight - gap * 2);
-          const color = exportCourseColor(item.course.name);
+          const x = dayStart + (day - 1) * (columnWidth + dayGap) + item.lane * laneWidth;
+          const y = gridTop + (item.startSection - 1) * rowHeight;
+          const cardWidth = laneWidth;
+          const cardHeight = Math.max(cellHeight, (item.endSection - item.startSection) * rowHeight + cellHeight);
+          const card = scheduleImageCourseStyle(theme, item.course.name);
           const clipId = "course-clip-" + day + "-" + index;
-          const maxLines = Math.max(1, Math.floor((cardHeight - 20) / 24));
-          const lines = scheduleSvgLines(item, Math.floor(cardWidth / 18)).slice(0, maxLines);
-          parts.push(`<defs><clipPath id="${clipId}"><rect x="${x + 8}" y="${y + 7}" width="${Math.max(10, cardWidth - 16)}" height="${Math.max(18, cardHeight - 14)}" rx="7"/></clipPath></defs>`, `<rect x="${x}" y="${y}" width="${cardWidth}" height="${cardHeight}" rx="9" fill="${color}" fill-opacity=".12" stroke="${color}" stroke-opacity=".58"/>`, `<g clip-path="url(#${clipId})">`);
+          const maxLines = Math.max(1, Math.floor((cardHeight - 18) / 23));
+          const lines = scheduleImageTextLines({
+            name: item.course.name,
+            teacher: item.course.teacher,
+            weekDescription: item.arrangement.weekDescription,
+            startSection: item.startSection,
+            endSection: item.endSection,
+            campus: item.arrangement.campus,
+            building: item.arrangement.building,
+            classroom: item.arrangement.classroom
+          }, Math.floor((cardWidth - 22) / 16), maxLines);
+          parts.push(`<clipPath id="${clipId}"><rect x="${x + 11}" y="${y + 8}" width="${Math.max(10, cardWidth - 22)}" height="${Math.max(18, cardHeight - 16)}" rx="${Math.max(0, shape.cardRadius - 5)}"/></clipPath>`, `<rect data-course-card="1" data-day="${day}" data-start="${item.startSection}" data-end="${item.endSection}" x="${x}" y="${y}" width="${cardWidth}" height="${cardHeight}" rx="${shape.cardRadius}" fill="${card.fill}" stroke="${card.stroke}" stroke-width="${shape.cardStroke}"${cardFilter}/>`);
+          if (theme.skin === "brutal") parts.push(`<path d="M ${x + cardWidth - 4} ${y + 4} V ${y + cardHeight - 4} H ${x + 4}" fill="none" stroke="#000000" stroke-opacity=".28" stroke-width="5"/>`);
+          if (theme.skin === "editorial") parts.push(`<rect x="${x}" y="${y}" width="6" height="${cardHeight}" fill="${card.stripe}"/>`);
+          if (theme.skin === "neu") parts.push(`<path d="M ${x + shape.cardRadius} ${y + 1} H ${x + cardWidth - shape.cardRadius}" stroke="#FFFFFF" stroke-opacity=".32" stroke-width="2"/>`);
+          parts.push(`<g clip-path="url(#${clipId})">`);
           lines.forEach((line, lineIndex) => {
-            const strong = lineIndex === 0;
-            parts.push(`<text x="${x + 11}" y="${y + 27 + lineIndex * 24}" fill="${strong ? "#0F172A" : "#475569"}" font-size="${strong ? 17 : 14}" font-weight="${strong ? 700 : 500}" font-family="Microsoft YaHei,Segoe UI,sans-serif">${escapeHtml(line)}</text>`);
+            const strong = line.kind === "title";
+            parts.push(`<text data-kind="${line.kind}" x="${x + 14}" y="${y + 28 + lineIndex * 23}" fill="${strong ? card.text : card.secondary}" font-size="${strong ? 16 : 13}" font-weight="${strong ? 700 : 500}" font-family="${strong && shape.serif ? headingFont : bodyFont}">${escapeHtml(line.text)}</text>`);
           });
           parts.push("</g>");
         });
       }
-      const gridBottom = top + rowHeight * 12;
-      parts.push(`<line x1="${left}" y1="${gridBottom}" x2="${width - 28}" y2="${gridBottom}" stroke="#CBD5E1"/>`);
+      const footerY = frameY + frameHeight + 30;
       if (unscheduledLines.length) {
-        parts.push(`<text x="${left}" y="${gridBottom + 38}" fill="#475569" font-size="16" font-weight="600" font-family="Microsoft YaHei,Segoe UI,sans-serif">未排定时间的课程</text>`);
-        unscheduledLines.forEach((line, index) => parts.push(`<text x="${left}" y="${gridBottom + 68 + index * 28}" fill="#64748B" font-size="15" font-family="Microsoft YaHei,Segoe UI,sans-serif">${escapeHtml(line)}</text>`));
+        parts.push(`<text x="${frameX}" y="${footerY}" fill="${colors.secondary}" font-size="15" font-weight="700" font-family="${bodyFont}">未排定时间的课程</text>`);
+        unscheduledLines.forEach((line, index) => parts.push(`<text x="${frameX}" y="${footerY + 29 + index * 27}" fill="${colors.muted}" font-size="14" font-family="${bodyFont}">${escapeHtml(line)}</text>`));
+      } else {
+        parts.push(`<text x="${frameX}" y="${footerY}" fill="${colors.muted}" font-size="14" font-family="${bodyFont}">由 SCU URP++ 基于结构化课表数据生成</text>`);
       }
       parts.push("</svg>");
-      return { svg: parts.join(""), width, height };
+      return { svg: parts.join(""), width, height, background: colors.bg, theme };
     }
     __name(buildScheduleSvg, "buildScheduleSvg");
     function svgToPngBlob(svgInfo) {
@@ -19100,7 +19489,7 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
             canvas.height = Math.floor(svgInfo.height * scale);
             const context = canvas.getContext("2d");
             context.scale(canvas.width / svgInfo.width, canvas.height / svgInfo.height);
-            context.fillStyle = "#F8FAFC";
+            context.fillStyle = svgInfo.background || "#F8FAFC";
             context.fillRect(0, 0, svgInfo.width, svgInfo.height);
             context.drawImage(image, 0, 0, svgInfo.width, svgInfo.height);
             canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("无法生成课表图片")), "image/png");
@@ -19170,8 +19559,7 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
         }
         if (type === "pdf") {
           if (typeof pdfHandler !== "function") throw new Error("当前页面不提供原生 PDF 导出");
-          pdfHandler();
-          await new Promise((resolve) => setTimeout(resolve, 1200));
+          await pdfHandler();
           return;
         }
         const data = await loadScheduleExportData(source);
@@ -19233,13 +19621,328 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
       return wrap;
     }
     __name(createScheduleExportMenu, "createScheduleExportMenu");
-    function pagePdfExportHandler(button) {
-      if (!button) return null;
-      return () => {
+    function disposeNativePdfCapture(entry) {
+      if (!entry) return;
+      try {
+        entry.stage.remove();
+      } catch (_) {
+      }
+      try {
+        document.getElementById("urppp-pdf-reset-style")?.remove();
+      } catch (_) {
+      }
+    }
+    __name(disposeNativePdfCapture, "disposeNativePdfCapture");
+    function runNativePdfWithCapture(button, context) {
+      return new Promise((resolve, reject) => {
+        const page = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+        const pageDocument = page.document || document;
+        const originalDollar = page.$;
+        const originalJQuery = page.jQuery;
+        const originalDivBuild = page.divBuild;
+        const originalBack = page.back;
+        const originalQuerySelector = pageDocument.querySelector;
+        const originalLoadFileList = page.Import && page.Import.LoadFileList;
+        const originalHtml2Canvas = page.html2canvas;
+        if (typeof originalDollar !== "function" || typeof originalLoadFileList !== "function" || typeof originalBack !== "function") {
+          reject(new Error("教务原生导出依赖未就绪"));
+          return;
+        }
+        const scopedDollar = /* @__PURE__ */ __name(function(selector) {
+          return originalDollar(rewriteNativePdfSelector(selector), context.stage);
+        }, "scopedDollar");
+        try {
+          Object.setPrototypeOf(scopedDollar, originalDollar);
+        } catch (_) {
+        }
+        scopedDollar.__urpppPdfScoped = true;
+        let finished = false;
+        let timeout = 0;
+        let scopedActive = false;
+        const scopedDivBuild = /* @__PURE__ */ __name(() => runNativeScheduleDivBuild(scopedDollar), "scopedDivBuild");
+        const scopedHtml2Canvas = typeof originalHtml2Canvas === "function" ? function() {
+          const result = originalHtml2Canvas.apply(this, arguments);
+          if (result && typeof result.catch === "function") result.catch(fail);
+          return result;
+        } : null;
+        const restoreScope = /* @__PURE__ */ __name(() => {
+          if (!scopedActive) return;
+          scopedActive = false;
+          page.$ = originalDollar;
+          page.jQuery = originalJQuery;
+          page.divBuild = originalDivBuild;
+          if (scopedHtml2Canvas && page.html2canvas === scopedHtml2Canvas) page.html2canvas = originalHtml2Canvas;
+          pageDocument.querySelector = originalQuerySelector;
+        }, "restoreScope");
+        const cleanup = /* @__PURE__ */ __name(() => {
+          if (timeout) clearTimeout(timeout);
+          if (page.Import && page.Import.LoadFileList === scopedLoadFileList) page.Import.LoadFileList = originalLoadFileList;
+          if (page.back === wrappedBack) page.back = originalBack;
+          restoreScope();
+        }, "cleanup");
+        const fail = /* @__PURE__ */ __name((error) => {
+          if (finished) return;
+          finished = true;
+          cleanup();
+          reject(error);
+        }, "fail");
+        const activateScope = /* @__PURE__ */ __name(() => {
+          if (scopedActive) return;
+          scopedActive = true;
+          page.$ = scopedDollar;
+          page.jQuery = scopedDollar;
+          page.divBuild = scopedDivBuild;
+          if (scopedHtml2Canvas) page.html2canvas = scopedHtml2Canvas;
+          pageDocument.querySelector = function(selector) {
+            if (selector === "#mycoursetable") return context.target;
+            return originalQuerySelector.call(this, selector);
+          };
+        }, "activateScope");
+        const wrappedBack = /* @__PURE__ */ __name(function() {
+          activateScope();
+          try {
+            return originalBack.apply(this, arguments);
+          } finally {
+            cleanup();
+            if (!finished) {
+              finished = true;
+              resolve();
+            }
+          }
+        }, "wrappedBack");
+        const scopedLoadFileList = /* @__PURE__ */ __name(function(files, success) {
+          return originalLoadFileList.call(this, files, function() {
+            activateScope();
+            try {
+              return success.apply(this, arguments);
+            } catch (error) {
+              fail(error);
+              throw error;
+            } finally {
+              if (page.Import && page.Import.LoadFileList === scopedLoadFileList) page.Import.LoadFileList = originalLoadFileList;
+              restoreScope();
+            }
+          });
+        }, "scopedLoadFileList");
+        page.back = wrappedBack;
+        page.Import.LoadFileList = scopedLoadFileList;
+        timeout = setTimeout(() => fail(new Error("原生 PDF 生成超时")), 60 * 1e3);
         try {
           button.click();
-        } catch (e) {
-          showFeatureToast(e && e.message || "原生 PDF 导出失败", true);
+        } catch (error) {
+          fail(error);
+        }
+      });
+    }
+    __name(runNativePdfWithCapture, "runNativePdfWithCapture");
+    function isolateScheduleForNativeExport() {
+      const page = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+      const restoreFns = [];
+      const inlineStates = [];
+      const scopeNodes = [document.getElementById("mycoursetable"), document.getElementById("courseTable")].filter(Boolean);
+      scopeNodes.forEach((root) => {
+        [root, ...root.querySelectorAll("*")].forEach((element) => {
+          if (!element.style || !element.style.length) return;
+          const saved = [];
+          Array.from(element.style).forEach((property) => {
+            if (element.style.getPropertyPriority(property) === "important") {
+              saved.push([property, element.style.getPropertyValue(property)]);
+              element.style.removeProperty(property);
+            }
+          });
+          if (saved.length) inlineStates.push({ element, saved });
+        });
+      });
+      restoreFns.push(() => {
+        inlineStates.forEach(({ element, saved }) => {
+          saved.forEach(([property, value]) => element.style.setProperty(property, value, "important"));
+        });
+      });
+      const styleStates = [];
+      document.querySelectorAll('style[id^="urppp-"], style[data-urppp-style]').forEach((style) => {
+        if (!style.sheet) return;
+        styleStates.push({ style, disabled: style.sheet.disabled });
+        style.sheet.disabled = true;
+      });
+      restoreFns.push(() => {
+        styleStates.forEach(({ style, disabled }) => {
+          try {
+            style.sheet.disabled = disabled;
+          } catch (_) {
+          }
+        });
+      });
+      const injected = [];
+      document.querySelectorAll('[id^="urppp-"]').forEach((element) => {
+        if (element.id === "urppp-native-schedule-export") return;
+        if (element.id === "urppp-settings-panel" || element.id === "urppp-settings-mask") return;
+        injected.push(element);
+        element.setAttribute("data-urppp-pdf-hidden", "1");
+        element.style.setProperty("display", "none", "important");
+      });
+      restoreFns.push(() => {
+        injected.forEach((element) => {
+          element.style.removeProperty("display");
+          element.removeAttribute("data-urppp-pdf-hidden");
+        });
+      });
+      const patchedDivBuild = page && page.divBuild;
+      const nativeDivBuild = page && page.__urpppOriginalDivBuild;
+      if (page && typeof nativeDivBuild === "function") page.divBuild = nativeDivBuild;
+      restoreFns.push(() => {
+        if (page && page.divBuild === nativeDivBuild && typeof patchedDivBuild === "function") {
+          page.divBuild = patchedDivBuild;
+        }
+      });
+      let restored = false;
+      return () => {
+        if (restored) return;
+        restored = true;
+        restoreFns.forEach((fn) => {
+          try {
+            fn();
+          } catch (_) {
+          }
+        });
+        requestAnimationFrame(() => {
+          try {
+            fixWeekScheduleLayout();
+          } catch (_) {
+          }
+        });
+      };
+    }
+    __name(isolateScheduleForNativeExport, "isolateScheduleForNativeExport");
+    function exportNativePdfIsolated(button) {
+      return new Promise((resolve, reject) => {
+        const page = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+        let restore = null;
+        try {
+          restore = isolateScheduleForNativeExport();
+        } catch (error) {
+          reject(error);
+          return;
+        }
+        const originalBack = page && page.back;
+        const originalHtml2Canvas = page && page.html2canvas;
+        let timeout = 0;
+        let finished = false;
+        let wrappedBack = null;
+        let scopedCanvas = null;
+        const finish = /* @__PURE__ */ __name(() => {
+          if (finished) return;
+          finished = true;
+          if (timeout) clearTimeout(timeout);
+          if (page && wrappedBack && page.back === wrappedBack) page.back = originalBack;
+          if (scopedCanvas && page.html2canvas === scopedCanvas) page.html2canvas = originalHtml2Canvas;
+          try {
+            if (restore) restore();
+          } catch (_) {
+          }
+          resolve();
+        }, "finish");
+        const fail = /* @__PURE__ */ __name((error) => {
+          if (finished) return;
+          finished = true;
+          if (timeout) clearTimeout(timeout);
+          if (page && wrappedBack && page.back === wrappedBack) page.back = originalBack;
+          if (scopedCanvas && page.html2canvas === scopedCanvas) page.html2canvas = originalHtml2Canvas;
+          try {
+            if (restore) restore();
+          } catch (_) {
+          }
+          reject(error);
+        }, "fail");
+        if (typeof originalHtml2Canvas === "function") {
+          scopedCanvas = /* @__PURE__ */ __name(function() {
+            const result = originalHtml2Canvas.apply(this, arguments);
+            if (result && typeof result.catch === "function") result.catch(fail);
+            return result;
+          }, "scopedCanvas");
+          page.html2canvas = scopedCanvas;
+        }
+        if (page && typeof originalBack === "function") {
+          wrappedBack = /* @__PURE__ */ __name(function() {
+            try {
+              return originalBack.apply(this, arguments);
+            } finally {
+              setTimeout(finish, 0);
+            }
+          }, "wrappedBack");
+          page.back = wrappedBack;
+        }
+        timeout = setTimeout(() => {
+          try {
+            if (typeof originalBack === "function") originalBack.call(page);
+          } catch (_) {
+          }
+          finish();
+        }, 15 * 1e3);
+        try {
+          button.click();
+        } catch (error) {
+          fail(error);
+        }
+      });
+    }
+    __name(exportNativePdfIsolated, "exportNativePdfIsolated");
+    function bindNativePdfDiagnose() {
+      if (window.__urpppPdfDiagnose) return;
+      window.__urpppPdfDiagnose = async () => {
+        const result = { time: (/* @__PURE__ */ new Date()).toISOString() };
+        const host = document.getElementById("mycoursetable");
+        const pageSource = document.getElementById("page-content-template");
+        result.host = !!host;
+        result.pageSource = !!pageSource;
+        result.hostCards = host ? host.querySelectorAll("div.class_div").length : -1;
+        result.hostHasCourseTable = host ? !!host.querySelector("#courseTable") : false;
+        result.hostHasCourseTableBody = host ? !!host.querySelector("#courseTableBody") : false;
+        result.hostTableId = host && host.querySelector("table") ? host.querySelector("table").id : "none";
+        try {
+          const context = cloneNativePdfStage(host);
+          result.stage = "ok";
+          result.stageCards = context.target.querySelectorAll(".urppp-pdf-card").length;
+          result.stageTableId = context.target.querySelector("table") ? context.target.querySelector("table").id : "none";
+          disposeNativePdfCapture(context);
+        } catch (error) {
+          result.stage = "failed";
+          result.stageError = error && error.message || String(error);
+        }
+        const page = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+        result.deps = {
+          dollar: typeof page.$,
+          loadFileList: typeof (page.Import && page.Import.LoadFileList),
+          back: typeof page.back,
+          html2canvas: typeof page.html2canvas,
+          originalDivBuild: typeof page.__urpppOriginalDivBuild
+        };
+        return result;
+      };
+    }
+    __name(bindNativePdfDiagnose, "bindNativePdfDiagnose");
+    function pagePdfExportHandler(button) {
+      if (!button) return null;
+      bindNativePdfDiagnose();
+      return async () => {
+        let context = null;
+        try {
+          const sourceHost = document.getElementById("mycoursetable");
+          if (!sourceHost) throw new Error("当前页面没有课表节点");
+          context = cloneNativePdfStage(sourceHost);
+          await runNativePdfWithCapture(button, context);
+        } catch (error) {
+          console.warn("[URP++] native PDF stage failed; isolating main container instead", error);
+          disposeNativePdfCapture(context);
+          context = null;
+          try {
+            showFeatureToast("原生捕获隔离失败，已切换隔离美化导出", true);
+            await exportNativePdfIsolated(button);
+          } catch (secondError) {
+            console.warn("[URP++] isolated export failed", secondError);
+            showFeatureToast("隔离导出失败：" + (secondError && secondError.message || String(secondError)) + "，请重试", true);
+          }
+        } finally {
+          disposeNativePdfCapture(context);
         }
       };
     }
@@ -22031,6 +22734,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         load: /* @__PURE__ */ __name(() => loadScheduleExportData("api"), "load"),
         run: /* @__PURE__ */ __name((format) => runScheduleExport(format, "api", null, null), "run"),
         patch: patchNativeScheduleExport,
+        image: {
+          theme: currentScheduleImageTheme,
+          build: /* @__PURE__ */ __name((data, theme) => buildScheduleSvg(data, theme), "build")
+        },
         jsonFormat: {
           get: getScheduleJsonFormatSettings,
           set: setScheduleJsonFormatSettings,

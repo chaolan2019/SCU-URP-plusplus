@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile, stat } from 'node:fs/promises';
 
 const artifacts = [
-  { file: new URL('../urppp.user.js', import.meta.url), version: '1.5.2' },
+  { file: new URL('../urppp.user.js', import.meta.url), version: '1.5.3' },
   { file: new URL('../urpppp.user.js', import.meta.url), version: '1.3.2' },
 ];
 
