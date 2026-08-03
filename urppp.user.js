@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SCU URP++教务系统美化
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.5.3
+// @version      1.5.4
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Chao_Lan,Hanako
 // @license      GPL-3.0-only
@@ -564,17 +564,17 @@
     background-color: transparent !important;
   }
 `;
-  function pinNativePdfHeaderBackgrounds(root) {
+  function stripNativePdfTdBackgrounds(root) {
+    root.querySelectorAll("td").forEach((cell) => {
+      cell.style.removeProperty("background");
+      cell.style.removeProperty("background-color");
+    });
     root.querySelectorAll("th").forEach((cell) => {
-      ["background-color", "background"].forEach((property) => {
-        const value = cell.style.getPropertyValue(property);
-        if (value && cell.style.getPropertyPriority(property) !== "important") {
-          cell.style.setProperty(property, value, "important");
-        }
-      });
+      cell.style.removeProperty("background");
+      cell.style.removeProperty("background-color");
     });
   }
-  __name(pinNativePdfHeaderBackgrounds, "pinNativePdfHeaderBackgrounds");
+  __name(stripNativePdfTdBackgrounds, "stripNativePdfTdBackgrounds");
   function cloneNativePdfStage(sourceHost) {
     const nativeWidth = measureNativeScheduleWidth();
     const stage = document.createElement("div");
@@ -588,7 +588,7 @@
     renameNativePdfClone(clone);
     page.appendChild(clone);
     stage.appendChild(page);
-    pinNativePdfHeaderBackgrounds(clone);
+    stripNativePdfTdBackgrounds(clone);
     const resetStyle = document.createElement("style");
     resetStyle.id = "urppp-pdf-reset-style";
     resetStyle.textContent = NATIVE_PDF_RESET_STYLE;
@@ -627,7 +627,7 @@
       const page = $("#page-content-template");
       const width = parseFloat(tdWidth) || 0;
       card.css("height", $("#courseTableBody tr").height() * (Number(card.attr("classNum")) || 1) + "px");
-      card.css("top", cell.offset().top - page.offset().top - 12);
+      card.css("top", cell.offset().top - page.offset().top);
       if (card.siblings().size() > 0) {
         const left = cell.offset().left - page.offset().left + (card.next().size() > 0 ? 0 : width / 2);
         card.css("left", left + "px");
@@ -9015,7 +9015,7 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
   // src/userscripts/urppp.entry.js
   (function() {
     "use strict";
-    const URPPP_VERSION = "1.5.3";
+    const URPPP_VERSION = "1.5.4";
     const URPPP_UPDATE = {
       mainRaw: "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js",
       assistRaw: "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js",
@@ -19745,12 +19745,30 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
           if (!element.style || !element.style.length) return;
           const saved = [];
           Array.from(element.style).forEach((property) => {
-            if (element.style.getPropertyPriority(property) === "important") {
-              saved.push([property, element.style.getPropertyValue(property)]);
-              element.style.removeProperty(property);
-            }
+            if (element.style.getPropertyPriority(property) !== "important") return;
+            if (property === "height" && element.matches("td, th")) return;
+            saved.push([property, element.style.getPropertyValue(property)]);
+            element.style.removeProperty(property);
           });
           if (saved.length) inlineStates.push({ element, saved });
+        });
+      });
+      const tdBackgroundStates = [];
+      scopeNodes.forEach((root) => {
+        root.querySelectorAll("td").forEach((cell) => {
+          const background = cell.style.getPropertyValue("background");
+          const backgroundColor = cell.style.getPropertyValue("background-color");
+          if (background || backgroundColor) {
+            tdBackgroundStates.push({ cell, background, backgroundColor });
+            cell.style.removeProperty("background");
+            cell.style.removeProperty("background-color");
+          }
+        });
+      });
+      restoreFns.push(() => {
+        tdBackgroundStates.forEach(({ cell, background, backgroundColor }) => {
+          if (background) cell.style.setProperty("background", background);
+          if (backgroundColor) cell.style.setProperty("background-color", backgroundColor);
         });
       });
       restoreFns.push(() => {

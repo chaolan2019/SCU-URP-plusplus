@@ -39,7 +39,7 @@ test('native PDF export scopes the site lifecycle to an offscreen capture stage'
   assert.match(moduleSource, /left:-20000px/);
   assert.match(moduleSource, /urppp-pdf-mycoursetable/);
   assert.match(moduleSource, /#dddddd !important/);
-  assert.match(moduleSource, /pinNativePdfHeaderBackgrounds/);
+  assert.match(moduleSource, /stripNativePdfTdBackgrounds/);
   assert.match(source, /cloneNativePdfStage\(sourceHost\)/);
   assert.match(source, /urppp-pdf-reset-style/);
   assert.match(source, /urppp-settings-panel.*urppp-settings-mask/);

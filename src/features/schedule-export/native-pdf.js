@@ -136,14 +136,14 @@ const NATIVE_PDF_RESET_STYLE = `
   }
 `;
 
-function pinNativePdfHeaderBackgrounds(root) {
+function stripNativePdfTdBackgrounds(root) {
+  root.querySelectorAll('td').forEach((cell) => {
+    cell.style.removeProperty('background');
+    cell.style.removeProperty('background-color');
+  });
   root.querySelectorAll('th').forEach((cell) => {
-    ['background-color', 'background'].forEach((property) => {
-      const value = cell.style.getPropertyValue(property);
-      if (value && cell.style.getPropertyPriority(property) !== 'important') {
-        cell.style.setProperty(property, value, 'important');
-      }
-    });
+    cell.style.removeProperty('background');
+    cell.style.removeProperty('background-color');
   });
 }
 
@@ -160,7 +160,7 @@ export function cloneNativePdfStage(sourceHost) {
   renameNativePdfClone(clone);
   page.appendChild(clone);
   stage.appendChild(page);
-  pinNativePdfHeaderBackgrounds(clone);
+  stripNativePdfTdBackgrounds(clone);
   const resetStyle = document.createElement('style');
   resetStyle.id = 'urppp-pdf-reset-style';
   resetStyle.textContent = NATIVE_PDF_RESET_STYLE;
@@ -200,7 +200,7 @@ export function runNativeScheduleDivBuild($) {
     const page = $('#page-content-template');
     const width = parseFloat(tdWidth) || 0;
     card.css('height', $('#courseTableBody tr').height() * (Number(card.attr('classNum')) || 1) + 'px');
-    card.css('top', cell.offset().top - page.offset().top - 12);
+    card.css('top', cell.offset().top - page.offset().top);
     if (card.siblings().size() > 0) {
       const left = cell.offset().left - page.offset().left + (card.next().size() > 0 ? 0 : width / 2);
       card.css('left', left + 'px');

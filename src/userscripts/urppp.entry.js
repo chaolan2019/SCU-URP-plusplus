@@ -27,7 +27,7 @@ import scheduleCardStyles from '../styles/schedule-cards.css';
   'use strict';
 
   // 与脚本头 @version 保持同步
-  const URPPP_VERSION = '1.5.3';
+  const URPPP_VERSION = '1.5.4';
   const URPPP_UPDATE = {
     mainRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js',
     assistRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js',
@@ -10845,12 +10845,30 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         if (!element.style || !element.style.length) return;
         const saved = [];
         Array.from(element.style).forEach((property) => {
-          if (element.style.getPropertyPriority(property) === 'important') {
-            saved.push([property, element.style.getPropertyValue(property)]);
-            element.style.removeProperty(property);
-          }
+          if (element.style.getPropertyPriority(property) !== 'important') return;
+          if (property === 'height' && element.matches('td, th')) return;
+          saved.push([property, element.style.getPropertyValue(property)]);
+          element.style.removeProperty(property);
         });
         if (saved.length) inlineStates.push({ element, saved });
+      });
+    });
+    const tdBackgroundStates = [];
+    scopeNodes.forEach((root) => {
+      root.querySelectorAll('td').forEach((cell) => {
+        const background = cell.style.getPropertyValue('background');
+        const backgroundColor = cell.style.getPropertyValue('background-color');
+        if (background || backgroundColor) {
+          tdBackgroundStates.push({ cell, background, backgroundColor });
+          cell.style.removeProperty('background');
+          cell.style.removeProperty('background-color');
+        }
+      });
+    });
+    restoreFns.push(() => {
+      tdBackgroundStates.forEach(({ cell, background, backgroundColor }) => {
+        if (background) cell.style.setProperty('background', background);
+        if (backgroundColor) cell.style.setProperty('background-color', backgroundColor);
       });
     });
     restoreFns.push(() => {
