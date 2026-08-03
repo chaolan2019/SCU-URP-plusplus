@@ -136,14 +136,46 @@ const NATIVE_PDF_RESET_STYLE = `
   }
 `;
 
-function stripNativePdfTdBackgrounds(root) {
-  root.querySelectorAll('td').forEach((cell) => {
+function normalizeNativePdfStage(root) {
+  root.querySelectorAll('td, th').forEach((cell) => {
     cell.style.removeProperty('background');
     cell.style.removeProperty('background-color');
   });
+  root.querySelectorAll('th[rowspan]').forEach((cell) => {
+    cell.style.removeProperty('width');
+    cell.style.setProperty('white-space', 'nowrap');
+    cell.style.setProperty('text-align', 'center');
+  });
+  root.querySelectorAll('table').forEach((table) => {
+    table.style.setProperty('background', '#ffffff', 'important');
+    table.style.setProperty('background-color', '#ffffff', 'important');
+    table.style.setProperty('border', 'none', 'important');
+    table.style.setProperty('color', '#000000', 'important');
+  });
   root.querySelectorAll('th').forEach((cell) => {
-    cell.style.removeProperty('background');
-    cell.style.removeProperty('background-color');
+    cell.style.setProperty('color', '#000000', 'important');
+    cell.style.setProperty('border', '1px solid #dddddd', 'important');
+    cell.style.setProperty('font-weight', 'normal', 'important');
+    if (cell.childNodes.length === 1 && cell.firstChild && cell.firstChild.nodeType === 3) {
+      const span = document.createElement('span');
+      span.textContent = cell.textContent;
+      cell.textContent = '';
+      cell.appendChild(span);
+    }
+  });
+  root.querySelectorAll('thead th').forEach((cell) => {
+    cell.style.setProperty('background', '#dddddd', 'important');
+    cell.style.setProperty('background-color', '#dddddd', 'important');
+  });
+  root.querySelectorAll('tbody th').forEach((cell) => {
+    cell.style.setProperty('background', 'transparent', 'important');
+    cell.style.setProperty('background-color', 'transparent', 'important');
+  });
+  root.querySelectorAll('td').forEach((cell) => {
+    cell.style.setProperty('background', 'transparent', 'important');
+    cell.style.setProperty('background-color', 'transparent', 'important');
+    cell.style.setProperty('color', '#000000', 'important');
+    cell.style.setProperty('border', '1px solid #dddddd', 'important');
   });
 }
 
@@ -160,7 +192,7 @@ export function cloneNativePdfStage(sourceHost) {
   renameNativePdfClone(clone);
   page.appendChild(clone);
   stage.appendChild(page);
-  stripNativePdfTdBackgrounds(clone);
+  normalizeNativePdfStage(clone);
   const resetStyle = document.createElement('style');
   resetStyle.id = 'urppp-pdf-reset-style';
   resetStyle.textContent = NATIVE_PDF_RESET_STYLE;

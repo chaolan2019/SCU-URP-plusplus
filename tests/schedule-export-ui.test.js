@@ -33,30 +33,27 @@ test('native PDF stage rewrites selectors into the offscreen clone', () => {
   assert.equal(rewriteNativePdfSelector('#h4_id1,#h4_id2'), '#urppp-pdf-h4-1,#urppp-pdf-h4-2');
 });
 
-test('native PDF export scopes the site lifecycle to an offscreen capture stage', async () => {
+test('native PDF export suspends beautification around the real site lifecycle', async () => {
   const source = await readFile(entryUrl, 'utf8');
-  const moduleSource = await readFile(new URL('../src/features/schedule-export/native-pdf.js', import.meta.url), 'utf8');
-  assert.match(moduleSource, /left:-20000px/);
-  assert.match(moduleSource, /urppp-pdf-mycoursetable/);
-  assert.match(moduleSource, /#dddddd !important/);
-  assert.match(moduleSource, /stripNativePdfTdBackgrounds/);
-  assert.match(source, /cloneNativePdfStage\(sourceHost\)/);
-  assert.match(source, /urppp-pdf-reset-style/);
-  assert.match(source, /urppp-settings-panel.*urppp-settings-mask/);
-  assert.match(source, /disposeNativePdfCapture\(context\)/);
-  assert.match(source, /rewriteNativePdfSelector\(selector\), context\.stage/);
-  assert.match(source, /selector === '#mycoursetable'/);
-  assert.match(source, /await runNativePdfWithCapture\(button, context\)/);
+  assert.match(source, /let nativePdfIsolationDepth = 0/);
+  assert.match(source, /if \(isNativePdfIsolationActive\(\)\) return/);
+  assert.match(source, /function isUrpppOwnedStyle\(style\)/);
+  assert.match(source, /\(style\.textContent \|\| ''\)\.includes\('urppp-'\)/);
+  assert.match(source, /style: element\.getAttribute\('style'\)/);
+  assert.match(source, /style\.setAttribute\('media', 'not all'\)/);
+  assert.match(source, /element\.setAttribute\('style', style\)/);
+  assert.match(source, /page\.divBuild = nativeDivBuild/);
+  assert.match(source, /timeout = setTimeout[\s\S]*60 \* 1000/);
   assert.match(source, /function isolateScheduleForNativeExport\(\)/);
   assert.match(source, /function exportNativePdfIsolated\(button\)/);
   assert.match(source, /await exportNativePdfIsolated\(button\)/);
   assert.match(source, /window\.__urpppPdfDiagnose = async \(\) =>/);
   assert.match(source, /__urpppOriginalDivBuild/);
   assert.match(source, /await pdfHandler\(\)/);
+  assert.doesNotMatch(source, /cloneNativePdfStage\(sourceHost\)/);
+  assert.doesNotMatch(source, /await runNativePdfWithCapture\(button, context\)/);
   assert.doesNotMatch(source, /frame\.srcdoc/);
   assert.doesNotMatch(source, /frame\.contentDocument/);
-  assert.doesNotMatch(source, /sanitizeNativePdfClone/);
-  assert.doesNotMatch(source, /suspendUrpppForNativePdf/);
 });
 
 test('PNG text layout preserves wrapped titles and reserves locations', () => {
