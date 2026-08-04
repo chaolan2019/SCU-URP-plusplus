@@ -215,20 +215,25 @@ PDF 专项检查：
 
 ### 8.1 发布前同步点
 
-1. 确定 `X.Y.Z`。
-2. 将 `[Unreleased]` 内容移动到 `## [X.Y.Z] - YYYY-MM-DD`。
-3. 同步第 3 节列出的全部版本位置。
-4. 执行：
+1. 确定 `X.Y.Z`，并确认 `CHANGELOG.md` 的 `[Unreleased]` 已包含本次用户可感知变化。
+2. 执行发布准备工具：
 
 ```powershell
-npm run build
-npm run check
-git diff --check
+npm run release:prepare -- X.Y.Z
 ```
 
-5. 检查 diff 中没有旧版本残留和无关文件。
-6. 在真实教务环境完成最终验收。
-7. 提交：
+该工具会校验版本递增、把 `[Unreleased]` 提升为带日期的正式版本、同步 package/lockfile/metadata/运行时常量/README、重新构建两个用户脚本并执行 `npm run check`。任一步失败时会恢复全部被修改文件。
+
+3. 再执行：
+
+```powershell
+git diff --check
+git status --short
+```
+
+4. 检查 diff 中没有旧版本残留和无关文件。
+5. 在真实教务环境完成最终验收。
+6. 提交：
 
 ```powershell
 git commit -m "release: vX.Y.Z"

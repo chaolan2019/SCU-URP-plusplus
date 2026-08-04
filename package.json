@@ -7,6 +7,7 @@
   "scripts": {
     "build": "node tools/build.mjs",
     "build:check": "node tools/build.mjs --check",
+    "release:prepare": "node tools/prepare-release.mjs",
     "test": "node --test tests/*.test.js",
     "check": "npm test && npm run build:check && node --check urppp.user.js && node --check urpppp.user.js"
   },
