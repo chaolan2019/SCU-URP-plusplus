@@ -13,6 +13,10 @@ const MAIN_FILES = {
   readme: 'README.md',
   changelog: 'CHANGELOG.md',
 };
+const ASSIST_FILES = {
+  metadata: 'src/metadata/urpppp.json',
+  entry: 'src/userscripts/urpppp.entry.js',
+};
 const GENERATED_FILES = ['urppp.user.js', 'urpppp.user.js'];
 const SEMVER_PATTERN = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 
@@ -29,6 +33,20 @@ export function compareVersions(left, right) {
     if (a[index] !== b[index]) return a[index] > b[index] ? 1 : -1;
   }
   return 0;
+}
+
+export function parseReleaseArgs(args) {
+  const values = Array.from(args || []);
+  const version = values.shift();
+  let assistVersion = '';
+  while (values.length) {
+    const flag = values.shift();
+    if (flag !== '--assist' || assistVersion || !values.length) {
+      throw new Error(`未知或不完整的发布参数：${flag || '(empty)'}`);
+    }
+    assistVersion = values.shift();
+  }
+  return { version, assistVersion };
 }
 
 export function promoteChangelog(changelog, version, date) {
@@ -61,6 +79,18 @@ function run(command, args) {
   execFileSync(command, args, { cwd: ROOT, stdio: 'inherit' });
 }
 
+function runNpm(args) {
+  if (process.env.npm_execpath) {
+    run(process.execPath, [process.env.npm_execpath, ...args]);
+    return;
+  }
+  if (process.platform === 'win32') {
+    run(process.env.ComSpec || 'cmd.exe', ['/d', '/s', '/c', 'npm', ...args]);
+    return;
+  }
+  run('npm', args);
+}
+
 async function readSnapshots(paths) {
   const entries = await Promise.all(paths.map(async (relativePath) => [
     relativePath,
@@ -80,18 +110,29 @@ export async function prepareRelease(version, options = {}) {
   const date = options.date || localDate();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(`无效发布日期：${date}`);
 
-  const trackedPaths = [...Object.values(MAIN_FILES), ...GENERATED_FILES];
+  const assistVersion = options.assistVersion || '';
+  if (assistVersion) parseVersion(assistVersion);
+  const trackedPaths = [...new Set([
+    ...Object.values(MAIN_FILES),
+    ...Object.values(ASSIST_FILES),
+    ...GENERATED_FILES,
+  ])];
   const snapshots = await readSnapshots(trackedPaths);
   const packageData = JSON.parse(snapshots.get(MAIN_FILES.package));
   const lockfileData = JSON.parse(snapshots.get(MAIN_FILES.lockfile));
   const metadataData = JSON.parse(snapshots.get(MAIN_FILES.metadata));
+  const assistMetadataData = JSON.parse(snapshots.get(ASSIST_FILES.metadata));
   const currentVersion = packageData.version;
+  const currentAssistVersion = assistMetadataData.version;
 
   if (compareVersions(version, currentVersion) <= 0) {
     throw new Error(`目标版本 ${version} 必须高于当前版本 ${currentVersion}`);
   }
   if (metadataData.version !== currentVersion) {
     throw new Error(`metadata 版本 ${metadataData.version} 与 package 版本 ${currentVersion} 不一致`);
+  }
+  if (assistVersion && compareVersions(assistVersion, currentAssistVersion) <= 0) {
+    throw new Error(`辅助插件目标版本 ${assistVersion} 必须高于当前版本 ${currentAssistVersion}`);
   }
 
   packageData.version = version;
@@ -106,13 +147,29 @@ export async function prepareRelease(version, options = {}) {
     `const URPPP_VERSION = '${version}';`,
     'URPPP_VERSION',
   );
-  const readme = replaceOnce(
+  let readme = replaceOnce(
     snapshots.get(MAIN_FILES.readme),
     /<strong>主脚本 v[^<]+<\/strong>/,
     `<strong>主脚本 v${version}</strong>`,
     'README 主脚本版本',
   );
   const changelog = promoteChangelog(snapshots.get(MAIN_FILES.changelog), version, date);
+  let assistEntry = snapshots.get(ASSIST_FILES.entry);
+  if (assistVersion) {
+    assistMetadataData.version = assistVersion;
+    assistEntry = replaceOnce(
+      assistEntry,
+      /const URPPPP_VERSION = ['"][^'"]+['"];/,
+      `const URPPPP_VERSION = '${assistVersion}';`,
+      'URPPPP_VERSION',
+    );
+    readme = replaceOnce(
+      readme,
+      /辅助插件 v[^<\s]+/,
+      `辅助插件 v${assistVersion}`,
+      'README 辅助插件版本',
+    );
+  }
 
   const updates = new Map([
     [MAIN_FILES.package, `${JSON.stringify(packageData, null, 2)}\n`],
@@ -122,29 +179,42 @@ export async function prepareRelease(version, options = {}) {
     [MAIN_FILES.readme, readme],
     [MAIN_FILES.changelog, changelog],
   ]);
+  if (assistVersion) {
+    updates.set(ASSIST_FILES.metadata, `${JSON.stringify(assistMetadataData, null, 2)}\n`);
+    updates.set(ASSIST_FILES.entry, assistEntry);
+  }
 
   try {
     await Promise.all(Array.from(updates, ([relativePath, content]) => (
       writeFile(path.join(ROOT, relativePath), content, 'utf8')
     )));
     run(process.execPath, [path.join(ROOT, 'tools/build.mjs')]);
-    const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-    run(npmCommand, ['run', 'check']);
+    runNpm(['run', 'check']);
   } catch (error) {
     await restoreSnapshots(snapshots);
     throw new Error(`发布准备失败，已恢复所有文件：${error instanceof Error ? error.message : error}`);
   }
 
-  return { currentVersion, version, date, files: Array.from(updates.keys()) };
+  return {
+    currentVersion,
+    version,
+    currentAssistVersion,
+    assistVersion,
+    date,
+    files: Array.from(updates.keys()),
+  };
 }
 
 async function main() {
-  const version = process.argv[2];
+  const { version, assistVersion } = parseReleaseArgs(process.argv.slice(2));
   if (!version) {
-    throw new Error('用法：npm run release:prepare -- X.Y.Z');
+    throw new Error('用法：npm run release:prepare -- X.Y.Z [--assist A.B.C]');
   }
-  const result = await prepareRelease(version);
+  const result = await prepareRelease(version, { assistVersion });
   console.log(`发布准备完成：${result.currentVersion} -> ${result.version} (${result.date})`);
+  if (result.assistVersion) {
+    console.log(`辅助插件版本：${result.currentAssistVersion} -> ${result.assistVersion}`);
+  }
   console.log('下一步：检查 diff、完成真实教务验收，然后提交 release: v' + result.version);
 }
 

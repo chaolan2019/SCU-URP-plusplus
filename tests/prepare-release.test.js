@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   compareVersions,
+  parseReleaseArgs,
   parseVersion,
   promoteChangelog,
 } from '../tools/prepare-release.mjs';
@@ -13,6 +14,16 @@ test('release versions accept strict SemVer cores and compare numerically', () =
   assert.equal(compareVersions('1.5.4', '1.5.5'), -1);
   assert.throws(() => parseVersion('v1.6.0'), /无效版本号/);
   assert.throws(() => parseVersion('1.6'), /无效版本号/);
+});
+
+test('release arguments support an optional assistant version', () => {
+  assert.deepEqual(parseReleaseArgs(['1.5.6']), { version: '1.5.6', assistVersion: '' });
+  assert.deepEqual(parseReleaseArgs(['1.5.6', '--assist', '1.3.4']), {
+    version: '1.5.6',
+    assistVersion: '1.3.4',
+  });
+  assert.throws(() => parseReleaseArgs(['1.5.6', '--assist']), /未知或不完整/);
+  assert.throws(() => parseReleaseArgs(['1.5.6', '--unknown', '1.3.4']), /未知或不完整/);
 });
 
 test('release preparation promotes non-empty Unreleased notes', () => {

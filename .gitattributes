@@ -4,6 +4,7 @@ package.json text eol=lf
 package-lock.json text eol=lf
 src/** text eol=lf
 tests/** text eol=lf
+*.png binary
 tools/** text eol=lf
 .github/workflows/*.yml text eol=lf
 *.md text eol=lf

@@ -6,6 +6,7 @@ import { scheduleCardLaneGeometry } from '../src/features/schedule-export/layout
 import { rewriteNativePdfSelector } from '../src/features/schedule-export/native-pdf.js';
 
 const entryUrl = new URL('../src/userscripts/urppp.entry.js', import.meta.url);
+const nativePdfUrl = new URL('../src/features/schedule-export/native-pdf.js', import.meta.url);
 
 test('schedule card lanes exactly cover the cell without internal gaps', () => {
   const width = 144.453125;
@@ -34,25 +35,26 @@ test('native PDF stage rewrites selectors into the offscreen clone', () => {
 });
 
 test('native PDF export suspends beautification around the real site lifecycle', async () => {
-  const source = await readFile(entryUrl, 'utf8');
-  assert.match(source, /let nativePdfIsolationDepth = 0/);
+  const [source, moduleSource] = await Promise.all([
+    readFile(entryUrl, 'utf8'),
+    readFile(nativePdfUrl, 'utf8'),
+  ]);
+  assert.match(moduleSource, /let nativePdfIsolationDepth = 0/);
   assert.match(source, /if \(isNativePdfIsolationActive\(\)\) return/);
-  assert.match(source, /function isUrpppOwnedStyle\(style\)/);
-  assert.match(source, /\(style\.textContent \|\| ''\)\.includes\('urppp-'\)/);
-  assert.match(source, /style: element\.getAttribute\('style'\)/);
-  assert.match(source, /style\.setAttribute\('media', 'not all'\)/);
-  assert.match(source, /element\.setAttribute\('style', style\)/);
-  assert.match(source, /page\.divBuild = nativeDivBuild/);
-  assert.match(source, /timeout = setTimeout[\s\S]*60 \* 1000/);
-  assert.match(source, /function isolateScheduleForNativeExport\(\)/);
-  assert.match(source, /function exportNativePdfIsolated\(button\)/);
-  assert.match(source, /await exportNativePdfIsolated\(button\)/);
+  assert.match(moduleSource, /function isUrpppOwnedStyle\(style\)/);
+  assert.match(moduleSource, /\(style\.textContent \|\| ''\)\.includes\('urppp-'\)/);
+  assert.match(moduleSource, /style: element\.getAttribute\('style'\)/);
+  assert.match(moduleSource, /style\.setAttribute\('media', 'not all'\)/);
+  assert.match(moduleSource, /element\.setAttribute\('style', style\)/);
+  assert.match(moduleSource, /page\.divBuild = nativeDivBuild/);
+  assert.match(moduleSource, /timeout = setTimeout[\s\S]*60 \* 1000/);
+  assert.match(moduleSource, /export function isolateScheduleForNativeExport\(options = \{\}\)/);
+  assert.match(moduleSource, /export function exportNativePdfIsolated\(button, options = \{\}\)/);
+  assert.match(source, /await exportNativePdfIsolated\(button, \{/);
   assert.match(source, /window\.__urpppPdfDiagnose = async \(\) =>/);
   assert.match(source, /__urpppOriginalDivBuild/);
   assert.match(source, /await pdfHandler\(\)/);
-  assert.doesNotMatch(source, /cloneNativePdfStage\(sourceHost\)/);
   assert.doesNotMatch(source, /function runNativePdfWithCapture\(/);
-  assert.doesNotMatch(source, /await runNativePdfWithCapture\(button, context\)/);
   assert.doesNotMatch(source, /frame\.srcdoc/);
   assert.doesNotMatch(source, /frame\.contentDocument/);
 });

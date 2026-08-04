@@ -8,6 +8,7 @@ export const LOGIN_KEYS = {
   zhjwPass: `${ASSIST_NAMESPACE}_login_zhjw_pass`,
   casUser: `${ASSIST_NAMESPACE}_login_cas_user`,
   casPass: `${ASSIST_NAMESPACE}_login_cas_pass`,
+  passwordStorage: `${ASSIST_NAMESPACE}_login_password_storage`,
   shareCred: `${ASSIST_NAMESPACE}_login_share_cred`,
   submitDelay: `${ASSIST_NAMESPACE}_login_submit_delay`,
   guardState: `${ASSIST_NAMESPACE}_login_guard_state`,

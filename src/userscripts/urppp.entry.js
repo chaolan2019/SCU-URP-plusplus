@@ -10,7 +10,11 @@ import {
 } from '../features/schedule-export/json-format.js';
 import { scheduleImageTextLines } from '../features/schedule-export/image-layout.js';
 import { scheduleCardLaneGeometry } from '../features/schedule-export/layout.js';
-import { cloneNativePdfStage } from '../features/schedule-export/native-pdf.js';
+import {
+  cloneNativePdfStage,
+  exportNativePdfIsolated,
+  isNativePdfIsolationActive,
+} from '../features/schedule-export/native-pdf.js';
 import { scheduleWeeks } from '../features/schedule-export/weeks.js';
 import featureStyles from '../styles/features.css';
 import internalStyles from '../styles/internal.css';
@@ -5590,13 +5594,6 @@ import scheduleCardStyles from '../styles/schedule-cards.css';
   // 评估公告 / 通知列表：
   // 真实结构多为 3 列 tr: 圆点 | 标题链接 | 日期（也可能单 td 多 span）
 
-  // 原生 PDF 导出期间冻结所有课表美化写入，让教务系统独占导出生命周期。
-  let nativePdfIsolationDepth = 0;
-
-  function isNativePdfIsolationActive() {
-    return nativePdfIsolationDepth > 0;
-  }
-
   // 本学期周课表：收束周次滑条；课程块相对父 td（拦截站点 divBuild，避免右闪）
   function fixWeekScheduleLayout() {
     if (isNativePdfIsolationActive()) return;
@@ -10750,146 +10747,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     try { document.getElementById('urppp-pdf-reset-style')?.remove(); } catch (_) {}
   }
 
-  function isUrpppOwnedStyle(style) {
-    if (!style || style.tagName !== 'STYLE') return false;
-    if (/^urppp(?:-|$)/.test(style.id || '')) return true;
-    if (style.hasAttribute('data-urppp-style')) return true;
-    return (style.textContent || '').includes('urppp-');
-  }
-
-  function isolateScheduleForNativeExport() {
-    const page = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
-    const host = document.getElementById('mycoursetable');
-    if (!host) throw new Error('当前页面没有课表节点');
-
-    nativePdfIsolationDepth += 1;
-    const elements = [host, ...host.querySelectorAll('*')];
-    const inlineStates = elements.map((element) => ({
-      element,
-      style: element.getAttribute('style'),
-    }));
-    const styleStates = Array.from(document.querySelectorAll('style'))
-      .filter(isUrpppOwnedStyle)
-      .map((style) => ({
-        style,
-        disabled: style.sheet ? style.sheet.disabled : false,
-        media: style.getAttribute('media'),
-      }));
-    const injected = Array.from(host.querySelectorAll('[id^="urppp-"], [data-urppp]'));
-    const patchedDivBuild = page && page.divBuild;
-    const nativeDivBuild = page && page.__urpppOriginalDivBuild;
-    let restored = false;
-
-    const restore = () => {
-      if (restored) return;
-      restored = true;
-      if (page && page.divBuild === nativeDivBuild && typeof patchedDivBuild === 'function') {
-        page.divBuild = patchedDivBuild;
-      }
-      inlineStates.forEach(({ element, style }) => {
-        if (!element.isConnected) return;
-        if (style === null) element.removeAttribute('style');
-        else element.setAttribute('style', style);
-      });
-      injected.forEach((element) => element.removeAttribute('data-urppp-pdf-hidden'));
-      styleStates.forEach(({ style, disabled, media }) => {
-        try {
-          if (media === null) style.removeAttribute('media');
-          else style.setAttribute('media', media);
-          if (style.sheet) style.sheet.disabled = disabled;
-        } catch (_) {}
-      });
-      nativePdfIsolationDepth = Math.max(0, nativePdfIsolationDepth - 1);
-      requestAnimationFrame(() => {
-        try { fixWeekScheduleLayout(); } catch (_) {}
-      });
-    };
-
-    try {
-      styleStates.forEach(({ style }) => {
-        try {
-          style.setAttribute('media', 'not all');
-          if (style.sheet) style.sheet.disabled = true;
-        } catch (_) {}
-      });
-      elements.forEach((element) => {
-        if (!element.style || !element.style.length) return;
-        Array.from(element.style).forEach((property) => {
-          if (element.style.getPropertyPriority(property) !== 'important') return;
-          if (property === 'height' && element.matches('td, th')) return;
-          element.style.removeProperty(property);
-        });
-      });
-      host.querySelectorAll('td').forEach((cell) => {
-        cell.style.removeProperty('background');
-        cell.style.removeProperty('background-color');
-      });
-      injected.forEach((element) => {
-        element.setAttribute('data-urppp-pdf-hidden', '1');
-        element.style.setProperty('display', 'none', 'important');
-      });
-      if (page && typeof nativeDivBuild === 'function') page.divBuild = nativeDivBuild;
-      return restore;
-    } catch (error) {
-      restore();
-      throw error;
-    }
-  }
-
-  function exportNativePdfIsolated(button) {
-    return new Promise((resolve, reject) => {
-      const page = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
-      const originalBack = page && page.back;
-      const originalHtml2Canvas = page && page.html2canvas;
-      if (!button || typeof originalBack !== 'function') {
-        reject(new Error('教务原生导出依赖未就绪'));
-        return;
-      }
-
-      let restore = null;
-      try { restore = isolateScheduleForNativeExport(); }
-      catch (error) { reject(error); return; }
-
-      let timeout = 0;
-      let finished = false;
-      let wrappedBack = null;
-      let scopedCanvas = null;
-      const settle = (error) => {
-        if (finished) return;
-        finished = true;
-        if (timeout) clearTimeout(timeout);
-        if (page && wrappedBack && page.back === wrappedBack) page.back = originalBack;
-        if (scopedCanvas && page.html2canvas === scopedCanvas) page.html2canvas = originalHtml2Canvas;
-        try { if (restore) restore(); } catch (_) {}
-        if (error) reject(error);
-        else resolve();
-      };
-      const fail = (error) => settle(error instanceof Error ? error : new Error(String(error)));
-
-      if (typeof originalHtml2Canvas === 'function') {
-        scopedCanvas = function () {
-          const result = originalHtml2Canvas.apply(this, arguments);
-          if (result && typeof result.catch === 'function') result.catch(fail);
-          return result;
-        };
-        page.html2canvas = scopedCanvas;
-      }
-      wrappedBack = function () {
-        try { return originalBack.apply(this, arguments); }
-        finally { setTimeout(() => settle(), 0); }
-      };
-      page.back = wrappedBack;
-      timeout = setTimeout(() => {
-        try { originalBack.call(page); } catch (_) {}
-        fail(new Error('原生 PDF 生成超时'));
-      }, 60 * 1000);
-      requestAnimationFrame(() => {
-        try { button.click(); }
-        catch (error) { fail(error); }
-      });
-    });
-  }
-
   function bindNativePdfDiagnose() {
     if (window.__urpppPdfDiagnose) return;
     window.__urpppPdfDiagnose = async () => {
@@ -10933,7 +10790,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       if (panel && panel.classList.contains('open')) panel.classList.remove('open');
       if (mask && mask.classList.contains('open')) mask.classList.remove('open');
       try {
-        await exportNativePdfIsolated(button);
+        const page = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+        await exportNativePdfIsolated(button, {
+          document,
+          page,
+          onAfterRestore: fixWeekScheduleLayout,
+        });
       } catch (error) {
         console.warn('[URP++] isolated native PDF export failed', error);
         showFeatureToast('原生 PDF 隔离导出失败：' + (error && error.message || String(error)) + '，请重试', true);

@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { createAssistConfig } from '../src/assist/config.js';
 import { EVALUATION_KEYS, LOGIN_FAILURE_LIMIT, LOGIN_KEYS } from '../src/assist/constants.js';
 import { parseOcrResponse, recognizeCaptcha } from '../src/assist/ocr.js';
@@ -70,6 +71,7 @@ test('assistant config and batch state retain existing defaults', () => {
     zhjwPass: '',
     casUser: '',
     casPass: '',
+    passwordStorage: 'none',
     shareCred: true,
     submitDelay: 300,
   });
@@ -83,6 +85,30 @@ test('assistant config and batch state retain existing defaults', () => {
   assert.deepEqual(config.getBatchState(), { active: false, queue: [], index: 0 });
   assert.equal(values.get(EVALUATION_KEYS.batchIndex), '0');
   assert.ok(LOGIN_KEYS.guardState.includes('login_guard_state'));
+  assert.ok(LOGIN_KEYS.passwordStorage.includes('password_storage'));
+});
+
+test('assistant credentials default to no persistence and preserve legacy opt-in', () => {
+  const fresh = memoryStorage();
+  assert.equal(createAssistConfig(fresh.storage).loginConf().passwordStorage, 'none');
+
+  const legacy = memoryStorage();
+  legacy.values.set(LOGIN_KEYS.zhjwPass, 'legacy-secret');
+  let config = createAssistConfig(legacy.storage);
+  assert.equal(config.loginConf().passwordStorage, 'persistent');
+  assert.equal(config.loginConf().zhjwPass, 'legacy-secret');
+
+  legacy.storage.setVal(LOGIN_KEYS.passwordStorage, 'none');
+  config = createAssistConfig(legacy.storage);
+  assert.equal(config.loginConf().passwordStorage, 'none');
+  assert.equal(config.loginConf().zhjwPass, '');
+});
+
+test('assistant settings never serialize passwords into HTML attributes', async () => {
+  const source = await readFile(new URL('../src/userscripts/urpppp.entry.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(source, /value="\$\{escapeAttr\(c\.(?:zhjw|cas)Pass\)\}"/);
+  assert.match(source, /querySelector\('#urpppp-login-zhjw-pass'\)\.value = c\.zhjwPass/);
+  assert.match(source, /setVal\(LOGIN\.passwordStorage, persistPassword \? 'persistent' : 'none'\)/);
 });
 
 test('OCR parser accepts supported fields and rejects malformed codes', async () => {

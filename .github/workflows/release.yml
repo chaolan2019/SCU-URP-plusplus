@@ -47,7 +47,9 @@ jobs:
       - name: Verify generated userscripts
         run: |
           npm ci
+          npx playwright install --with-deps chromium
           npm test
+          npm run test:browser
           npm run build:check
 
       - name: Read versions and build notes

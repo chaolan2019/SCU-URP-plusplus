@@ -102,15 +102,17 @@ import assistStyles from '../styles/assist.css';
         <button type="button" class="urppp-set-follow" id="urpppp-login-enabled">功能：${c.enabled ? '开' : '关'}</button>
         <button type="button" class="urppp-set-follow" id="urpppp-login-auto">识别后自动登录：${c.autoSubmit ? '开' : '关'}</button>
         <button type="button" class="urppp-set-follow" id="urpppp-login-share">教务/统一认证共用账密：${c.shareCred ? '开' : '关'}</button>
+        <button type="button" class="urppp-set-follow" id="urpppp-login-persist-password">持久保存密码：${c.passwordStorage === 'persistent' ? '开' : '关'}</button>
       </div>
       <div class="urpppp-grid">
         <div class="urpppp-row"><label>OCR 服务</label><input type="url" id="urpppp-login-ocr" placeholder="${DEFAULT_OCR_EXAMPLE}" value="${escapeAttr(c.ocrUrl)}" spellcheck="false" /></div>
         <div class="urpppp-row"><label>提交延迟(ms)</label><input type="number" id="urpppp-login-delay" min="0" step="50" value="${escapeAttr(String(c.submitDelay))}" /></div>
         <div class="urpppp-row"><label>教务学号</label><input type="text" id="urpppp-login-zhjw-user" value="${escapeAttr(c.zhjwUser)}" autocomplete="username" /></div>
-        <div class="urpppp-row"><label>教务密码</label><input type="password" id="urpppp-login-zhjw-pass" value="${escapeAttr(c.zhjwPass)}" autocomplete="current-password" /></div>
+        <div class="urpppp-row"><label>教务密码</label><input type="password" id="urpppp-login-zhjw-pass" autocomplete="current-password" /></div>
         <div class="urpppp-row urpppp-cas-user"><label>统一认证账号</label><input type="text" id="urpppp-login-cas-user" value="${escapeAttr(c.casUser)}" /></div>
-        <div class="urpppp-row urpppp-cas-pass"><label>统一认证密码</label><input type="password" id="urpppp-login-cas-pass" value="${escapeAttr(c.casPass)}" /></div>
+        <div class="urpppp-row urpppp-cas-pass"><label>统一认证密码</label><input type="password" id="urpppp-login-cas-pass" /></div>
       </div>
+      <p class="urpppp-tip">默认不保存密码；开关关闭时只保存学号，登录请使用浏览器密码管理器或手动输入。已有旧密码会兼容读取，关闭开关并保存后立即清除。</p>
       <p class="urpppp-tip">可选 OCR：<code>${DEFAULT_OCR_EXAMPLE}</code> · POST <code>{"image":"base64"}</code> → <code>{"status":"success","code":"..."}</code></p>
       <p class="urpppp-tip">告示：OCR 服务会接收验证码图片，但插件不会向 OCR 服务发送学号或密码。该服务并非学校官方服务，请自行判断并承担使用风险。</p>
       <div class="urpppp-actions">
@@ -119,6 +121,8 @@ import assistStyles from '../styles/assist.css';
       </div>
       <div class="urpppp-status" id="urpppp-login-status"></div>
     `;
+    sec.querySelector('#urpppp-login-zhjw-pass').value = c.zhjwPass;
+    sec.querySelector('#urpppp-login-cas-pass').value = c.casPass;
     return sec;
   }
 
@@ -126,9 +130,11 @@ import assistStyles from '../styles/assist.css';
     let enabled = getBool(LOGIN.enabled, true);
     let autoSubmit = getBool(LOGIN.autoSubmit, true);
     let shareCred = getBool(LOGIN.shareCred, true);
+    let persistPassword = loginConf().passwordStorage === 'persistent';
     const enabledBtn = sec.querySelector('#urpppp-login-enabled');
     const autoBtn = sec.querySelector('#urpppp-login-auto');
     const shareBtn = sec.querySelector('#urpppp-login-share');
+    const persistBtn = sec.querySelector('#urpppp-login-persist-password');
     const toggleCas = () => {
       sec.querySelectorAll('.urpppp-cas-user,.urpppp-cas-pass').forEach((r) => {
         r.style.display = shareCred ? 'none' : 'grid';
@@ -137,6 +143,7 @@ import assistStyles from '../styles/assist.css';
     syncToggle(enabledBtn, enabled, '功能：开', '功能：关');
     syncToggle(autoBtn, autoSubmit, '识别后自动登录：开', '识别后自动登录：关');
     syncToggle(shareBtn, shareCred, '教务/统一认证共用账密：开', '教务/统一认证共用账密：关');
+    syncToggle(persistBtn, persistPassword, '持久保存密码：开', '持久保存密码：关');
     toggleCas();
 
     enabledBtn.onclick = () => {
@@ -153,26 +160,40 @@ import assistStyles from '../styles/assist.css';
       syncToggle(shareBtn, shareCred, '教务/统一认证共用账密：开', '教务/统一认证共用账密：关');
       toggleCas();
     };
+    persistBtn.onclick = () => {
+      persistPassword = !persistPassword;
+      syncToggle(persistBtn, persistPassword, '持久保存密码：开', '持久保存密码：关');
+    };
     sec.querySelector('#urpppp-login-save').onclick = () => {
       setVal(LOGIN.ocrUrl, (sec.querySelector('#urpppp-login-ocr').value || '').trim());
       setVal(LOGIN.submitDelay, String(Math.max(0, parseInt(sec.querySelector('#urpppp-login-delay').value, 10) || 300)));
       setVal(LOGIN.zhjwUser, (sec.querySelector('#urpppp-login-zhjw-user').value || '').trim());
-      setVal(LOGIN.zhjwPass, sec.querySelector('#urpppp-login-zhjw-pass').value || '');
+      setVal(LOGIN.zhjwPass, persistPassword ? sec.querySelector('#urpppp-login-zhjw-pass').value || '' : '');
       setVal(LOGIN.casUser, (sec.querySelector('#urpppp-login-cas-user').value || '').trim());
-      setVal(LOGIN.casPass, sec.querySelector('#urpppp-login-cas-pass').value || '');
+      setVal(LOGIN.casPass, persistPassword ? sec.querySelector('#urpppp-login-cas-pass').value || '' : '');
+      setVal(LOGIN.passwordStorage, persistPassword ? 'persistent' : 'none');
       setVal(LOGIN.enabled, enabled);
       setVal(LOGIN.autoSubmit, autoSubmit);
       setVal(LOGIN.shareCred, shareCred);
+      if (!persistPassword) {
+        sec.querySelector('#urpppp-login-zhjw-pass').value = '';
+        sec.querySelector('#urpppp-login-cas-pass').value = '';
+      }
       resetLoginGuardState('');
-      setStatus('urpppp-login-status', '登录设置已保存，连续失败计数已清零', 'ok');
+      setStatus('urpppp-login-status', persistPassword
+        ? '登录设置已保存；密码将持久保存在脚本存储中，请确认你接受风险。'
+        : '登录设置已保存；密码未持久化，连续失败计数已清零', 'ok');
     };
     sec.querySelector('#urpppp-login-clear').onclick = () => {
       setVal(LOGIN.zhjwUser, ''); setVal(LOGIN.zhjwPass, '');
       setVal(LOGIN.casUser, ''); setVal(LOGIN.casPass, '');
+      setVal(LOGIN.passwordStorage, 'none');
       sec.querySelector('#urpppp-login-zhjw-user').value = '';
       sec.querySelector('#urpppp-login-zhjw-pass').value = '';
       sec.querySelector('#urpppp-login-cas-user').value = '';
       sec.querySelector('#urpppp-login-cas-pass').value = '';
+      persistPassword = false;
+      syncToggle(persistBtn, false, '持久保存密码：开', '持久保存密码：关');
       resetLoginGuardState('');
       setStatus('urpppp-login-status', '已清除账密和连续失败计数', 'ok');
     };

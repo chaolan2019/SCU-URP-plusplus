@@ -10,14 +10,22 @@ export function createAssistConfig(storage, now = () => Date.now()) {
   const { getBool, getStr, getNum, getJSON, setVal, setJSON } = storage;
 
   function loginConf() {
+    const storedZhjwPass = getStr(LOGIN_KEYS.zhjwPass, '');
+    const storedCasPass = getStr(LOGIN_KEYS.casPass, '');
+    const savedMode = getStr(LOGIN_KEYS.passwordStorage, '');
+    // 兼容旧用户：已有密码且从未选择模式时，保留原持久化行为；新用户默认不保存。
+    const passwordStorage = savedMode === 'persistent' || (!savedMode && (storedZhjwPass || storedCasPass))
+      ? 'persistent'
+      : 'none';
     return {
       enabled: getBool(LOGIN_KEYS.enabled, true),
       autoSubmit: getBool(LOGIN_KEYS.autoSubmit, true),
       ocrUrl: getStr(LOGIN_KEYS.ocrUrl, ''),
       zhjwUser: getStr(LOGIN_KEYS.zhjwUser, ''),
-      zhjwPass: getStr(LOGIN_KEYS.zhjwPass, ''),
+      zhjwPass: passwordStorage === 'persistent' ? storedZhjwPass : '',
       casUser: getStr(LOGIN_KEYS.casUser, ''),
-      casPass: getStr(LOGIN_KEYS.casPass, ''),
+      casPass: passwordStorage === 'persistent' ? storedCasPass : '',
+      passwordStorage,
       shareCred: getBool(LOGIN_KEYS.shareCred, true),
       submitDelay: Math.max(0, getNum(LOGIN_KEYS.submitDelay, 300)),
     };

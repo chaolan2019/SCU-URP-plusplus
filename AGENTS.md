@@ -154,6 +154,7 @@ npm ci
 ```powershell
 npm run build
 npm run check
+npm run test:browser
 git diff --check
 git status --short
 ```
@@ -166,6 +167,8 @@ git status --short
 - 生成制品是否最新。
 - 两个用户脚本的 JavaScript 语法。
 - 制品大小、许可证和单文件约束。
+
+`npm run test:browser` 使用 Playwright 和脱敏 fixture 验证 DOM/观察器生命周期及 PDF 隔离恢复。`npm run test:visual` 是本地像素基线任务，更新快照必须人工审查。
 
 字符串契约测试只能防止结构被意外删除，不能替代真实 DOM 行为测试。新模块应优先测试输入输出、异常和边界条件。
 
@@ -222,7 +225,13 @@ PDF 专项检查：
 npm run release:prepare -- X.Y.Z
 ```
 
-该工具会校验版本递增、把 `[Unreleased]` 提升为带日期的正式版本、同步 package/lockfile/metadata/运行时常量/README、重新构建两个用户脚本并执行 `npm run check`。任一步失败时会恢复全部被修改文件。
+如果本次包含辅助插件的用户可见改动，同时指定其独立版本：
+
+```powershell
+npm run release:prepare -- X.Y.Z --assist A.B.C
+```
+
+该工具会校验版本递增、把 `[Unreleased]` 提升为带日期的正式版本、同步 package/lockfile/metadata/运行时常量/README、重新构建两个用户脚本并执行 `npm run check`。传入 `--assist` 时同步辅助插件版本。任一步失败时会恢复全部被修改文件。
 
 3. 再执行：
 
