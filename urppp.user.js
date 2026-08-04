@@ -14825,9 +14825,18 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
       }
     }
     __name(patchSiteDivBuild, "patchSiteDivBuild");
+    let weekScheduleObserverEntry = null;
+    let weekScheduleGlobalBound = false;
     function scheduleWeekScheduleFix() {
-      if (window.__urpppWeekSchedBound) return;
-      window.__urpppWeekSchedBound = true;
+      const host = document.getElementById("mycoursetable") || document.getElementById("page-content-template") || document.body;
+      if (weekScheduleObserverEntry && weekScheduleObserverEntry.root === host && host?.isConnected) {
+        fixWeekScheduleLayout();
+        return;
+      }
+      if (weekScheduleObserverEntry) weekScheduleObserverEntry.observer.disconnect();
+      weekScheduleObserverEntry = null;
+      const bindGlobals = !weekScheduleGlobalBound;
+      weekScheduleGlobalBound = true;
       let busy = false;
       const run = /* @__PURE__ */ __name(() => {
         if (busy || isNativePdfIsolationActive()) return;
@@ -14848,7 +14857,7 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
         patchSiteDivBuild();
         run();
       }, ms));
-      window.addEventListener("resize", () => {
+      if (bindGlobals) window.addEventListener("resize", () => {
         clearTimeout(window.__urpppWeekSchedResize);
         window.__urpppWeekSchedResize = setTimeout(run, 120);
       });
@@ -14902,7 +14911,6 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
           requestAnimationFrame(run);
         }, 16);
       });
-      const host = document.getElementById("mycoursetable") || document.getElementById("page-content-template") || document.body;
       if (host) {
         obs.observe(host, {
           childList: true,
@@ -14910,8 +14918,9 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
           attributes: true,
           attributeFilter: ["style", "class"]
         });
+        weekScheduleObserverEntry = { root: host, observer: obs };
       }
-      document.addEventListener("mouseup", () => {
+      if (bindGlobals) document.addEventListener("mouseup", () => {
         if (!document.getElementById("soliderbox")) return;
         setTimeout(run, 200);
         setTimeout(run, 500);
@@ -15990,6 +15999,44 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
       }, true);
     }
     __name(patchModalOpenPath, "patchModalOpenPath");
+    let courseOpacityObserverEntry = null;
+    let courseOpacityTimer = 0;
+    function applyCourseTableOpacity() {
+      if (isNativePdfIsolationActive()) return;
+      const table = document.getElementById("courseTable");
+      if (!table) return;
+      table.querySelectorAll("td").forEach((cell) => {
+        const background = cell.style.backgroundColor;
+        if (!background || !background.includes("rgba")) return;
+        const match = background.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/);
+        if (match) cell.style.backgroundColor = `rgba(${match[1]},${match[2]},${match[3]},0.5)`;
+      });
+    }
+    __name(applyCourseTableOpacity, "applyCourseTableOpacity");
+    function bindCourseTableOpacityObserver() {
+      const host = document.getElementById("mycoursetable") || document.getElementById("courseTable");
+      if (courseOpacityObserverEntry && courseOpacityObserverEntry.root === host && host?.isConnected) {
+        applyCourseTableOpacity();
+        return;
+      }
+      clearTimeout(courseOpacityTimer);
+      if (courseOpacityObserverEntry) courseOpacityObserverEntry.observer.disconnect();
+      courseOpacityObserverEntry = null;
+      if (!host) return;
+      const observer = new MutationObserver(() => {
+        clearTimeout(courseOpacityTimer);
+        courseOpacityTimer = setTimeout(applyCourseTableOpacity, 60);
+      });
+      observer.observe(host, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["style"]
+      });
+      courseOpacityObserverEntry = { root: host, observer };
+      applyCourseTableOpacity();
+    }
+    __name(bindCourseTableOpacityObserver, "bindCourseTableOpacityObserver");
     function beautifyInternal() {
       try {
         const n = getCurrent();
@@ -16153,35 +16200,7 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
         bindScheduleHoverNearCursor();
       } catch (_) {
       }
-      (/* @__PURE__ */ __name((function courseTableOpacity() {
-        if (window.__urpppCourseOpacityBound) return;
-        window.__urpppCourseOpacityBound = true;
-        const apply = /* @__PURE__ */ __name(() => {
-          if (isNativePdfIsolationActive()) return;
-          const tbl = document.getElementById("courseTable");
-          if (!tbl) return;
-          tbl.querySelectorAll("td").forEach((td) => {
-            const bg = td.style.backgroundColor;
-            if (bg && bg.includes("rgba")) {
-              const m = bg.match(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/);
-              if (m) td.style.backgroundColor = "rgba(" + m[1] + "," + m[2] + "," + m[3] + ",0.5)";
-            }
-          });
-        }, "apply");
-        apply();
-        const bind = /* @__PURE__ */ __name((host2) => {
-          if (!host2 || host2.__urpppOpacityObs) return;
-          host2.__urpppOpacityObs = true;
-          let tmr = 0;
-          new MutationObserver(() => {
-            clearTimeout(tmr);
-            tmr = setTimeout(apply, 60);
-          }).observe(host2, { childList: true, subtree: true, attributes: true, attributeFilter: ["style"] });
-        }, "bind");
-        const host = document.getElementById("mycoursetable") || document.getElementById("courseTable");
-        if (host) bind(host);
-        else setTimeout(() => bind(document.getElementById("mycoursetable") || document.getElementById("courseTable")), 1200);
-      }), "courseTableOpacity"))();
+      bindCourseTableOpacityObserver();
     }
     __name(beautifyInternal, "beautifyInternal");
     function syncThemeDotGroup(wrap) {
@@ -22527,6 +22546,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           patchSchoolCalendarLink();
           wrapTables();
           bindTableWrapObserver();
+          scheduleWeekScheduleFix();
+          bindCourseTableOpacityObserver();
           scheduleBeautifyNoticeTables();
           scheduleScrubTableInlineBg();
           document.querySelectorAll(".page-content, #page-content-template").forEach((el) => {

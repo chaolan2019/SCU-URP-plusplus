@@ -1,47 +1,9 @@
 import { expect, test } from '@playwright/test';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const FIXTURE_PATH = path.join(ROOT, 'tests/fixtures/schedule.html');
-const FIXTURE_URL = 'http://zhjw.scu.edu.cn/student/courseSelect/thisSemesterCurriculum/index';
-const USERSCRIPT_PATH = path.join(ROOT, 'urppp.user.js');
-
-async function loadScheduleFixture(page) {
-  const pageErrors = [];
-  page.on('pageerror', (error) => pageErrors.push(error.message));
-  await page.addInitScript(() => {
-    const values = new Map([
-      ['urppp_auto_update_check_v1', false],
-      ['urppp_theme_v3', 'default'],
-      ['urppp_skin_v1', 'apple'],
-    ]);
-    window.unsafeWindow = window;
-    window.GM_getValue = (key, fallback) => (values.has(key) ? values.get(key) : fallback);
-    window.GM_setValue = (key, value) => values.set(key, value);
-    window.GM_addStyle = (css) => {
-      const style = document.createElement('style');
-      style.textContent = css;
-      (document.head || document.documentElement).appendChild(style);
-      return style;
-    };
-    window.GM_xmlhttpRequest = (options) => {
-      if (options && typeof options.onerror === 'function') options.onerror(new Error('network disabled in fixture'));
-    };
-  });
-  await page.route('http://zhjw.scu.edu.cn/**', (route) => route.fulfill({
-    path: FIXTURE_PATH,
-    contentType: 'text/html; charset=utf-8',
-  }));
-  await page.goto(FIXTURE_URL);
-  await page.addScriptTag({ path: USERSCRIPT_PATH });
-  await expect(page.locator('#urppp-native-schedule-export')).toHaveCount(1);
-  await expect(page.locator('html')).toHaveClass(/urppp-ready/);
-  return pageErrors;
-}
+import { loadUrpFixture } from './support/urp-fixture.js';
 
 test('native PDF capture removes theme residue and restores it after every export', async ({ page }) => {
-  const pageErrors = await loadScheduleFixture(page);
+  const { pageErrors } = await loadUrpFixture(page);
+  await expect(page.locator('#urppp-native-schedule-export')).toHaveCount(1);
   const card = page.locator('#courseTable .class_div').first();
   const before = await card.evaluate((element) => ({
     radius: getComputedStyle(element).borderRadius,
@@ -81,7 +43,8 @@ test('native PDF capture removes theme residue and restores it after every expor
 });
 
 test('@visual themed schedule fixture remains stable', async ({ page }) => {
-  const pageErrors = await loadScheduleFixture(page);
+  const { pageErrors } = await loadUrpFixture(page);
+  await expect(page.locator('#urppp-native-schedule-export')).toHaveCount(1);
   await expect(page.locator('#mycoursetable')).toHaveScreenshot('schedule-themed.png', {
     animations: 'disabled',
     maxDiffPixels: 120,

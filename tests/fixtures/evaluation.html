@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>评教列表 fixture</title>
+  <style>
+    html, body { margin: 0; color: #393939; font: 14px Arial, sans-serif; }
+    #navbar { min-height: 45px; }
+    #sidebar { width: 190px; }
+    .page-content { padding: 16px; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { border: 1px solid #ddd; padding: 8px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar" id="navbar"><div class="navbar-header"><a class="navbar-brand" href="/index">URP Fixture</a></div><ul class="ace-nav"></ul></nav>
+  <aside class="sidebar" id="sidebar"><ul class="nav nav-list" id="menus"><li><a href="/index"><span class="menu-text">首页</span></a></li><li class="active"><a href="#"><span class="menu-text">教学评估</span></a></li></ul><div class="sidebar-collapse" id="sidebar-collapse"></div></aside>
+  <main class="main-content">
+    <div class="page-content" id="page-content-template">
+      <div class="breadcrumb">教学评估 / 评教任务</div>
+      <h4 class="header">待评估课程</h4>
+      <table class="table table-bordered" id="evaluation-table"><thead><tr><th>课程</th><th>教师</th><th>状态</th><th>操作</th></tr></thead><tbody><tr><td>示例课程</td><td>示例教师</td><td>未评估</td><td><button type="button">进入评估</button></td></tr></tbody></table>
+      <form id="evaluation-form"><fieldset><legend>示例问题</legend><label><input type="radio" name="question-1" value="A">A</label><label><input type="radio" name="question-1" value="B">B</label><textarea name="comment" placeholder="意见"></textarea></fieldset></form>
+    </div>
+  </main>
+</body>
+</html>

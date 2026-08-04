@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>成绩查询 fixture</title>
+  <style>
+    html, body { margin: 0; color: #393939; font: 14px Arial, sans-serif; }
+    #navbar { min-height: 45px; }
+    #sidebar { width: 190px; }
+    .page-content { padding: 16px; }
+    .form-group { margin: 8px 0; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { border: 1px solid #ddd; padding: 8px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar" id="navbar"><div class="navbar-header"><a class="navbar-brand" href="/index">URP Fixture</a></div><ul class="ace-nav"></ul></nav>
+  <aside class="sidebar" id="sidebar"><ul class="nav nav-list" id="menus"><li class="active"><a href="/index"><span class="menu-text">首页</span></a></li><li><a href="/student/integratedQuery/scoreQuery/allTermScores/index"><span class="menu-text">成绩查询</span></a></li></ul><div class="sidebar-collapse" id="sidebar-collapse"></div></aside>
+  <main class="main-content">
+    <div class="page-content" id="page-content-template">
+      <div class="breadcrumb">综合查询 / 成绩查询</div>
+      <h4 class="header">历年成绩</h4>
+      <form id="score-query-form"><div class="form-group"><label for="term">学期</label><select id="term"><option>2025-2026-1</option></select><button type="submit">查询</button></div></form>
+      <table class="table table-bordered" id="score-table"><thead><tr><th>课程</th><th>成绩</th><th>学分</th></tr></thead><tbody><tr><td>示例课程</td><td>95</td><td>3</td></tr></tbody></table>
+    </div>
+  </main>
+</body>
+</html>

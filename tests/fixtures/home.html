@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>URP 首页 fixture</title>
+  <style>
+    html, body { margin: 0; color: #393939; font: 14px Arial, sans-serif; }
+    #navbar { min-height: 45px; }
+    #sidebar { width: 190px; }
+    .page-content { padding: 16px; }
+    .widget-box { margin: 12px 0; border: 1px solid #ddd; }
+    .widget-header, .widget-body { padding: 10px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar" id="navbar">
+    <div class="navbar-header"><a class="navbar-brand" href="/index">URP Fixture</a></div>
+    <ul class="ace-nav"><li class="light-blue"><a><span class="user-info">测试用户</span></a></li></ul>
+  </nav>
+  <aside class="sidebar" id="sidebar">
+    <ul class="nav nav-list" id="menus"><li id="menu-home" class="active"><a href="/index"><span class="menu-text">首页</span></a></li></ul>
+    <div class="sidebar-collapse" id="sidebar-collapse"></div>
+  </aside>
+  <main class="main-content">
+    <div class="page-content" id="page-content-template">
+      <div class="breadcrumb">首页</div>
+      <div class="widget-box">
+        <div class="widget-header"><h4>通知公告</h4></div>
+        <div class="widget-body"><table class="table"><tbody><tr><td>脱敏通知</td><td>2026-08-01</td></tr></tbody></table></div>
+      </div>
+      <div class="widget-box">
+        <div class="widget-header"><h4>学业概览</h4></div>
+        <div class="widget-body"><div class="infobox"><span class="infobox-data-number">32</span><span class="infobox-content">已修课程</span></div></div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

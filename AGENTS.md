@@ -168,7 +168,7 @@ git status --short
 - 两个用户脚本的 JavaScript 语法。
 - 制品大小、许可证和单文件约束。
 
-`npm run test:browser` 使用 Playwright 和脱敏 fixture 验证 DOM/观察器生命周期及 PDF 隔离恢复。`npm run test:visual` 是本地像素基线任务，更新快照必须人工审查。
+`npm run test:browser` 使用 Playwright 和脱敏 fixture 验证 DOM、PJAX/观察器生命周期及 PDF 隔离恢复。`npm run test:visual` 覆盖六套课表皮肤、暗色桌面和移动端代表状态；快照必须人工审查。视觉快照具有操作系统和字体依赖，未生成并复跑固定 Ubuntu 基线前，不得把视觉任务作为 CI 像素门禁。详细 fixture 规则和 Linux 基线命令见 `tests/browser/README.md`。
 
 字符串契约测试只能防止结构被意外删除，不能替代真实 DOM 行为测试。新模块应优先测试输入输出、异常和边界条件。
 

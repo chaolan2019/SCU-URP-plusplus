@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>空闲教室 fixture</title>
+  <style>
+    html, body { margin: 0; color: #393939; font: 14px Arial, sans-serif; }
+    #navbar { min-height: 45px; }
+    #sidebar { width: 190px; }
+    .page-content { padding: 16px; }
+    .form-group { margin: 8px 0; }
+    .table { width: 100%; border-collapse: collapse; }
+    .table th, .table td { border: 1px solid #ddd; padding: 8px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar" id="navbar"><div class="navbar-header"><a class="navbar-brand" href="/index">URP Fixture</a></div><ul class="ace-nav"></ul></nav>
+  <aside class="sidebar" id="sidebar"><ul class="nav nav-list" id="menus"><li><a href="/index"><span class="menu-text">首页</span></a></li><li class="active"><a href="#"><span class="menu-text">空闲教室</span></a></li></ul><div class="sidebar-collapse" id="sidebar-collapse"></div></aside>
+  <main class="main-content">
+    <div class="page-content" id="page-content-template">
+      <div class="breadcrumb">教学资源 / 空闲教室</div>
+      <h4 class="header">空闲教室查询</h4>
+      <form id="free-classroom-form"><div class="form-group"><label for="campus">校区</label><select id="campus"><option>望江校区</option></select><label for="date">日期</label><input id="date" type="text" value="2026-08-04"><button type="submit">查询</button></div></form>
+      <table class="table table-bordered" id="free-classroom-table"><thead><tr><th>教室</th><th>容量</th><th>时间</th></tr></thead><tbody><tr><td>A101</td><td>60</td><td>第1-2节</td></tr></tbody></table>
+    </div>
+  </main>
+</body>
+</html>
