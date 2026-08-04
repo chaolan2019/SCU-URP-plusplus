@@ -10,9 +10,11 @@ import {
 } from '../src/features/schedule-export/image-layout.js';
 import { scheduleCardLaneGeometry } from '../src/features/schedule-export/layout.js';
 import { rewriteNativePdfSelector } from '../src/features/schedule-export/native-pdf.js';
+import { buildScheduleSvg } from '../src/features/schedule-export/schedule-image.js';
 
 const entryUrl = new URL('../src/userscripts/urppp.entry.js', import.meta.url);
 const nativePdfUrl = new URL('../src/features/schedule-export/native-pdf.js', import.meta.url);
+const scheduleImageUrl = new URL('../src/features/schedule-export/schedule-image.js', import.meta.url);
 const featureStylesUrl = new URL('../src/styles/features.css', import.meta.url);
 const scheduleExportStylesUrl = new URL('../src/styles/schedule-export.css', import.meta.url);
 
@@ -117,16 +119,99 @@ test('schedule export owns its menu and date dialog styles', async () => {
   assert.match(exportStyles, /\.urppp-dialog-mask/);
 });
 
-test('PNG export snapshots every skin into aligned standalone SVG colors', async () => {
-  const source = await readFile(entryUrl, 'utf8');
+test('pure PNG renderer is deterministic, escaped, and lane-aware', () => {
+  const data = {
+    semester: { label: '2026 & <春季>' },
+    courses: [{
+      name: '算法 & <安全>',
+      teacher: '张老师',
+      arrangements: [{
+        day: 1,
+        startSection: 1,
+        endSection: 2,
+        weekDescription: '1-16周',
+        campus: '江安',
+        building: '一教',
+        classroom: 'A101',
+      }],
+    }, {
+      name: '并发课程',
+      teacher: '李老师',
+      arrangements: [{
+        day: 1,
+        startSection: 2,
+        endSection: 3,
+        weekDescription: '1-16周',
+        campus: '江安',
+        building: '二教',
+        classroom: 'B202',
+      }],
+    }, {
+      name: '待定 <课程>',
+      teacher: '',
+      arrangements: [],
+    }],
+  };
+  const theme = {
+    id: 'light',
+    skin: 'apple',
+    dark: false,
+    label: '类 Apple & <浅色>',
+    colors: {
+      bg: '#F5F5F7',
+      surface: '#FFFFFF',
+      input: '#F5F5F7',
+      text: '#1D1D1F',
+      secondary: '#6E6E73',
+      muted: '#86868B',
+      border: '#D2D2D7',
+      primary: '#0071E3',
+    },
+    shape: {
+      frameRadius: 24,
+      headerRadius: 13,
+      gridRadius: 10,
+      cardRadius: 12,
+      frameStroke: 1,
+      cardStroke: 1,
+      shadow: 'soft',
+    },
+  };
+  const options = { now: new Date('2026-03-01T04:05:06Z') };
+  const first = buildScheduleSvg(data, theme, options);
+  const second = buildScheduleSvg(data, theme, options);
+
+  assert.deepEqual(first, second);
+  assert.equal(first.width, 1960);
+  assert.equal(first.background, theme.colors.bg);
+  assert.equal(first.theme, theme);
+  assert.match(first.svg, /2026 &amp; &lt;春季&gt;课表/);
+  assert.match(first.svg, /算法 &amp;/);
+  assert.match(first.svg, /类 Apple &amp; &lt;浅色&gt;/);
+  assert.match(first.svg, /未排定时间的课程/);
+  assert.match(first.svg, /待定 &lt;课程&gt;/);
+  assert.doesNotMatch(first.svg, /算法 & <安全>/);
+
+  const cards = [...first.svg.matchAll(/data-course-card="1"[^>]*x="([^"]+)"[^>]*y="([^"]+)"[^>]*width="([^"]+)"/g)];
+  assert.equal(cards.length, 2);
+  assert.notEqual(cards[0][1], cards[1][1]);
+  assert.equal(cards[0][3], cards[1][3]);
+});
+
+test('PNG export delegates SVG rendering while retaining current theme ownership', async () => {
+  const [source, imageSource] = await Promise.all([
+    readFile(entryUrl, 'utf8'),
+    readFile(scheduleImageUrl, 'utf8'),
+  ]);
   for (const skin of ['apple', 'flat', 'organic', 'brutal', 'editorial', 'neu']) {
     assert.match(source, new RegExp(`\\b${skin}: \\{ frameRadius:`), skin);
   }
   assert.match(source, /function currentScheduleImageTheme\(\)/);
-  assert.match(source, /function buildScheduleSvg\(data, themeOverride\)/);
-  assert.match(source, /const cardWidth = laneWidth;/);
-  assert.match(source, /line\.kind === 'title'/);
-  assert.doesNotMatch(source, /const gap = 3;/);
-  assert.match(source, /background: colors\.bg/);
+  assert.match(source, /return renderScheduleSvg\(data, themeOverride \|\| currentScheduleImageTheme\(\)\)/);
+  assert.doesNotMatch(source, /function scheduleImageCourseStyle\(/);
+  assert.match(imageSource, /const cardWidth = laneWidth;/);
+  assert.match(imageSource, /line\.kind === 'title'/);
+  assert.doesNotMatch(imageSource, /const gap = 3;/);
+  assert.match(imageSource, /background: colors\.bg/);
   assert.match(source, /image:\s*\{\s*theme: currentScheduleImageTheme/);
 });
