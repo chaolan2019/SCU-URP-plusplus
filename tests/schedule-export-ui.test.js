@@ -11,10 +11,15 @@ import {
 import { scheduleCardLaneGeometry } from '../src/features/schedule-export/layout.js';
 import { rewriteNativePdfSelector } from '../src/features/schedule-export/native-pdf.js';
 import { buildScheduleSvg } from '../src/features/schedule-export/schedule-image.js';
+import {
+  createScheduleExportUi,
+  scheduleExportCompletionNotes,
+} from '../src/features/schedule-export/ui.js';
 
 const entryUrl = new URL('../src/userscripts/urppp.entry.js', import.meta.url);
 const nativePdfUrl = new URL('../src/features/schedule-export/native-pdf.js', import.meta.url);
 const scheduleImageUrl = new URL('../src/features/schedule-export/schedule-image.js', import.meta.url);
+const scheduleExportUiUrl = new URL('../src/features/schedule-export/ui.js', import.meta.url);
 const featureStylesUrl = new URL('../src/styles/features.css', import.meta.url);
 const scheduleExportStylesUrl = new URL('../src/styles/schedule-export.css', import.meta.url);
 
@@ -45,9 +50,10 @@ test('native PDF stage rewrites selectors into the offscreen clone', () => {
 });
 
 test('native PDF export suspends beautification around the real site lifecycle', async () => {
-  const [source, moduleSource] = await Promise.all([
+  const [source, moduleSource, uiSource] = await Promise.all([
     readFile(entryUrl, 'utf8'),
     readFile(nativePdfUrl, 'utf8'),
+    readFile(scheduleExportUiUrl, 'utf8'),
   ]);
   assert.match(moduleSource, /let nativePdfIsolationDepth = 0/);
   assert.match(source, /if \(isNativePdfIsolationActive\(\)\) return/);
@@ -63,7 +69,7 @@ test('native PDF export suspends beautification around the real site lifecycle',
   assert.match(source, /await exportNativePdfIsolated\(button, \{/);
   assert.match(source, /window\.__urpppPdfDiagnose = async \(\) =>/);
   assert.match(source, /__urpppOriginalDivBuild/);
-  assert.match(source, /await pdfHandler\(\)/);
+  assert.match(uiSource, /await pdfHandler\(\)/);
   assert.doesNotMatch(source, /function runNativePdfWithCapture\(/);
   assert.doesNotMatch(source, /frame\.srcdoc/);
   assert.doesNotMatch(source, /frame\.contentDocument/);
@@ -107,6 +113,63 @@ test('PNG text layout preserves wrapped titles and reserves locations', () => {
   assert.equal(lines[1].kind, 'title');
   assert.ok(lines.some((line) => line.kind === 'schedule'));
   assert.ok(lines.some((line) => line.kind === 'location'));
+});
+
+test('schedule export completion notes preserve format-specific omissions', () => {
+  const data = {
+    courses: [
+      { arrangements: [] },
+      { arrangements: [{ day: 1 }] },
+    ],
+  };
+  assert.deepEqual(scheduleExportCompletionNotes('ics', data, {
+    ics: { missingWeeks: 2, missingTimes: 1 },
+  }), [
+    '1 门未排定时间的课程未写入日历',
+    '2 个上课安排缺少周次',
+    '1 个上课安排缺少节次时间',
+  ]);
+  assert.deepEqual(scheduleExportCompletionNotes('json', data, {
+    json: { unscheduledCourses: 1, missingWeeks: 2, invalidArrangements: 3 },
+  }), [
+    '1 门未排定时间的课程未写入 JSON',
+    '2 个上课安排缺少周次',
+    '3 个上课安排缺少日期或节次',
+  ]);
+});
+
+test('schedule export UI orchestrates format execution and restores its trigger', async () => {
+  const calls = [];
+  const trigger = { disabled: false, innerHTML: '<i>export</i>' };
+  const ui = createScheduleExportUi({
+    document: {},
+    window: {},
+    ensureStyles: () => {},
+    loadData: async (source) => {
+      calls.push(['load', source]);
+      return { courses: [{ arrangements: [] }] };
+    },
+    exportJson: async () => {
+      calls.push(['json']);
+      return { unscheduledCourses: 1 };
+    },
+    exportIcs: async () => {},
+    exportPng: async () => {},
+    showToast: (message, error) => calls.push(['toast', message, error]),
+    nativePageUrl: '/schedule',
+    navigate: () => {},
+    logger: { warn: (...args) => calls.push(['warn', ...args]) },
+  });
+
+  await ui.run('json', 'clean', null, trigger);
+
+  assert.deepEqual(calls, [
+    ['load', 'clean'],
+    ['json'],
+    ['toast', '课表已导出：JSON；1 门未排定时间的课程未写入 JSON', undefined],
+  ]);
+  assert.equal(trigger.disabled, false);
+  assert.equal(trigger.innerHTML, '<i>export</i>');
 });
 
 test('schedule export owns its menu and date dialog styles', async () => {
@@ -199,9 +262,10 @@ test('pure PNG renderer is deterministic, escaped, and lane-aware', () => {
 });
 
 test('PNG export delegates SVG rendering while retaining current theme ownership', async () => {
-  const [source, imageSource] = await Promise.all([
+  const [source, imageSource, uiSource] = await Promise.all([
     readFile(entryUrl, 'utf8'),
     readFile(scheduleImageUrl, 'utf8'),
+    readFile(scheduleExportUiUrl, 'utf8'),
   ]);
   for (const skin of ['apple', 'flat', 'organic', 'brutal', 'editorial', 'neu']) {
     assert.match(source, new RegExp(`\\b${skin}: \\{ frameRadius:`), skin);
@@ -209,6 +273,9 @@ test('PNG export delegates SVG rendering while retaining current theme ownership
   assert.match(source, /function currentScheduleImageTheme\(\)/);
   assert.match(source, /return renderScheduleSvg\(data, themeOverride \|\| currentScheduleImageTheme\(\)\)/);
   assert.doesNotMatch(source, /function scheduleImageCourseStyle\(/);
+  assert.doesNotMatch(source, /function exportOptionHtml\(/);
+  assert.match(source, /const scheduleExportUi = createScheduleExportUi\(\{/);
+  assert.match(uiSource, /function createMenu\(options = \{\}\)/);
   assert.match(imageSource, /const cardWidth = laneWidth;/);
   assert.match(imageSource, /line\.kind === 'title'/);
   assert.doesNotMatch(imageSource, /const gap = 3;/);
