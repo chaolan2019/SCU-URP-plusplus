@@ -36,6 +36,7 @@ import {
 import featureStyles from '../styles/features.css';
 import internalStyles from '../styles/internal.css';
 import scheduleCardStyles from '../styles/schedule-cards.css';
+import scheduleExportStyles from '../styles/schedule-export.css';
 
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Chao_Lan
@@ -9660,6 +9661,14 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     (document.head || document.documentElement).appendChild(style);
   }
 
+  function ensureScheduleExportStyles() {
+    if (document.getElementById('urppp-schedule-export-style')) return;
+    const style = document.createElement('style');
+    style.id = 'urppp-schedule-export-style';
+    style.textContent = scheduleExportStyles;
+    (document.head || document.documentElement).appendChild(style);
+  }
+
   function ensureNavNameTarget(root) {
     const scope = root && root.querySelector ? root : document;
     const user = scope.querySelector('#navbar .user-info, .ace-nav .user-info, .user-info');
@@ -10525,6 +10534,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   function createScheduleExportMenu(options) {
+    ensureScheduleExportStyles();
     const source = options && options.source || 'native';
     const pdfHandler = options && options.pdfHandler;
     const pdfAvailable = typeof pdfHandler === 'function';

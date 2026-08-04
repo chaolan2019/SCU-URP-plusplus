@@ -13,6 +13,8 @@ import { rewriteNativePdfSelector } from '../src/features/schedule-export/native
 
 const entryUrl = new URL('../src/userscripts/urppp.entry.js', import.meta.url);
 const nativePdfUrl = new URL('../src/features/schedule-export/native-pdf.js', import.meta.url);
+const featureStylesUrl = new URL('../src/styles/features.css', import.meta.url);
+const scheduleExportStylesUrl = new URL('../src/styles/schedule-export.css', import.meta.url);
 
 test('schedule card lanes exactly cover the cell without internal gaps', () => {
   const width = 144.453125;
@@ -103,6 +105,16 @@ test('PNG text layout preserves wrapped titles and reserves locations', () => {
   assert.equal(lines[1].kind, 'title');
   assert.ok(lines.some((line) => line.kind === 'schedule'));
   assert.ok(lines.some((line) => line.kind === 'location'));
+});
+
+test('schedule export owns its menu and date dialog styles', async () => {
+  const [sharedStyles, exportStyles] = await Promise.all([
+    readFile(featureStylesUrl, 'utf8'),
+    readFile(scheduleExportStylesUrl, 'utf8'),
+  ]);
+  assert.doesNotMatch(sharedStyles, /urppp-export|urppp-dialog/);
+  assert.match(exportStyles, /\.urppp-export-menu/);
+  assert.match(exportStyles, /\.urppp-dialog-mask/);
 });
 
 test('PNG export snapshots every skin into aligned standalone SVG colors', async () => {
