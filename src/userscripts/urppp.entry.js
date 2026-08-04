@@ -1,3 +1,12 @@
+import {
+  alpha,
+  darken,
+  hexToRgb,
+  lighten,
+  mixHex,
+  normalizeHexColor,
+  rgbToHex,
+} from '../core/color.js';
 import { createFeatureRuntime, defineFeature } from '../core/feature-runtime.js';
 import { escapeHtml } from '../core/html.js';
 import { compareVersions, parseUserscriptVersion } from '../core/version.js';
@@ -571,57 +580,6 @@ import scheduleExportStyles from '../styles/schedule-export.css';
   // seed → primary/secondary/neutral tonal steps → scheme roles
   // ============================================================
 
-  function hexToRgb(hex) {
-    const m = String(hex).replace('#', '').match(/^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
-    if (!m) return { r: 30, g: 58, b: 95 };
-    return {
-      r: parseInt(m[1], 16),
-      g: parseInt(m[2], 16),
-      b: parseInt(m[3], 16),
-    };
-  }
-
-  function rgbToHex(r, g, b) {
-    return '#' + [r, g, b].map(x => {
-      const v = Math.max(0, Math.min(255, Math.round(x)));
-      return v.toString(16).padStart(2, '0');
-    }).join('');
-  }
-
-  function normalizeHexColor(v) {
-    let s = String(v || '').trim();
-    if (!s) return '';
-    if (s[0] !== '#') s = '#' + s;
-    if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toUpperCase();
-    return '';
-  }
-
-  function darken(hex, p) {
-    const { r, g, b } = hexToRgb(hex);
-    const f = 1 - p;
-    return rgbToHex(r * f, g * f, b * f);
-  }
-
-  function lighten(hex, p) {
-    const { r, g, b } = hexToRgb(hex);
-    return rgbToHex(r + (255 - r) * p, g + (255 - g) * p, b + (255 - b) * p);
-  }
-
-  function alpha(hex, a) {
-    const { r, g, b } = hexToRgb(hex);
-    return `rgba(${r},${g},${b},${a})`;
-  }
-
-  function mixHex(a, b, t) {
-    const pa = hexToRgb(normalizeHexColor(a) || '#FFFFFF');
-    const pb = hexToRgb(normalizeHexColor(b) || '#FFFFFF');
-    const k = Math.max(0, Math.min(1, Number(t) || 0));
-    return rgbToHex(
-      pa.r + (pb.r - pa.r) * k,
-      pa.g + (pb.g - pa.g) * k,
-      pa.b + (pb.b - pa.b) * k
-    );
-  }
 
   function rgbToHsl(r, g, b) {
     r /= 255; g /= 255; b /= 255;

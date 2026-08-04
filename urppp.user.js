@@ -27,6 +27,54 @@
   var __defProp = Object.defineProperty;
   var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
+  // src/core/color.js
+  function hexToRgb(hex) {
+    const match = String(hex).replace("#", "").match(/^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+    if (!match) return { r: 30, g: 58, b: 95 };
+    return {
+      r: parseInt(match[1], 16),
+      g: parseInt(match[2], 16),
+      b: parseInt(match[3], 16)
+    };
+  }
+  __name(hexToRgb, "hexToRgb");
+  function rgbToHex(r, g, b) {
+    return "#" + [r, g, b].map((channel) => {
+      const value = Math.max(0, Math.min(255, Math.round(channel)));
+      return value.toString(16).padStart(2, "0");
+    }).join("");
+  }
+  __name(rgbToHex, "rgbToHex");
+  function normalizeHexColor(value) {
+    let color = String(value || "").trim();
+    if (!color) return "";
+    if (color[0] !== "#") color = "#" + color;
+    return /^#[0-9a-fA-F]{6}$/.test(color) ? color.toUpperCase() : "";
+  }
+  __name(normalizeHexColor, "normalizeHexColor");
+  function darken(hex, proportion) {
+    const { r, g, b } = hexToRgb(hex);
+    const factor = 1 - proportion;
+    return rgbToHex(r * factor, g * factor, b * factor);
+  }
+  __name(darken, "darken");
+  function alpha(hex, opacity) {
+    const { r, g, b } = hexToRgb(hex);
+    return `rgba(${r},${g},${b},${opacity})`;
+  }
+  __name(alpha, "alpha");
+  function mixHex(left, right, proportion) {
+    const a = hexToRgb(normalizeHexColor(left) || "#FFFFFF");
+    const b = hexToRgb(normalizeHexColor(right) || "#FFFFFF");
+    const factor = Math.max(0, Math.min(1, Number(proportion) || 0));
+    return rgbToHex(
+      a.r + (b.r - a.r) * factor,
+      a.g + (b.g - a.g) * factor,
+      a.b + (b.b - a.b) * factor
+    );
+  }
+  __name(mixHex, "mixHex");
+
   // src/core/feature-runtime.js
   function assertFunction(value, label) {
     if (typeof value !== "function") throw new TypeError(`${label} must be a function`);
@@ -10116,58 +10164,6 @@ html[data-urppp-skin="neu"] .urppp-export-option{border-radius:8px!important}
         font: '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", "PingFang SC", "Helvetica Neue", "Microsoft YaHei", sans-serif'
       }
     };
-    function hexToRgb(hex) {
-      const m = String(hex).replace("#", "").match(/^([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
-      if (!m) return { r: 30, g: 58, b: 95 };
-      return {
-        r: parseInt(m[1], 16),
-        g: parseInt(m[2], 16),
-        b: parseInt(m[3], 16)
-      };
-    }
-    __name(hexToRgb, "hexToRgb");
-    function rgbToHex(r, g, b) {
-      return "#" + [r, g, b].map((x) => {
-        const v = Math.max(0, Math.min(255, Math.round(x)));
-        return v.toString(16).padStart(2, "0");
-      }).join("");
-    }
-    __name(rgbToHex, "rgbToHex");
-    function normalizeHexColor(v) {
-      let s = String(v || "").trim();
-      if (!s) return "";
-      if (s[0] !== "#") s = "#" + s;
-      if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toUpperCase();
-      return "";
-    }
-    __name(normalizeHexColor, "normalizeHexColor");
-    function darken(hex, p) {
-      const { r, g, b } = hexToRgb(hex);
-      const f = 1 - p;
-      return rgbToHex(r * f, g * f, b * f);
-    }
-    __name(darken, "darken");
-    function lighten(hex, p) {
-      const { r, g, b } = hexToRgb(hex);
-      return rgbToHex(r + (255 - r) * p, g + (255 - g) * p, b + (255 - b) * p);
-    }
-    __name(lighten, "lighten");
-    function alpha(hex, a) {
-      const { r, g, b } = hexToRgb(hex);
-      return `rgba(${r},${g},${b},${a})`;
-    }
-    __name(alpha, "alpha");
-    function mixHex(a, b, t) {
-      const pa = hexToRgb(normalizeHexColor(a) || "#FFFFFF");
-      const pb = hexToRgb(normalizeHexColor(b) || "#FFFFFF");
-      const k = Math.max(0, Math.min(1, Number(t) || 0));
-      return rgbToHex(
-        pa.r + (pb.r - pa.r) * k,
-        pa.g + (pb.g - pa.g) * k,
-        pa.b + (pb.b - pa.b) * k
-      );
-    }
-    __name(mixHex, "mixHex");
     function rgbToHsl(r, g, b) {
       r /= 255;
       g /= 255;
