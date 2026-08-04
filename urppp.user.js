@@ -616,6 +616,119 @@
   }
   __name(scheduleIcsOmissionStats, "scheduleIcsOmissionStats");
 
+  // src/features/schedule-export/weeks.js
+  function scheduleWeeksFromDescription(value) {
+    const text = String(value || "").replace(/[—–]/g, "-");
+    const parity = /单周|单数周|[（(]单[）)]/.test(text) ? 1 : /双周|双数周|[（(]双[）)]/.test(text) ? 0 : -1;
+    const weeks = /* @__PURE__ */ new Set();
+    const add = /* @__PURE__ */ __name((week) => {
+      const normalized = Number(week);
+      if (normalized >= 1 && normalized <= 30 && (parity < 0 || normalized % 2 === parity)) {
+        weeks.add(normalized);
+      }
+    }, "add");
+    text.replace(/(\d{1,2})\s*[-~至到]\s*(\d{1,2})/g, (match, start, end) => {
+      const from = Math.min(Number(start), Number(end));
+      const to = Math.max(Number(start), Number(end));
+      for (let week = from; week <= to; week += 1) add(week);
+      return match;
+    });
+    (text.match(/\d{1,2}/g) || []).forEach(add);
+    return Array.from(weeks).sort((first, second) => first - second);
+  }
+  __name(scheduleWeeksFromDescription, "scheduleWeeksFromDescription");
+  function scheduleWeeks(classWeek, weekDescription) {
+    const bits = String(classWeek || "").trim();
+    if (/^[01]+$/.test(bits)) {
+      const weeks = [];
+      for (let index = 0; index < bits.length; index += 1) {
+        if (bits.charAt(index) === "1") weeks.push(index + 1);
+      }
+      return weeks;
+    }
+    return scheduleWeeksFromDescription(weekDescription || bits);
+  }
+  __name(scheduleWeeks, "scheduleWeeks");
+
+  // src/features/schedule-export/data-normalize.js
+  function firstScheduleCourse(data) {
+    const packs = data && Array.isArray(data.xkxx) ? data.xkxx : [];
+    for (const pack of packs) {
+      const values = Object.values(pack || {});
+      if (values.length) return values[0];
+    }
+    return null;
+  }
+  __name(firstScheduleCourse, "firstScheduleCourse");
+  function schedulePlanCodeFromData(data) {
+    const course = firstScheduleCourse(data);
+    if (!course) return "";
+    const firstTime = Array.isArray(course.timeAndPlaceList) ? course.timeAndPlaceList[0] : null;
+    return String(
+      course.zxjxjhh || course.executiveEducationPlanNumber || course.id && (course.id.zxjxjhh || course.id.executiveEducationPlanNumber) || firstTime && (firstTime.zxjxjhh || firstTime.executiveEducationPlanNumber) || ""
+    ).trim();
+  }
+  __name(schedulePlanCodeFromData, "schedulePlanCodeFromData");
+  function semesterLabelFromPlanCode(planCode) {
+    const match = String(planCode || "").match(/^(\d{4})-(\d{4})-(\d)/);
+    if (!match) return "学生课表";
+    const term = match[3] === "1" ? "秋季学期" : match[3] === "2" ? "春季学期" : "学期";
+    return match[1] + "-" + match[2] + "学年" + term;
+  }
+  __name(semesterLabelFromPlanCode, "semesterLabelFromPlanCode");
+  function normalizeScheduleExportData(data, requestedPlanCode, source, options = {}) {
+    const planCode = requestedPlanCode || schedulePlanCodeFromData(data);
+    const sections = (Array.isArray(data && data.jcsjbs) ? data.jcsjbs : []).map((item) => ({
+      section: Number(item.jc) || 0,
+      start: normalizeSectionTime(item.kssj),
+      end: normalizeSectionTime(item.jssj)
+    })).filter((item) => item.section >= 1 && item.section <= 20 && item.start && item.end).sort((left, right) => left.section - right.section);
+    const courses = [];
+    (Array.isArray(data && data.xkxx) ? data.xkxx : []).forEach((pack) => {
+      Object.keys(pack || {}).forEach((key) => {
+        const course = pack[key];
+        if (!course) return;
+        const id = course.id || {};
+        const arrangements = (course.timeAndPlaceList || []).map((time) => ({
+          day: Number(time.classDay) || 0,
+          startSection: Number(time.classSessions) || 1,
+          endSection: Math.min(12, (Number(time.classSessions) || 1) + Math.max(1, Number(time.continuingSession) || 1) - 1),
+          weeks: scheduleWeeks(time.classWeek, time.weekDescription || course.skzcs),
+          weekDescription: String(time.weekDescription || course.skzcs || "").trim(),
+          campus: String(time.campusName || "").trim(),
+          building: String(time.teachingBuildingName || "").trim(),
+          classroom: String(time.classroomName || "").trim()
+        })).filter((item) => item.day >= 1 && item.day <= 7 && item.startSection >= 1 && item.startSection <= 12);
+        courses.push({
+          code: String(id.coureNumber || course.zkch || "").trim(),
+          sequence: String(id.coureSequenceNumber || course.zkxh || "").trim(),
+          name: String(course.courseName || course.englishCourseName || key).trim(),
+          englishName: String(course.englishCourseName || "").trim(),
+          teacher: String(course.attendClassTeacher || "").trim(),
+          attribute: String(course.coursePropertiesName || "").trim(),
+          category: String(course.courseCategoryName || "").trim(),
+          credit: Number(course.unit) || 0,
+          status: String(course.selectCourseStatusName || "").trim(),
+          arrangements
+        });
+      });
+    });
+    const firstMonday = String(options.firstMonday || "").trim();
+    return {
+      schemaVersion: 1,
+      exportedAt: (options.now instanceof Date ? options.now : /* @__PURE__ */ new Date()).toISOString(),
+      source: source || "SCU URP++",
+      semester: {
+        planCode,
+        label: semesterLabelFromPlanCode(planCode),
+        firstMonday: parseLocalIsoDate(firstMonday) ? firstMonday : ""
+      },
+      sections,
+      courses
+    };
+  }
+  __name(normalizeScheduleExportData, "normalizeScheduleExportData");
+
   // src/features/schedule-export/image-layout.js
   function wrapField(text, limit, kind) {
     const lines = [];
@@ -1089,40 +1202,6 @@
     });
   }
   __name(exportNativePdfIsolated, "exportNativePdfIsolated");
-
-  // src/features/schedule-export/weeks.js
-  function scheduleWeeksFromDescription(value) {
-    const text = String(value || "").replace(/[—–]/g, "-");
-    const parity = /单周|单数周|[（(]单[）)]/.test(text) ? 1 : /双周|双数周|[（(]双[）)]/.test(text) ? 0 : -1;
-    const weeks = /* @__PURE__ */ new Set();
-    const add = /* @__PURE__ */ __name((week) => {
-      const normalized = Number(week);
-      if (normalized >= 1 && normalized <= 30 && (parity < 0 || normalized % 2 === parity)) {
-        weeks.add(normalized);
-      }
-    }, "add");
-    text.replace(/(\d{1,2})\s*[-~至到]\s*(\d{1,2})/g, (match, start, end) => {
-      const from = Math.min(Number(start), Number(end));
-      const to = Math.max(Number(start), Number(end));
-      for (let week = from; week <= to; week += 1) add(week);
-      return match;
-    });
-    (text.match(/\d{1,2}/g) || []).forEach(add);
-    return Array.from(weeks).sort((first, second) => first - second);
-  }
-  __name(scheduleWeeksFromDescription, "scheduleWeeksFromDescription");
-  function scheduleWeeks(classWeek, weekDescription) {
-    const bits = String(classWeek || "").trim();
-    if (/^[01]+$/.test(bits)) {
-      const weeks = [];
-      for (let index = 0; index < bits.length; index += 1) {
-        if (bits.charAt(index) === "1") weeks.push(index + 1);
-      }
-      return weeks;
-    }
-    return scheduleWeeksFromDescription(weekDescription || bits);
-  }
-  __name(scheduleWeeks, "scheduleWeeks");
 
   // src/styles/features.css
   var features_default = `#urppp-settings-panel .urppp-feature-grid{display:grid;gap:10px;margin-top:12px}
@@ -19399,77 +19478,6 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
     const SCHEDULE_EXPORT_API = "/student/courseSelect/thisSemesterCurriculum/ajaxStudentSchedule/callback";
     const SCHEDULE_RESULT_API = "/student/courseSelect/thisSemesterCurriculum/callback";
     const SCHEDULE_PAGE_URL = "/student/courseSelect/thisSemesterCurriculum/index";
-    function firstScheduleCourse(data) {
-      const packs = data && Array.isArray(data.xkxx) ? data.xkxx : [];
-      for (const pack of packs) {
-        const values = Object.values(pack || {});
-        if (values.length) return values[0];
-      }
-      return null;
-    }
-    __name(firstScheduleCourse, "firstScheduleCourse");
-    function schedulePlanCodeFromData(data) {
-      const course = firstScheduleCourse(data);
-      if (!course) return "";
-      const firstTime = Array.isArray(course.timeAndPlaceList) ? course.timeAndPlaceList[0] : null;
-      return String(course.zxjxjhh || course.executiveEducationPlanNumber || course.id && (course.id.zxjxjhh || course.id.executiveEducationPlanNumber) || firstTime && (firstTime.zxjxjhh || firstTime.executiveEducationPlanNumber) || "").trim();
-    }
-    __name(schedulePlanCodeFromData, "schedulePlanCodeFromData");
-    function semesterLabelFromPlanCode(planCode) {
-      const match = String(planCode || "").match(/^(\d{4})-(\d{4})-(\d)/);
-      if (!match) return "学生课表";
-      const term = match[3] === "1" ? "秋季学期" : match[3] === "2" ? "春季学期" : "学期";
-      return match[1] + "-" + match[2] + "学年" + term;
-    }
-    __name(semesterLabelFromPlanCode, "semesterLabelFromPlanCode");
-    function normalizeScheduleExportData(data, requestedPlanCode, source) {
-      const planCode = requestedPlanCode || schedulePlanCodeFromData(data);
-      const sections = (Array.isArray(data && data.jcsjbs) ? data.jcsjbs : []).map((item) => ({
-        section: Number(item.jc) || 0,
-        start: normalizeSectionTime(item.kssj),
-        end: normalizeSectionTime(item.jssj)
-      })).filter((item) => item.section >= 1 && item.section <= 20 && item.start && item.end).sort((a, b) => a.section - b.section);
-      const courses = [];
-      (Array.isArray(data && data.xkxx) ? data.xkxx : []).forEach((pack) => {
-        Object.keys(pack || {}).forEach((key) => {
-          const course = pack[key];
-          if (!course) return;
-          const id = course.id || {};
-          const arrangements = (course.timeAndPlaceList || []).map((time) => ({
-            day: Number(time.classDay) || 0,
-            startSection: Number(time.classSessions) || 1,
-            endSection: Math.min(12, (Number(time.classSessions) || 1) + Math.max(1, Number(time.continuingSession) || 1) - 1),
-            weeks: scheduleWeeks(time.classWeek, time.weekDescription || course.skzcs),
-            weekDescription: String(time.weekDescription || course.skzcs || "").trim(),
-            campus: String(time.campusName || "").trim(),
-            building: String(time.teachingBuildingName || "").trim(),
-            classroom: String(time.classroomName || "").trim()
-          })).filter((item) => item.day >= 1 && item.day <= 7 && item.startSection >= 1 && item.startSection <= 12);
-          courses.push({
-            code: String(id.coureNumber || course.zkch || "").trim(),
-            sequence: String(id.coureSequenceNumber || course.zkxh || "").trim(),
-            name: String(course.courseName || course.englishCourseName || key).trim(),
-            englishName: String(course.englishCourseName || "").trim(),
-            teacher: String(course.attendClassTeacher || "").trim(),
-            attribute: String(course.coursePropertiesName || "").trim(),
-            category: String(course.courseCategoryName || "").trim(),
-            credit: Number(course.unit) || 0,
-            status: String(course.selectCourseStatusName || "").trim(),
-            arrangements
-          });
-        });
-      });
-      const knownFirstMonday = deriveCurrentSemesterMonday(planCode) || getScheduleFirstMondayMap()[planCode] || "";
-      return {
-        schemaVersion: 1,
-        exportedAt: (/* @__PURE__ */ new Date()).toISOString(),
-        source: source || "SCU URP++",
-        semester: { planCode, label: semesterLabelFromPlanCode(planCode), firstMonday: parseLocalIsoDate(knownFirstMonday) ? knownFirstMonday : "" },
-        sections,
-        courses
-      };
-    }
-    __name(normalizeScheduleExportData, "normalizeScheduleExportData");
     async function resolveSchedulePlanCode() {
       const select = document.querySelector("#planCode, #zxjxjhh");
       if (select && select.value && select.value !== "no") return String(select.value);
@@ -19517,7 +19525,7 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
           headers: { "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" }
         }));
       }
-      const normalized = normalizeScheduleExportData(data, planCode, source);
+      const normalized = normalizeScheduleDataForPage(data, planCode, source);
       if (!normalized.courses.length) throw new Error("没有读取到可导出的课表数据");
       return normalized;
     }
@@ -19560,6 +19568,12 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
       return localDateIso(monday);
     }
     __name(deriveCurrentSemesterMonday, "deriveCurrentSemesterMonday");
+    function normalizeScheduleDataForPage(data, requestedPlanCode, source) {
+      const planCode = requestedPlanCode || schedulePlanCodeFromData(data);
+      const firstMonday = deriveCurrentSemesterMonday(planCode) || getScheduleFirstMondayMap()[planCode] || "";
+      return normalizeScheduleExportData(data, planCode, source, { firstMonday });
+    }
+    __name(normalizeScheduleDataForPage, "normalizeScheduleDataForPage");
     function requestScheduleFirstMonday(data) {
       const planCode = data.semester.planCode;
       const stored = getScheduleFirstMondayMap()[planCode];
@@ -20496,7 +20510,7 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
         if (!courses.length) {
           courses = parseScheduleFromDoc(document);
         }
-        const exportData = data ? normalizeScheduleExportData(data, schedulePlanCodeFromData(data), "clean") : null;
+        const exportData = data ? normalizeScheduleDataForPage(data, schedulePlanCodeFromData(data), "clean") : null;
         return { courses, exportData, rawOk: courses.length > 0, error: courses.length ? "" : "课表 JSON 无 timeAndPlaceList" };
       } catch (e) {
         try {
