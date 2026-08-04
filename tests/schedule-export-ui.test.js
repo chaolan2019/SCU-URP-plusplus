@@ -1,7 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { scheduleImageTextLines } from '../src/features/schedule-export/image-layout.js';
+import {
+  exportCourseColor,
+  layoutScheduleDay,
+  scheduleExportEvents,
+  scheduleImageTextLines,
+  wrapScheduleFooter,
+} from '../src/features/schedule-export/image-layout.js';
 import { scheduleCardLaneGeometry } from '../src/features/schedule-export/layout.js';
 import { rewriteNativePdfSelector } from '../src/features/schedule-export/native-pdf.js';
 
@@ -57,6 +63,28 @@ test('native PDF export suspends beautification around the real site lifecycle',
   assert.doesNotMatch(source, /function runNativePdfWithCapture\(/);
   assert.doesNotMatch(source, /frame\.srcdoc/);
   assert.doesNotMatch(source, /frame\.contentDocument/);
+});
+
+test('PNG event layout assigns stable lanes and deterministic colors', () => {
+  const courses = [{
+    name: '课程 A',
+    arrangements: [
+      { day: 1, startSection: 1, endSection: 2 },
+      { day: 1, startSection: 4, endSection: 4 },
+    ],
+  }, {
+    name: '课程 B',
+    arrangements: [{ day: 1, startSection: 2, endSection: 3 }],
+  }];
+  const events = scheduleExportEvents({ courses });
+  const laidOut = layoutScheduleDay(events);
+
+  assert.equal(laidOut.length, 3);
+  assert.deepEqual(laidOut.slice(0, 2).map((item) => [item.lane, item.laneCount]), [[0, 2], [1, 2]]);
+  assert.deepEqual([laidOut[2].lane, laidOut[2].laneCount], [0, 1]);
+  assert.equal(exportCourseColor('课程 A'), exportCourseColor('课程 A'));
+  assert.match(exportCourseColor('课程 A'), /^#[0-9A-F]{6}$/);
+  assert.deepEqual(wrapScheduleFooter('1234567', 3), ['123', '456', '7']);
 });
 
 test('PNG text layout preserves wrapped titles and reserves locations', () => {

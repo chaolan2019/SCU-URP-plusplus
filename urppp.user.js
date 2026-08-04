@@ -637,6 +637,73 @@
     return taken;
   }
   __name(takeLines, "takeLines");
+  var COURSE_PALETTE = ["#2563EB", "#059669", "#D97706", "#DC2626", "#7C3AED", "#0891B2", "#DB2777", "#4D7C0F", "#EA580C", "#4F46E5"];
+  function exportCourseColor(name) {
+    let hash = 0;
+    const text = String(name || "");
+    for (let index = 0; index < text.length; index += 1) {
+      hash = hash * 31 + text.charCodeAt(index) >>> 0;
+    }
+    return COURSE_PALETTE[hash % COURSE_PALETTE.length];
+  }
+  __name(exportCourseColor, "exportCourseColor");
+  function assignScheduleLanes(component) {
+    const laneEnds = [];
+    component.forEach((item) => {
+      let lane = laneEnds.findIndex((end) => end < item.startSection);
+      if (lane < 0) {
+        lane = laneEnds.length;
+        laneEnds.push(0);
+      }
+      laneEnds[lane] = item.endSection;
+      item.lane = lane;
+    });
+    component.forEach((item) => {
+      item.laneCount = Math.max(1, laneEnds.length);
+    });
+  }
+  __name(assignScheduleLanes, "assignScheduleLanes");
+  function layoutScheduleDay(items) {
+    const sorted = items.slice().sort((left, right) => left.startSection - right.startSection || left.endSection - right.endSection || left.course.name.localeCompare(right.course.name));
+    let component = [];
+    let componentEnd = 0;
+    sorted.forEach((item) => {
+      if (component.length && item.startSection > componentEnd) {
+        assignScheduleLanes(component);
+        component = [];
+        componentEnd = 0;
+      }
+      component.push(item);
+      componentEnd = Math.max(componentEnd, item.endSection);
+    });
+    if (component.length) assignScheduleLanes(component);
+    return sorted;
+  }
+  __name(layoutScheduleDay, "layoutScheduleDay");
+  function scheduleExportEvents(data) {
+    const events = [];
+    data.courses.forEach((course) => course.arrangements.forEach((arrangement) => {
+      events.push({
+        course,
+        arrangement,
+        startSection: arrangement.startSection,
+        endSection: arrangement.endSection,
+        day: arrangement.day
+      });
+    }));
+    return events;
+  }
+  __name(scheduleExportEvents, "scheduleExportEvents");
+  function wrapScheduleFooter(text, limit) {
+    const lines = [];
+    let rest = String(text || "");
+    while (rest) {
+      lines.push(rest.slice(0, limit));
+      rest = rest.slice(limit);
+    }
+    return lines;
+  }
+  __name(wrapScheduleFooter, "wrapScheduleFooter");
   function scheduleImageTextLines(item, maxChars, maxLines) {
     const sectionLabel = item.startSection === item.endSection ? item.startSection + "节" : item.startSection + "-" + item.endSection + "节";
     const title = wrapField(item.name, Math.max(5, maxChars), "title");
@@ -19533,65 +19600,6 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
       return scheduleIcsOmissionStats(data);
     }
     __name(exportScheduleIcs, "exportScheduleIcs");
-    const EXPORT_COURSE_PALETTE = ["#2563EB", "#059669", "#D97706", "#DC2626", "#7C3AED", "#0891B2", "#DB2777", "#4D7C0F", "#EA580C", "#4F46E5"];
-    function exportCourseColor(name) {
-      let hash = 0;
-      const text = String(name || "");
-      for (let i = 0; i < text.length; i++) hash = hash * 31 + text.charCodeAt(i) >>> 0;
-      return EXPORT_COURSE_PALETTE[hash % EXPORT_COURSE_PALETTE.length];
-    }
-    __name(exportCourseColor, "exportCourseColor");
-    function assignScheduleLanes(component) {
-      const laneEnds = [];
-      component.forEach((item) => {
-        let lane = laneEnds.findIndex((end) => end < item.startSection);
-        if (lane < 0) {
-          lane = laneEnds.length;
-          laneEnds.push(0);
-        }
-        laneEnds[lane] = item.endSection;
-        item.lane = lane;
-      });
-      component.forEach((item) => {
-        item.laneCount = Math.max(1, laneEnds.length);
-      });
-    }
-    __name(assignScheduleLanes, "assignScheduleLanes");
-    function layoutScheduleDay(items) {
-      const sorted = items.slice().sort((a, b) => a.startSection - b.startSection || a.endSection - b.endSection || a.course.name.localeCompare(b.course.name));
-      let component = [];
-      let componentEnd = 0;
-      sorted.forEach((item) => {
-        if (component.length && item.startSection > componentEnd) {
-          assignScheduleLanes(component);
-          component = [];
-          componentEnd = 0;
-        }
-        component.push(item);
-        componentEnd = Math.max(componentEnd, item.endSection);
-      });
-      if (component.length) assignScheduleLanes(component);
-      return sorted;
-    }
-    __name(layoutScheduleDay, "layoutScheduleDay");
-    function scheduleExportEvents(data) {
-      const events = [];
-      data.courses.forEach((course) => course.arrangements.forEach((arrangement) => {
-        events.push({ course, arrangement, startSection: arrangement.startSection, endSection: arrangement.endSection, day: arrangement.day });
-      }));
-      return events;
-    }
-    __name(scheduleExportEvents, "scheduleExportEvents");
-    function wrapScheduleFooter(text, limit) {
-      const lines = [];
-      let rest = String(text || "");
-      while (rest) {
-        lines.push(rest.slice(0, limit));
-        rest = rest.slice(limit);
-      }
-      return lines;
-    }
-    __name(wrapScheduleFooter, "wrapScheduleFooter");
     const SCHEDULE_IMAGE_SKIN_NAMES = {
       apple: "类 Apple",
       flat: "极简扁平",
@@ -20418,12 +20426,12 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
       return false;
     }
     __name(weekBitActive, "weekBitActive");
-    const COURSE_PALETTE = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4", "#EC4899", "#84CC16", "#F97316", "#6366F1"];
+    const COURSE_PALETTE2 = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#06B6D4", "#EC4899", "#84CC16", "#F97316", "#6366F1"];
     function courseColor(name) {
       let h = 0;
       const s = String(name || "");
       for (let i = 0; i < s.length; i++) h = h * 31 + s.charCodeAt(i) >>> 0;
-      return COURSE_PALETTE[h % COURSE_PALETTE.length];
+      return COURSE_PALETTE2[h % COURSE_PALETTE2.length];
     }
     __name(courseColor, "courseColor");
     function parseScheduleFromJson(data) {

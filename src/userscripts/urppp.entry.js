@@ -17,7 +17,13 @@ import {
   parseLocalIsoDate,
   scheduleIcsOmissionStats,
 } from '../features/schedule-export/ics.js';
-import { scheduleImageTextLines } from '../features/schedule-export/image-layout.js';
+import {
+  exportCourseColor,
+  layoutScheduleDay,
+  scheduleExportEvents,
+  scheduleImageTextLines,
+  wrapScheduleFooter,
+} from '../features/schedule-export/image-layout.js';
 import { scheduleCardLaneGeometry } from '../features/schedule-export/layout.js';
 import {
   cloneNativePdfStage,
@@ -10285,58 +10291,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const ics = buildScheduleIcs(data, firstMonday);
     downloadBlob(new Blob([ics], { type: 'text/calendar;charset=utf-8' }), safeScheduleFilename(data.semester.label) + '.ics');
     return scheduleIcsOmissionStats(data);
-  }
-
-  const EXPORT_COURSE_PALETTE = ['#2563EB', '#059669', '#D97706', '#DC2626', '#7C3AED', '#0891B2', '#DB2777', '#4D7C0F', '#EA580C', '#4F46E5'];
-
-  function exportCourseColor(name) {
-    let hash = 0;
-    const text = String(name || '');
-    for (let i = 0; i < text.length; i++) hash = (hash * 31 + text.charCodeAt(i)) >>> 0;
-    return EXPORT_COURSE_PALETTE[hash % EXPORT_COURSE_PALETTE.length];
-  }
-
-  function assignScheduleLanes(component) {
-    const laneEnds = [];
-    component.forEach((item) => {
-      let lane = laneEnds.findIndex((end) => end < item.startSection);
-      if (lane < 0) { lane = laneEnds.length; laneEnds.push(0); }
-      laneEnds[lane] = item.endSection;
-      item.lane = lane;
-    });
-    component.forEach((item) => { item.laneCount = Math.max(1, laneEnds.length); });
-  }
-
-  function layoutScheduleDay(items) {
-    const sorted = items.slice().sort((a, b) => a.startSection - b.startSection || a.endSection - b.endSection || a.course.name.localeCompare(b.course.name));
-    let component = [];
-    let componentEnd = 0;
-    sorted.forEach((item) => {
-      if (component.length && item.startSection > componentEnd) {
-        assignScheduleLanes(component);
-        component = [];
-        componentEnd = 0;
-      }
-      component.push(item);
-      componentEnd = Math.max(componentEnd, item.endSection);
-    });
-    if (component.length) assignScheduleLanes(component);
-    return sorted;
-  }
-
-  function scheduleExportEvents(data) {
-    const events = [];
-    data.courses.forEach((course) => course.arrangements.forEach((arrangement) => {
-      events.push({ course, arrangement, startSection: arrangement.startSection, endSection: arrangement.endSection, day: arrangement.day });
-    }));
-    return events;
-  }
-
-  function wrapScheduleFooter(text, limit) {
-    const lines = [];
-    let rest = String(text || '');
-    while (rest) { lines.push(rest.slice(0, limit)); rest = rest.slice(limit); }
-    return lines;
   }
 
   const SCHEDULE_IMAGE_SKIN_NAMES = {
