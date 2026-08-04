@@ -51,6 +51,7 @@ test('native PDF export suspends beautification around the real site lifecycle',
   assert.match(source, /__urpppOriginalDivBuild/);
   assert.match(source, /await pdfHandler\(\)/);
   assert.doesNotMatch(source, /cloneNativePdfStage\(sourceHost\)/);
+  assert.doesNotMatch(source, /function runNativePdfWithCapture\(/);
   assert.doesNotMatch(source, /await runNativePdfWithCapture\(button, context\)/);
   assert.doesNotMatch(source, /frame\.srcdoc/);
   assert.doesNotMatch(source, /frame\.contentDocument/);

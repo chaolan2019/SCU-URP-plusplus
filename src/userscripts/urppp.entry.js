@@ -10,11 +10,7 @@ import {
 } from '../features/schedule-export/json-format.js';
 import { scheduleImageTextLines } from '../features/schedule-export/image-layout.js';
 import { scheduleCardLaneGeometry } from '../features/schedule-export/layout.js';
-import {
-  cloneNativePdfStage,
-  rewriteNativePdfSelector,
-  runNativeScheduleDivBuild,
-} from '../features/schedule-export/native-pdf.js';
+import { cloneNativePdfStage } from '../features/schedule-export/native-pdf.js';
 import { scheduleWeeks } from '../features/schedule-export/weeks.js';
 import featureStyles from '../styles/features.css';
 import internalStyles from '../styles/internal.css';
@@ -10752,100 +10748,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (!entry) return;
     try { entry.stage.remove(); } catch (_) {}
     try { document.getElementById('urppp-pdf-reset-style')?.remove(); } catch (_) {}
-  }
-
-  function runNativePdfWithCapture(button, context) {
-    return new Promise((resolve, reject) => {
-      const page = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
-      const pageDocument = page.document || document;
-      const originalDollar = page.$;
-      const originalJQuery = page.jQuery;
-      const originalDivBuild = page.divBuild;
-      const originalBack = page.back;
-      const originalQuerySelector = pageDocument.querySelector;
-      const originalLoadFileList = page.Import && page.Import.LoadFileList;
-      const originalHtml2Canvas = page.html2canvas;
-      if (typeof originalDollar !== 'function' || typeof originalLoadFileList !== 'function' || typeof originalBack !== 'function') {
-        reject(new Error('教务原生导出依赖未就绪'));
-        return;
-      }
-      const scopedDollar = function (selector) {
-        return originalDollar(rewriteNativePdfSelector(selector), context.stage);
-      };
-      try { Object.setPrototypeOf(scopedDollar, originalDollar); } catch (_) {}
-      scopedDollar.__urpppPdfScoped = true;
-      let finished = false;
-      let timeout = 0;
-      let scopedActive = false;
-      const scopedDivBuild = () => runNativeScheduleDivBuild(scopedDollar);
-      const scopedHtml2Canvas = typeof originalHtml2Canvas === 'function'
-        ? function () {
-          const result = originalHtml2Canvas.apply(this, arguments);
-          if (result && typeof result.catch === 'function') result.catch(fail);
-          return result;
-        }
-        : null;
-      const restoreScope = () => {
-        if (!scopedActive) return;
-        scopedActive = false;
-        page.$ = originalDollar;
-        page.jQuery = originalJQuery;
-        page.divBuild = originalDivBuild;
-        if (scopedHtml2Canvas && page.html2canvas === scopedHtml2Canvas) page.html2canvas = originalHtml2Canvas;
-        pageDocument.querySelector = originalQuerySelector;
-      };
-      const cleanup = () => {
-        if (timeout) clearTimeout(timeout);
-        if (page.Import && page.Import.LoadFileList === scopedLoadFileList) page.Import.LoadFileList = originalLoadFileList;
-        if (page.back === wrappedBack) page.back = originalBack;
-        restoreScope();
-      };
-      const fail = (error) => {
-        if (finished) return;
-        finished = true;
-        cleanup();
-        reject(error);
-      };
-      const activateScope = () => {
-        if (scopedActive) return;
-        scopedActive = true;
-        page.$ = scopedDollar;
-        page.jQuery = scopedDollar;
-        page.divBuild = scopedDivBuild;
-        if (scopedHtml2Canvas) page.html2canvas = scopedHtml2Canvas;
-        pageDocument.querySelector = function (selector) {
-          if (selector === '#mycoursetable') return context.target;
-          return originalQuerySelector.call(this, selector);
-        };
-      };
-      const wrappedBack = function () {
-        activateScope();
-        try { return originalBack.apply(this, arguments); }
-        finally {
-          cleanup();
-          if (!finished) {
-            finished = true;
-            resolve();
-          }
-        }
-      };
-      const scopedLoadFileList = function (files, success) {
-        return originalLoadFileList.call(this, files, function () {
-          activateScope();
-          try { return success.apply(this, arguments); }
-          catch (error) { fail(error); throw error; }
-          finally {
-            if (page.Import && page.Import.LoadFileList === scopedLoadFileList) page.Import.LoadFileList = originalLoadFileList;
-            restoreScope();
-          }
-        });
-      };
-      page.back = wrappedBack;
-      page.Import.LoadFileList = scopedLoadFileList;
-      timeout = setTimeout(() => fail(new Error('原生 PDF 生成超时')), 60 * 1000);
-      try { button.click(); }
-      catch (error) { fail(error); }
-    });
   }
 
   function isUrpppOwnedStyle(style) {

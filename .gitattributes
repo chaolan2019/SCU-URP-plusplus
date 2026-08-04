@@ -6,4 +6,4 @@ src/** text eol=lf
 tests/** text eol=lf
 tools/** text eol=lf
 .github/workflows/*.yml text eol=lf
-README.md text eol=lf
+*.md text eol=lf

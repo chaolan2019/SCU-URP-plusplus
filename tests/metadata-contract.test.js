@@ -28,10 +28,25 @@ test('metadata versions match runtime constants', async () => {
   }
 });
 
-test('package version follows the main userscript version', async () => {
-  const [packageText, metadataText] = await Promise.all([
+test('current main userscript version has a changelog release section', async () => {
+  const [metadataText, changelog] = await Promise.all([
+    readFile(new URL('../src/metadata/urppp.json', import.meta.url), 'utf8'),
+    readFile(new URL('../CHANGELOG.md', import.meta.url), 'utf8'),
+  ]);
+  const version = JSON.parse(metadataText).version.replaceAll('.', '\\.');
+  assert.match(changelog, new RegExp(`^## \\[${version}\\] - \\d{4}-\\d{2}-\\d{2}$`, 'm'));
+});
+
+test('package and lockfile versions follow the main userscript version', async () => {
+  const [packageText, packageLockText, metadataText] = await Promise.all([
     readFile(new URL('../package.json', import.meta.url), 'utf8'),
+    readFile(new URL('../package-lock.json', import.meta.url), 'utf8'),
     readFile(new URL('../src/metadata/urppp.json', import.meta.url), 'utf8'),
   ]);
-  assert.equal(JSON.parse(packageText).version, JSON.parse(metadataText).version);
+  const packageVersion = JSON.parse(packageText).version;
+  const lockfile = JSON.parse(packageLockText);
+  const metadataVersion = JSON.parse(metadataText).version;
+  assert.equal(packageVersion, metadataVersion);
+  assert.equal(lockfile.version, packageVersion);
+  assert.equal(lockfile.packages?.['']?.version, packageVersion);
 });

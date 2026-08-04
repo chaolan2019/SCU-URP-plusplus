@@ -445,35 +445,6 @@
     temp_title: "urppp-pdf-temp-title",
     temp_subtitle: "urppp-pdf-temp-subtitle"
   };
-  var NATIVE_PDF_SELECTOR_REWRITES = [
-    ["#page-content-template", "#urppp-pdf-page"],
-    ["#mycoursetable", "#urppp-pdf-mycoursetable"],
-    ["#courseTableBody", "#urppp-pdf-courseTableBody"],
-    ["#courseTable", "#urppp-pdf-courseTable"],
-    ["div.class_div", "div.urppp-pdf-card"],
-    ["div.printDiv", "div.urppp-pdf-card.printDiv"],
-    ["#h4_id1", "#urppp-pdf-h4-1"],
-    ["#h4_id2", "#urppp-pdf-h4-2"],
-    ["#infoTable", "#urppp-pdf-info-table"],
-    [".breadcrumb", ".urppp-pdf-breadcrumb"],
-    ["#rwskxxbg-course", "#urppp-pdf-rwskxxbg"],
-    ["#temp_title", "#urppp-pdf-temp-title"],
-    ["#temp_subtitle", "#urppp-pdf-temp-subtitle"]
-  ];
-  function rewriteNativePdfSelector(selector) {
-    if (typeof selector !== "string") return selector;
-    let rewritten = selector;
-    for (const [from, to] of NATIVE_PDF_SELECTOR_REWRITES) {
-      rewritten = rewritten.split(",").map((part) => {
-        const trimmed = part.trim();
-        if (trimmed === from) return to;
-        if (trimmed.startsWith(from + " ")) return to + trimmed.slice(from.length);
-        return part;
-      }).join(",");
-    }
-    return rewritten;
-  }
-  __name(rewriteNativePdfSelector, "rewriteNativePdfSelector");
   function sanitizeNativePdfClone(root) {
     root.querySelectorAll('script, iframe, object, embed, [id^="urppp-"], [data-urppp]').forEach((element) => element.remove());
     [root, ...root.querySelectorAll("*")].forEach((element) => {
@@ -635,40 +606,6 @@
     return { stage, target, page: pageRef, sourceHost };
   }
   __name(cloneNativePdfStage, "cloneNativePdfStage");
-  function runNativeScheduleDivBuild($) {
-    $("div.class_div").removeAttr("style");
-    $("div.class_div").css("position", "absolute");
-    let tdWidth = $("#mycoursetable td").css("width");
-    $("div.class_div").each(function(_, element) {
-      const width = parseFloat(tdWidth) || 0;
-      $(element).css("width", $(element).siblings().size() > 0 ? width / 2 + "px" : tdWidth);
-    });
-    let rowHeight = 0;
-    $("#courseTableBody tr").each(function(_, row) {
-      if ($(row).height() > rowHeight) rowHeight = $(row).height();
-    });
-    $("div.class_div").each(function(_, element) {
-      const span = Number($(element).attr("classNum")) || 1;
-      if ($(element).height() / span > rowHeight) rowHeight = $(element).height() / span;
-    });
-    $("#courseTableBody tr").height(rowHeight + "px");
-    tdWidth = $("#mycoursetable td").css("width");
-    $("div.class_div").each(function(_, element) {
-      const card = $(element);
-      const cell = card.parent("td");
-      const page = $("#page-content-template");
-      const width = parseFloat(tdWidth) || 0;
-      card.css("height", $("#courseTableBody tr").height() * (Number(card.attr("classNum")) || 1) + "px");
-      card.css("top", cell.offset().top - page.offset().top);
-      if (card.siblings().size() > 0) {
-        const left = cell.offset().left - page.offset().left + (card.next().size() > 0 ? 0 : width / 2);
-        card.css("left", left + "px");
-      } else {
-        card.css("left", cell.offset().left - page.offset().left + "px");
-      }
-    });
-  }
-  __name(runNativeScheduleDivBuild, "runNativeScheduleDivBuild");
 
   // src/features/schedule-export/weeks.js
   function scheduleWeeksFromDescription(value) {
@@ -19676,108 +19613,6 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
       }
     }
     __name(disposeNativePdfCapture, "disposeNativePdfCapture");
-    function runNativePdfWithCapture(button, context) {
-      return new Promise((resolve, reject) => {
-        const page = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
-        const pageDocument = page.document || document;
-        const originalDollar = page.$;
-        const originalJQuery = page.jQuery;
-        const originalDivBuild = page.divBuild;
-        const originalBack = page.back;
-        const originalQuerySelector = pageDocument.querySelector;
-        const originalLoadFileList = page.Import && page.Import.LoadFileList;
-        const originalHtml2Canvas = page.html2canvas;
-        if (typeof originalDollar !== "function" || typeof originalLoadFileList !== "function" || typeof originalBack !== "function") {
-          reject(new Error("教务原生导出依赖未就绪"));
-          return;
-        }
-        const scopedDollar = /* @__PURE__ */ __name(function(selector) {
-          return originalDollar(rewriteNativePdfSelector(selector), context.stage);
-        }, "scopedDollar");
-        try {
-          Object.setPrototypeOf(scopedDollar, originalDollar);
-        } catch (_) {
-        }
-        scopedDollar.__urpppPdfScoped = true;
-        let finished = false;
-        let timeout = 0;
-        let scopedActive = false;
-        const scopedDivBuild = /* @__PURE__ */ __name(() => runNativeScheduleDivBuild(scopedDollar), "scopedDivBuild");
-        const scopedHtml2Canvas = typeof originalHtml2Canvas === "function" ? function() {
-          const result = originalHtml2Canvas.apply(this, arguments);
-          if (result && typeof result.catch === "function") result.catch(fail);
-          return result;
-        } : null;
-        const restoreScope = /* @__PURE__ */ __name(() => {
-          if (!scopedActive) return;
-          scopedActive = false;
-          page.$ = originalDollar;
-          page.jQuery = originalJQuery;
-          page.divBuild = originalDivBuild;
-          if (scopedHtml2Canvas && page.html2canvas === scopedHtml2Canvas) page.html2canvas = originalHtml2Canvas;
-          pageDocument.querySelector = originalQuerySelector;
-        }, "restoreScope");
-        const cleanup = /* @__PURE__ */ __name(() => {
-          if (timeout) clearTimeout(timeout);
-          if (page.Import && page.Import.LoadFileList === scopedLoadFileList) page.Import.LoadFileList = originalLoadFileList;
-          if (page.back === wrappedBack) page.back = originalBack;
-          restoreScope();
-        }, "cleanup");
-        const fail = /* @__PURE__ */ __name((error) => {
-          if (finished) return;
-          finished = true;
-          cleanup();
-          reject(error);
-        }, "fail");
-        const activateScope = /* @__PURE__ */ __name(() => {
-          if (scopedActive) return;
-          scopedActive = true;
-          page.$ = scopedDollar;
-          page.jQuery = scopedDollar;
-          page.divBuild = scopedDivBuild;
-          if (scopedHtml2Canvas) page.html2canvas = scopedHtml2Canvas;
-          pageDocument.querySelector = function(selector) {
-            if (selector === "#mycoursetable") return context.target;
-            return originalQuerySelector.call(this, selector);
-          };
-        }, "activateScope");
-        const wrappedBack = /* @__PURE__ */ __name(function() {
-          activateScope();
-          try {
-            return originalBack.apply(this, arguments);
-          } finally {
-            cleanup();
-            if (!finished) {
-              finished = true;
-              resolve();
-            }
-          }
-        }, "wrappedBack");
-        const scopedLoadFileList = /* @__PURE__ */ __name(function(files, success) {
-          return originalLoadFileList.call(this, files, function() {
-            activateScope();
-            try {
-              return success.apply(this, arguments);
-            } catch (error) {
-              fail(error);
-              throw error;
-            } finally {
-              if (page.Import && page.Import.LoadFileList === scopedLoadFileList) page.Import.LoadFileList = originalLoadFileList;
-              restoreScope();
-            }
-          });
-        }, "scopedLoadFileList");
-        page.back = wrappedBack;
-        page.Import.LoadFileList = scopedLoadFileList;
-        timeout = setTimeout(() => fail(new Error("原生 PDF 生成超时")), 60 * 1e3);
-        try {
-          button.click();
-        } catch (error) {
-          fail(error);
-        }
-      });
-    }
-    __name(runNativePdfWithCapture, "runNativePdfWithCapture");
     function isUrpppOwnedStyle(style) {
       if (!style || style.tagName !== "STYLE") return false;
       if (/^urppp(?:-|$)/.test(style.id || "")) return true;

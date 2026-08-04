@@ -31,6 +31,7 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -109,14 +110,12 @@ jobs:
           notes.append("- 主脚本：Greasy Fork 搜索 `SCU URP++`，或下载本页附件 `urppp.user.js` 安装到 Tampermonkey")
           notes.append("- 辅助插件：下载 `urpppp.user.js` 本地安装（需已启用主脚本；风险自负）")
           notes.append("")
-          if section:
-              notes.append("### 本版本更新日志")
-              notes.append("")
-              notes.append(section)
-          else:
-              notes.append("### 本版本更新日志")
-              notes.append("")
-              notes.append(f"_CHANGELOG.md 中未找到 `{ver}` 段落，请查看完整 [CHANGELOG](https://github.com/{os.environ.get('GITHUB_REPOSITORY','')}/blob/main/CHANGELOG.md)。_")
+          if not section:
+              raise SystemExit(f"CHANGELOG.md 中未找到版本 {ver} 的正式段落，拒绝发布")
+
+          notes.append("### 本版本更新日志")
+          notes.append("")
+          notes.append(section)
           notes.append("")
           notes.append(f"完整日志：https://github.com/{os.environ.get('GITHUB_REPOSITORY','')}/blob/main/CHANGELOG.md")
 
@@ -139,8 +138,18 @@ jobs:
 
           if [[ "${TAG_EXISTS}" == "true" && "${FORCE}" != "true" ]]; then
             echo "Tag ${TAG} 已存在，跳过发布（避免重复）。"
-            echo "如需覆盖说明/附件：Actions 手动运行并勾选 force。"
+            echo "如需更新同一提交的说明/附件：Actions 手动运行并勾选 force。"
             exit 0
+          fi
+
+          if [[ "${TAG_EXISTS}" == "true" && "${FORCE}" == "true" ]]; then
+            tag_commit="$(git rev-list -n 1 "${TAG}")"
+            head_commit="$(git rev-parse HEAD)"
+            if [[ "${tag_commit}" != "${head_commit}" ]]; then
+              echo "拒绝覆盖：${TAG} 指向 ${tag_commit}，当前 HEAD 是 ${head_commit}。" >&2
+              echo "已发布 tag 不得移动，Release 附件必须与 tag 源码一致。" >&2
+              exit 1
+            fi
           fi
 
           if [[ "${TAG_EXISTS}" != "true" ]]; then

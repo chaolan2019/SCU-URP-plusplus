@@ -3,8 +3,14 @@ import assert from 'node:assert/strict';
 import { readFile, stat } from 'node:fs/promises';
 
 const artifacts = [
-  { file: new URL('../urppp.user.js', import.meta.url), version: '1.5.5' },
-  { file: new URL('../urpppp.user.js', import.meta.url), version: '1.3.2' },
+  {
+    file: new URL('../urppp.user.js', import.meta.url),
+    metadata: new URL('../src/metadata/urppp.json', import.meta.url),
+  },
+  {
+    file: new URL('../urpppp.user.js', import.meta.url),
+    metadata: new URL('../src/metadata/urpppp.json', import.meta.url),
+  },
 ];
 
 const readmeUrl = new URL('../README.md', import.meta.url);
@@ -13,12 +19,14 @@ const assistMetadataUrl = new URL('../src/metadata/urpppp.json', import.meta.url
 
 test('generated artifacts remain installable readable single files', async () => {
   for (const artifact of artifacts) {
-    const [source, info] = await Promise.all([
+    const [source, info, metadataText] = await Promise.all([
       readFile(artifact.file, 'utf8'),
       stat(artifact.file),
+      readFile(artifact.metadata, 'utf8'),
     ]);
+    const version = JSON.parse(metadataText).version;
     assert.ok(source.startsWith('// ==UserScript==\n'));
-    assert.match(source, new RegExp(`^// @version\\s+${artifact.version.replaceAll('.', '\\.')}$`, 'm'));
+    assert.match(source, new RegExp(`^// @version\\s+${version.replaceAll('.', '\\.')}$`, 'm'));
     assert.match(source, /^\/\/ @license\s+GPL-3\.0-only$/m);
     assert.match(source, /^\/\/ SPDX-License-Identifier: GPL-3\.0-only$/m);
     assert.match(source, /^\/\/ Copyright \(C\) 2026 Chao_Lan$/m);
