@@ -5,6 +5,7 @@ import {
   bindSettingsTabs,
   createSettingsPanelController,
 } from '../src/features/settings/panel-controller.js';
+import { buildSettingsPanelHtml } from '../src/features/settings/panel-template.js';
 
 const entryUrl = new URL('../src/userscripts/urppp.entry.js', import.meta.url);
 const controllerUrl = new URL('../src/features/settings/panel-controller.js', import.meta.url);
@@ -15,6 +16,34 @@ function classListFor(name, calls) {
     remove: (value) => calls.push([name, 'remove', value]),
   };
 }
+
+test('settings template preserves four panes and unique control identifiers', () => {
+  const html = buildSettingsPanelHtml({
+    logoData: 'data:image/png;base64,TEST',
+    repositoryUrl: 'https://example.test/repository',
+    version: '9.8.7',
+  });
+  const tabs = [...html.matchAll(/data-tab="([^"]+)"/g)].map((match) => match[1]);
+  const panes = [...html.matchAll(/data-pane="([^"]+)"/g)].map((match) => match[1]);
+  const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((match) => match[1]);
+
+  assert.deepEqual(tabs, ['theme', 'skin', 'system', 'about']);
+  assert.deepEqual(panes, tabs);
+  assert.equal(new Set(ids).size, ids.length);
+  for (const id of [
+    'urppp-set-close',
+    'urppp-set-modes',
+    'urppp-skin-list',
+    'urppp-set-privacy',
+    'urppp-set-json-export',
+    'urppp-set-assist-slot',
+    'urppp-about-logo',
+  ]) assert.ok(ids.includes(id), id);
+  assert.match(html, /src="data:image\/png;base64,TEST"/);
+  assert.match(html, /href="https:\/\/example\.test\/repository"/);
+  assert.match(html, /SCU URP\+\+ v9\.8\.7/);
+  assert.doesNotMatch(html, /undefined/);
+});
 
 test('settings tabs synchronize active state, ARIA, panes, and scroll position', () => {
   const makeNode = (dataset) => ({
@@ -128,7 +157,9 @@ test('settings entry delegates panel transitions to the controller module', asyn
   assert.match(entrySource, /const settingsPanelController = createSettingsPanelController\(\{/);
   assert.match(entrySource, /return settingsPanelController\.open\(\)/);
   assert.match(entrySource, /bindSettingsTabs\(panel\)/);
+  assert.match(entrySource, /panel\.innerHTML = buildSettingsPanelHtml\(\{/);
   assert.doesNotMatch(entrySource, /const switchTab = \(tab\) =>/);
+  assert.doesNotMatch(entrySource, /<div class="urppp-set-head">/);
   assert.doesNotMatch(entrySource, /void panel\.offsetWidth/);
   assert.match(controllerSource, /void panel\.offsetWidth/);
 });
