@@ -1,7 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { createSettingsPanelController } from '../src/features/settings/panel-controller.js';
+import {
+  bindSettingsTabs,
+  createSettingsPanelController,
+} from '../src/features/settings/panel-controller.js';
 
 const entryUrl = new URL('../src/userscripts/urppp.entry.js', import.meta.url);
 const controllerUrl = new URL('../src/features/settings/panel-controller.js', import.meta.url);
@@ -12,6 +15,48 @@ function classListFor(name, calls) {
     remove: (value) => calls.push([name, 'remove', value]),
   };
 }
+
+test('settings tabs synchronize active state, ARIA, panes, and scroll position', () => {
+  const makeNode = (dataset) => ({
+    dataset,
+    active: false,
+    selected: null,
+    classList: {
+      toggle(name, value) {
+        if (name === 'ac') this.owner.active = value;
+      },
+      owner: null,
+    },
+    setAttribute(name, value) {
+      if (name === 'aria-selected') this.selected = value;
+    },
+    addEventListener(name, listener) {
+      if (name === 'click') this.click = listener;
+    },
+  });
+  const themeTab = makeNode({ tab: 'theme' });
+  const systemTab = makeNode({ tab: 'system' });
+  const themePane = makeNode({ pane: 'theme' });
+  const systemPane = makeNode({ pane: 'system' });
+  [themeTab, systemTab, themePane, systemPane].forEach((node) => { node.classList.owner = node; });
+  const body = { scrollTop: 42 };
+  const panel = {
+    querySelectorAll(selector) {
+      return selector === '.urppp-set-tab' ? [themeTab, systemTab] : [themePane, systemPane];
+    },
+    querySelector: (selector) => selector === '.urppp-set-body' ? body : null,
+  };
+
+  const switchTab = bindSettingsTabs(panel);
+  switchTab('system');
+  assert.deepEqual([themeTab.active, themeTab.selected, systemTab.active, systemTab.selected], [false, 'false', true, 'true']);
+  assert.deepEqual([themePane.active, systemPane.active], [false, true]);
+  assert.equal(body.scrollTop, 0);
+  assert.equal(panel.__urpppSwitchTab, switchTab);
+
+  themeTab.click();
+  assert.deepEqual([themeTab.active, systemTab.active, themePane.active, systemPane.active], [true, false, true, false]);
+});
 
 test('settings panel controller preserves open transition and scroll reset order', () => {
   const calls = [];
@@ -82,6 +127,8 @@ test('settings entry delegates panel transitions to the controller module', asyn
   ]);
   assert.match(entrySource, /const settingsPanelController = createSettingsPanelController\(\{/);
   assert.match(entrySource, /return settingsPanelController\.open\(\)/);
+  assert.match(entrySource, /bindSettingsTabs\(panel\)/);
+  assert.doesNotMatch(entrySource, /const switchTab = \(tab\) =>/);
   assert.doesNotMatch(entrySource, /void panel\.offsetWidth/);
   assert.match(controllerSource, /void panel\.offsetWidth/);
 });

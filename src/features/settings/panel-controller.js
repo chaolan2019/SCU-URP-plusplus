@@ -1,4 +1,26 @@
-// Settings panel open/close lifecycle independent of panel content.
+// Settings panel shell lifecycle independent of settings content.
+
+export function bindSettingsTabs(panel) {
+  const switchTab = (tab) => {
+    panel.querySelectorAll('.urppp-set-tab').forEach((button) => {
+      const active = button.dataset.tab === tab;
+      button.classList.toggle('ac', active);
+      button.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    panel.querySelectorAll('.urppp-set-pane').forEach((pane) => {
+      pane.classList.toggle('ac', pane.dataset.pane === tab);
+    });
+    try {
+      const body = panel.querySelector('.urppp-set-body');
+      if (body) body.scrollTop = 0;
+    } catch (_) {}
+  };
+  panel.querySelectorAll('.urppp-set-tab').forEach((button) => {
+    button.addEventListener('click', () => switchTab(button.dataset.tab));
+  });
+  panel.__urpppSwitchTab = switchTab;
+  return switchTab;
+}
 
 export function createSettingsPanelController(options) {
   const {

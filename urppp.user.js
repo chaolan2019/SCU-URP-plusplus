@@ -1166,6 +1166,29 @@
   __name(createScheduleExportUi, "createScheduleExportUi");
 
   // src/features/settings/panel-controller.js
+  function bindSettingsTabs(panel) {
+    const switchTab = /* @__PURE__ */ __name((tab) => {
+      panel.querySelectorAll(".urppp-set-tab").forEach((button) => {
+        const active = button.dataset.tab === tab;
+        button.classList.toggle("ac", active);
+        button.setAttribute("aria-selected", active ? "true" : "false");
+      });
+      panel.querySelectorAll(".urppp-set-pane").forEach((pane) => {
+        pane.classList.toggle("ac", pane.dataset.pane === tab);
+      });
+      try {
+        const body = panel.querySelector(".urppp-set-body");
+        if (body) body.scrollTop = 0;
+      } catch (_) {
+      }
+    }, "switchTab");
+    panel.querySelectorAll(".urppp-set-tab").forEach((button) => {
+      button.addEventListener("click", () => switchTab(button.dataset.tab));
+    });
+    panel.__urpppSwitchTab = switchTab;
+    return switchTab;
+  }
+  __name(bindSettingsTabs, "bindSettingsTabs");
   function createSettingsPanelController(options) {
     const {
       document: document2,
@@ -17626,25 +17649,7 @@ html[data-urppp-skin="neu"] .urppp-export-option{border-radius:8px!important}
       ].join("");
       document.documentElement.appendChild(mask);
       document.documentElement.appendChild(panel);
-      const switchTab = /* @__PURE__ */ __name((tab) => {
-        panel.querySelectorAll(".urppp-set-tab").forEach((b) => {
-          const on = b.dataset.tab === tab;
-          b.classList.toggle("ac", on);
-          b.setAttribute("aria-selected", on ? "true" : "false");
-        });
-        panel.querySelectorAll(".urppp-set-pane").forEach((p) => {
-          p.classList.toggle("ac", p.dataset.pane === tab);
-        });
-        try {
-          const body = panel.querySelector(".urppp-set-body");
-          if (body) body.scrollTop = 0;
-        } catch (_) {
-        }
-      }, "switchTab");
-      panel.querySelectorAll(".urppp-set-tab").forEach((btn) => {
-        btn.addEventListener("click", () => switchTab(btn.dataset.tab));
-      });
-      panel.__urpppSwitchTab = switchTab;
+      bindSettingsTabs(panel);
       panel.querySelector("#urppp-set-close").addEventListener("click", closeSettingsPanel);
       try {
         bindPrivacySettingsUI(panel);

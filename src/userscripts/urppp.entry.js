@@ -32,7 +32,10 @@ import {
 import { scheduleCardLaneGeometry } from '../features/schedule-export/layout.js';
 import { buildScheduleSvg as renderScheduleSvg } from '../features/schedule-export/schedule-image.js';
 import { createScheduleExportUi } from '../features/schedule-export/ui.js';
-import { createSettingsPanelController } from '../features/settings/panel-controller.js';
+import {
+  bindSettingsTabs,
+  createSettingsPanelController,
+} from '../features/settings/panel-controller.js';
 import {
   cloneNativePdfStage,
   exportNativePdfIsolated,
@@ -7848,24 +7851,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     document.documentElement.appendChild(mask);
     document.documentElement.appendChild(panel);
 
-    const switchTab = (tab) => {
-      panel.querySelectorAll('.urppp-set-tab').forEach((b) => {
-        const on = b.dataset.tab === tab;
-        b.classList.toggle('ac', on);
-        b.setAttribute('aria-selected', on ? 'true' : 'false');
-      });
-      panel.querySelectorAll('.urppp-set-pane').forEach((p) => {
-        p.classList.toggle('ac', p.dataset.pane === tab);
-      });
-      try {
-        const body = panel.querySelector('.urppp-set-body');
-        if (body) body.scrollTop = 0;
-      } catch (_) {}
-    };
-    panel.querySelectorAll('.urppp-set-tab').forEach((btn) => {
-      btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
-    panel.__urpppSwitchTab = switchTab;
+    bindSettingsTabs(panel);
 
     panel.querySelector('#urppp-set-close').addEventListener('click', closeSettingsPanel);
     try { bindPrivacySettingsUI(panel); } catch (e) { console.warn('[URP++] privacy settings', e); }
