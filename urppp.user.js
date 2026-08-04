@@ -1776,6 +1776,101 @@
   }
   __name(createPrivacySettingsController, "createPrivacySettingsController");
 
+  // src/features/settings/theme-settings.js
+  function syncThemeSettingsControls(panel, state) {
+    const {
+      seed,
+      currentTheme,
+      followSystem,
+      skinId,
+      darkSupported,
+      dynamicSupported,
+      fixedPalettes,
+      followUseDynamic,
+      cleanDefault,
+      appleEdge,
+      autoUpdate,
+      modeAvailability
+    } = state;
+    const colorInput = panel.querySelector("#urppp-set-color");
+    const hexInput = panel.querySelector("#urppp-set-hex");
+    if (colorInput) colorInput.value = seed;
+    if (hexInput) hexInput.value = seed;
+    panel.querySelectorAll(".urppp-set-mode").forEach((button) => {
+      const theme = button.dataset.theme;
+      const available = modeAvailability[theme] !== false;
+      const active = !followSystem && theme === currentTheme && available;
+      button.disabled = !available;
+      button.classList.toggle("ac", active);
+      button.classList.toggle("urppp-dyn-disabled", !available);
+      button.setAttribute("aria-disabled", available ? "false" : "true");
+      if (!available) {
+        button.title = theme === "dark" ? "当前界面风格不支持暗色模式" : "当前界面风格不支持动态配色";
+      } else {
+        button.removeAttribute("title");
+      }
+    });
+    const followButton = panel.querySelector("#urppp-set-follow");
+    if (followButton) {
+      followButton.disabled = !darkSupported;
+      followButton.classList.toggle("ac", followSystem && darkSupported);
+      followButton.classList.toggle("urppp-dyn-disabled", !darkSupported);
+      followButton.setAttribute("aria-pressed", followSystem && darkSupported ? "true" : "false");
+      followButton.textContent = followSystem && darkSupported ? "跟随系统：开" : "跟随系统：关";
+      followButton.title = darkSupported ? "" : "当前界面风格不支持暗色模式";
+    }
+    const dynamicFollowButton = panel.querySelector("#urppp-set-follow-dynamic");
+    if (dynamicFollowButton) {
+      dynamicFollowButton.classList.toggle("ac", followUseDynamic && dynamicSupported);
+      dynamicFollowButton.setAttribute("aria-pressed", followUseDynamic && dynamicSupported ? "true" : "false");
+      dynamicFollowButton.textContent = followUseDynamic ? "浅色用动态配色：开" : "浅色用动态配色：关";
+      dynamicFollowButton.disabled = !followSystem || !dynamicSupported;
+      dynamicFollowButton.classList.toggle("urppp-dyn-disabled", !dynamicSupported);
+      dynamicFollowButton.style.opacity = !dynamicSupported ? "0.5" : followSystem ? "1" : "0.5";
+      dynamicFollowButton.title = dynamicSupported ? "" : "当前界面风格不支持动态配色";
+    }
+    const dynamicSection = panel.querySelector("#urppp-set-dynamic");
+    if (dynamicSection) {
+      dynamicSection.style.display = fixedPalettes ? "none" : "";
+      dynamicSection.style.opacity = "1";
+      dynamicSection.classList.toggle("urppp-dyn-disabled", !dynamicSupported);
+      dynamicSection.querySelectorAll("button, input, .urppp-set-scheme, .urppp-set-swatch").forEach((element) => {
+        element.disabled = !dynamicSupported;
+        element.classList.toggle("urppp-dyn-disabled", !dynamicSupported);
+      });
+      dynamicSection.querySelectorAll("h3, .urppp-set-tip, label").forEach((element) => {
+        element.classList.toggle("urppp-dyn-disabled", !dynamicSupported);
+      });
+    }
+    const brutalSection = panel.querySelector("#urppp-set-brutal");
+    if (brutalSection) brutalSection.style.display = fixedPalettes ? "" : "none";
+    const cleanDefaultButton = panel.querySelector("#urppp-set-clean-default");
+    if (cleanDefaultButton) {
+      cleanDefaultButton.classList.toggle("ac", cleanDefault);
+      cleanDefaultButton.setAttribute("aria-pressed", cleanDefault ? "true" : "false");
+      cleanDefaultButton.textContent = cleanDefault ? "默认进入清爽模式：开" : "默认进入清爽模式：关";
+    }
+    const appleEdgeButton = panel.querySelector("#urppp-set-apple-edge");
+    const appleEdgeTip = panel.querySelector("#urppp-set-apple-edge-tip");
+    if (appleEdgeButton) {
+      const appleSkin = skinId === "apple";
+      appleEdgeButton.style.display = appleSkin ? "" : "none";
+      if (appleEdgeTip) appleEdgeTip.style.display = appleSkin ? "" : "none";
+      if (appleSkin) {
+        appleEdgeButton.classList.toggle("ac", appleEdge);
+        appleEdgeButton.setAttribute("aria-pressed", appleEdge ? "true" : "false");
+        appleEdgeButton.textContent = appleEdge ? "类Apple边缘线条：开" : "类Apple边缘线条：关";
+      }
+    }
+    const autoUpdateButton = panel.querySelector("#urppp-set-auto-update");
+    if (autoUpdateButton) {
+      autoUpdateButton.classList.toggle("ac", autoUpdate);
+      autoUpdateButton.setAttribute("aria-pressed", autoUpdate ? "true" : "false");
+      autoUpdateButton.textContent = autoUpdate ? "自动检测更新：开" : "自动检测更新：关";
+    }
+  }
+  __name(syncThemeSettingsControls, "syncThemeSettingsControls");
+
   // src/features/schedule-export/native-pdf.js
   var NATIVE_PDF_ID_MAP = {
     "page-content-template": "urppp-pdf-page",
@@ -17511,92 +17606,31 @@ html[data-urppp-skin="neu"] .urppp-export-option{border-radius:8px!important}
       if (!panel) return;
       const seed = getAccent() || DEFAULT_SEED;
       const scheme = getScheme();
-      const ct = getCurrent();
-      const follow = isThemeFollowSystem();
-      const colorInput = panel.querySelector("#urppp-set-color");
-      const hexInput = panel.querySelector("#urppp-set-hex");
-      if (colorInput) colorInput.value = seed;
-      if (hexInput) hexInput.value = seed;
+      const currentTheme = getCurrent();
+      const followSystem = isThemeFollowSystem();
       const skinId = getSkin();
-      const darkOk = skinSupportsDark(skinId);
-      const dynOk = skinSupportsDynamic(skinId);
-      const hasFixedPalettes = skinSupportsFixedPalettes(skinId);
-      panel.querySelectorAll(".urppp-set-mode").forEach((btn) => {
-        const theme = btn.dataset.theme;
-        const available = isThemeModeAvailable(theme, skinId);
-        const on = !follow && theme === ct && available;
-        btn.disabled = !available;
-        btn.classList.toggle("ac", on);
-        btn.classList.toggle("urppp-dyn-disabled", !available);
-        btn.setAttribute("aria-disabled", available ? "false" : "true");
-        if (!available) {
-          btn.title = theme === "dark" ? "当前界面风格不支持暗色模式" : "当前界面风格不支持动态配色";
-        } else {
-          btn.removeAttribute("title");
-        }
+      const darkSupported = skinSupportsDark(skinId);
+      const dynamicSupported = skinSupportsDynamic(skinId);
+      const fixedPalettes = skinSupportsFixedPalettes(skinId);
+      const modeAvailability = {};
+      panel.querySelectorAll(".urppp-set-mode").forEach((button) => {
+        modeAvailability[button.dataset.theme] = isThemeModeAvailable(button.dataset.theme, skinId);
       });
-      const followBtn = panel.querySelector("#urppp-set-follow");
-      if (followBtn) {
-        followBtn.disabled = !darkOk;
-        followBtn.classList.toggle("ac", follow && darkOk);
-        followBtn.classList.toggle("urppp-dyn-disabled", !darkOk);
-        followBtn.setAttribute("aria-pressed", follow && darkOk ? "true" : "false");
-        followBtn.textContent = follow && darkOk ? "跟随系统：开" : "跟随系统：关";
-        followBtn.title = darkOk ? "" : "当前界面风格不支持暗色模式";
-      }
-      const dynFollowBtn = panel.querySelector("#urppp-set-follow-dynamic");
-      const useDyn = isFollowUseDynamic();
-      if (dynFollowBtn) {
-        dynFollowBtn.classList.toggle("ac", useDyn && dynOk);
-        dynFollowBtn.setAttribute("aria-pressed", useDyn && dynOk ? "true" : "false");
-        dynFollowBtn.textContent = useDyn ? "浅色用动态配色：开" : "浅色用动态配色：关";
-        dynFollowBtn.disabled = !follow || !dynOk;
-        dynFollowBtn.classList.toggle("urppp-dyn-disabled", !dynOk);
-        dynFollowBtn.style.opacity = !dynOk ? "0.5" : follow ? "1" : "0.5";
-        dynFollowBtn.title = dynOk ? "" : "当前界面风格不支持动态配色";
-      }
-      const dynSec = panel.querySelector("#urppp-set-dynamic");
-      if (dynSec) {
-        dynSec.style.display = hasFixedPalettes ? "none" : "";
-        dynSec.classList.toggle("urppp-dyn-disabled", !dynOk);
-        dynSec.querySelectorAll("button, input, .urppp-set-scheme, .urppp-set-swatch").forEach((el) => {
-          el.disabled = !dynOk;
-          el.classList.toggle("urppp-dyn-disabled", !dynOk);
-        });
-        dynSec.querySelectorAll("h3, .urppp-set-tip, label").forEach((el) => {
-          el.classList.toggle("urppp-dyn-disabled", !dynOk);
-        });
-      }
-      const brutalSec = panel.querySelector("#urppp-set-brutal");
-      if (brutalSec) brutalSec.style.display = hasFixedPalettes ? "" : "none";
-      if (hasFixedPalettes) renderBrutalPaletteCards(panel);
-      const cleanDefBtn = panel.querySelector("#urppp-set-clean-default");
-      if (cleanDefBtn) {
-        const on = isCleanDefault();
-        cleanDefBtn.classList.toggle("ac", on);
-        cleanDefBtn.setAttribute("aria-pressed", on ? "true" : "false");
-        cleanDefBtn.textContent = on ? "默认进入清爽模式：开" : "默认进入清爽模式：关";
-      }
-      const appleEdgeBtn = panel.querySelector("#urppp-set-apple-edge");
-      const appleEdgeTip = panel.querySelector("#urppp-set-apple-edge-tip");
-      if (appleEdgeBtn) {
-        const isApple = getSkin() === "apple";
-        appleEdgeBtn.style.display = isApple ? "" : "none";
-        if (appleEdgeTip) appleEdgeTip.style.display = isApple ? "" : "none";
-        if (isApple) {
-          const on = isAppleEdgeLine();
-          appleEdgeBtn.classList.toggle("ac", on);
-          appleEdgeBtn.setAttribute("aria-pressed", on ? "true" : "false");
-          appleEdgeBtn.textContent = on ? "类Apple边缘线条：开" : "类Apple边缘线条：关";
-        }
-      }
-      const autoUpBtn = panel.querySelector("#urppp-set-auto-update");
-      if (autoUpBtn) {
-        const on = isAutoUpdateCheck();
-        autoUpBtn.classList.toggle("ac", on);
-        autoUpBtn.setAttribute("aria-pressed", on ? "true" : "false");
-        autoUpBtn.textContent = on ? "自动检测更新：开" : "自动检测更新：关";
-      }
+      syncThemeSettingsControls(panel, {
+        seed,
+        currentTheme,
+        followSystem,
+        skinId,
+        darkSupported,
+        dynamicSupported,
+        fixedPalettes,
+        followUseDynamic: isFollowUseDynamic(),
+        cleanDefault: isCleanDefault(),
+        appleEdge: isAppleEdgeLine(),
+        autoUpdate: isAutoUpdateCheck(),
+        modeAvailability
+      });
+      if (fixedPalettes) renderBrutalPaletteCards(panel);
       try {
         syncPrivacySettingsUI(panel);
       } catch (_) {
@@ -17605,8 +17639,6 @@ html[data-urppp-skin="neu"] .urppp-export-option{border-radius:8px!important}
         syncScheduleJsonSettingsUI(panel);
       } catch (_) {
       }
-      const dyn = panel.querySelector("#urppp-set-dynamic");
-      if (dyn) dyn.style.opacity = "1";
       const presets = panel.querySelector("#urppp-set-presets");
       if (presets) {
         presets.innerHTML = "";
