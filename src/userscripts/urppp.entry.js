@@ -1,3 +1,4 @@
+import { createFeatureRuntime, defineFeature } from '../core/feature-runtime.js';
 import { escapeHtml } from '../core/html.js';
 import { compareVersions, parseUserscriptVersion } from '../core/version.js';
 import {
@@ -10824,8 +10825,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     };
   }
 
-  function isPersonalSchedulePage() {
-    return /\/(?:student\/courseSelect\/(?:thisSemesterCurriculum|courseSelectResult|calendarSemesterCurriculum)|student\/personalSenate\/giveLessonInfo\/thisSemesterSchedule)\//.test(location.pathname);
+  function isPersonalSchedulePage(targetLocation = location) {
+    return /\/(?:student\/courseSelect\/(?:thisSemesterCurriculum|courseSelectResult|calendarSemesterCurriculum)|student\/personalSenate\/giveLessonInfo\/thisSemesterSchedule)\//.test(targetLocation.pathname);
   }
 
   function patchNativeScheduleExport() {
@@ -10841,6 +10842,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const menu = createScheduleExportMenu({ source: 'native', pdfHandler: pagePdfExportHandler(original) });
     menu.id = 'urppp-native-schedule-export';
     if (original && original.parentElement) {
+      if (!original.__urpppNativeExportState) {
+        original.__urpppNativeExportState = {
+          display: original.style.getPropertyValue('display'),
+          displayPriority: original.style.getPropertyPriority('display'),
+          ariaHidden: original.getAttribute('aria-hidden'),
+          tabIndex: original.getAttribute('tabindex'),
+        };
+      }
+      original.setAttribute('data-urppp-native-export-source', '1');
       original.style.setProperty('display', 'none', 'important');
       original.setAttribute('aria-hidden', 'true');
       original.setAttribute('tabindex', '-1');
@@ -10885,6 +10895,59 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     });
     observer.observe(root, { childList: true, subtree: true });
     nativeScheduleObserverEntry = { root, observer };
+  }
+
+  function restoreOptionalAttribute(element, name, value) {
+    if (value === null) element.removeAttribute(name);
+    else element.setAttribute(name, value);
+  }
+
+  function removeNativeScheduleExport(scope = document) {
+    const root = scope && scope.querySelectorAll ? scope : document;
+    const menu = root.matches?.('#urppp-native-schedule-export')
+      ? root
+      : root.querySelector('#urppp-native-schedule-export');
+    if (menu) {
+      const fallback = menu.closest('.urppp-export-fallback');
+      menu.remove();
+      if (fallback && !fallback.children.length) fallback.remove();
+    }
+    root.querySelectorAll('[data-urppp-native-export-source]').forEach((original) => {
+      const state = original.__urpppNativeExportState;
+      if (state) {
+        if (state.display) original.style.setProperty('display', state.display, state.displayPriority);
+        else original.style.removeProperty('display');
+        restoreOptionalAttribute(original, 'aria-hidden', state.ariaHidden);
+        restoreOptionalAttribute(original, 'tabindex', state.tabIndex);
+      }
+      original.removeAttribute('data-urppp-native-export-source');
+      try { delete original.__urpppNativeExportState; } catch (_) {}
+    });
+  }
+
+  const routeFeatureRuntime = createFeatureRuntime([
+    defineFeature({
+      id: 'schedule-export',
+      matches: (context) => isPersonalSchedulePage(context.location),
+      mount: () => {
+        patchNativeScheduleExport();
+        bindNativeScheduleExportObserver();
+      },
+      unmount: (context) => {
+        disconnectNativeScheduleExportObserver();
+        removeNativeScheduleExport(context?.lifecycleKey);
+      },
+    }),
+  ]);
+
+  function refreshRouteFeatures() {
+    const lifecycleKey = document.getElementById('page-content-template') || document.querySelector('.page-content') || document.body;
+    return routeFeatureRuntime.refresh({
+      document,
+      location,
+      window,
+      lifecycleKey,
+    });
   }
 
   function bindScheduleExportHosts(scope) {
@@ -13451,10 +13514,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     } else {
       beautifyInternal();
       try { ensureFeatureStyles(); } catch (_) {}
-      try { patchNativeScheduleExport(); bindNativeScheduleExportObserver(); } catch (e) { console.warn('[URP++] native schedule export', e); }
+      try { refreshRouteFeatures(); } catch (e) { console.warn('[URP++] route feature refresh', e); }
       try { applyPersonalDisplay(document); } catch (_) {}
       ;[350, 900, 1800].forEach((ms) => setTimeout(() => {
-        try { patchNativeScheduleExport(); bindNativeScheduleExportObserver(); } catch (_) {}
+        try { refreshRouteFeatures(); } catch (_) {}
         try { applyPersonalDisplay(document); } catch (_) {}
       }, ms));
       try { if (window.__urpppCleanMode) window.__urpppCleanMode.inject(); } catch (_) {}
@@ -13542,10 +13605,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         setTimeout(() => beautifyPlanTree(), 500);
         beautifyBreadcrumbs();
         scheduleBeautifyPagebar();
-        try { patchNativeScheduleExport(); bindNativeScheduleExportObserver(); } catch (_) {}
+        try { refreshRouteFeatures(); } catch (_) {}
         try { applyPersonalDisplay(document); } catch (_) {}
         setTimeout(() => {
-          try { patchNativeScheduleExport(); bindNativeScheduleExportObserver(); } catch (_) {}
+          try { refreshRouteFeatures(); } catch (_) {}
           try { applyPersonalDisplay(document); } catch (_) {}
         }, 500);
       }, 100);

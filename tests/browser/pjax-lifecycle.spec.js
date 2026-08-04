@@ -61,6 +61,14 @@ test('PJAX replacement remounts schedule UI without duplicate nodes or global li
   await page.evaluate(() => history.replaceState({ fixture: true }, '', location.pathname));
   await expect(page.locator('#urppp-nav-settings')).toHaveCount(1);
 
+  await page.evaluate((url) => history.pushState({ fixture: true }, '', url), FIXTURE_URLS.grades);
+  await expect(page.locator('#urppp-native-schedule-export')).toHaveCount(0);
+  await expect(page.locator('#native-export')).toBeVisible();
+  await expect(page.locator('[data-urppp-native-export-source]')).toHaveCount(0);
+  await page.evaluate((url) => history.pushState({ fixture: true }, '', url), FIXTURE_URLS.schedule);
+  await expect(page.locator('#urppp-native-schedule-export')).toHaveCount(1);
+  await expect(page.locator('#native-export')).toBeHidden();
+
   const initialDiagnostics = await page.evaluate(() => window.__urpFixtureDiagnosticsSnapshot());
 
   for (let cycle = 0; cycle < 2; cycle += 1) {

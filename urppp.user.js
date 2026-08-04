@@ -27,6 +27,85 @@
   var __defProp = Object.defineProperty;
   var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
+  // src/core/feature-runtime.js
+  function assertFunction(value, label) {
+    if (typeof value !== "function") throw new TypeError(`${label} must be a function`);
+  }
+  __name(assertFunction, "assertFunction");
+  function defineFeature(definition) {
+    if (!definition || typeof definition !== "object") {
+      throw new TypeError("feature definition must be an object");
+    }
+    const id = String(definition.id || "").trim();
+    if (!id) throw new TypeError("feature id is required");
+    assertFunction(definition.matches, `${id}.matches`);
+    assertFunction(definition.mount, `${id}.mount`);
+    assertFunction(definition.unmount, `${id}.unmount`);
+    return Object.freeze({
+      id,
+      matches: definition.matches,
+      mount: definition.mount,
+      unmount: definition.unmount
+    });
+  }
+  __name(defineFeature, "defineFeature");
+  function createFeatureRuntime(features) {
+    if (!Array.isArray(features)) throw new TypeError("features must be an array");
+    const registry = features.map(defineFeature);
+    const ids = /* @__PURE__ */ new Set();
+    registry.forEach((feature) => {
+      if (ids.has(feature.id)) throw new Error(`duplicate feature id: ${feature.id}`);
+      ids.add(feature.id);
+    });
+    let activeFeature = null;
+    let activeContext = null;
+    function unmount() {
+      if (!activeFeature) return;
+      const feature = activeFeature;
+      const context = activeContext;
+      activeFeature = null;
+      activeContext = null;
+      feature.unmount(context);
+    }
+    __name(unmount, "unmount");
+    function refresh(context = {}) {
+      const next = registry.find((feature) => feature.matches(context));
+      const sameLifecycle = next && activeFeature === next && context.lifecycleKey !== void 0 && activeContext?.lifecycleKey === context.lifecycleKey;
+      if (sameLifecycle) {
+        try {
+          next.mount(context);
+          activeContext = context;
+          return next.id;
+        } catch (error) {
+          unmount();
+          throw error;
+        }
+      }
+      unmount();
+      if (!next) return null;
+      try {
+        next.mount(context);
+        activeFeature = next;
+        activeContext = context;
+        return next.id;
+      } catch (error) {
+        try {
+          next.unmount(context);
+        } catch (_) {
+        }
+        throw error;
+      }
+    }
+    __name(refresh, "refresh");
+    return Object.freeze({
+      refresh,
+      unmount,
+      getActiveFeatureId: /* @__PURE__ */ __name(() => activeFeature?.id || null, "getActiveFeatureId"),
+      listFeatureIds: /* @__PURE__ */ __name(() => registry.map((feature) => feature.id), "listFeatureIds")
+    });
+  }
+  __name(createFeatureRuntime, "createFeatureRuntime");
+
   // src/core/html.js
   function escapeHtml(value) {
     return String(value || "").replace(/[&<>"']/g, (character) => ({
@@ -19857,8 +19936,8 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
       };
     }
     __name(pagePdfExportHandler, "pagePdfExportHandler");
-    function isPersonalSchedulePage() {
-      return /\/(?:student\/courseSelect\/(?:thisSemesterCurriculum|courseSelectResult|calendarSemesterCurriculum)|student\/personalSenate\/giveLessonInfo\/thisSemesterSchedule)\//.test(location.pathname);
+    function isPersonalSchedulePage(targetLocation = location) {
+      return /\/(?:student\/courseSelect\/(?:thisSemesterCurriculum|courseSelectResult|calendarSemesterCurriculum)|student\/personalSenate\/giveLessonInfo\/thisSemesterSchedule)\//.test(targetLocation.pathname);
     }
     __name(isPersonalSchedulePage, "isPersonalSchedulePage");
     function patchNativeScheduleExport() {
@@ -19874,6 +19953,15 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
       const menu = createScheduleExportMenu({ source: "native", pdfHandler: pagePdfExportHandler(original) });
       menu.id = "urppp-native-schedule-export";
       if (original && original.parentElement) {
+        if (!original.__urpppNativeExportState) {
+          original.__urpppNativeExportState = {
+            display: original.style.getPropertyValue("display"),
+            displayPriority: original.style.getPropertyPriority("display"),
+            ariaHidden: original.getAttribute("aria-hidden"),
+            tabIndex: original.getAttribute("tabindex")
+          };
+        }
+        original.setAttribute("data-urppp-native-export-source", "1");
         original.style.setProperty("display", "none", "important");
         original.setAttribute("aria-hidden", "true");
         original.setAttribute("tabindex", "-1");
@@ -19919,6 +20007,59 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
       nativeScheduleObserverEntry = { root, observer };
     }
     __name(bindNativeScheduleExportObserver, "bindNativeScheduleExportObserver");
+    function restoreOptionalAttribute(element, name, value) {
+      if (value === null) element.removeAttribute(name);
+      else element.setAttribute(name, value);
+    }
+    __name(restoreOptionalAttribute, "restoreOptionalAttribute");
+    function removeNativeScheduleExport(scope = document) {
+      const root = scope && scope.querySelectorAll ? scope : document;
+      const menu = root.matches?.("#urppp-native-schedule-export") ? root : root.querySelector("#urppp-native-schedule-export");
+      if (menu) {
+        const fallback = menu.closest(".urppp-export-fallback");
+        menu.remove();
+        if (fallback && !fallback.children.length) fallback.remove();
+      }
+      root.querySelectorAll("[data-urppp-native-export-source]").forEach((original) => {
+        const state2 = original.__urpppNativeExportState;
+        if (state2) {
+          if (state2.display) original.style.setProperty("display", state2.display, state2.displayPriority);
+          else original.style.removeProperty("display");
+          restoreOptionalAttribute(original, "aria-hidden", state2.ariaHidden);
+          restoreOptionalAttribute(original, "tabindex", state2.tabIndex);
+        }
+        original.removeAttribute("data-urppp-native-export-source");
+        try {
+          delete original.__urpppNativeExportState;
+        } catch (_) {
+        }
+      });
+    }
+    __name(removeNativeScheduleExport, "removeNativeScheduleExport");
+    const routeFeatureRuntime = createFeatureRuntime([
+      defineFeature({
+        id: "schedule-export",
+        matches: /* @__PURE__ */ __name((context) => isPersonalSchedulePage(context.location), "matches"),
+        mount: /* @__PURE__ */ __name(() => {
+          patchNativeScheduleExport();
+          bindNativeScheduleExportObserver();
+        }, "mount"),
+        unmount: /* @__PURE__ */ __name((context) => {
+          disconnectNativeScheduleExportObserver();
+          removeNativeScheduleExport(context?.lifecycleKey);
+        }, "unmount")
+      })
+    ]);
+    function refreshRouteFeatures() {
+      const lifecycleKey = document.getElementById("page-content-template") || document.querySelector(".page-content") || document.body;
+      return routeFeatureRuntime.refresh({
+        document,
+        location,
+        window,
+        lifecycleKey
+      });
+    }
+    __name(refreshRouteFeatures, "refreshRouteFeatures");
     function bindScheduleExportHosts(scope) {
       const root = scope && scope.querySelectorAll ? scope : document;
       root.querySelectorAll("[data-schedule-export-host]").forEach((host) => {
@@ -22456,10 +22597,9 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         } catch (_) {
         }
         try {
-          patchNativeScheduleExport();
-          bindNativeScheduleExportObserver();
+          refreshRouteFeatures();
         } catch (e) {
-          console.warn("[URP++] native schedule export", e);
+          console.warn("[URP++] route feature refresh", e);
         }
         try {
           applyPersonalDisplay(document);
@@ -22468,8 +22608,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         ;
         [350, 900, 1800].forEach((ms) => setTimeout(() => {
           try {
-            patchNativeScheduleExport();
-            bindNativeScheduleExportObserver();
+            refreshRouteFeatures();
           } catch (_) {
           }
           try {
@@ -22569,8 +22708,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           beautifyBreadcrumbs();
           scheduleBeautifyPagebar();
           try {
-            patchNativeScheduleExport();
-            bindNativeScheduleExportObserver();
+            refreshRouteFeatures();
           } catch (_) {
           }
           try {
@@ -22579,8 +22717,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           }
           setTimeout(() => {
             try {
-              patchNativeScheduleExport();
-              bindNativeScheduleExportObserver();
+              refreshRouteFeatures();
             } catch (_) {
             }
             try {

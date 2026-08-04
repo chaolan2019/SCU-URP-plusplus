@@ -5,7 +5,7 @@ The root `urppp.user.js` and `urpppp.user.js` files are generated release artifa
 ```text
 src/
 ├── assist/          Assistant storage, configuration, OCR, and form helpers
-├── core/            Shared HTML and version utilities
+├── core/            Shared utilities and route-aware feature lifecycle runtime
 ├── features/        Main userscript feature modules testable without a page
 ├── metadata/        Userscript metadata merged into generated headers
 ├── styles/          Readable CSS inlined into the generated userscripts
