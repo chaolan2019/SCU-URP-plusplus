@@ -1386,6 +1386,90 @@
   }
   __name(buildSettingsPanelHtml, "buildSettingsPanelHtml");
 
+  // src/features/settings/json-settings.js
+  function createJsonSettingsController(options) {
+    const {
+      document: document2,
+      getSettings,
+      setSettings,
+      validateMapping,
+      defaultMapping,
+      getRecoveryMessage = /* @__PURE__ */ __name(() => "", "getRecoveryMessage")
+    } = options;
+    function setStatus(panel, message, error) {
+      const status = panel && panel.querySelector("#urppp-set-json-status");
+      if (!status) return;
+      status.textContent = message || "";
+      status.classList.toggle("urppp-status-error", !!error);
+      status.style.color = error ? "var(--danger,#b91c1c)" : "var(--text-muted)";
+    }
+    __name(setStatus, "setStatus");
+    function sync(panel, force) {
+      if (!panel) return;
+      const settings = getSettings();
+      const toggle = panel.querySelector("#urppp-set-json-custom");
+      const editor = panel.querySelector("#urppp-set-json-editor");
+      const textarea = panel.querySelector("#urppp-set-json-mapping");
+      if (toggle) {
+        toggle.classList.toggle("ac", settings.enabled);
+        toggle.setAttribute("aria-pressed", settings.enabled ? "true" : "false");
+        toggle.textContent = "自定义 JSON：" + (settings.enabled ? "开" : "关");
+      }
+      if (editor) editor.style.display = settings.enabled ? "grid" : "none";
+      if (textarea && (force || !panel.__urpppJsonMappingDirty && document2.activeElement !== textarea)) {
+        textarea.value = JSON.stringify(settings.mapping, null, 2);
+        panel.__urpppJsonMappingDirty = false;
+      }
+      const recoveryMessage = getRecoveryMessage();
+      if (recoveryMessage) setStatus(panel, recoveryMessage, true);
+    }
+    __name(sync, "sync");
+    function bind(panel) {
+      if (!panel || panel.__urpppJsonSettingsBound) return;
+      panel.__urpppJsonSettingsBound = true;
+      const toggle = panel.querySelector("#urppp-set-json-custom");
+      const textarea = panel.querySelector("#urppp-set-json-mapping");
+      const save = panel.querySelector("#urppp-set-json-save");
+      const reset = panel.querySelector("#urppp-set-json-reset");
+      if (textarea) textarea.addEventListener("input", () => {
+        panel.__urpppJsonMappingDirty = true;
+      });
+      if (toggle) toggle.addEventListener("click", () => {
+        const settings = getSettings();
+        settings.enabled = !settings.enabled;
+        const hadDraft = !!panel.__urpppJsonMappingDirty;
+        setSettings(settings);
+        sync(panel, false);
+        const message = settings.enabled ? "已启用自定义 JSON 格式" : "已恢复小爱课程兼容格式";
+        setStatus(panel, hadDraft ? message + "；未保存草稿已保留" : message);
+      });
+      if (save) save.addEventListener("click", () => {
+        try {
+          const parsed = JSON.parse(String(textarea && textarea.value || "").trim());
+          const settings = getSettings();
+          settings.mapping = validateMapping(parsed);
+          setSettings(settings);
+          panel.__urpppJsonMappingDirty = false;
+          sync(panel, true);
+          setStatus(panel, "自定义 JSON 映射已保存");
+        } catch (error) {
+          setStatus(panel, error && error.message || String(error), true);
+        }
+      });
+      if (reset) reset.addEventListener("click", () => {
+        const settings = getSettings();
+        settings.mapping = validateMapping(defaultMapping);
+        setSettings(settings);
+        panel.__urpppJsonMappingDirty = false;
+        sync(panel, true);
+        setStatus(panel, "已恢复默认字段映射");
+      });
+    }
+    __name(bind, "bind");
+    return { bind, setStatus, sync };
+  }
+  __name(createJsonSettingsController, "createJsonSettingsController");
+
   // src/features/schedule-export/native-pdf.js
   var NATIVE_PDF_ID_MAP = {
     "page-content-template": "urppp-pdf-page",
@@ -17367,75 +17451,17 @@ html[data-urppp-skin="neu"] .urppp-export-option{border-radius:8px!important}
       });
     }
     __name(bindPrivacySettingsUI, "bindPrivacySettingsUI");
-    function setScheduleJsonSettingsStatus(panel, message, error) {
-      const status = panel && panel.querySelector("#urppp-set-json-status");
-      if (!status) return;
-      status.textContent = message || "";
-      status.classList.toggle("urppp-status-error", !!error);
-      status.style.color = error ? "var(--danger,#b91c1c)" : "var(--text-muted)";
-    }
-    __name(setScheduleJsonSettingsStatus, "setScheduleJsonSettingsStatus");
-    function syncScheduleJsonSettingsUI(panel, force) {
-      if (!panel) return;
-      const settings = getScheduleJsonFormatSettings();
-      const toggle = panel.querySelector("#urppp-set-json-custom");
-      const editor = panel.querySelector("#urppp-set-json-editor");
-      const textarea = panel.querySelector("#urppp-set-json-mapping");
-      if (toggle) {
-        toggle.classList.toggle("ac", settings.enabled);
-        toggle.setAttribute("aria-pressed", settings.enabled ? "true" : "false");
-        toggle.textContent = "自定义 JSON：" + (settings.enabled ? "开" : "关");
-      }
-      if (editor) editor.style.display = settings.enabled ? "grid" : "none";
-      if (textarea && (force || !panel.__urpppJsonMappingDirty && document.activeElement !== textarea)) {
-        textarea.value = JSON.stringify(settings.mapping, null, 2);
-        panel.__urpppJsonMappingDirty = false;
-      }
-      if (scheduleJsonFormatRecoveryMessage) setScheduleJsonSettingsStatus(panel, scheduleJsonFormatRecoveryMessage, true);
-    }
-    __name(syncScheduleJsonSettingsUI, "syncScheduleJsonSettingsUI");
-    function bindScheduleJsonSettingsUI(panel) {
-      if (!panel || panel.__urpppJsonSettingsBound) return;
-      panel.__urpppJsonSettingsBound = true;
-      const toggle = panel.querySelector("#urppp-set-json-custom");
-      const textarea = panel.querySelector("#urppp-set-json-mapping");
-      const save = panel.querySelector("#urppp-set-json-save");
-      const reset = panel.querySelector("#urppp-set-json-reset");
-      if (textarea) textarea.addEventListener("input", () => {
-        panel.__urpppJsonMappingDirty = true;
-      });
-      if (toggle) toggle.addEventListener("click", () => {
-        const settings = getScheduleJsonFormatSettings();
-        settings.enabled = !settings.enabled;
-        const hadDraft = !!panel.__urpppJsonMappingDirty;
-        setScheduleJsonFormatSettings(settings);
-        syncScheduleJsonSettingsUI(panel, false);
-        const message = settings.enabled ? "已启用自定义 JSON 格式" : "已恢复小爱课程兼容格式";
-        setScheduleJsonSettingsStatus(panel, hadDraft ? message + "；未保存草稿已保留" : message);
-      });
-      if (save) save.addEventListener("click", () => {
-        try {
-          const parsed = JSON.parse(String(textarea && textarea.value || "").trim());
-          const settings = getScheduleJsonFormatSettings();
-          settings.mapping = validateScheduleJsonMapping(parsed);
-          setScheduleJsonFormatSettings(settings);
-          panel.__urpppJsonMappingDirty = false;
-          syncScheduleJsonSettingsUI(panel, true);
-          setScheduleJsonSettingsStatus(panel, "自定义 JSON 映射已保存");
-        } catch (error) {
-          setScheduleJsonSettingsStatus(panel, error && error.message || String(error), true);
-        }
-      });
-      if (reset) reset.addEventListener("click", () => {
-        const settings = getScheduleJsonFormatSettings();
-        settings.mapping = validateScheduleJsonMapping(DEFAULT_SCHEDULE_JSON_MAPPING);
-        setScheduleJsonFormatSettings(settings);
-        panel.__urpppJsonMappingDirty = false;
-        syncScheduleJsonSettingsUI(panel, true);
-        setScheduleJsonSettingsStatus(panel, "已恢复默认字段映射");
-      });
-    }
-    __name(bindScheduleJsonSettingsUI, "bindScheduleJsonSettingsUI");
+    const jsonSettingsController = createJsonSettingsController({
+      document,
+      getSettings: getScheduleJsonFormatSettings,
+      setSettings: setScheduleJsonFormatSettings,
+      validateMapping: validateScheduleJsonMapping,
+      defaultMapping: DEFAULT_SCHEDULE_JSON_MAPPING,
+      getRecoveryMessage: /* @__PURE__ */ __name(() => scheduleJsonFormatRecoveryMessage, "getRecoveryMessage")
+    });
+    const setScheduleJsonSettingsStatus = jsonSettingsController.setStatus;
+    const syncScheduleJsonSettingsUI = jsonSettingsController.sync;
+    const bindScheduleJsonSettingsUI = jsonSettingsController.bind;
     function syncSettingsPanelUI() {
       const panel = document.getElementById("urppp-settings-panel");
       if (!panel) return;
