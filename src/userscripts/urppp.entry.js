@@ -32,6 +32,7 @@ import {
 import { scheduleCardLaneGeometry } from '../features/schedule-export/layout.js';
 import { buildScheduleSvg as renderScheduleSvg } from '../features/schedule-export/schedule-image.js';
 import { createScheduleExportUi } from '../features/schedule-export/ui.js';
+import { createSettingsPanelController } from '../features/settings/panel-controller.js';
 import {
   cloneNativePdfStage,
   exportNativePdfIsolated,
@@ -7656,32 +7657,19 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     try { ensureAboutLogo(panel); } catch (_) {}
   }
 
+  const settingsPanelController = createSettingsPanelController({
+    document,
+    ensurePanel: ensureSettingsPanel,
+    syncPanel: syncSettingsPanelUI,
+    refreshUpdateStatus: refreshUpdateStatusHint,
+  });
+
   function openSettingsPanel() {
-    ensureSettingsPanel();
-    const panel = document.getElementById('urppp-settings-panel');
-    const mask = document.getElementById('urppp-settings-mask');
-    if (!panel || !mask) return;
-    syncSettingsPanelUI();
-    try { refreshUpdateStatusHint(); } catch (_) {}
-    try { if (panel.__urpppSwitchTab) panel.__urpppSwitchTab('theme'); } catch (_) {}
-    // 强制重触发过渡：先关再开
-    mask.classList.remove('open');
-    panel.classList.remove('open');
-    void panel.offsetWidth;
-    mask.classList.add('open');
-    panel.classList.add('open');
-    // 打开时把 body 滚回顶部，避免上次位置残留
-    try {
-      const body = panel.querySelector('.urppp-set-body');
-      if (body) body.scrollTop = 0;
-    } catch (_) {}
+    return settingsPanelController.open();
   }
 
   function closeSettingsPanel() {
-    const panel = document.getElementById('urppp-settings-panel');
-    const mask = document.getElementById('urppp-settings-mask');
-    if (panel) panel.classList.remove('open');
-    if (mask) mask.classList.remove('open');
+    settingsPanelController.close();
   }
 
 

@@ -1165,6 +1165,53 @@
   }
   __name(createScheduleExportUi, "createScheduleExportUi");
 
+  // src/features/settings/panel-controller.js
+  function createSettingsPanelController(options) {
+    const {
+      document: document2,
+      ensurePanel,
+      syncPanel,
+      refreshUpdateStatus,
+      defaultTab = "theme"
+    } = options;
+    function open() {
+      ensurePanel();
+      const panel = document2.getElementById("urppp-settings-panel");
+      const mask = document2.getElementById("urppp-settings-mask");
+      if (!panel || !mask) return false;
+      syncPanel();
+      try {
+        refreshUpdateStatus();
+      } catch (_) {
+      }
+      try {
+        if (panel.__urpppSwitchTab) panel.__urpppSwitchTab(defaultTab);
+      } catch (_) {
+      }
+      mask.classList.remove("open");
+      panel.classList.remove("open");
+      void panel.offsetWidth;
+      mask.classList.add("open");
+      panel.classList.add("open");
+      try {
+        const body = panel.querySelector(".urppp-set-body");
+        if (body) body.scrollTop = 0;
+      } catch (_) {
+      }
+      return true;
+    }
+    __name(open, "open");
+    function close() {
+      const panel = document2.getElementById("urppp-settings-panel");
+      const mask = document2.getElementById("urppp-settings-mask");
+      if (panel) panel.classList.remove("open");
+      if (mask) mask.classList.remove("open");
+    }
+    __name(close, "close");
+    return { close, open };
+  }
+  __name(createSettingsPanelController, "createSettingsPanelController");
+
   // src/features/schedule-export/native-pdf.js
   var NATIVE_PDF_ID_MAP = {
     "page-content-template": "urppp-pdf-page",
@@ -17389,37 +17436,18 @@ html[data-urppp-skin="neu"] .urppp-export-option{border-radius:8px!important}
       }
     }
     __name(syncSettingsPanelUI, "syncSettingsPanelUI");
+    const settingsPanelController = createSettingsPanelController({
+      document,
+      ensurePanel: ensureSettingsPanel,
+      syncPanel: syncSettingsPanelUI,
+      refreshUpdateStatus: refreshUpdateStatusHint
+    });
     function openSettingsPanel() {
-      ensureSettingsPanel();
-      const panel = document.getElementById("urppp-settings-panel");
-      const mask = document.getElementById("urppp-settings-mask");
-      if (!panel || !mask) return;
-      syncSettingsPanelUI();
-      try {
-        refreshUpdateStatusHint();
-      } catch (_) {
-      }
-      try {
-        if (panel.__urpppSwitchTab) panel.__urpppSwitchTab("theme");
-      } catch (_) {
-      }
-      mask.classList.remove("open");
-      panel.classList.remove("open");
-      void panel.offsetWidth;
-      mask.classList.add("open");
-      panel.classList.add("open");
-      try {
-        const body = panel.querySelector(".urppp-set-body");
-        if (body) body.scrollTop = 0;
-      } catch (_) {
-      }
+      return settingsPanelController.open();
     }
     __name(openSettingsPanel, "openSettingsPanel");
     function closeSettingsPanel() {
-      const panel = document.getElementById("urppp-settings-panel");
-      const mask = document.getElementById("urppp-settings-mask");
-      if (panel) panel.classList.remove("open");
-      if (mask) mask.classList.remove("open");
+      settingsPanelController.close();
     }
     __name(closeSettingsPanel, "closeSettingsPanel");
     const URPPP_ABOUT_LOGO_DATA = "data:image/png;base64,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";
