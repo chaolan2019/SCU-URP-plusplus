@@ -334,3 +334,485 @@
         border-color: color-mix(in srgb, var(--primary) 28%, var(--border)) !important;
         color: var(--text-secondary) !important;
       }
+      /* 分页条在滚动区外：始终在表格容器下方 */
+      #urppagebar,
+      #urppagebar.urppp-pagebar {
+        position: relative !important;
+        clear: both !important;
+        margin-top: 12px !important;
+        z-index: 2 !important;
+      }
+
+      /* 分页「确定」：禁止全局 .btn 的 display:inline-flex 盖掉 display:none */
+      #urppagebar [id^="btn_turnpageto_"].btn,
+      #urppagebar input.btn[id^="btn_turnpageto_"],
+      body #urppagebar .btn[id^="btn_turnpageto_"] {
+        /* display 留给内联 style / 站点 JS；只定尺寸 */
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        min-width: 56px !important;
+        padding: 0 12px !important;
+        font-size: 13px !important;
+        line-height: 1 !important;
+        box-sizing: border-box !important;
+      }
+      #urppagebar [id^="btn_turnpageto_"][style*="display: none"],
+      #urppagebar [id^="btn_turnpageto_"][style*="display:none"],
+      body #urppagebar .btn[id^="btn_turnpageto_"][style*="display: none"],
+      body #urppagebar .btn[id^="btn_turnpageto_"][style*="display:none"] {
+        display: none !important;
+      }
+
+      /* 分页「确定」：用更高优先级盖过全局 .btn display:inline-flex */
+      #urppagebar .btn.urppp-page-confirm,
+      #urppagebar button.urppp-page-confirm,
+      #urppagebar a.btn.urppp-page-confirm,
+      #urppagebar input.urppp-page-confirm,
+      .urppagebreak .btn.urppp-page-confirm,
+      .urppagebreak button.urppp-page-confirm,
+      body #urppagebar .urppp-page-confirm {
+        display: none !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        max-height: 32px !important;
+        min-width: 52px !important;
+        padding: 0 12px !important;
+        font-size: 13px !important;
+      }
+      #urppagebar .btn.urppp-page-confirm.urppp-page-confirm-show,
+      #urppagebar button.urppp-page-confirm.urppp-page-confirm-show,
+      #urppagebar a.btn.urppp-page-confirm.urppp-page-confirm-show,
+      #urppagebar input.urppp-page-confirm.urppp-page-confirm-show,
+      .urppagebreak .btn.urppp-page-confirm.urppp-page-confirm-show,
+      body #urppagebar .urppp-page-confirm.urppp-page-confirm-show {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+
+      /* 分页/每页条数：不截断，不强制压扁 */
+      .urppagebreak select,
+      .urppagebreak #pagesize,
+      #urppagebar select,
+      select#pagesize,
+      .pagination select,
+      .dataTables_length select {
+        width: auto !important;
+        min-width: 0 !important;
+        max-width: none !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        padding: 2px 6px !important;
+        font-size: 13px !important;
+        line-height: 1.2 !important;
+        border-radius: var(--radius-sm) !important;
+        -webkit-appearance: menulist !important;
+        appearance: menulist !important;
+        background-image: none !important;
+        box-sizing: border-box !important;
+        vertical-align: middle !important;
+      }
+
+      /* ============================================================
+       * 分页（pagination.js 真实结构）
+       * ul.pagination > li.paginate_button > span[padding:3px 7px]
+       * 当前页 li.active；确定 #btn_turnpageto_* focus 显示
+       * ============================================================ */
+      #urppagebar,
+      #urppagebar.urppp-pagebar {
+        display: block !important;
+        width: 100% !important;
+        margin-top: 10px !important;
+        line-height: 1.5 !important;
+        font-size: 13px !important;
+        color: var(--text-secondary) !important;
+        box-sizing: border-box !important;
+      }
+      /* 「共 x 条」等纯文本：正常行高，禁止被 36px chip 行高带歪 */
+      #urppagebar.urppp-pagebar-jump,
+      #urppagebar.urppp-pagebar-jump .dataTables_paginate {
+        white-space: normal !important;
+      }
+      /* 默认不强制 flex；真跳转才 flex */
+      #urppagebar .dataTables_paginate,
+      #urppagebar [id^="sample-table-2_paginate_"] {
+        position: relative !important;
+        width: 100% !important;
+        line-height: 1.5 !important;
+      }
+      #urppagebar.urppp-pagebar-jump .dataTables_paginate,
+      #urppagebar.urppp-pagebar-jump [id^="sample-table-2_paginate_"] {
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        gap: 8px 10px !important;
+      }
+      /*
+       * 滚动态：单行右对齐。
+       * class 由 JS 打标；:has(readonly) 覆盖重建瞬间、class 尚未挂上时。
+       */
+      #urppagebar.urppp-pagebar-scroll,
+      #urppagebar.urppp-pagebar-scroll .dataTables_paginate,
+      #urppagebar.urppp-pagebar-scroll [id^="sample-table-2_paginate_"],
+      #urppagebar:has([id^="turnpageto_"][readonly]),
+      #urppagebar:has([id^="turnpageto_"][readonly]) .dataTables_paginate,
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="sample-table-2_paginate_"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+        gap: 0 4px !important;
+        width: 100% !important;
+        white-space: nowrap !important;
+        line-height: 1.5 !important;
+        text-align: right !important;
+      }
+      #urppagebar.urppp-pagebar-scroll .dataTables_paginate > div,
+      #urppagebar.urppp-pagebar-scroll [id^="sample-table-2_paginate_"] > div,
+      #urppagebar:has([id^="turnpageto_"][readonly]) .dataTables_paginate > div,
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="sample-table-2_paginate_"] > div {
+        display: inline-flex !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        float: none !important;
+        width: auto !important;
+        white-space: nowrap !important;
+        flex: 0 0 auto !important;
+      }
+      #urppagebar.urppp-pagebar-scroll [id^="currNum_"],
+      #urppagebar.urppp-pagebar-scroll [id^="selectNum_"],
+      #urppagebar.urppp-pagebar-scroll ul.pagination,
+      #urppagebar.urppp-pagebar-scroll [id^="pagination_ul_"],
+      #urppagebar.urppp-pagebar-scroll [id^="btn_turnpageto_"],
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="currNum_"],
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="selectNum_"],
+      #urppagebar:has([id^="turnpageto_"][readonly]) ul.pagination,
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="pagination_ul_"],
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="btn_turnpageto_"] {
+        display: none !important;
+      }
+      #urppagebar.urppp-pagebar-scroll [id^="span_page_txt_"],
+      #urppagebar.urppp-pagebar-scroll [id^="totalPage_show_"],
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="span_page_txt_"],
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="totalPage_show_"] {
+        display: inline !important;
+        float: none !important;
+        white-space: nowrap !important;
+        vertical-align: middle !important;
+      }
+      #urppagebar.urppp-pagebar-scroll span:has(> [id^="turnpageto_"]),
+      #urppagebar:has([id^="turnpageto_"][readonly]) span:has(> [id^="turnpageto_"]) {
+        display: inline-flex !important;
+        align-items: center !important;
+        position: static !important;
+        width: auto !important;
+        height: auto !important;
+        float: none !important;
+      }
+      #urppagebar.urppp-pagebar-scroll [id^="turnpageto_"],
+      #urppagebar:has([id^="turnpageto_"][readonly]) [id^="turnpageto_"] {
+        display: inline-block !important;
+        float: none !important;
+        vertical-align: middle !important;
+        width: 40px !important;
+        min-width: 40px !important;
+        max-width: 40px !important;
+        height: 26px !important;
+        min-height: 26px !important;
+        margin: 0 2px !important;
+        padding: 0 4px !important;
+        line-height: 24px !important;
+        font-size: 12px !important;
+        box-sizing: border-box !important;
+      }
+      /* 每页条数：固定 128px，完整显示「滚动加载(30)」 */
+      #urppagebar.urppp-pagebar-scroll select,
+      #urppagebar.urppp-pagebar-scroll select[id^="pagination_pageSize_"],
+      #urppagebar:has([id^="turnpageto_"][readonly]) select,
+      html body #urppagebar.urppp-pagebar-scroll select {
+        display: inline-block !important;
+        float: none !important;
+        vertical-align: middle !important;
+        width: 128px !important;
+        min-width: 128px !important;
+        max-width: 128px !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        max-height: 28px !important;
+        margin: 0 4px !important;
+        padding: 0 8px !important;
+        flex: 0 0 128px !important;
+        box-sizing: border-box !important;
+        text-overflow: clip !important;
+        overflow: hidden !important;
+        white-space: nowrap !important;
+      }
+
+      /* 清掉旧 pagination 全局小按钮样式在页码条上的影响 */
+      #urppagebar.urppp-pagebar-jump ul.pagination,
+      #urppagebar.urppp-pagebar-jump ul.urppp-pagination {
+        display: inline-flex !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        list-style: none !important;
+        float: none !important;
+        position: static !important;
+        border: none !important;
+        background: transparent !important;
+      }
+      #urppagebar ul.pagination > li,
+      #urppagebar .paginate_button,
+      #urppagebar .urppp-page-li {
+        display: inline-flex !important;
+        float: none !important;
+        position: static !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        list-style: none !important;
+      }
+      /* 真正的可点 chip = 内层 span（站点写死 padding:3px 7px，必须覆盖） */
+      #urppagebar ul.pagination > li > span,
+      #urppagebar ul.pagination > li > a,
+      #urppagebar .paginate_button > span,
+      #urppagebar .paginate_button > a,
+      #urppagebar .urppp-page-chip,
+      body #urppagebar .pagination > li > span,
+      body #urppagebar .pagination > li > a {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        float: none !important;
+        position: static !important;
+        box-sizing: border-box !important;
+        width: auto !important;
+        min-width: 40px !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        max-height: 36px !important;
+        padding: 0 12px !important;
+        margin: 0 !important;
+        line-height: 36px !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        border-radius: var(--radius-sm) !important;
+        border: 1px solid var(--border) !important;
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        box-shadow: none !important;
+        text-decoration: none !important;
+        white-space: nowrap !important;
+        cursor: pointer !important;
+      }
+      #urppagebar ul.pagination > li.previous > span,
+      #urppagebar ul.pagination > li.next > span,
+      #urppagebar .urppp-page-chip-nav {
+        min-width: 72px !important;
+      }
+      /* 分页条里的说明文字 / 每页条数：正常排版 */
+      #urppagebar > span,
+      #urppagebar .dataTables_paginate > span,
+      #urppagebar label,
+      #urppagebar font,
+      #urppagebar {
+        font-size: 13px !important;
+      }
+      #urppagebar select {
+        height: 32px !important;
+        min-height: 32px !important;
+        line-height: 1.3 !important;
+        vertical-align: middle !important;
+      }
+      #urppagebar.urppp-pagebar-jump [id^="turnpageto_"] {
+        height: 32px !important;
+        min-height: 32px !important;
+        line-height: 1.3 !important;
+        width: 48px !important;
+        vertical-align: middle !important;
+      }
+      #urppagebar.urppp-pagebar-jump [id^="btn_turnpageto_"] {
+        height: 32px !important;
+        min-height: 32px !important;
+        line-height: 1 !important;
+        vertical-align: middle !important;
+      }
+      /* 当前页 */
+      #urppagebar ul.pagination > li.active > span,
+      #urppagebar ul.pagination > li.active > a,
+      #urppagebar .paginate_button.active > span,
+      #urppagebar .urppp-page-chip-active,
+      body #urppagebar .pagination > li.active > span,
+      body #urppagebar .pagination > li.active > a {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        color: #fff !important;
+        font-weight: 700 !important;
+      }
+      /* 禁用 */
+      #urppagebar ul.pagination > li.disabled > span,
+      #urppagebar .urppp-page-chip-disabled {
+        color: var(--text-muted) !important;
+        background: var(--input-bg) !important;
+        border-color: var(--border) !important;
+        cursor: default !important;
+        opacity: 0.75 !important;
+      }
+      #urppagebar ul.pagination > li > span:hover,
+      #urppagebar ul.pagination > li.pagebarhand > span:hover {
+        border-color: var(--primary) !important;
+        color: var(--primary) !important;
+      }
+      #urppagebar ul.pagination > li.active > span:hover {
+        color: #fff !important;
+        border-color: var(--primary) !important;
+      }
+      /* 跳转输入：仅真跳转分页改尺寸；滚动态跟站点，避免闪 */
+      #urppagebar.urppp-pagebar-jump [id^="turnpageto_"],
+      #urppagebar.urppp-pagebar-jump input.urppp-page-goto {
+        display: inline-block !important;
+        position: static !important;
+        height: 36px !important;
+        width: 48px !important;
+        margin: 0 4px !important;
+        padding: 4px 8px !important;
+        font-size: 14px !important;
+        line-height: 1.2 !important;
+        box-sizing: border-box !important;
+        vertical-align: middle !important;
+      }
+      #urppagebar [id^="btn_turnpageto_"],
+      #urppagebar .urppp-page-confirm {
+        position: static !important;
+        left: auto !important;
+        top: auto !important;
+        height: 36px !important;
+        min-width: 56px !important;
+        margin: 0 4px !important;
+        padding: 0 12px !important;
+        font-size: 13px !important;
+        line-height: 1 !important;
+        vertical-align: middle !important;
+        float: none !important;
+      }
+      /* 站点默认 display:none；focus 时 inline-block —— 不要用全局 .btn 盖掉 none */
+      #urppagebar [id^="btn_turnpageto_"][style*="display: none"],
+      #urppagebar [id^="btn_turnpageto_"][style*="display:none"] {
+        display: none !important;
+      }
+      #urppagebar [id^="btn_turnpageto_"][style*="inline-block"],
+      #urppagebar [id^="btn_turnpageto_"][style*="inline-flex"] {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+      /* 每页条数：真跳转分页可用稍大尺寸；滚动态保持紧凑行内 */
+      #urppagebar.urppp-pagebar-jump select[id^="pagination_pageSize_"],
+      #urppagebar.urppp-pagebar-jump select {
+        height: 36px !important;
+        min-height: 36px !important;
+        width: auto !important;
+        min-width: 64px !important;
+        max-width: none !important;
+        padding: 2px 8px !important;
+        font-size: 13px !important;
+        vertical-align: middle !important;
+        border-radius: var(--radius-sm) !important;
+      }
+      #urppagebar [id^="totalPage_show_"],
+      #urppagebar [id^="span_page_txt_"] {
+        display: inline !important;
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        height: auto !important;
+        line-height: 36px !important;
+        font-size: 13px !important;
+        color: var(--text-secondary, var(--text-muted)) !important;
+      }
+      /* 兼容旧 class 名（若残留） */
+      .urppagebreak {
+        display: flex !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        gap: 6px 8px !important;
+      }
+
+      /* 分页（通用；#urppagebar 内由上方专用规则覆盖为 36px 整颗 chip） */
+      .pagination > li > a, .pagination > li > span {
+        background: var(--surface) !important;
+        border-color: var(--border) !important;
+        color: var(--text) !important;
+        border-radius: var(--radius-sm) !important;
+        margin: 0 2px !important;
+      }
+      .pagination > li > a:hover { background: var(--input-bg) !important; color: var(--primary) !important; }
+      .pagination > li.active > a, .pagination > li.active > span, .pagination > li.active > a:hover { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
+
+      html.urppp-theme-dark .pagination > li > a,
+      html.urppp-theme-dark .pagination > li > span,
+      html.urppp-theme-dark .urppp-page-chip {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      html.urppp-theme-dark .pagination > li.active > a,
+      html.urppp-theme-dark .pagination > li.active > span,
+      html.urppp-theme-dark .urppp-page-chip-active {
+        background: var(--primary) !important;
+        color: #0B0F17 !important;
+        border-color: var(--primary) !important;
+      }
+      /* modal */
+      html.urppp-theme-dark .modal-content,
+      html.urppp-theme-dark .modal-header,
+      html.urppp-theme-dark .modal-body,
+      html.urppp-theme-dark .modal-footer {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      /* zTree */
+      html.urppp-theme-dark .ztree li a,
+      html.urppp-theme-dark .urppp-ztree li a {
+        color: var(--text) !important;
+      }
+
+      /* 分页条每页条数：禁止 ellipsis；禁止 Chosen 接管 */
+      #urppagebar select,
+      #urppagebar select.form-control,
+      .urppagebreak select {
+        text-overflow: clip !important;
+        max-width: none !important;
+      }
+      #urppagebar .chosen-container,
+      #urppagebar .chosen-container-single,
+      .urppagebreak .chosen-container {
+        display: none !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+      #urppagebar select[id^="pagination_pageSize_"],
+      #urppagebar select.urppp-chosen-hidden,
+      #urppagebar select.chzn-done {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: static !important;
+        width: 128px !important;
+        min-width: 128px !important;
+        max-width: 128px !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        pointer-events: auto !important;
+      }
