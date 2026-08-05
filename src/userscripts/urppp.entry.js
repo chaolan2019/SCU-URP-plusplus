@@ -76,6 +76,7 @@ import settingsStyles from '../styles/settings.css';
 import tableBeautifyStyles from '../styles/table-beautify.css';
 import navigationStyles from '../styles/navigation.css';
 import cleanModeStyles from '../styles/clean-mode.css';
+import dashboardStyles from '../styles/dashboard.css';
 import { createCleanModeState, resetCleanModeData } from '../features/clean-mode/state.js';
 import { createCleanModeDataLoader } from '../features/clean-mode/data.js';
 import { createCleanModeRenderer } from '../features/clean-mode/render.js';
@@ -5999,6 +6000,14 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       document.head.appendChild(navigationStyle);
     }
     navigationStyle.textContent = navigationStyles;
+    // 首页仪表板样式紧随其后，与 internal 的覆盖关系保持不变
+    let dashboardStyle = document.getElementById('urppp-dashboard-style');
+    if (!dashboardStyle) {
+      dashboardStyle = document.createElement('style');
+      dashboardStyle.id = 'urppp-dashboard-style';
+      document.head.appendChild(dashboardStyle);
+    }
+    dashboardStyle.textContent = dashboardStyles;
     let scheduleCardStyle = document.getElementById('urppp-schedule-card-style');
     if (!scheduleCardStyle) {
       scheduleCardStyle = document.createElement('style');
