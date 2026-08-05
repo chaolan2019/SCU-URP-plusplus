@@ -2076,6 +2076,60 @@
   }
   __name(isBusinessDataTable, "isBusinessDataTable");
 
+  // src/features/table-beautify/table-wrapper.js
+  function createTableWrapper({
+    isNativePdfIsolationActive: isNativePdfIsolationActive2,
+    isBusinessDataTable: isBusinessDataTable2,
+    documentRef = document,
+    windowRef = window,
+    MutationObserverRef = MutationObserver,
+    getComputedStyleRef = getComputedStyle
+  }) {
+    function wrapTables() {
+      if (isNativePdfIsolationActive2()) return;
+      documentRef.querySelectorAll("table.table, table.table-bordered, table.dataTable").forEach((table) => {
+        if (!table || table.closest(".urppp-table-wrap")) return;
+        if (table.id === "courseTable") return;
+        if (table.closest(".modal, .modal-dialog, .modal-content, .modal-body, #work_rest_schedule_modal")) return;
+        if (table.classList.contains("urppp-wrs-table")) return;
+        if (table.classList.contains("urppp-notice-table")) return;
+        if (isBusinessDataTable2(table)) {
+        }
+        const parent = table.parentElement;
+        if (!parent) return;
+        const parentOverflow = parent.style?.overflow || getComputedStyleRef(parent).overflow;
+        const isScrollBox = parent.id?.endsWith("_scroll") || parentOverflow === "auto" || parentOverflow === "scroll";
+        if (isScrollBox) {
+          parent.classList.add("urppp-scroll-table-host");
+          return;
+        }
+        const wrapper = documentRef.createElement("div");
+        wrapper.className = "urppp-table-wrap";
+        parent.insertBefore(wrapper, table);
+        wrapper.appendChild(table);
+      });
+    }
+    __name(wrapTables, "wrapTables");
+    function bindTableWrapObserver() {
+      const host = documentRef.getElementById("page-content-template") || documentRef.querySelector(".page-content") || documentRef.body;
+      if (!host) return;
+      const currentRoot = windowRef.__urpppTableObsRoot;
+      if (windowRef.__urpppTableObs && currentRoot === host && host.isConnected) return;
+      if (windowRef.__urpppTableObs) windowRef.__urpppTableObs.disconnect();
+      let wrapTimer = 0;
+      const observer = new MutationObserverRef(() => {
+        clearTimeout(wrapTimer);
+        wrapTimer = setTimeout(wrapTables, 80);
+      });
+      observer.observe(host, { childList: true, subtree: true });
+      windowRef.__urpppTableObs = observer;
+      windowRef.__urpppTableObsRoot = host;
+    }
+    __name(bindTableWrapObserver, "bindTableWrapObserver");
+    return { bindTableWrapObserver, wrapTables };
+  }
+  __name(createTableWrapper, "createTableWrapper");
+
   // src/features/schedule-export/native-pdf.js
   var NATIVE_PDF_ID_MAP = {
     "page-content-template": "urppp-pdf-page",
@@ -16967,46 +17021,10 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       }
     }
     __name(beautifyNoticeTables, "beautifyNoticeTables");
-    function wrapTables() {
-      if (isNativePdfIsolationActive()) return;
-      document.querySelectorAll("table.table, table.table-bordered, table.dataTable").forEach((table) => {
-        if (!table || table.closest(".urppp-table-wrap")) return;
-        if (table.id === "courseTable") return;
-        if (table.closest(".modal, .modal-dialog, .modal-content, .modal-body, #work_rest_schedule_modal")) return;
-        if (table.classList.contains("urppp-wrs-table")) return;
-        if (table.classList.contains("urppp-notice-table")) return;
-        if (isBusinessDataTable2(table)) {
-        }
-        const parent = table.parentElement;
-        if (!parent) return;
-        const parentOverflow = parent.style && parent.style.overflow || getComputedStyle(parent).overflow;
-        const isScrollBox = parent.id && parent.id.endsWith("_scroll") || parentOverflow === "auto" || parentOverflow === "scroll";
-        if (isScrollBox) {
-          parent.classList.add("urppp-scroll-table-host");
-          return;
-        }
-        const wrap = document.createElement("div");
-        wrap.className = "urppp-table-wrap";
-        parent.insertBefore(wrap, table);
-        wrap.appendChild(table);
-      });
-    }
-    __name(wrapTables, "wrapTables");
-    function bindTableWrapObserver() {
-      const host = document.getElementById("page-content-template") || document.querySelector(".page-content") || document.body;
-      if (!host) return;
-      const currentRoot = window.__urpppTableObsRoot;
-      if (window.__urpppTableObs && currentRoot === host && host.isConnected) return;
-      if (window.__urpppTableObs) window.__urpppTableObs.disconnect();
-      let wrapTimer = 0;
-      window.__urpppTableObs = new MutationObserver(() => {
-        clearTimeout(wrapTimer);
-        wrapTimer = setTimeout(wrapTables, 80);
-      });
-      window.__urpppTableObs.observe(host, { childList: true, subtree: true });
-      window.__urpppTableObsRoot = host;
-    }
-    __name(bindTableWrapObserver, "bindTableWrapObserver");
+    const { wrapTables, bindTableWrapObserver } = createTableWrapper({
+      isNativePdfIsolationActive,
+      isBusinessDataTable: isBusinessDataTable2
+    });
     function scheduleBeautifyNoticeTables() {
       ;
       [0, 400, 1500].forEach((ms) => setTimeout(() => {

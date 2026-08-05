@@ -56,6 +56,7 @@ import {
   isNoticeListTable as classifyNoticeListTable,
   isNoticePageContext as detectNoticePageContext,
 } from '../features/table-beautify/table-classification.js';
+import { createTableWrapper } from '../features/table-beautify/table-wrapper.js';
 import {
   cloneNativePdfStage,
   exportNativePdfIsolated,
@@ -6559,47 +6560,10 @@ import settingsStyles from '../styles/settings.css';
       console.warn('[URP++] notice table beautify failed', err);
     }
   }
-  function wrapTables() {
-    if (isNativePdfIsolationActive()) return;
-    document.querySelectorAll('table.table, table.table-bordered, table.dataTable').forEach((table) => {
-      if (!table || table.closest('.urppp-table-wrap')) return;
-      if (table.id === 'courseTable') return;
-      if (table.closest('.modal, .modal-dialog, .modal-content, .modal-body, #work_rest_schedule_modal')) return;
-      if (table.classList.contains('urppp-wrs-table')) return;
-      if (table.classList.contains('urppp-notice-table')) return;
-      if (isBusinessDataTable(table)) { /* keep wrap for business tables */ }
-      const parent = table.parentElement;
-      if (!parent) return;
-      const parentOverflow = (parent.style && parent.style.overflow) || getComputedStyle(parent).overflow;
-      const isScrollBox = (parent.id && parent.id.endsWith('_scroll')) || parentOverflow === 'auto' || parentOverflow === 'scroll';
-      if (isScrollBox) {
-        // 滚动分页容器：只做标记，不要用 table-wrap 的 overflow/margin 干扰 fixedheader
-        parent.classList.add('urppp-scroll-table-host');
-        return;
-      }
-      const wrap = document.createElement('div');
-      wrap.className = 'urppp-table-wrap';
-      parent.insertBefore(wrap, table);
-      wrap.appendChild(table);
-    });
-  }
-
-  function bindTableWrapObserver() {
-    const host = document.getElementById('page-content-template')
-      || document.querySelector('.page-content')
-      || document.body;
-    if (!host) return;
-    const currentRoot = window.__urpppTableObsRoot;
-    if (window.__urpppTableObs && currentRoot === host && host.isConnected) return;
-    if (window.__urpppTableObs) window.__urpppTableObs.disconnect();
-    let wrapTimer = 0;
-    window.__urpppTableObs = new MutationObserver(() => {
-      clearTimeout(wrapTimer);
-      wrapTimer = setTimeout(wrapTables, 80);
-    });
-    window.__urpppTableObs.observe(host, { childList: true, subtree: true });
-    window.__urpppTableObsRoot = host;
-  }
+  const { wrapTables, bindTableWrapObserver } = createTableWrapper({
+    isNativePdfIsolationActive,
+    isBusinessDataTable,
+  });
 
   function scheduleBeautifyNoticeTables() {
     ;[0, 400, 1500].forEach((ms) => setTimeout(() => {
