@@ -78,6 +78,7 @@ import navigationStyles from '../styles/navigation.css';
 import cleanModeStyles from '../styles/clean-mode.css';
 import { createCleanModeState, resetCleanModeData } from '../features/clean-mode/state.js';
 import { createCleanModeDataLoader } from '../features/clean-mode/data.js';
+import { createCleanModeRenderer } from '../features/clean-mode/render.js';
 import { createBreadcrumbController } from '../features/navigation/breadcrumb.js';
 import { createSidebarController } from '../features/navigation/sidebar.js';
 import { createNavbarController } from '../features/navigation/navbar.js';
@@ -9698,318 +9699,27 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return el;
   }
 
-  function metricHtml(s, scope) {
-    s = s || summarizeCourses([]);
-    // 与教务成绩单习惯对齐：学分 → 成绩 → 绩点；必修同序
-    const items = [
-      ['TotalCredit', '总学分', s.totalCredit],
-      ['AvgScore', '平均成绩', s.avgScore],
-      ['AvgGpa', '平均绩点', s.avgGpa],
-      ['RequiredCredit', '必修学分', s.requiredCredit],
-      ['RequiredAvg', '必修平均', s.requiredAvg],
-      ['RequiredGpa', '必修绩点', s.requiredGpa]
-    ];
-    return `<div class="uc-metrics">${items.map(([suffix, label, value]) => {
-      const field = classifyPrivacyLabel(label) || 'grade';
-      const editKey = scope && DIRECT_EDIT_LABELS[scope + suffix] ? ` data-urppp-edit-key="${scope + suffix}"` : '';
-      return `<div class="uc-metric"><em>${label}</em><b data-urppp-private="${field}"${editKey}>${value}</b></div>`;
-    }).join('')}</div>`;
-  }
-
-  function getScheduleRowHeight() {
-    try {
-      // 手机/窄屏用更矮行高，整表更紧凑
-      if (window.matchMedia && window.matchMedia('(max-width:900px)').matches) return 40;
-    } catch (_) {}
-    return 56;
-  }
-
-  function renderScheduleBoard(courses) {
-    const weekNo = getViewWeekNumber();
-    const ROW = getScheduleRowHeight();
-    const CELL = Math.max(ROW - 4, 28);
-    const list = (courses || []).map((c) => Object.assign({}, c, {
-      thisWeek: weekBitActive(c.classWeek, weekNo) || (!c.classWeek && String(c.week || '').indexOf(String(weekNo)) >= 0),
-      span: Math.max(1, c.span || 1),
-      color: c.color || courseColor(c.name)
-    }));
-    // group by day+startSection
-    const byStart = {};
-    list.forEach((c) => {
-      const k = c.day + '_' + c.section;
-      (byStart[k] || (byStart[k] = [])).push(c);
-    });
-    // mark cells that are only continuations (for empty look still show grid)
-    let html = `<div class="uc-week" data-urppp-private="schedule" data-week="${weekNo}" data-row="${ROW}">`;
-    html += '<div class="uc-week-head"><div class="h"></div>';
-    for (let d = 0; d < 7; d++) html += `<div class="h">${DAY_NAMES[d]}</div>`;
-    html += '</div><div class="uc-week-body">';
-    // left section labels
-    html += '<div class="uc-sec-col">';
-    for (let s = 1; s <= 12; s++) html += `<div class="s" style="height:${ROW}px">${s}</div>`;
-    html += '</div>';
-    // 7 day columns
-    for (let d = 0; d < 7; d++) {
-      html += `<div class="uc-day-col" data-day="${d}" style="height:${ROW * 12}px">`;
-      // background grid cells: fixed equal height, full column width
-      for (let s = 1; s <= 12; s++) html += `<div class="uc-grid-cell" data-sec="${s}" style="top:${(s - 1) * ROW}px;height:${CELL}px"></div>`;
-      // 4|5 与 9|10 之间分割线（上午/下午/晚上）
-      html += `<div class="uc-part-line" style="top:${4 * ROW - 2}px"></div>`;
-      html += `<div class="uc-part-line" style="top:${9 * ROW - 2}px"></div>`;
-      // place courses absolutely
-      for (let s = 1; s <= 12; s++) {
-        const starters = (byStart[d + '_' + s] || []).slice().sort((a, b) => {
-          // 本周永远优先
-          if (a.thisWeek !== b.thisWeek) return (b.thisWeek ? 1 : 0) - (a.thisWeek ? 1 : 0);
-          return (b.span || 1) - (a.span || 1);
-        });
-        if (!starters.length) continue;
-        // 若本格同时有本周与非本周，外显本周；非本周进角标
-        const weekOnes = starters.filter((c) => c.thisWeek);
-        const primary = weekOnes[0] || starters[0];
-        const rest = starters.filter((c) => c !== primary);
-        const span = primary.span;
-        const top = (s - 1) * ROW + 1;
-        const height = span * ROW - 6;
-        const z = primary.thisWeek ? 8 : 2;
-        const style = primary.thisWeek
-          ? `--uc-course-color:${primary.color};top:${top}px;height:${height}px;z-index:${z};background:${primary.color}26;border-color:${primary.color}80`
-          : `--uc-course-color:${primary.color};top:${top}px;height:${height}px;z-index:${z};background:color-mix(in srgb,${primary.color} 8%,var(--input-bg));border-color:var(--border);opacity:.48`;
-        const badge = rest.length ? `<span class="uc-badge">+${rest.length}</span>` : '';
-        const payload = escapeHtml(JSON.stringify({
-          name: primary.name, teacher: primary.teacher, place: primary.place, week: primary.week,
-          day: primary.day, section: primary.section, span: primary.span, thisWeek: primary.thisWeek,
-          others: rest.map((r) => ({ name: r.name, teacher: r.teacher, place: r.place, week: r.week, thisWeek: r.thisWeek, section: r.section, span: r.span }))
-        }));
-        html += `<div class="uc-lesson${primary.thisWeek ? '' : ' is-fade'}" style="${style}" data-course='${payload}'>
-          <b>${escapeHtml(primary.name)}</b>
-          <i>${escapeHtml([primary.place, primary.week].filter(Boolean).join(' · '))}</i>
-          ${badge}
-        </div>`;
-      }
-      html += '</div>';
-    }
-    html += '</div></div>';
-    return html;
-  }
-
-  function servicesHtml() {
-    const items = [
-      { t: '空闲教室', i: 'room', a: 'room' },
-      { t: '教学评估', i: 'eval', h: '/student/teachingEvaluation/newEvaluation/index' },
-      { t: '培养方案', i: 'plan', h: '/student/integratedQuery/planCompletion/index' },
-      // 路径以首页 #personalApplication 真实 a[href] 为准
-      { t: '补办学生证', i: 'apply', h: '/student/personalManagement/individualApplication/routineWork/busSection/index?ywid=11082' },
-      { t: '免修申请', i: 'apply', h: '/student/personalManagement/individualApplication/exemptionApplication/index' },
-      { t: '替代课申请', i: 'apply', h: '/student/personalManagement/personalApplication/curriculumReplacement/index' },
-      { t: '火车票优惠卡', i: 'apply', h: '/student/personalManagement/individualApplication/routineWork/busSection/index?ywid=11083' }
-    ];
-    return `<div class="uc-services">${items.map((it) => `
-      <button type="button" class="uc-svc" data-action="${it.a || ''}" data-href="${it.h || ''}">
-        ${ico(it.i)}<strong>${it.t}</strong>
-      </button>`).join('')}</div>`;
-  }
-
-  function renderDesktop() {
-    const p = personalizedProfile(state.profile || {});
-    const courses = (state.schedule && state.schedule.courses) || [];
-    const pass = (state.scores && state.scores.passing && state.scores.passing[0]) || { summary: summarizeCourses([]) };
-    const schemes = (state.scores && state.scores.schemes) || [];
-    if (state.scores && state.scores.majorIdx != null && state._schemeInited !== true) {
-      state.activeSchemeIdx = state.scores.majorIdx || 0;
-      state._schemeInited = true;
-    }
-    const scheme = schemes[state.activeSchemeIdx] || schemes[0] || { summary: summarizeCourses([]), title: '方案成绩' };
-    const av = p.avatar ? `<img src="${escapeHtml(p.avatar)}" alt="">` : `<span>${escapeHtml((p.name || '同')[0])}</span>`;
-    const scoreBody = state.loading.scores
-      ? '<div class="uc-loading">成绩加载中</div>'
-      : (state.scores && state.scores.error
-        ? `<div class="uc-empty">${escapeHtml(state.scores.error)}</div>`
-        : `<div class="uc-score-grid">
-            <div class="uc-score-pane" data-score="passing"><h5>全部及格成绩</h5>${metricHtml(pass.summary, 'passing')}</div>
-            <div class="uc-score-pane" data-score="scheme"><h5>${escapeHtml((scheme.title || '方案成绩').split(/通过|获得|不通过/)[0].trim() || '方案成绩')}</h5>${metricHtml(scheme.summary, 'scheme')}</div>
-          </div>`);
-
-    return `<div class="uc-desktop">
-      <div class="uc-col">
-        <div class="uc-card"><div class="uc-bd"><div class="uc-profile">
-          <div class="uc-avatar" data-urppp-private="avatar">${av}</div>
-          <div>
-            <div class="uc-name" data-urppp-private="name">${escapeHtml(p.name || '同学')}</div>
-            <div class="uc-sub">主修方案：<span data-urppp-private="organization" data-urppp-edit-key="majorPlan">${escapeHtml(p.majorPlan || '—')}</span></div>
-            <div class="uc-gpa">主修必修绩点 <span data-urppp-private="gpa" data-urppp-edit-key="majorGpa">${escapeHtml(String(p.majorGpa || '—'))}</span></div>
-          </div>
-        </div></div></div>
-        <div class="uc-card grow">
-          <div class="uc-hd">
-            <span class="uc-hd-title">课表<span data-schedule-export-host="clean"></span></span>
-            <div class="uc-week-nav">
-              <button type="button" class="uc-btn" data-week-delta="-1" title="上一周">‹</button>
-              <span class="uc-week-label">第${getViewWeekNumber()}周</span>
-              <button type="button" class="uc-btn" data-week-delta="1" title="下一周">›</button>
-              <button type="button" class="uc-btn" data-week-reset="1" title="回到当前周">本周</button>
-              <span class="uc-week-cur">${courses.length ? (courses.length + ' 课次') : ((state.schedule && state.schedule.error) || '')}</span>
-            </div>
-          </div>
-          <div class="uc-bd">${state.loading.schedule ? '<div class="uc-loading">课表加载中…</div>' : (courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${escapeHtml((state.schedule && state.schedule.error) || '暂无课表数据')}</div>`)}</div>
-        </div>
-      </div>
-      <div class="uc-col">
-        <div class="uc-card">
-          <div class="uc-hd"><span>成绩总览</span><span class="uc-sub">点击查看明细</span></div>
-          <div class="uc-bd">${scoreBody}</div>
-        </div>
-        <div class="uc-card services">
-          <div class="uc-hd">服务</div>
-          <div class="uc-bd">${servicesHtml()}</div>
-        </div>
-      </div>
-    </div>`;
-  }
-
-  function renderMobile() {
-    const p = personalizedProfile(state.profile || {});
-    const courses = (state.schedule && state.schedule.courses) || [];
-    const pass = (state.scores && state.scores.passing && state.scores.passing[0]) || { summary: summarizeCourses([]) };
-    const scheme = ((state.scores && state.scores.schemes) || [])[state.activeSchemeIdx] || { summary: summarizeCourses([]) };
-    const av = p.avatar ? `<img src="${escapeHtml(p.avatar)}" alt="">` : `<span>${escapeHtml((p.name || '同')[0])}</span>`;
-    if (state.mobileTab === 'scores') {
-      return `<div class="uc-mobile"><div class="uc-card"><div class="uc-bd">
-        <div class="uc-score-pane" data-score="passing" style="margin-bottom:12px"><h5>全部及格成绩</h5>${metricHtml(pass.summary, 'passing')}</div>
-        <div class="uc-score-pane" data-score="scheme"><h5>方案成绩</h5>${metricHtml(scheme.summary, 'scheme')}</div>
-      </div></div></div>`;
-    }
-    if (state.mobileTab === 'room') {
-      return `<div class="uc-mobile"><div class="uc-card"><div class="uc-hd">教室查询</div><div class="uc-bd" id="uc-room-panel">${roomPickerHtml()}</div></div></div>`;
-    }
-    if (state.mobileTab === 'more') {
-      return `<div class="uc-mobile"><div class="uc-card"><div class="uc-bd">${servicesHtml()}</div></div></div>`;
-    }
-    return `<div class="uc-mobile">
-      <div class="uc-card" style="margin-bottom:12px"><div class="uc-bd"><div class="uc-profile">
-        <div class="uc-avatar" data-urppp-private="avatar">${av}</div>
-        <div><div class="uc-name" data-urppp-private="name">${escapeHtml(p.name || '同学')}</div>
-        <div class="uc-sub">主修方案：<span data-urppp-private="organization" data-urppp-edit-key="majorPlan">${escapeHtml(p.majorPlan || '—')}</span></div>
-        <div class="uc-gpa">主修必修绩点 <span data-urppp-private="gpa" data-urppp-edit-key="majorGpa">${escapeHtml(String(p.majorGpa || '—'))}</span></div></div>
-      </div></div></div>
-      <div class="uc-card"><div class="uc-hd"><span class="uc-hd-title">课表<span data-schedule-export-host="clean"></span></span>
-        <div class="uc-week-nav">
-          <button type="button" class="uc-btn" data-week-delta="-1">‹</button>
-          <span class="uc-week-label">第${getViewWeekNumber()}周</span>
-          <button type="button" class="uc-btn" data-week-delta="1">›</button>
-          <button type="button" class="uc-btn" data-week-reset="1">本周</button>
-        </div>
-      </div><div class="uc-bd">
-        <div style="overflow:auto">${state.loading.schedule ? '<div class="uc-loading">课表加载中…</div>' : (courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${escapeHtml((state.schedule && state.schedule.error) || '暂无课表数据')}</div>`)}</div>
-      </div></div>
-    </div>`;
-  }
-
-  function roomPickerHtml() {
-    if (state.loading.room) return '<div class="uc-loading">教学楼加载中…</div>';
-    const groups = state.catalog || [];
-    if (!groups.length) {
-      return `<div class="uc-empty">${escapeHtml(state.roomError || '未读到教学楼列表')}<div style="margin-top:10px"><button type="button" class="uc-btn" data-room-reload="1">重新加载</button></div></div>`;
-    }
-    // prefer 江安 first
-    const ordered = groups.slice().sort((a, b) => (/江安/.test(a.campus) ? -1 : 0) - (/江安/.test(b.campus) ? -1 : 0));
-    return ordered.map((g) => `
-      <div style="margin-bottom:14px">
-        <div style="font-weight:700;margin:0 0 8px">${escapeHtml(g.campus)}</div>
-        <div class="uc-build-grid">
-          ${g.buildings.map((b) => `<button type="button" data-build-path="${escapeHtml(b.path)}" data-cn="${escapeHtml(b.campusNumber || '')}" data-bn="${escapeHtml(b.buildingNumber || '')}">${escapeHtml(b.name)}</button>`).join('')}
-        </div>
-      </div>`).join('');
-  }
-
-  function occupancyHtml(pack, buildingName) {
-    if (!pack || !pack.rooms || !pack.rooms.length) return '<div class="uc-empty">该楼暂无教室占用数据</div>';
-    let head = '<tr><th class="sticky">教室</th><th class="sticky2">座位</th>';
-    for (let i = 1; i <= 12; i++) head += `<th class="sec">${i}</th>`;
-    head += '</tr>';
-    const body = pack.rooms.map((r) => {
-      let row = `<tr><th class="sticky">${escapeHtml(r.name)}</th><th class="sticky2">${escapeHtml(r.seats)}</th>`;
-      for (let i = 1; i <= 12; i++) {
-        const slot = (r.slots || []).find((s) => s.section === i) || { busy: false };
-        if (slot.busy) {
-          const reason = slot.reason || slot.typeLabel || '占用';
-          const typeLabel = slot.typeLabel || occupancyTypeLabel({ occupancymoduleId: slot.module });
-          const ch = slot.displayChar || firstContentChar(reason) || firstContentChar(typeLabel) || '占';
-          const detailObj = Object.assign({}, slot.detail || { room: r.name, section: i, reason }, {
-            reason,
-            typeLabel,
-            contentName: slot.contentName || (slot.detail && slot.detail.contentName) || ''
-          });
-          const detail = escapeHtml(JSON.stringify(detailObj));
-          row += `<td><button type="button" class="uc-slot busy ${occupancyKindClass(typeLabel)}" data-occ='${detail}' title="${escapeHtml(r.name)} 第${i}节 · ${escapeHtml(reason)}">${escapeHtml(ch)}</button></td>`;
-        } else {
-          row += `<td><div class="uc-slot free" title="${escapeHtml(r.name)} 第${i}节 · 空闲"></div></td>`;
-        }
-      }
-      return row + '</tr>';
-    }).join('');
-    const off = Number(pack.dateOffset != null ? pack.dateOffset : state.roomDateOffset) || 0;
-    const dayBtn = (v, label) =>
-      `<button type="button" class="uc-btn${off === v ? ' primary' : ''}" data-room-day="${v}">${label}</button>`;
-    return `
-      <div class="uc-occ-head">
-        <div>
-          <div class="uc-occ-title">${escapeHtml(buildingName || '')}</div>
-          <div class="uc-sub">${escapeHtml(pack.dateLabel || '')}${pack.jxzc ? (' · 教学第' + pack.jxzc + '周') : ''}</div>
-          <div class="uc-room-days">
-            ${dayBtn(0, '今天')}
-            ${dayBtn(1, '明天')}
-            ${dayBtn(2, '后天')}
-          </div>
-        </div>
-        <button type="button" class="uc-btn" id="uc-room-back">返回楼栋</button>
-      </div>
-      <div class="uc-legend">
-        <span><i class="lg-busy"></i>有课</span>
-        <span><i class="lg-exam"></i>考试</span>
-        <span><i class="lg-lab"></i>实验</span>
-        <span><i class="lg-borrow"></i>借用</span>
-        <span><i class="lg-free"></i>空闲</span>
-        <span class="uc-sub">色块为首字：有课/考试显示课程或考试名首字，点击查看详情</span>
-      </div>
-      <div class="uc-occ"><table class="uc-occ-table">${head}${body}</table></div>`;
-  }
-
-  let cleanRenderFrame = 0;
-
-  function render() {
-    const el = ensureRoot();
-    const body = el.querySelector('#uc-body');
-    const mobile = window.matchMedia && window.matchMedia('(max-width:900px)').matches;
-    // 渲染前同步系统教学周，防止小屏首屏误落第1周
-    getViewWeekNumber();
-    // 仅首次进入播放卡片入场；后续数据刷新不再重播，避免闪烁
-    const firstPaint = !state.uiReady;
-    body.innerHTML = mobile ? renderMobile() : renderDesktop();
-    if (!firstPaint) {
-      el.classList.add('uc-settled');
-    } else {
-      state.uiReady = true;
-      el.classList.remove('uc-settled');
-      clearTimeout(el.__ucSettleTimer);
-      el.__ucSettleTimer = setTimeout(() => {
-        if (state.open) el.classList.add('uc-settled');
-      }, 480);
-    }
-    bindUI(body);
-    applyPersonalDisplay(body);
-  }
-
-  function scheduleRender() {
-    if (!state.open || cleanRenderFrame) return;
-    const run = () => {
-      cleanRenderFrame = 0;
-      if (state.open) render();
-    };
-    cleanRenderFrame = typeof requestAnimationFrame === 'function'
-      ? requestAnimationFrame(run)
-      : setTimeout(run, 0);
-  }
+  const { occupancyHtml, render, renderScheduleBoard, scheduleRender } = createCleanModeRenderer({
+    state,
+    deps: {
+      DIRECT_EDIT_LABELS,
+      DAY_NAMES,
+      applyPersonalDisplay,
+      bindUI,
+      classifyPrivacyLabel,
+      courseColor,
+      ensureRoot,
+      escapeHtml,
+      firstContentChar,
+      getViewWeekNumber,
+      ico,
+      occupancyKindClass,
+      occupancyTypeLabel,
+      personalizedProfile,
+      summarizeCourses,
+      weekBitActive,
+    },
+  });
 
   function markCleanUiBound(node, key) {
     if (!node) return false;
