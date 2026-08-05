@@ -11850,6 +11850,106 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   }
   __name(resetCleanModeData, "resetCleanModeData");
 
+  // src/features/clean-mode/data.js
+  function createCleanModeDataLoader({ state, deps }) {
+    async function ensureRoomCatalogLoaded(force) {
+      if (!force && state.catalog && state.catalog.length) return state.catalog;
+      if (state.loading.room) return state.catalog;
+      state.loading.room = true;
+      try {
+        deps.render();
+      } catch (_) {
+      }
+      try {
+        state.catalog = await deps.loadClassroomCatalog();
+        state.roomError = "";
+      } catch (error) {
+        state.catalog = state.catalog || [];
+        state.roomError = String(error && error.message || error);
+        console.warn("[URP++] room catalog", error);
+      } finally {
+        state.loading.room = false;
+        try {
+          deps.scheduleRender();
+        } catch (_) {
+        }
+      }
+      return state.catalog;
+    }
+    __name(ensureRoomCatalogLoaded, "ensureRoomCatalogLoaded");
+    async function loadAll(force) {
+      if (force) {
+        resetCleanModeData(state);
+      }
+      state.loading.profile = state.loading.schedule = state.loading.scores = true;
+      try {
+        const termWeek = await deps.ensureTermWeekResolved();
+        if (!state.weekLocked && termWeek >= 1) state.viewWeek = termWeek;
+      } catch (_) {
+      }
+      deps.render();
+      await Promise.all([
+        (async () => {
+          try {
+            if (!(state.profile && !force)) state.profile = await deps.loadProfile();
+            deps.reconcileProfileAndScores();
+          } catch (error) {
+            state.profile = { name: "同学", majorPlan: "主修方案", majorGpa: "—", avatar: "" };
+            console.warn(error);
+          } finally {
+            state.loading.profile = false;
+            deps.scheduleRender();
+          }
+        })(),
+        (async () => {
+          try {
+            if (!(state.schedule && !force)) state.schedule = await deps.loadSchedule();
+          } catch (error) {
+            state.schedule = { courses: [], error: String(error && error.message || error) };
+          } finally {
+            state.loading.schedule = false;
+            if (!state.weekLocked) {
+              const termWeek = deps.getCurrentWeekNumber() || deps.readRememberedTermWeek();
+              if (termWeek >= 1) state.viewWeek = termWeek;
+            }
+            deps.scheduleRender();
+          }
+        })(),
+        (async () => {
+          let scorePack = null;
+          try {
+            if (!(state.scores && !force)) state.scores = await deps.loadScores();
+            scorePack = state.scores;
+            deps.reconcileProfileAndScores();
+            if (scorePack && !scorePack.error && !scorePack.evaluationReady) {
+              deps.enrichScoresWithEvaluation(scorePack).then(() => {
+                if (state.scores !== scorePack) return;
+                deps.reconcileProfileAndScores();
+                deps.scheduleRender();
+              }).catch((error) => {
+                console.warn("[URP++] attach evaluation", error);
+              });
+            }
+          } catch (error) {
+            state.scores = { passing: [], schemes: [], error: String(error && error.message || error) };
+          } finally {
+            state.loading.scores = false;
+            deps.scheduleRender();
+          }
+        })()
+      ]);
+      deps.reconcileProfileAndScores();
+      if (!state.weekLocked) {
+        const termWeek = deps.getCurrentWeekNumber() || deps.readRememberedTermWeek();
+        if (termWeek >= 1) state.viewWeek = termWeek;
+      }
+      deps.scheduleRender();
+    }
+    __name(loadAll, "loadAll");
+    return { ensureRoomCatalogLoaded, loadAll };
+  }
+  __name(createCleanModeDataLoader, "createCleanModeDataLoader");
+
   // src/features/navigation/breadcrumb.js
   function createBreadcrumbController({
     documentRef = document,
@@ -22096,31 +22196,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       return el;
     }
     __name(ensureRoot, "ensureRoot");
-    async function ensureRoomCatalogLoaded(force) {
-      if (!force && state.catalog && state.catalog.length) return state.catalog;
-      if (state.loading.room) return state.catalog;
-      state.loading.room = true;
-      try {
-        render();
-      } catch (_) {
-      }
-      try {
-        state.catalog = await loadClassroomCatalog();
-        state.roomError = "";
-      } catch (e) {
-        state.catalog = state.catalog || [];
-        state.roomError = String(e && e.message || e);
-        console.warn("[URP++] room catalog", e);
-      } finally {
-        state.loading.room = false;
-        try {
-          scheduleRender();
-        } catch (_) {
-        }
-      }
-      return state.catalog;
-    }
-    __name(ensureRoomCatalogLoaded, "ensureRoomCatalogLoaded");
     function metricHtml(s, scope) {
       s = s || summarizeCourses([]);
       const items = [
@@ -22872,75 +22947,22 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       }
     }
     __name(showBuilding, "showBuilding");
-    async function loadAll(force) {
-      if (force) {
-        resetCleanModeData(state);
+    const { ensureRoomCatalogLoaded, loadAll } = createCleanModeDataLoader({
+      state,
+      deps: {
+        ensureTermWeekResolved,
+        enrichScoresWithEvaluation,
+        getCurrentWeekNumber,
+        loadClassroomCatalog,
+        loadProfile,
+        loadSchedule,
+        loadScores,
+        readRememberedTermWeek,
+        reconcileProfileAndScores,
+        render,
+        scheduleRender
       }
-      state.loading.profile = state.loading.schedule = state.loading.scores = true;
-      try {
-        const tw = await ensureTermWeekResolved();
-        if (!state.weekLocked && tw >= 1) state.viewWeek = tw;
-      } catch (_) {
-      }
-      render();
-      await Promise.all([
-        (async () => {
-          try {
-            if (!(state.profile && !force)) state.profile = await loadProfile();
-            reconcileProfileAndScores();
-          } catch (e) {
-            state.profile = { name: "同学", majorPlan: "主修方案", majorGpa: "—", avatar: "" };
-            console.warn(e);
-          } finally {
-            state.loading.profile = false;
-            scheduleRender();
-          }
-        })(),
-        (async () => {
-          try {
-            if (!(state.schedule && !force)) state.schedule = await loadSchedule();
-          } catch (e) {
-            state.schedule = { courses: [], error: String(e && e.message || e) };
-          } finally {
-            state.loading.schedule = false;
-            if (!state.weekLocked) {
-              const tw = getCurrentWeekNumber() || readRememberedTermWeek();
-              if (tw >= 1) state.viewWeek = tw;
-            }
-            scheduleRender();
-          }
-        })(),
-        (async () => {
-          let scorePack = null;
-          try {
-            if (!(state.scores && !force)) state.scores = await loadScores();
-            scorePack = state.scores;
-            reconcileProfileAndScores();
-            if (scorePack && !scorePack.error && !scorePack.evaluationReady) {
-              enrichScoresWithEvaluation(scorePack).then(() => {
-                if (state.scores !== scorePack) return;
-                reconcileProfileAndScores();
-                scheduleRender();
-              }).catch((e) => {
-                console.warn("[URP++] attach evaluation", e);
-              });
-            }
-          } catch (e) {
-            state.scores = { passing: [], schemes: [], error: String(e && e.message || e) };
-          } finally {
-            state.loading.scores = false;
-            scheduleRender();
-          }
-        })()
-      ]);
-      reconcileProfileAndScores();
-      if (!state.weekLocked) {
-        const tw = getCurrentWeekNumber() || readRememberedTermWeek();
-        if (tw >= 1) state.viewWeek = tw;
-      }
-      scheduleRender();
-    }
-    __name(loadAll, "loadAll");
+    });
     function openCleanMode(force) {
       ensureRoot();
       state.open = true;

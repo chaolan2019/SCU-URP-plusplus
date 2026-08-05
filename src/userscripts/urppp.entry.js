@@ -77,6 +77,7 @@ import tableBeautifyStyles from '../styles/table-beautify.css';
 import navigationStyles from '../styles/navigation.css';
 import cleanModeStyles from '../styles/clean-mode.css';
 import { createCleanModeState, resetCleanModeData } from '../features/clean-mode/state.js';
+import { createCleanModeDataLoader } from '../features/clean-mode/data.js';
 import { createBreadcrumbController } from '../features/navigation/breadcrumb.js';
 import { createSidebarController } from '../features/navigation/sidebar.js';
 import { createNavbarController } from '../features/navigation/navbar.js';
@@ -9697,25 +9698,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return el;
   }
 
-  async function ensureRoomCatalogLoaded(force) {
-    if (!force && state.catalog && state.catalog.length) return state.catalog;
-    if (state.loading.room) return state.catalog;
-    state.loading.room = true;
-    try { render(); } catch (_) {}
-    try {
-      state.catalog = await loadClassroomCatalog();
-      state.roomError = '';
-    } catch (e) {
-      state.catalog = state.catalog || [];
-      state.roomError = String(e && e.message || e);
-      console.warn('[URP++] room catalog', e);
-    } finally {
-      state.loading.room = false;
-      try { scheduleRender(); } catch (_) {}
-    }
-    return state.catalog;
-  }
-
   function metricHtml(s, scope) {
     s = s || summarizeCourses([]);
     // 与教务成绩单习惯对齐：学分 → 成绩 → 绩点；必修同序
@@ -10489,73 +10471,22 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }
   }
 
-  async function loadAll(force) {
-    if (force) {
-      resetCleanModeData(state);
-    }
-    state.loading.profile = state.loading.schedule = state.loading.scores = true;
-    // 先解析教学周，再画界面，避免小屏首帧落到第1周
-    try {
-      const tw = await ensureTermWeekResolved();
-      if (!state.weekLocked && tw >= 1) state.viewWeek = tw;
-    } catch (_) {}
-    render();
-    await Promise.all([
-      (async () => {
-        try {
-          if (!(state.profile && !force)) state.profile = await loadProfile();
-          reconcileProfileAndScores();
-        } catch (e) {
-          state.profile = { name: '同学', majorPlan: '主修方案', majorGpa: '—', avatar: '' };
-          console.warn(e);
-        } finally {
-          state.loading.profile = false;
-          scheduleRender();
-        }
-      })(),
-      (async () => {
-        try { if (!(state.schedule && !force)) state.schedule = await loadSchedule(); }
-        catch (e) { state.schedule = { courses: [], error: String(e && e.message || e) }; }
-        finally {
-          state.loading.schedule = false;
-          // 课表加载后若周次仍可疑，再纠一次
-          if (!state.weekLocked) {
-            const tw = getCurrentWeekNumber() || readRememberedTermWeek();
-            if (tw >= 1) state.viewWeek = tw;
-          }
-          scheduleRender();
-        }
-      })(),
-      (async () => {
-        let scorePack = null;
-        try {
-          if (!(state.scores && !force)) state.scores = await loadScores();
-          scorePack = state.scores;
-          reconcileProfileAndScores();
-          if (scorePack && !scorePack.error && !scorePack.evaluationReady) {
-            enrichScoresWithEvaluation(scorePack).then(() => {
-              if (state.scores !== scorePack) return;
-              reconcileProfileAndScores();
-              scheduleRender();
-            }).catch((e) => {
-              console.warn('[URP++] attach evaluation', e);
-            });
-          }
-        } catch (e) {
-          state.scores = { passing: [], schemes: [], error: String(e && e.message || e) };
-        } finally {
-          state.loading.scores = false;
-          scheduleRender();
-        }
-      })()
-    ]);
-    reconcileProfileAndScores();
-    if (!state.weekLocked) {
-      const tw = getCurrentWeekNumber() || readRememberedTermWeek();
-      if (tw >= 1) state.viewWeek = tw;
-    }
-    scheduleRender();
-  }
+  const { ensureRoomCatalogLoaded, loadAll } = createCleanModeDataLoader({
+    state,
+    deps: {
+      ensureTermWeekResolved,
+      enrichScoresWithEvaluation,
+      getCurrentWeekNumber,
+      loadClassroomCatalog,
+      loadProfile,
+      loadSchedule,
+      loadScores,
+      readRememberedTermWeek,
+      reconcileProfileAndScores,
+      render,
+      scheduleRender,
+    },
+  });
 
   function openCleanMode(force) {
     ensureRoot();
