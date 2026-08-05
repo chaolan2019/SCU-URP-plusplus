@@ -58,6 +58,7 @@ import featureStyles from '../styles/features.css';
 import internalStyles from '../styles/internal.css';
 import scheduleCardStyles from '../styles/schedule-cards.css';
 import scheduleExportStyles from '../styles/schedule-export.css';
+import settingsStyles from '../styles/settings.css';
 
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Chao_Lan
@@ -7383,6 +7384,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   function ensureSettingsPanel() {
     if (document.getElementById('urppp-settings-panel')) return;
+    ensureSettingsStyles();
     try { applySkinAttr(); } catch (_) {}
     const mask = document.createElement('div');
     mask.id = 'urppp-settings-mask';
@@ -9020,6 +9022,14 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const style = document.createElement('style');
     style.id = 'urppp-schedule-export-style';
     style.textContent = scheduleExportStyles;
+    (document.head || document.documentElement).appendChild(style);
+  }
+
+  function ensureSettingsStyles() {
+    if (document.getElementById('urppp-settings-style')) return;
+    const style = document.createElement('style');
+    style.id = 'urppp-settings-style';
+    style.textContent = settingsStyles;
     (document.head || document.documentElement).appendChild(style);
   }
 

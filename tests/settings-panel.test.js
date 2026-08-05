@@ -9,6 +9,8 @@ import { buildSettingsPanelHtml } from '../src/features/settings/panel-template.
 
 const entryUrl = new URL('../src/userscripts/urppp.entry.js', import.meta.url);
 const controllerUrl = new URL('../src/features/settings/panel-controller.js', import.meta.url);
+const featureStylesUrl = new URL('../src/styles/features.css', import.meta.url);
+const settingsStylesUrl = new URL('../src/styles/settings.css', import.meta.url);
 
 function classListFor(name, calls) {
   return {
@@ -16,6 +18,18 @@ function classListFor(name, calls) {
     remove: (value) => calls.push([name, 'remove', value]),
   };
 }
+
+test('settings owns privacy, identity, and JSON editor styles', async () => {
+  const [featureStyles, settingsStyles] = await Promise.all([
+    readFile(featureStylesUrl, 'utf8'),
+    readFile(settingsStylesUrl, 'utf8'),
+  ]);
+  assert.doesNotMatch(featureStyles, /#urppp-settings-panel/);
+  assert.match(settingsStyles, /#urppp-settings-panel \.urppp-privacy-groups/);
+  assert.match(settingsStyles, /#urppp-settings-panel \.urppp-identity-editor/);
+  assert.match(settingsStyles, /#urppp-settings-panel #urppp-set-json-mapping/);
+  assert.match(settingsStyles, /@media\(max-width:520px\)/);
+});
 
 test('settings template preserves four panes and unique control identifiers', () => {
   const html = buildSettingsPanelHtml({
@@ -158,6 +172,7 @@ test('settings entry delegates panel transitions to the controller module', asyn
   assert.match(entrySource, /return settingsPanelController\.open\(\)/);
   assert.match(entrySource, /bindSettingsTabs\(panel\)/);
   assert.match(entrySource, /panel\.innerHTML = buildSettingsPanelHtml\(\{/);
+  assert.match(entrySource, /ensureSettingsStyles\(\)/);
   assert.doesNotMatch(entrySource, /const switchTab = \(tab\) =>/);
   assert.doesNotMatch(entrySource, /<div class="urppp-set-head">/);
   assert.doesNotMatch(entrySource, /void panel\.offsetWidth/);
