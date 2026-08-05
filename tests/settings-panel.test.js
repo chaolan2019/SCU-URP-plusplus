@@ -29,7 +29,9 @@ test('settings owns privacy, identity, and JSON editor styles', async () => {
   assert.doesNotMatch(featureStyles, /#urppp-settings-panel/);
   assert.doesNotMatch(internalStyles, /#urppp-settings-mask/);
   assert.doesNotMatch(internalStyles, /#urppp-settings-panel \.urppp-set-modes/);
+  assert.doesNotMatch(internalStyles, /#urppp-settings-panel \.urppp-set-tabs/);
   assert.match(settingsStyles, /#urppp-settings-mask\.open/);
+  assert.match(settingsStyles, /#urppp-settings-panel \.urppp-set-tabs/);
   assert.match(settingsStyles, /#urppp-settings-panel \.urppp-set-modes/);
   assert.match(settingsStyles, /#urppp-settings-panel \.urppp-privacy-groups/);
   assert.match(settingsStyles, /#urppp-settings-panel \.urppp-identity-editor/);
