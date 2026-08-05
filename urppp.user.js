@@ -11675,6 +11675,204 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
   }
   __name(createBreadcrumbController, "createBreadcrumbController");
 
+  // src/features/navigation/sidebar.js
+  function createSidebarController({
+    documentRef = document,
+    windowRef = window,
+    MutationObserverRef = MutationObserver,
+    nodeTypeRef = Node
+  }) {
+    function syncMobileContentOffset() {
+      try {
+        const sidebar = documentRef.getElementById("sidebar");
+        const mains = documentRef.querySelectorAll(".main-content");
+        if (!mains.length) return;
+        const narrow = windowRef.matchMedia && windowRef.matchMedia("(max-width: 991px)").matches;
+        let marginLeft = "260px";
+        if (narrow) {
+          marginLeft = "0px";
+        } else if (sidebar) {
+          marginLeft = sidebar.classList.contains("menu-min") ? "50px" : "260px";
+        }
+        mains.forEach((el) => el.style.setProperty("margin-left", marginLeft, "important"));
+      } catch (_) {
+      }
+    }
+    __name(syncMobileContentOffset, "syncMobileContentOffset");
+    function syncSidebarUnderNavbar() {
+      try {
+        const sidebar = documentRef.getElementById("sidebar");
+        const navbar = documentRef.querySelector("#navbar, .navbar.navbar-default, .navbar-fixed-top");
+        if (!sidebar || !navbar) return;
+        const rect = navbar.getBoundingClientRect();
+        const navbarHeight = Math.max(45, Math.round(rect.height || navbar.offsetHeight || 45));
+        documentRef.documentElement.style.setProperty("--urppp-navbar-height", navbarHeight + "px");
+        sidebar.style.setProperty("top", navbarHeight + "px", "important");
+        sidebar.style.setProperty("height", "calc(100vh - " + navbarHeight + "px)", "important");
+        sidebar.style.setProperty("margin-top", "0", "important");
+        navbar.style.setProperty("z-index", "1100", "important");
+        sidebar.style.setProperty("z-index", "1030", "important");
+        syncMobileContentOffset();
+      } catch (_) {
+      }
+    }
+    __name(syncSidebarUnderNavbar, "syncSidebarUnderNavbar");
+    function rebuildSidebarCompletely() {
+      const sidebar = documentRef.getElementById("sidebar");
+      const origMenus = documentRef.getElementById("menus");
+      if (!sidebar || !origMenus) return;
+      if (windowRef.__urpppSidebarMenuObserver) {
+        try {
+          windowRef.__urpppSidebarMenuObserver.disconnect();
+        } catch (_) {
+        }
+        windowRef.__urpppSidebarMenuObserver = null;
+      }
+      const oldMenus = documentRef.getElementById("urppp-menus");
+      const oldHeader = sidebar.querySelector(".urppp-sidebar-header");
+      if (oldMenus) oldMenus.remove();
+      if (oldHeader) oldHeader.remove();
+      syncSidebarUnderNavbar();
+      const activeIds = /* @__PURE__ */ new Set();
+      origMenus.querySelectorAll("li.active").forEach((li) => {
+        if (li.id) activeIds.add(li.id);
+      });
+      function parseMenu(ul) {
+        return Array.from(ul.children).filter((li) => li.tagName === "LI").map((li) => {
+          const anchor = li.querySelector(":scope > a");
+          const textEl = anchor?.querySelector(".menu-text");
+          const text = textEl ? textEl.textContent.trim() : anchor ? Array.from(anchor.childNodes).filter((node) => node.nodeType === nodeTypeRef.TEXT_NODE).map((node) => node.textContent).join("").trim() : "";
+          const iconEl = anchor?.querySelector(".menu-icon");
+          const iconClass = iconEl ? Array.from(iconEl.classList).filter((c) => c !== "menu-icon").join(" ") : "";
+          const submenu = li.querySelector(":scope > .submenu");
+          let children = submenu ? parseMenu(submenu) : [];
+          children = children.filter((child) => child.text && (child.text.trim() || child.href && child.href !== "#"));
+          const href = anchor?.getAttribute("href") || "#";
+          const onclick = li.getAttribute("onclick") || anchor?.getAttribute("onclick") || "";
+          const id = li.id;
+          if (href !== "#" && !href.startsWith("javascript")) {
+            return { id, text, iconClass, children: [], href, onclick };
+          }
+          if (children.length === 1 && children[0].children.length === 0) {
+            return {
+              id: id || children[0].id,
+              text,
+              iconClass: iconClass || children[0].iconClass,
+              children: [],
+              href: children[0].href || href,
+              onclick: children[0].onclick || onclick
+            };
+          }
+          return { id, text, iconClass, children, href, onclick };
+        });
+      }
+      __name(parseMenu, "parseMenu");
+      const menuData = parseMenu(origMenus);
+      origMenus.style.display = "none";
+      const header = documentRef.createElement("div");
+      header.className = "urppp-sidebar-header";
+      header.style.cssText = "position:absolute;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:flex-end;padding:14px 14px 12px;border-bottom:1px solid var(--border);background:var(--surface)";
+      const toggle = documentRef.createElement("div");
+      toggle.className = "urppp-sidebar-toggle";
+      toggle.innerHTML = '<i class="fa fa-angle-left"></i>';
+      toggle.title = "收起侧边栏";
+      const doToggle = /* @__PURE__ */ __name(() => {
+        const origToggle = documentRef.getElementById("sidebar-collapse");
+        if (origToggle) origToggle.click();
+      }, "doToggle");
+      toggle.addEventListener("click", doToggle);
+      header.appendChild(toggle);
+      const observer = new MutationObserverRef(() => {
+        const isMin = documentRef.body.classList.contains("menu-min") || sidebar.classList.contains("menu-min");
+        toggle.innerHTML = isMin ? '<i class="fa fa-angle-right"></i>' : '<i class="fa fa-angle-left"></i>';
+        toggle.title = isMin ? "展开侧边栏" : "收起侧边栏";
+        if (isMin) {
+          header.style.justifyContent = "center";
+          header.style.padding = "12px 0";
+        } else {
+          header.style.justifyContent = "flex-end";
+          header.style.padding = "";
+        }
+      });
+      observer.observe(documentRef.body, { attributes: true, attributeFilter: ["class"] });
+      observer.observe(sidebar, { attributes: true, attributeFilter: ["class"] });
+      windowRef.__urpppSidebarMenuObserver = observer;
+      const newMenus = documentRef.createElement("ul");
+      newMenus.id = "urppp-menus";
+      newMenus.style.cssText = "margin-top:50px;list-style:none;padding:10px 12px 24px;overflow-y:auto;max-height:calc(100vh - 64px)";
+      function setActiveBranch(li) {
+        documentRef.querySelectorAll("#urppp-menus .urppp-nav-item").forEach((el) => el.classList.remove("active"));
+        let node = li;
+        while (node && node.id !== "urppp-menus") {
+          if (node.classList.contains("urppp-nav-item")) node.classList.add("active");
+          node = node.parentElement;
+        }
+      }
+      __name(setActiveBranch, "setActiveBranch");
+      function buildItem(item, container) {
+        const li = documentRef.createElement("li");
+        li.className = "urppp-nav-item";
+        if (item.id) li.id = item.id;
+        const hasSub = item.children.length > 0;
+        const href = item.href || "#";
+        const hasRealHref = href !== "#" && !href.startsWith("javascript");
+        const link = documentRef.createElement("a");
+        link.className = "urppp-nav-link";
+        link.href = hasRealHref ? href : "javascript:void(0)";
+        if (item.iconClass) {
+          const icon = documentRef.createElement("i");
+          item.iconClass.split(" ").forEach((c) => {
+            if (c) icon.classList.add(c);
+          });
+          link.appendChild(icon);
+        }
+        const text = documentRef.createElement("span");
+        text.className = "urppp-nav-text";
+        text.textContent = item.text;
+        text.title = item.text;
+        link.appendChild(text);
+        if (hasSub) {
+          const arrow = documentRef.createElement("i");
+          arrow.className = "urppp-nav-arrow fa fa-angle-down";
+          arrow.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            li.classList.toggle("open");
+          });
+          link.appendChild(arrow);
+        }
+        li.appendChild(link);
+        link.addEventListener("click", (event) => {
+          setActiveBranch(li);
+          if (!hasRealHref && hasSub) {
+            event.preventDefault();
+            li.classList.toggle("open");
+          } else if (hasRealHref) {
+            return;
+          }
+        });
+        if (hasSub) {
+          const sub = documentRef.createElement("ul");
+          sub.className = "urppp-nav-submenu";
+          item.children.forEach((child) => buildItem(child, sub));
+          li.appendChild(sub);
+        }
+        if (item.id && activeIds.has(item.id)) {
+          li.classList.add("active");
+        }
+        container.appendChild(li);
+      }
+      __name(buildItem, "buildItem");
+      menuData.forEach((item) => buildItem(item, newMenus));
+      newMenus.querySelectorAll(".urppp-nav-item.open").forEach((li) => li.classList.remove("open"));
+      sidebar.insertBefore(header, sidebar.firstChild);
+      sidebar.appendChild(newMenus);
+    }
+    __name(rebuildSidebarCompletely, "rebuildSidebarCompletely");
+    return { rebuildSidebarCompletely, syncMobileContentOffset, syncSidebarUnderNavbar };
+  }
+  __name(createSidebarController, "createSidebarController");
+
   // src/userscripts/urppp.entry.js
   (function() {
     "use strict";
@@ -18854,201 +19052,7 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       }
     }
     __name(rebuildNavbar, "rebuildNavbar");
-    function syncMobileContentOffset() {
-      try {
-        const sidebar = document.getElementById("sidebar");
-        const mains = document.querySelectorAll(".main-content");
-        if (!mains.length) return;
-        const narrow = window.matchMedia && window.matchMedia("(max-width: 991px)").matches;
-        let ml = "260px";
-        if (narrow) {
-          ml = "0px";
-        } else if (sidebar) {
-          ml = sidebar.classList.contains("menu-min") ? "50px" : "260px";
-        }
-        mains.forEach((el) => el.style.setProperty("margin-left", ml, "important"));
-      } catch (_) {
-      }
-    }
-    __name(syncMobileContentOffset, "syncMobileContentOffset");
-    function syncSidebarUnderNavbar() {
-      try {
-        const sidebar = document.getElementById("sidebar");
-        const navbar = document.querySelector("#navbar, .navbar.navbar-default, .navbar-fixed-top");
-        if (!sidebar || !navbar) return;
-        const rect = navbar.getBoundingClientRect();
-        const nh = Math.max(45, Math.round(rect.height || navbar.offsetHeight || 45));
-        document.documentElement.style.setProperty("--urppp-navbar-height", nh + "px");
-        sidebar.style.setProperty("top", nh + "px", "important");
-        sidebar.style.setProperty("height", "calc(100vh - " + nh + "px)", "important");
-        sidebar.style.setProperty("margin-top", "0", "important");
-        navbar.style.setProperty("z-index", "1100", "important");
-        sidebar.style.setProperty("z-index", "1030", "important");
-        syncMobileContentOffset();
-      } catch (_) {
-      }
-    }
-    __name(syncSidebarUnderNavbar, "syncSidebarUnderNavbar");
-    function rebuildSidebarCompletely() {
-      const sidebar = document.getElementById("sidebar");
-      const origMenus = document.getElementById("menus");
-      if (!sidebar || !origMenus) return;
-      if (window.__urpppSidebarMenuObserver) {
-        try {
-          window.__urpppSidebarMenuObserver.disconnect();
-        } catch (_) {
-        }
-        window.__urpppSidebarMenuObserver = null;
-      }
-      const oldMenus = document.getElementById("urppp-menus");
-      const oldHeader = sidebar.querySelector(".urppp-sidebar-header");
-      if (oldMenus) oldMenus.remove();
-      if (oldHeader) oldHeader.remove();
-      syncSidebarUnderNavbar();
-      const activeIds = /* @__PURE__ */ new Set();
-      origMenus.querySelectorAll("li.active").forEach((li) => {
-        if (li.id) activeIds.add(li.id);
-      });
-      function parseMenu(ul) {
-        return Array.from(ul.children).filter((li) => li.tagName === "LI").map((li) => {
-          const a = li.querySelector(":scope > a");
-          const textEl = a?.querySelector(".menu-text");
-          const text = textEl ? textEl.textContent.trim() : a ? Array.from(a.childNodes).filter((n) => n.nodeType === Node.TEXT_NODE).map((n) => n.textContent).join("").trim() : "";
-          const iconEl = a?.querySelector(".menu-icon");
-          const iconClass = iconEl ? Array.from(iconEl.classList).filter((c) => c !== "menu-icon").join(" ") : "";
-          const submenu = li.querySelector(":scope > .submenu");
-          let children = submenu ? parseMenu(submenu) : [];
-          children = children.filter((c) => c.text && (c.text.trim() || c.href && c.href !== "#"));
-          const href = a?.getAttribute("href") || "#";
-          const onclick = li.getAttribute("onclick") || a?.getAttribute("onclick") || "";
-          const id = li.id;
-          if (href !== "#" && !href.startsWith("javascript")) {
-            return { id, text, iconClass, children: [], href, onclick };
-          }
-          if (children.length === 1 && children[0].children.length === 0) {
-            return {
-              id: id || children[0].id,
-              text,
-              iconClass: iconClass || children[0].iconClass,
-              children: [],
-              href: children[0].href || href,
-              onclick: children[0].onclick || onclick
-            };
-          }
-          return { id, text, iconClass, children, href, onclick };
-        });
-      }
-      __name(parseMenu, "parseMenu");
-      const menuData = parseMenu(origMenus);
-      origMenus.style.display = "none";
-      const header = document.createElement("div");
-      header.className = "urppp-sidebar-header";
-      header.style.cssText = "position:absolute;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:flex-end;padding:14px 14px 12px;border-bottom:1px solid var(--border);background:var(--surface)";
-      const toggle = document.createElement("div");
-      toggle.className = "urppp-sidebar-toggle";
-      toggle.innerHTML = '<i class="fa fa-angle-left"></i>';
-      toggle.title = "收起侧边栏";
-      const doToggle = /* @__PURE__ */ __name(() => {
-        const origToggle = document.getElementById("sidebar-collapse");
-        if (origToggle) origToggle.click();
-      }, "doToggle");
-      toggle.addEventListener("click", doToggle);
-      header.appendChild(toggle);
-      const observer = new MutationObserver(() => {
-        const isMin = document.body.classList.contains("menu-min") || sidebar.classList.contains("menu-min");
-        toggle.innerHTML = isMin ? '<i class="fa fa-angle-right"></i>' : '<i class="fa fa-angle-left"></i>';
-        toggle.title = isMin ? "展开侧边栏" : "收起侧边栏";
-        if (isMin) {
-          header.style.justifyContent = "center";
-          header.style.padding = "12px 0";
-        } else {
-          header.style.justifyContent = "flex-end";
-          header.style.padding = "";
-        }
-      });
-      observer.observe(document.body, { attributes: true, attributeFilter: ["class"] });
-      observer.observe(sidebar, { attributes: true, attributeFilter: ["class"] });
-      window.__urpppSidebarMenuObserver = observer;
-      const newMenus = document.createElement("ul");
-      newMenus.id = "urppp-menus";
-      newMenus.style.cssText = "margin-top:50px;list-style:none;padding:10px 12px 24px;overflow-y:auto;max-height:calc(100vh - 64px)";
-      function setActiveBranch(li) {
-        document.querySelectorAll("#urppp-menus .urppp-nav-item").forEach((el) => el.classList.remove("active"));
-        let p = li;
-        while (p && p.id !== "urppp-menus") {
-          if (p.classList.contains("urppp-nav-item")) p.classList.add("active");
-          p = p.parentElement;
-        }
-      }
-      __name(setActiveBranch, "setActiveBranch");
-      function openActiveBranch(li) {
-        let p = li.parentElement;
-        while (p && p.id !== "urppp-menus") {
-          if (p.classList.contains("urppp-nav-item")) p.classList.add("open");
-          p = p.parentElement;
-        }
-      }
-      __name(openActiveBranch, "openActiveBranch");
-      function buildItem(item, container) {
-        const li = document.createElement("li");
-        li.className = "urppp-nav-item";
-        if (item.id) li.id = item.id;
-        const hasSub = item.children.length > 0;
-        const href = item.href || "#";
-        const hasRealHref = href !== "#" && !href.startsWith("javascript");
-        const link = document.createElement("a");
-        link.className = "urppp-nav-link";
-        link.href = hasRealHref ? href : "javascript:void(0)";
-        if (item.iconClass) {
-          const icon = document.createElement("i");
-          item.iconClass.split(" ").forEach((c) => {
-            if (c) icon.classList.add(c);
-          });
-          link.appendChild(icon);
-        }
-        const text = document.createElement("span");
-        text.className = "urppp-nav-text";
-        text.textContent = item.text;
-        text.title = item.text;
-        link.appendChild(text);
-        if (hasSub) {
-          const arrow = document.createElement("i");
-          arrow.className = "urppp-nav-arrow fa fa-angle-down";
-          arrow.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            li.classList.toggle("open");
-          });
-          link.appendChild(arrow);
-        }
-        li.appendChild(link);
-        link.addEventListener("click", (e) => {
-          setActiveBranch(li);
-          if (!hasRealHref && hasSub) {
-            e.preventDefault();
-            li.classList.toggle("open");
-          } else if (hasRealHref) {
-            return;
-          }
-        });
-        if (hasSub) {
-          const sub = document.createElement("ul");
-          sub.className = "urppp-nav-submenu";
-          item.children.forEach((child) => buildItem(child, sub));
-          li.appendChild(sub);
-        }
-        if (item.id && activeIds.has(item.id)) {
-          li.classList.add("active");
-        }
-        container.appendChild(li);
-      }
-      __name(buildItem, "buildItem");
-      menuData.forEach((item) => buildItem(item, newMenus));
-      newMenus.querySelectorAll(".urppp-nav-item.open").forEach((li) => li.classList.remove("open"));
-      sidebar.insertBefore(header, sidebar.firstChild);
-      sidebar.appendChild(newMenus);
-    }
-    __name(rebuildSidebarCompletely, "rebuildSidebarCompletely");
+    const { rebuildSidebarCompletely, syncMobileContentOffset, syncSidebarUnderNavbar } = createSidebarController({});
     function bindScheduleHoverNearCursor() {
       if (window.__urpppScheduleHoverNear) return;
       window.__urpppScheduleHoverNear = true;
