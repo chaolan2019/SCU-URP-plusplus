@@ -80,6 +80,7 @@ import { createCleanModeState, resetCleanModeData } from '../features/clean-mode
 import { createCleanModeDataLoader } from '../features/clean-mode/data.js';
 import { createCleanModeRenderer } from '../features/clean-mode/render.js';
 import { createCleanModeUI } from '../features/clean-mode/ui.js';
+import { createCleanModeController } from '../features/clean-mode/controller.js';
 import { createBreadcrumbController } from '../features/navigation/breadcrumb.js';
 import { createSidebarController } from '../features/navigation/sidebar.js';
 import { createNavbarController } from '../features/navigation/navbar.js';
@@ -9625,81 +9626,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     (document.head || document.documentElement).appendChild(st);
   }
 
-  function rootEl() { return document.getElementById('urppp-clean-root'); }
-
-  function ensureRoot() {
-    ensureStyle();
-    let el = rootEl();
-    if (el) return el;
-    el = document.createElement('div');
-    el.id = 'urppp-clean-root';
-    el.innerHTML = `
-      <div class="uc-top">
-        <div class="uc-top-left">
-          <div class="uc-top-theme" id="uc-top-theme">
-            <button type="button" class="urppp-nav-dot" data-theme="default" title="简约白" style="background:#F1F5F9"></button>
-            <button type="button" class="urppp-nav-dot" data-theme="dark" title="深邃暗" style="background:#0B0F17"></button>
-            <button type="button" class="urppp-nav-dot" data-theme="scu-red" title="动态配色" style="background:#B53434"></button>
-            <button type="button" class="urppp-nav-settings" id="uc-settings" title="设置" aria-label="设置">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            </button>
-          </div>
-        </div>
-        <div class="uc-top-actions">
-          <button type="button" class="uc-btn" id="uc-refresh">${ico('refresh')}<span>刷新</span></button>
-          <button type="button" class="uc-btn primary" id="uc-exit">${ico('exit')}<span>退出</span></button>
-        </div>
-      </div>
-      <div class="uc-shell"><div class="uc-shell-inner" id="uc-body"></div></div>
-      <div class="uc-tabbar" id="uc-tabbar">
-        <button type="button" data-tab="home" class="ac">${ico('home')}<span>首页</span></button>
-        <button type="button" data-tab="scores">${ico('score')}<span>成绩</span></button>
-        <button type="button" data-tab="room">${ico('room')}<span>教室</span></button>
-        <button type="button" data-tab="more">${ico('more')}<span>其他</span></button>
-      </div>
-      <div class="uc-mask" id="uc-mask"></div>
-      <div class="uc-modal" id="uc-modal">
-        <div class="uc-modal-hd"><span id="uc-modal-title">详情</span><button type="button" class="uc-btn" id="uc-modal-close">${ico('close')}</button></div>
-        <div class="uc-modal-bd" id="uc-modal-body"></div>
-        <div class="uc-modal-ft" id="uc-modal-ft"></div>
-      </div>`;
-    document.documentElement.appendChild(el);
-    el.querySelector('#uc-exit').onclick = closeCleanMode;
-    el.querySelector('#uc-refresh').onclick = () => openCleanMode(true);
-    el.querySelector('#uc-mask').onclick = closeModal;
-    el.querySelector('#uc-modal-close').onclick = closeModal;
-    const syncCleanThemeDots = () => {
-      syncThemeDotGroup(el.querySelector('#uc-top-theme'));
-    };
-    el.querySelectorAll('#uc-top-theme .urppp-nav-dot[data-theme]').forEach((dot) => {
-      dot.addEventListener('click', () => {
-        handleThemeDotClick(dot.dataset.theme);
-        syncCleanThemeDots();
-        try { syncNavbarThemeUI(); } catch (_) {}
-        try { syncSettingsPanelUI(); } catch (_) {}
-      });
-    });
-    const setBtn = el.querySelector('#uc-settings');
-    if (setBtn) setBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      try { openSettingsPanel(); } catch (_) {}
-    });
-    el.__syncCleanThemeDots = syncCleanThemeDots;
-    try { applySkinAttr(); } catch (_) {}
-    syncCleanThemeDots();
-    el.querySelectorAll('#uc-tabbar button').forEach((btn) => {
-      btn.onclick = () => {
-        state.mobileTab = btn.dataset.tab;
-        el.querySelectorAll('#uc-tabbar button').forEach((b) => b.classList.toggle('ac', b === btn));
-        render();
-        // 小屏「教室」页需要主动拉 catalog；桌面是弹窗路径才加载
-        if (state.mobileTab === 'room') ensureRoomCatalogLoaded();
-      };
-    });
-    return el;
-  }
-
   const { metricHtml, occupancyHtml, render, renderScheduleBoard, roomPickerHtml, scheduleRender } = createCleanModeRenderer({
     state,
     deps: {
@@ -9709,7 +9635,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       bindUI: (scope) => bindUI(scope),
       classifyPrivacyLabel,
       courseColor,
-      ensureRoot,
+      ensureRoot: () => ensureRoot(),
       escapeHtml,
       firstContentChar,
       getViewWeekNumber,
@@ -9753,10 +9679,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       DAY_NAMES,
       applyPersonalDisplay,
       bindScheduleExportHosts,
-      closeCleanMode,
+      closeCleanMode: () => closeCleanMode(),
       ensureRoomCatalogLoaded,
       enrichOccupancyWithCurriculum,
-      ensureRoot,
+      ensureRoot: () => ensureRoot(),
       escapeHtml,
       fetchText,
       getCurrentWeekNumber,
@@ -9768,7 +9694,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       metricHtml,
       occupancyHtml,
       render,
-      rootEl,
+      rootEl: () => rootEl(),
       roomPickerHtml,
       scoreToGpa,
       scoreToNumber,
@@ -9777,85 +9703,40 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     },
   });
 
-  function openCleanMode(force) {
-    ensureRoot();
-    state.open = true;
-    state.uiReady = false;
-    state.weekLocked = false;
-    const curWeek = getCurrentWeekNumber() || readRememberedTermWeek();
-    // 每次进入都按教学周重置；读不到时先用缓存，别默认 1
-    state.viewWeek = curWeek >= 1 ? curWeek : (state.viewWeek >= 1 ? state.viewWeek : 0);
-    document.documentElement.classList.add('urppp-clean-lock', CLEAN_FLAG);
-    const el = rootEl();
-    el.classList.remove('uc-settled', 'open');
-    void el.offsetWidth; // 重触发根层进入动画
-    el.classList.add('open');
-    try { if (el.__syncCleanThemeDots) el.__syncCleanThemeDots(); } catch (_) {}
-    loadAll(!!force);
-  }
-  function closeCleanMode() {
-    state.open = false;
-    state.uiReady = false;
-    closeModal();
-    document.documentElement.classList.remove('urppp-clean-lock', CLEAN_FLAG);
-    const el = rootEl();
-    if (el) {
-      el.classList.remove('open', 'uc-settled');
-      clearTimeout(el.__ucSettleTimer);
-    }
-  }
+  const {
+    cleanModeApi,
+    closeCleanMode,
+    ensureRoot,
+    injectCleanEntry,
+    openCleanMode,
+    rootEl,
+  } = createCleanModeController({
+    state,
+    deps: {
+      CLEAN_FLAG,
+      applySkinAttr,
+      closeModal,
+      ensureRoomCatalogLoaded,
+      ensureStyle,
+      getCurrentWeekNumber,
+      getSkin,
+      handleThemeDotClick,
+      ico,
+      isHomePage,
+      loadAll,
+      openSettingsPanel,
+      readRememberedTermWeek,
+      refreshCleanPersonalDisplay,
+      render,
+      scoreToGpa,
+      summarizeCourses,
+      syncNavbarThemeUI,
+      syncSettingsPanelUI,
+      syncThemeDotGroup,
+    },
+  });
 
-  function injectCleanEntry() {
-    try {
-      let btn = document.getElementById('urppp-nav-clean');
-      // 仅首页展示清爽入口；业务页移除残留按钮
-      if (!isHomePage()) {
-        if (btn) btn.remove();
-        return;
-      }
-      const host = document.getElementById('urppp-nav-theme') ||
-        document.querySelector('#navbar .navbar-header') ||
-        document.querySelector('#navbar');
-      if (!host) return;
-      if (!btn) {
-        btn = document.createElement('button');
-        btn.type = 'button';
-        btn.id = 'urppp-nav-clean';
-        btn.title = '清爽模式';
-        btn.innerHTML = `${ico('clean')}<span>清爽</span>`;
-        btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); openCleanMode(false); });
-        host.appendChild(btn);
-      }
-      const skin = (typeof getSkin === 'function' ? getSkin() : 'apple');
-      const isFlat = skin === 'flat';
-      Object.entries({
-        display: 'inline-flex', 'align-items': 'center', height: '28px', 'min-height': '28px',
-        padding: '0 10px',
-        border: isFlat ? '2px solid var(--text)' : '1px solid transparent',
-        'border-radius': isFlat ? '0' : '999px',
-        background: isFlat ? 'var(--surface)' : 'var(--input-bg)',
-        color: 'var(--text)', 'font-size': '12px', gap: '6px',
-        width: 'auto', 'box-shadow': isFlat ? 'none' : '0 1px 2px rgba(0,0,0,.05)',
-        margin: '0 0 0 8px', float: 'none'
-      }).forEach(([k, v]) => btn.style.setProperty(k, v, 'important'));
-    } catch (e) {
-      console.warn('[URP++] clean entry', e);
-    }
-  }
-
-  window.__urpppCleanMode = {
-    open: openCleanMode,
-    close: closeCleanMode,
-    inject: injectCleanEntry,
-    refresh: refreshCleanPersonalDisplay,
-    scoreToGpa,
-    summarizeCourses
-  };
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => setTimeout(injectCleanEntry, 200));
-  } else setTimeout(injectCleanEntry, 200);
-  ;[600, 1500, 3000].forEach((ms) => setTimeout(injectCleanEntry, ms));
+  window.__urpppCleanMode = cleanModeApi;
 
   // ============================================================
   // 初始化

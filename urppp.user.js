@@ -12733,6 +12733,192 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   }
   __name(createCleanModeUI, "createCleanModeUI");
 
+  // src/features/clean-mode/controller.js
+  function createCleanModeController({ state, deps }) {
+    function rootEl() {
+      return document.getElementById("urppp-clean-root");
+    }
+    __name(rootEl, "rootEl");
+    function ensureRoot() {
+      deps.ensureStyle();
+      let el = rootEl();
+      if (el) return el;
+      el = document.createElement("div");
+      el.id = "urppp-clean-root";
+      el.innerHTML = `
+      <div class="uc-top">
+        <div class="uc-top-left">
+          <div class="uc-top-theme" id="uc-top-theme">
+            <button type="button" class="urppp-nav-dot" data-theme="default" title="简约白" style="background:#F1F5F9"></button>
+            <button type="button" class="urppp-nav-dot" data-theme="dark" title="深邃暗" style="background:#0B0F17"></button>
+            <button type="button" class="urppp-nav-dot" data-theme="scu-red" title="动态配色" style="background:#B53434"></button>
+            <button type="button" class="urppp-nav-settings" id="uc-settings" title="设置" aria-label="设置">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
+          </div>
+        </div>
+        <div class="uc-top-actions">
+          <button type="button" class="uc-btn" id="uc-refresh">${deps.ico("refresh")}<span>刷新</span></button>
+          <button type="button" class="uc-btn primary" id="uc-exit">${deps.ico("exit")}<span>退出</span></button>
+        </div>
+      </div>
+      <div class="uc-shell"><div class="uc-shell-inner" id="uc-body"></div></div>
+      <div class="uc-tabbar" id="uc-tabbar">
+        <button type="button" data-tab="home" class="ac">${deps.ico("home")}<span>首页</span></button>
+        <button type="button" data-tab="scores">${deps.ico("score")}<span>成绩</span></button>
+        <button type="button" data-tab="room">${deps.ico("room")}<span>教室</span></button>
+        <button type="button" data-tab="more">${deps.ico("more")}<span>其他</span></button>
+      </div>
+      <div class="uc-mask" id="uc-mask"></div>
+      <div class="uc-modal" id="uc-modal">
+        <div class="uc-modal-hd"><span id="uc-modal-title">详情</span><button type="button" class="uc-btn" id="uc-modal-close">${deps.ico("close")}</button></div>
+        <div class="uc-modal-bd" id="uc-modal-body"></div>
+        <div class="uc-modal-ft" id="uc-modal-ft"></div>
+      </div>`;
+      document.documentElement.appendChild(el);
+      el.querySelector("#uc-exit").onclick = closeCleanMode;
+      el.querySelector("#uc-refresh").onclick = () => openCleanMode(true);
+      el.querySelector("#uc-mask").onclick = deps.closeModal;
+      el.querySelector("#uc-modal-close").onclick = deps.closeModal;
+      const syncCleanThemeDots = /* @__PURE__ */ __name(() => {
+        deps.syncThemeDotGroup(el.querySelector("#uc-top-theme"));
+      }, "syncCleanThemeDots");
+      el.querySelectorAll("#uc-top-theme .urppp-nav-dot[data-theme]").forEach((dot) => {
+        dot.addEventListener("click", () => {
+          deps.handleThemeDotClick(dot.dataset.theme);
+          syncCleanThemeDots();
+          try {
+            deps.syncNavbarThemeUI();
+          } catch (_) {
+          }
+          try {
+            deps.syncSettingsPanelUI();
+          } catch (_) {
+          }
+        });
+      });
+      const setBtn = el.querySelector("#uc-settings");
+      if (setBtn) setBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        try {
+          deps.openSettingsPanel();
+        } catch (_) {
+        }
+      });
+      el.__syncCleanThemeDots = syncCleanThemeDots;
+      try {
+        deps.applySkinAttr();
+      } catch (_) {
+      }
+      syncCleanThemeDots();
+      el.querySelectorAll("#uc-tabbar button").forEach((btn) => {
+        btn.onclick = () => {
+          state.mobileTab = btn.dataset.tab;
+          el.querySelectorAll("#uc-tabbar button").forEach((b) => b.classList.toggle("ac", b === btn));
+          deps.render();
+          if (state.mobileTab === "room") deps.ensureRoomCatalogLoaded();
+        };
+      });
+      return el;
+    }
+    __name(ensureRoot, "ensureRoot");
+    function openCleanMode(force) {
+      ensureRoot();
+      state.open = true;
+      state.uiReady = false;
+      state.weekLocked = false;
+      const curWeek = deps.getCurrentWeekNumber() || deps.readRememberedTermWeek();
+      state.viewWeek = curWeek >= 1 ? curWeek : state.viewWeek >= 1 ? state.viewWeek : 0;
+      document.documentElement.classList.add("urppp-clean-lock", deps.CLEAN_FLAG);
+      const el = rootEl();
+      el.classList.remove("uc-settled", "open");
+      void el.offsetWidth;
+      el.classList.add("open");
+      try {
+        if (el.__syncCleanThemeDots) el.__syncCleanThemeDots();
+      } catch (_) {
+      }
+      deps.loadAll(!!force);
+    }
+    __name(openCleanMode, "openCleanMode");
+    function closeCleanMode() {
+      state.open = false;
+      state.uiReady = false;
+      deps.closeModal();
+      document.documentElement.classList.remove("urppp-clean-lock", deps.CLEAN_FLAG);
+      const el = rootEl();
+      if (el) {
+        el.classList.remove("open", "uc-settled");
+        clearTimeout(el.__ucSettleTimer);
+      }
+    }
+    __name(closeCleanMode, "closeCleanMode");
+    function injectCleanEntry() {
+      try {
+        let btn = document.getElementById("urppp-nav-clean");
+        if (!deps.isHomePage()) {
+          if (btn) btn.remove();
+          return;
+        }
+        const host = document.getElementById("urppp-nav-theme") || document.querySelector("#navbar .navbar-header") || document.querySelector("#navbar");
+        if (!host) return;
+        if (!btn) {
+          btn = document.createElement("button");
+          btn.type = "button";
+          btn.id = "urppp-nav-clean";
+          btn.title = "清爽模式";
+          btn.innerHTML = `${deps.ico("clean")}<span>清爽</span>`;
+          btn.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            openCleanMode(false);
+          });
+          host.appendChild(btn);
+        }
+        const skin = typeof deps.getSkin === "function" ? deps.getSkin() : "apple";
+        const isFlat = skin === "flat";
+        Object.entries({
+          display: "inline-flex",
+          "align-items": "center",
+          height: "28px",
+          "min-height": "28px",
+          padding: "0 10px",
+          border: isFlat ? "2px solid var(--text)" : "1px solid transparent",
+          "border-radius": isFlat ? "0" : "999px",
+          background: isFlat ? "var(--surface)" : "var(--input-bg)",
+          color: "var(--text)",
+          "font-size": "12px",
+          gap: "6px",
+          width: "auto",
+          "box-shadow": isFlat ? "none" : "0 1px 2px rgba(0,0,0,.05)",
+          margin: "0 0 0 8px",
+          float: "none"
+        }).forEach(([key, value]) => btn.style.setProperty(key, value, "important"));
+      } catch (error) {
+        console.warn("[URP++] clean entry", error);
+      }
+    }
+    __name(injectCleanEntry, "injectCleanEntry");
+    const cleanModeApi = {
+      open: openCleanMode,
+      close: closeCleanMode,
+      inject: injectCleanEntry,
+      refresh: deps.refreshCleanPersonalDisplay,
+      scoreToGpa: deps.scoreToGpa,
+      summarizeCourses: deps.summarizeCourses
+    };
+    return {
+      cleanModeApi,
+      closeCleanMode,
+      ensureRoot,
+      injectCleanEntry,
+      openCleanMode,
+      rootEl
+    };
+  }
+  __name(createCleanModeController, "createCleanModeController");
+
   // src/features/navigation/breadcrumb.js
   function createBreadcrumbController({
     documentRef = document,
@@ -22891,94 +23077,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       (document.head || document.documentElement).appendChild(st);
     }
     __name(ensureStyle, "ensureStyle");
-    function rootEl() {
-      return document.getElementById("urppp-clean-root");
-    }
-    __name(rootEl, "rootEl");
-    function ensureRoot() {
-      ensureStyle();
-      let el = rootEl();
-      if (el) return el;
-      el = document.createElement("div");
-      el.id = "urppp-clean-root";
-      el.innerHTML = `
-      <div class="uc-top">
-        <div class="uc-top-left">
-          <div class="uc-top-theme" id="uc-top-theme">
-            <button type="button" class="urppp-nav-dot" data-theme="default" title="简约白" style="background:#F1F5F9"></button>
-            <button type="button" class="urppp-nav-dot" data-theme="dark" title="深邃暗" style="background:#0B0F17"></button>
-            <button type="button" class="urppp-nav-dot" data-theme="scu-red" title="动态配色" style="background:#B53434"></button>
-            <button type="button" class="urppp-nav-settings" id="uc-settings" title="设置" aria-label="设置">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            </button>
-          </div>
-        </div>
-        <div class="uc-top-actions">
-          <button type="button" class="uc-btn" id="uc-refresh">${ico("refresh")}<span>刷新</span></button>
-          <button type="button" class="uc-btn primary" id="uc-exit">${ico("exit")}<span>退出</span></button>
-        </div>
-      </div>
-      <div class="uc-shell"><div class="uc-shell-inner" id="uc-body"></div></div>
-      <div class="uc-tabbar" id="uc-tabbar">
-        <button type="button" data-tab="home" class="ac">${ico("home")}<span>首页</span></button>
-        <button type="button" data-tab="scores">${ico("score")}<span>成绩</span></button>
-        <button type="button" data-tab="room">${ico("room")}<span>教室</span></button>
-        <button type="button" data-tab="more">${ico("more")}<span>其他</span></button>
-      </div>
-      <div class="uc-mask" id="uc-mask"></div>
-      <div class="uc-modal" id="uc-modal">
-        <div class="uc-modal-hd"><span id="uc-modal-title">详情</span><button type="button" class="uc-btn" id="uc-modal-close">${ico("close")}</button></div>
-        <div class="uc-modal-bd" id="uc-modal-body"></div>
-        <div class="uc-modal-ft" id="uc-modal-ft"></div>
-      </div>`;
-      document.documentElement.appendChild(el);
-      el.querySelector("#uc-exit").onclick = closeCleanMode;
-      el.querySelector("#uc-refresh").onclick = () => openCleanMode(true);
-      el.querySelector("#uc-mask").onclick = closeModal;
-      el.querySelector("#uc-modal-close").onclick = closeModal;
-      const syncCleanThemeDots = /* @__PURE__ */ __name(() => {
-        syncThemeDotGroup(el.querySelector("#uc-top-theme"));
-      }, "syncCleanThemeDots");
-      el.querySelectorAll("#uc-top-theme .urppp-nav-dot[data-theme]").forEach((dot) => {
-        dot.addEventListener("click", () => {
-          handleThemeDotClick(dot.dataset.theme);
-          syncCleanThemeDots();
-          try {
-            syncNavbarThemeUI();
-          } catch (_) {
-          }
-          try {
-            syncSettingsPanelUI();
-          } catch (_) {
-          }
-        });
-      });
-      const setBtn = el.querySelector("#uc-settings");
-      if (setBtn) setBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        try {
-          openSettingsPanel();
-        } catch (_) {
-        }
-      });
-      el.__syncCleanThemeDots = syncCleanThemeDots;
-      try {
-        applySkinAttr();
-      } catch (_) {
-      }
-      syncCleanThemeDots();
-      el.querySelectorAll("#uc-tabbar button").forEach((btn) => {
-        btn.onclick = () => {
-          state.mobileTab = btn.dataset.tab;
-          el.querySelectorAll("#uc-tabbar button").forEach((b) => b.classList.toggle("ac", b === btn));
-          render();
-          if (state.mobileTab === "room") ensureRoomCatalogLoaded();
-        };
-      });
-      return el;
-    }
-    __name(ensureRoot, "ensureRoot");
     const { metricHtml, occupancyHtml, render, renderScheduleBoard, roomPickerHtml, scheduleRender } = createCleanModeRenderer({
       state,
       deps: {
@@ -22988,7 +23086,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         bindUI: /* @__PURE__ */ __name((scope) => bindUI(scope), "bindUI"),
         classifyPrivacyLabel,
         courseColor,
-        ensureRoot,
+        ensureRoot: /* @__PURE__ */ __name(() => ensureRoot(), "ensureRoot"),
         escapeHtml,
         firstContentChar,
         getViewWeekNumber,
@@ -23030,10 +23128,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         DAY_NAMES,
         applyPersonalDisplay,
         bindScheduleExportHosts,
-        closeCleanMode,
+        closeCleanMode: /* @__PURE__ */ __name(() => closeCleanMode(), "closeCleanMode"),
         ensureRoomCatalogLoaded,
         enrichOccupancyWithCurriculum,
-        ensureRoot,
+        ensureRoot: /* @__PURE__ */ __name(() => ensureRoot(), "ensureRoot"),
         escapeHtml,
         fetchText,
         getCurrentWeekNumber,
@@ -23045,7 +23143,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         metricHtml,
         occupancyHtml,
         render,
-        rootEl,
+        rootEl: /* @__PURE__ */ __name(() => rootEl(), "rootEl"),
         roomPickerHtml,
         scoreToGpa,
         scoreToNumber,
@@ -23053,96 +23151,39 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         summarizeCoursesPreferOfficial
       }
     });
-    function openCleanMode(force) {
-      ensureRoot();
-      state.open = true;
-      state.uiReady = false;
-      state.weekLocked = false;
-      const curWeek = getCurrentWeekNumber() || readRememberedTermWeek();
-      state.viewWeek = curWeek >= 1 ? curWeek : state.viewWeek >= 1 ? state.viewWeek : 0;
-      document.documentElement.classList.add("urppp-clean-lock", CLEAN_FLAG);
-      const el = rootEl();
-      el.classList.remove("uc-settled", "open");
-      void el.offsetWidth;
-      el.classList.add("open");
-      try {
-        if (el.__syncCleanThemeDots) el.__syncCleanThemeDots();
-      } catch (_) {
+    const {
+      cleanModeApi,
+      closeCleanMode,
+      ensureRoot,
+      injectCleanEntry,
+      openCleanMode,
+      rootEl
+    } = createCleanModeController({
+      state,
+      deps: {
+        CLEAN_FLAG,
+        applySkinAttr,
+        closeModal,
+        ensureRoomCatalogLoaded,
+        ensureStyle,
+        getCurrentWeekNumber,
+        getSkin,
+        handleThemeDotClick,
+        ico,
+        isHomePage,
+        loadAll,
+        openSettingsPanel,
+        readRememberedTermWeek,
+        refreshCleanPersonalDisplay,
+        render,
+        scoreToGpa,
+        summarizeCourses,
+        syncNavbarThemeUI,
+        syncSettingsPanelUI,
+        syncThemeDotGroup
       }
-      loadAll(!!force);
-    }
-    __name(openCleanMode, "openCleanMode");
-    function closeCleanMode() {
-      state.open = false;
-      state.uiReady = false;
-      closeModal();
-      document.documentElement.classList.remove("urppp-clean-lock", CLEAN_FLAG);
-      const el = rootEl();
-      if (el) {
-        el.classList.remove("open", "uc-settled");
-        clearTimeout(el.__ucSettleTimer);
-      }
-    }
-    __name(closeCleanMode, "closeCleanMode");
-    function injectCleanEntry() {
-      try {
-        let btn = document.getElementById("urppp-nav-clean");
-        if (!isHomePage()) {
-          if (btn) btn.remove();
-          return;
-        }
-        const host = document.getElementById("urppp-nav-theme") || document.querySelector("#navbar .navbar-header") || document.querySelector("#navbar");
-        if (!host) return;
-        if (!btn) {
-          btn = document.createElement("button");
-          btn.type = "button";
-          btn.id = "urppp-nav-clean";
-          btn.title = "清爽模式";
-          btn.innerHTML = `${ico("clean")}<span>清爽</span>`;
-          btn.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            openCleanMode(false);
-          });
-          host.appendChild(btn);
-        }
-        const skin = typeof getSkin === "function" ? getSkin() : "apple";
-        const isFlat = skin === "flat";
-        Object.entries({
-          display: "inline-flex",
-          "align-items": "center",
-          height: "28px",
-          "min-height": "28px",
-          padding: "0 10px",
-          border: isFlat ? "2px solid var(--text)" : "1px solid transparent",
-          "border-radius": isFlat ? "0" : "999px",
-          background: isFlat ? "var(--surface)" : "var(--input-bg)",
-          color: "var(--text)",
-          "font-size": "12px",
-          gap: "6px",
-          width: "auto",
-          "box-shadow": isFlat ? "none" : "0 1px 2px rgba(0,0,0,.05)",
-          margin: "0 0 0 8px",
-          float: "none"
-        }).forEach(([k, v]) => btn.style.setProperty(k, v, "important"));
-      } catch (e) {
-        console.warn("[URP++] clean entry", e);
-      }
-    }
-    __name(injectCleanEntry, "injectCleanEntry");
-    window.__urpppCleanMode = {
-      open: openCleanMode,
-      close: closeCleanMode,
-      inject: injectCleanEntry,
-      refresh: refreshCleanPersonalDisplay,
-      scoreToGpa,
-      summarizeCourses
-    };
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", () => setTimeout(injectCleanEntry, 200));
-    } else setTimeout(injectCleanEntry, 200);
-    ;
-    [600, 1500, 3e3].forEach((ms) => setTimeout(injectCleanEntry, ms));
+    });
+    window.__urpppCleanMode = cleanModeApi;
     function init() {
       if (!document.body) {
         setTimeout(init, 10);
