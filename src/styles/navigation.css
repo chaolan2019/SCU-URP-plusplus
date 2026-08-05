@@ -1,0 +1,753 @@
+      /* 导航：顶栏、侧栏、面包屑（navigation） */
+      /* 顶栏 —— 基于真实 DOM */
+      .navbar.navbar-default,
+      .navbar.navbar-default.navbar-fixed-top,
+      .navbar-default {
+        background: var(--surface) !important;
+        border: none !important;
+        box-shadow: var(--shadow) !important;
+        min-height: 45px !important;
+        z-index: 1100 !important;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+      }
+      .navbar.navbar-default .navbar-brand,
+      .navbar-default .navbar-brand {
+        color: var(--text) !important;
+        text-shadow: none !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        height: 45px !important;
+        line-height: 45px !important;
+        vertical-align: middle !important;
+      }
+      .navbar-header {
+        display: flex !important;
+        align-items: center !important;
+        min-height: 45px !important;
+      }
+      /* 顶栏主题色切换 */
+      #urppp-nav-theme {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        margin-left: 12px !important;
+        height: 100% !important;
+        min-height: 36px !important;
+        vertical-align: middle !important;
+        position: relative !important;
+        top: 0 !important;
+        transform: none !important;
+        z-index: 20 !important;
+        line-height: 1 !important;
+      }
+      #urppp-nav-theme .urppp-nav-dot,
+      #urppp-nav-theme button.urppp-nav-dot,
+      #urppp-clean-root .uc-top-theme .urppp-nav-dot,
+      #urppp-clean-root .uc-top-theme button.urppp-nav-dot {
+        width: 16px !important;
+        height: 16px !important;
+        min-width: 16px !important;
+        min-height: 16px !important;
+        border-radius: 50% !important;
+        border: 2px solid var(--border) !important;
+        box-sizing: border-box !important;
+        cursor: pointer !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex: 0 0 16px !important;
+        box-shadow: none !important;
+        transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease !important;
+        background-clip: padding-box !important;
+        -webkit-appearance: none !important;
+        appearance: none !important;
+        vertical-align: middle !important;
+        position: relative !important;
+        top: 0 !important;
+        line-height: 0 !important;
+        font-size: 0 !important;
+        overflow: hidden !important;
+        text-indent: 0 !important;
+      }
+      /* 动态配色渐变点：避免被 .btn 全局规则压成胶囊/透明边 */
+      #urppp-nav-theme .urppp-nav-dot[data-theme="scu-red"],
+      #urppp-clean-root .uc-top-theme .urppp-nav-dot[data-theme="scu-red"] {
+        border-radius: 50% !important;
+        border: 2px solid var(--border) !important;
+        background-size: cover !important;
+        background-repeat: no-repeat !important;
+      }
+      #urppp-nav-theme .urppp-nav-dot:hover {
+        transform: scale(1.08) !important;
+        border-color: var(--text-muted) !important;
+      }
+      #urppp-nav-theme .urppp-nav-dot.ac {
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 3px var(--ring) !important;
+      }
+      #urppp-nav-theme .urppp-nav-settings {
+        width: 22px !important;
+        height: 22px !important;
+        border-radius: var(--radius-sm) !important;
+        border: none !important;
+        background: transparent !important;
+        color: var(--text-secondary) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        padding: 0 !important;
+        margin: 0 0 0 4px !important;
+        box-shadow: none !important;
+        transition: color .15s ease, background .15s ease, transform .15s ease !important;
+        vertical-align: middle !important;
+      }
+      #urppp-nav-theme .urppp-nav-settings:hover {
+        color: var(--primary) !important;
+        background: var(--ring) !important;
+        transform: scale(1.05) !important;
+      }
+      #urppp-nav-theme .urppp-nav-settings:focus {
+        outline: none !important;
+        box-shadow: 0 0 0 3px var(--ring) !important;
+      }
+      #urppp-nav-theme .urppp-nav-settings svg {
+        display: block !important;
+        width: 14px !important;
+        height: 14px !important;
+      }
+
+
+      /* 导航项 */
+      .ace-nav { margin: 0 !important; }
+      .ace-nav > li {
+        text-align: left !important;
+        vertical-align: middle !important;
+        background: transparent !important;
+        border: none !important;
+      }
+      .ace-nav > li > a {
+        background: transparent !important;
+        color: var(--text-secondary) !important;
+        border-radius: var(--radius-sm) !important;
+        padding: 7px 10px !important;
+        line-height: 1.4 !important;
+        height: auto !important;
+        display: inline-flex !important;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap !important;
+        transition: background .15s;
+      }
+      .ace-nav > li > a:hover,
+      .ace-nav > li.open > a {
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+        box-shadow: none !important;
+      }
+
+      /* 覆盖 ACE 颜色类 */
+      #navbar .ace-nav > li.green > a,
+      #navbar .ace-nav > li.grey > a,
+      #navbar .ace-nav > li.light-red > a,
+      #navbar .ace-nav > li.light-blue > a,
+      #navbar .ace-nav > li.green.open > a,
+      #navbar .ace-nav > li.grey.open > a,
+      #navbar .ace-nav > li.light-red.open > a,
+      #navbar .ace-nav > li.light-blue.open > a {
+        background: transparent !important;
+        color: var(--text-secondary) !important;
+      }
+      #navbar .ace-nav > li.green > a:hover,
+      #navbar .ace-nav > li.grey > a:hover,
+      #navbar .ace-nav > li.light-red > a:hover,
+      #navbar .ace-nav > li.light-blue > a:hover {
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+      }
+
+      /* 图标统一颜色 */
+      #navbar .ace-nav > li > a > .ace-icon,
+      #navbar .ace-nav > li > a > .glyphicon {
+        color: var(--text-secondary) !important;
+        font-size: 15px;
+        transition: color .15s;
+      }
+      #navbar .ace-nav > li > a:hover > .ace-icon,
+      #navbar .ace-nav > li > a:hover > .glyphicon,
+      #navbar .ace-nav > li.open > a > .ace-icon,
+      #navbar .ace-nav > li.open > a > .glyphicon { color: var(--text) !important; }
+
+      /* 强制所有顶栏项对齐 */
+      #navbar .ace-nav > li {
+        display: inline-block !important;
+        vertical-align: middle !important;
+        text-align: left !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      #navbar .ace-nav > li > a {
+        display: inline-flex !important;
+        align-items: center !important;
+        height: 36px !important;
+        padding: 0 4px !important;
+        flex-wrap: nowrap !important;
+        vertical-align: middle !important;
+      }
+      #navbar .ace-nav > li > a > .ace-icon,
+      #navbar .ace-nav > li > a > .glyphicon,
+      #navbar .ace-nav > li > a > .fa {
+        top: auto !important;
+        vertical-align: middle !important;
+        line-height: 1 !important;
+        margin-top: 0 !important;
+      }
+
+      /* 限制搜索容器宽度 */
+      #navbar #intellegenceUDiv {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 32px !important;
+        height: 36px !important;
+        vertical-align: middle !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      /* 搜索按钮向右微调，靠近客服 */
+      #navbar #intellegenceUDiv #clickdiv {
+        transform: translateX(42px) !important;
+      }
+      #intellegenceUDiv > .nav-search { position: absolute !important; right: 34px !important; top: 50% !important; transform: translateY(-50%) !important; }
+
+      /* 用户项：头像和文字一行 */
+      #navbar .ace-nav > li.light-blue > a {
+        display: inline-flex !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        gap: 6px !important;
+      }
+      #navbar .ace-nav > li.light-blue > a .user-info {
+        margin-top: -12px !important;
+      }
+      #navbar .ace-nav > li.light-blue > a .nav-user-photo {
+        margin-right: 6px;
+        vertical-align: middle !important;
+      }
+      #navbar .ace-nav > li.light-blue > a .user-info {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px;
+        max-width: none !important;
+        white-space: nowrap !important;
+        color: var(--text-secondary) !important;
+        line-height: 1 !important;
+        vertical-align: middle !important;
+      }
+      #navbar .ace-nav > li.light-blue > a .user-info * {
+        display: inline !important;
+        white-space: nowrap !important;
+        color: inherit !important;
+        vertical-align: middle !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      #navbar .ace-nav > li.light-blue > a .user-info small { color: var(--text-muted) !important; font-size: inherit !important; }
+
+      /* 头像：中间截取矩形再裁圆 */
+      #navbar .ace-nav .nav-user-photo {
+        width: 30px !important;
+        height: 30px !important;
+        border-radius: 50% !important;
+        object-fit: cover !important;
+        object-position: center center !important;
+        border: 2px solid var(--border) !important;
+        margin-right: 6px;
+        flex-shrink: 0;
+        vertical-align: middle !important;
+      }
+
+      /* 搜索按钮 #clickdiv */
+      #clickdiv {
+        background: transparent !important;
+        color: var(--text-secondary) !important;
+        position: relative !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 32px !important;
+        height: 32px !important;
+        border-radius: var(--radius-sm) !important;
+        line-height: 1 !important;
+        transition: background .15s;
+        z-index: 30 !important;
+      }
+      #clickdiv:hover { background: var(--input-bg) !important; color: var(--text) !important; }
+      #clickdiv #clicki,
+      #clickdiv .fa-search {
+        color: var(--text-secondary) !important;
+        margin-top: 0 !important;
+        transition: color .15s;
+      }
+      #clickdiv:hover #clicki,
+      #clickdiv:hover .fa-search { color: var(--text) !important; }
+
+      /* 搜索表单 —— 在按钮左侧紧邻展开，无背景卡片 */
+      #form-search.nav-search {
+        position: absolute !important;
+        right: 40px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        margin: 0 !important;
+        z-index: 10 !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        overflow: hidden !important;
+        padding: 0 !important;
+        transition: width .2s ease, opacity .2s ease;
+      }
+      #form-search.nav-search[style*="width: 0px"] {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #form-search.nav-search .form-search,
+      #form-search.nav-search .input-icon {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+      }
+      #form-search.nav-search .nav-search-input,
+      input#search-input.nav-search-input {
+        background: var(--input-bg) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text) !important;
+        border-radius: var(--radius-sm) !important;
+        height: 32px !important;
+        padding: 0 12px !important;
+        line-height: 32px !important;
+      }
+      #form-search.nav-search .nav-search-input:focus { border-color: var(--border-focus) !important; box-shadow: 0 0 0 3px var(--ring) !important; }
+      #form-search.nav-search .ace-icon.fa-search { color: var(--text-secondary) !important; }
+      #form-search.nav-search .nav-search-input:focus + .ace-icon.fa-search { color: var(--text) !important; }
+
+      /* 用户下拉菜单 */
+      .ace-nav > li.light-blue .dropdown-menu {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: var(--shadow) !important;
+        border-radius: var(--radius-sm) !important;
+      }
+      .ace-nav > li.light-blue .dropdown-menu > li > a {
+        color: var(--text-secondary) !important;
+        background: transparent !important;
+        border-radius: 0 !important;
+      }
+      .ace-nav > li.light-blue .dropdown-menu > li > a:hover {
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+      }
+      .ace-nav > li.light-blue .dropdown-menu .divider { background: var(--border) !important; }
+
+      /* 侧边栏 —— Hanako 风格完全重构 */
+      :root { --urppp-navbar-height: 45px; }
+      /* 内容左边距只跟随侧栏状态，不跟随汉堡按钮 */
+      .sidebar:not(.menu-min) { width: 260px !important; }
+      .sidebar.menu-min,
+      .sidebar.menu-min.display,
+      body.menu-min .sidebar,
+      body.menu-min .sidebar.display {
+        width: 50px !important;
+        min-width: 50px !important;
+        max-width: 50px !important;
+      }
+      .sidebar:not(.menu-min) ~ .main-content { margin-left: 260px !important; }
+      .sidebar.menu-min ~ .main-content,
+      body.menu-min .main-content { margin-left: 50px !important; }
+      .main-content {
+        margin-top: var(--urppp-navbar-height) !important;
+        transition: margin-left .25s ease !important;
+      }
+      /* 小屏：侧栏默认隐藏为覆盖层，内容贴左；展开侧栏也不挤占内容 */
+      @media (max-width: 991px) {
+        .sidebar:not(.display) ~ .main-content,
+        .sidebar.menu-min:not(.display) ~ .main-content,
+        .sidebar:not(.menu-min):not(.display) ~ .main-content,
+        body.menu-min .main-content {
+          margin-left: 0 !important;
+        }
+        .sidebar.display ~ .main-content {
+          margin-left: 0 !important; /* 覆盖层模式，不推内容 */
+        }
+        /* 小屏点开汉堡：完整宽度抽屉 */
+        .sidebar.display:not(.menu-min) {
+          display: block !important;
+          position: fixed !important;
+          left: 0 !important;
+          top: var(--urppp-navbar-height) !important;
+          width: 260px !important;
+          min-width: 260px !important;
+          max-width: 260px !important;
+          z-index: 1045 !important;
+          height: calc(100vh - var(--urppp-navbar-height)) !important;
+        }
+        /* 小屏若处于 menu-min，保持 50px，不要被 .display 的 260 盖掉 */
+        .sidebar.display.menu-min,
+        body.menu-min .sidebar.display {
+          display: block !important;
+          position: fixed !important;
+          left: 0 !important;
+          top: var(--urppp-navbar-height) !important;
+          width: 50px !important;
+          min-width: 50px !important;
+          max-width: 50px !important;
+          z-index: 1045 !important;
+          height: calc(100vh - var(--urppp-navbar-height)) !important;
+        }
+      }
+      .navbar.navbar-default.navbar-fixed-top,
+      .navbar-fixed-top,
+      .navbar-fixed-bottom { left: 0 !important; right: 0 !important; }
+      .sidebar {
+        z-index: 1030 !important; /* 低于顶栏，避免盖住 navbar 底边 */
+        top: var(--urppp-navbar-height) !important;
+        height: calc(100vh - var(--urppp-navbar-height)) !important;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+        background: var(--surface) !important;
+        border-right: 1px solid var(--border) !important;
+        border-top: none !important;
+        /* 阴影只向右，不向上侵入顶栏 */
+        box-shadow: 2px 0 10px rgba(15, 23, 42, 0.06) !important;
+        transition: width .25s ease;
+      }
+      .sidebar:before { display: none !important; }
+      .main-content { transition: margin-left .25s ease; }
+      .sidebar .nav-wrap { padding: 0 !important; height: 100% !important; }
+      .sidebar .nav-wrap > div { position: static !important; }
+      .sidebar .ace-scroll.nav-scroll { display: none !important; }
+      #menus { display: none !important; }
+      .sidebar-collapse { display: none !important; }
+
+      /* 侧边栏顶部 header */
+      .urppp-sidebar-header {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 14px 14px 12px;
+        border-bottom: 1px solid var(--border);
+        transition: padding .2s;
+        z-index: 100 !important;
+        background: var(--surface) !important;
+      }
+      #urppp-menus { margin-top: 50px !important; }
+      .urppp-sidebar-toggle {
+        width: 30px;
+        height: 30px;
+        border-radius: var(--radius-sm);
+        background: var(--input-bg);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 15px;
+        transition: all .15s;
+      }
+      .urppp-sidebar-toggle:hover { background: var(--border); color: var(--text); }
+
+      /* 小屏汉堡按钮：贴合主题，不再用 ACE 默认灰/蓝 */
+      /* 桌面隐藏汉堡；仅小屏显示（不要全局 display:flex 常驻） */
+      @media (min-width: 992px) {
+        #menu-toggler,
+        .navbar-toggle.menu-toggler,
+        button.navbar-toggle.menu-toggler,
+        .navbar .menu-toggler {
+          display: none !important;
+        }
+      }
+      @media (max-width: 991px) {
+        #menu-toggler,
+        .navbar-toggle.menu-toggler,
+        button.navbar-toggle.menu-toggler,
+        .navbar .menu-toggler {
+          background: var(--input-bg) !important;
+          border: 1px solid var(--border) !important;
+          border-radius: 10px !important;
+          box-shadow: none !important;
+          padding: 8px 10px !important;
+          margin: 6px 8px !important;
+          min-width: 40px !important;
+          min-height: 36px !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          flex-direction: column !important;
+          gap: 4px !important;
+        }
+      }
+      #menu-toggler:hover,
+      .navbar-toggle.menu-toggler:hover,
+      button.navbar-toggle.menu-toggler:hover {
+        background: color-mix(in srgb, var(--primary) 12%, var(--surface)) !important;
+        border-color: var(--primary) !important;
+      }
+      #menu-toggler:focus,
+      .navbar-toggle.menu-toggler:focus,
+      #menu-toggler:active,
+      .navbar-toggle.menu-toggler:active {
+        outline: none !important;
+        background: color-mix(in srgb, var(--primary) 16%, var(--surface)) !important;
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 3px var(--ring) !important;
+      }
+      #menu-toggler .icon-bar,
+      .navbar-toggle.menu-toggler .icon-bar,
+      .menu-toggler .icon-bar {
+        display: block !important;
+        width: 18px !important;
+        height: 2px !important;
+        margin: 0 !important;
+        background: var(--text) !important;
+        border-radius: 2px !important;
+        opacity: 1 !important;
+        box-shadow: none !important;
+      }
+      #menu-toggler:hover .icon-bar,
+      .navbar-toggle.menu-toggler:hover .icon-bar {
+        background: var(--primary) !important;
+      }
+      /* ACE 有时用伪元素画三条线 */
+      #menu-toggler:before,
+      #menu-toggler:after,
+      .menu-toggler:before,
+      .menu-toggler:after {
+        background: var(--text) !important;
+        border-color: var(--text) !important;
+      }
+
+      /* 新菜单 */
+      #urppp-menus {
+        list-style: none;
+        margin: 50px 0 0 0;
+        padding: 10px 12px 24px;
+        overflow-y: auto;
+        max-height: calc(100vh - 64px);
+      }
+      #urppp-menus::-webkit-scrollbar { width: 4px; }
+      #urppp-menus::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+      .urppp-nav-item { margin: 4px 0; }
+      .urppp-nav-link {
+        display: flex;
+        align-items: center;
+        padding: 11px 13px;
+        border-radius: var(--radius-sm);
+        color: var(--text-secondary);
+        transition: background .15s, color .15s;
+        text-decoration: none;
+        position: relative;
+      }
+      .urppp-nav-link { cursor: default !important; text-decoration: none !important; }
+      .urppp-nav-link .urppp-nav-text { cursor: pointer; }
+      .urppp-nav-link .fa, .urppp-nav-link .ace-icon { pointer-events: none !important; cursor: default !important; }
+      .urppp-nav-link:hover { background: var(--input-bg); color: var(--text); }
+      .urppp-nav-link:hover .urppp-nav-text { text-decoration: underline; }
+      .urppp-nav-item.active > .urppp-nav-link,
+      .urppp-nav-item.open.active > .urppp-nav-link {
+        background: var(--input-bg);
+        color: var(--text);
+        font-weight: 600;
+      }
+      .urppp-nav-link > .fa {
+        width: 22px;
+        text-align: center;
+        margin-right: 11px;
+        font-size: 18px;
+        color: inherit;
+        flex-shrink: 0;
+        transition: margin .25s ease;
+      }
+      .urppp-nav-text {
+        flex: 1;
+        font-size: 15px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        opacity: 1;
+        max-width: 200px;
+        transition: opacity .2s ease, max-width .25s ease;
+      }
+      .urppp-nav-arrow {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-left: 8px;
+        opacity: 1;
+        max-width: 20px;
+        transition: transform .2s, opacity .2s ease, max-width .25s ease;
+        flex-shrink: 0;
+      }
+      .urppp-nav-item.open > .urppp-nav-link .urppp-nav-arrow { transform: rotate(180deg); }
+
+      .urppp-nav-submenu {
+        list-style: none;
+        margin: 0;
+        padding: 0 0 0 20px;
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        transition: max-height .3s cubic-bezier(.4,0,.2,1), opacity .25s ease, padding .3s ease;
+      }
+      .urppp-nav-item.open > .urppp-nav-submenu {
+        max-height: 800px;
+        opacity: 1;
+        padding: 3px 0 3px 20px;
+      }
+      .urppp-nav-submenu .urppp-nav-link { padding: 9px 13px; font-size: 14px; }
+      .urppp-nav-submenu .urppp-nav-submenu { padding-left: 16px; }
+
+      /* 折叠状态 */
+      .sidebar.menu-min .urppp-sidebar-header,
+      body.menu-min .sidebar .urppp-sidebar-header { justify-content: center; padding: 14px 0 12px; }
+      .sidebar.menu-min #urppp-menus,
+      body.menu-min .sidebar #urppp-menus { padding: 10px 6px 24px; }
+      .sidebar.menu-min .urppp-nav-link,
+      body.menu-min .sidebar .urppp-nav-link { padding: 12px 0; justify-content: center; }
+      .sidebar.menu-min .urppp-nav-text,
+      .sidebar.menu-min .urppp-nav-arrow,
+      body.menu-min .sidebar .urppp-nav-text,
+      body.menu-min .sidebar .urppp-nav-arrow {
+        opacity: 0 !important;
+        max-width: 0 !important;
+        width: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        overflow: hidden !important;
+        pointer-events: none !important;
+        display: none !important;
+      }
+      .sidebar.menu-min .urppp-nav-link > .fa,
+      body.menu-min .sidebar .urppp-nav-link > .fa { margin-right: 0; font-size: 18px; }
+      .sidebar.menu-min .urppp-nav-submenu,
+      body.menu-min .sidebar .urppp-nav-submenu { max-height: 0 !important; opacity: 0 !important; display: none !important; }
+
+      /* 面包屑：胶囊路径条，加大字号，与顶栏/侧栏留白 */
+      .breadcrumbs, #breadcrumbs {
+        display: flex !important;
+        align-items: center !important;
+        background: transparent !important;
+        border: none !important;
+        border-bottom: none !important;
+        box-shadow: none !important;
+        padding: 16px 64px 12px !important;
+        min-height: 0 !important;
+        line-height: 1.4 !important;
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        right: auto !important;
+        z-index: 1 !important;
+        margin: 0 !important;
+      }
+      .breadcrumbs.breadcrumbs-fixed {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        right: auto !important;
+      }
+      .main-content { padding-top: 0 !important; }
+      body.breadcrumbs-fixed .main-content { padding-top: 0 !important; }
+      .breadcrumb {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius) !important;
+        margin: 0 !important;
+        padding: 10px 16px !important;
+        display: inline-flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        gap: 2px !important;
+        font-size: 16px !important;
+        list-style: none !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+        width: auto !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      .breadcrumb > li {
+        color: var(--text-secondary) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        float: none !important;
+        padding: 0 !important;
+        text-shadow: none !important;
+        font-size: 16px !important;
+        line-height: 1.35 !important;
+      }
+      .breadcrumb > li + li:before {
+        content: '' !important;
+        display: inline-block !important;
+        width: 6px !important;
+        height: 6px !important;
+        margin: 0 10px !important;
+        border-right: 1.5px solid var(--text-muted) !important;
+        border-top: 1.5px solid var(--text-muted) !important;
+        transform: rotate(45deg) !important;
+        opacity: 0.7 !important;
+        padding: 0 !important;
+        float: none !important;
+        font-size: 0 !important;
+      }
+      .breadcrumb > li > a,
+      .breadcrumb > li > span,
+      .breadcrumb > li .urppp-bc-label {
+        color: inherit !important;
+        text-decoration: none !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 7px !important;
+        font-size: 16px !important;
+        padding: 4px 10px !important;
+        border-radius: var(--radius-sm) !important;
+        transition: background .15s, color .15s !important;
+      }
+      .breadcrumb > li > a:hover,
+      .breadcrumb > li:not(.active):not(:last-child) .urppp-bc-label:hover {
+        color: var(--primary) !important;
+        background: var(--input-bg) !important;
+      }
+      .breadcrumb > li.active,
+      .breadcrumb > li:last-child {
+        color: var(--primary) !important;
+        font-weight: 600 !important;
+        font-size: 16px !important;
+      }
+      .breadcrumb > li.active > span,
+      .breadcrumb > li.active .urppp-bc-label,
+      .breadcrumb > li:last-child > span,
+      .breadcrumb > li:last-child .urppp-bc-label {
+        background: var(--ring) !important;
+        color: var(--primary) !important;
+        font-weight: 600 !important;
+      }
+      .breadcrumb .home-icon,
+      .breadcrumb .fa-home {
+        color: var(--primary) !important;
+        margin-right: 0 !important;
+        font-size: 16px !important;
+      }
+      .breadcrumb > li.hide-item { display: none !important; }
+

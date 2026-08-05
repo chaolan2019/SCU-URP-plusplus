@@ -74,6 +74,7 @@ import scheduleCardStyles from '../styles/schedule-cards.css';
 import scheduleExportStyles from '../styles/schedule-export.css';
 import settingsStyles from '../styles/settings.css';
 import tableBeautifyStyles from '../styles/table-beautify.css';
+import navigationStyles from '../styles/navigation.css';
 import { createBreadcrumbController } from '../features/navigation/breadcrumb.js';
 import { createSidebarController } from '../features/navigation/sidebar.js';
 import { createNavbarController } from '../features/navigation/navbar.js';
@@ -5983,6 +5984,14 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       document.head.appendChild(tableBeautifyStyle);
     }
     tableBeautifyStyle.textContent = tableBeautifyStyles;
+    // 导航样式紧随其后：与 internal 的覆盖关系保持不变
+    let navigationStyle = document.getElementById('urppp-navigation-style');
+    if (!navigationStyle) {
+      navigationStyle = document.createElement('style');
+      navigationStyle.id = 'urppp-navigation-style';
+      document.head.appendChild(navigationStyle);
+    }
+    navigationStyle.textContent = navigationStyles;
     let scheduleCardStyle = document.getElementById('urppp-schedule-card-style');
     if (!scheduleCardStyle) {
       scheduleCardStyle = document.createElement('style');
