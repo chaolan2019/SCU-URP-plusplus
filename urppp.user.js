@@ -2130,6 +2130,99 @@
   }
   __name(createTableWrapper, "createTableWrapper");
 
+  // src/features/table-beautify/inline-style-scrub.js
+  function isLightInlineColor(value) {
+    const color = String(value || "").trim().toLowerCase();
+    if (!color || color === "transparent" || color === "inherit" || color === "initial") return false;
+    if (/#(?:f{3,6}|e[0-9a-f]{5}|d[89a-f][0-9a-f]{4}|c[89a-f][0-9a-f]{4})/i.test(color)) return true;
+    const match = color.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+    if (!match) return false;
+    const red = Number(match[1]);
+    const green = Number(match[2]);
+    const blue = Number(match[3]);
+    return (red + green + blue) / 3 >= 200;
+  }
+  __name(isLightInlineColor, "isLightInlineColor");
+  function scrubLightInlineBackground(element) {
+    if (!element?.style) return;
+    const inlineStyle = element.getAttribute("style") || "";
+    if (!inlineStyle || !/background/i.test(inlineStyle)) return;
+    const background = element.style.backgroundColor || element.style.background || "";
+    if (isLightInlineColor(background) || /background(-color|-image)?\s*:/i.test(inlineStyle)) {
+      element.style.removeProperty("background");
+      element.style.removeProperty("background-color");
+      element.style.removeProperty("background-image");
+    }
+    ["borderColor", "borderTopColor", "borderRightColor", "borderBottomColor", "borderLeftColor"].forEach((property) => {
+      const value = element.style[property];
+      if (!value || !isLightInlineColor(value)) return;
+      element.style.removeProperty(property.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`));
+    });
+    if (/border(-color)?\s*:/i.test(inlineStyle) && /#e6e6e6|#eee|#ddd|#ccc/i.test(inlineStyle)) {
+      element.style.removeProperty("border-color");
+      element.style.removeProperty("border-top-color");
+      element.style.removeProperty("border-right-color");
+      element.style.removeProperty("border-bottom-color");
+      element.style.removeProperty("border-left-color");
+    }
+  }
+  __name(scrubLightInlineBackground, "scrubLightInlineBackground");
+  function createTableInlineStyleScrubber({
+    isNativePdfIsolationActive: isNativePdfIsolationActive2,
+    documentRef = document,
+    windowRef = window,
+    MutationObserverRef = MutationObserver
+  }) {
+    function scrubTableHeaderInlineBg() {
+      if (isNativePdfIsolationActive2()) return;
+      try {
+        const htmlDark = documentRef.documentElement.classList.contains("urppp-theme-dark");
+        const bodyDark = documentRef.body?.classList.contains("urppp-dark");
+        if (!htmlDark && !bodyDark) return;
+        documentRef.querySelectorAll(
+          "table, table thead, table thead tr, table thead th, table thead td, table tbody, table tbody tr, table tbody td, table tbody th, .table-box, .table-box table, .table-box td, .table-box th"
+        ).forEach(scrubLightInlineBackground);
+      } catch (_) {
+      }
+    }
+    __name(scrubTableHeaderInlineBg, "scrubTableHeaderInlineBg");
+    function scheduleScrubTableInlineBg() {
+      [0, 200, 800, 1600].forEach((delay) => setTimeout(() => {
+        try {
+          scrubTableHeaderInlineBg();
+        } catch (_) {
+        }
+      }, delay));
+      try {
+        const host = documentRef.querySelector(".page-content, #page-content-template, .main-content") || documentRef.body;
+        if (!host) return;
+        const current = windowRef.__urpppTableScrubObs;
+        if (current && current.root === host && host.isConnected) return;
+        if (current?.observer) current.observer.disconnect();
+        const observer = new MutationObserverRef(() => {
+          clearTimeout(windowRef.__urpppTableScrubTimer);
+          windowRef.__urpppTableScrubTimer = setTimeout(() => {
+            try {
+              scrubTableHeaderInlineBg();
+            } catch (_) {
+            }
+          }, 120);
+        });
+        observer.observe(host, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ["style", "class"]
+        });
+        windowRef.__urpppTableScrubObs = { root: host, observer };
+      } catch (_) {
+      }
+    }
+    __name(scheduleScrubTableInlineBg, "scheduleScrubTableInlineBg");
+    return { scheduleScrubTableInlineBg, scrubTableHeaderInlineBg };
+  }
+  __name(createTableInlineStyleScrubber, "createTableInlineStyleScrubber");
+
   // src/features/schedule-export/native-pdf.js
   var NATIVE_PDF_ID_MAP = {
     "page-content-template": "urppp-pdf-page",
@@ -16498,82 +16591,9 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       });
     }
     __name(pinNoticeRowSurface, "pinNoticeRowSurface");
-    function isLightInlineColor(val) {
-      const s = String(val || "").trim().toLowerCase();
-      if (!s || s === "transparent" || s === "inherit" || s === "initial") return false;
-      if (/#(?:f{3,6}|e[0-9a-f]{5}|d[89a-f][0-9a-f]{4}|c[89a-f][0-9a-f]{4})/i.test(s)) return true;
-      const m = s.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
-      if (m) {
-        const r = +m[1], g = +m[2], b = +m[3];
-        return (r + g + b) / 3 >= 200;
-      }
-      return false;
-    }
-    __name(isLightInlineColor, "isLightInlineColor");
-    function scrubLightInlineBg(el) {
-      if (!el || !el.style) return;
-      const st = el.getAttribute("style") || "";
-      if (!st || !/background/i.test(st)) return;
-      const bg = el.style.backgroundColor || el.style.background || "";
-      if (isLightInlineColor(bg) || /background(-color|-image)?\s*:/i.test(st)) {
-        el.style.removeProperty("background");
-        el.style.removeProperty("background-color");
-        el.style.removeProperty("background-image");
-      }
-      ;
-      ["borderColor", "borderTopColor", "borderRightColor", "borderBottomColor", "borderLeftColor"].forEach((k) => {
-        const v = el.style[k];
-        if (v && isLightInlineColor(v)) el.style.removeProperty(k.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase()));
-      });
-      if (/border(-color)?\s*:/i.test(st) && /#e6e6e6|#eee|#ddd|#ccc/i.test(st)) {
-        el.style.removeProperty("border-color");
-        el.style.removeProperty("border-top-color");
-        el.style.removeProperty("border-right-color");
-        el.style.removeProperty("border-bottom-color");
-        el.style.removeProperty("border-left-color");
-      }
-    }
-    __name(scrubLightInlineBg, "scrubLightInlineBg");
-    function scrubTableHeaderInlineBg() {
-      if (isNativePdfIsolationActive()) return;
-      try {
-        if (!document.documentElement.classList.contains("urppp-theme-dark") && !(document.body && document.body.classList.contains("urppp-dark"))) return;
-        document.querySelectorAll(
-          "table, table thead, table thead tr, table thead th, table thead td, table tbody, table tbody tr, table tbody td, table tbody th, .table-box, .table-box table, .table-box td, .table-box th"
-        ).forEach(scrubLightInlineBg);
-      } catch (_) {
-      }
-    }
-    __name(scrubTableHeaderInlineBg, "scrubTableHeaderInlineBg");
-    function scheduleScrubTableInlineBg() {
-      ;
-      [0, 200, 800, 1600].forEach((ms) => setTimeout(() => {
-        try {
-          scrubTableHeaderInlineBg();
-        } catch (_) {
-        }
-      }, ms));
-      try {
-        const host = document.querySelector(".page-content, #page-content-template, .main-content") || document.body;
-        if (!host) return;
-        const current = window.__urpppTableScrubObs;
-        if (current && current.root === host && host.isConnected) return;
-        if (current && current.observer) current.observer.disconnect();
-        const observer = new MutationObserver(() => {
-          clearTimeout(window.__urpppTableScrubTimer);
-          window.__urpppTableScrubTimer = setTimeout(() => {
-            try {
-              scrubTableHeaderInlineBg();
-            } catch (_) {
-            }
-          }, 120);
-        });
-        observer.observe(host, { childList: true, subtree: true, attributes: true, attributeFilter: ["style", "class"] });
-        window.__urpppTableScrubObs = { root: host, observer };
-      } catch (_) {
-      }
-    }
-    __name(scheduleScrubTableInlineBg, "scheduleScrubTableInlineBg");
+    const { scheduleScrubTableInlineBg, scrubTableHeaderInlineBg } = createTableInlineStyleScrubber({
+      isNativePdfIsolationActive
+    });
     function scrubNoticeInlineBg(root) {
       try {
         const scope = root || document;

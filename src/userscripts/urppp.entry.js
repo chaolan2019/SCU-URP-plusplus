@@ -57,6 +57,7 @@ import {
   isNoticePageContext as detectNoticePageContext,
 } from '../features/table-beautify/table-classification.js';
 import { createTableWrapper } from '../features/table-beautify/table-wrapper.js';
+import { createTableInlineStyleScrubber } from '../features/table-beautify/inline-style-scrub.js';
 import {
   cloneNativePdfStage,
   exportNativePdfIsolated,
@@ -5998,78 +5999,9 @@ import settingsStyles from '../styles/settings.css';
     });
   }
 
-  function isLightInlineColor(val) {
-    const s = String(val || '').trim().toLowerCase();
-    if (!s || s === 'transparent' || s === 'inherit' || s === 'initial') return false;
-    // 常见评教/ACE 浅色：#EDF3F4 / #e6e6e6 / #fff / rgb 高亮
-    if (/#(?:f{3,6}|e[0-9a-f]{5}|d[89a-f][0-9a-f]{4}|c[89a-f][0-9a-f]{4})/i.test(s)) return true;
-    const m = s.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
-    if (m) {
-      const r = +m[1], g = +m[2], b = +m[3];
-      // 浅灰/浅青底：平均亮度高
-      return (r + g + b) / 3 >= 200;
-    }
-    return false;
-  }
-
-  function scrubLightInlineBg(el) {
-    if (!el || !el.style) return;
-    const st = el.getAttribute('style') || '';
-    if (!st || !/background/i.test(st)) return;
-    const bg = el.style.backgroundColor || el.style.background || '';
-    // 有 background 内联且偏浅 / 或显式写了 background* 属性，一律清掉交给主题
-    if (isLightInlineColor(bg) || /background(-color|-image)?\s*:/i.test(st)) {
-      el.style.removeProperty('background');
-      el.style.removeProperty('background-color');
-      el.style.removeProperty('background-image');
-    }
-    // 边框浅色也清
-    ;['borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor'].forEach((k) => {
-      const v = el.style[k];
-      if (v && isLightInlineColor(v)) el.style.removeProperty(k.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase()));
-    });
-    // 简化：统一清 border-color 系列
-    if (/border(-color)?\s*:/i.test(st) && /#e6e6e6|#eee|#ddd|#ccc/i.test(st)) {
-      el.style.removeProperty('border-color');
-      el.style.removeProperty('border-top-color');
-      el.style.removeProperty('border-right-color');
-      el.style.removeProperty('border-bottom-color');
-      el.style.removeProperty('border-left-color');
-    }
-  }
-
-  function scrubTableHeaderInlineBg() {
-    if (isNativePdfIsolationActive()) return;
-    try {
-      if (!document.documentElement.classList.contains('urppp-theme-dark') &&
-          !(document.body && document.body.classList.contains('urppp-dark'))) return;
-      // 表头 + 评教 table-box 整表浅色内联
-      document.querySelectorAll(
-        'table, table thead, table thead tr, table thead th, table thead td, table tbody, table tbody tr, table tbody td, table tbody th, .table-box, .table-box table, .table-box td, .table-box th'
-      ).forEach(scrubLightInlineBg);
-    } catch (_) {}
-  }
-
-  function scheduleScrubTableInlineBg() {
-    ;[0, 200, 800, 1600].forEach((ms) => setTimeout(() => {
-      try { scrubTableHeaderInlineBg(); } catch (_) {}
-    }, ms));
-    try {
-      const host = document.querySelector('.page-content, #page-content-template, .main-content') || document.body;
-      if (!host) return;
-      const current = window.__urpppTableScrubObs;
-      if (current && current.root === host && host.isConnected) return;
-      if (current && current.observer) current.observer.disconnect();
-      const observer = new MutationObserver(() => {
-        clearTimeout(window.__urpppTableScrubTimer);
-        window.__urpppTableScrubTimer = setTimeout(() => {
-          try { scrubTableHeaderInlineBg(); } catch (_) {}
-        }, 120);
-      });
-      observer.observe(host, { childList: true, subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
-      window.__urpppTableScrubObs = { root: host, observer };
-    } catch (_) {}
-  }
+  const { scheduleScrubTableInlineBg, scrubTableHeaderInlineBg } = createTableInlineStyleScrubber({
+    isNativePdfIsolationActive,
+  });
 
   function scrubNoticeInlineBg(root) {
     try {
