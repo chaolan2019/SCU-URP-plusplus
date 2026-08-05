@@ -303,9 +303,11 @@ export function createCleanModeRenderer({ state, deps }) {
   }
 
   return {
+    metricHtml,
     occupancyHtml,
     render,
     renderScheduleBoard,
+    roomPickerHtml,
     scheduleRender,
   };
 }
