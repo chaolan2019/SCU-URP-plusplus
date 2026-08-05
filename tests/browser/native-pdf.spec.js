@@ -5,6 +5,9 @@ test('native PDF capture removes theme residue and restores it after every expor
   const { pageErrors } = await loadUrpFixture(page);
   await expect(page.locator('#urppp-native-schedule-export')).toHaveCount(1);
   const card = page.locator('#courseTable .class_div').first();
+  await card.evaluate(async (element) => {
+    await Promise.all(element.getAnimations().map((animation) => animation.finished.catch(() => {})));
+  });
   const before = await card.evaluate((element) => ({
     radius: getComputedStyle(element).borderRadius,
     shadow: getComputedStyle(element).boxShadow,
