@@ -10,6 +10,7 @@ import { buildSettingsPanelHtml } from '../src/features/settings/panel-template.
 const entryUrl = new URL('../src/userscripts/urppp.entry.js', import.meta.url);
 const controllerUrl = new URL('../src/features/settings/panel-controller.js', import.meta.url);
 const featureStylesUrl = new URL('../src/styles/features.css', import.meta.url);
+const internalStylesUrl = new URL('../src/styles/internal.css', import.meta.url);
 const settingsStylesUrl = new URL('../src/styles/settings.css', import.meta.url);
 
 function classListFor(name, calls) {
@@ -20,11 +21,14 @@ function classListFor(name, calls) {
 }
 
 test('settings owns privacy, identity, and JSON editor styles', async () => {
-  const [featureStyles, settingsStyles] = await Promise.all([
+  const [featureStyles, internalStyles, settingsStyles] = await Promise.all([
     readFile(featureStylesUrl, 'utf8'),
+    readFile(internalStylesUrl, 'utf8'),
     readFile(settingsStylesUrl, 'utf8'),
   ]);
   assert.doesNotMatch(featureStyles, /#urppp-settings-panel/);
+  assert.doesNotMatch(internalStyles, /#urppp-settings-mask/);
+  assert.match(settingsStyles, /#urppp-settings-mask\.open/);
   assert.match(settingsStyles, /#urppp-settings-panel \.urppp-privacy-groups/);
   assert.match(settingsStyles, /#urppp-settings-panel \.urppp-identity-editor/);
   assert.match(settingsStyles, /#urppp-settings-panel #urppp-set-json-mapping/);
