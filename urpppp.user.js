@@ -458,6 +458,1222 @@
   }
   __name(compareVersions, "compareVersions");
 
+  // src/assist/login.js
+  function createLoginAssist({ config, storage, deps }) {
+    const { getBool, setVal } = storage;
+    const { LOGIN, LOGIN_FAILURE_LIMIT: LOGIN_FAILURE_LIMIT2, DEFAULT_OCR_EXAMPLE: DEFAULT_OCR_EXAMPLE2 } = deps.constants;
+    function buildLoginSection() {
+      const c = config.loginConf();
+      const sec = document.createElement("section");
+      sec.className = "urppp-set-sec urpppp-sec";
+      sec.id = "urpppp-login-sec";
+      sec.innerHTML = `
+      <h3>登录助手</h3>
+      <p class="urppp-set-tip">自动填写账号密码、OCR 识别验证码。同一次自动登录过程连续失败 ${LOGIN_FAILURE_LIMIT2} 次后暂停提交，由用户手动填写验证码并接管登录。</p>
+      <div class="urpppp-switches">
+        <button type="button" class="urppp-set-follow" id="urpppp-login-enabled">功能：${c.enabled ? "开" : "关"}</button>
+        <button type="button" class="urppp-set-follow" id="urpppp-login-auto">识别后自动登录：${c.autoSubmit ? "开" : "关"}</button>
+        <button type="button" class="urppp-set-follow" id="urpppp-login-share">教务/统一认证共用账密：${c.shareCred ? "开" : "关"}</button>
+        <button type="button" class="urppp-set-follow" id="urpppp-login-persist-password">持久保存密码：${c.passwordStorage === "persistent" ? "开" : "关"}</button>
+      </div>
+      <div class="urpppp-grid">
+        <div class="urpppp-row"><label>OCR 服务</label><input type="url" id="urpppp-login-ocr" placeholder="${DEFAULT_OCR_EXAMPLE2}" value="${deps.escapeAttr(c.ocrUrl)}" spellcheck="false" /></div>
+        <div class="urpppp-row"><label>提交延迟(ms)</label><input type="number" id="urpppp-login-delay" min="0" step="50" value="${deps.escapeAttr(String(c.submitDelay))}" /></div>
+        <div class="urpppp-row"><label>教务学号</label><input type="text" id="urpppp-login-zhjw-user" value="${deps.escapeAttr(c.zhjwUser)}" autocomplete="username" /></div>
+        <div class="urpppp-row"><label>教务密码</label><input type="password" id="urpppp-login-zhjw-pass" autocomplete="current-password" /></div>
+        <div class="urpppp-row urpppp-cas-user"><label>统一认证账号</label><input type="text" id="urpppp-login-cas-user" value="${deps.escapeAttr(c.casUser)}" /></div>
+        <div class="urpppp-row urpppp-cas-pass"><label>统一认证密码</label><input type="password" id="urpppp-login-cas-pass" /></div>
+      </div>
+      <p class="urpppp-tip">默认不保存密码；开关关闭时只保存学号，登录请使用浏览器密码管理器或手动输入。已有旧密码会兼容读取，关闭开关并保存后立即清除。</p>
+      <p class="urpppp-tip">可选 OCR：<code>${DEFAULT_OCR_EXAMPLE2}</code> · POST <code>{"image":"base64"}</code> → <code>{"status":"success","code":"..."}</code></p>
+      <p class="urpppp-tip">告示：OCR 服务会接收验证码图片，但插件不会向 OCR 服务发送学号或密码。该服务并非学校官方服务，请自行判断并承担使用风险。</p>
+      <div class="urpppp-actions">
+        <button type="button" class="urppp-set-btn" id="urpppp-login-save">保存登录设置</button>
+        <button type="button" class="urppp-set-btn ghost" id="urpppp-login-clear">清除账密</button>
+      </div>
+      <div class="urpppp-status" id="urpppp-login-status"></div>
+    `;
+      sec.querySelector("#urpppp-login-zhjw-pass").value = c.zhjwPass;
+      sec.querySelector("#urpppp-login-cas-pass").value = c.casPass;
+      return sec;
+    }
+    __name(buildLoginSection, "buildLoginSection");
+    function bindLoginSection(sec) {
+      let enabled = getBool(LOGIN.enabled, true);
+      let autoSubmit = getBool(LOGIN.autoSubmit, true);
+      let shareCred = getBool(LOGIN.shareCred, true);
+      let persistPassword = config.loginConf().passwordStorage === "persistent";
+      const enabledBtn = sec.querySelector("#urpppp-login-enabled");
+      const autoBtn = sec.querySelector("#urpppp-login-auto");
+      const shareBtn = sec.querySelector("#urpppp-login-share");
+      const persistBtn = sec.querySelector("#urpppp-login-persist-password");
+      const toggleCas = /* @__PURE__ */ __name(() => {
+        sec.querySelectorAll(".urpppp-cas-user,.urpppp-cas-pass").forEach((r) => {
+          r.style.display = shareCred ? "none" : "grid";
+        });
+      }, "toggleCas");
+      deps.syncToggle(enabledBtn, enabled, "功能：开", "功能：关");
+      deps.syncToggle(autoBtn, autoSubmit, "识别后自动登录：开", "识别后自动登录：关");
+      deps.syncToggle(shareBtn, shareCred, "教务/统一认证共用账密：开", "教务/统一认证共用账密：关");
+      deps.syncToggle(persistBtn, persistPassword, "持久保存密码：开", "持久保存密码：关");
+      toggleCas();
+      enabledBtn.onclick = () => {
+        enabled = !enabled;
+        setVal(LOGIN.enabled, enabled);
+        if (enabled) config.resetLoginGuardState("");
+        deps.syncToggle(enabledBtn, enabled, "功能：开", "功能：关");
+      };
+      autoBtn.onclick = () => {
+        autoSubmit = !autoSubmit;
+        setVal(LOGIN.autoSubmit, autoSubmit);
+        deps.syncToggle(autoBtn, autoSubmit, "识别后自动登录：开", "识别后自动登录：关");
+      };
+      shareBtn.onclick = () => {
+        shareCred = !shareCred;
+        setVal(LOGIN.shareCred, shareCred);
+        deps.syncToggle(shareBtn, shareCred, "教务/统一认证共用账密：开", "教务/统一认证共用账密：关");
+        toggleCas();
+      };
+      persistBtn.onclick = () => {
+        persistPassword = !persistPassword;
+        deps.syncToggle(persistBtn, persistPassword, "持久保存密码：开", "持久保存密码：关");
+      };
+      sec.querySelector("#urpppp-login-save").onclick = () => {
+        setVal(LOGIN.ocrUrl, (sec.querySelector("#urpppp-login-ocr").value || "").trim());
+        setVal(LOGIN.submitDelay, String(Math.max(0, parseInt(sec.querySelector("#urpppp-login-delay").value, 10) || 300)));
+        setVal(LOGIN.zhjwUser, (sec.querySelector("#urpppp-login-zhjw-user").value || "").trim());
+        setVal(LOGIN.zhjwPass, persistPassword ? sec.querySelector("#urpppp-login-zhjw-pass").value || "" : "");
+        setVal(LOGIN.casUser, (sec.querySelector("#urpppp-login-cas-user").value || "").trim());
+        setVal(LOGIN.casPass, persistPassword ? sec.querySelector("#urpppp-login-cas-pass").value || "" : "");
+        setVal(LOGIN.passwordStorage, persistPassword ? "persistent" : "none");
+        setVal(LOGIN.enabled, enabled);
+        setVal(LOGIN.autoSubmit, autoSubmit);
+        setVal(LOGIN.shareCred, shareCred);
+        if (!persistPassword) {
+          sec.querySelector("#urpppp-login-zhjw-pass").value = "";
+          sec.querySelector("#urpppp-login-cas-pass").value = "";
+        }
+        config.resetLoginGuardState("");
+        deps.setStatus("urpppp-login-status", persistPassword ? "登录设置已保存；密码将持久保存在脚本存储中，请确认你接受风险。" : "登录设置已保存；密码未持久化，连续失败计数已清零", "ok");
+      };
+      sec.querySelector("#urpppp-login-clear").onclick = () => {
+        setVal(LOGIN.zhjwUser, "");
+        setVal(LOGIN.zhjwPass, "");
+        setVal(LOGIN.casUser, "");
+        setVal(LOGIN.casPass, "");
+        setVal(LOGIN.passwordStorage, "none");
+        sec.querySelector("#urpppp-login-zhjw-user").value = "";
+        sec.querySelector("#urpppp-login-zhjw-pass").value = "";
+        sec.querySelector("#urpppp-login-cas-user").value = "";
+        sec.querySelector("#urpppp-login-cas-pass").value = "";
+        persistPassword = false;
+        deps.syncToggle(persistBtn, false, "持久保存密码：开", "持久保存密码：关");
+        config.resetLoginGuardState("");
+        deps.setStatus("urpppp-login-status", "已清除账密和连续失败计数", "ok");
+      };
+    }
+    __name(bindLoginSection, "bindLoginSection");
+    const recognizeCaptcha2 = /* @__PURE__ */ __name((base64, ocrUrl) => deps.recognizeCaptchaWithRequest(
+      base64,
+      ocrUrl,
+      typeof GM_xmlhttpRequest === "function" ? GM_xmlhttpRequest : null
+    ), "recognizeCaptcha");
+    function credFor(kind, c) {
+      if (c.shareCred || kind === "zhjw") return { username: c.zhjwUser, password: c.zhjwPass };
+      return { username: c.casUser || c.zhjwUser, password: c.casPass || c.zhjwPass };
+    }
+    __name(credFor, "credFor");
+    function ensureReadyForLogin(kind) {
+      const c = config.loginConf();
+      if (!c.enabled) return null;
+      const cred = credFor(kind, c);
+      if (!cred.username || !cred.password) {
+        deps.log("未配置账密，请到设置 → 登录助手");
+        return null;
+      }
+      return { conf: c, cred };
+    }
+    __name(ensureReadyForLogin, "ensureReadyForLogin");
+    function fillLoginCredentials(usernameInput, passwordInput, cred) {
+      const users = [usernameInput, document.getElementById("urppp-user")];
+      const passwords = [passwordInput, document.getElementById("urppp-pass")];
+      Array.from(new Set(users.filter(Boolean))).forEach((el) => deps.setInputValue(el, cred.username));
+      Array.from(new Set(passwords.filter(Boolean))).forEach((el) => deps.setInputValue(el, cred.password));
+    }
+    __name(fillLoginCredentials, "fillLoginCredentials");
+    function fillLoginCaptcha(captchaInput, code) {
+      const inputs = [captchaInput, document.getElementById("urppp-cap")];
+      Array.from(new Set(inputs.filter(Boolean))).forEach((el) => deps.setInputValue(el, code));
+    }
+    __name(fillLoginCaptcha, "fillLoginCaptcha");
+    function refreshLoginCaptchaImage(captchaImg) {
+      if (!captchaImg || !captchaImg.src) return;
+      let refreshed = captchaImg.src;
+      try {
+        const url = new URL(captchaImg.src, location.href);
+        url.searchParams.set("_urpppp", String(Date.now()));
+        refreshed = url.href;
+      } catch (_) {
+      }
+      captchaImg.src = refreshed;
+      const visibleImg = document.getElementById("urppp-capimg");
+      if (visibleImg) visibleImg.src = refreshed;
+    }
+    __name(refreshLoginCaptchaImage, "refreshLoginCaptchaImage");
+    function ensureLoginGuardStyles() {
+      if (document.getElementById("urpppp-login-guard-style")) return;
+      const style = document.createElement("style");
+      style.id = "urpppp-login-guard-style";
+      style.textContent = deps.loginGuardStyles;
+      (document.head || document.documentElement).appendChild(style);
+    }
+    __name(ensureLoginGuardStyles, "ensureLoginGuardStyles");
+    function removeLoginGuardNotice() {
+      const notice = document.getElementById("urpppp-login-guard-notice");
+      if (notice) notice.remove();
+    }
+    __name(removeLoginGuardNotice, "removeLoginGuardNotice");
+    function resumeAutoLogin() {
+      config.resetLoginGuardState("");
+      removeLoginGuardNotice();
+      setTimeout(() => {
+        mainLogin();
+      }, 0);
+    }
+    __name(resumeAutoLogin, "resumeAutoLogin");
+    function showLoginGuardNotice(state) {
+      if (!state || !state.failures && !state.paused) {
+        removeLoginGuardNotice();
+        return;
+      }
+      const host = document.getElementById("urppp-form") || document.querySelector(".form-signin") || document.querySelector("form");
+      if (!host) return;
+      ensureLoginGuardStyles();
+      let notice = document.getElementById("urpppp-login-guard-notice");
+      if (!notice) {
+        notice = document.createElement("div");
+        notice.id = "urpppp-login-guard-notice";
+        notice.setAttribute("role", "status");
+      }
+      notice.innerHTML = "";
+      const title = document.createElement("strong");
+      const text = document.createElement("span");
+      title.textContent = state.paused ? "自动登录已暂停" : `自动登录失败 ${state.failures}/${LOGIN_FAILURE_LIMIT2}`;
+      text.textContent = state.paused ? "连续登录失败已达上限。学号和密码已填好，请手动输入验证码后登录。" : `正在重新识别验证码；达到 ${LOGIN_FAILURE_LIMIT2} 次后将改为手动接管。`;
+      notice.append(title, text);
+      if (state.paused) {
+        const resume = document.createElement("button");
+        resume.type = "button";
+        resume.textContent = "恢复自动登录";
+        resume.addEventListener("click", resumeAutoLogin);
+        notice.appendChild(resume);
+      }
+      host.insertBefore(notice, host.firstChild);
+    }
+    __name(showLoginGuardNotice, "showLoginGuardNotice");
+    async function handleZhjwLogin() {
+      const usernameInput = document.getElementById("input_username");
+      const passwordInput = document.getElementById("input_password");
+      const captchaInput = document.getElementById("input_checkcode");
+      const captchaImg = document.getElementById("captchaImg") || document.querySelector(".form-signin img");
+      const loginButton = document.getElementById("loginButton");
+      if (!usernameInput || !passwordInput || !captchaInput || !captchaImg) return false;
+      deps.log("教务登录页");
+      const ready = ensureReadyForLogin("zhjw");
+      if (!ready) return true;
+      const { conf: c, cred } = ready;
+      fillLoginCredentials(usernameInput, passwordInput, cred);
+      const guard = config.beginLoginProcess("zhjw", cred.username);
+      showLoginGuardNotice(guard);
+      if (guard.paused) return true;
+      if (!c.ocrUrl) {
+        deps.log("未配置 OCR，已填充账密并等待手动登录");
+        return true;
+      }
+      if (guard.failures > 0) refreshLoginCaptchaImage(captchaImg);
+      fillLoginCaptcha(captchaInput, "");
+      if (!captchaImg.complete) await new Promise((resolve) => {
+        captchaImg.onload = resolve;
+        setTimeout(resolve, 2e3);
+      });
+      const code = await recognizeCaptcha2(deps.getBase64FromImage(captchaImg), c.ocrUrl);
+      fillLoginCaptcha(captchaInput, code);
+      deps.log("教务验证码：", code);
+      if (c.autoSubmit && loginButton) {
+        await deps.sleep(c.submitDelay);
+        config.markPendingAutoLogin("zhjw", cred.username);
+        loginButton.click();
+      }
+      return true;
+    }
+    __name(handleZhjwLogin, "handleZhjwLogin");
+    function findCasElements() {
+      const inputs = Array.from(document.querySelectorAll("input"));
+      const usernameInput = inputs.find((i) => /账号|学号|用户名|username|user/i.test(i.placeholder || i.name || i.id || "")) || inputs.find((i) => i.type === "text" && !/验证码|captcha|check/i.test(i.placeholder || i.name || i.id || ""));
+      const passwordInput = inputs.find((i) => i.type === "password");
+      const captchaInput = inputs.find((i) => /验证码|captcha|checkcode|verifycode|verification/i.test(i.placeholder || i.name || i.id || "")) || inputs.find((i) => i.type === "text" && i.maxLength > 0 && i.maxLength <= 8);
+      const captchaImg = document.querySelector("img.captcha-img") || document.querySelector("img[src^='data:image']") || Array.from(document.querySelectorAll("img")).find(
+        (img) => /captcha|yzm|验证码/i.test((img.className || "") + " " + (img.alt || "") + " " + (img.src || ""))
+      );
+      const loginButton = Array.from(document.querySelectorAll("button, .ivu-btn, input[type='button'], input[type='submit']")).find((el) => (el.textContent || el.value || "").replace(/\s+/g, "") === "登录");
+      return { usernameInput, passwordInput, captchaInput, captchaImg, loginButton };
+    }
+    __name(findCasElements, "findCasElements");
+    async function handleUnifiedAuthLogin() {
+      const bodyText = document.body && document.body.innerText || "";
+      const isUnifiedAuth = /统一身份认证/.test(bodyText) || !!document.querySelector("img.captcha-img") || /frontend\/login|id\.scu\.edu\.cn|enduser\/sp\/sso/i.test(location.href);
+      if (!isUnifiedAuth) return false;
+      const els = findCasElements();
+      if (!els.usernameInput || !els.passwordInput || !els.captchaInput || !els.captchaImg) return false;
+      deps.log("统一认证页");
+      const ready = ensureReadyForLogin("cas");
+      if (!ready) return true;
+      const { conf: c, cred } = ready;
+      fillLoginCredentials(els.usernameInput, els.passwordInput, cred);
+      const guard = config.beginLoginProcess("cas", cred.username);
+      showLoginGuardNotice(guard);
+      if (guard.paused) return true;
+      if (!c.ocrUrl) {
+        deps.log("未配置 OCR，已填充账密并等待手动登录");
+        return true;
+      }
+      fillLoginCaptcha(els.captchaInput, "");
+      if (!els.captchaImg.complete) await new Promise((resolve) => {
+        els.captchaImg.onload = resolve;
+        setTimeout(resolve, 2e3);
+      });
+      const code = await recognizeCaptcha2(deps.getBase64FromImage(els.captchaImg), c.ocrUrl);
+      fillLoginCaptcha(els.captchaInput, code);
+      deps.log("统一认证验证码：", code);
+      if (c.autoSubmit && els.loginButton) {
+        await deps.sleep(c.submitDelay);
+        config.markPendingAutoLogin("cas", cred.username);
+        els.loginButton.click();
+      }
+      return true;
+    }
+    __name(handleUnifiedAuthLogin, "handleUnifiedAuthLogin");
+    let loginRunning = false;
+    async function mainLogin() {
+      if (loginRunning) return;
+      loginRunning = true;
+      try {
+        await deps.sleep(600);
+        if (await handleZhjwLogin()) return;
+        if (await handleUnifiedAuthLogin()) return;
+      } catch (error) {
+        console.error("[URP++ 辅助] 登录失败", error);
+      } finally {
+        loginRunning = false;
+      }
+    }
+    __name(mainLogin, "mainLogin");
+    return {
+      bindLoginSection,
+      buildLoginSection,
+      mainLogin,
+      resumeAutoLogin
+    };
+  }
+  __name(createLoginAssist, "createLoginAssist");
+
+  // src/assist/evaluation.js
+  function createEvaluationAssist({ config, storage, deps }) {
+    const { getBool, setVal, setJSON } = storage;
+    const { EVAL, EVALUATION_LIST_PATH: EVALUATION_LIST_PATH2, DEFAULT_COMMENTS: DEFAULT_COMMENTS2 } = deps.constants;
+    const {
+      escapeHtml,
+      escapeAttr: escapeAttr2,
+      lettersForMulti: lettersForMulti2,
+      lettersForSingle: lettersForSingle2,
+      log: log2,
+      optionLetter: optionLetter2,
+      parsePerQuestionMap: parsePerQuestionMap2,
+      pickRandom: pickRandom2,
+      randInt: randInt2,
+      setInputValue: setInputValue2,
+      setTextAreaValue: setTextAreaValue2,
+      sleep: sleep2
+    } = deps.utils;
+    function buildEvalSection() {
+      const c = config.evalConf();
+      const perSingle = Object.keys(c.singlePerQ || {}).map((k) => `${k}:${c.singlePerQ[k]}`).join("\n");
+      const perMulti = Object.keys(c.multiPerQ || {}).map((k) => `${k}:${c.multiPerQ[k]}`).join("\n");
+      const sec = document.createElement("section");
+      sec.className = "urppp-set-sec urpppp-sec";
+      sec.id = "urpppp-eval-sec";
+      sec.innerHTML = `
+      <h3>评教助手</h3>
+      <p class="urppp-set-tip">在评教填写页自动填写问卷。服务端有约 100 秒停留校验，已取消“跳过倒计时”；开启自动保存后会等到设定秒数再提交。</p>
+      <div class="urpppp-switches">
+        <button type="button" class="urppp-set-follow" id="urpppp-eval-enabled">功能：${c.enabled ? "开" : "关"}</button>
+        <button type="button" class="urppp-set-follow" id="urpppp-eval-autofill">进入页面自动填写：${c.autoFill ? "开" : "关"}</button>
+        <button type="button" class="urppp-set-follow" id="urpppp-eval-autosave">到时自动保存：${c.autoSave ? "开" : "关"}</button>
+        <button type="button" class="urppp-set-follow" id="urpppp-eval-avoid-none">多选避开「以上均无」：${c.multiAvoidNone ? "开" : "关"}</button>
+      </div>
+
+      <div class="urpppp-sub">自动保存等待</div>
+      <div class="urpppp-grid">
+        <div class="urpppp-row"><label>等待秒数</label><input type="number" id="urpppp-eval-wait-sec" min="0" max="600" value="${escapeAttr2(String(c.waitSec))}" /></div>
+      </div>
+      <p class="urpppp-tip">默认100秒，启用自动保存后会在计时结束自动保存。教务系统服务端也会进行倒计时，无法直接跳过等待秒数。</p>
+
+      <div class="urpppp-sub">分数题</div>
+      <div class="urpppp-grid">
+        <div class="urpppp-row"><label>随机下限</label><input type="number" id="urpppp-eval-score-min" min="1" max="100" value="${escapeAttr2(String(c.scoreMin))}" /></div>
+        <div class="urpppp-row"><label>随机上限</label><input type="number" id="urpppp-eval-score-max" min="1" max="100" value="${escapeAttr2(String(c.scoreMax))}" /></div>
+      </div>
+      <p class="urpppp-tip">每位教师的分数题会在 [下限, 上限] 内独立随机整数。</p>
+
+      <div class="urpppp-sub">单选题</div>
+      <div class="urpppp-grid">
+        <div class="urpppp-row"><label>默认选项池</label><input type="text" id="urpppp-eval-single" value="${escapeAttr2(c.singleLetters)}" placeholder="如 A 或 A,B" /></div>
+        <div class="urpppp-row" style="align-items:start"><label>按题配置</label><textarea id="urpppp-eval-single-per" placeholder="每行：题号:选项池&#10;2:A,B&#10;5:A">${escapeHtml(perSingle)}</textarea></div>
+      </div>
+      <p class="urpppp-tip">不同问卷的部分题目特殊（如国际周课程的第7题），建议在执行自动评教前检查特殊题目并按题配置</p>
+      <p class="urpppp-tip">题号为页面「2、3、4…」中的数字。选项池如 <code>A,B</code> 表示在 A/B 中随机。</p>
+
+      <div class="urpppp-sub">多选题</div>
+      <div class="urpppp-grid">
+        <div class="urpppp-row"><label>默认勾选池</label><input type="text" id="urpppp-eval-multi" value="${escapeAttr2(c.multiLetters)}" placeholder="如 A,B,C" /></div>
+        <div class="urpppp-row" style="align-items:start"><label>按题配置</label><textarea id="urpppp-eval-multi-per" placeholder="每行：题号:选项池&#10;6:A,B,C,F">${escapeHtml(perMulti)}</textarea></div>
+      </div>
+      <p class="urpppp-tip">会勾选池内全部选项；若开启避开「以上均无」，不会勾选含「以上均无」的项。</p>
+
+      <div class="urpppp-sub">主观题模板</div>
+      <div class="urpppp-grid">
+        <div class="urpppp-row" style="align-items:start"><label>评语模板</label><textarea id="urpppp-eval-comments" placeholder="每行一条，随机选用">${escapeHtml(c.commentTemplates)}</textarea></div>
+        <div class="urpppp-row"><label>自动保存延迟(ms)</label><input type="number" id="urpppp-eval-save-delay" min="0" step="100" value="${escapeAttr2(String(c.saveDelay))}" /></div>
+      </div>
+      <p class="urpppp-tip">评语模版以回车划分，可以自行添加新模板</p>
+
+      <div class="urpppp-sub">全自动评教（列表页）</div>
+      <div class="urpppp-grid">
+        <div class="urpppp-row"><label>问卷间隔(秒)</label><input type="number" id="urpppp-eval-batch-gap" min="0" max="60" value="${escapeAttr2(String(c.batchGapSec))}" /></div>
+      </div>
+      <p class="urpppp-tip">在「教学评估」列表页启动：自动找未评估 → 进入填写 → 等待秒数后保存 → 返回列表继续，直到全部完成。期间请勿手动关闭页面。</p>
+
+      <div class="urpppp-actions">
+        <button type="button" class="urppp-set-btn" id="urpppp-eval-save">保存评教设置</button>
+        <button type="button" class="urppp-set-btn ghost" id="urpppp-eval-run">对当前评教页立即执行</button>
+        <button type="button" class="urppp-set-btn" id="urpppp-eval-batch-start">启动全自动评教</button>
+        <button type="button" class="urppp-set-btn ghost" id="urpppp-eval-batch-stop">停止全自动</button>
+      </div>
+      <div class="urpppp-status" id="urpppp-eval-status"></div>
+    `;
+      return sec;
+    }
+    __name(buildEvalSection, "buildEvalSection");
+    function bindEvalSection(sec) {
+      let enabled = getBool(EVAL.enabled, true);
+      let autoFill = getBool(EVAL.autoFill, true);
+      let autoSave = getBool(EVAL.autoSave, false);
+      let avoidNone = getBool(EVAL.multiAvoidNone, true);
+      const enabledBtn = sec.querySelector("#urpppp-eval-enabled");
+      const fillBtn = sec.querySelector("#urpppp-eval-autofill");
+      const saveAutoBtn = sec.querySelector("#urpppp-eval-autosave");
+      const avoidBtn = sec.querySelector("#urpppp-eval-avoid-none");
+      deps.syncToggle(enabledBtn, enabled, "功能：开", "功能：关");
+      deps.syncToggle(fillBtn, autoFill, "进入页面自动填写：开", "进入页面自动填写：关");
+      deps.syncToggle(saveAutoBtn, autoSave, "到时自动保存：开", "到时自动保存：关");
+      deps.syncToggle(avoidBtn, avoidNone, "多选避开「以上均无」：开", "多选避开「以上均无」：关");
+      enabledBtn.onclick = () => {
+        enabled = !enabled;
+        setVal(EVAL.enabled, enabled);
+        deps.syncToggle(enabledBtn, enabled, "功能：开", "功能：关");
+      };
+      fillBtn.onclick = () => {
+        autoFill = !autoFill;
+        setVal(EVAL.autoFill, autoFill);
+        deps.syncToggle(fillBtn, autoFill, "进入页面自动填写：开", "进入页面自动填写：关");
+      };
+      saveAutoBtn.onclick = () => {
+        autoSave = !autoSave;
+        setVal(EVAL.autoSave, autoSave);
+        deps.syncToggle(saveAutoBtn, autoSave, "到时自动保存：开", "到时自动保存：关");
+      };
+      avoidBtn.onclick = () => {
+        avoidNone = !avoidNone;
+        setVal(EVAL.multiAvoidNone, avoidNone);
+        deps.syncToggle(avoidBtn, avoidNone, "多选避开「以上均无」：开", "多选避开「以上均无」：关");
+      };
+      sec.querySelector("#urpppp-eval-save").onclick = () => {
+        let min = Math.max(1, Math.min(100, parseInt(sec.querySelector("#urpppp-eval-score-min").value, 10) || 92));
+        let max = Math.max(1, Math.min(100, parseInt(sec.querySelector("#urpppp-eval-score-max").value, 10) || 98));
+        if (max < min) {
+          const t = min;
+          min = max;
+          max = t;
+        }
+        setVal(EVAL.enabled, enabled);
+        setVal(EVAL.autoFill, autoFill);
+        setVal(EVAL.autoSave, autoSave);
+        setVal(EVAL.multiAvoidNone, avoidNone);
+        setVal(EVAL.waitSec, String(Math.max(0, parseInt(sec.querySelector("#urpppp-eval-wait-sec").value, 10) || 100)));
+        setVal(EVAL.scoreMin, String(min));
+        setVal(EVAL.scoreMax, String(max));
+        setVal(EVAL.singleLetters, (sec.querySelector("#urpppp-eval-single").value || "A").trim());
+        setJSON(EVAL.singlePerQ, parsePerQuestionMap2(sec.querySelector("#urpppp-eval-single-per").value));
+        setVal(EVAL.multiLetters, (sec.querySelector("#urpppp-eval-multi").value || "A,B,C").trim());
+        setJSON(EVAL.multiPerQ, parsePerQuestionMap2(sec.querySelector("#urpppp-eval-multi-per").value));
+        setVal(EVAL.commentTemplates, sec.querySelector("#urpppp-eval-comments").value || "");
+        setVal(EVAL.saveDelay, String(Math.max(0, parseInt(sec.querySelector("#urpppp-eval-save-delay").value, 10) || 500)));
+        setVal(EVAL.batchGapSec, String(Math.max(0, parseInt(sec.querySelector("#urpppp-eval-batch-gap").value, 10) || 2)));
+        deps.setStatus("urpppp-eval-status", "评教设置已保存", "ok");
+      };
+      sec.querySelector("#urpppp-eval-run").onclick = async () => {
+        try {
+          const ok = await runEvaluationAssist({ force: true, forceSave: true });
+          deps.setStatus("urpppp-eval-status", ok ? "已在当前评教页执行" : "当前不是评教填写页，或执行失败", ok ? "ok" : "err");
+        } catch (e) {
+          deps.setStatus("urpppp-eval-status", String(e && e.message || e), "err");
+        }
+      };
+      const batchStartBtn = sec.querySelector("#urpppp-eval-batch-start");
+      const batchStopBtn = sec.querySelector("#urpppp-eval-batch-stop");
+      if (batchStartBtn) {
+        batchStartBtn.onclick = async () => {
+          try {
+            const n = await startFullAutoEvaluation();
+            deps.setStatus("urpppp-eval-status", n > 0 ? "已启动全自动，共 " + n + " 份未评估" : "当前列表没有未评估问卷（请先打开教学评估列表页）", n > 0 ? "ok" : "err");
+          } catch (e) {
+            deps.setStatus("urpppp-eval-status", String(e && e.message || e), "err");
+          }
+        };
+      }
+      if (batchStopBtn) {
+        batchStopBtn.onclick = () => {
+          config.clearBatchState();
+          deps.setStatus("urpppp-eval-status", "已停止全自动评教", "ok");
+          updateBatchHud();
+        };
+      }
+    }
+    __name(bindEvalSection, "bindEvalSection");
+    function isEvaluationPage() {
+      return /\/student\/teachingEvaluation\/newEvaluation\/evaluation\//i.test(location.pathname || "") || !!(document.getElementById("savebutton") && document.getElementById("timer") && document.forms.saveEvaluation);
+    }
+    __name(isEvaluationPage, "isEvaluationPage");
+    function getGlobalScope() {
+      try {
+        if (typeof unsafeWindow !== "undefined" && unsafeWindow) return unsafeWindow;
+      } catch (_) {
+      }
+      return window;
+    }
+    __name(getGlobalScope, "getGlobalScope");
+    function injectPageScript(fn, arg) {
+      try {
+        const script = document.createElement("script");
+        script.textContent = "(" + fn.toString() + ")(" + JSON.stringify(arg == null ? null : arg) + ");";
+        const root = document.documentElement || document.head || document.body;
+        root.appendChild(script);
+        script.remove();
+        return true;
+      } catch (e) {
+        console.warn("[URP++ 辅助] injectPageScript failed", e);
+        return false;
+      }
+    }
+    __name(injectPageScript, "injectPageScript");
+    function enableSaveButtonInPage() {
+      injectPageScript(function() {
+        try {
+          var btn2 = document.getElementById("savebutton") || document.getElementById("save") || document.getElementById("save2");
+          if (btn2) {
+            btn2.disabled = false;
+            btn2.removeAttribute("disabled");
+            try {
+              btn2.classList.remove("disabled");
+            } catch (e0) {
+            }
+          }
+          var ts = document.getElementById("tsxx");
+          if (ts) ts.style.display = "none";
+        } catch (e) {
+          console.warn("[URP++ 辅助] enable save failed", e);
+        }
+      });
+      const btn = document.getElementById("savebutton") || document.getElementById("save") || document.getElementById("save2");
+      if (btn) {
+        btn.disabled = false;
+        btn.removeAttribute("disabled");
+      }
+    }
+    __name(enableSaveButtonInPage, "enableSaveButtonInPage");
+    function questionIndexNear(el) {
+      let node = el;
+      for (let i = 0; i < 12 && node; i++) {
+        const t = (node.innerText || node.textContent || "").replace(/\s+/g, " ").trim();
+        const m = t.match(/(?:^|\n)\s*(\d{1,2})\s*[、.．]/);
+        if (m) return m[1];
+        let prev = node.previousElementSibling;
+        let guard = 0;
+        while (prev && guard++ < 6) {
+          const pt = (prev.innerText || prev.textContent || "").replace(/\s+/g, " ").trim();
+          const pm = pt.match(/^(\d{1,2})\s*[、.．]/);
+          if (pm) return pm[1];
+          prev = prev.previousElementSibling;
+        }
+        node = node.parentElement;
+      }
+      return "";
+    }
+    __name(questionIndexNear, "questionIndexNear");
+    function fillScores(cfg) {
+      let min = Number(cfg.scoreMin) || 92;
+      let max = Number(cfg.scoreMax) || 98;
+      if (max < min) {
+        const t = min;
+        min = max;
+        max = t;
+      }
+      const inputs = Array.from(document.querySelectorAll('input[data-name="szt"], input[placeholder*="1-100"]'));
+      let n = 0;
+      inputs.forEach((input) => {
+        if (input.type === "hidden") return;
+        const v = String(randInt2(min, max));
+        setInputValue2(input, v);
+        n++;
+      });
+      return n;
+    }
+    __name(fillScores, "fillScores");
+    function fillRadios(cfg) {
+      const names = [...new Set(Array.from(document.querySelectorAll('input[type="radio"]')).map((r) => r.name).filter((n) => n && !/zcms|week|kszc|jszc/i.test(n)))];
+      let filled = 0;
+      names.forEach((name) => {
+        const radios = Array.from(document.querySelectorAll(`input[type="radio"][name="${CSS.escape ? CSS.escape(name) : name}"]`));
+        if (!radios.length) return;
+        if (radios.every((r) => /全周|单周|双周/.test(r.value || ""))) return;
+        const qNo = questionIndexNear(radios[0]);
+        const pool = lettersForSingle2(qNo, cfg);
+        const candidates = radios.filter((r) => {
+          const letter = optionLetter2(r.value) || optionLetter2(r.nextSibling && r.nextSibling.textContent || "") || optionLetter2(r.parentElement && r.parentElement.textContent);
+          return pool.includes(letter);
+        });
+        const pick = pickRandom2(candidates.length ? candidates : radios);
+        if (pick) {
+          pick.checked = true;
+          pick.dispatchEvent(new Event("click", { bubbles: true }));
+          pick.dispatchEvent(new Event("change", { bubbles: true }));
+          filled++;
+        }
+      });
+      return filled;
+    }
+    __name(fillRadios, "fillRadios");
+    function fillChecks(cfg) {
+      const names = [...new Set(Array.from(document.querySelectorAll('input[type="checkbox"]')).map((c) => c.name).filter(Boolean))];
+      let groups = 0;
+      names.forEach((name) => {
+        const boxes = Array.from(document.querySelectorAll(`input[type="checkbox"][name="${CSS.escape ? CSS.escape(name) : name}"]`));
+        if (!boxes.length) return;
+        const qNo = questionIndexNear(boxes[0]);
+        const pool = lettersForMulti2(qNo, cfg);
+        boxes.forEach((b) => {
+          b.checked = false;
+        });
+        let any = false;
+        boxes.forEach((b) => {
+          const label = b.value || b.parentElement && b.parentElement.textContent || "";
+          const letter = optionLetter2(b.value) || optionLetter2(label);
+          if (!pool.includes(letter)) return;
+          if (cfg.multiAvoidNone && /以上均无|均无|无以上/.test(label)) return;
+          b.checked = true;
+          b.dispatchEvent(new Event("click", { bubbles: true }));
+          b.dispatchEvent(new Event("change", { bubbles: true }));
+          any = true;
+        });
+        if (!any) {
+          const fallback = boxes.find((b) => !/以上均无|均无/.test(b.value || b.parentElement && b.parentElement.textContent || "")) || boxes[0];
+          if (fallback) {
+            fallback.checked = true;
+            fallback.dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        }
+        groups++;
+      });
+      return groups;
+    }
+    __name(fillChecks, "fillChecks");
+    function fillComments(cfg) {
+      const lines = String(cfg.commentTemplates || "").split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+      const pool = lines.length ? lines : DEFAULT_COMMENTS2.split("\n");
+      const areas = Array.from(document.querySelectorAll('form[name="saveEvaluation"] textarea, #saveEvaluation textarea, textarea')).filter((t) => t.name || t.closest("form"));
+      let n = 0;
+      areas.forEach((ta) => {
+        if (/kszc|jszc|search/i.test(ta.name || ta.id || "")) return;
+        const text = pickRandom2(pool) || "老师认真负责，课程收获很大。";
+        setTextAreaValue2(ta, text.slice(0, ta.maxLength > 0 ? ta.maxLength : 500));
+        n++;
+      });
+      return n;
+    }
+    __name(fillComments, "fillComments");
+    function tryAutoSave(cfg) {
+      if (!cfg.autoSave && !cfg.__forceSave) return false;
+      enableSaveButtonInPage();
+      const injected = injectPageScript(function() {
+        try {
+          var btn2 = document.getElementById("savebutton") || document.getElementById("save") || document.getElementById("save2");
+          if (btn2) {
+            btn2.disabled = false;
+            btn2.removeAttribute("disabled");
+          }
+          if (typeof save === "function") {
+            save();
+            return;
+          }
+          if (btn2) btn2.click();
+        } catch (e) {
+          console.warn("[URP++ 辅助] page save failed", e);
+          try {
+            var b2 = document.getElementById("savebutton");
+            if (b2) b2.click();
+          } catch (e2) {
+          }
+        }
+      });
+      if (injected) {
+        log2("已请求页面保存");
+        return true;
+      }
+      const btn = document.getElementById("savebutton") || document.getElementById("save") || document.getElementById("save2");
+      if (btn) {
+        btn.disabled = false;
+        btn.removeAttribute("disabled");
+        btn.click();
+        log2("已点击保存按钮");
+        return true;
+      }
+      return false;
+    }
+    __name(tryAutoSave, "tryAutoSave");
+    let evalPageEnterAt = 0;
+    function markEvalPageEnter() {
+      if (!isEvaluationPage()) return;
+      if (!evalPageEnterAt) evalPageEnterAt = Date.now();
+    }
+    __name(markEvalPageEnter, "markEvalPageEnter");
+    async function waitBeforeAutoSave(cfg) {
+      const need = Math.max(0, Number(cfg.waitSec) || 0);
+      if (need <= 0) return 0;
+      if (!evalPageEnterAt) evalPageEnterAt = Date.now();
+      const elapsed = (Date.now() - evalPageEnterAt) / 1e3;
+      const remain = Math.ceil(need - elapsed);
+      if (remain <= 0) return 0;
+      log2(`自动保存等待 ${remain}s（不跳过服务端倒计时）`);
+      let left = remain;
+      while (left > 0) {
+        const tip2 = document.getElementById("urpppp-eval-wait-tip");
+        if (tip2) tip2.textContent = `评教助手：约 ${left} 秒后自动保存`;
+        await sleep2(1e3);
+        left -= 1;
+      }
+      const tip = document.getElementById("urpppp-eval-wait-tip");
+      if (tip) tip.textContent = "评教助手：正在自动保存…";
+      return remain;
+    }
+    __name(waitBeforeAutoSave, "waitBeforeAutoSave");
+    function ensureWaitTip() {
+      if (!isEvaluationPage()) return;
+      if (document.getElementById("urpppp-eval-wait-tip")) return;
+      const host = document.querySelector(".right_top_oper") || document.querySelector("#savebutton") && document.getElementById("savebutton").parentElement;
+      if (!host) return;
+      const tip = document.createElement("span");
+      tip.id = "urpppp-eval-wait-tip";
+      host.appendChild(tip);
+    }
+    __name(ensureWaitTip, "ensureWaitTip");
+    let evalRunning = false;
+    async function runEvaluationAssist(opts) {
+      opts = opts || {};
+      if (!isEvaluationPage()) return false;
+      markEvalPageEnter();
+      ensureWaitTip();
+      updateBatchHud();
+      const cfg = config.evalConf();
+      const batch = config.getBatchState();
+      const forceSave = !!(opts.forceSave || batch.active);
+      const forceFill = !!(opts.force || cfg.autoFill || batch.active);
+      if (!cfg.enabled && !opts.force && !batch.active) return false;
+      if (evalRunning) return false;
+      evalRunning = true;
+      try {
+        log2("评教页处理开始", cfg, batch);
+        if (forceFill) {
+          const s = fillScores(cfg);
+          const r = fillRadios(cfg);
+          const m = fillChecks(cfg);
+          const t = fillComments(cfg);
+          log2(`已填充：分数${s} 单选${r} 多选${m} 主观${t}`);
+          setBatchTip(`已填写，等待 ${cfg.waitSec}s 后保存（${batch.active ? "队列 " + (batch.index + 1) + "/" + batch.queue.length : "单页"}）`);
+        }
+        if (cfg.autoSave || forceSave) {
+          await waitBeforeAutoSave(cfg);
+          await sleep2(cfg.saveDelay || 0);
+          enableSaveButtonInPage();
+          if (batch.active) installSaveSuccessWatcher();
+          tryAutoSave(Object.assign({}, cfg, { autoSave: true, __forceSave: true }));
+          if (batch.active) {
+            await sleep2(2500);
+            if (isEvaluationPage()) {
+              log2("保存后仍停留在填写页，可能失败；停止或回列表重试");
+              setBatchTip("保存可能失败，请检查后重试/停止全自动");
+            }
+          }
+        }
+        return true;
+      } catch (e) {
+        console.error("[URP++ 辅助] 评教失败", e);
+        return false;
+      } finally {
+        evalRunning = false;
+      }
+    }
+    __name(runEvaluationAssist, "runEvaluationAssist");
+    function isEvaluationListPage() {
+      const p = String(location.pathname || "");
+      return /\/student\/teachingEvaluation\/newEvaluation\/index/i.test(p);
+    }
+    __name(isEvaluationListPage, "isEvaluationListPage");
+    function setBatchTip(text) {
+      const el = document.getElementById("urpppp-eval-wait-tip") || document.getElementById("urpppp-batch-hud");
+      if (el) el.textContent = text || "";
+      log2(text);
+    }
+    __name(setBatchTip, "setBatchTip");
+    function updateBatchHud() {
+      const batch = config.getBatchState();
+      let hud = document.getElementById("urpppp-batch-hud");
+      if (!batch.active) {
+        if (hud) hud.remove();
+        return;
+      }
+      if (!hud) {
+        hud = document.createElement("div");
+        hud.id = "urpppp-batch-hud";
+        document.documentElement.appendChild(hud);
+        deps.settingsStyles();
+      }
+      const total = (batch.queue || []).length;
+      const cur = Math.min(batch.index + 1, total);
+      const item = batch.queue[batch.index];
+      hud.innerHTML = `<div class="urpppp-hud-title">全自动评教进行中</div>
+      <div class="urpppp-hud-line">进度：${cur}/${total}</div>
+      <div class="urpppp-hud-course">${escapeHtml(item && item.title || "")}</div>
+      <button type="button" id="urpppp-batch-hud-stop">停止</button>`;
+      const stop = document.getElementById("urpppp-batch-hud-stop");
+      if (stop) stop.onclick = () => {
+        config.clearBatchState();
+        updateBatchHud();
+        setBatchTip("已停止全自动评教");
+      };
+    }
+    __name(updateBatchHud, "updateBatchHud");
+    function scanUnevaluatedFromList() {
+      const out = [];
+      const seen = /* @__PURE__ */ new Set();
+      document.querySelectorAll('a[onclick*="evaluation("], button[onclick*="evaluation("]').forEach((a) => {
+        const oc = a.getAttribute("onclick") || "";
+        const m = oc.match(/evaluation\s*\(\s*this\s*,\s*["']([0-9A-Fa-f]+)["']/);
+        if (!m) return;
+        const ktid = m[1];
+        if (seen.has(ktid)) return;
+        const tr = a.closest("tr");
+        const rowText = (tr && tr.innerText || a.innerText || "").replace(/\s+/g, " ").trim();
+        const opText = (a.textContent || "").replace(/\s+/g, "");
+        if (!(opText === "评估" || /\s否\s|是否已评估.*否|\b否\b/.test(rowText))) return;
+        let title = "";
+        if (tr) {
+          const tds = Array.from(tr.cells || []).map((td) => (td.textContent || "").replace(/\s+/g, " ").trim());
+          title = tds[4] || tds[2] || tds.find((t) => t && !/^\d+$/.test(t) && t !== "评估" && t !== "否") || rowText;
+        }
+        seen.add(ktid);
+        out.push({
+          ktid,
+          url: "/student/teachingEvaluation/newEvaluation/evaluation/" + ktid,
+          title: String(title || ktid).slice(0, 80)
+        });
+      });
+      return out;
+    }
+    __name(scanUnevaluatedFromList, "scanUnevaluatedFromList");
+    async function startFullAutoEvaluation() {
+      if (!isEvaluationListPage()) {
+        config.setBatchState({ active: true, queue: [], index: 0 });
+        location.href = EVALUATION_LIST_PATH2;
+        return 0;
+      }
+      await sleep2(400);
+      const queue = scanUnevaluatedFromList();
+      if (!queue.length) {
+        config.clearBatchState();
+        updateBatchHud();
+        return 0;
+      }
+      config.setBatchState({ active: true, queue, index: 0 });
+      updateBatchHud();
+      log2("全自动队列", queue);
+      await sleep2(Math.max(0, (config.evalConf().batchGapSec || 0) * 1e3));
+      location.href = queue[0].url;
+      return queue.length;
+    }
+    __name(startFullAutoEvaluation, "startFullAutoEvaluation");
+    async function resumeFullAutoOnList() {
+      const batch = config.getBatchState();
+      if (!batch.active) return false;
+      if (!isEvaluationListPage()) return false;
+      await sleep2(600);
+      let queue = batch.queue || [];
+      let index = batch.index || 0;
+      if (!queue.length) {
+        queue = scanUnevaluatedFromList();
+        index = 0;
+        if (!queue.length) {
+          config.clearBatchState();
+          updateBatchHud();
+          setBatchTip("全自动完成：没有未评估问卷");
+          alert("全自动评教完成：当前没有未评估问卷");
+          return true;
+        }
+        config.setBatchState({ active: true, queue, index: 0 });
+      }
+      const fresh = scanUnevaluatedFromList();
+      if (!fresh.length) {
+        config.clearBatchState();
+        updateBatchHud();
+        setBatchTip("全自动完成：全部评教已完成");
+        alert("全自动评教完成：全部已评估");
+        return true;
+      }
+      config.setBatchState({ active: true, queue: fresh, index: 0 });
+      updateBatchHud();
+      const next = fresh[0];
+      setBatchTip(`全自动：下一项 ${next.title}`);
+      await sleep2(Math.max(300, (config.evalConf().batchGapSec || 0) * 1e3));
+      location.href = next.url;
+      return true;
+    }
+    __name(resumeFullAutoOnList, "resumeFullAutoOnList");
+    function installSaveSuccessWatcher() {
+      if (window.__urppppSaveWatch) return;
+      window.__urppppSaveWatch = true;
+      injectPageScript(function() {
+        try {
+          if (!window.jQuery || window.__urppppAjaxHooked) return;
+          window.__urppppAjaxHooked = true;
+          var $ = window.jQuery;
+          var orig = $.ajax;
+          $.ajax = function(opts) {
+            var o = opts || {};
+            var url = o.url || "";
+            if (/doSave/i.test(url)) {
+              var userSuccess = o.success;
+              o = Object.assign({}, o, {
+                success: /* @__PURE__ */ __name(function(data, status, xhr) {
+                  try {
+                    window.dispatchEvent(new CustomEvent("urpppp-eval-saved", { detail: data || {} }));
+                  } catch (e) {
+                  }
+                  if (typeof userSuccess === "function") userSuccess(data, status, xhr);
+                }, "success")
+              });
+              return orig.call(this, o);
+            }
+            return orig.apply(this, arguments);
+          };
+        } catch (e) {
+          console.warn("[URP++ 辅助] ajax hook failed", e);
+        }
+      });
+      window.addEventListener("urpppp-eval-saved", async (ev) => {
+        const data = ev && ev.detail || {};
+        const batch = config.getBatchState();
+        if (!batch.active) return;
+        const ok = data && (data.result === "ok" || typeof data.result === "string" && data.result.indexOf("/") !== -1);
+        if (!ok && data.result && data.result !== "ok") {
+          log2("保存返回非 ok", data);
+        }
+        setBatchTip("保存成功，返回列表继续…");
+        config.setBatchState({
+          active: true,
+          queue: batch.queue,
+          index: (batch.index || 0) + 1
+        });
+        await sleep2(Math.max(500, (config.evalConf().batchGapSec || 0) * 1e3));
+        location.href = EVALUATION_LIST_PATH2;
+      });
+    }
+    __name(installSaveSuccessWatcher, "installSaveSuccessWatcher");
+    return {
+      bindEvalSection,
+      buildEvalSection,
+      ensureWaitTip,
+      installSaveSuccessWatcher,
+      isEvaluationPage,
+      isEvaluationListPage,
+      markEvalPageEnter,
+      resumeFullAutoOnList,
+      runEvaluationAssist,
+      startFullAutoEvaluation,
+      updateBatchHud
+    };
+  }
+  __name(createEvaluationAssist, "createEvaluationAssist");
+
+  // src/assist/update.js
+  function createUpdateAssist({ deps }) {
+    function fetchAssistRemoteVersion() {
+      return new Promise((resolve, reject) => {
+        try {
+          GM_xmlhttpRequest({
+            method: "GET",
+            url: deps.URPPPP_RAW_URL,
+            timeout: 15e3,
+            headers: { "Cache-Control": "no-cache" },
+            onload: /* @__PURE__ */ __name((r) => {
+              if (r.status >= 200 && r.status < 400) resolve(r.responseText || "");
+              else reject(new Error("HTTP " + r.status));
+            }, "onload"),
+            onerror: /* @__PURE__ */ __name(() => reject(new Error("network error")), "onerror"),
+            ontimeout: /* @__PURE__ */ __name(() => reject(new Error("timeout")), "ontimeout")
+          });
+        } catch (e) {
+          reject(e);
+        }
+      });
+    }
+    __name(fetchAssistRemoteVersion, "fetchAssistRemoteVersion");
+    function compareSemver(a, b) {
+      try {
+        const api = typeof unsafeWindow !== "undefined" && unsafeWindow && unsafeWindow.__urpppUpdate || window.__urpppUpdate;
+        if (api && typeof api.compareVersions === "function") {
+          return api.compareVersions(a, b);
+        }
+      } catch (_) {
+      }
+      return deps.compareStandaloneVersions(a, b);
+    }
+    __name(compareSemver, "compareSemver");
+    async function checkAssistUpdate() {
+      const local = deps.URPPPP_VERSION;
+      const remoteSource = await fetchAssistRemoteVersion();
+      const remote = deps.parseVersionFromSource(remoteSource);
+      if (!remote) throw new Error("无法解析远程辅助插件版本");
+      const cmp = compareSemver(remote, local);
+      return {
+        id: "assist",
+        name: "辅助插件",
+        local,
+        remote,
+        status: cmp > 0 ? "update" : cmp === 0 ? "latest" : "ahead",
+        updateUrl: deps.URPPPP_RAW_URL
+      };
+    }
+    __name(checkAssistUpdate, "checkAssistUpdate");
+    function getMainUpdateApi() {
+      try {
+        if (typeof unsafeWindow !== "undefined" && unsafeWindow && unsafeWindow.__urpppUpdate) {
+          return unsafeWindow.__urpppUpdate;
+        }
+      } catch (_) {
+      }
+      try {
+        if (window.top && window.top !== window && window.top.__urpppUpdate) return window.top.__urpppUpdate;
+      } catch (_) {
+      }
+      try {
+        if (window.__urpppUpdate) return window.__urpppUpdate;
+      } catch (_) {
+      }
+      return null;
+    }
+    __name(getMainUpdateApi, "getMainUpdateApi");
+    function registerAssistUpdateChecker() {
+      try {
+        const api = getMainUpdateApi();
+        if (!api || typeof api.registerChecker !== "function") return false;
+        return api.registerChecker({
+          id: "assist",
+          name: "辅助插件",
+          localVersion: deps.URPPPP_VERSION,
+          check: checkAssistUpdate
+        });
+      } catch (_) {
+      }
+      return false;
+    }
+    __name(registerAssistUpdateChecker, "registerAssistUpdateChecker");
+    return {
+      checkAssistUpdate,
+      registerAssistUpdateChecker
+    };
+  }
+  __name(createUpdateAssist, "createUpdateAssist");
+
+  // src/assist/panel.js
+  function createAssistPanel({ login, evaluation, deps }) {
+    const uiState = { injected: false };
+    function ensureSubPanel() {
+      let panel = document.getElementById("urpppp-subpanel");
+      if (panel) return panel;
+      panel = document.createElement("div");
+      panel.id = "urpppp-subpanel";
+      panel.innerHTML = `
+      <div class="urpppp-sub-head">
+        <div class="urpppp-sub-title" id="urpppp-sub-title">助手设置</div>
+        <button type="button" class="urpppp-sub-close" id="urpppp-sub-close" aria-label="关闭">×</button>
+      </div>
+      <div class="urpppp-sub-body" id="urpppp-sub-body"></div>
+    `;
+      document.documentElement.appendChild(panel);
+      panel.querySelector("#urpppp-sub-close").onclick = closeSubPanel;
+      return panel;
+    }
+    __name(ensureSubPanel, "ensureSubPanel");
+    function placeSubPanelLikeMain() {
+      const main = document.getElementById("urppp-settings-panel");
+      const sub = document.getElementById("urpppp-subpanel");
+      if (!main || !sub) return;
+      const r = main.getBoundingClientRect();
+      const top = Math.max(8, r.top);
+      const left = Math.max(8, r.left);
+      const width = Math.max(320, r.width || 420);
+      const maxHeight = Math.max(240, r.height || window.innerHeight - top - 16);
+      sub.style.top = top + "px";
+      sub.style.left = left + "px";
+      sub.style.width = width + "px";
+      sub.style.maxHeight = maxHeight + "px";
+      sub.style.right = "auto";
+      sub.style.bottom = "auto";
+    }
+    __name(placeSubPanelLikeMain, "placeSubPanelLikeMain");
+    function openSubPanel(kind) {
+      deps.settingsStyles();
+      const sub = ensureSubPanel();
+      const body = sub.querySelector("#urpppp-sub-body");
+      const title = sub.querySelector("#urpppp-sub-title");
+      if (!body || !title) return;
+      body.innerHTML = "";
+      if (kind === "login") {
+        title.textContent = "登录助手";
+        const sec = login.buildLoginSection();
+        body.appendChild(sec);
+        login.bindLoginSection(sec);
+      } else {
+        title.textContent = "评教助手";
+        const sec = evaluation.buildEvalSection();
+        body.appendChild(sec);
+        evaluation.bindEvalSection(sec);
+      }
+      placeSubPanelLikeMain();
+      sub.classList.add("open");
+      setTimeout(placeSubPanelLikeMain, 30);
+    }
+    __name(openSubPanel, "openSubPanel");
+    function closeSubPanel() {
+      const sub = document.getElementById("urpppp-subpanel");
+      if (!sub) return;
+      sub.classList.remove("open");
+      const body = sub.querySelector("#urpppp-sub-body");
+      if (body) body.innerHTML = "";
+    }
+    __name(closeSubPanel, "closeSubPanel");
+    function injectSettingsPanel() {
+      const panel = document.getElementById("urppp-settings-panel");
+      if (!panel) return false;
+      const body = panel.querySelector("#urppp-set-assist-slot") || panel.querySelector('.urppp-set-pane[data-pane="system"]') || panel.querySelector(".urppp-set-body");
+      if (!body) return false;
+      deps.settingsStyles();
+      const oldLogin = document.getElementById("urpppp-login-sec");
+      const oldEval = document.getElementById("urpppp-eval-sec");
+      if (oldLogin && oldLogin.closest("#urppp-settings-panel")) oldLogin.remove();
+      if (oldEval && oldEval.closest("#urppp-settings-panel")) oldEval.remove();
+      let entry = document.getElementById("urpppp-entry-sec");
+      if (entry && body.id === "urppp-set-assist-slot" && entry.parentElement !== body) {
+        entry.remove();
+        entry = null;
+      }
+      if (!document.getElementById("urpppp-entry-sec")) {
+        entry = document.createElement("section");
+        entry.className = "urppp-set-sec urpppp-entry-sec";
+        entry.id = "urpppp-entry-sec";
+        entry.innerHTML = `
+        <h3>辅助插件</h3>
+        <div class="urpppp-entry-grid">
+          <button type="button" class="urppp-set-btn" id="urpppp-open-login">登录助手</button>
+          <button type="button" class="urppp-set-btn" id="urpppp-open-eval">评教助手</button>
+        </div>
+        <p class="urpppp-tip">辅助插件 v${deps.URPPPP_VERSION}</p>
+      `;
+        body.appendChild(entry);
+        entry.querySelector("#urpppp-open-login").onclick = () => openSubPanel("login");
+        entry.querySelector("#urpppp-open-eval").onclick = () => openSubPanel("eval");
+      }
+      if (!panel.__urppppCloseHooked) {
+        panel.__urppppCloseHooked = true;
+        const closeBtn = panel.querySelector("#urppp-set-close");
+        if (closeBtn) {
+          closeBtn.addEventListener("click", () => closeSubPanel());
+        }
+        const mask = document.getElementById("urppp-settings-mask");
+        if (mask && !mask.__urppppCloseHooked) {
+          mask.__urppppCloseHooked = true;
+          mask.addEventListener("click", () => closeSubPanel());
+        }
+      }
+      uiState.injected = true;
+      return true;
+    }
+    __name(injectSettingsPanel, "injectSettingsPanel");
+    function watchSettingsPanel() {
+      if (window.__urppppSettingsWatchBound) return;
+      window.__urppppSettingsWatchBound = true;
+      const tryInject = /* @__PURE__ */ __name(() => {
+        try {
+          injectSettingsPanel();
+        } catch (e) {
+          console.warn(e);
+        }
+      }, "tryInject");
+      let injectTimer = 0;
+      const scheduleInject = /* @__PURE__ */ __name((delay) => {
+        clearTimeout(injectTimer);
+        injectTimer = setTimeout(tryInject, delay);
+      }, "scheduleInject");
+      const settingsSelector = "#urppp-settings-panel, #urppp-set-assist-slot, .urppp-set-body";
+      const containsSettingsNode = /* @__PURE__ */ __name((node) => {
+        if (!node || ![1, 11].includes(node.nodeType)) return false;
+        if (node.matches && node.matches(settingsSelector)) return true;
+        return Boolean(node.querySelector && node.querySelector(settingsSelector));
+      }, "containsSettingsNode");
+      tryInject();
+      const obs = new MutationObserver((mutations) => {
+        const relevant = mutations.some((mutation) => Array.from(mutation.addedNodes || []).some(containsSettingsNode));
+        if (relevant) scheduleInject(30);
+      });
+      obs.observe(document.documentElement, { childList: true, subtree: true });
+      document.addEventListener("click", (e) => {
+        const t = e.target;
+        if (!t || !t.closest) return;
+        if (t.closest("#urppp-nav-settings") || t.closest("#uc-settings") || t.closest(".urppp-nav-settings")) {
+          setTimeout(tryInject, 50);
+          setTimeout(tryInject, 200);
+        }
+      }, true);
+    }
+    __name(watchSettingsPanel, "watchSettingsPanel");
+    return {
+      closeSubPanel,
+      injectSettingsPanel,
+      openSubPanel,
+      watchSettingsPanel
+    };
+  }
+  __name(createAssistPanel, "createAssistPanel");
+
   // src/styles/assist-login-guard.css
   var assist_login_guard_default = `#urpppp-login-guard-notice{
   margin:10px 0;padding:10px 12px;border-radius:10px;
@@ -608,7 +1824,6 @@
       resetLoginGuardState,
       setBatchState
     } = config;
-    const uiState = { injected: false };
     function settingsStyles() {
       if (document.getElementById("urpppp-assist-style")) return;
       const st = document.createElement("style");
@@ -631,1075 +1846,76 @@
       btn.classList.toggle("ac", !!on);
     }
     __name(syncToggle, "syncToggle");
-    function buildLoginSection() {
-      const c = loginConf();
-      const sec = document.createElement("section");
-      sec.className = "urppp-set-sec urpppp-sec";
-      sec.id = "urpppp-login-sec";
-      sec.innerHTML = `
-      <h3>登录助手</h3>
-      <p class="urppp-set-tip">自动填写账号密码、OCR 识别验证码。同一次自动登录过程连续失败 ${LOGIN_FAILURE_LIMIT} 次后暂停提交，由用户手动填写验证码并接管登录。</p>
-      <div class="urpppp-switches">
-        <button type="button" class="urppp-set-follow" id="urpppp-login-enabled">功能：${c.enabled ? "开" : "关"}</button>
-        <button type="button" class="urppp-set-follow" id="urpppp-login-auto">识别后自动登录：${c.autoSubmit ? "开" : "关"}</button>
-        <button type="button" class="urppp-set-follow" id="urpppp-login-share">教务/统一认证共用账密：${c.shareCred ? "开" : "关"}</button>
-        <button type="button" class="urppp-set-follow" id="urpppp-login-persist-password">持久保存密码：${c.passwordStorage === "persistent" ? "开" : "关"}</button>
-      </div>
-      <div class="urpppp-grid">
-        <div class="urpppp-row"><label>OCR 服务</label><input type="url" id="urpppp-login-ocr" placeholder="${DEFAULT_OCR_EXAMPLE}" value="${escapeAttr(c.ocrUrl)}" spellcheck="false" /></div>
-        <div class="urpppp-row"><label>提交延迟(ms)</label><input type="number" id="urpppp-login-delay" min="0" step="50" value="${escapeAttr(String(c.submitDelay))}" /></div>
-        <div class="urpppp-row"><label>教务学号</label><input type="text" id="urpppp-login-zhjw-user" value="${escapeAttr(c.zhjwUser)}" autocomplete="username" /></div>
-        <div class="urpppp-row"><label>教务密码</label><input type="password" id="urpppp-login-zhjw-pass" autocomplete="current-password" /></div>
-        <div class="urpppp-row urpppp-cas-user"><label>统一认证账号</label><input type="text" id="urpppp-login-cas-user" value="${escapeAttr(c.casUser)}" /></div>
-        <div class="urpppp-row urpppp-cas-pass"><label>统一认证密码</label><input type="password" id="urpppp-login-cas-pass" /></div>
-      </div>
-      <p class="urpppp-tip">默认不保存密码；开关关闭时只保存学号，登录请使用浏览器密码管理器或手动输入。已有旧密码会兼容读取，关闭开关并保存后立即清除。</p>
-      <p class="urpppp-tip">可选 OCR：<code>${DEFAULT_OCR_EXAMPLE}</code> · POST <code>{"image":"base64"}</code> → <code>{"status":"success","code":"..."}</code></p>
-      <p class="urpppp-tip">告示：OCR 服务会接收验证码图片，但插件不会向 OCR 服务发送学号或密码。该服务并非学校官方服务，请自行判断并承担使用风险。</p>
-      <div class="urpppp-actions">
-        <button type="button" class="urppp-set-btn" id="urpppp-login-save">保存登录设置</button>
-        <button type="button" class="urppp-set-btn ghost" id="urpppp-login-clear">清除账密</button>
-      </div>
-      <div class="urpppp-status" id="urpppp-login-status"></div>
-    `;
-      sec.querySelector("#urpppp-login-zhjw-pass").value = c.zhjwPass;
-      sec.querySelector("#urpppp-login-cas-pass").value = c.casPass;
-      return sec;
-    }
-    __name(buildLoginSection, "buildLoginSection");
-    function bindLoginSection(sec) {
-      let enabled = getBool(LOGIN.enabled, true);
-      let autoSubmit = getBool(LOGIN.autoSubmit, true);
-      let shareCred = getBool(LOGIN.shareCred, true);
-      let persistPassword = loginConf().passwordStorage === "persistent";
-      const enabledBtn = sec.querySelector("#urpppp-login-enabled");
-      const autoBtn = sec.querySelector("#urpppp-login-auto");
-      const shareBtn = sec.querySelector("#urpppp-login-share");
-      const persistBtn = sec.querySelector("#urpppp-login-persist-password");
-      const toggleCas = /* @__PURE__ */ __name(() => {
-        sec.querySelectorAll(".urpppp-cas-user,.urpppp-cas-pass").forEach((r) => {
-          r.style.display = shareCred ? "none" : "grid";
-        });
-      }, "toggleCas");
-      syncToggle(enabledBtn, enabled, "功能：开", "功能：关");
-      syncToggle(autoBtn, autoSubmit, "识别后自动登录：开", "识别后自动登录：关");
-      syncToggle(shareBtn, shareCred, "教务/统一认证共用账密：开", "教务/统一认证共用账密：关");
-      syncToggle(persistBtn, persistPassword, "持久保存密码：开", "持久保存密码：关");
-      toggleCas();
-      enabledBtn.onclick = () => {
-        enabled = !enabled;
-        setVal(LOGIN.enabled, enabled);
-        if (enabled) resetLoginGuardState("");
-        syncToggle(enabledBtn, enabled, "功能：开", "功能：关");
-      };
-      autoBtn.onclick = () => {
-        autoSubmit = !autoSubmit;
-        setVal(LOGIN.autoSubmit, autoSubmit);
-        syncToggle(autoBtn, autoSubmit, "识别后自动登录：开", "识别后自动登录：关");
-      };
-      shareBtn.onclick = () => {
-        shareCred = !shareCred;
-        setVal(LOGIN.shareCred, shareCred);
-        syncToggle(shareBtn, shareCred, "教务/统一认证共用账密：开", "教务/统一认证共用账密：关");
-        toggleCas();
-      };
-      persistBtn.onclick = () => {
-        persistPassword = !persistPassword;
-        syncToggle(persistBtn, persistPassword, "持久保存密码：开", "持久保存密码：关");
-      };
-      sec.querySelector("#urpppp-login-save").onclick = () => {
-        setVal(LOGIN.ocrUrl, (sec.querySelector("#urpppp-login-ocr").value || "").trim());
-        setVal(LOGIN.submitDelay, String(Math.max(0, parseInt(sec.querySelector("#urpppp-login-delay").value, 10) || 300)));
-        setVal(LOGIN.zhjwUser, (sec.querySelector("#urpppp-login-zhjw-user").value || "").trim());
-        setVal(LOGIN.zhjwPass, persistPassword ? sec.querySelector("#urpppp-login-zhjw-pass").value || "" : "");
-        setVal(LOGIN.casUser, (sec.querySelector("#urpppp-login-cas-user").value || "").trim());
-        setVal(LOGIN.casPass, persistPassword ? sec.querySelector("#urpppp-login-cas-pass").value || "" : "");
-        setVal(LOGIN.passwordStorage, persistPassword ? "persistent" : "none");
-        setVal(LOGIN.enabled, enabled);
-        setVal(LOGIN.autoSubmit, autoSubmit);
-        setVal(LOGIN.shareCred, shareCred);
-        if (!persistPassword) {
-          sec.querySelector("#urpppp-login-zhjw-pass").value = "";
-          sec.querySelector("#urpppp-login-cas-pass").value = "";
-        }
-        resetLoginGuardState("");
-        setStatus("urpppp-login-status", persistPassword ? "登录设置已保存；密码将持久保存在脚本存储中，请确认你接受风险。" : "登录设置已保存；密码未持久化，连续失败计数已清零", "ok");
-      };
-      sec.querySelector("#urpppp-login-clear").onclick = () => {
-        setVal(LOGIN.zhjwUser, "");
-        setVal(LOGIN.zhjwPass, "");
-        setVal(LOGIN.casUser, "");
-        setVal(LOGIN.casPass, "");
-        setVal(LOGIN.passwordStorage, "none");
-        sec.querySelector("#urpppp-login-zhjw-user").value = "";
-        sec.querySelector("#urpppp-login-zhjw-pass").value = "";
-        sec.querySelector("#urpppp-login-cas-user").value = "";
-        sec.querySelector("#urpppp-login-cas-pass").value = "";
-        persistPassword = false;
-        syncToggle(persistBtn, false, "持久保存密码：开", "持久保存密码：关");
-        resetLoginGuardState("");
-        setStatus("urpppp-login-status", "已清除账密和连续失败计数", "ok");
-      };
-    }
-    __name(bindLoginSection, "bindLoginSection");
-    function buildEvalSection() {
-      const c = evalConf();
-      const perSingle = Object.keys(c.singlePerQ || {}).map((k) => `${k}:${c.singlePerQ[k]}`).join("\n");
-      const perMulti = Object.keys(c.multiPerQ || {}).map((k) => `${k}:${c.multiPerQ[k]}`).join("\n");
-      const sec = document.createElement("section");
-      sec.className = "urppp-set-sec urpppp-sec";
-      sec.id = "urpppp-eval-sec";
-      sec.innerHTML = `
-      <h3>评教助手</h3>
-      <p class="urppp-set-tip">在评教填写页自动填写问卷。服务端有约 100 秒停留校验，已取消“跳过倒计时”；开启自动保存后会等到设定秒数再提交。</p>
-      <div class="urpppp-switches">
-        <button type="button" class="urppp-set-follow" id="urpppp-eval-enabled">功能：${c.enabled ? "开" : "关"}</button>
-        <button type="button" class="urppp-set-follow" id="urpppp-eval-autofill">进入页面自动填写：${c.autoFill ? "开" : "关"}</button>
-        <button type="button" class="urppp-set-follow" id="urpppp-eval-autosave">到时自动保存：${c.autoSave ? "开" : "关"}</button>
-        <button type="button" class="urppp-set-follow" id="urpppp-eval-avoid-none">多选避开「以上均无」：${c.multiAvoidNone ? "开" : "关"}</button>
-      </div>
-
-      <div class="urpppp-sub">自动保存等待</div>
-      <div class="urpppp-grid">
-        <div class="urpppp-row"><label>等待秒数</label><input type="number" id="urpppp-eval-wait-sec" min="0" max="600" value="${escapeAttr(String(c.waitSec))}" /></div>
-      </div>
-      <p class="urpppp-tip">默认100秒，启用自动保存后会在计时结束自动保存。教务系统服务端也会进行倒计时，无法直接跳过等待秒数。</p>
-
-      <div class="urpppp-sub">分数题</div>
-      <div class="urpppp-grid">
-        <div class="urpppp-row"><label>随机下限</label><input type="number" id="urpppp-eval-score-min" min="1" max="100" value="${escapeAttr(String(c.scoreMin))}" /></div>
-        <div class="urpppp-row"><label>随机上限</label><input type="number" id="urpppp-eval-score-max" min="1" max="100" value="${escapeAttr(String(c.scoreMax))}" /></div>
-      </div>
-      <p class="urpppp-tip">每位教师的分数题会在 [下限, 上限] 内独立随机整数。</p>
-
-      <div class="urpppp-sub">单选题</div>
-      <div class="urpppp-grid">
-        <div class="urpppp-row"><label>默认选项池</label><input type="text" id="urpppp-eval-single" value="${escapeAttr(c.singleLetters)}" placeholder="如 A 或 A,B" /></div>
-        <div class="urpppp-row" style="align-items:start"><label>按题配置</label><textarea id="urpppp-eval-single-per" placeholder="每行：题号:选项池&#10;2:A,B&#10;5:A">${escapeAssistHtml(perSingle)}</textarea></div>
-      </div>
-      <p class="urpppp-tip">不同问卷的部分题目特殊（如国际周课程的第7题），建议在执行自动评教前检查特殊题目并按题配置</p>
-      <p class="urpppp-tip">题号为页面「2、3、4…」中的数字。选项池如 <code>A,B</code> 表示在 A/B 中随机。</p>
-
-      <div class="urpppp-sub">多选题</div>
-      <div class="urpppp-grid">
-        <div class="urpppp-row"><label>默认勾选池</label><input type="text" id="urpppp-eval-multi" value="${escapeAttr(c.multiLetters)}" placeholder="如 A,B,C" /></div>
-        <div class="urpppp-row" style="align-items:start"><label>按题配置</label><textarea id="urpppp-eval-multi-per" placeholder="每行：题号:选项池&#10;6:A,B,C,F">${escapeAssistHtml(perMulti)}</textarea></div>
-      </div>
-      <p class="urpppp-tip">会勾选池内全部选项；若开启避开「以上均无」，不会勾选含「以上均无」的项。</p>
-
-      <div class="urpppp-sub">主观题模板</div>
-      <div class="urpppp-grid">
-        <div class="urpppp-row" style="align-items:start"><label>评语模板</label><textarea id="urpppp-eval-comments" placeholder="每行一条，随机选用">${escapeAssistHtml(c.commentTemplates)}</textarea></div>
-        <div class="urpppp-row"><label>自动保存延迟(ms)</label><input type="number" id="urpppp-eval-save-delay" min="0" step="100" value="${escapeAttr(String(c.saveDelay))}" /></div>
-      </div>
-      <p class="urpppp-tip">评语模版以回车划分，可以自行添加新模板</p>
-
-      <div class="urpppp-sub">全自动评教（列表页）</div>
-      <div class="urpppp-grid">
-        <div class="urpppp-row"><label>问卷间隔(秒)</label><input type="number" id="urpppp-eval-batch-gap" min="0" max="60" value="${escapeAttr(String(c.batchGapSec))}" /></div>
-      </div>
-      <p class="urpppp-tip">在「教学评估」列表页启动：自动找未评估 → 进入填写 → 等待秒数后保存 → 返回列表继续，直到全部完成。期间请勿手动关闭页面。</p>
-
-      <div class="urpppp-actions">
-        <button type="button" class="urppp-set-btn" id="urpppp-eval-save">保存评教设置</button>
-        <button type="button" class="urppp-set-btn ghost" id="urpppp-eval-run">对当前评教页立即执行</button>
-        <button type="button" class="urppp-set-btn" id="urpppp-eval-batch-start">启动全自动评教</button>
-        <button type="button" class="urppp-set-btn ghost" id="urpppp-eval-batch-stop">停止全自动</button>
-      </div>
-      <div class="urpppp-status" id="urpppp-eval-status"></div>
-    `;
-      return sec;
-    }
-    __name(buildEvalSection, "buildEvalSection");
-    function bindEvalSection(sec) {
-      let enabled = getBool(EVAL.enabled, true);
-      let autoFill = getBool(EVAL.autoFill, true);
-      let autoSave = getBool(EVAL.autoSave, false);
-      let avoidNone = getBool(EVAL.multiAvoidNone, true);
-      const enabledBtn = sec.querySelector("#urpppp-eval-enabled");
-      const fillBtn = sec.querySelector("#urpppp-eval-autofill");
-      const saveAutoBtn = sec.querySelector("#urpppp-eval-autosave");
-      const avoidBtn = sec.querySelector("#urpppp-eval-avoid-none");
-      syncToggle(enabledBtn, enabled, "功能：开", "功能：关");
-      syncToggle(fillBtn, autoFill, "进入页面自动填写：开", "进入页面自动填写：关");
-      syncToggle(saveAutoBtn, autoSave, "到时自动保存：开", "到时自动保存：关");
-      syncToggle(avoidBtn, avoidNone, "多选避开「以上均无」：开", "多选避开「以上均无」：关");
-      enabledBtn.onclick = () => {
-        enabled = !enabled;
-        setVal(EVAL.enabled, enabled);
-        syncToggle(enabledBtn, enabled, "功能：开", "功能：关");
-      };
-      fillBtn.onclick = () => {
-        autoFill = !autoFill;
-        setVal(EVAL.autoFill, autoFill);
-        syncToggle(fillBtn, autoFill, "进入页面自动填写：开", "进入页面自动填写：关");
-      };
-      saveAutoBtn.onclick = () => {
-        autoSave = !autoSave;
-        setVal(EVAL.autoSave, autoSave);
-        syncToggle(saveAutoBtn, autoSave, "到时自动保存：开", "到时自动保存：关");
-      };
-      avoidBtn.onclick = () => {
-        avoidNone = !avoidNone;
-        setVal(EVAL.multiAvoidNone, avoidNone);
-        syncToggle(avoidBtn, avoidNone, "多选避开「以上均无」：开", "多选避开「以上均无」：关");
-      };
-      sec.querySelector("#urpppp-eval-save").onclick = () => {
-        let min = Math.max(1, Math.min(100, parseInt(sec.querySelector("#urpppp-eval-score-min").value, 10) || 92));
-        let max = Math.max(1, Math.min(100, parseInt(sec.querySelector("#urpppp-eval-score-max").value, 10) || 98));
-        if (max < min) {
-          const t = min;
-          min = max;
-          max = t;
-        }
-        setVal(EVAL.enabled, enabled);
-        setVal(EVAL.autoFill, autoFill);
-        setVal(EVAL.autoSave, autoSave);
-        setVal(EVAL.multiAvoidNone, avoidNone);
-        setVal(EVAL.waitSec, String(Math.max(0, parseInt(sec.querySelector("#urpppp-eval-wait-sec").value, 10) || 100)));
-        setVal(EVAL.scoreMin, String(min));
-        setVal(EVAL.scoreMax, String(max));
-        setVal(EVAL.singleLetters, (sec.querySelector("#urpppp-eval-single").value || "A").trim());
-        setJSON(EVAL.singlePerQ, parsePerQuestionMap(sec.querySelector("#urpppp-eval-single-per").value));
-        setVal(EVAL.multiLetters, (sec.querySelector("#urpppp-eval-multi").value || "A,B,C").trim());
-        setJSON(EVAL.multiPerQ, parsePerQuestionMap(sec.querySelector("#urpppp-eval-multi-per").value));
-        setVal(EVAL.commentTemplates, sec.querySelector("#urpppp-eval-comments").value || "");
-        setVal(EVAL.saveDelay, String(Math.max(0, parseInt(sec.querySelector("#urpppp-eval-save-delay").value, 10) || 500)));
-        setVal(EVAL.batchGapSec, String(Math.max(0, parseInt(sec.querySelector("#urpppp-eval-batch-gap").value, 10) || 2)));
-        setStatus("urpppp-eval-status", "评教设置已保存", "ok");
-      };
-      sec.querySelector("#urpppp-eval-run").onclick = async () => {
-        try {
-          const ok = await runEvaluationAssist({ force: true, forceSave: true });
-          setStatus("urpppp-eval-status", ok ? "已在当前评教页执行" : "当前不是评教填写页，或执行失败", ok ? "ok" : "err");
-        } catch (e) {
-          setStatus("urpppp-eval-status", String(e && e.message || e), "err");
-        }
-      };
-      const batchStartBtn = sec.querySelector("#urpppp-eval-batch-start");
-      const batchStopBtn = sec.querySelector("#urpppp-eval-batch-stop");
-      if (batchStartBtn) {
-        batchStartBtn.onclick = async () => {
-          try {
-            const n = await startFullAutoEvaluation();
-            setStatus("urpppp-eval-status", n > 0 ? "已启动全自动，共 " + n + " 份未评估" : "当前列表没有未评估问卷（请先打开教学评估列表页）", n > 0 ? "ok" : "err");
-          } catch (e) {
-            setStatus("urpppp-eval-status", String(e && e.message || e), "err");
-          }
-        };
+    const login = createLoginAssist({
+      config: { loginConf, beginLoginProcess, markPendingAutoLogin, resetLoginGuardState },
+      storage: { getBool, setVal },
+      deps: {
+        constants: { LOGIN, LOGIN_FAILURE_LIMIT, DEFAULT_OCR_EXAMPLE },
+        escapeAttr,
+        getBase64FromImage,
+        log,
+        loginGuardStyles: assist_login_guard_default,
+        recognizeCaptchaWithRequest: recognizeCaptcha,
+        setInputValue,
+        setStatus,
+        sleep,
+        syncToggle
       }
-      if (batchStopBtn) {
-        batchStopBtn.onclick = () => {
-          clearBatchState();
-          setStatus("urpppp-eval-status", "已停止全自动评教", "ok");
-          updateBatchHud();
-        };
-      }
-    }
-    __name(bindEvalSection, "bindEvalSection");
-    function ensureSubPanel() {
-      let panel = document.getElementById("urpppp-subpanel");
-      if (panel) return panel;
-      panel = document.createElement("div");
-      panel.id = "urpppp-subpanel";
-      panel.innerHTML = `
-      <div class="urpppp-sub-head">
-        <div class="urpppp-sub-title" id="urpppp-sub-title">助手设置</div>
-        <button type="button" class="urpppp-sub-close" id="urpppp-sub-close" aria-label="关闭">×</button>
-      </div>
-      <div class="urpppp-sub-body" id="urpppp-sub-body"></div>
-    `;
-      document.documentElement.appendChild(panel);
-      panel.querySelector("#urpppp-sub-close").onclick = closeSubPanel;
-      return panel;
-    }
-    __name(ensureSubPanel, "ensureSubPanel");
-    function placeSubPanelLikeMain() {
-      const main = document.getElementById("urppp-settings-panel");
-      const sub = document.getElementById("urpppp-subpanel");
-      if (!main || !sub) return;
-      const r = main.getBoundingClientRect();
-      const top = Math.max(8, r.top);
-      const left = Math.max(8, r.left);
-      const width = Math.max(320, r.width || 420);
-      const maxHeight = Math.max(240, r.height || window.innerHeight - top - 16);
-      sub.style.top = top + "px";
-      sub.style.left = left + "px";
-      sub.style.width = width + "px";
-      sub.style.maxHeight = maxHeight + "px";
-      sub.style.right = "auto";
-      sub.style.bottom = "auto";
-    }
-    __name(placeSubPanelLikeMain, "placeSubPanelLikeMain");
-    function openSubPanel(kind) {
-      settingsStyles();
-      const sub = ensureSubPanel();
-      const body = sub.querySelector("#urpppp-sub-body");
-      const title = sub.querySelector("#urpppp-sub-title");
-      if (!body || !title) return;
-      body.innerHTML = "";
-      if (kind === "login") {
-        title.textContent = "登录助手";
-        const sec = buildLoginSection();
-        body.appendChild(sec);
-        bindLoginSection(sec);
-      } else {
-        title.textContent = "评教助手";
-        const sec = buildEvalSection();
-        body.appendChild(sec);
-        bindEvalSection(sec);
-      }
-      placeSubPanelLikeMain();
-      sub.classList.add("open");
-      setTimeout(placeSubPanelLikeMain, 30);
-    }
-    __name(openSubPanel, "openSubPanel");
-    function closeSubPanel() {
-      const sub = document.getElementById("urpppp-subpanel");
-      if (!sub) return;
-      sub.classList.remove("open");
-      const body = sub.querySelector("#urpppp-sub-body");
-      if (body) body.innerHTML = "";
-    }
-    __name(closeSubPanel, "closeSubPanel");
-    function injectSettingsPanel() {
-      const panel = document.getElementById("urppp-settings-panel");
-      if (!panel) return false;
-      const body = panel.querySelector("#urppp-set-assist-slot") || panel.querySelector('.urppp-set-pane[data-pane="system"]') || panel.querySelector(".urppp-set-body");
-      if (!body) return false;
-      settingsStyles();
-      const oldLogin = document.getElementById("urpppp-login-sec");
-      const oldEval = document.getElementById("urpppp-eval-sec");
-      if (oldLogin && oldLogin.closest("#urppp-settings-panel")) oldLogin.remove();
-      if (oldEval && oldEval.closest("#urppp-settings-panel")) oldEval.remove();
-      let entry = document.getElementById("urpppp-entry-sec");
-      if (entry && body.id === "urppp-set-assist-slot" && entry.parentElement !== body) {
-        entry.remove();
-        entry = null;
-      }
-      if (!document.getElementById("urpppp-entry-sec")) {
-        entry = document.createElement("section");
-        entry.className = "urppp-set-sec urpppp-entry-sec";
-        entry.id = "urpppp-entry-sec";
-        entry.innerHTML = `
-        <h3>辅助插件</h3>
-        <div class="urpppp-entry-grid">
-          <button type="button" class="urppp-set-btn" id="urpppp-open-login">登录助手</button>
-          <button type="button" class="urppp-set-btn" id="urpppp-open-eval">评教助手</button>
-        </div>
-        <p class="urpppp-tip">辅助插件 v${URPPPP_VERSION}</p>
-      `;
-        body.appendChild(entry);
-        entry.querySelector("#urpppp-open-login").onclick = () => openSubPanel("login");
-        entry.querySelector("#urpppp-open-eval").onclick = () => openSubPanel("eval");
-      }
-      if (!panel.__urppppCloseHooked) {
-        panel.__urppppCloseHooked = true;
-        const closeBtn = panel.querySelector("#urppp-set-close");
-        if (closeBtn) {
-          closeBtn.addEventListener("click", () => closeSubPanel());
-        }
-        const mask = document.getElementById("urppp-settings-mask");
-        if (mask && !mask.__urppppCloseHooked) {
-          mask.__urppppCloseHooked = true;
-          mask.addEventListener("click", () => closeSubPanel());
+    });
+    const evaluation = createEvaluationAssist({
+      config: { evalConf, getBatchState, setBatchState, clearBatchState },
+      storage: { getBool, setVal, setJSON },
+      deps: {
+        constants: { EVAL, EVALUATION_LIST_PATH, DEFAULT_COMMENTS },
+        settingsStyles,
+        setStatus,
+        syncToggle,
+        utils: {
+          escapeHtml: escapeAssistHtml,
+          escapeAttr,
+          lettersForMulti,
+          lettersForSingle,
+          log,
+          optionLetter,
+          parsePerQuestionMap,
+          pickRandom,
+          randInt,
+          setInputValue,
+          setTextAreaValue,
+          sleep
         }
       }
-      uiState.injected = true;
-      return true;
-    }
-    __name(injectSettingsPanel, "injectSettingsPanel");
-    function watchSettingsPanel() {
-      if (window.__urppppSettingsWatchBound) return;
-      window.__urppppSettingsWatchBound = true;
-      const tryInject = /* @__PURE__ */ __name(() => {
-        try {
-          injectSettingsPanel();
-        } catch (e) {
-          console.warn(e);
-        }
-      }, "tryInject");
-      let injectTimer = 0;
-      const scheduleInject = /* @__PURE__ */ __name((delay) => {
-        clearTimeout(injectTimer);
-        injectTimer = setTimeout(tryInject, delay);
-      }, "scheduleInject");
-      const settingsSelector = "#urppp-settings-panel, #urppp-set-assist-slot, .urppp-set-body";
-      const containsSettingsNode = /* @__PURE__ */ __name((node) => {
-        if (!node || ![1, 11].includes(node.nodeType)) return false;
-        if (node.matches && node.matches(settingsSelector)) return true;
-        return Boolean(node.querySelector && node.querySelector(settingsSelector));
-      }, "containsSettingsNode");
-      tryInject();
-      const obs = new MutationObserver((mutations) => {
-        const relevant = mutations.some((mutation) => Array.from(mutation.addedNodes || []).some(containsSettingsNode));
-        if (relevant) scheduleInject(30);
-      });
-      obs.observe(document.documentElement, { childList: true, subtree: true });
-      document.addEventListener("click", (e) => {
-        const t = e.target;
-        if (!t || !t.closest) return;
-        if (t.closest("#urppp-nav-settings") || t.closest("#uc-settings") || t.closest(".urppp-nav-settings")) {
-          setTimeout(tryInject, 50);
-          setTimeout(tryInject, 200);
-        }
-      }, true);
-    }
-    __name(watchSettingsPanel, "watchSettingsPanel");
-    const recognizeCaptcha2 = /* @__PURE__ */ __name((base64, ocrUrl) => recognizeCaptcha(
-      base64,
-      ocrUrl,
-      typeof GM_xmlhttpRequest === "function" ? GM_xmlhttpRequest : null
-    ), "recognizeCaptcha");
-    function credFor(kind, c) {
-      if (c.shareCred || kind === "zhjw") return { username: c.zhjwUser, password: c.zhjwPass };
-      return { username: c.casUser || c.zhjwUser, password: c.casPass || c.zhjwPass };
-    }
-    __name(credFor, "credFor");
-    function ensureReadyForLogin(kind) {
-      const c = loginConf();
-      if (!c.enabled) return null;
-      const cred = credFor(kind, c);
-      if (!cred.username || !cred.password) {
-        log("未配置账密，请到设置 → 登录助手");
-        return null;
+    });
+    const update = createUpdateAssist({
+      deps: {
+        URPPPP_VERSION,
+        URPPPP_RAW_URL,
+        compareStandaloneVersions: compareVersions,
+        parseVersionFromSource: parseUserscriptVersion
       }
-      return { conf: c, cred };
-    }
-    __name(ensureReadyForLogin, "ensureReadyForLogin");
-    function fillLoginCredentials(usernameInput, passwordInput, cred) {
-      const users = [usernameInput, document.getElementById("urppp-user")];
-      const passwords = [passwordInput, document.getElementById("urppp-pass")];
-      Array.from(new Set(users.filter(Boolean))).forEach((el) => setInputValue(el, cred.username));
-      Array.from(new Set(passwords.filter(Boolean))).forEach((el) => setInputValue(el, cred.password));
-    }
-    __name(fillLoginCredentials, "fillLoginCredentials");
-    function fillLoginCaptcha(captchaInput, code) {
-      const inputs = [captchaInput, document.getElementById("urppp-cap")];
-      Array.from(new Set(inputs.filter(Boolean))).forEach((el) => setInputValue(el, code));
-    }
-    __name(fillLoginCaptcha, "fillLoginCaptcha");
-    function refreshLoginCaptchaImage(captchaImg) {
-      if (!captchaImg || !captchaImg.src) return;
-      let refreshed = captchaImg.src;
-      try {
-        const url = new URL(captchaImg.src, location.href);
-        url.searchParams.set("_urpppp", String(Date.now()));
-        refreshed = url.href;
-      } catch (_) {
-        refreshed += (refreshed.includes("?") ? "&" : "?") + "_urpppp=" + Date.now();
+    });
+    const panel = createAssistPanel({
+      login,
+      evaluation,
+      deps: {
+        URPPPP_VERSION,
+        settingsStyles
       }
-      captchaImg.src = refreshed;
-      const visibleImg = document.getElementById("urppp-capimg");
-      if (visibleImg) visibleImg.src = refreshed;
-    }
-    __name(refreshLoginCaptchaImage, "refreshLoginCaptchaImage");
-    function ensureLoginGuardStyles() {
-      if (document.getElementById("urpppp-login-guard-style")) return;
-      const style = document.createElement("style");
-      style.id = "urpppp-login-guard-style";
-      style.textContent = assist_login_guard_default;
-      (document.head || document.documentElement).appendChild(style);
-    }
-    __name(ensureLoginGuardStyles, "ensureLoginGuardStyles");
-    function removeLoginGuardNotice() {
-      const notice = document.getElementById("urpppp-login-guard-notice");
-      if (notice) notice.remove();
-    }
-    __name(removeLoginGuardNotice, "removeLoginGuardNotice");
-    function resumeAutoLogin() {
-      resetLoginGuardState("");
-      removeLoginGuardNotice();
-      setTimeout(() => {
-        mainLogin();
-      }, 0);
-    }
-    __name(resumeAutoLogin, "resumeAutoLogin");
-    function showLoginGuardNotice(state) {
-      if (!state || !state.failures && !state.paused) {
-        removeLoginGuardNotice();
-        return;
-      }
-      const host = document.getElementById("urppp-form") || document.querySelector(".form-signin") || document.querySelector("form");
-      if (!host) return;
-      ensureLoginGuardStyles();
-      let notice = document.getElementById("urpppp-login-guard-notice");
-      if (!notice) {
-        notice = document.createElement("div");
-        notice.id = "urpppp-login-guard-notice";
-        notice.setAttribute("role", "status");
-      }
-      notice.innerHTML = "";
-      const title = document.createElement("strong");
-      const text = document.createElement("span");
-      title.textContent = state.paused ? "自动登录已暂停" : `自动登录失败 ${state.failures}/${LOGIN_FAILURE_LIMIT}`;
-      text.textContent = state.paused ? "连续登录失败已达上限。学号和密码已填好，请手动输入验证码后登录。" : `正在重新识别验证码；达到 ${LOGIN_FAILURE_LIMIT} 次后将改为手动接管。`;
-      notice.append(title, text);
-      if (state.paused) {
-        const resume = document.createElement("button");
-        resume.type = "button";
-        resume.textContent = "恢复自动登录";
-        resume.addEventListener("click", resumeAutoLogin);
-        notice.appendChild(resume);
-      }
-      host.insertBefore(notice, host.firstChild);
-    }
-    __name(showLoginGuardNotice, "showLoginGuardNotice");
-    async function handleZhjwLogin() {
-      const usernameInput = document.getElementById("input_username");
-      const passwordInput = document.getElementById("input_password");
-      const captchaInput = document.getElementById("input_checkcode");
-      const captchaImg = document.getElementById("captchaImg") || document.querySelector(".form-signin img");
-      const loginButton = document.getElementById("loginButton");
-      if (!usernameInput || !passwordInput || !captchaInput || !captchaImg) return false;
-      log("教务登录页");
-      const ready = ensureReadyForLogin("zhjw");
-      if (!ready) return true;
-      const { conf: c, cred } = ready;
-      fillLoginCredentials(usernameInput, passwordInput, cred);
-      const guard = beginLoginProcess("zhjw", cred.username);
-      showLoginGuardNotice(guard);
-      if (guard.paused) return true;
-      if (!c.ocrUrl) {
-        log("未配置 OCR，已填充账密并等待手动登录");
-        return true;
-      }
-      if (guard.failures > 0) refreshLoginCaptchaImage(captchaImg);
-      fillLoginCaptcha(captchaInput, "");
-      if (!captchaImg.complete) await new Promise((r) => {
-        captchaImg.onload = r;
-        setTimeout(r, 2e3);
-      });
-      const code = await recognizeCaptcha2(getBase64FromImage(captchaImg), c.ocrUrl);
-      fillLoginCaptcha(captchaInput, code);
-      log("教务验证码：", code);
-      if (c.autoSubmit && loginButton) {
-        await sleep(c.submitDelay);
-        markPendingAutoLogin("zhjw", cred.username);
-        loginButton.click();
-      }
-      return true;
-    }
-    __name(handleZhjwLogin, "handleZhjwLogin");
-    function findCasElements() {
-      const inputs = Array.from(document.querySelectorAll("input"));
-      const usernameInput = inputs.find((i) => /账号|学号|用户名|username|user/i.test(i.placeholder || i.name || i.id || "")) || inputs.find((i) => i.type === "text" && !/验证码|captcha|check/i.test(i.placeholder || i.name || i.id || ""));
-      const passwordInput = inputs.find((i) => i.type === "password");
-      const captchaInput = inputs.find((i) => /验证码|captcha|checkcode|verifycode|verification/i.test(i.placeholder || i.name || i.id || "")) || inputs.find((i) => i.type === "text" && i.maxLength > 0 && i.maxLength <= 8);
-      const captchaImg = document.querySelector("img.captcha-img") || document.querySelector("img[src^='data:image']") || Array.from(document.querySelectorAll("img")).find(
-        (img) => /captcha|yzm|验证码/i.test((img.className || "") + " " + (img.alt || "") + " " + (img.src || ""))
-      );
-      const loginButton = Array.from(document.querySelectorAll("button, .ivu-btn, input[type='button'], input[type='submit']")).find((el) => (el.textContent || el.value || "").replace(/\s+/g, "") === "登录");
-      return { usernameInput, passwordInput, captchaInput, captchaImg, loginButton };
-    }
-    __name(findCasElements, "findCasElements");
-    async function handleUnifiedAuthLogin() {
-      const bodyText = document.body && document.body.innerText || "";
-      const isUnifiedAuth = /统一身份认证/.test(bodyText) || !!document.querySelector("img.captcha-img") || /frontend\/login|id\.scu\.edu\.cn|enduser\/sp\/sso/i.test(location.href);
-      if (!isUnifiedAuth) return false;
-      const els = findCasElements();
-      if (!els.usernameInput || !els.passwordInput || !els.captchaInput || !els.captchaImg) return false;
-      log("统一认证页");
-      const ready = ensureReadyForLogin("cas");
-      if (!ready) return true;
-      const { conf: c, cred } = ready;
-      fillLoginCredentials(els.usernameInput, els.passwordInput, cred);
-      const guard = beginLoginProcess("cas", cred.username);
-      showLoginGuardNotice(guard);
-      if (guard.paused) return true;
-      if (!c.ocrUrl) {
-        log("未配置 OCR，已填充账密并等待手动登录");
-        return true;
-      }
-      fillLoginCaptcha(els.captchaInput, "");
-      if (!els.captchaImg.complete) await new Promise((r) => {
-        els.captchaImg.onload = r;
-        setTimeout(r, 2e3);
-      });
-      const code = await recognizeCaptcha2(getBase64FromImage(els.captchaImg), c.ocrUrl);
-      fillLoginCaptcha(els.captchaInput, code);
-      log("统一认证验证码：", code);
-      if (c.autoSubmit && els.loginButton) {
-        await sleep(c.submitDelay);
-        markPendingAutoLogin("cas", cred.username);
-        els.loginButton.click();
-      }
-      return true;
-    }
-    __name(handleUnifiedAuthLogin, "handleUnifiedAuthLogin");
-    let loginRunning = false;
-    async function mainLogin() {
-      if (loginRunning) return;
-      loginRunning = true;
-      try {
-        await sleep(600);
-        if (await handleZhjwLogin()) return;
-        if (await handleUnifiedAuthLogin()) return;
-      } catch (err) {
-        console.error("[URP++ 辅助] 登录失败", err);
-      } finally {
-        loginRunning = false;
-      }
-    }
-    __name(mainLogin, "mainLogin");
-    function isEvaluationPage() {
-      return /\/student\/teachingEvaluation\/newEvaluation\/evaluation\//i.test(location.pathname || "") || !!(document.getElementById("savebutton") && document.getElementById("timer") && document.forms.saveEvaluation);
-    }
-    __name(isEvaluationPage, "isEvaluationPage");
-    function getGlobalScope() {
-      try {
-        if (typeof unsafeWindow !== "undefined" && unsafeWindow) return unsafeWindow;
-      } catch (_) {
-      }
-      return window;
-    }
-    __name(getGlobalScope, "getGlobalScope");
-    function injectPageScript(fn, arg) {
-      try {
-        const script = document.createElement("script");
-        script.textContent = "(" + fn.toString() + ")(" + JSON.stringify(arg == null ? null : arg) + ");";
-        const root = document.documentElement || document.head || document.body;
-        root.appendChild(script);
-        script.remove();
-        return true;
-      } catch (e) {
-        console.warn("[URP++ 辅助] injectPageScript failed", e);
-        return false;
-      }
-    }
-    __name(injectPageScript, "injectPageScript");
-    function enableSaveButtonInPage() {
-      injectPageScript(function() {
-        try {
-          var btn2 = document.getElementById("savebutton") || document.getElementById("save") || document.getElementById("save2");
-          if (btn2) {
-            btn2.disabled = false;
-            btn2.removeAttribute("disabled");
-            try {
-              btn2.classList.remove("disabled");
-            } catch (e0) {
-            }
-          }
-          var ts = document.getElementById("tsxx");
-          if (ts) ts.style.display = "none";
-        } catch (e) {
-          console.warn("[URP++ 辅助] enable save failed", e);
-        }
-      });
-      const btn = document.getElementById("savebutton") || document.getElementById("save") || document.getElementById("save2");
-      if (btn) {
-        btn.disabled = false;
-        btn.removeAttribute("disabled");
-      }
-    }
-    __name(enableSaveButtonInPage, "enableSaveButtonInPage");
-    function questionIndexNear(el) {
-      let node = el;
-      for (let i = 0; i < 12 && node; i++) {
-        const t = (node.innerText || node.textContent || "").replace(/\s+/g, " ").trim();
-        const m = t.match(/(?:^|\n)\s*(\d{1,2})\s*[、.．]/);
-        if (m) return m[1];
-        let prev = node.previousElementSibling;
-        let guard = 0;
-        while (prev && guard++ < 6) {
-          const pt = (prev.innerText || prev.textContent || "").replace(/\s+/g, " ").trim();
-          const pm = pt.match(/^(\d{1,2})\s*[、.．]/);
-          if (pm) return pm[1];
-          prev = prev.previousElementSibling;
-        }
-        node = node.parentElement;
-      }
-      return "";
-    }
-    __name(questionIndexNear, "questionIndexNear");
-    function fillScores(cfg) {
-      let min = Number(cfg.scoreMin) || 92;
-      let max = Number(cfg.scoreMax) || 98;
-      if (max < min) {
-        const t = min;
-        min = max;
-        max = t;
-      }
-      const inputs = Array.from(document.querySelectorAll('input[data-name="szt"], input[placeholder*="1-100"]'));
-      let n = 0;
-      inputs.forEach((input) => {
-        if (input.type === "hidden") return;
-        const v = String(randInt(min, max));
-        setInputValue(input, v);
-        n++;
-      });
-      return n;
-    }
-    __name(fillScores, "fillScores");
-    function fillRadios(cfg) {
-      const names = [...new Set(Array.from(document.querySelectorAll('input[type="radio"]')).map((r) => r.name).filter((n) => n && !/zcms|week|kszc|jszc/i.test(n)))];
-      let filled = 0;
-      names.forEach((name) => {
-        const radios = Array.from(document.querySelectorAll(`input[type="radio"][name="${CSS.escape ? CSS.escape(name) : name}"]`));
-        if (!radios.length) return;
-        if (radios.every((r) => /全周|单周|双周/.test(r.value || ""))) return;
-        const qNo = questionIndexNear(radios[0]);
-        const pool = lettersForSingle(qNo, cfg);
-        const candidates = radios.filter((r) => {
-          const letter = optionLetter(r.value) || optionLetter(r.nextSibling && r.nextSibling.textContent || "") || optionLetter(r.parentElement && r.parentElement.textContent);
-          return pool.includes(letter);
-        });
-        const pick = pickRandom(candidates.length ? candidates : radios);
-        if (pick) {
-          pick.checked = true;
-          pick.dispatchEvent(new Event("click", { bubbles: true }));
-          pick.dispatchEvent(new Event("change", { bubbles: true }));
-          filled++;
-        }
-      });
-      return filled;
-    }
-    __name(fillRadios, "fillRadios");
-    function fillChecks(cfg) {
-      const names = [...new Set(Array.from(document.querySelectorAll('input[type="checkbox"]')).map((c) => c.name).filter(Boolean))];
-      let groups = 0;
-      names.forEach((name) => {
-        const boxes = Array.from(document.querySelectorAll(`input[type="checkbox"][name="${CSS.escape ? CSS.escape(name) : name}"]`));
-        if (!boxes.length) return;
-        const qNo = questionIndexNear(boxes[0]);
-        const pool = lettersForMulti(qNo, cfg);
-        boxes.forEach((b) => {
-          b.checked = false;
-        });
-        let any = false;
-        boxes.forEach((b) => {
-          const label = b.value || b.parentElement && b.parentElement.textContent || "";
-          const letter = optionLetter(b.value) || optionLetter(label);
-          if (!pool.includes(letter)) return;
-          if (cfg.multiAvoidNone && /以上均无|均无|无以上/.test(label)) return;
-          b.checked = true;
-          b.dispatchEvent(new Event("click", { bubbles: true }));
-          b.dispatchEvent(new Event("change", { bubbles: true }));
-          any = true;
-        });
-        if (!any) {
-          const fallback = boxes.find((b) => !/以上均无|均无/.test(b.value || b.parentElement && b.parentElement.textContent || "")) || boxes[0];
-          if (fallback) {
-            fallback.checked = true;
-            fallback.dispatchEvent(new Event("change", { bubbles: true }));
-          }
-        }
-        groups++;
-      });
-      return groups;
-    }
-    __name(fillChecks, "fillChecks");
-    function fillComments(cfg) {
-      const lines = String(cfg.commentTemplates || "").split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-      const pool = lines.length ? lines : DEFAULT_COMMENTS.split("\n");
-      const areas = Array.from(document.querySelectorAll('form[name="saveEvaluation"] textarea, #saveEvaluation textarea, textarea')).filter((t) => t.name || t.closest("form"));
-      let n = 0;
-      areas.forEach((ta) => {
-        if (/kszc|jszc|search/i.test(ta.name || ta.id || "")) return;
-        const text = pickRandom(pool) || "老师认真负责，课程收获很大。";
-        setTextAreaValue(ta, text.slice(0, ta.maxLength > 0 ? ta.maxLength : 500));
-        n++;
-      });
-      return n;
-    }
-    __name(fillComments, "fillComments");
-    function tryAutoSave(cfg) {
-      if (!cfg.autoSave && !cfg.__forceSave) return false;
-      enableSaveButtonInPage();
-      const injected = injectPageScript(function() {
-        try {
-          var btn2 = document.getElementById("savebutton") || document.getElementById("save") || document.getElementById("save2");
-          if (btn2) {
-            btn2.disabled = false;
-            btn2.removeAttribute("disabled");
-          }
-          if (typeof save === "function") {
-            save();
-            return;
-          }
-          if (btn2) btn2.click();
-        } catch (e) {
-          console.warn("[URP++ 辅助] page save failed", e);
-          try {
-            var b2 = document.getElementById("savebutton");
-            if (b2) b2.click();
-          } catch (e2) {
-          }
-        }
-      });
-      if (injected) {
-        log("已请求页面保存");
-        return true;
-      }
-      const btn = document.getElementById("savebutton") || document.getElementById("save") || document.getElementById("save2");
-      if (btn) {
-        btn.disabled = false;
-        btn.removeAttribute("disabled");
-        btn.click();
-        log("已点击保存按钮");
-        return true;
-      }
-      return false;
-    }
-    __name(tryAutoSave, "tryAutoSave");
-    let evalPageEnterAt = 0;
-    function markEvalPageEnter() {
-      if (!isEvaluationPage()) return;
-      if (!evalPageEnterAt) evalPageEnterAt = Date.now();
-    }
-    __name(markEvalPageEnter, "markEvalPageEnter");
-    async function waitBeforeAutoSave(cfg) {
-      const need = Math.max(0, Number(cfg.waitSec) || 0);
-      if (need <= 0) return 0;
-      if (!evalPageEnterAt) evalPageEnterAt = Date.now();
-      const elapsed = (Date.now() - evalPageEnterAt) / 1e3;
-      const remain = Math.ceil(need - elapsed);
-      if (remain <= 0) return 0;
-      log(`自动保存等待 ${remain}s（不跳过服务端倒计时）`);
-      let left = remain;
-      while (left > 0) {
-        const tip2 = document.getElementById("urpppp-eval-wait-tip");
-        if (tip2) tip2.textContent = `评教助手：约 ${left} 秒后自动保存`;
-        await sleep(1e3);
-        left -= 1;
-      }
-      const tip = document.getElementById("urpppp-eval-wait-tip");
-      if (tip) tip.textContent = "评教助手：正在自动保存…";
-      return remain;
-    }
-    __name(waitBeforeAutoSave, "waitBeforeAutoSave");
-    function ensureWaitTip() {
-      if (!isEvaluationPage()) return;
-      if (document.getElementById("urpppp-eval-wait-tip")) return;
-      const host = document.querySelector(".right_top_oper") || document.querySelector("#savebutton") && document.getElementById("savebutton").parentElement;
-      if (!host) return;
-      const tip = document.createElement("span");
-      tip.id = "urpppp-eval-wait-tip";
-      host.appendChild(tip);
-    }
-    __name(ensureWaitTip, "ensureWaitTip");
-    let evalRunning = false;
-    async function runEvaluationAssist(opts) {
-      opts = opts || {};
-      if (!isEvaluationPage()) return false;
-      markEvalPageEnter();
-      ensureWaitTip();
-      updateBatchHud();
-      const cfg = evalConf();
-      const batch = getBatchState();
-      const forceSave = !!(opts.forceSave || batch.active);
-      const forceFill = !!(opts.force || cfg.autoFill || batch.active);
-      if (!cfg.enabled && !opts.force && !batch.active) return false;
-      if (evalRunning) return false;
-      evalRunning = true;
-      try {
-        log("评教页处理开始", cfg, batch);
-        if (forceFill) {
-          const s = fillScores(cfg);
-          const r = fillRadios(cfg);
-          const m = fillChecks(cfg);
-          const t = fillComments(cfg);
-          log(`已填充：分数${s} 单选${r} 多选${m} 主观${t}`);
-          setBatchTip(`已填写，等待 ${cfg.waitSec}s 后保存（${batch.active ? "队列 " + (batch.index + 1) + "/" + batch.queue.length : "单页"}）`);
-        }
-        if (cfg.autoSave || forceSave) {
-          await waitBeforeAutoSave(cfg);
-          await sleep(cfg.saveDelay || 0);
-          enableSaveButtonInPage();
-          if (batch.active) installSaveSuccessWatcher();
-          tryAutoSave(Object.assign({}, cfg, { autoSave: true, __forceSave: true }));
-          if (batch.active) {
-            await sleep(2500);
-            if (isEvaluationPage()) {
-              log("保存后仍停留在填写页，可能失败；停止或回列表重试");
-              setBatchTip("保存可能失败，请检查后重试/停止全自动");
-            }
-          }
-        }
-        return true;
-      } catch (e) {
-        console.error("[URP++ 辅助] 评教失败", e);
-        return false;
-      } finally {
-        evalRunning = false;
-      }
-    }
-    __name(runEvaluationAssist, "runEvaluationAssist");
-    const EVAL_LIST_PATH = EVALUATION_LIST_PATH;
-    function isEvaluationListPage() {
-      const p = String(location.pathname || "");
-      return /\/student\/teachingEvaluation\/newEvaluation\/index/i.test(p);
-    }
-    __name(isEvaluationListPage, "isEvaluationListPage");
-    function setBatchTip(text) {
-      const el = document.getElementById("urpppp-eval-wait-tip") || document.getElementById("urpppp-batch-hud");
-      if (el) el.textContent = text || "";
-      log(text);
-    }
-    __name(setBatchTip, "setBatchTip");
-    function updateBatchHud() {
-      const batch = getBatchState();
-      let hud = document.getElementById("urpppp-batch-hud");
-      if (!batch.active) {
-        if (hud) hud.remove();
-        return;
-      }
-      if (!hud) {
-        hud = document.createElement("div");
-        hud.id = "urpppp-batch-hud";
-        document.documentElement.appendChild(hud);
-        settingsStyles();
-      }
-      const total = (batch.queue || []).length;
-      const cur = Math.min(batch.index + 1, total);
-      const item = batch.queue[batch.index];
-      hud.innerHTML = `<div class="urpppp-hud-title">全自动评教进行中</div>
-      <div class="urpppp-hud-line">进度：${cur}/${total}</div>
-      <div class="urpppp-hud-course">${escapeAssistHtml(item && item.title || "")}</div>
-      <button type="button" id="urpppp-batch-hud-stop">停止</button>`;
-      const stop = document.getElementById("urpppp-batch-hud-stop");
-      if (stop) stop.onclick = () => {
-        clearBatchState();
-        updateBatchHud();
-        setBatchTip("已停止全自动评教");
-      };
-    }
-    __name(updateBatchHud, "updateBatchHud");
-    function scanUnevaluatedFromList() {
-      const out = [];
-      const seen = /* @__PURE__ */ new Set();
-      document.querySelectorAll('a[onclick*="evaluation("], button[onclick*="evaluation("]').forEach((a) => {
-        const oc = a.getAttribute("onclick") || "";
-        const m = oc.match(/evaluation\s*\(\s*this\s*,\s*["']([0-9A-Fa-f]+)["']/);
-        if (!m) return;
-        const ktid = m[1];
-        if (seen.has(ktid)) return;
-        const tr = a.closest("tr");
-        const rowText = (tr && tr.innerText || a.innerText || "").replace(/\s+/g, " ").trim();
-        const opText = (a.textContent || "").replace(/\s+/g, "");
-        if (!(opText === "评估" || /\s否\s|是否已评估.*否|\b否\b/.test(rowText))) return;
-        let title = "";
-        if (tr) {
-          const tds = Array.from(tr.cells || []).map((td) => (td.textContent || "").replace(/\s+/g, " ").trim());
-          title = tds[4] || tds[2] || tds.find((t) => t && !/^\d+$/.test(t) && t !== "评估" && t !== "否") || rowText;
-        }
-        seen.add(ktid);
-        out.push({
-          ktid,
-          url: "/student/teachingEvaluation/newEvaluation/evaluation/" + ktid,
-          title: String(title || ktid).slice(0, 80)
-        });
-      });
-      return out;
-    }
-    __name(scanUnevaluatedFromList, "scanUnevaluatedFromList");
-    async function startFullAutoEvaluation() {
-      if (!isEvaluationListPage()) {
-        setBatchState({ active: true, queue: [], index: 0 });
-        location.href = EVAL_LIST_PATH;
-        return 0;
-      }
-      await sleep(400);
-      const queue = scanUnevaluatedFromList();
-      if (!queue.length) {
-        clearBatchState();
-        updateBatchHud();
-        return 0;
-      }
-      setBatchState({ active: true, queue, index: 0 });
-      updateBatchHud();
-      log("全自动队列", queue);
-      await sleep(Math.max(0, (evalConf().batchGapSec || 0) * 1e3));
-      location.href = queue[0].url;
-      return queue.length;
-    }
-    __name(startFullAutoEvaluation, "startFullAutoEvaluation");
-    async function resumeFullAutoOnList() {
-      const batch = getBatchState();
-      if (!batch.active) return false;
-      if (!isEvaluationListPage()) return false;
-      await sleep(600);
-      let queue = batch.queue || [];
-      let index = batch.index || 0;
-      if (!queue.length) {
-        queue = scanUnevaluatedFromList();
-        index = 0;
-        if (!queue.length) {
-          clearBatchState();
-          updateBatchHud();
-          setBatchTip("全自动完成：没有未评估问卷");
-          alert("全自动评教完成：当前没有未评估问卷");
-          return true;
-        }
-        setBatchState({ active: true, queue, index: 0 });
-      }
-      const fresh = scanUnevaluatedFromList();
-      if (!fresh.length) {
-        clearBatchState();
-        updateBatchHud();
-        setBatchTip("全自动完成：全部评教已完成");
-        alert("全自动评教完成：全部已评估");
-        return true;
-      }
-      setBatchState({ active: true, queue: fresh, index: 0 });
-      updateBatchHud();
-      const next = fresh[0];
-      setBatchTip(`全自动：下一项 ${next.title}`);
-      await sleep(Math.max(300, (evalConf().batchGapSec || 0) * 1e3));
-      location.href = next.url;
-      return true;
-    }
-    __name(resumeFullAutoOnList, "resumeFullAutoOnList");
-    function installSaveSuccessWatcher() {
-      if (window.__urppppSaveWatch) return;
-      window.__urppppSaveWatch = true;
-      injectPageScript(function() {
-        try {
-          if (!window.jQuery || window.__urppppAjaxHooked) return;
-          window.__urppppAjaxHooked = true;
-          var $ = window.jQuery;
-          var orig = $.ajax;
-          $.ajax = function(opts) {
-            var o = opts || {};
-            var url = o.url || "";
-            if (/doSave/i.test(url)) {
-              var userSuccess = o.success;
-              o = Object.assign({}, o, {
-                success: /* @__PURE__ */ __name(function(data, status, xhr) {
-                  try {
-                    window.dispatchEvent(new CustomEvent("urpppp-eval-saved", { detail: data || {} }));
-                  } catch (e) {
-                  }
-                  if (typeof userSuccess === "function") userSuccess(data, status, xhr);
-                }, "success")
-              });
-              return orig.call(this, o);
-            }
-            return orig.apply(this, arguments);
-          };
-        } catch (e) {
-          console.warn("[URP++ 辅助] ajax hook failed", e);
-        }
-      });
-      window.addEventListener("urpppp-eval-saved", async (ev) => {
-        const data = ev && ev.detail || {};
-        const batch = getBatchState();
-        if (!batch.active) return;
-        const ok = data && (data.result === "ok" || typeof data.result === "string" && data.result.indexOf("/") !== -1);
-        if (!ok && data.result && data.result !== "ok") {
-          log("保存返回非 ok", data);
-        }
-        setBatchTip("保存成功，返回列表继续…");
-        setBatchState({
-          active: true,
-          queue: batch.queue,
-          index: (batch.index || 0) + 1
-        });
-        await sleep(Math.max(500, (evalConf().batchGapSec || 0) * 1e3));
-        location.href = EVAL_LIST_PATH;
-      });
-    }
-    __name(installSaveSuccessWatcher, "installSaveSuccessWatcher");
+    });
+    const { mainLogin, resumeAutoLogin } = login;
+    const {
+      ensureWaitTip,
+      installSaveSuccessWatcher,
+      isEvaluationPage,
+      isEvaluationListPage,
+      markEvalPageEnter,
+      resumeFullAutoOnList,
+      runEvaluationAssist,
+      startFullAutoEvaluation,
+      updateBatchHud
+    } = evaluation;
+    const { injectSettingsPanel, watchSettingsPanel } = panel;
+    const { registerAssistUpdateChecker } = update;
     try {
       GM_registerMenuCommand("URP++辅助：打开设置说明", () => {
         alert("请启用 URP++ 主脚本，点击顶栏齿轮，在设置底部配置「登录助手」「评教助手」。");
@@ -1737,87 +1953,6 @@
       };
     } catch (_) {
     }
-    function fetchAssistRemoteVersion() {
-      return new Promise((resolve, reject) => {
-        try {
-          GM_xmlhttpRequest({
-            method: "GET",
-            url: URPPPP_RAW_URL,
-            timeout: 15e3,
-            headers: { "Cache-Control": "no-cache" },
-            onload: /* @__PURE__ */ __name((r) => {
-              if (r.status >= 200 && r.status < 400) resolve(r.responseText || "");
-              else reject(new Error("HTTP " + r.status));
-            }, "onload"),
-            onerror: /* @__PURE__ */ __name(() => reject(new Error("network error")), "onerror"),
-            ontimeout: /* @__PURE__ */ __name(() => reject(new Error("timeout")), "ontimeout")
-          });
-        } catch (e) {
-          reject(e);
-        }
-      });
-    }
-    __name(fetchAssistRemoteVersion, "fetchAssistRemoteVersion");
-    function compareSemver(a, b) {
-      try {
-        const api = typeof unsafeWindow !== "undefined" && unsafeWindow && unsafeWindow.__urpppUpdate || window.__urpppUpdate;
-        if (api && typeof api.compareVersions === "function") {
-          return api.compareVersions(a, b);
-        }
-      } catch (_) {
-      }
-      return compareVersions(a, b);
-    }
-    __name(compareSemver, "compareSemver");
-    async function checkAssistUpdate() {
-      const local = URPPPP_VERSION;
-      const remoteSource = await fetchAssistRemoteVersion();
-      const remote = parseUserscriptVersion(remoteSource);
-      if (!remote) throw new Error("无法解析远程辅助插件版本");
-      const cmp = compareSemver(remote, local);
-      return {
-        id: "assist",
-        name: "辅助插件",
-        local,
-        remote,
-        status: cmp > 0 ? "update" : cmp === 0 ? "latest" : "ahead",
-        updateUrl: URPPPP_RAW_URL
-      };
-    }
-    __name(checkAssistUpdate, "checkAssistUpdate");
-    function getMainUpdateApi() {
-      try {
-        if (typeof unsafeWindow !== "undefined" && unsafeWindow && unsafeWindow.__urpppUpdate) {
-          return unsafeWindow.__urpppUpdate;
-        }
-      } catch (_) {
-      }
-      try {
-        if (window.top && window.top !== window && window.top.__urpppUpdate) return window.top.__urpppUpdate;
-      } catch (_) {
-      }
-      try {
-        if (window.__urpppUpdate) return window.__urpppUpdate;
-      } catch (_) {
-      }
-      return null;
-    }
-    __name(getMainUpdateApi, "getMainUpdateApi");
-    function registerAssistUpdateChecker() {
-      try {
-        const api = getMainUpdateApi();
-        if (!api || typeof api.registerChecker !== "function") return false;
-        return api.registerChecker({
-          id: "assist",
-          name: "辅助插件",
-          localVersion: URPPPP_VERSION,
-          check: checkAssistUpdate
-        });
-      } catch (_) {
-        return false;
-      }
-    }
-    __name(registerAssistUpdateChecker, "registerAssistUpdateChecker");
     (/* @__PURE__ */ __name((function waitRegisterUpdate() {
       let tries = 0;
       const tick = /* @__PURE__ */ __name(() => {

@@ -105,7 +105,7 @@ test('assistant credentials default to no persistence and preserve legacy opt-in
 });
 
 test('assistant settings never serialize passwords into HTML attributes', async () => {
-  const source = await readFile(new URL('../src/userscripts/urpppp.entry.js', import.meta.url), 'utf8');
+  const source = await readFile(new URL('../src/assist/login.js', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /value="\$\{escapeAttr\(c\.(?:zhjw|cas)Pass\)\}"/);
   assert.match(source, /querySelector\('#urpppp-login-zhjw-pass'\)\.value = c\.zhjwPass/);
   assert.match(source, /setVal\(LOGIN\.passwordStorage, persistPassword \? 'persistent' : 'none'\)/);
