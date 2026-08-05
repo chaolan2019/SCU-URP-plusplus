@@ -61,6 +61,7 @@ import { createTableInlineStyleScrubber } from '../features/table-beautify/inlin
 import { createPagebarLifecycle } from '../features/table-beautify/pagebar-lifecycle.js';
 import { createPagebarBeautifier } from '../features/table-beautify/pagebar.js';
 import { createNoticeTableLifecycle } from '../features/table-beautify/notice-lifecycle.js';
+import { createNoticeTableSurface } from '../features/table-beautify/notice-surface.js';
 import {
   cloneNativePdfStage,
   exportNativePdfIsolated,
@@ -5754,95 +5755,15 @@ import settingsStyles from '../styles/settings.css';
   }
   // 撤销误套在业务表上的公告样式（如空闲教室）
 
-  function noticeSurfaceColor() {
-    // 直接读计算后的主题 surface，避免 var() 在内联里偶发不生效
-    try {
-      const v = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim();
-      return v || (getCurrent() === 'dark' ? '#151A24' : '#FFFFFF');
-    } catch (_) {
-      return getCurrent() === 'dark' ? '#151A24' : '#FFFFFF';
-    }
-  }
-
-  function pinNoticeRowSurface(tr) {
-    if (!tr || !tr.classList || !tr.classList.contains('urppp-notice-row')) return;
-    const surface = noticeSurfaceColor();
-    tr.classList.remove('hover');
-    // 用具体色 + important 钉死，压过 ACE jQuery 写回的 #fff
-    tr.style.setProperty('background', surface, 'important');
-    tr.style.setProperty('background-color', surface, 'important');
-    tr.querySelectorAll('td, th').forEach((cell) => {
-      cell.classList.remove('hover');
-      cell.style.setProperty('background', 'transparent', 'important');
-      cell.style.setProperty('background-color', 'transparent', 'important');
-    });
-  }
-
   const { scheduleScrubTableInlineBg, scrubTableHeaderInlineBg } = createTableInlineStyleScrubber({
     isNativePdfIsolationActive,
   });
-
-  function scrubNoticeInlineBg(root) {
-    try {
-      const scope = root || document;
-      if (scope.matches && scope.matches('tr.urppp-notice-row')) {
-        pinNoticeRowSurface(scope);
-        return;
-      }
-      scope.querySelectorAll('table.urppp-notice-table tr.urppp-notice-row').forEach(pinNoticeRowSurface);
-    } catch (_) {}
-  }
-
-  function disarmNoticeTableHover(table) {
-    if (!table) return;
-    // CSS 已覆盖 table-hover；只摘 class + 钉背景，避免 jQuery 全量 off
-    table.classList.remove('table-hover', 'table-striped');
-    table.classList.add('urppp-notice-nohover');
-    table.querySelectorAll('tr.urppp-notice-row').forEach((tr) => {
-      tr.classList.remove('hover');
-      pinNoticeRowSurface(tr);
-    });
-  }
-
-  function stripMistakenNoticeTable(table) {
-    if (!table) return;
-    table.classList.remove('urppp-notice-table');
-    delete table.dataset.urpppNoticeScan;
-    table.style.removeProperty('border');
-    table.style.removeProperty('border-left');
-    table.style.removeProperty('background');
-    const wrap = table.closest('.urppp-table-wrap.urppp-notice-wrap');
-    if (wrap) {
-      wrap.classList.remove('urppp-notice-wrap');
-      wrap.style.removeProperty('border');
-      wrap.style.removeProperty('background');
-      wrap.style.removeProperty('box-shadow');
-      wrap.style.removeProperty('overflow');
-      wrap.style.removeProperty('border-radius');
-    }
-    table.querySelectorAll('tr.urppp-notice-row, td.urppp-notice-title-cell, td.urppp-notice-date-cell, td.urppp-notice-bullet-cell, a.urppp-notice-link, .urppp-notice-time, .urppp-notice-card').forEach((el) => {
-      el.classList.remove(
-        'urppp-notice-row',
-        'urppp-notice-title-cell',
-        'urppp-notice-date-cell',
-        'urppp-notice-bullet-cell',
-        'urppp-notice-link',
-        'urppp-notice-time',
-        'urppp-notice-card',
-        'urppp-notice-card-row',
-        'urppp-notice-main',
-        'urppp-notice-meta',
-        'urppp-notice-title',
-        'urppp-notice-body'
-      );
-      if (el.tagName === 'TR' || el.tagName === 'TD') {
-        ['display', 'border', 'background', 'padding', 'margin', 'width', 'box-shadow', 'border-radius', 'float', 'position'].forEach((p) => {
-          if (el.style.getPropertyPriority(p) === 'important') el.style.removeProperty(p);
-        });
-      }
-      delete el.dataset.urpppNoticeDone;
-    });
-  }
+  const {
+    disarmNoticeTableHover,
+    pinNoticeRowSurface,
+    scrubNoticeInlineBg,
+    stripMistakenNoticeTable,
+  } = createNoticeTableSurface({ getCurrentTheme: getCurrent });
 
   function isNoticePageContext() {
     try {

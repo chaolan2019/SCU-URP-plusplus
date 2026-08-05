@@ -2498,6 +2498,109 @@
   }
   __name(createNoticeTableLifecycle, "createNoticeTableLifecycle");
 
+  // src/features/table-beautify/notice-surface.js
+  function createNoticeTableSurface({
+    getCurrentTheme,
+    documentRef = document,
+    getComputedStyleRef = getComputedStyle
+  }) {
+    function noticeSurfaceColor() {
+      try {
+        const value = getComputedStyleRef(documentRef.documentElement).getPropertyValue("--surface").trim();
+        return value || (getCurrentTheme() === "dark" ? "#151A24" : "#FFFFFF");
+      } catch (_) {
+        return getCurrentTheme() === "dark" ? "#151A24" : "#FFFFFF";
+      }
+    }
+    __name(noticeSurfaceColor, "noticeSurfaceColor");
+    function pinNoticeRowSurface(row) {
+      if (!row?.classList?.contains("urppp-notice-row")) return;
+      const surface = noticeSurfaceColor();
+      row.classList.remove("hover");
+      row.style.setProperty("background", surface, "important");
+      row.style.setProperty("background-color", surface, "important");
+      row.querySelectorAll("td, th").forEach((cell) => {
+        cell.classList.remove("hover");
+        cell.style.setProperty("background", "transparent", "important");
+        cell.style.setProperty("background-color", "transparent", "important");
+      });
+    }
+    __name(pinNoticeRowSurface, "pinNoticeRowSurface");
+    function scrubNoticeInlineBg(root) {
+      try {
+        const scope = root || documentRef;
+        if (scope.matches?.("tr.urppp-notice-row")) {
+          pinNoticeRowSurface(scope);
+          return;
+        }
+        scope.querySelectorAll("table.urppp-notice-table tr.urppp-notice-row").forEach(pinNoticeRowSurface);
+      } catch (_) {
+      }
+    }
+    __name(scrubNoticeInlineBg, "scrubNoticeInlineBg");
+    function disarmNoticeTableHover(table) {
+      if (!table) return;
+      table.classList.remove("table-hover", "table-striped");
+      table.classList.add("urppp-notice-nohover");
+      table.querySelectorAll("tr.urppp-notice-row").forEach((row) => {
+        row.classList.remove("hover");
+        pinNoticeRowSurface(row);
+      });
+    }
+    __name(disarmNoticeTableHover, "disarmNoticeTableHover");
+    function stripMistakenNoticeTable(table) {
+      if (!table) return;
+      table.classList.remove("urppp-notice-table");
+      delete table.dataset.urpppNoticeScan;
+      table.style.removeProperty("border");
+      table.style.removeProperty("border-left");
+      table.style.removeProperty("background");
+      const wrapper = table.closest(".urppp-table-wrap.urppp-notice-wrap");
+      if (wrapper) {
+        wrapper.classList.remove("urppp-notice-wrap");
+        wrapper.style.removeProperty("border");
+        wrapper.style.removeProperty("background");
+        wrapper.style.removeProperty("box-shadow");
+        wrapper.style.removeProperty("overflow");
+        wrapper.style.removeProperty("border-radius");
+      }
+      table.querySelectorAll(
+        "tr.urppp-notice-row, td.urppp-notice-title-cell, td.urppp-notice-date-cell, td.urppp-notice-bullet-cell, a.urppp-notice-link, .urppp-notice-time, .urppp-notice-card"
+      ).forEach((element) => {
+        element.classList.remove(
+          "urppp-notice-row",
+          "urppp-notice-title-cell",
+          "urppp-notice-date-cell",
+          "urppp-notice-bullet-cell",
+          "urppp-notice-link",
+          "urppp-notice-time",
+          "urppp-notice-card",
+          "urppp-notice-card-row",
+          "urppp-notice-main",
+          "urppp-notice-meta",
+          "urppp-notice-title",
+          "urppp-notice-body"
+        );
+        if (element.tagName === "TR" || element.tagName === "TD") {
+          ["display", "border", "background", "padding", "margin", "width", "box-shadow", "border-radius", "float", "position"].forEach((property) => {
+            if (element.style.getPropertyPriority(property) === "important") {
+              element.style.removeProperty(property);
+            }
+          });
+        }
+        delete element.dataset.urpppNoticeDone;
+      });
+    }
+    __name(stripMistakenNoticeTable, "stripMistakenNoticeTable");
+    return {
+      disarmNoticeTableHover,
+      pinNoticeRowSurface,
+      scrubNoticeInlineBg,
+      stripMistakenNoticeTable
+    };
+  }
+  __name(createNoticeTableSurface, "createNoticeTableSurface");
+
   // src/features/schedule-export/native-pdf.js
   var NATIVE_PDF_ID_MAP = {
     "page-content-template": "urppp-pdf-page",
@@ -16650,93 +16753,15 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       }, true);
     }
     __name(scheduleCurriculumDrawerBeautify, "scheduleCurriculumDrawerBeautify");
-    function noticeSurfaceColor() {
-      try {
-        const v = getComputedStyle(document.documentElement).getPropertyValue("--surface").trim();
-        return v || (getCurrent() === "dark" ? "#151A24" : "#FFFFFF");
-      } catch (_) {
-        return getCurrent() === "dark" ? "#151A24" : "#FFFFFF";
-      }
-    }
-    __name(noticeSurfaceColor, "noticeSurfaceColor");
-    function pinNoticeRowSurface(tr) {
-      if (!tr || !tr.classList || !tr.classList.contains("urppp-notice-row")) return;
-      const surface = noticeSurfaceColor();
-      tr.classList.remove("hover");
-      tr.style.setProperty("background", surface, "important");
-      tr.style.setProperty("background-color", surface, "important");
-      tr.querySelectorAll("td, th").forEach((cell) => {
-        cell.classList.remove("hover");
-        cell.style.setProperty("background", "transparent", "important");
-        cell.style.setProperty("background-color", "transparent", "important");
-      });
-    }
-    __name(pinNoticeRowSurface, "pinNoticeRowSurface");
     const { scheduleScrubTableInlineBg, scrubTableHeaderInlineBg } = createTableInlineStyleScrubber({
       isNativePdfIsolationActive
     });
-    function scrubNoticeInlineBg(root) {
-      try {
-        const scope = root || document;
-        if (scope.matches && scope.matches("tr.urppp-notice-row")) {
-          pinNoticeRowSurface(scope);
-          return;
-        }
-        scope.querySelectorAll("table.urppp-notice-table tr.urppp-notice-row").forEach(pinNoticeRowSurface);
-      } catch (_) {
-      }
-    }
-    __name(scrubNoticeInlineBg, "scrubNoticeInlineBg");
-    function disarmNoticeTableHover(table) {
-      if (!table) return;
-      table.classList.remove("table-hover", "table-striped");
-      table.classList.add("urppp-notice-nohover");
-      table.querySelectorAll("tr.urppp-notice-row").forEach((tr) => {
-        tr.classList.remove("hover");
-        pinNoticeRowSurface(tr);
-      });
-    }
-    __name(disarmNoticeTableHover, "disarmNoticeTableHover");
-    function stripMistakenNoticeTable(table) {
-      if (!table) return;
-      table.classList.remove("urppp-notice-table");
-      delete table.dataset.urpppNoticeScan;
-      table.style.removeProperty("border");
-      table.style.removeProperty("border-left");
-      table.style.removeProperty("background");
-      const wrap = table.closest(".urppp-table-wrap.urppp-notice-wrap");
-      if (wrap) {
-        wrap.classList.remove("urppp-notice-wrap");
-        wrap.style.removeProperty("border");
-        wrap.style.removeProperty("background");
-        wrap.style.removeProperty("box-shadow");
-        wrap.style.removeProperty("overflow");
-        wrap.style.removeProperty("border-radius");
-      }
-      table.querySelectorAll("tr.urppp-notice-row, td.urppp-notice-title-cell, td.urppp-notice-date-cell, td.urppp-notice-bullet-cell, a.urppp-notice-link, .urppp-notice-time, .urppp-notice-card").forEach((el) => {
-        el.classList.remove(
-          "urppp-notice-row",
-          "urppp-notice-title-cell",
-          "urppp-notice-date-cell",
-          "urppp-notice-bullet-cell",
-          "urppp-notice-link",
-          "urppp-notice-time",
-          "urppp-notice-card",
-          "urppp-notice-card-row",
-          "urppp-notice-main",
-          "urppp-notice-meta",
-          "urppp-notice-title",
-          "urppp-notice-body"
-        );
-        if (el.tagName === "TR" || el.tagName === "TD") {
-          ["display", "border", "background", "padding", "margin", "width", "box-shadow", "border-radius", "float", "position"].forEach((p) => {
-            if (el.style.getPropertyPriority(p) === "important") el.style.removeProperty(p);
-          });
-        }
-        delete el.dataset.urpppNoticeDone;
-      });
-    }
-    __name(stripMistakenNoticeTable, "stripMistakenNoticeTable");
+    const {
+      disarmNoticeTableHover,
+      pinNoticeRowSurface,
+      scrubNoticeInlineBg,
+      stripMistakenNoticeTable
+    } = createNoticeTableSurface({ getCurrentTheme: getCurrent });
     function isNoticePageContext2() {
       try {
         const heading = document.querySelector("h4.header, h3.header, h4, h3, .breadcrumb, .page-header");
