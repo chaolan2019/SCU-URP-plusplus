@@ -47,6 +47,7 @@ import {
   validCustomAvatar,
 } from '../features/settings/privacy-model.js';
 import { createPrivacySettingsController } from '../features/settings/privacy-settings.js';
+import { createThemeSettingsController } from '../features/settings/theme-controller.js';
 import { syncThemeSettingsControls } from '../features/settings/theme-settings.js';
 import {
   cloneNativePdfStage,
@@ -7320,6 +7321,42 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     refreshUpdateStatus: refreshUpdateStatusHint,
   });
 
+  const themeSettingsController = createThemeSettingsController({
+    document,
+    theme: {
+      isModeAvailable: isThemeModeAvailable,
+      apply: applyTheme,
+      supportsDark: skinSupportsDark,
+      supportsDynamic: skinSupportsDynamic,
+      getFollowSystem: isThemeFollowSystem,
+      setFollowSystem: setThemeFollowSystem,
+      resolveFollowTheme: resolveFollowThemeName,
+      getCurrent,
+      getFollowDynamic: isFollowUseDynamic,
+      setFollowDynamic: setFollowUseDynamic,
+      syncNavbar: syncNavbarThemeUI,
+    },
+    preferences: {
+      getCleanDefault: isCleanDefault,
+      setCleanDefault,
+      getAppleEdge: isAppleEdgeLine,
+      setAppleEdge: setAppleEdgeLine,
+      applySkin: applySkinAttr,
+      getAutoUpdate: isAutoUpdateCheck,
+      setAutoUpdate: setAutoUpdateCheck,
+      checkUpdates: checkForUpdates,
+    },
+    accent: {
+      normalize: normalizeHexColor,
+      setAccent: (color) => GM_setValue(ACCENT_KEY, color),
+      savePreset: saveAccentPreset,
+      getScheme,
+      setScheme,
+      listSchemePreviews,
+    },
+    syncPanel: syncSettingsPanelUI,
+  });
+
   function openSettingsPanel() {
     return settingsPanelController.open();
   }
@@ -7378,129 +7415,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         aboutLogo.src = logoCdn;
       });
     }
-    panel.querySelectorAll('.urppp-set-mode').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        if (!isThemeModeAvailable(btn.dataset.theme)) return;
-        applyTheme(btn.dataset.theme, { manual: true });
-        syncSettingsPanelUI();
-      });
-    });
-    const followBtn = panel.querySelector('#urppp-set-follow');
-    if (followBtn) {
-      followBtn.addEventListener('click', () => {
-        if (!skinSupportsDark()) return;
-        const next = !isThemeFollowSystem();
-        setThemeFollowSystem(next);
-        if (next) applyTheme(resolveFollowThemeName(), { system: true });
-        else applyTheme(getCurrent(), { manual: true });
-        syncSettingsPanelUI();
-        syncNavbarThemeUI();
-      });
-    }
-    const dynFollowBtn = panel.querySelector('#urppp-set-follow-dynamic');
-    if (dynFollowBtn) {
-      dynFollowBtn.addEventListener('click', () => {
-        if (!skinSupportsDynamic()) return;
-        if (!isThemeFollowSystem()) {
-          setThemeFollowSystem(true);
-          setFollowUseDynamic(true);
-        } else {
-          setFollowUseDynamic(!isFollowUseDynamic());
-        }
-        applyTheme(resolveFollowThemeName(), { system: true });
-        syncSettingsPanelUI();
-        syncNavbarThemeUI();
-      });
-    }
-    const cleanDefBtn = panel.querySelector('#urppp-set-clean-default');
-    if (cleanDefBtn) {
-      cleanDefBtn.addEventListener('click', () => {
-        setCleanDefault(!isCleanDefault());
-        syncSettingsPanelUI();
-      });
-    }
-    const appleEdgeBtn = panel.querySelector('#urppp-set-apple-edge');
-    if (appleEdgeBtn) {
-      appleEdgeBtn.addEventListener('click', () => {
-        setAppleEdgeLine(!isAppleEdgeLine());
-        try { applySkinAttr(); } catch (_) {}
-        syncSettingsPanelUI();
-      });
-    }
-    const autoUpBtn = panel.querySelector('#urppp-set-auto-update');
-    if (autoUpBtn) {
-      autoUpBtn.addEventListener('click', () => {
-        setAutoUpdateCheck(!isAutoUpdateCheck());
-        syncSettingsPanelUI();
-      });
-    }
-    const checkUpdateBtn = panel.querySelector('#urppp-set-check-update');
-    if (checkUpdateBtn && !checkUpdateBtn.__urpppBound) {
-      checkUpdateBtn.__urpppBound = true;
-      checkUpdateBtn.addEventListener('click', () => { checkForUpdates(); });
-    }
-    const colorInput = panel.querySelector('#urppp-set-color');
-    const hexInput = panel.querySelector('#urppp-set-hex');
-    colorInput.addEventListener('input', () => {
-      hexInput.value = colorInput.value.toUpperCase();
-    });
-    hexInput.addEventListener('change', () => {
-      const h = normalizeHexColor(hexInput.value);
-      if (h) {
-        hexInput.value = h;
-        colorInput.value = h;
-      }
-    });
-    panel.querySelector('#urppp-set-gen').addEventListener('click', () => {
-      const h = normalizeHexColor(hexInput.value) || colorInput.value;
-      if (!h) return;
-      GM_setValue(ACCENT_KEY, normalizeHexColor(h));
-      if (isThemeFollowSystem()) applyTheme(resolveFollowThemeName(), { system: true });
-      else applyTheme('scu-red', { manual: true });
-      syncSettingsPanelUI();
-    });
-    panel.querySelector('#urppp-set-save').addEventListener('click', () => {
-      const h = normalizeHexColor(hexInput.value) || colorInput.value;
-      if (!h) return;
-      saveAccentPreset(h);
-      GM_setValue(ACCENT_KEY, normalizeHexColor(h));
-      if (isThemeFollowSystem()) applyTheme(resolveFollowThemeName(), { system: true });
-      else applyTheme('scu-red', { manual: true });
-      syncSettingsPanelUI();
-    });
-    colorInput.addEventListener('change', () => {
-      const h = normalizeHexColor(colorInput.value);
-      if (!h) return;
-      hexInput.value = h;
-      const schemes = panel.querySelector('#urppp-set-schemes');
-      if (!schemes) return;
-      const curScheme = getScheme();
-      schemes.innerHTML = '';
-      listSchemePreviews(h).forEach((item) => {
-        const card = document.createElement('button');
-        card.type = 'button';
-        card.className = 'urppp-set-scheme' + (item.id === curScheme ? ' ac' : '');
-        card.innerHTML = [
-          '<div class="urppp-set-scheme-preview">',
-          '  <span style="background:' + item.bg + '"></span>',
-          '  <span style="background:' + item.surface + ';border-color:' + item.border + '"></span>',
-          '  <span style="background:' + item.primary + '"></span>',
-          '</div>',
-          '<div class="urppp-set-scheme-meta">',
-          '  <strong>' + item.name + '</strong>',
-          '  <em>' + item.desc + '</em>',
-          '</div>'
-        ].join('');
-        card.addEventListener('click', () => {
-          GM_setValue(ACCENT_KEY, h);
-          setScheme(item.id);
-          if (isThemeFollowSystem()) applyTheme(resolveFollowThemeName(), { system: true });
-          else applyTheme('scu-red', { manual: true });
-          syncSettingsPanelUI();
-        });
-        schemes.appendChild(card);
-      });
-    });
+    themeSettingsController.bind(panel);
   }
 
   function renderSkinCards(panel) {
