@@ -816,3 +816,325 @@
         min-height: 28px !important;
         pointer-events: auto !important;
       }
+      /* scroll 容器内表格：不要再套一层 overflow:auto 双滚动 */
+      [id$="_scroll"].urppp-table-wrap,
+      [id$="_scroll"] .urppp-table-wrap {
+        overflow: visible !important;
+        border: none !important;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+      }
+
+      .page-content .tab-pane .urppp-table-wrap,
+      .page-content .tab-pane form .urppp-table-wrap,
+      .page-content .tab-pane #sample-table-2,
+      .page-content .tab-pane form .table {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+
+      /* 表格：外框交给 wrapper，表格本身只负责内部网格 */
+      .urppp-table-wrap {
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-sm) !important;
+        overflow: auto !important;
+        background: var(--surface) !important;
+        margin: 0 0 8px !important;
+      }
+      .table, .table-bordered, .table-striped, .table-hover, .dataTable {
+        background: var(--surface) !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        color: var(--text) !important;
+        border-collapse: collapse !important;
+        margin-bottom: 0 !important;
+        width: 100% !important;
+      }
+      /* 只画 right/bottom，top/left 由 wrapper 提供，避免与 Bootstrap thead border-top:0 冲突 */
+      .table > thead > tr > th, .table-bordered > thead > tr > th, .dataTable > thead > tr > th,
+      .table > tbody > tr > th, .table > tbody > tr > td,
+      .table-bordered > tbody > tr > td, .dataTable > tbody > tr > td,
+      .table > tfoot > tr > th, .table > tfoot > tr > td {
+        border: none !important;
+        border-right: 1px solid var(--border) !important;
+        border-bottom: 1px solid var(--border) !important;
+        color: var(--text) !important;
+        padding: 10px 12px !important;
+        font-size: 13px !important;
+        vertical-align: middle !important;
+      }
+      .table > thead > tr > th:last-child,
+      .table > tbody > tr > td:last-child,
+      .table > tbody > tr > th:last-child,
+      .table > tfoot > tr > th:last-child,
+      .table > tfoot > tr > td:last-child,
+      .table-bordered > thead > tr > th:last-child,
+      .table-bordered > tbody > tr > td:last-child {
+        border-right: none !important;
+      }
+      .table > tbody > tr:last-child > td,
+      .table > tbody > tr:last-child > th,
+      .table > tfoot > tr:last-child > td,
+      .table > tfoot > tr:last-child > th,
+      .table-bordered > tbody > tr:last-child > td {
+        border-bottom: none !important;
+      }
+      .table > thead > tr > th, .table-bordered > thead > tr > th, .dataTable > thead > tr > th {
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+        font-weight: 600 !important;
+        white-space: nowrap !important;
+      }
+      .table > tbody > tr,
+      .table > tbody > tr > td,
+      .table > tbody > tr > th,
+      .table-bordered > tbody > tr,
+      .table-bordered > tbody > tr > td,
+      .dataTable > tbody > tr,
+      .dataTable > tbody > tr > td {
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+        color: var(--text) !important;
+      }
+      .table-striped > tbody > tr:nth-of-type(odd),
+      .table-striped > tbody > tr:nth-of-type(odd) > td,
+      .table-striped > tbody > tr:nth-of-type(odd) > th,
+      .dataTable > tbody > tr:nth-of-type(odd),
+      .dataTable > tbody > tr:nth-of-type(odd) > td,
+      .dataTable > tbody > tr:nth-of-type(odd) > th {
+        background: var(--bg) !important;
+        background-color: var(--bg) !important;
+      }
+      .table-hover > tbody > tr:not(.urppp-notice-row):hover,
+      .table-hover > tbody > tr:not(.urppp-notice-row):hover > td,
+      .table-hover > tbody > tr:not(.urppp-notice-row):hover > th,
+      .table-hover > tbody > tr.hover:not(.urppp-notice-row),
+      .table-hover > tbody > tr.hover:not(.urppp-notice-row) > td,
+      .dataTable > tbody > tr:hover,
+      .dataTable > tbody > tr:hover > td {
+        background: var(--input-bg) !important;
+        background-color: var(--input-bg) !important;
+      }
+      /*
+       * 成绩表站点标记：
+       *   td.green_background = 及格/通过
+       *   td.red_background / .pink 等 = 不及格（若有）
+       * 必须压过上面 tbody td 的 surface !important
+       */
+      html body .table > tbody > tr > td.green_background,
+      html body .table-bordered > tbody > tr > td.green_background,
+      html body .table-striped > tbody > tr > td.green_background,
+      html body .table-hover > tbody > tr > td.green_background,
+      html body .dataTable > tbody > tr > td.green_background,
+      html body td.green_background,
+      html body .green_background {
+        background: #d9f5d6 !important;
+        background-color: #d9f5d6 !important;
+        color: #166534 !important;
+      }
+      html body .table-hover > tbody > tr:hover > td.green_background,
+      html body .table-hover > tbody > tr.hover > td.green_background {
+        background: #c6efc0 !important;
+        background-color: #c6efc0 !important;
+        color: #14532d !important;
+      }
+      html body .table > tbody > tr > td.red_background,
+      html body .table-bordered > tbody > tr > td.red_background,
+      html body .dataTable > tbody > tr > td.red_background,
+      html body td.red_background,
+      html body .red_background {
+        background: #fde2e1 !important;
+        background-color: #fde2e1 !important;
+        color: #991b1b !important;
+      }
+      html body .table-hover > tbody > tr:hover > td.red_background,
+      html body .table-hover > tbody > tr.hover > td.red_background {
+        background: #fbcaca !important;
+        background-color: #fbcaca !important;
+        color: #7f1d1d !important;
+      }
+      /* 暗色模式：保留语义色但降低刺眼程度 */
+      html.urppp-theme-dark td.green_background,
+      html.urppp-theme-dark .green_background,
+      html.urppp-theme-dark .table > tbody > tr > td.green_background {
+        background: rgba(34, 197, 94, 0.22) !important;
+        background-color: rgba(34, 197, 94, 0.22) !important;
+        color: #86efac !important;
+      }
+      html.urppp-theme-dark .table-hover > tbody > tr:hover > td.green_background {
+        background: rgba(34, 197, 94, 0.30) !important;
+        background-color: rgba(34, 197, 94, 0.30) !important;
+      }
+      html.urppp-theme-dark td.red_background,
+      html.urppp-theme-dark .red_background,
+      html.urppp-theme-dark .table > tbody > tr > td.red_background {
+        background: rgba(239, 68, 68, 0.22) !important;
+        background-color: rgba(239, 68, 68, 0.22) !important;
+        color: #fca5a5 !important;
+      }
+      html.urppp-theme-dark .table-hover > tbody > tr:hover > td.red_background {
+        background: rgba(239, 68, 68, 0.30) !important;
+        background-color: rgba(239, 68, 68, 0.30) !important;
+      }
+
+      .tab-content .urppp-table-wrap,
+      .tab-content .table,
+      .tab-content .table-bordered {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+      }
+
+      #billContainer .table-box,
+      #billContainer table {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+
+      /* 表格：强制 td/th 吃主题色，盖掉 Bootstrap #fff / 评教 table-box #EDF3F4 */
+      html.urppp-theme-dark .table,
+      html.urppp-theme-dark .table-bordered,
+      html.urppp-theme-dark .table-striped,
+      html.urppp-theme-dark .dataTable,
+      html.urppp-theme-dark .urppp-table-wrap,
+      html.urppp-theme-dark table.table-box,
+      html.urppp-theme-dark .table-box,
+      html.urppp-theme-dark table[style*='background'],
+      html.urppp-theme-dark table[style*='EDF3F4'],
+      html.urppp-theme-dark table[style*='edf3f4'],
+      body.urppp-dark .table,
+      body.urppp-dark table.table-box,
+      body.urppp-dark .table-box {
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      /* 评教问卷等：无 .table class 的裸 table / table-box */
+      html.urppp-theme-dark .page-content table,
+      html.urppp-theme-dark #page-content-template table,
+      html.urppp-theme-dark .main-content table,
+      html.urppp-theme-dark .widget-body table,
+      html.urppp-theme-dark .widget-main table,
+      body.urppp-dark .page-content table {
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      html.urppp-theme-dark .page-content table td,
+      html.urppp-theme-dark .page-content table th,
+      html.urppp-theme-dark #page-content-template table td,
+      html.urppp-theme-dark #page-content-template table th,
+      html.urppp-theme-dark .main-content table td,
+      html.urppp-theme-dark .main-content table th,
+      html.urppp-theme-dark .widget-body table td,
+      html.urppp-theme-dark .widget-body table th,
+      html.urppp-theme-dark table.table-box td,
+      html.urppp-theme-dark table.table-box th,
+      html.urppp-theme-dark .table-box td,
+      html.urppp-theme-dark .table-box th,
+      body.urppp-dark .page-content table td,
+      body.urppp-dark .page-content table th {
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      html.urppp-theme-dark .page-content table thead th,
+      html.urppp-theme-dark .page-content table thead td,
+      html.urppp-theme-dark table.table-box thead th,
+      html.urppp-theme-dark .table-box thead th {
+        background: var(--input-bg) !important;
+        background-color: var(--input-bg) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      /* 表头：压过 ACE/Bootstrap 的 #f2f2f2 / .center / 内联浅色 */
+      html.urppp-theme-dark .table > thead > tr > th,
+      html.urppp-theme-dark .table-bordered > thead > tr > th,
+      html.urppp-theme-dark .dataTable > thead > tr > th,
+      html.urppp-theme-dark table.table > thead > tr > th,
+      html.urppp-theme-dark table.table-striped > thead > tr > th,
+      html.urppp-theme-dark table.table-bordered > thead > tr > th,
+      html.urppp-theme-dark .table thead th,
+      html.urppp-theme-dark .table thead td,
+      html.urppp-theme-dark table thead th,
+      html.urppp-theme-dark table thead td,
+      html.urppp-theme-dark .table > thead > tr,
+      html.urppp-theme-dark .table-bordered > thead > tr,
+      html.urppp-theme-dark table > thead > tr.center,
+      html.urppp-theme-dark table > thead > tr.center > th,
+      html body.urppp-dark .table > thead > tr > th,
+      html body.urppp-dark table thead th,
+      html body.urppp-dark .table thead th {
+        background: var(--input-bg) !important;
+        background-color: var(--input-bg) !important;
+        background-image: none !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      html.urppp-theme-dark .table > thead,
+      html.urppp-theme-dark .table-bordered > thead,
+      html.urppp-theme-dark table > thead {
+        background: var(--input-bg) !important;
+        background-color: var(--input-bg) !important;
+        background-image: none !important;
+      }
+      html.urppp-theme-dark .table > tbody > tr > td:not(.green_background):not(.red_background),
+      html.urppp-theme-dark .table > tbody > tr > th,
+      html.urppp-theme-dark .table-bordered > tbody > tr > td:not(.green_background):not(.red_background),
+      html.urppp-theme-dark .dataTable > tbody > tr > td:not(.green_background):not(.red_background),
+      html.urppp-theme-dark .table > tfoot > tr > td {
+        background: var(--surface) !important;
+        background-color: var(--surface) !important;
+        color: var(--text) !important;
+        border-color: var(--border) !important;
+      }
+      html.urppp-theme-dark .table-striped > tbody > tr:nth-of-type(odd) > td:not(.green_background):not(.red_background),
+      html.urppp-theme-dark .table-striped > tbody > tr:nth-of-type(odd) > th,
+      html.urppp-theme-dark .dataTable > tbody > tr:nth-of-type(odd) > td:not(.green_background):not(.red_background) {
+        background: color-mix(in srgb, var(--bg) 70%, var(--surface)) !important;
+        background-color: color-mix(in srgb, var(--bg) 70%, var(--surface)) !important;
+        color: var(--text) !important;
+      }
+      html.urppp-theme-dark .table-hover > tbody > tr:hover > td:not(.green_background):not(.red_background),
+      html.urppp-theme-dark .dataTable > tbody > tr:hover > td:not(.green_background):not(.red_background) {
+        background: var(--input-bg) !important;
+        background-color: var(--input-bg) !important;
+      }
+      /* ACE 离开悬停时常把 td 写回 #fff：暗色下强制清掉 */
+      html.urppp-theme-dark .table-hover > tbody > tr:not(.urppp-notice-row).hover > td:not(.green_background):not(.red_background),
+      html.urppp-theme-dark .table-hover > tbody > tr:not(.urppp-notice-row) > td:not(.green_background):not(.red_background) {
+        background-color: var(--surface) !important;
+      }
+      html.urppp-theme-dark .table-striped > tbody > tr:nth-of-type(odd):not(.urppp-notice-row) > td:not(.green_background):not(.red_background) {
+        background-color: color-mix(in srgb, var(--bg) 70%, var(--surface)) !important;
+      }
+      /* 暗色成绩语义色：必须写在上面 surface 规则之后 */
+      html.urppp-theme-dark body .table > tbody > tr > td.green_background,
+      html.urppp-theme-dark body .table-bordered > tbody > tr > td.green_background,
+      html.urppp-theme-dark body .table-striped > tbody > tr > td.green_background,
+      html.urppp-theme-dark body .table-hover > tbody > tr > td.green_background,
+      html.urppp-theme-dark body .table-hover > tbody > tr:hover > td.green_background,
+      html.urppp-theme-dark body .table-hover > tbody > tr.hover > td.green_background,
+      html.urppp-theme-dark body .dataTable > tbody > tr > td.green_background,
+      html.urppp-theme-dark body td.green_background,
+      html.urppp-theme-dark body .green_background {
+        background: rgba(34, 197, 94, 0.28) !important;
+        background-color: rgba(34, 197, 94, 0.28) !important;
+        color: #86efac !important;
+      }
+      html.urppp-theme-dark body .table > tbody > tr > td.red_background,
+      html.urppp-theme-dark body .table-bordered > tbody > tr > td.red_background,
+      html.urppp-theme-dark body .table-hover > tbody > tr > td.red_background,
+      html.urppp-theme-dark body .table-hover > tbody > tr:hover > td.red_background,
+      html.urppp-theme-dark body td.red_background,
+      html.urppp-theme-dark body .red_background {
+        background: rgba(239, 68, 68, 0.28) !important;
+        background-color: rgba(239, 68, 68, 0.28) !important;
+        color: #fca5a5 !important;
+      }

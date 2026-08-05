@@ -23,6 +23,18 @@ test('table beautify owns table, pagination, and notice card styles', async () =
   assert.doesNotMatch(internalStyles, /urppagebreak/);
   assert.doesNotMatch(internalStyles, /\.pagination > li/);
 
+  assert.doesNotMatch(internalStyles, /\.urppp-table-wrap/);
+  assert.doesNotMatch(internalStyles, /\.table, \.table-bordered/);
+  assert.doesNotMatch(internalStyles, /green_background/);
+  assert.doesNotMatch(internalStyles, /red_background/);
+  assert.doesNotMatch(internalStyles, /table\.table-box/);
+  assert.doesNotMatch(internalStyles, /#billContainer \.table-box/);
+
+  assert.match(tableBeautifyStyles, /\.urppp-table-wrap/);
+  assert.match(tableBeautifyStyles, /green_background/);
+  assert.match(tableBeautifyStyles, /red_background/);
+  assert.match(tableBeautifyStyles, /#billContainer \.table-box/);
+
   assert.match(tableBeautifyStyles, /#urppagebar/);
   assert.match(tableBeautifyStyles, /urppp-page-confirm/);
   assert.match(tableBeautifyStyles, /urppp-page-chip/);
