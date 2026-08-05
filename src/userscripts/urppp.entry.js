@@ -94,7 +94,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   'use strict';
 
   // 与脚本头 @version 保持同步
-  const URPPP_VERSION = '1.5.5';
+  const URPPP_VERSION = '1.5.6';
   const URPPP_UPDATE = {
     mainRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js',
     assistRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js',

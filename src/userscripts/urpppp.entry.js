@@ -47,7 +47,7 @@ import assistStyles from '../styles/assist.css';
   'use strict';
 
   // 与脚本头 @version 保持同步
-  const URPPPP_VERSION = '1.3.2';
+  const URPPPP_VERSION = '1.3.3';
   const URPPPP_RAW_URL = 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js';
 
   // ===================== 公共工具与配置 =====================
