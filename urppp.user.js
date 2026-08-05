@@ -11508,6 +11508,173 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       }
 `;
 
+  // src/features/navigation/breadcrumb.js
+  function createBreadcrumbController({
+    documentRef = document,
+    locationRef = location,
+    windowRef = window
+  }) {
+    function cleanMenuLabel(raw) {
+      return String(raw || "").replace(/[\u00a0\s]+/g, " ").replace(/^[>\u25b8\u203a·•\u00bb]+/, "").replace(/^\s*[\u25b8>]\s*/, "").trim();
+    }
+    __name(cleanMenuLabel, "cleanMenuLabel");
+    function getMenuLiLabel(li) {
+      if (!li) return "";
+      const anchor = li.querySelector(":scope > a");
+      if (!anchor) return "";
+      const textEl = anchor.querySelector(".menu-text, .urppp-nav-text");
+      if (textEl) return cleanMenuLabel(textEl.textContent);
+      const clone = anchor.cloneNode(true);
+      clone.querySelectorAll("i, b, .badge, .arrow, .menu-icon, .urppp-nav-arrow").forEach((node) => node.remove());
+      return cleanMenuLabel(clone.textContent);
+    }
+    __name(getMenuLiLabel, "getMenuLiLabel");
+    function walkMenuAncestors(li) {
+      const stack = [];
+      let node = li;
+      const root = documentRef.getElementById("menus") || documentRef.getElementById("urppp-menus");
+      while (node && node !== root) {
+        if (node.tagName === "LI") {
+          const label = getMenuLiLabel(node);
+          if (label && !/^(首页|一级菜单|二级菜单|三级菜单)$/.test(label)) {
+            stack.unshift(label);
+          }
+        }
+        node = node.parentElement;
+      }
+      return stack.filter((label, index) => label && label !== stack[index - 1]);
+    }
+    __name(walkMenuAncestors, "walkMenuAncestors");
+    function findMenuLiByPath() {
+      const path = locationRef.pathname.replace(/\/+$/, "") || "/";
+      const search = locationRef.search || "";
+      const candidates = [];
+      const roots = [documentRef.getElementById("menus"), documentRef.getElementById("urppp-menus")].filter(Boolean);
+      roots.forEach((root) => {
+        root.querySelectorAll("a[href]").forEach((anchor) => {
+          const href = anchor.getAttribute("href") || "";
+          if (!href || href === "#" || href.startsWith("javascript")) return;
+          try {
+            const url = new URL(href, locationRef.origin);
+            const targetPath = url.pathname.replace(/\/+$/, "") || "/";
+            if (targetPath === "/" && path !== "/") return;
+            let score = 0;
+            if (path === targetPath) score = 1e3 + targetPath.length;
+            else if (path.startsWith(targetPath + "/")) score = 500 + targetPath.length;
+            else if (path.includes(targetPath) && targetPath.length > 8) score = 200 + targetPath.length;
+            if (score && search && url.search && search.indexOf(url.search.slice(1)) >= 0) score += 50;
+            if (score > 0) candidates.push({ score, li: anchor.closest("li") });
+          } catch (_) {
+          }
+        });
+      });
+      candidates.sort((a, b) => b.score - a.score);
+      return candidates.length ? candidates[0].li : null;
+    }
+    __name(findMenuLiByPath, "findMenuLiByPath");
+    function getBreadcrumbTrail() {
+      const byPath = findMenuLiByPath();
+      if (byPath) {
+        const trail = walkMenuAncestors(byPath);
+        if (trail.length) return trail;
+      }
+      let bar = "";
+      try {
+        const match = documentRef.cookie.match(/(?:^|;\s*)selectionBar=([^;]+)/);
+        if (match) bar = decodeURIComponent(match[1]);
+      } catch (_) {
+      }
+      if (bar && bar !== "0") {
+        const node = documentRef.getElementById(bar);
+        if (node) {
+          const trail = walkMenuAncestors(node);
+          if (trail.length) return trail;
+        }
+      }
+      let activeLi = null;
+      const menuActives = Array.from(documentRef.querySelectorAll("#menus li.active"));
+      if (menuActives.length) {
+        activeLi = menuActives[menuActives.length - 1];
+        for (let i = menuActives.length - 1; i >= 0; i--) {
+          if (!menuActives[i].querySelector("li.active")) {
+            activeLi = menuActives[i];
+            break;
+          }
+        }
+      }
+      if (!activeLi) {
+        const urpActives = Array.from(documentRef.querySelectorAll("#urppp-menus .urppp-nav-item.active"));
+        if (urpActives.length) {
+          activeLi = urpActives[urpActives.length - 1];
+          for (let i = urpActives.length - 1; i >= 0; i--) {
+            if (!urpActives[i].querySelector(".urppp-nav-item.active")) {
+              activeLi = urpActives[i];
+              break;
+            }
+          }
+        }
+      }
+      if (activeLi) {
+        const trail = walkMenuAncestors(activeLi);
+        if (trail.length) return trail;
+      }
+      const box = documentRef.getElementById("breadcrumbs") || documentRef.querySelector(".breadcrumbs");
+      const ul = box && (box.querySelector("ul.breadcrumb") || box.querySelector(".breadcrumb"));
+      if (ul) {
+        const trail = [];
+        Array.from(ul.children).forEach((item, index) => {
+          if (index === 0) return;
+          const label = cleanMenuLabel(item.textContent);
+          if (!label || /^(首页|一级菜单|二级菜单|三级菜单)$/.test(label)) return;
+          if (trail[trail.length - 1] === label) return;
+          trail.push(label);
+        });
+        if (trail.length) return trail;
+      }
+      return [];
+    }
+    __name(getBreadcrumbTrail, "getBreadcrumbTrail");
+    function beautifyBreadcrumbs() {
+      const box = documentRef.getElementById("breadcrumbs") || documentRef.querySelector(".breadcrumbs");
+      if (!box) return;
+      box.classList.remove("hide");
+      box.style.removeProperty("display");
+      box.style.setProperty("display", "flex", "important");
+      let ul = box.querySelector("ul.breadcrumb") || box.querySelector(".breadcrumb");
+      if (!ul) {
+        ul = documentRef.createElement("ul");
+        ul.className = "breadcrumb";
+        box.appendChild(ul);
+      }
+      const trail = getBreadcrumbTrail();
+      if (!trail.length) {
+        const existing = Array.from(ul.children).map((item) => cleanMenuLabel(item.textContent)).filter(Boolean);
+        const hasReal = existing.some((label) => label !== "首页" && !/^(一级菜单|二级菜单|三级菜单)$/.test(label));
+        if (hasReal) return;
+      }
+      ul.innerHTML = "";
+      const home = documentRef.createElement("li");
+      home.style.cursor = "pointer";
+      home.innerHTML = '<span class="urppp-bc-label"><i class="ace-icon fa fa-home home-icon"></i>首页</span>';
+      home.addEventListener("click", () => {
+        windowRef.location.href = "/";
+      });
+      ul.appendChild(home);
+      trail.forEach((label, index) => {
+        const li = documentRef.createElement("li");
+        if (index === trail.length - 1) li.classList.add("active");
+        const span = documentRef.createElement("span");
+        span.className = "urppp-bc-label";
+        span.textContent = label;
+        li.appendChild(span);
+        ul.appendChild(li);
+      });
+    }
+    __name(beautifyBreadcrumbs, "beautifyBreadcrumbs");
+    return { beautifyBreadcrumbs };
+  }
+  __name(createBreadcrumbController, "createBreadcrumbController");
+
   // src/userscripts/urppp.entry.js
   (function() {
     "use strict";
@@ -15206,164 +15373,7 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       }, 100);
     }
     __name(rebuild, "rebuild");
-    function cleanMenuLabel(raw) {
-      return String(raw || "").replace(/[\u00a0\s]+/g, " ").replace(/^[>\u25b8\u203a·•\u00bb]+/, "").replace(/^\s*[\u25b8>]\s*/, "").trim();
-    }
-    __name(cleanMenuLabel, "cleanMenuLabel");
-    function getMenuLiLabel(li) {
-      if (!li) return "";
-      const a = li.querySelector(":scope > a");
-      if (!a) return "";
-      const textEl = a.querySelector(".menu-text, .urppp-nav-text");
-      if (textEl) return cleanMenuLabel(textEl.textContent);
-      const clone = a.cloneNode(true);
-      clone.querySelectorAll("i, b, .badge, .arrow, .menu-icon, .urppp-nav-arrow").forEach((n) => n.remove());
-      return cleanMenuLabel(clone.textContent);
-    }
-    __name(getMenuLiLabel, "getMenuLiLabel");
-    function walkMenuAncestors(li) {
-      const stack = [];
-      let node = li;
-      const root = document.getElementById("menus") || document.getElementById("urppp-menus");
-      while (node && node !== root) {
-        if (node.tagName === "LI") {
-          const label = getMenuLiLabel(node);
-          if (label && !/^(首页|一级菜单|二级菜单|三级菜单)$/.test(label)) {
-            stack.unshift(label);
-          }
-        }
-        node = node.parentElement;
-      }
-      return stack.filter((t, i) => t && t !== stack[i - 1]);
-    }
-    __name(walkMenuAncestors, "walkMenuAncestors");
-    function findMenuLiByPath() {
-      const path = location.pathname.replace(/\/+$/, "") || "/";
-      const search = location.search || "";
-      const candidates = [];
-      const roots = [document.getElementById("menus"), document.getElementById("urppp-menus")].filter(Boolean);
-      roots.forEach((root) => {
-        root.querySelectorAll("a[href]").forEach((a) => {
-          const href = a.getAttribute("href") || "";
-          if (!href || href === "#" || href.startsWith("javascript")) return;
-          try {
-            const u = new URL(href, location.origin);
-            const p = u.pathname.replace(/\/+$/, "") || "/";
-            if (p === "/" && path !== "/") return;
-            let score = 0;
-            if (path === p) score = 1e3 + p.length;
-            else if (path.startsWith(p + "/")) score = 500 + p.length;
-            else if (path.includes(p) && p.length > 8) score = 200 + p.length;
-            if (score && search && u.search && search.indexOf(u.search.slice(1)) >= 0) score += 50;
-            if (score > 0) candidates.push({ score, li: a.closest("li") });
-          } catch (_) {
-          }
-        });
-      });
-      candidates.sort((a, b) => b.score - a.score);
-      return candidates.length ? candidates[0].li : null;
-    }
-    __name(findMenuLiByPath, "findMenuLiByPath");
-    function getBreadcrumbTrail() {
-      const byPath = findMenuLiByPath();
-      if (byPath) {
-        const t = walkMenuAncestors(byPath);
-        if (t.length) return t;
-      }
-      let bar = "";
-      try {
-        const m = document.cookie.match(/(?:^|;\s*)selectionBar=([^;]+)/);
-        if (m) bar = decodeURIComponent(m[1]);
-      } catch (_) {
-      }
-      if (bar && bar !== "0") {
-        const node = document.getElementById(bar);
-        if (node) {
-          const t = walkMenuAncestors(node);
-          if (t.length) return t;
-        }
-      }
-      let activeLi = null;
-      const menuActives = Array.from(document.querySelectorAll("#menus li.active"));
-      if (menuActives.length) {
-        activeLi = menuActives[menuActives.length - 1];
-        for (let i = menuActives.length - 1; i >= 0; i--) {
-          if (!menuActives[i].querySelector("li.active")) {
-            activeLi = menuActives[i];
-            break;
-          }
-        }
-      }
-      if (!activeLi) {
-        const urpActives = Array.from(document.querySelectorAll("#urppp-menus .urppp-nav-item.active"));
-        if (urpActives.length) {
-          activeLi = urpActives[urpActives.length - 1];
-          for (let i = urpActives.length - 1; i >= 0; i--) {
-            if (!urpActives[i].querySelector(".urppp-nav-item.active")) {
-              activeLi = urpActives[i];
-              break;
-            }
-          }
-        }
-      }
-      if (activeLi) {
-        const t = walkMenuAncestors(activeLi);
-        if (t.length) return t;
-      }
-      const box = document.getElementById("breadcrumbs") || document.querySelector(".breadcrumbs");
-      const ul = box && (box.querySelector("ul.breadcrumb") || box.querySelector(".breadcrumb"));
-      if (ul) {
-        const trail = [];
-        Array.from(ul.children).forEach((li, idx) => {
-          if (idx === 0) return;
-          const t = cleanMenuLabel(li.textContent);
-          if (!t || /^(首页|一级菜单|二级菜单|三级菜单)$/.test(t)) return;
-          if (trail[trail.length - 1] === t) return;
-          trail.push(t);
-        });
-        if (trail.length) return trail;
-      }
-      return [];
-    }
-    __name(getBreadcrumbTrail, "getBreadcrumbTrail");
-    function beautifyBreadcrumbs() {
-      const box = document.getElementById("breadcrumbs") || document.querySelector(".breadcrumbs");
-      if (!box) return;
-      box.classList.remove("hide");
-      box.style.removeProperty("display");
-      box.style.setProperty("display", "flex", "important");
-      let ul = box.querySelector("ul.breadcrumb") || box.querySelector(".breadcrumb");
-      if (!ul) {
-        ul = document.createElement("ul");
-        ul.className = "breadcrumb";
-        box.appendChild(ul);
-      }
-      const trail = getBreadcrumbTrail();
-      if (!trail.length) {
-        const existing = Array.from(ul.children).map((li) => cleanMenuLabel(li.textContent)).filter(Boolean);
-        const hasReal = existing.some((t) => t !== "首页" && !/^(一级菜单|二级菜单|三级菜单)$/.test(t));
-        if (hasReal) return;
-      }
-      ul.innerHTML = "";
-      const home = document.createElement("li");
-      home.style.cursor = "pointer";
-      home.innerHTML = '<span class="urppp-bc-label"><i class="ace-icon fa fa-home home-icon"></i>首页</span>';
-      home.addEventListener("click", () => {
-        window.location.href = "/";
-      });
-      ul.appendChild(home);
-      trail.forEach((label, i) => {
-        const li = document.createElement("li");
-        const isLast = i === trail.length - 1;
-        if (isLast) li.classList.add("active");
-        const span = document.createElement("span");
-        span.className = "urppp-bc-label";
-        span.textContent = label;
-        li.appendChild(span);
-        ul.appendChild(li);
-      });
-    }
-    __name(beautifyBreadcrumbs, "beautifyBreadcrumbs");
+    const { beautifyBreadcrumbs } = createBreadcrumbController({});
     function fixSinglePairProfileForms() {
       try {
         document.querySelectorAll(".profile-user-info, .profile-user-info-striped").forEach((root) => {
