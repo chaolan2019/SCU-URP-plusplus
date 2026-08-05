@@ -3179,7 +3179,21 @@
     const host = doc.getElementById("mycoursetable");
     if (!host) throw new Error("当前页面没有课表节点");
     nativePdfIsolationDepth += 1;
-    const elements = [host, ...host.querySelectorAll("*")];
+    const layoutScope = [host, ...host.querySelectorAll("*")];
+    const extra = [];
+    const soliderBox = doc.getElementById("soliderbox");
+    if (soliderBox) extra.push(soliderBox);
+    let ancestor = host.parentElement;
+    while (ancestor && ancestor !== doc.documentElement) {
+      const cls = ancestor.classList;
+      if (ancestor.id === "page-content-template" || cls && (cls.contains("page-content") || cls.contains("profile-info-row") || cls.contains("profile-info-value"))) {
+        extra.push(ancestor);
+      }
+      ancestor = ancestor.parentElement;
+    }
+    const pageAnchor = doc.getElementById("page-content-template") || doc.querySelector(".page-content");
+    if (pageAnchor && !extra.includes(pageAnchor)) extra.push(pageAnchor);
+    const elements = [...layoutScope, ...extra];
     const inlineStates = elements.map((element) => ({
       element,
       style: element.getAttribute("style")
@@ -3240,6 +3254,11 @@
       host.querySelectorAll("td").forEach((cell) => {
         cell.style.removeProperty("background");
         cell.style.removeProperty("background-color");
+      });
+      if (pageAnchor) pageAnchor.style.setProperty("position", "relative", "important");
+      host.style.setProperty("position", "static", "important");
+      host.querySelectorAll("td").forEach((cell) => {
+        cell.style.setProperty("position", "static", "important");
       });
       injected.forEach((element) => {
         element.setAttribute("data-urppp-pdf-hidden", "1");

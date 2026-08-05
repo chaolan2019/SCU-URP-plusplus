@@ -29,6 +29,9 @@ test('native PDF capture removes theme residue and restores it after every expor
   expect(capture.cardRadius).toBe('0px');
   expect(capture.cardShadow).toBe('none');
   expect(capture.cardLeftPriority).toBe('');
+  // 原生 divBuild 按整页坐标重排卡片：隔离必须把定位上下文固定回 page-content，
+  // 否则 td/#mycoursetable 的 position:relative 会让卡片相对它们定位，整列偏移。
+  expect(capture.cardOffsetDelta).toBe(0);
 
   const restoredImmediately = await card.evaluate((element) => ({
     radius: getComputedStyle(element).borderRadius,

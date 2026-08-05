@@ -40,7 +40,12 @@
                 <p>1-17周 · 1-2节</p>
               </div>
             </td>
-            <td id="2_1"></td>
+            <td id="2_1">
+              <div class="class_div box_font div-kcb-2" classNum="1">
+                <p class="p-kcm-2">世界民族问题研究</p>
+                <p>1-17周 · 1-2节</p>
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -55,8 +60,26 @@
 
     window.divBuild = function nativeDivBuild() {
       window.__nativeDivBuildCalls += 1;
-      document.querySelectorAll('.class_div').forEach((card) => {
-        card.setAttribute('style', 'position:absolute;left:0;top:0;width:100%;height:72px;');
+      const cards = document.querySelectorAll('.class_div');
+      cards.forEach((card) => {
+        card.style.position = 'absolute';
+        const cell = card.parentElement;
+        const page = document.getElementById('page-content-template');
+        const cellRect = cell.getBoundingClientRect();
+        const pageRect = page.getBoundingClientRect();
+        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+        const cellLeft = cellRect.left + scrollX;
+        const cellTop = cellRect.top + scrollY;
+        const pageLeft = pageRect.left + scrollX;
+        const pageTop = pageRect.top + scrollY;
+        const width = cellRect.width;
+        const siblings = Array.from(cell.children).filter((node) => node.classList && node.classList.contains('class_div')).length;
+        card.style.width = (siblings > 1 ? width / 2 : width) + 'px';
+        card.style.height = '72px';
+        card.style.top = (cellTop - pageTop) + 'px';
+        const isSecond = siblings > 1 && Array.from(cell.children).indexOf(card) === 1;
+        card.style.left = (cellLeft - pageLeft + (isSecond ? width / 2 : 0)) + 'px';
       });
     };
 
@@ -70,12 +93,15 @@
       const table = target.querySelector('#courseTable');
       const cell = target.querySelector('td');
       const card = target.querySelector('.class_div');
+      const cardCell = card ? card.parentElement : null;
+      const offsetDelta = card && cardCell ? Math.round(card.getBoundingClientRect().left - cardCell.getBoundingClientRect().left) : null;
       window.__captureHistory.push({
         tableBackground: getComputedStyle(table).backgroundColor,
         cellBackground: getComputedStyle(cell).backgroundColor,
         cardRadius: getComputedStyle(card).borderRadius,
         cardShadow: getComputedStyle(card).boxShadow,
         cardLeftPriority: card.style.getPropertyPriority('left'),
+        cardOffsetDelta: offsetDelta,
       });
       return Promise.resolve(document.createElement('canvas'));
     };

@@ -277,7 +277,24 @@ export function isolateScheduleForNativeExport(options = {}) {
   if (!host) throw new Error('当前页面没有课表节点');
 
   nativePdfIsolationDepth += 1;
-  const elements = [host, ...host.querySelectorAll('*')];
+  // 周课表布局链与页面定位锚点：导出期间回到站点原生布局，
+  // 避免 URP++ 残留内联导致 divBuild 的 offset 测量与 html2canvas 渲染不一致。
+  const layoutScope = [host, ...host.querySelectorAll('*')];
+  const extra = [];
+  const soliderBox = doc.getElementById('soliderbox');
+  if (soliderBox) extra.push(soliderBox);
+  let ancestor = host.parentElement;
+  while (ancestor && ancestor !== doc.documentElement) {
+    const cls = ancestor.classList;
+    if (ancestor.id === 'page-content-template'
+      || (cls && (cls.contains('page-content') || cls.contains('profile-info-row') || cls.contains('profile-info-value')))) {
+      extra.push(ancestor);
+    }
+    ancestor = ancestor.parentElement;
+  }
+  const pageAnchor = doc.getElementById('page-content-template') || doc.querySelector('.page-content');
+  if (pageAnchor && !extra.includes(pageAnchor)) extra.push(pageAnchor);
+  const elements = [...layoutScope, ...extra];
   const inlineStates = elements.map((element) => ({
     element,
     style: element.getAttribute('style'),
@@ -337,6 +354,14 @@ export function isolateScheduleForNativeExport(options = {}) {
     host.querySelectorAll('td').forEach((cell) => {
       cell.style.removeProperty('background');
       cell.style.removeProperty('background-color');
+    });
+    // 固定定位上下文：卡片包含块必须回到 #page-content-template。
+    // 若 td / #mycoursetable 的 position:relative 来自站点 CSS，原生 divBuild 按整页坐标算出的
+    // left 会相对它们定位，整列卡片偏移。
+    if (pageAnchor) pageAnchor.style.setProperty('position', 'relative', 'important');
+    host.style.setProperty('position', 'static', 'important');
+    host.querySelectorAll('td').forEach((cell) => {
+      cell.style.setProperty('position', 'static', 'important');
     });
     injected.forEach((element) => {
       element.setAttribute('data-urppp-pdf-hidden', '1');
