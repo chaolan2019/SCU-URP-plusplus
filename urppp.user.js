@@ -2223,6 +2223,44 @@
   }
   __name(createTableInlineStyleScrubber, "createTableInlineStyleScrubber");
 
+  // src/features/table-beautify/pagebar-lifecycle.js
+  function createPagebarLifecycle({
+    beautifyPagebar,
+    documentRef = document,
+    windowRef = window,
+    MutationObserverRef = MutationObserver,
+    setTimeoutRef = setTimeout,
+    clearTimeoutRef = clearTimeout
+  }) {
+    function run() {
+      beautifyPagebar();
+      documentRef.querySelectorAll("#urppagebar").forEach((host) => {
+        if (host.__urpppPagebarObs) return;
+        host.__urpppPagebarObs = true;
+        const observer = new MutationObserverRef(() => {
+          clearTimeoutRef(windowRef.__urpppPagebarTimer);
+          windowRef.__urpppPagebarTimer = setTimeoutRef(
+            () => beautifyPagebar(host.parentElement || documentRef),
+            150
+          );
+        });
+        observer.observe(host, { childList: true, subtree: true });
+      });
+    }
+    __name(run, "run");
+    function scheduleBeautifyPagebar() {
+      if (windowRef.__urpppPagebarBound) {
+        setTimeoutRef(run, 0);
+        return;
+      }
+      windowRef.__urpppPagebarBound = true;
+      [0, 300, 1e3, 2500].forEach((delay) => setTimeoutRef(run, delay));
+    }
+    __name(scheduleBeautifyPagebar, "scheduleBeautifyPagebar");
+    return { scheduleBeautifyPagebar };
+  }
+  __name(createPagebarLifecycle, "createPagebarLifecycle");
+
   // src/features/schedule-export/native-pdf.js
   var NATIVE_PDF_ID_MAP = {
     "page-content-template": "urppp-pdf-page",
@@ -15150,28 +15188,7 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       }
     }
     __name(beautifyPagebar, "beautifyPagebar");
-    function scheduleBeautifyPagebar() {
-      const run = /* @__PURE__ */ __name(() => {
-        beautifyPagebar();
-        document.querySelectorAll("#urppagebar").forEach((host) => {
-          if (host.__urpppPagebarObs) return;
-          host.__urpppPagebarObs = true;
-          const obs = new MutationObserver(() => {
-            clearTimeout(window.__urpppPagebarTimer);
-            window.__urpppPagebarTimer = setTimeout(() => beautifyPagebar(host.parentElement || document), 150);
-          });
-          obs.observe(host, { childList: true, subtree: true });
-        });
-      }, "run");
-      if (window.__urpppPagebarBound) {
-        setTimeout(run, 0);
-        return;
-      }
-      window.__urpppPagebarBound = true;
-      ;
-      [0, 300, 1e3, 2500].forEach((ms) => setTimeout(run, ms));
-    }
-    __name(scheduleBeautifyPagebar, "scheduleBeautifyPagebar");
+    const { scheduleBeautifyPagebar } = createPagebarLifecycle({ beautifyPagebar });
     function beautifyFreeClassroomList() {
       try {
         document.querySelectorAll("#drag-ul, ul#drag-ul").forEach((ul) => {

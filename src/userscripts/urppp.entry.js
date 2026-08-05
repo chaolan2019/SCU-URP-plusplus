@@ -58,6 +58,7 @@ import {
 } from '../features/table-beautify/table-classification.js';
 import { createTableWrapper } from '../features/table-beautify/table-wrapper.js';
 import { createTableInlineStyleScrubber } from '../features/table-beautify/inline-style-scrub.js';
+import { createPagebarLifecycle } from '../features/table-beautify/pagebar-lifecycle.js';
 import {
   cloneNativePdfStage,
   exportNativePdfIsolated,
@@ -4435,27 +4436,7 @@ import settingsStyles from '../styles/settings.css';
     }
   }
 
-  function scheduleBeautifyPagebar() {
-    const run = () => {
-      beautifyPagebar();
-      // 分页条可能晚注入：补挂 observer
-      document.querySelectorAll('#urppagebar').forEach((host) => {
-        if (host.__urpppPagebarObs) return;
-        host.__urpppPagebarObs = true;
-        const obs = new MutationObserver(() => {
-          clearTimeout(window.__urpppPagebarTimer);
-          window.__urpppPagebarTimer = setTimeout(() => beautifyPagebar(host.parentElement || document), 150);
-        });
-        obs.observe(host, { childList: true, subtree: true });
-      });
-    };
-    if (window.__urpppPagebarBound) {
-      setTimeout(run, 0);
-      return;
-    }
-    window.__urpppPagebarBound = true;
-    ;[0, 300, 1000, 2500].forEach((ms) => setTimeout(run, ms));
-  }
+  const { scheduleBeautifyPagebar } = createPagebarLifecycle({ beautifyPagebar });
   function beautifyFreeClassroomList() {
     try {
       document.querySelectorAll('#drag-ul, ul#drag-ul').forEach((ul) => {
