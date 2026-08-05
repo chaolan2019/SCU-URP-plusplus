@@ -60,6 +60,7 @@ import { createTableWrapper } from '../features/table-beautify/table-wrapper.js'
 import { createTableInlineStyleScrubber } from '../features/table-beautify/inline-style-scrub.js';
 import { createPagebarLifecycle } from '../features/table-beautify/pagebar-lifecycle.js';
 import { createPagebarBeautifier } from '../features/table-beautify/pagebar.js';
+import { createNoticeTableLifecycle } from '../features/table-beautify/notice-lifecycle.js';
 import {
   cloneNativePdfStage,
   exportNativePdfIsolated,
@@ -5803,16 +5804,6 @@ import settingsStyles from '../styles/settings.css';
     });
   }
 
-  function bindNoticeHoverScrub() {
-    if (window.__urpppNoticeHoverScrub) return;
-    window.__urpppNoticeHoverScrub = true;
-    // 轻量：仅 leave 后清一次，不做 document Observer / mousemove（会卡死页面）
-    document.addEventListener('mouseout', (e) => {
-      const tr = e.target && e.target.closest ? e.target.closest('table.urppp-notice-table tr.urppp-notice-row') : null;
-      if (!tr) return;
-      requestAnimationFrame(() => pinNoticeRowSurface(tr));
-    }, true);
-  }
   function stripMistakenNoticeTable(table) {
     if (!table) return;
     table.classList.remove('urppp-notice-table');
@@ -6275,26 +6266,10 @@ import settingsStyles from '../styles/settings.css';
     isBusinessDataTable,
   });
 
-  function scheduleBeautifyNoticeTables() {
-    ;[0, 400, 1500].forEach((ms) => setTimeout(() => {
-      try { beautifyNoticeTables(); } catch (_) {}
-    }, ms));
-    try {
-      const host = document.getElementById('page-content-template') || document.querySelector('.page-content, .main-content') || document.body;
-      if (!host) return;
-      const current = window.__urpppNoticeObs;
-      if (current && current.root === host && host.isConnected) return;
-      if (current && current.observer) current.observer.disconnect();
-      const observer = new MutationObserver(() => {
-        clearTimeout(window.__urpppNoticeTimer);
-        window.__urpppNoticeTimer = setTimeout(() => {
-          try { beautifyNoticeTables(); } catch (_) {}
-        }, 180);
-      });
-      observer.observe(host, { childList: true, subtree: true });
-      window.__urpppNoticeObs = { root: host, observer };
-    } catch (_) {}
-  }
+  const { bindNoticeHoverScrub, scheduleBeautifyNoticeTables } = createNoticeTableLifecycle({
+    beautifyNoticeTables,
+    pinNoticeRowSurface,
+  });
 
 
   // 清理被错误强制显示的空白 modal（无 .in/.show 却 display:block）

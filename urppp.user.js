@@ -2445,6 +2445,59 @@
   }
   __name(createPagebarBeautifier, "createPagebarBeautifier");
 
+  // src/features/table-beautify/notice-lifecycle.js
+  function createNoticeTableLifecycle({
+    beautifyNoticeTables,
+    pinNoticeRowSurface,
+    documentRef = document,
+    windowRef = window,
+    MutationObserverRef = MutationObserver,
+    requestAnimationFrameRef = requestAnimationFrame,
+    setTimeoutRef = setTimeout,
+    clearTimeoutRef = clearTimeout
+  }) {
+    function bindNoticeHoverScrub() {
+      if (windowRef.__urpppNoticeHoverScrub) return;
+      windowRef.__urpppNoticeHoverScrub = true;
+      documentRef.addEventListener("mouseout", (event) => {
+        const row = event.target?.closest ? event.target.closest("table.urppp-notice-table tr.urppp-notice-row") : null;
+        if (!row) return;
+        requestAnimationFrameRef(() => pinNoticeRowSurface(row));
+      }, true);
+    }
+    __name(bindNoticeHoverScrub, "bindNoticeHoverScrub");
+    function scheduleBeautifyNoticeTables() {
+      [0, 400, 1500].forEach((delay) => setTimeoutRef(() => {
+        try {
+          beautifyNoticeTables();
+        } catch (_) {
+        }
+      }, delay));
+      try {
+        const host = documentRef.getElementById("page-content-template") || documentRef.querySelector(".page-content, .main-content") || documentRef.body;
+        if (!host) return;
+        const current = windowRef.__urpppNoticeObs;
+        if (current && current.root === host && host.isConnected) return;
+        if (current?.observer) current.observer.disconnect();
+        const observer = new MutationObserverRef(() => {
+          clearTimeoutRef(windowRef.__urpppNoticeTimer);
+          windowRef.__urpppNoticeTimer = setTimeoutRef(() => {
+            try {
+              beautifyNoticeTables();
+            } catch (_) {
+            }
+          }, 180);
+        });
+        observer.observe(host, { childList: true, subtree: true });
+        windowRef.__urpppNoticeObs = { root: host, observer };
+      } catch (_) {
+      }
+    }
+    __name(scheduleBeautifyNoticeTables, "scheduleBeautifyNoticeTables");
+    return { bindNoticeHoverScrub, scheduleBeautifyNoticeTables };
+  }
+  __name(createNoticeTableLifecycle, "createNoticeTableLifecycle");
+
   // src/features/schedule-export/native-pdf.js
   var NATIVE_PDF_ID_MAP = {
     "page-content-template": "urppp-pdf-page",
@@ -16644,16 +16697,6 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       });
     }
     __name(disarmNoticeTableHover, "disarmNoticeTableHover");
-    function bindNoticeHoverScrub() {
-      if (window.__urpppNoticeHoverScrub) return;
-      window.__urpppNoticeHoverScrub = true;
-      document.addEventListener("mouseout", (e) => {
-        const tr = e.target && e.target.closest ? e.target.closest("table.urppp-notice-table tr.urppp-notice-row") : null;
-        if (!tr) return;
-        requestAnimationFrame(() => pinNoticeRowSurface(tr));
-      }, true);
-    }
-    __name(bindNoticeHoverScrub, "bindNoticeHoverScrub");
     function stripMistakenNoticeTable(table) {
       if (!table) return;
       table.classList.remove("urppp-notice-table");
@@ -17073,35 +17116,10 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       isNativePdfIsolationActive,
       isBusinessDataTable: isBusinessDataTable2
     });
-    function scheduleBeautifyNoticeTables() {
-      ;
-      [0, 400, 1500].forEach((ms) => setTimeout(() => {
-        try {
-          beautifyNoticeTables();
-        } catch (_) {
-        }
-      }, ms));
-      try {
-        const host = document.getElementById("page-content-template") || document.querySelector(".page-content, .main-content") || document.body;
-        if (!host) return;
-        const current = window.__urpppNoticeObs;
-        if (current && current.root === host && host.isConnected) return;
-        if (current && current.observer) current.observer.disconnect();
-        const observer = new MutationObserver(() => {
-          clearTimeout(window.__urpppNoticeTimer);
-          window.__urpppNoticeTimer = setTimeout(() => {
-            try {
-              beautifyNoticeTables();
-            } catch (_) {
-            }
-          }, 180);
-        });
-        observer.observe(host, { childList: true, subtree: true });
-        window.__urpppNoticeObs = { root: host, observer };
-      } catch (_) {
-      }
-    }
-    __name(scheduleBeautifyNoticeTables, "scheduleBeautifyNoticeTables");
+    const { bindNoticeHoverScrub, scheduleBeautifyNoticeTables } = createNoticeTableLifecycle({
+      beautifyNoticeTables,
+      pinNoticeRowSurface
+    });
     function cleanupStuckModals() {
       try {
         document.querySelectorAll(".modal").forEach((m) => {
