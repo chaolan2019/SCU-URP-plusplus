@@ -50,6 +50,13 @@ import { createPrivacySettingsController } from '../features/settings/privacy-se
 import { createThemeSettingsController } from '../features/settings/theme-controller.js';
 import { syncThemeSettingsControls } from '../features/settings/theme-settings.js';
 import {
+  isBusinessDataTable as classifyBusinessDataTable,
+  isNoticeBulletText,
+  isNoticeDateText,
+  isNoticeListTable as classifyNoticeListTable,
+  isNoticePageContext as detectNoticePageContext,
+} from '../features/table-beautify/table-classification.js';
+import {
   cloneNativePdfStage,
   exportNativePdfIsolated,
   isNativePdfIsolationActive,
@@ -6135,70 +6142,26 @@ import settingsStyles from '../styles/settings.css';
     });
   }
 
-  function isNoticeBulletText(s) {
-    const t = String(s || '').replace(/\s+/g, '');
-    return /^[•·●○▪◆★\-–]$/.test(t) || /^\d{1,4}$/.test(t);
-  }
-
-  function isNoticeDateText(s) {
-    return /\d{4}[-/.年]\d{1,2}([-/.月]\d{1,2})?/.test(String(s || ''));
-  }
-
   function isNoticePageContext() {
     try {
-      const path = String(location.pathname || '') + ' ' + String(location.href || '');
-      if (/courseSelectNotice|evaluationNotice|notice\/index/i.test(path)) return true;
-      const hint = (
-        (document.title || '') + ' ' +
-        ((document.querySelector('h4.header, h3.header, h4, h3, .breadcrumb, .page-header') || {}).textContent || '')
-      );
-      return /评估公告|通知公告|选课公告|公告|通知/.test(hint);
+      const heading = document.querySelector('h4.header, h3.header, h4, h3, .breadcrumb, .page-header');
+      return detectNoticePageContext({
+        pathname: location.pathname,
+        href: location.href,
+        title: document.title,
+        headingText: heading?.textContent || '',
+      });
     } catch (_) {
       return false;
     }
   }
 
   function isNoticeListTable(table) {
-    if (!table) return false;
-    const headText = ((table.querySelector('thead') && table.querySelector('thead').textContent) || '').replace(/\s+/g, '');
-    if (/标题/.test(headText) && /发布时间|发布日期|日期|时间/.test(headText)) return true;
-    if (isNoticePageContext() && /标题|公告|通知/.test(headText) && !/教室|教学楼|课程号|成绩|学号|座位数/.test(headText)) return true;
-    // 无 thead：●/序号 + a + 日期
-    const rows = table.querySelectorAll('tbody tr, tr');
-    let hit = 0;
-    rows.forEach((tr) => {
-      const tds = tr.querySelectorAll('td');
-      if (tds.length < 2 || tds.length > 4) return;
-      if (isNoticeBulletText(tds[0].textContent) && tr.querySelector('a') && isNoticeDateText(tr.textContent)) hit += 1;
-    });
-    if (hit < 1) return false;
-    if (isNoticePageContext() || hit === rows.length) return true;
-    const st = table.getAttribute('style') || '';
-    return /dashed/i.test(st) || table.classList.contains('no-border-top') || !!table.getAttribute('width');
+    return classifyNoticeListTable(table, { noticePage: isNoticePageContext() });
   }
 
   function isBusinessDataTable(table) {
-    if (!table) return true;
-    if (table.classList && table.classList.contains('urppp-notice-table')) return false;
-    // 公告列表（含「标题 + 发布时间」）优先，避免被「序号」误判成业务表
-    if (isNoticeListTable(table)) return false;
-    const id = (table.id || '') + ' ' + ((table.getAttribute('class') || ''));
-    if (/freeClassroom|courseTable|codeTable|jszhpjdf|score|grade|exam|drag|classroom/i.test(id)) return true;
-    if (table.querySelector('#tbodyFreeClassroom, tbody[id*="FreeClassroom"], tbody[id*="Classroom"], tbody[id*="course"], tbody[id*="Code"]')) return true;
-    // 多列表格（>=5 列）几乎一定是业务表
-    const sample = table.querySelector('tbody tr, tr');
-    if (sample && sample.querySelectorAll('td,th').length >= 5) return true;
-    // 仅用 thead 判业务表；无 thead 时不要拿第一行正文当表头（公告行会被误杀）
-    const headText = ((table.querySelector('thead') && table.querySelector('thead').textContent) || '').replace(/\s+/g, '');
-    if (headText) {
-      if (/校区|教学楼|教室|座位数|类型|课表|操作|课程号|课程名|成绩|学号|姓名|教师|周次|节次/.test(headText)) return true;
-      if (/序号/.test(headText) && !/标题|公告|通知|发布时间/.test(headText)) return true;
-    }
-    // 行内操作链接：排除公告页；“评估”单独不能当业务表信号（评估公告正文里常见）
-    if (table.querySelector('a') && /课表|教室信息|查看/.test(table.textContent || '')) {
-      if (!isNoticePageContext() && /座位数|教学楼|教室号|校区名/.test(table.textContent || '')) return true;
-    }
-    return false;
+    return classifyBusinessDataTable(table, { noticePage: isNoticePageContext() });
   }
 
   function beautifyNoticeTables() {

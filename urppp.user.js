@@ -2014,6 +2014,68 @@
   }
   __name(syncThemeSettingsControls, "syncThemeSettingsControls");
 
+  // src/features/table-beautify/table-classification.js
+  function isNoticeBulletText(value) {
+    const text = String(value || "").replace(/\s+/g, "");
+    return /^[•·●○▪◆★\-–]$/.test(text) || /^\d{1,4}$/.test(text);
+  }
+  __name(isNoticeBulletText, "isNoticeBulletText");
+  function isNoticeDateText(value) {
+    return /\d{4}[-/.年]\d{1,2}([-/.月]\d{1,2})?/.test(String(value || ""));
+  }
+  __name(isNoticeDateText, "isNoticeDateText");
+  function isNoticePageContext({ pathname = "", href = "", title = "", headingText = "" } = {}) {
+    if (/courseSelectNotice|evaluationNotice|notice\/index/i.test(`${pathname} ${href}`)) return true;
+    return /评估公告|通知公告|选课公告|公告|通知/.test(`${title} ${headingText}`);
+  }
+  __name(isNoticePageContext, "isNoticePageContext");
+  function isNoticeListTable(table, { noticePage = false } = {}) {
+    if (!table) return false;
+    const thead = table.querySelector("thead");
+    const headText = (thead?.textContent || "").replace(/\s+/g, "");
+    if (/标题/.test(headText) && /发布时间|发布日期|日期|时间/.test(headText)) return true;
+    if (noticePage && /标题|公告|通知/.test(headText) && !/教室|教学楼|课程号|成绩|学号|座位数/.test(headText)) {
+      return true;
+    }
+    const rows = table.querySelectorAll("tbody tr, tr");
+    let hit = 0;
+    rows.forEach((row) => {
+      const cells = row.querySelectorAll("td");
+      if (cells.length < 2 || cells.length > 4) return;
+      if (isNoticeBulletText(cells[0].textContent) && row.querySelector("a") && isNoticeDateText(row.textContent)) {
+        hit += 1;
+      }
+    });
+    if (hit < 1) return false;
+    if (noticePage || hit === rows.length) return true;
+    const style = table.getAttribute("style") || "";
+    return /dashed/i.test(style) || table.classList.contains("no-border-top") || Boolean(table.getAttribute("width"));
+  }
+  __name(isNoticeListTable, "isNoticeListTable");
+  function isBusinessDataTable(table, { noticePage = false } = {}) {
+    if (!table) return true;
+    if (table.classList?.contains("urppp-notice-table")) return false;
+    if (isNoticeListTable(table, { noticePage })) return false;
+    const identity = `${table.id || ""} ${table.getAttribute("class") || ""}`;
+    if (/freeClassroom|courseTable|codeTable|jszhpjdf|score|grade|exam|drag|classroom/i.test(identity)) return true;
+    if (table.querySelector('#tbodyFreeClassroom, tbody[id*="FreeClassroom"], tbody[id*="Classroom"], tbody[id*="course"], tbody[id*="Code"]')) {
+      return true;
+    }
+    const sample = table.querySelector("tbody tr, tr");
+    if (sample && sample.querySelectorAll("td,th").length >= 5) return true;
+    const thead = table.querySelector("thead");
+    const headText = (thead?.textContent || "").replace(/\s+/g, "");
+    if (headText) {
+      if (/校区|教学楼|教室|座位数|类型|课表|操作|课程号|课程名|成绩|学号|姓名|教师|周次|节次/.test(headText)) return true;
+      if (/序号/.test(headText) && !/标题|公告|通知|发布时间/.test(headText)) return true;
+    }
+    if (table.querySelector("a") && /课表|教室信息|查看/.test(table.textContent || "")) {
+      if (!noticePage && /座位数|教学楼|教室号|校区名/.test(table.textContent || "")) return true;
+    }
+    return false;
+  }
+  __name(isBusinessDataTable, "isBusinessDataTable");
+
   // src/features/schedule-export/native-pdf.js
   var NATIVE_PDF_ID_MAP = {
     "page-content-template": "urppp-pdf-page",
@@ -16530,89 +16592,53 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       });
     }
     __name(stripMistakenNoticeTable, "stripMistakenNoticeTable");
-    function isNoticeBulletText(s) {
-      const t = String(s || "").replace(/\s+/g, "");
-      return /^[•·●○▪◆★\-–]$/.test(t) || /^\d{1,4}$/.test(t);
-    }
-    __name(isNoticeBulletText, "isNoticeBulletText");
-    function isNoticeDateText(s) {
-      return /\d{4}[-/.年]\d{1,2}([-/.月]\d{1,2})?/.test(String(s || ""));
-    }
-    __name(isNoticeDateText, "isNoticeDateText");
-    function isNoticePageContext() {
+    function isNoticePageContext2() {
       try {
-        const path = String(location.pathname || "") + " " + String(location.href || "");
-        if (/courseSelectNotice|evaluationNotice|notice\/index/i.test(path)) return true;
-        const hint = (document.title || "") + " " + ((document.querySelector("h4.header, h3.header, h4, h3, .breadcrumb, .page-header") || {}).textContent || "");
-        return /评估公告|通知公告|选课公告|公告|通知/.test(hint);
+        const heading = document.querySelector("h4.header, h3.header, h4, h3, .breadcrumb, .page-header");
+        return isNoticePageContext({
+          pathname: location.pathname,
+          href: location.href,
+          title: document.title,
+          headingText: heading?.textContent || ""
+        });
       } catch (_) {
         return false;
       }
     }
-    __name(isNoticePageContext, "isNoticePageContext");
-    function isNoticeListTable(table) {
-      if (!table) return false;
-      const headText = (table.querySelector("thead") && table.querySelector("thead").textContent || "").replace(/\s+/g, "");
-      if (/标题/.test(headText) && /发布时间|发布日期|日期|时间/.test(headText)) return true;
-      if (isNoticePageContext() && /标题|公告|通知/.test(headText) && !/教室|教学楼|课程号|成绩|学号|座位数/.test(headText)) return true;
-      const rows = table.querySelectorAll("tbody tr, tr");
-      let hit = 0;
-      rows.forEach((tr) => {
-        const tds = tr.querySelectorAll("td");
-        if (tds.length < 2 || tds.length > 4) return;
-        if (isNoticeBulletText(tds[0].textContent) && tr.querySelector("a") && isNoticeDateText(tr.textContent)) hit += 1;
-      });
-      if (hit < 1) return false;
-      if (isNoticePageContext() || hit === rows.length) return true;
-      const st = table.getAttribute("style") || "";
-      return /dashed/i.test(st) || table.classList.contains("no-border-top") || !!table.getAttribute("width");
+    __name(isNoticePageContext2, "isNoticePageContext");
+    function isNoticeListTable2(table) {
+      return isNoticeListTable(table, { noticePage: isNoticePageContext2() });
     }
-    __name(isNoticeListTable, "isNoticeListTable");
-    function isBusinessDataTable(table) {
-      if (!table) return true;
-      if (table.classList && table.classList.contains("urppp-notice-table")) return false;
-      if (isNoticeListTable(table)) return false;
-      const id = (table.id || "") + " " + (table.getAttribute("class") || "");
-      if (/freeClassroom|courseTable|codeTable|jszhpjdf|score|grade|exam|drag|classroom/i.test(id)) return true;
-      if (table.querySelector('#tbodyFreeClassroom, tbody[id*="FreeClassroom"], tbody[id*="Classroom"], tbody[id*="course"], tbody[id*="Code"]')) return true;
-      const sample = table.querySelector("tbody tr, tr");
-      if (sample && sample.querySelectorAll("td,th").length >= 5) return true;
-      const headText = (table.querySelector("thead") && table.querySelector("thead").textContent || "").replace(/\s+/g, "");
-      if (headText) {
-        if (/校区|教学楼|教室|座位数|类型|课表|操作|课程号|课程名|成绩|学号|姓名|教师|周次|节次/.test(headText)) return true;
-        if (/序号/.test(headText) && !/标题|公告|通知|发布时间/.test(headText)) return true;
-      }
-      if (table.querySelector("a") && /课表|教室信息|查看/.test(table.textContent || "")) {
-        if (!isNoticePageContext() && /座位数|教学楼|教室号|校区名/.test(table.textContent || "")) return true;
-      }
-      return false;
+    __name(isNoticeListTable2, "isNoticeListTable");
+    function isBusinessDataTable2(table) {
+      return isBusinessDataTable(table, { noticePage: isNoticePageContext2() });
     }
-    __name(isBusinessDataTable, "isBusinessDataTable");
+    __name(isBusinessDataTable2, "isBusinessDataTable");
     function beautifyNoticeTables() {
       if (isNativePdfIsolationActive()) return;
       try {
         bindNoticeHoverScrub();
         scrubNoticeInlineBg();
         document.querySelectorAll("table.urppp-notice-table, table.table").forEach((table) => {
-          if (isBusinessDataTable(table) && (table.classList.contains("urppp-notice-table") || table.querySelector(".urppp-notice-row, .urppp-notice-title-cell"))) {
+          if (isBusinessDataTable2(table) && (table.classList.contains("urppp-notice-table") || table.querySelector(".urppp-notice-row, .urppp-notice-title-cell"))) {
             stripMistakenNoticeTable(table);
           }
         });
         const tableSet = new Set(document.querySelectorAll(
           '.page-content table, #page-content-template table, .main-content table, table.table, table.urppp-notice-table, table[style*="dashed"], table.no-border-top'
         ));
-        if (isNoticePageContext()) {
+        if (isNoticePageContext2()) {
           document.querySelectorAll("table").forEach((tb) => tableSet.add(tb));
         } else {
           document.querySelectorAll("table").forEach((tb) => {
-            if (isNoticeListTable(tb)) tableSet.add(tb);
+            if (isNoticeListTable2(tb)) tableSet.add(tb);
           });
         }
         Array.from(tableSet).forEach((table) => {
-          if (!table || isBusinessDataTable(table)) return;
+          if (!table || isBusinessDataTable2(table)) return;
           if (table.querySelector("thead th") && table.querySelectorAll("thead th").length >= 3) {
             const thText = table.querySelector("thead")?.textContent || "";
-            if (!isNoticeListTable(table) && /序号|课程|成绩|教室|校区|学号|姓名|教学楼|座位|操作|类型/.test(thText) && !/标题|公告|通知/.test(thText)) return;
+            if (!isNoticeListTable2(table) && /序号|课程|成绩|教室|校区|学号|姓名|教学楼|座位|操作|类型/.test(thText) && !/标题|公告|通知/.test(thText)) return;
           }
           const rows = Array.from(table.querySelectorAll("tbody > tr, tr")).filter((tr) => tr.querySelector("td"));
           if (!rows.length) return;
@@ -16629,7 +16655,7 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
             }
           });
           const looksDashedNotice = table.classList.contains("no-border-top") || /dashed|border-left-style/.test(table.getAttribute("style") || "");
-          const inNoticePage = isNoticePageContext();
+          const inNoticePage = isNoticePageContext2();
           if (noticeLike < 1) {
             if (inNoticePage) {
               const loose = rows.slice(0, 8).filter((tr) => {
@@ -16643,7 +16669,7 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
               return;
             }
           }
-          if (isBusinessDataTable(table)) return;
+          if (isBusinessDataTable2(table)) return;
           table.classList.add("urppp-notice-table");
           table.dataset.urpppNoticeScan = "1";
           disarmNoticeTableHover(table);
@@ -16949,7 +16975,7 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
         if (table.closest(".modal, .modal-dialog, .modal-content, .modal-body, #work_rest_schedule_modal")) return;
         if (table.classList.contains("urppp-wrs-table")) return;
         if (table.classList.contains("urppp-notice-table")) return;
-        if (isBusinessDataTable(table)) {
+        if (isBusinessDataTable2(table)) {
         }
         const parent = table.parentElement;
         if (!parent) return;
@@ -17339,7 +17365,7 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       scheduleBeautifyNoticeTables();
       scheduleScrubTableInlineBg();
       setTimeout(() => document.querySelectorAll("table").forEach((tb) => {
-        if (isBusinessDataTable(tb)) stripMistakenNoticeTable(tb);
+        if (isBusinessDataTable2(tb)) stripMistakenNoticeTable(tb);
       }), 500);
       scheduleWeekScheduleFix();
       fixWeekScheduleLayout();
