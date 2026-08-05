@@ -2601,6 +2601,376 @@
   }
   __name(createNoticeTableSurface, "createNoticeTableSurface");
 
+  // src/features/table-beautify/notice-tables.js
+  function createNoticeTableBeautifier({
+    isNativePdfIsolationActive: isNativePdfIsolationActive2,
+    bindNoticeHoverScrub,
+    scrubNoticeInlineBg,
+    stripMistakenNoticeTable,
+    disarmNoticeTableHover,
+    pinNoticeRowSurface,
+    isBusinessDataTable: isBusinessDataTable2,
+    isNoticeListTable: isNoticeListTable2,
+    isNoticePageContext: isNoticePageContext2,
+    isNoticeBulletText: isNoticeBulletText2,
+    documentRef = document,
+    windowRef = window,
+    logger = console
+  }) {
+    function beautifyNoticeTables() {
+      if (isNativePdfIsolationActive2()) return;
+      try {
+        bindNoticeHoverScrub();
+        scrubNoticeInlineBg();
+        documentRef.querySelectorAll("table.urppp-notice-table, table.table").forEach((table) => {
+          if (isBusinessDataTable2(table) && (table.classList.contains("urppp-notice-table") || table.querySelector(".urppp-notice-row, .urppp-notice-title-cell"))) {
+            stripMistakenNoticeTable(table);
+          }
+        });
+        const tableSet = new Set(documentRef.querySelectorAll(
+          '.page-content table, #page-content-template table, .main-content table, table.table, table.urppp-notice-table, table[style*="dashed"], table.no-border-top'
+        ));
+        if (isNoticePageContext2()) {
+          documentRef.querySelectorAll("table").forEach((table) => tableSet.add(table));
+        } else {
+          documentRef.querySelectorAll("table").forEach((table) => {
+            if (isNoticeListTable2(table)) tableSet.add(table);
+          });
+        }
+        Array.from(tableSet).forEach((table) => {
+          if (!table || isBusinessDataTable2(table)) return;
+          if (table.querySelector("thead th") && table.querySelectorAll("thead th").length >= 3) {
+            const thText = table.querySelector("thead")?.textContent || "";
+            if (!isNoticeListTable2(table) && /序号|课程|成绩|教室|校区|学号|姓名|教学楼|座位|操作|类型/.test(thText) && !/标题|公告|通知/.test(thText)) return;
+          }
+          const rows = Array.from(table.querySelectorAll("tbody > tr, tr")).filter((row) => row.querySelector("td"));
+          if (!rows.length) return;
+          let noticeLike = 0;
+          rows.slice(0, 12).forEach((row) => {
+            const tds = Array.from(row.children).filter((cell) => cell.tagName === "TD" || cell.tagName === "TH");
+            if (tds.length >= 5) return;
+            const text = (row.textContent || "").replace(/\s+/g, " ").trim();
+            const hasLink = !!row.querySelector("a[href], a[onclick], a");
+            const hasDate = /\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}/.test(text);
+            const hasBullet = tds.some((cell) => isNoticeBulletText2(cell.textContent));
+            if (hasLink && hasDate || hasBullet && hasLink || hasBullet && hasDate) {
+              noticeLike += 1;
+            }
+          });
+          const looksDashedNotice = table.classList.contains("no-border-top") || /dashed|border-left-style/.test(table.getAttribute("style") || "");
+          const inNoticePage = isNoticePageContext2();
+          if (noticeLike < 1) {
+            if (inNoticePage) {
+              const loose = rows.slice(0, 8).filter((row) => {
+                const tds = Array.from(row.children).filter((cell) => cell.tagName === "TD" || cell.tagName === "TH");
+                if (tds.length < 1 || tds.length > 4) return false;
+                const text = (row.textContent || "").replace(/\s+/g, " ").trim();
+                return !!row.querySelector("a") || /\d{4}/.test(text);
+              }).length;
+              if (loose < 1 && !looksDashedNotice) return;
+            } else if (!(looksDashedNotice && /公告|通知/.test(documentRef.title || ""))) {
+              return;
+            }
+          }
+          if (isBusinessDataTable2(table)) return;
+          table.classList.add("urppp-notice-table");
+          table.dataset.urpppNoticeScan = "1";
+          disarmNoticeTableHover(table);
+          table.style.setProperty("border", "none", "important");
+          table.style.setProperty("border-left", "none", "important");
+          table.style.setProperty("background", "transparent", "important");
+          table.style.setProperty("width", "100%", "important");
+          const wrap = table.closest(".urppp-table-wrap");
+          if (wrap) {
+            wrap.classList.add("urppp-notice-wrap");
+            wrap.style.setProperty("border", "none", "important");
+            wrap.style.setProperty("background", "transparent", "important");
+            wrap.style.setProperty("box-shadow", "none", "important");
+            wrap.style.setProperty("overflow", "visible", "important");
+            wrap.style.setProperty("border-radius", "0", "important");
+          }
+          rows.forEach((row) => {
+            if (row.dataset.urpppNoticeDone === "1") return;
+            const tds = Array.from(row.children).filter((cell) => cell.tagName === "TD" || cell.tagName === "TH");
+            if (!tds.length) return;
+            const clean = /* @__PURE__ */ __name((value) => (value || "").replace(/\u00AD/g, "").replace(/\u200B/g, "").replace(/\s+/g, " ").trim(), "clean");
+            if (tds.length >= 2) {
+              let bulletTd = null;
+              let titleTd = null;
+              let dateTd = null;
+              tds.forEach((cell, index) => {
+                const text = clean(cell.textContent);
+                const hasLink = !!cell.querySelector("a");
+                if (!bulletTd && isNoticeBulletText2(text) && (index === 0 || tds.length >= 2)) {
+                  bulletTd = cell;
+                  return;
+                }
+                if (!dateTd && (/\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}/.test(text) || /\d{4}-\d{1,2}-\d{1,2}\s+\d{1,2}:\d{2}/.test(text) || /text-align\s*:\s*right/i.test(cell.getAttribute("style") || "") || index === tds.length - 1 && text.length <= 28 && /\d{4}/.test(text))) {
+                  if (/\d{4}/.test(text) && text.length <= 32) {
+                    dateTd = cell;
+                    return;
+                  }
+                }
+                if (!titleTd && (hasLink || text.length > 4)) {
+                  titleTd = cell;
+                }
+              });
+              if (!titleTd) titleTd = tds.find((cell) => cell !== bulletTd && cell !== dateTd) || tds[0];
+              if (!dateTd && tds.length >= 2) {
+                const last = tds[tds.length - 1];
+                if (last !== titleTd && last !== bulletTd) dateTd = last;
+              }
+              row.classList.add("urppp-notice-row");
+              pinNoticeRowSurface(row);
+              row.removeAttribute("width");
+              row.style.setProperty("flex-wrap", "nowrap", "important");
+              tds.forEach((cell) => {
+                cell.removeAttribute("width");
+                cell.removeAttribute("height");
+                cell.removeAttribute("align");
+                cell.style.setProperty("border", "none", "important");
+                cell.style.setProperty("background", "transparent", "important");
+                cell.style.setProperty("vertical-align", "middle", "important");
+                cell.style.removeProperty("width");
+                cell.style.setProperty("width", "auto", "important");
+              });
+              if (bulletTd) {
+                bulletTd.classList.add("urppp-notice-bullet-cell");
+                bulletTd.style.setProperty("display", "none", "important");
+                bulletTd.style.setProperty("width", "0", "important");
+                bulletTd.style.setProperty("padding", "0", "important");
+              }
+              if (titleTd) {
+                titleTd.classList.add("urppp-notice-title-cell");
+                titleTd.removeAttribute("width");
+                titleTd.style.setProperty("width", "auto", "important");
+                titleTd.style.setProperty("max-width", "100%", "important");
+                titleTd.style.setProperty("min-width", "0", "important");
+                titleTd.style.setProperty("flex", "1 1 0%", "important");
+                titleTd.style.setProperty("overflow", "hidden", "important");
+                titleTd.style.setProperty("padding", "0", "important");
+                titleTd.style.setProperty("pointer-events", "auto", "important");
+                titleTd.style.setProperty("white-space", "nowrap", "important");
+                let link = titleTd.querySelector("a[href], a[onclick], a");
+                if (!link) link = row.querySelector("a[href], a[onclick], a");
+                if (link) {
+                  if (!titleTd.contains(link)) {
+                    titleTd.innerHTML = "";
+                    titleTd.appendChild(link);
+                  }
+                  link.classList.add("urppp-notice-link");
+                  const href = link.getAttribute("href");
+                  const onclick = link.getAttribute("onclick");
+                  const target = link.getAttribute("target");
+                  const label = clean(link.textContent);
+                  link.textContent = label;
+                  if (href != null) link.setAttribute("href", href);
+                  if (onclick != null) link.setAttribute("onclick", onclick);
+                  if (target != null) link.setAttribute("target", target);
+                  link.style.setProperty("color", "var(--text)", "important");
+                  link.style.setProperty("text-decoration", "none", "important");
+                  link.style.setProperty("font-size", "14px", "important");
+                  link.style.setProperty("font-weight", "500", "important");
+                  link.style.setProperty("line-height", "1.5", "important");
+                  link.style.setProperty("pointer-events", "auto", "important");
+                  link.style.setProperty("cursor", "pointer", "important");
+                  link.style.setProperty("position", "relative", "important");
+                  link.style.setProperty("z-index", "2", "important");
+                  link.style.setProperty("display", "block", "important");
+                  link.style.setProperty("white-space", "nowrap", "important");
+                  link.style.setProperty("overflow", "hidden", "important");
+                  link.style.setProperty("text-overflow", "ellipsis", "important");
+                  if (row.dataset.urpppNoticeClickBound !== "1") {
+                    row.dataset.urpppNoticeClickBound = "1";
+                    row.style.setProperty("cursor", "pointer", "important");
+                    row.addEventListener("click", (event) => {
+                      if (event.target && event.target.closest && event.target.closest("a,button,input,select,textarea,label")) return;
+                      if (link.getAttribute("onclick")) {
+                        link.click();
+                        return;
+                      }
+                      const hrefValue = link.getAttribute("href");
+                      if (!hrefValue || hrefValue === "#" || hrefValue.indexOf("javascript:") === 0) {
+                        link.click();
+                        return;
+                      }
+                      if (link.target === "_blank") windowRef.open(hrefValue, "_blank");
+                      else windowRef.location.href = hrefValue;
+                    });
+                  }
+                } else {
+                  const onlyText = clean(titleTd.textContent);
+                  if (onlyText && !titleTd.querySelector("button, input, select")) {
+                    if (!titleTd.querySelector("*") || titleTd.children.length === 0) {
+                      titleTd.textContent = onlyText;
+                    }
+                  }
+                }
+              }
+              if (dateTd) {
+                dateTd.classList.add("urppp-notice-date-cell");
+                dateTd.style.cssText = [
+                  "display:flex !important",
+                  "align-items:center !important",
+                  "justify-content:flex-end !important",
+                  "flex:0 0 auto !important",
+                  "width:auto !important",
+                  "max-width:none !important",
+                  "white-space:nowrap !important",
+                  "text-align:right !important",
+                  "padding:0 !important",
+                  "margin:0 0 0 auto !important",
+                  "border:none !important",
+                  "background:transparent !important",
+                  "float:none !important",
+                  "position:static !important",
+                  "right:auto !important",
+                  "left:auto !important",
+                  "top:auto !important"
+                ].join(";");
+                const dateText = clean(dateTd.textContent);
+                dateTd.innerHTML = "";
+                const badge = documentRef.createElement("span");
+                badge.className = "urppp-notice-time";
+                badge.textContent = dateText;
+                dateTd.appendChild(badge);
+              }
+              if (titleTd) {
+                titleTd.style.setProperty("flex", "1 1 auto", "important");
+                titleTd.style.setProperty("min-width", "0", "important");
+                titleTd.style.setProperty("margin", "0", "important");
+                titleTd.style.setProperty("float", "none", "important");
+                titleTd.style.setProperty("position", "static", "important");
+              }
+              row.style.setProperty("display", "flex", "important");
+              row.style.setProperty("align-items", "center", "important");
+              row.style.setProperty("justify-content", "space-between", "important");
+              row.style.setProperty("gap", "16px", "important");
+              row.style.setProperty("max-width", "100%", "important");
+              row.style.setProperty("box-sizing", "border-box", "important");
+              row.style.setProperty("overflow", "hidden", "important");
+              row.dataset.urpppNoticeDone = "1";
+              return;
+            }
+            const td = tds[0];
+            const parts = Array.from(td.querySelectorAll(":scope > span"));
+            if (parts.length < 2) {
+              const link = td.querySelector("a");
+              const full = clean(td.textContent);
+              const dateMatch = full.match(/(\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?)/);
+              if (link || dateMatch) {
+                row.classList.add("urppp-notice-row");
+                const card2 = documentRef.createElement("div");
+                card2.className = "urppp-notice-card urppp-notice-card-row";
+                const left = documentRef.createElement("div");
+                left.className = "urppp-notice-main";
+                if (link) {
+                  link.classList.add("urppp-notice-link");
+                  const href = link.getAttribute("href");
+                  const onclick = link.getAttribute("onclick");
+                  const label = clean(link.textContent);
+                  link.textContent = label;
+                  if (href != null) link.setAttribute("href", href);
+                  if (onclick != null) link.setAttribute("onclick", onclick);
+                  link.style.setProperty("pointer-events", "auto", "important");
+                  link.style.setProperty("cursor", "pointer", "important");
+                  left.appendChild(link);
+                  if (row.dataset.urpppNoticeClickBound !== "1") {
+                    row.dataset.urpppNoticeClickBound = "1";
+                    row.style.setProperty("cursor", "pointer", "important");
+                    row.addEventListener("click", (event) => {
+                      if (event.target && event.target.closest && event.target.closest("a,button,input,select")) return;
+                      if (link.getAttribute("onclick") || !link.getAttribute("href") || link.getAttribute("href") === "#") {
+                        link.click();
+                        return;
+                      }
+                      windowRef.location.href = link.getAttribute("href");
+                    });
+                  }
+                } else {
+                  const title = documentRef.createElement("div");
+                  title.className = "urppp-notice-title";
+                  title.textContent = dateMatch ? full.replace(dateMatch[0], "").trim() : full;
+                  left.appendChild(title);
+                }
+                card2.appendChild(left);
+                if (dateMatch) {
+                  const meta = documentRef.createElement("div");
+                  meta.className = "urppp-notice-meta";
+                  const timeElement = documentRef.createElement("span");
+                  timeElement.className = "urppp-notice-time";
+                  timeElement.textContent = dateMatch[1];
+                  meta.appendChild(timeElement);
+                  card2.appendChild(meta);
+                }
+                td.innerHTML = "";
+                td.appendChild(card2);
+                td.dataset.urpppNoticeDone = "1";
+                row.dataset.urpppNoticeDone = "1";
+              }
+              return;
+            }
+            let titleEl = null;
+            let timeEl = null;
+            const bodyEls = [];
+            parts.forEach((part) => {
+              const styleText = (part.getAttribute("style") || "") + " " + (part.style.cssText || "");
+              const text = clean(part.textContent);
+              if (!text) return;
+              if (/font-size\s*:\s*18/i.test(styleText) || !titleEl && /font-size\s*:\s*1[6-9]/i.test(styleText)) {
+                titleEl = part;
+                return;
+              }
+              if (/font-size\s*:\s*12/i.test(styleText) || /float\s*:\s*right/i.test(styleText) || /^\d{4}-\d{2}-\d{2}/.test(text)) {
+                timeEl = part;
+                return;
+              }
+              bodyEls.push(part);
+            });
+            if (!titleEl) titleEl = parts[0];
+            if (!timeEl) {
+              const last = parts[parts.length - 1];
+              if (last !== titleEl) timeEl = last;
+            }
+            const card = documentRef.createElement("div");
+            card.className = "urppp-notice-card";
+            if (titleEl) {
+              const heading = documentRef.createElement("div");
+              heading.className = "urppp-notice-title";
+              heading.textContent = clean(titleEl.textContent);
+              card.appendChild(heading);
+            }
+            (bodyEls.length ? bodyEls : parts.filter((part) => part !== titleEl && part !== timeEl)).forEach((body) => {
+              const paragraph = documentRef.createElement("div");
+              paragraph.className = "urppp-notice-body";
+              paragraph.textContent = clean(body.textContent);
+              if (paragraph.textContent) card.appendChild(paragraph);
+            });
+            if (timeEl) {
+              const meta = documentRef.createElement("div");
+              meta.className = "urppp-notice-meta";
+              const timeElement = documentRef.createElement("span");
+              timeElement.className = "urppp-notice-time";
+              timeElement.textContent = clean(timeEl.textContent);
+              meta.appendChild(timeElement);
+              card.appendChild(meta);
+            }
+            td.innerHTML = "";
+            td.appendChild(card);
+            td.dataset.urpppNoticeDone = "1";
+            row.dataset.urpppNoticeDone = "1";
+            row.classList.add("urppp-notice-row");
+          });
+        });
+      } catch (error) {
+        logger.warn("[URP++] notice table beautify failed", error);
+      }
+    }
+    __name(beautifyNoticeTables, "beautifyNoticeTables");
+    return { beautifyNoticeTables };
+  }
+  __name(createNoticeTableBeautifier, "createNoticeTableBeautifier");
+
   // src/features/schedule-export/native-pdf.js
   var NATIVE_PDF_ID_MAP = {
     "page-content-template": "urppp-pdf-page",
@@ -16784,366 +17154,26 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       return isBusinessDataTable(table, { noticePage: isNoticePageContext2() });
     }
     __name(isBusinessDataTable2, "isBusinessDataTable");
-    function beautifyNoticeTables() {
-      if (isNativePdfIsolationActive()) return;
-      try {
-        bindNoticeHoverScrub();
-        scrubNoticeInlineBg();
-        document.querySelectorAll("table.urppp-notice-table, table.table").forEach((table) => {
-          if (isBusinessDataTable2(table) && (table.classList.contains("urppp-notice-table") || table.querySelector(".urppp-notice-row, .urppp-notice-title-cell"))) {
-            stripMistakenNoticeTable(table);
-          }
-        });
-        const tableSet = new Set(document.querySelectorAll(
-          '.page-content table, #page-content-template table, .main-content table, table.table, table.urppp-notice-table, table[style*="dashed"], table.no-border-top'
-        ));
-        if (isNoticePageContext2()) {
-          document.querySelectorAll("table").forEach((tb) => tableSet.add(tb));
-        } else {
-          document.querySelectorAll("table").forEach((tb) => {
-            if (isNoticeListTable2(tb)) tableSet.add(tb);
-          });
-        }
-        Array.from(tableSet).forEach((table) => {
-          if (!table || isBusinessDataTable2(table)) return;
-          if (table.querySelector("thead th") && table.querySelectorAll("thead th").length >= 3) {
-            const thText = table.querySelector("thead")?.textContent || "";
-            if (!isNoticeListTable2(table) && /序号|课程|成绩|教室|校区|学号|姓名|教学楼|座位|操作|类型/.test(thText) && !/标题|公告|通知/.test(thText)) return;
-          }
-          const rows = Array.from(table.querySelectorAll("tbody > tr, tr")).filter((tr) => tr.querySelector("td"));
-          if (!rows.length) return;
-          let noticeLike = 0;
-          rows.slice(0, 12).forEach((tr) => {
-            const tds = Array.from(tr.children).filter((c) => c.tagName === "TD" || c.tagName === "TH");
-            if (tds.length >= 5) return;
-            const text = (tr.textContent || "").replace(/\s+/g, " ").trim();
-            const hasLink = !!tr.querySelector("a[href], a[onclick], a");
-            const hasDate = /\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}/.test(text);
-            const hasBullet = tds.some((td) => isNoticeBulletText(td.textContent));
-            if (hasLink && hasDate || hasBullet && hasLink || hasBullet && hasDate) {
-              noticeLike += 1;
-            }
-          });
-          const looksDashedNotice = table.classList.contains("no-border-top") || /dashed|border-left-style/.test(table.getAttribute("style") || "");
-          const inNoticePage = isNoticePageContext2();
-          if (noticeLike < 1) {
-            if (inNoticePage) {
-              const loose = rows.slice(0, 8).filter((tr) => {
-                const tds = Array.from(tr.children).filter((c) => c.tagName === "TD" || c.tagName === "TH");
-                if (tds.length < 1 || tds.length > 4) return false;
-                const text = (tr.textContent || "").replace(/\s+/g, " ").trim();
-                return !!tr.querySelector("a") || /\d{4}/.test(text);
-              }).length;
-              if (loose < 1 && !looksDashedNotice) return;
-            } else if (!(looksDashedNotice && /公告|通知/.test(document.title || ""))) {
-              return;
-            }
-          }
-          if (isBusinessDataTable2(table)) return;
-          table.classList.add("urppp-notice-table");
-          table.dataset.urpppNoticeScan = "1";
-          disarmNoticeTableHover(table);
-          table.style.setProperty("border", "none", "important");
-          table.style.setProperty("border-left", "none", "important");
-          table.style.setProperty("background", "transparent", "important");
-          table.style.setProperty("width", "100%", "important");
-          const wrap = table.closest(".urppp-table-wrap");
-          if (wrap) {
-            wrap.classList.add("urppp-notice-wrap");
-            wrap.style.setProperty("border", "none", "important");
-            wrap.style.setProperty("background", "transparent", "important");
-            wrap.style.setProperty("box-shadow", "none", "important");
-            wrap.style.setProperty("overflow", "visible", "important");
-            wrap.style.setProperty("border-radius", "0", "important");
-          }
-          rows.forEach((tr) => {
-            if (tr.dataset.urpppNoticeDone === "1") return;
-            const tds = Array.from(tr.children).filter((c) => c.tagName === "TD" || c.tagName === "TH");
-            if (!tds.length) return;
-            const clean = /* @__PURE__ */ __name((s) => (s || "").replace(/\u00AD/g, "").replace(/\u200B/g, "").replace(/\s+/g, " ").trim(), "clean");
-            if (tds.length >= 2) {
-              let bulletTd = null;
-              let titleTd = null;
-              let dateTd = null;
-              tds.forEach((td2, i) => {
-                const t = clean(td2.textContent);
-                const hasA = !!td2.querySelector("a");
-                if (!bulletTd && isNoticeBulletText(t) && (i === 0 || tds.length >= 2)) {
-                  bulletTd = td2;
-                  return;
-                }
-                if (!dateTd && (/\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}/.test(t) || /\d{4}-\d{1,2}-\d{1,2}\s+\d{1,2}:\d{2}/.test(t) || /text-align\s*:\s*right/i.test(td2.getAttribute("style") || "") || i === tds.length - 1 && t.length <= 28 && /\d{4}/.test(t))) {
-                  if (/\d{4}/.test(t) && t.length <= 32) {
-                    dateTd = td2;
-                    return;
-                  }
-                }
-                if (!titleTd && (hasA || t.length > 4)) {
-                  titleTd = td2;
-                }
-              });
-              if (!titleTd) titleTd = tds.find((td2) => td2 !== bulletTd && td2 !== dateTd) || tds[0];
-              if (!dateTd && tds.length >= 2) {
-                const last = tds[tds.length - 1];
-                if (last !== titleTd && last !== bulletTd) dateTd = last;
-              }
-              tr.classList.add("urppp-notice-row");
-              pinNoticeRowSurface(tr);
-              tr.removeAttribute("width");
-              tr.style.setProperty("flex-wrap", "nowrap", "important");
-              tds.forEach((td2) => {
-                td2.removeAttribute("width");
-                td2.removeAttribute("height");
-                td2.removeAttribute("align");
-                td2.style.setProperty("border", "none", "important");
-                td2.style.setProperty("background", "transparent", "important");
-                td2.style.setProperty("vertical-align", "middle", "important");
-                td2.style.removeProperty("width");
-                td2.style.setProperty("width", "auto", "important");
-              });
-              if (bulletTd) {
-                bulletTd.classList.add("urppp-notice-bullet-cell");
-                bulletTd.style.setProperty("display", "none", "important");
-                bulletTd.style.setProperty("width", "0", "important");
-                bulletTd.style.setProperty("padding", "0", "important");
-              }
-              if (titleTd) {
-                titleTd.classList.add("urppp-notice-title-cell");
-                titleTd.removeAttribute("width");
-                titleTd.style.setProperty("width", "auto", "important");
-                titleTd.style.setProperty("max-width", "100%", "important");
-                titleTd.style.setProperty("min-width", "0", "important");
-                titleTd.style.setProperty("flex", "1 1 0%", "important");
-                titleTd.style.setProperty("overflow", "hidden", "important");
-                titleTd.style.setProperty("padding", "0", "important");
-                titleTd.style.setProperty("pointer-events", "auto", "important");
-                titleTd.style.setProperty("white-space", "nowrap", "important");
-                let a = titleTd.querySelector("a[href], a[onclick], a");
-                if (!a) a = tr.querySelector("a[href], a[onclick], a");
-                if (a) {
-                  if (!titleTd.contains(a)) {
-                    titleTd.innerHTML = "";
-                    titleTd.appendChild(a);
-                  }
-                  a.classList.add("urppp-notice-link");
-                  const href = a.getAttribute("href");
-                  const onclick = a.getAttribute("onclick");
-                  const target = a.getAttribute("target");
-                  const label = clean(a.textContent);
-                  a.textContent = label;
-                  if (href != null) a.setAttribute("href", href);
-                  if (onclick != null) a.setAttribute("onclick", onclick);
-                  if (target != null) a.setAttribute("target", target);
-                  a.style.setProperty("color", "var(--text)", "important");
-                  a.style.setProperty("text-decoration", "none", "important");
-                  a.style.setProperty("font-size", "14px", "important");
-                  a.style.setProperty("font-weight", "500", "important");
-                  a.style.setProperty("line-height", "1.5", "important");
-                  a.style.setProperty("pointer-events", "auto", "important");
-                  a.style.setProperty("cursor", "pointer", "important");
-                  a.style.setProperty("position", "relative", "important");
-                  a.style.setProperty("z-index", "2", "important");
-                  a.style.setProperty("display", "block", "important");
-                  a.style.setProperty("white-space", "nowrap", "important");
-                  a.style.setProperty("overflow", "hidden", "important");
-                  a.style.setProperty("text-overflow", "ellipsis", "important");
-                  if (tr.dataset.urpppNoticeClickBound !== "1") {
-                    tr.dataset.urpppNoticeClickBound = "1";
-                    tr.style.setProperty("cursor", "pointer", "important");
-                    tr.addEventListener("click", (e) => {
-                      if (e.target && e.target.closest && e.target.closest("a,button,input,select,textarea,label")) return;
-                      if (a.getAttribute("onclick")) {
-                        a.click();
-                        return;
-                      }
-                      const h = a.getAttribute("href");
-                      if (!h || h === "#" || h.indexOf("javascript:") === 0) {
-                        a.click();
-                        return;
-                      }
-                      if (a.target === "_blank") window.open(h, "_blank");
-                      else window.location.href = h;
-                    });
-                  }
-                } else {
-                  const rawHtml = titleTd.innerHTML;
-                  const onlyText = clean(titleTd.textContent);
-                  if (onlyText && !titleTd.querySelector("button, input, select")) {
-                    if (!titleTd.querySelector("*") || titleTd.children.length === 0) {
-                      titleTd.textContent = onlyText;
-                    }
-                  }
-                  void rawHtml;
-                }
-              }
-              if (dateTd) {
-                dateTd.classList.add("urppp-notice-date-cell");
-                dateTd.style.cssText = [
-                  "display:flex !important",
-                  "align-items:center !important",
-                  "justify-content:flex-end !important",
-                  "flex:0 0 auto !important",
-                  "width:auto !important",
-                  "max-width:none !important",
-                  "white-space:nowrap !important",
-                  "text-align:right !important",
-                  "padding:0 !important",
-                  "margin:0 0 0 auto !important",
-                  "border:none !important",
-                  "background:transparent !important",
-                  "float:none !important",
-                  "position:static !important",
-                  "right:auto !important",
-                  "left:auto !important",
-                  "top:auto !important"
-                ].join(";");
-                const dateText = clean(dateTd.textContent);
-                dateTd.innerHTML = "";
-                const badge = document.createElement("span");
-                badge.className = "urppp-notice-time";
-                badge.textContent = dateText;
-                dateTd.appendChild(badge);
-              }
-              if (titleTd) {
-                titleTd.style.setProperty("flex", "1 1 auto", "important");
-                titleTd.style.setProperty("min-width", "0", "important");
-                titleTd.style.setProperty("margin", "0", "important");
-                titleTd.style.setProperty("float", "none", "important");
-                titleTd.style.setProperty("position", "static", "important");
-              }
-              tr.style.setProperty("display", "flex", "important");
-              tr.style.setProperty("align-items", "center", "important");
-              tr.style.setProperty("justify-content", "space-between", "important");
-              tr.style.setProperty("gap", "16px", "important");
-              tr.style.setProperty("max-width", "100%", "important");
-              tr.style.setProperty("box-sizing", "border-box", "important");
-              tr.style.setProperty("overflow", "hidden", "important");
-              tr.dataset.urpppNoticeDone = "1";
-              return;
-            }
-            const td = tds[0];
-            const parts = Array.from(td.querySelectorAll(":scope > span"));
-            if (parts.length < 2) {
-              const a = td.querySelector("a");
-              const full = clean(td.textContent);
-              const dateMatch = full.match(/(\d{4}[-/.年]\d{1,2}[-/.月]\d{1,2}(?:\s+\d{1,2}:\d{2}(?::\d{2})?)?)/);
-              if (a || dateMatch) {
-                tr.classList.add("urppp-notice-row");
-                const card2 = document.createElement("div");
-                card2.className = "urppp-notice-card urppp-notice-card-row";
-                const left = document.createElement("div");
-                left.className = "urppp-notice-main";
-                if (a) {
-                  const link = a;
-                  link.classList.add("urppp-notice-link");
-                  const href = link.getAttribute("href");
-                  const onclick = link.getAttribute("onclick");
-                  const label = clean(link.textContent);
-                  link.textContent = label;
-                  if (href != null) link.setAttribute("href", href);
-                  if (onclick != null) link.setAttribute("onclick", onclick);
-                  link.style.setProperty("pointer-events", "auto", "important");
-                  link.style.setProperty("cursor", "pointer", "important");
-                  left.appendChild(link);
-                  if (tr.dataset.urpppNoticeClickBound !== "1") {
-                    tr.dataset.urpppNoticeClickBound = "1";
-                    tr.style.setProperty("cursor", "pointer", "important");
-                    tr.addEventListener("click", (e) => {
-                      if (e.target && e.target.closest && e.target.closest("a,button,input,select")) return;
-                      if (link.getAttribute("onclick") || !link.getAttribute("href") || link.getAttribute("href") === "#") {
-                        link.click();
-                        return;
-                      }
-                      window.location.href = link.getAttribute("href");
-                    });
-                  }
-                } else {
-                  const title = document.createElement("div");
-                  title.className = "urppp-notice-title";
-                  title.textContent = dateMatch ? full.replace(dateMatch[0], "").trim() : full;
-                  left.appendChild(title);
-                }
-                card2.appendChild(left);
-                if (dateMatch) {
-                  const meta = document.createElement("div");
-                  meta.className = "urppp-notice-meta";
-                  const tEl = document.createElement("span");
-                  tEl.className = "urppp-notice-time";
-                  tEl.textContent = dateMatch[1];
-                  meta.appendChild(tEl);
-                  card2.appendChild(meta);
-                }
-                td.innerHTML = "";
-                td.appendChild(card2);
-                td.dataset.urpppNoticeDone = "1";
-                tr.dataset.urpppNoticeDone = "1";
-              }
-              return;
-            }
-            let titleEl = null;
-            let timeEl = null;
-            const bodyEls = [];
-            parts.forEach((sp) => {
-              const st = (sp.getAttribute("style") || "") + " " + (sp.style.cssText || "");
-              const txt = clean(sp.textContent);
-              if (!txt) return;
-              if (/font-size\s*:\s*18/i.test(st) || !titleEl && /font-size\s*:\s*1[6-9]/i.test(st)) {
-                titleEl = sp;
-                return;
-              }
-              if (/font-size\s*:\s*12/i.test(st) || /float\s*:\s*right/i.test(st) || /^\d{4}-\d{2}-\d{2}/.test(txt)) {
-                timeEl = sp;
-                return;
-              }
-              bodyEls.push(sp);
-            });
-            if (!titleEl) titleEl = parts[0];
-            if (!timeEl) {
-              const last = parts[parts.length - 1];
-              if (last !== titleEl) timeEl = last;
-            }
-            const card = document.createElement("div");
-            card.className = "urppp-notice-card";
-            if (titleEl) {
-              const h = document.createElement("div");
-              h.className = "urppp-notice-title";
-              h.textContent = clean(titleEl.textContent);
-              card.appendChild(h);
-            }
-            (bodyEls.length ? bodyEls : parts.filter((sp) => sp !== titleEl && sp !== timeEl)).forEach((b) => {
-              const p = document.createElement("div");
-              p.className = "urppp-notice-body";
-              p.textContent = clean(b.textContent);
-              if (p.textContent) card.appendChild(p);
-            });
-            if (timeEl) {
-              const meta = document.createElement("div");
-              meta.className = "urppp-notice-meta";
-              const tEl = document.createElement("span");
-              tEl.className = "urppp-notice-time";
-              tEl.textContent = clean(timeEl.textContent);
-              meta.appendChild(tEl);
-              card.appendChild(meta);
-            }
-            td.innerHTML = "";
-            td.appendChild(card);
-            td.dataset.urpppNoticeDone = "1";
-            tr.dataset.urpppNoticeDone = "1";
-            tr.classList.add("urppp-notice-row");
-          });
-        });
-      } catch (err) {
-        console.warn("[URP++] notice table beautify failed", err);
-      }
-    }
-    __name(beautifyNoticeTables, "beautifyNoticeTables");
+    let beautifyNoticeTables;
+    const { bindNoticeHoverScrub, scheduleBeautifyNoticeTables } = createNoticeTableLifecycle({
+      beautifyNoticeTables: /* @__PURE__ */ __name((root) => beautifyNoticeTables(root), "beautifyNoticeTables"),
+      pinNoticeRowSurface
+    });
+    ({ beautifyNoticeTables } = createNoticeTableBeautifier({
+      isNativePdfIsolationActive,
+      bindNoticeHoverScrub,
+      scrubNoticeInlineBg,
+      stripMistakenNoticeTable,
+      disarmNoticeTableHover,
+      pinNoticeRowSurface,
+      isBusinessDataTable: isBusinessDataTable2,
+      isNoticeListTable: isNoticeListTable2,
+      isNoticePageContext: isNoticePageContext2,
+      isNoticeBulletText
+    }));
     const { wrapTables, bindTableWrapObserver } = createTableWrapper({
       isNativePdfIsolationActive,
       isBusinessDataTable: isBusinessDataTable2
-    });
-    const { bindNoticeHoverScrub, scheduleBeautifyNoticeTables } = createNoticeTableLifecycle({
-      beautifyNoticeTables,
-      pinNoticeRowSurface
     });
     function cleanupStuckModals() {
       try {
