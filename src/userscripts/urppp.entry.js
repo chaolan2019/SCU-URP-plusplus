@@ -76,6 +76,7 @@ import settingsStyles from '../styles/settings.css';
 import tableBeautifyStyles from '../styles/table-beautify.css';
 import navigationStyles from '../styles/navigation.css';
 import cleanModeStyles from '../styles/clean-mode.css';
+import { createCleanModeState, resetCleanModeData } from '../features/clean-mode/state.js';
 import { createBreadcrumbController } from '../features/navigation/breadcrumb.js';
 import { createSidebarController } from '../features/navigation/sidebar.js';
 import { createNavbarController } from '../features/navigation/navbar.js';
@@ -9611,27 +9612,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   };
   function ico(n) { return ICO[n] || ICO.more; }
 
-  const state = {
-    open: false,
-    mobileTab: 'home',
-    profile: null,
-    schedule: null,
-    scores: null,
-    catalog: null,
-    occupancy: null,
-    currentBuilding: null,
-    loading: { profile: false, schedule: false, scores: false, room: false },
-    roomError: '',
-    roomDateOffset: 0, // 0今天 1明天 2后天
-    selected: { passing: new Set(), scheme: new Set() },
-    activeSchemeIdx: 0,
-    _schemeUserSelected: false,
-    viewWeek: 0, // 0 = 跟随系统当前周
-    weekLocked: false, // 用户手动切周后锁定
-    _termWeek: 0,
-    _termWeekResolved: false,
-    uiReady: false
-  };
+  const state = createCleanModeState();
 
   function ensureStyle() {
     if (document.getElementById('urppp-clean-style')) return;
@@ -10510,10 +10491,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   async function loadAll(force) {
     if (force) {
-      state.profile = null; state.schedule = null; state.scores = null; state.catalog = null; state.occupancy = null;
-      state._termWeekResolved = false;
-      state._schemeUserSelected = false;
-      state._schemeInited = false;
+      resetCleanModeData(state);
     }
     state.loading.profile = state.loading.schedule = state.loading.scores = true;
     // 先解析教学周，再画界面，避免小屏首帧落到第1周

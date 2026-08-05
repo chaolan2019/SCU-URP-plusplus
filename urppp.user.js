@@ -11810,6 +11810,46 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
 }
 `;
 
+  // src/features/clean-mode/state.js
+  function createCleanModeState() {
+    return {
+      open: false,
+      mobileTab: "home",
+      profile: null,
+      schedule: null,
+      scores: null,
+      catalog: null,
+      occupancy: null,
+      currentBuilding: null,
+      loading: { profile: false, schedule: false, scores: false, room: false },
+      roomError: "",
+      roomDateOffset: 0,
+      // 0今天 1明天 2后天
+      selected: { passing: /* @__PURE__ */ new Set(), scheme: /* @__PURE__ */ new Set() },
+      activeSchemeIdx: 0,
+      _schemeUserSelected: false,
+      viewWeek: 0,
+      // 0 = 跟随系统当前周
+      weekLocked: false,
+      // 用户手动切周后锁定
+      _termWeek: 0,
+      _termWeekResolved: false,
+      uiReady: false
+    };
+  }
+  __name(createCleanModeState, "createCleanModeState");
+  function resetCleanModeData(state) {
+    state.profile = null;
+    state.schedule = null;
+    state.scores = null;
+    state.catalog = null;
+    state.occupancy = null;
+    state._termWeekResolved = false;
+    state._schemeUserSelected = false;
+    state._schemeInited = false;
+  }
+  __name(resetCleanModeData, "resetCleanModeData");
+
   // src/features/navigation/breadcrumb.js
   function createBreadcrumbController({
     documentRef = document,
@@ -21959,30 +21999,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       return ICO[n] || ICO.more;
     }
     __name(ico, "ico");
-    const state = {
-      open: false,
-      mobileTab: "home",
-      profile: null,
-      schedule: null,
-      scores: null,
-      catalog: null,
-      occupancy: null,
-      currentBuilding: null,
-      loading: { profile: false, schedule: false, scores: false, room: false },
-      roomError: "",
-      roomDateOffset: 0,
-      // 0今天 1明天 2后天
-      selected: { passing: /* @__PURE__ */ new Set(), scheme: /* @__PURE__ */ new Set() },
-      activeSchemeIdx: 0,
-      _schemeUserSelected: false,
-      viewWeek: 0,
-      // 0 = 跟随系统当前周
-      weekLocked: false,
-      // 用户手动切周后锁定
-      _termWeek: 0,
-      _termWeekResolved: false,
-      uiReady: false
-    };
+    const state = createCleanModeState();
     function ensureStyle() {
       if (document.getElementById("urppp-clean-style")) return;
       const st = document.createElement("style");
@@ -22857,14 +22874,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     __name(showBuilding, "showBuilding");
     async function loadAll(force) {
       if (force) {
-        state.profile = null;
-        state.schedule = null;
-        state.scores = null;
-        state.catalog = null;
-        state.occupancy = null;
-        state._termWeekResolved = false;
-        state._schemeUserSelected = false;
-        state._schemeInited = false;
+        resetCleanModeData(state);
       }
       state.loading.profile = state.loading.schedule = state.loading.scores = true;
       try {
