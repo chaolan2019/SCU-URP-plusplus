@@ -2590,202 +2590,6 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
         height: 14px !important;
       }
 
-      #urppp-settings-panel .urppp-set-modes {
-        display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 8px !important;
-      }
-      #urppp-settings-panel .urppp-set-mode {
-        height: 34px !important;
-        border-radius: 10px !important;
-        border: 1px solid var(--border) !important;
-        background: var(--input-bg) !important;
-        color: var(--text) !important;
-        font-size: 12px !important;
-        cursor: pointer !important;
-      }
-      #urppp-settings-panel .urppp-set-mode:hover {
-        border-color: var(--primary) !important;
-      }
-      #urppp-settings-panel .urppp-set-mode.ac,
-      html.urppp-theme-default:not(.urppp-theme-follow) #urppp-settings-panel .urppp-set-mode[data-theme="default"],
-      html.urppp-theme-dark:not(.urppp-theme-follow) #urppp-settings-panel .urppp-set-mode[data-theme="dark"],
-      html.urppp-theme-scu-red:not(.urppp-theme-follow) #urppp-settings-panel .urppp-set-mode[data-theme="scu-red"] {
-        background: var(--primary) !important;
-        border-color: var(--primary) !important;
-        color: #fff !important;
-      }
-      #urppp-settings-panel .urppp-set-follow-row {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 8px !important;
-        margin-top: 8px !important;
-      }
-      #urppp-settings-panel .urppp-set-follow {
-        width: 100% !important;
-        margin-top: 0 !important;
-        height: 34px !important;
-        border-radius: 10px !important;
-        border: 1px solid var(--border) !important;
-        background: var(--input-bg) !important;
-        color: var(--text) !important;
-        font-size: 12px !important;
-        font-weight: 600 !important;
-        cursor: pointer !important;
-        padding: 0 8px !important;
-        white-space: nowrap !important;
-      }
-      #urppp-settings-panel .urppp-set-follow:hover:not(:disabled) {
-        border-color: var(--primary) !important;
-      }
-      #urppp-settings-panel .urppp-set-follow.ac {
-        background: var(--primary) !important;
-        border-color: var(--primary) !important;
-        color: #fff !important;
-      }
-      #urppp-settings-panel .urppp-set-follow:disabled {
-        cursor: not-allowed !important;
-      }
-      #urppp-settings-panel .urppp-dyn-disabled,
-      #urppp-settings-panel .urppp-dyn-disabled * {
-        text-decoration: line-through !important;
-        opacity: 0.55 !important;
-        pointer-events: none !important;
-        cursor: not-allowed !important;
-        user-select: none !important;
-      }
-      #urppp-settings-panel .urppp-set-mode.urppp-dyn-disabled,
-      #urppp-settings-panel .urppp-set-follow.urppp-dyn-disabled,
-      #urppp-settings-panel .urppp-set-btn.urppp-dyn-disabled {
-        text-decoration: line-through !important;
-        opacity: 0.5 !important;
-        pointer-events: none !important;
-        filter: grayscale(0.4) !important;
-      }
-      #urppp-settings-panel .urppp-set-presets {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        gap: 8px !important;
-        margin: 0 0 12px !important;
-      }
-      #urppp-settings-panel .urppp-set-swatch {
-        width: 26px !important;
-        height: 26px !important;
-        border-radius: 50% !important;
-        border: 2px solid var(--border) !important;
-        cursor: pointer !important;
-        padding: 0 !important;
-        box-sizing: border-box !important;
-      }
-      #urppp-settings-panel .urppp-set-swatch.ac {
-        box-shadow: 0 0 0 3px var(--ring) !important;
-        border-color: var(--primary) !important;
-      }
-      #urppp-settings-panel .urppp-set-custom {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        align-items: center !important;
-        gap: 8px !important;
-      }
-      #urppp-settings-panel #urppp-set-color {
-        width: 40px !important;
-        height: 32px !important;
-        padding: 0 !important;
-        border: 1px solid var(--border) !important;
-        border-radius: var(--radius-sm) !important;
-        background: var(--input-bg) !important;
-        cursor: pointer !important;
-      }
-      #urppp-settings-panel #urppp-set-hex {
-        width: 96px !important;
-        height: 32px !important;
-        border: 1px solid var(--border) !important;
-        border-radius: var(--radius-sm) !important;
-        background: var(--input-bg) !important;
-        color: var(--text) !important;
-        padding: 0 8px !important;
-        font-size: 12px !important;
-        box-sizing: border-box !important;
-      }
-      #urppp-settings-panel .urppp-set-btn {
-        height: 32px !important;
-        padding: 0 12px !important;
-        border-radius: var(--radius-sm) !important;
-        border: 1px solid var(--primary) !important;
-        background: var(--primary) !important;
-        color: #fff !important;
-        font-size: 12px !important;
-        cursor: pointer !important;
-      }
-      #urppp-settings-panel .urppp-set-btn.ghost {
-        background: var(--input-bg) !important;
-        color: var(--text) !important;
-        border-color: var(--border) !important;
-      }
-      #urppp-settings-panel .urppp-set-schemes {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 8px !important;
-      }
-      #urppp-settings-panel .urppp-set-scheme {
-        display: flex !important;
-        align-items: center !important;
-        gap: 12px !important;
-        width: 100% !important;
-        text-align: left !important;
-        padding: 10px !important;
-        border-radius: var(--radius) !important;
-        border: 1px solid var(--border) !important;
-        background: var(--input-bg) !important;
-        cursor: pointer !important;
-        box-sizing: border-box !important;
-      }
-      #urppp-settings-panel .urppp-set-scheme:hover {
-        border-color: var(--primary) !important;
-      }
-      #urppp-settings-panel .urppp-set-scheme.ac {
-        border-color: var(--primary) !important;
-        box-shadow: 0 0 0 3px var(--ring) !important;
-        background: var(--surface) !important;
-      }
-      #urppp-settings-panel .urppp-set-scheme-preview {
-        display: flex !important;
-        align-items: center !important;
-        gap: 4px !important;
-        flex: 0 0 auto !important;
-      }
-      #urppp-settings-panel .urppp-set-scheme-preview span {
-        display: block !important;
-        width: 22px !important;
-        height: 22px !important;
-        border-radius: var(--radius-sm) !important;
-        border: 1px solid rgba(0,0,0,0.06) !important;
-        box-sizing: border-box !important;
-      }
-      #urppp-settings-panel .urppp-set-scheme-preview span:nth-child(2) {
-        width: 28px !important;
-        height: 28px !important;
-        border-radius: var(--radius-sm) !important;
-      }
-      #urppp-settings-panel .urppp-set-scheme-meta {
-        min-width: 0 !important;
-        flex: 1 1 auto !important;
-      }
-      #urppp-settings-panel .urppp-set-scheme-meta strong {
-        display: block !important;
-        font-size: 13px !important;
-        color: var(--text) !important;
-        font-weight: 700 !important;
-        margin: 0 0 2px !important;
-      }
-      #urppp-settings-panel .urppp-set-scheme-meta em {
-        display: block !important;
-        font-style: normal !important;
-        font-size: 11px !important;
-        line-height: 1.4 !important;
-        color: var(--text-muted) !important;
-      }
-
 
       /* 设置：选项卡 */
       #urppp-settings-panel {
@@ -10650,6 +10454,192 @@ html[data-urppp-skin="neu"] .urppp-export-option{border-radius:8px!important}
   margin: 0 0 10px !important;
   font-size: 12px !important;
   line-height: 1.5 !important;
+  color: var(--text-muted) !important;
+}
+
+/* Shared settings controls */
+#urppp-settings-panel .urppp-set-modes {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 8px !important;
+}
+#urppp-settings-panel .urppp-set-mode {
+  height: 34px !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--input-bg) !important;
+  color: var(--text) !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+}
+#urppp-settings-panel .urppp-set-mode:hover { border-color: var(--primary) !important; }
+#urppp-settings-panel .urppp-set-mode.ac,
+html.urppp-theme-default:not(.urppp-theme-follow) #urppp-settings-panel .urppp-set-mode[data-theme="default"],
+html.urppp-theme-dark:not(.urppp-theme-follow) #urppp-settings-panel .urppp-set-mode[data-theme="dark"],
+html.urppp-theme-scu-red:not(.urppp-theme-follow) #urppp-settings-panel .urppp-set-mode[data-theme="scu-red"] {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #fff !important;
+}
+#urppp-settings-panel .urppp-set-follow-row {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+  margin-top: 8px !important;
+}
+#urppp-settings-panel .urppp-set-follow {
+  width: 100% !important;
+  margin-top: 0 !important;
+  height: 34px !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--input-bg) !important;
+  color: var(--text) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  padding: 0 8px !important;
+  white-space: nowrap !important;
+}
+#urppp-settings-panel .urppp-set-follow:hover:not(:disabled) { border-color: var(--primary) !important; }
+#urppp-settings-panel .urppp-set-follow.ac {
+  background: var(--primary) !important;
+  border-color: var(--primary) !important;
+  color: #fff !important;
+}
+#urppp-settings-panel .urppp-set-follow:disabled { cursor: not-allowed !important; }
+#urppp-settings-panel .urppp-dyn-disabled,
+#urppp-settings-panel .urppp-dyn-disabled * {
+  text-decoration: line-through !important;
+  opacity: 0.55 !important;
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+  user-select: none !important;
+}
+#urppp-settings-panel .urppp-set-mode.urppp-dyn-disabled,
+#urppp-settings-panel .urppp-set-follow.urppp-dyn-disabled,
+#urppp-settings-panel .urppp-set-btn.urppp-dyn-disabled {
+  text-decoration: line-through !important;
+  opacity: 0.5 !important;
+  pointer-events: none !important;
+  filter: grayscale(0.4) !important;
+}
+#urppp-settings-panel .urppp-set-presets {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  margin: 0 0 12px !important;
+}
+#urppp-settings-panel .urppp-set-swatch {
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 50% !important;
+  border: 2px solid var(--border) !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+#urppp-settings-panel .urppp-set-swatch.ac {
+  box-shadow: 0 0 0 3px var(--ring) !important;
+  border-color: var(--primary) !important;
+}
+#urppp-settings-panel .urppp-set-custom {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+#urppp-settings-panel #urppp-set-color {
+  width: 40px !important;
+  height: 32px !important;
+  padding: 0 !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+  background: var(--input-bg) !important;
+  cursor: pointer !important;
+}
+#urppp-settings-panel #urppp-set-hex {
+  width: 96px !important;
+  height: 32px !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+  background: var(--input-bg) !important;
+  color: var(--text) !important;
+  padding: 0 8px !important;
+  font-size: 12px !important;
+  box-sizing: border-box !important;
+}
+#urppp-settings-panel .urppp-set-btn {
+  height: 32px !important;
+  padding: 0 12px !important;
+  border-radius: var(--radius-sm) !important;
+  border: 1px solid var(--primary) !important;
+  background: var(--primary) !important;
+  color: #fff !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+}
+#urppp-settings-panel .urppp-set-btn.ghost {
+  background: var(--input-bg) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+#urppp-settings-panel .urppp-set-schemes {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+#urppp-settings-panel .urppp-set-scheme {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+  text-align: left !important;
+  padding: 10px !important;
+  border-radius: var(--radius) !important;
+  border: 1px solid var(--border) !important;
+  background: var(--input-bg) !important;
+  cursor: pointer !important;
+  box-sizing: border-box !important;
+}
+#urppp-settings-panel .urppp-set-scheme:hover { border-color: var(--primary) !important; }
+#urppp-settings-panel .urppp-set-scheme.ac {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px var(--ring) !important;
+  background: var(--surface) !important;
+}
+#urppp-settings-panel .urppp-set-scheme-preview {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  flex: 0 0 auto !important;
+}
+#urppp-settings-panel .urppp-set-scheme-preview span {
+  display: block !important;
+  width: 22px !important;
+  height: 22px !important;
+  border-radius: var(--radius-sm) !important;
+  border: 1px solid rgba(0,0,0,0.06) !important;
+  box-sizing: border-box !important;
+}
+#urppp-settings-panel .urppp-set-scheme-preview span:nth-child(2) {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: var(--radius-sm) !important;
+}
+#urppp-settings-panel .urppp-set-scheme-meta { min-width: 0 !important; flex: 1 1 auto !important; }
+#urppp-settings-panel .urppp-set-scheme-meta strong {
+  display: block !important;
+  font-size: 13px !important;
+  color: var(--text) !important;
+  font-weight: 700 !important;
+  margin: 0 0 2px !important;
+}
+#urppp-settings-panel .urppp-set-scheme-meta em {
+  display: block !important;
+  font-style: normal !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
   color: var(--text-muted) !important;
 }
 
