@@ -73,6 +73,7 @@ import internalStyles from '../styles/internal.css';
 import scheduleCardStyles from '../styles/schedule-cards.css';
 import scheduleExportStyles from '../styles/schedule-export.css';
 import settingsStyles from '../styles/settings.css';
+import tableBeautifyStyles from '../styles/table-beautify.css';
 
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Chao_Lan
@@ -6103,6 +6104,14 @@ import settingsStyles from '../styles/settings.css';
       const style = styleEl;
       style.textContent = internalStyles;
     }
+    // 表格美化样式紧跟在 internal 之后注入，覆盖关系与原先同文件内保持一致
+    let tableBeautifyStyle = document.getElementById('urppp-table-beautify-style');
+    if (!tableBeautifyStyle) {
+      tableBeautifyStyle = document.createElement('style');
+      tableBeautifyStyle.id = 'urppp-table-beautify-style';
+      document.head.appendChild(tableBeautifyStyle);
+    }
+    tableBeautifyStyle.textContent = tableBeautifyStyles;
     let scheduleCardStyle = document.getElementById('urppp-schedule-card-style');
     if (!scheduleCardStyle) {
       scheduleCardStyle = document.createElement('style');
