@@ -11596,21 +11596,35 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       #urppp-clean-root .uc-sa-pane[hidden]{display:none}
       #urppp-clean-root .uc-sa-pane-analysis{margin-top:10px}
       #urppp-clean-root .uc-sa-charts{display:grid;grid-template-columns:1fr;gap:10px}
-      #urppp-clean-root .uc-sa-chart-card{border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--surface)}
-      #urppp-clean-root .uc-sa-chart-card h5{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--text)}
+      #urppp-clean-root .uc-sa-chart-card{
+        border:1px solid var(--border);border-radius:12px;padding:12px 14px;
+        background:var(--surface);color:var(--text);
+      }
+      #urppp-clean-root .uc-sa-chart-card h5{margin:0 0 8px;font-size:13px;font-weight:700;color:var(--text)}
       #urppp-clean-root .uc-sa-chart-card svg{width:100%;height:auto;display:block}
       #urppp-clean-root .uc-sa-empty{padding:18px 8px;color:var(--text-muted);font-size:13px;text-align:center}
+      #urppp-clean-root .uc-sa-more-row{margin-top:10px;text-align:right}
+      #urppp-clean-root .uc-sa-more{
+        display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:8px;
+        color:var(--primary);font-size:12.5px;font-weight:600;cursor:pointer;text-decoration:none;
+        background:color-mix(in srgb,var(--primary) 8%,transparent);transition:background .15s;
+      }
+      #urppp-clean-root .uc-sa-more:hover{background:color-mix(in srgb,var(--primary) 16%,transparent);text-decoration:none}
 
       /* 成绩总览/成绩分析：标题位 tab（参考设置界面） */
       #urppp-clean-root .uc-hd.uc-hd-tabs{padding:6px 8px 0;gap:6px;display:flex;justify-content:flex-start;align-items:flex-end;border-bottom:1px solid var(--border)}
       #urppp-clean-root .uc-hd-tabs .uc-sa-tab{
-        height:34px;padding:0 16px;border:none;background:transparent;color:var(--text-secondary);
+        height:36px;padding:0 18px;border:none;background:transparent;color:var(--text-secondary);
         font-size:13px;font-weight:600;cursor:pointer;position:relative;border-radius:10px 10px 0 0;
+        transition:color .15s,background .15s;
       }
       #urppp-clean-root .uc-hd-tabs .uc-sa-tab:hover{color:var(--text);background:var(--input-bg)}
-      #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac{color:var(--primary);background:color-mix(in srgb,var(--primary) 8%,var(--surface))}
+      #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac{
+        color:var(--primary);background:color-mix(in srgb,var(--primary) 13%,var(--surface));
+        font-weight:700;
+      }
       #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac::after{
-        content:'';position:absolute;left:18%;right:18%;bottom:0;height:2px;border-radius:2px 2px 0 0;background:var(--primary);
+        content:'';position:absolute;left:12%;right:12%;bottom:0;height:2.5px;border-radius:2.5px 2.5px 0 0;background:var(--primary);
       }
       #urppp-clean-root .uc-sa-pane[hidden]{display:none}
       #urppp-clean-root .uc-sa-pane-analysis{margin-top:10px}
@@ -12258,7 +12272,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       return `<div class="uc-sa-charts">
       <div class="uc-sa-chart-card"><h5>学期趋势</h5>${deps.trendChartSvg({ trend: analysis.trend, palette: deps.scoreChartPalette || SA_PALETTE })}</div>
       <div class="uc-sa-chart-card"><h5>成绩分段分布</h5>${deps.bandsChartSvg({ bands: analysis.bands, palette: deps.scoreChartPalette || SA_PALETTE })}</div>
-    </div>`;
+    </div>
+    <div class="uc-sa-more-row"><a class="uc-sa-more" data-href="/student/integratedQuery/scoreQuery/allPassingScores/index?urppp=sa">点击此处跳转到详细分析界面 →</a></div>`;
     }
     __name(analysisHtml, "analysisHtml");
     function scoreSectionHtml(scoreBody) {
@@ -14110,6 +14125,15 @@ ${arcs}
       uiHandle = ui.bindPanel(panel, { onExpand: handleExpand, onRetry: handleExpand });
       bindResize();
       warmup();
+      if (deps.shouldAutoExpand && deps.shouldAutoExpand()) {
+        const raf = typeof requestAnimationFrame === "function" ? requestAnimationFrame : (fn) => setTimeout(fn, 0);
+        raf(() => {
+          try {
+            uiHandle.setExpanded(true);
+          } catch (_) {
+          }
+        });
+      }
       return panel;
     }
     __name(mount, "mount");
@@ -22909,7 +22933,17 @@ ${arcs}
         loadProfile,
         scoreToNumber,
         scoreToGpa,
-        getInsertHost: /* @__PURE__ */ __name(() => document.querySelector(".page-content") || document.getElementById("page-content-template") || null, "getInsertHost")
+        getInsertHost: /* @__PURE__ */ __name(() => document.querySelector(".page-content") || document.getElementById("page-content-template") || null, "getInsertHost"),
+        shouldAutoExpand: /* @__PURE__ */ __name(() => {
+          const match = /[?&]urppp=sa(?:&|$)/.test(window.location.search);
+          if (match) {
+            try {
+              history.replaceState(null, "", window.location.pathname + window.location.hash);
+            } catch (_) {
+            }
+          }
+          return match;
+        }, "shouldAutoExpand")
       }
     });
     const routeFeatureRuntime = createFeatureRuntime([

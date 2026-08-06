@@ -39,7 +39,7 @@ function makePanel({ toggle, body, content }) {
   };
 }
 
-function controllerFixture({ loadScores, loadProfile } = {}) {
+function controllerFixture({ loadScores, loadProfile, shouldAutoExpand } = {}) {
   const toggle = makeEventTarget();
   const body = makeEventTarget();
   const content = makeEventTarget();
@@ -80,6 +80,7 @@ function controllerFixture({ loadScores, loadProfile } = {}) {
       },
       scoreToGpa() { return 3.5; },
       getInsertHost: () => host,
+      shouldAutoExpand: typeof shouldAutoExpand === 'function' ? shouldAutoExpand : () => false,
     },
   });
   return { controller, host, panel, toggle, body, content, styleEl, calls };
@@ -87,6 +88,10 @@ function controllerFixture({ loadScores, loadProfile } = {}) {
 
 async function settle() {
   await new Promise((resolve) => setImmediate(resolve));
+}
+
+async function settleTimer() {
+  await new Promise((resolve) => setTimeout(resolve, 30));
 }
 
 test('mount inserts a collapsed panel, injects style and warms up data', async () => {
@@ -173,4 +178,12 @@ test('unmount removes the panel and resets load state', async () => {
   assert.ok(again);
   await settle();
   assert.equal(calls.loadScores, 2);
+});
+
+test('auto expand flag expands the panel after mount', async () => {
+  const { controller, toggle } = controllerFixture({ shouldAutoExpand: () => true });
+  controller.mount();
+  await settleTimer();
+  assert.equal(toggle.getAttribute('aria-expanded'), 'true');
+  assert.equal(controller.getPanel().dataset.urpppSaState, 'expanded');
 });

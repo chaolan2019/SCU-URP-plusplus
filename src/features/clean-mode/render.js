@@ -40,7 +40,8 @@ export function createCleanModeRenderer({ state, deps }) {
     return `<div class="uc-sa-charts">
       <div class="uc-sa-chart-card"><h5>学期趋势</h5>${deps.trendChartSvg({ trend: analysis.trend, palette: deps.scoreChartPalette || SA_PALETTE }) }</div>
       <div class="uc-sa-chart-card"><h5>成绩分段分布</h5>${deps.bandsChartSvg({ bands: analysis.bands, palette: deps.scoreChartPalette || SA_PALETTE })}</div>
-    </div>`;
+    </div>
+    <div class="uc-sa-more-row"><a class="uc-sa-more" data-href="/student/integratedQuery/scoreQuery/allPassingScores/index?urppp=sa">点击此处跳转到详细分析界面 →</a></div>`;
   }
 
   // 成绩总览卡：标题位 tab（参考设置界面）。tab 模式标题栏为「成绩总览 | 成绩分析」，

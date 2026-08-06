@@ -8151,6 +8151,14 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       getInsertHost: () => document.querySelector('.page-content')
         || document.getElementById('page-content-template')
         || null,
+      shouldAutoExpand: () => {
+        // 清爽模式「详细分析」跳转携带 ?urppp=sa，展开后清除标记避免刷新重复展开
+        const match = /[?&]urppp=sa(?:&|$)/.test(window.location.search);
+        if (match) {
+          try { history.replaceState(null, '', window.location.pathname + window.location.hash); } catch (_) { /* ignore */ }
+        }
+        return match;
+      },
     },
   });
 

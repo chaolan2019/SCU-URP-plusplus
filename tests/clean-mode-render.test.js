@@ -104,6 +104,15 @@ test('analysis renders empty state when scores are unavailable', () => {
   assert.match(html, /uc-sa-empty/);
 });
 
+test('analysis includes a jump link to the detailed score page', () => {
+  const { state, renderer } = rendererFixture();
+  state.scores = scorePack();
+  const html = renderer.analysisHtml();
+  assert.match(html, /uc-sa-more/);
+  assert.match(html, /data-href="\/student\/integratedQuery\/scoreQuery\/allPassingScores\/index\?urppp=sa"/);
+  assert.match(html, /点击此处跳转到详细分析界面/);
+});
+
 test('scheduleRender coalesces into a single frame while open', () => {
   const { state, renderer } = rendererFixture();
   state.open = true;

@@ -123,6 +123,13 @@ export function createScoreAnalysisController({ deps }) {
     uiHandle = ui.bindPanel(panel, { onExpand: handleExpand, onRetry: handleExpand });
     bindResize();
     warmup();
+    // 从清爽模式「详细分析」跳转而来：自动展开成绩分析面板
+    if (deps.shouldAutoExpand && deps.shouldAutoExpand()) {
+      const raf = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (fn) => setTimeout(fn, 0);
+      raf(() => {
+        try { uiHandle.setExpanded(true); } catch (_) { /* ignore */ }
+      });
+    }
     return panel;
   }
 
