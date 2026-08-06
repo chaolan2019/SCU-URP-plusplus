@@ -1,6 +1,8 @@
-// 验证码本地 OCR 训练 v2：复刻 scu-plus 的颜色量化分割 + 宽高比特征 + 质心模板。
-// 专为「每字符独立颜色」的验证码（统一认证 scu-id）设计。
-// 用法：node train.mjs <scu-id> [--full] [--k=N]
+// 验证码本地 OCR 训练 v3：双站点。
+// scu-id：颜色量化分割（每字符一色）+ 饱和度过滤。
+// zhjw：红色掩码 + 连通域聚类合并（黑线碎片）+ 粘连等分。
+// 共同：48 像素 8×6 二值 + 宽高比特征，质心模板匹配（k-means 多模板）。
+// 用法：node train.mjs <zhjw|scu-id> [--full] [--k=N]
 import { mkdirSync, readFileSync, writeFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,22 +13,22 @@ const TARGET = process.argv[2];
 const DRY = process.argv.includes('--dry');
 const FULL = process.argv.includes('--full');
 const K = Number((process.argv.find((a) => a.startsWith('--k=')) || '').split('=')[1]) || 1;
-if (TARGET !== 'scu-id') {
-  console.error('v2 仅支持 scu-id（颜色量化分割）；zhjw 请用旧版逻辑');
+if (!TARGET || !['zhjw', 'scu-id'].includes(TARGET)) {
+  console.error('用法：node train.mjs <zhjw|scu-id> [--full] [--k=N]');
   process.exit(1);
 }
 
 const CHAR_H = 8;
 const CHAR_W = 6;
-const FEAT_DIM = CHAR_H * CHAR_W; // 48 像素
-const FEAT_DIM_WITH_AR = FEAT_DIM + 1; // + 宽高比
+const FEAT_DIM = CHAR_H * CHAR_W;
+const FEAT_DIM_WITH_AR = FEAT_DIM + 1;
 const MAX_ASPECT_RATIO = 2.0;
 const AR_WEIGHT = 25.0;
-const QUANT_STEP = 8;
-const WHITE_THRESHOLD = 250;
-const NUM_CHARS = 4;
 
-const SITE = { dir: 'scu-id', ext: '.png' };
+const SITE = {
+  'scu-id': { dir: 'scu-id', ext: '.png', method: 'color-quant' },
+  zhjw: { dir: 'zhjw', ext: '.jpg', method: 'red-projection' },
+}[TARGET];
 
 function dist(a, b) {
   let pixelDist = 0;
@@ -38,35 +40,58 @@ function dist(a, b) {
   return pixelDist + AR_WEIGHT * arDiff * arDiff;
 }
 
-// scu-plus 式颜色量化分割：非白像素 → 步长 8 量化 → top-4 颜色中心 → 逐像素归属 → bbox
-function segmentByColor(img) {
+function connectedComponents(w, h, mask) {
+  const label = new Int32Array(w * h).fill(-1);
+  const areas = [];
+  const stack = [];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const idx = y * w + x;
+    if (mask[idx] !== 1 || label[idx] !== -1) continue;
+    const comp = { minX: x, maxX: x, minY: y, maxY: y, count: 0 };
+    label[idx] = areas.length;
+    stack.push(idx);
+    while (stack.length) {
+      const cur = stack.pop();
+      const cx = cur % w, cy = (cur / w) | 0;
+      comp.minX = Math.min(comp.minX, cx);
+      comp.maxX = Math.max(comp.maxX, cx);
+      comp.minY = Math.min(comp.minY, cy);
+      comp.maxY = Math.max(comp.maxY, cy);
+      comp.count++;
+      for (const nb of [cur - w, cur + w, cur - 1, cur + 1]) {
+        if (nb < 0 || nb >= w * h) continue;
+        if (mask[nb] === 1 && label[nb] === -1) { label[nb] = areas.length; stack.push(nb); }
+      }
+    }
+    areas.push(comp);
+  }
+  return areas;
+}
+
+// scu-id：颜色量化分割（每字符一色，饱和度过滤排除灰色斜线）
+function segmentColorQuant(img) {
   const { width: w, height: h, data } = img.bitmap;
   const len = w * h;
   const pixels = [];
   for (let i = 0; i < len; i++) {
     const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2];
-    if (r > WHITE_THRESHOLD && g > WHITE_THRESHOLD && b > WHITE_THRESHOLD) continue;
-    // 排除灰色系（斜线/噪点：低饱和度），只保留彩色字符像素
-    const sat = Math.max(r, g, b) - Math.min(r, g, b);
-    if (sat < 10) continue;
+    if (r > 250 && g > 250 && b > 250) continue;
+    if (Math.max(r, g, b) - Math.min(r, g, b) < 10) continue;
     pixels.push({ r, g, b, idx: i });
   }
   if (pixels.length < 20) return [];
   const quant = new Map();
   for (const px of pixels) {
-    const key = `${Math.floor(px.r / QUANT_STEP) * QUANT_STEP},${Math.floor(px.g / QUANT_STEP) * QUANT_STEP},${Math.floor(px.b / QUANT_STEP) * QUANT_STEP}`;
+    const key = `${Math.floor(px.r / 8) * 8},${Math.floor(px.g / 8) * 8},${Math.floor(px.b / 8) * 8}`;
     const e = quant.get(key) || { r: 0, g: 0, b: 0, n: 0 };
     e.r += px.r; e.g += px.g; e.b += px.b; e.n++;
     quant.set(key, e);
   }
-  const centers = [...quant.values()]
-    .sort((a, b) => b.n - a.n)
-    .slice(0, 4)
+  const centers = [...quant.values()].sort((a, b) => b.n - a.n).slice(0, 4)
     .map((e) => ({ r: Math.round(e.r / e.n), g: Math.round(e.g / e.n), b: Math.round(e.b / e.n) }));
   const labels = new Int32Array(len).fill(-1);
   for (const px of pixels) {
-    let bi = 0;
-    let bd = Infinity;
+    let bi = 0, bd = Infinity;
     for (let c = 0; c < centers.length; c++) {
       const d = (px.r - centers[c].r) ** 2 + (px.g - centers[c].g) ** 2 + (px.b - centers[c].b) ** 2;
       if (d < bd) { bd = d; bi = c; }
@@ -78,8 +103,7 @@ function segmentByColor(img) {
     let x1 = w, y1 = h, x2 = 0, y2 = 0, n = 0;
     for (let i = 0; i < len; i++) {
       if (labels[i] !== c) continue;
-      const x = i % w;
-      const y = (i / w) | 0;
+      const x = i % w, y = (i / w) | 0;
       if (x < x1) x1 = x;
       if (x > x2) x2 = x;
       if (y < y1) y1 = y;
@@ -93,22 +117,79 @@ function segmentByColor(img) {
   return chars;
 }
 
-// 特征：48 像素（颜色蒙版 8×6，非白即字符）+ 宽高比归一化
+// zhjw：红色掩码 → 垂直投影低谷切分 → 块数调整到 n（合并窄块 / 等分宽块）
+function segmentRedProjection(img, n) {
+  const { width: w, height: h, data } = img.bitmap;
+  const mask = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) {
+    const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2];
+    mask[i] = (r > 100 && r - g > 50 && r - b > 50) ? 1 : 0;
+  }
+  const col = new Array(w).fill(0);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) col[x] += mask[y * w + x];
+  const max = Math.max(...col);
+  if (max <= 0 || !n) return [];
+  const threshold = max * 0.2;
+  const isLow = col.map((v) => v < threshold);
+  const blocks = [];
+  let start = -1;
+  for (let x = 0; x <= w; x++) {
+    const low = x < w && isLow[x];
+    if (!low && start < 0) start = x;
+    if (low && start >= 0) {
+      if (x - start >= 2) blocks.push({ x1: start, x2: x - 1, y1: 0, y2: h - 1 });
+      start = -1;
+    }
+  }
+  if (start >= 0 && w - start >= 2) blocks.push({ x1: start, x2: w - 1, y1: 0, y2: h - 1 });
+  // 块数多于目标：合并相邻最窄的两块
+  while (blocks.length > n && blocks.length > 1) {
+    let bi = 0;
+    let best = Infinity;
+    for (let i = 0; i < blocks.length - 1; i++) {
+      const sum = (blocks[i].x2 - blocks[i].x1) + (blocks[i + 1].x2 - blocks[i + 1].x1);
+      if (sum < best) { best = sum; bi = i; }
+    }
+    blocks[bi].x2 = blocks[bi + 1].x2;
+    blocks.splice(bi + 1, 1);
+  }
+  // 块数少于目标：把最宽的块按缺口数量等分
+  while (blocks.length < n && blocks.length > 0) {
+    let bi = 0;
+    let widest = -1;
+    for (let i = 0; i < blocks.length; i++) {
+      const wdt = blocks[i].x2 - blocks[i].x1;
+      if (wdt > widest) { widest = wdt; bi = i; }
+    }
+    const b = blocks[bi];
+    const need = n - blocks.length + 1;
+    const seg = Math.round((b.x2 - b.x1 + 1) / need);
+    for (let k = need - 1; k >= 1; k--) {
+      const cutAt = Math.min(b.x2, b.x1 + k * seg - 1);
+      blocks.splice(bi + 1, 0, { x1: cutAt + 1, x2: b.x2, y1: 0, y2: h - 1 });
+      b.x2 = cutAt;
+    }
+  }
+  return blocks.slice(0, n);
+}
+
 function extractFeature(img, box) {
   const { width: w, data } = img.bitmap;
   const cw = box.x2 - box.x1 + 1;
   const ch = box.y2 - box.y1 + 1;
   const feat = new Float64Array(FEAT_DIM_WITH_AR);
+  const isChar = SITE.method === 'color-quant'
+    ? (i) => !(data[i] > 250 && data[i + 1] > 250 && data[i + 2] > 250)
+    : (i) => data[i] > 100 && data[i] - data[i + 1] > 50 && data[i] - data[i + 2] > 50;
   for (let ty = 0; ty < CHAR_H; ty++) {
     const sy = box.y1 + Math.min(ch - 1, Math.floor((ty / CHAR_H) * ch));
     for (let tx = 0; tx < CHAR_W; tx++) {
       const sx = box.x1 + Math.min(cw - 1, Math.floor((tx / CHAR_W) * cw));
       const i = (sy * w + sx) * 4;
-      feat[ty * CHAR_W + tx] = (data[i] > WHITE_THRESHOLD && data[i + 1] > WHITE_THRESHOLD && data[i + 2] > WHITE_THRESHOLD) ? 0 : 1;
+      feat[ty * CHAR_W + tx] = isChar(i) ? 1 : 0;
     }
   }
-  const ar = cw / Math.max(ch, 1);
-  feat[FEAT_DIM] = Math.max(0, Math.min(1, ar / MAX_ASPECT_RATIO));
+  feat[FEAT_DIM] = Math.max(0, Math.min(1, (cw / Math.max(ch, 1)) / MAX_ASPECT_RATIO));
   return feat;
 }
 
@@ -156,7 +237,9 @@ async function main() {
     if (!label) continue;
     try {
       const img = await Jimp.read(path.join(ROOT, SITE.dir, f));
-      const chars = segmentByColor(img);
+      const chars = SITE.method === 'color-quant'
+        ? segmentColorQuant(img)
+        : segmentRedProjection(img, label.length);
       if (chars.length !== label.length) { segFail++; continue; }
       for (let i = 0; i < chars.length; i++) {
         const ch = String(label[i] || '').toLowerCase();
@@ -171,7 +254,6 @@ async function main() {
   console.log(`标注样本 ${labeledIds.length}，有效字符 ${examples.length}，分割失败 ${segFail}，错误 ${failed}`);
   if (DRY) return;
 
-  // 训练（跳过验证集）
   const charSamples = new Map();
   for (const ex of examples) {
     if (ex.valid) continue;
@@ -192,7 +274,7 @@ async function main() {
   mkdirSync(path.join(ROOT, 'model'), { recursive: true });
   const outFile = path.join(ROOT, 'model', TARGET + '.json');
   writeFileSync(outFile, JSON.stringify(model));
-  console.log(`模型已生成: ${outFile}（${model.chars.length} 类 × k=${K} 模板）`);
+  console.log(`模型已生成: ${outFile}（${model.chars.length} 类 × k=${K}）`);
 
   const recognize = (feat) => {
     let best = null;
@@ -205,13 +287,11 @@ async function main() {
     }
     return best;
   };
-  // 训练自检
+  const trainEx = examples.filter((e) => !e.valid);
   let hit = 0;
-  for (const ex of examples) { if (!ex.valid && recognize(ex.feat) === ex.ch) hit++; }
-  const trainN = examples.filter((e) => !e.valid).length;
-  console.log(`训练集自检: ${(hit / trainN * 100).toFixed(1)}% (${hit}/${trainN})`);
+  for (const ex of trainEx) if (recognize(ex.feat) === ex.ch) hit++;
+  console.log(`训练集自检: ${(hit / trainEx.length * 100).toFixed(1)}% (${hit}/${trainEx.length})`);
 
-  // 留出验证
   const validEx = examples.filter((e) => e.valid);
   if (VALIDATE && validEx.length) {
     const bySample = new Map();
