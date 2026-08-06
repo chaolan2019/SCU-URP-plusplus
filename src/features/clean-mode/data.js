@@ -62,7 +62,7 @@ export function createCleanModeDataLoader({ state, deps }) {
       (async () => {
         let scorePack = null;
         try {
-          if (!(state.scores && !force)) state.scores = await deps.loadScores();
+          if (!(state.scores && !force)) state.scores = await deps.loadScores(force);
           scorePack = state.scores;
           deps.reconcileProfileAndScores();
           if (scorePack && !scorePack.error && !scorePack.evaluationReady) {

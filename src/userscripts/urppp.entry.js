@@ -8986,7 +8986,16 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }
   }
 
-  async function loadScores() {
+  // 成绩数据内存缓存：同一页面生命周期内复用，避免清爽模式/成绩分析重复拉 4 次接口；force 强制重拉
+  let cachedScorePack = null;
+  async function loadScores(force) {
+    if (force) cachedScorePack = null;
+    if (cachedScorePack && !cachedScorePack.error) return cachedScorePack;
+    cachedScorePack = await loadScoresImpl();
+    return cachedScorePack;
+  }
+
+  async function loadScoresImpl() {
     const out = {
       passing: [], schemes: [], error: '', majorIdx: 0,
       evaluationReady: false, evaluationLoading: false

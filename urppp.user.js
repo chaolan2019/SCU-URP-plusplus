@@ -12198,7 +12198,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         (async () => {
           let scorePack = null;
           try {
-            if (!(state.scores && !force)) state.scores = await deps.loadScores();
+            if (!(state.scores && !force)) state.scores = await deps.loadScores(force);
             scorePack = state.scores;
             deps.reconcileProfileAndScores();
             if (scorePack && !scorePack.error && !scorePack.evaluationReady) {
@@ -23729,7 +23729,15 @@ ${arcs}
       }
     }
     __name(reconcileProfileAndScores, "reconcileProfileAndScores");
-    async function loadScores() {
+    let cachedScorePack = null;
+    async function loadScores(force) {
+      if (force) cachedScorePack = null;
+      if (cachedScorePack && !cachedScorePack.error) return cachedScorePack;
+      cachedScorePack = await loadScoresImpl();
+      return cachedScorePack;
+    }
+    __name(loadScores, "loadScores");
+    async function loadScoresImpl() {
       const out = {
         passing: [],
         schemes: [],
@@ -23765,7 +23773,7 @@ ${arcs}
       }
       return out;
     }
-    __name(loadScores, "loadScores");
+    __name(loadScoresImpl, "loadScoresImpl");
     function parseJsonArrayLoose(raw) {
       if (!raw) return [];
       let s = String(raw).trim();
