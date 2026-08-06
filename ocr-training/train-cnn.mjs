@@ -12,6 +12,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 const ARGS = process.argv.slice(2);
 const EPOCHS = Number((ARGS.find((a) => a.startsWith('--epochs=')) || '').split('=')[1]) || 120;
 const LR = Number((ARGS.find((a) => a.startsWith('--lr=')) || '').split('=')[1]) || 0.01;
+const CLEAN_ROUNDS = Number((ARGS.find((a) => a.startsWith('--clean=')) || '').split('=')[1]) || 0;
 const SAVE_EVERY = 20;
 
 const IW = 60, IH = 20;          // 输入
@@ -294,6 +295,12 @@ let cacheInputRef = null;
 
 // ---- 主流程 ----
 const labels = JSON.parse(readFileSync(path.join(ROOT, 'labels/zhjw.json'), 'utf8'));
+// 合并：人工标注优先（更准），线上 OCR 自动标注补充
+const autoLabels = JSON.parse(readFileSync(path.join(ROOT, 'labels-auto/zhjw.json'), 'utf8'));
+for (const [id, l] of Object.entries(autoLabels)) {
+  const v = String(l || '').toLowerCase();
+  if (v.length === 4 && !labels[id]) labels[id] = v;
+}
 // 教务验证码固定 4 位：仅保留长度 4 的标注（009/018 疑似误标，剔除）
 for (const id of Object.keys(labels)) {
   if (String(labels[id]).length !== 4) delete labels[id];
@@ -338,45 +345,61 @@ const net = new Net();
 let step = 0;
 let bestValid = 0;
 
-for (let epoch = 1; epoch <= EPOCHS; epoch++) {
-  // 训练：每 epoch 随机增强
-  let lossSum = 0;
-  let nBatch = 0;
-  // 打乱训练集
-  const order = [...trainIds].sort(() => rand() - 0.5);
-  for (const id of order) {
-    const input = augment(id);
-    const target = labelToTarget(labels[id]);
-    cacheInputRef = input;
-    const cache = net.forward(input, true);
-    const { loss, grad } = net.loss(cache.logits, target);
-    lossSum += loss;
-    nBatch++;
-    net.backward(grad, cache);
-    step++;
-    net.adam(LR, step);
-  }
-  // 验证
-  let validHit = 0, validCharHit = 0, validCharTotal = 0;
-  let trainHit = 0;
-  for (const id of validSet) {
-    const input = redGrayToInput(imgs.get(id));
-    const pred = net.predict(input);
-    if (pred === labels[id]) validHit++;
-    for (let i = 0; i < labels[id].length; i++) {
-      validCharTotal++;
-      if (pred[i] === labels[id][i]) validCharHit++;
+async function trainEpochs(epochs, trainIds, labelFn) {
+  for (let epoch = 1; epoch <= epochs; epoch++) {
+    let lossSum = 0;
+    let nBatch = 0;
+    const order = [...trainIds].sort(() => rand() - 0.5);
+    for (const id of order) {
+      const input = augment(id);
+      const target = labelToTarget(labelFn(id));
+      cacheInputRef = input;
+      const cache = net.forward(input, true);
+      const { loss, grad } = net.loss(cache.logits, target);
+      lossSum += loss;
+      nBatch++;
+      net.backward(grad, cache);
+      step++;
+      net.adam(LR, step);
+    }
+    let validHit = 0, validCharHit = 0, validCharTotal = 0;
+    let trainHit = 0;
+    for (const id of validSet) {
+      const input = redGrayToInput(imgs.get(id));
+      const pred = net.predict(input);
+      if (pred === labelFn(id)) validHit++;
+      for (let i = 0; i < labelFn(id).length; i++) {
+        validCharTotal++;
+        if (pred[i] === labelFn(id)[i]) validCharHit++;
+      }
+    }
+    for (const id of trainIds) {
+      if (net.predict(redGrayToInput(imgs.get(id))) === labelFn(id)) trainHit++;
+    }
+    const validAcc = validHit / validSet.size * 100;
+    const validChar = validCharTotal ? validCharHit / validCharTotal * 100 : 0;
+    if (validAcc > bestValid) bestValid = validAcc;
+    if (epoch % 10 === 0 || epoch === 1) {
+      console.log(`epoch ${epoch}: loss ${(lossSum / nBatch).toFixed(3)} 训练整图 ${(trainHit / trainIds.length * 100).toFixed(1)}% 验证整图 ${validAcc.toFixed(1)}% (${validHit}/${validSet.size}) 字符级 ${validChar.toFixed(1)}%`);
     }
   }
-  for (const id of trainIds) {
-    const input = redGrayToInput(imgs.get(id));
-    if (net.predict(input) === labels[id]) trainHit++;
-  }
-  const validAcc = validHit / validSet.size * 100;
-  const validChar = validCharTotal ? validCharHit / validCharTotal * 100 : 0;
-  if (validAcc > bestValid) bestValid = validAcc;
-  if (epoch % 10 === 0 || epoch === 1) {
-    console.log(`epoch ${epoch}: loss ${(lossSum / nBatch).toFixed(3)} 训练整图 ${(trainHit / trainIds.length * 100).toFixed(1)}% 验证整图 ${validAcc.toFixed(1)}% (${validHit}/${validSet.size}) 字符级 ${validChar.toFixed(1)}%`);
+}
+
+// 迭代标签清洗：训练 → 剔除网络预测与标注不符的样本 → 重训
+let currentTrain = [...trainIds];
+for (let round = 0; round <= CLEAN_ROUNDS; round++) {
+  console.log(`=== 训练轮次 ${round + 1}（训练集 ${currentTrain.length} 张） ===`);
+  await trainEpochs(EPOCHS, currentTrain, (id) => labels[id]);
+  if (round < CLEAN_ROUNDS) {
+    const keep = [];
+    let removed = 0;
+    for (const id of currentTrain) {
+      const input = redGrayToInput(imgs.get(id));
+      if (net.predict(input) === labels[id]) keep.push(id);
+      else removed++;
+    }
+    console.log(`清洗: 保留 ${keep.length}，剔除 ${removed}`);
+    currentTrain = keep;
   }
 }
 
