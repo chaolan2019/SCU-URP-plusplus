@@ -9,7 +9,9 @@ function rendererFixture(overrides = {}) {
   const deps = {
     DIRECT_EDIT_LABELS: {},
     DAY_NAMES: ['日', '一', '二', '三', '四', '五', '六'],
+    analyzeScores: () => ({ empty: false, trend: [{ label: '24-25-1', count: 2, credit: 6, avgScore: 88, avgGpa: 3.5 }], bands: [] }),
     applyPersonalDisplay() { calls.applyPersonalDisplay += 1; },
+    bandsChartSvg: () => '<svg class="mock-bands"></svg>',
     bindUI() { calls.bindUI += 1; },
     classifyPrivacyLabel: () => '',
     courseColor: () => '#50bd8b',
@@ -22,15 +24,23 @@ function rendererFixture(overrides = {}) {
     firstContentChar: (value) => (value || '').charAt(0),
     getViewWeekNumber: () => 3,
     ico: () => '',
+    isCleanAnalysisDirect: () => false,
     occupancyKindClass: () => '',
     occupancyTypeLabel: () => '占用',
     personalizedProfile: (profile) => profile,
     summarizeCourses: () => ({ totalCredit: 0, avgScore: 0, avgGpa: 0 }),
+    trendChartSvg: () => '<svg class="mock-trend"></svg>',
     weekBitActive: () => true,
     ...overrides,
   };
   const renderer = createCleanModeRenderer({ state, deps });
   return { state, deps, calls, renderer };
+}
+
+function scorePack() {
+  return { passing: [{ title: '全部及格成绩', courses: [
+    { name: '高数', credit: 4, score: '92', term: '2024-2025-1', required: true, unevaluated: false },
+  ], summary: {} }], schemes: [] };
 }
 
 test('render schedule board places lessons with week-based emphasis', () => {
@@ -50,6 +60,47 @@ test('render draws desktop layout and binds UI once per frame', () => {
   assert.ok(calls.bindUI >= 1);
   assert.ok(calls.applyPersonalDisplay >= 1);
   assert.equal(state.uiReady, true);
+});
+
+test('tab mode renders overview/analysis switch with analysis pane hidden by default', () => {
+  const { state, renderer } = rendererFixture();
+  state.scores = scorePack();
+  const html = renderer.scoreSectionHtml('<div class="uc-score-grid">x</div>');
+  assert.match(html, /uc-sa-switch/);
+  assert.match(html, /data-sa-tab="overview"/);
+  assert.match(html, /data-sa-tab="analysis"/);
+  assert.match(html, /uc-sa-pane-analysis/);
+  assert.match(html, /uc-sa-pane-analysis" hidden>/);
+  // 分析 pane 内容已渲染但隐藏，切换时无需重新计算
+  assert.match(html, /mock-trend/);
+});
+
+test('tab mode with analysis selected shows charts and hides overview', () => {
+  const { state, renderer } = rendererFixture();
+  state.scores = scorePack();
+  state.scoreAnalysisTab = 'analysis';
+  const html = renderer.scoreSectionHtml('<div class="uc-score-grid">x</div>');
+  assert.match(html, /uc-sa-pane-analysis"[^h]/);
+  assert.match(html, /mock-trend/);
+  assert.match(html, /mock-bands/);
+});
+
+test('direct mode renders overview and analysis together without switch', () => {
+  const { state, renderer } = rendererFixture({ isCleanAnalysisDirect: () => true });
+  state.scores = scorePack();
+  const html = renderer.scoreSectionHtml('<div class="uc-score-grid">x</div>');
+  assert.doesNotMatch(html, /uc-sa-switch/);
+  assert.match(html, /uc-sa-pane-analysis/);
+  assert.match(html, /mock-trend/);
+  assert.match(html, /mock-bands/);
+  assert.doesNotMatch(html, /hidden/);
+});
+
+test('analysis renders empty state when scores are unavailable', () => {
+  const { state, renderer } = rendererFixture();
+  state.scores = null;
+  const html = renderer.analysisHtml();
+  assert.match(html, /uc-sa-empty/);
 });
 
 test('scheduleRender coalesces into a single frame while open', () => {

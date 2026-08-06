@@ -14,6 +14,14 @@ export function createCleanModeUI({ state, deps }) {
       if (!markCleanUiBound(node, 'score')) return;
       node.addEventListener('click', () => openScoreModal(node.getAttribute('data-score')));
     });
+    // 成绩分析子页切换（选项卡模式）
+    scope.querySelectorAll('[data-sa-tab]').forEach((node) => {
+      if (!markCleanUiBound(node, 'saTab')) return;
+      node.addEventListener('click', () => {
+        state.scoreAnalysisTab = node.getAttribute('data-sa-tab') === 'analysis' ? 'analysis' : 'overview';
+        deps.render();
+      });
+    });
     scope.querySelectorAll('[data-href]').forEach((node) => {
       if (!markCleanUiBound(node, 'href')) return;
       node.addEventListener('click', (event) => {

@@ -271,3 +271,27 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   #urppp-clean-root .uc-avatar,#urppp-clean-root .uc-avatar img{height:56px;max-width:72px}
   #urppp-clean-root .uc-name{font-size:16px}
 }
+
+      /* 清爽模式成绩分析（uc-sa） */
+      #urppp-clean-root .uc-sa-wrap{margin-top:10px}
+      #urppp-clean-root .uc-sa-switch{display:flex;gap:6px;margin-bottom:10px}
+      #urppp-clean-root .uc-sa-tab{
+        flex:1 1 auto;
+        padding:7px 10px;
+        border:1px solid var(--border);
+        border-radius:9px;
+        background:transparent;
+        color:var(--text-secondary);
+        font-size:12.5px;
+        font-weight:600;
+        cursor:pointer;
+        transition:background .15s,color .15s,border-color .15s;
+      }
+      #urppp-clean-root .uc-sa-tab.ac{background:color-mix(in srgb,var(--primary) 12%,transparent);border-color:var(--primary);color:var(--primary)}
+      #urppp-clean-root .uc-sa-pane[hidden]{display:none}
+      #urppp-clean-root .uc-sa-pane-analysis{margin-top:10px}
+      #urppp-clean-root .uc-sa-charts{display:grid;grid-template-columns:1fr;gap:10px}
+      #urppp-clean-root .uc-sa-chart-card{border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--surface)}
+      #urppp-clean-root .uc-sa-chart-card h5{margin:0 0 6px;font-size:12.5px;font-weight:700;color:var(--text)}
+      #urppp-clean-root .uc-sa-chart-card svg{width:100%;height:auto;display:block}
+      #urppp-clean-root .uc-sa-empty{padding:18px 8px;color:var(--text-muted);font-size:12.5px;text-align:center}

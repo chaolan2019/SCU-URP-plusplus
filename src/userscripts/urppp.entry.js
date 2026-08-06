@@ -85,6 +85,8 @@ import { createCleanModeUI } from '../features/clean-mode/ui.js';
 import { createCleanModeController } from '../features/clean-mode/controller.js';
 import { createDashboardController } from '../features/dashboard/dashboard.js';
 import { createScoreAnalysisController } from '../features/score-analysis/controller.js';
+import { createScoreAnalysisData } from '../features/score-analysis/data.js';
+import { bandsChartSvg as renderScoreBandsChart, trendChartSvg as renderScoreTrendChart } from '../features/score-analysis/charts.js';
 import { createBreadcrumbController } from '../features/navigation/breadcrumb.js';
 import { createSidebarController } from '../features/navigation/sidebar.js';
 import { createNavbarController } from '../features/navigation/navbar.js';
@@ -470,6 +472,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   const SCHEME_KEY = 'urppp_scheme_v1';
   const THEME_FOLLOW_KEY = 'urppp_theme_follow_system_v1';
   const CLEAN_DEFAULT_KEY = 'urppp_clean_default_v1';
+  const CLEAN_ANALYSIS_KEY = 'urppp_clean_analysis_v1'; // tab | direct
   const APPLE_EDGE_KEY = 'urppp_apple_edge_line_v1';
   const FOLLOW_DYNAMIC_KEY = 'urppp_follow_use_dynamic_v1';
   const BRUTAL_PALETTE_KEY = 'urppp_brutal_palette_v1';
@@ -943,6 +946,14 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   function setCleanDefault(on) {
     GM_setValue(CLEAN_DEFAULT_KEY, !!on);
     return !!on;
+  }
+  /** 清爽模式成绩分析展示方式：tab（选项卡）| direct（直接显示） */
+  function isCleanAnalysisDirect() {
+    try { return GM_getValue(CLEAN_ANALYSIS_KEY, 'tab') === 'direct'; } catch (_) { return false; }
+  }
+  function setCleanAnalysis(mode) {
+    GM_setValue(CLEAN_ANALYSIS_KEY, mode === 'direct' ? 'direct' : 'tab');
+    return mode === 'direct' ? 'direct' : 'tab';
   }
   /** 类Apple 卡片淡边线：默认开 */
   function isAppleEdgeLine() {
@@ -6237,6 +6248,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       fixedPalettes,
       followUseDynamic: isFollowUseDynamic(),
       cleanDefault: isCleanDefault(),
+      cleanAnalysis: isCleanAnalysisDirect() ? 'direct' : 'tab',
       appleEdge: isAppleEdgeLine(),
       autoUpdate: isAutoUpdateCheck(),
       modeAvailability,
@@ -6336,6 +6348,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     preferences: {
       getCleanDefault: isCleanDefault,
       setCleanDefault,
+      getCleanAnalysis: () => (isCleanAnalysisDirect() ? 'direct' : 'tab'),
+      setCleanAnalysis,
       getAppleEdge: isAppleEdgeLine,
       setAppleEdge: setAppleEdgeLine,
       applySkin: applySkinAttr,
@@ -9382,12 +9396,18 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     (document.head || document.documentElement).appendChild(st);
   }
 
+  const cleanAnalysisData = createScoreAnalysisData({
+    deps: { scoreToNumber, scoreToGpa },
+  });
+
   const { metricHtml, occupancyHtml, render, renderScheduleBoard, roomPickerHtml, scheduleRender } = createCleanModeRenderer({
     state,
     deps: {
       DIRECT_EDIT_LABELS,
       DAY_NAMES,
+      analyzeScores: (payload) => cleanAnalysisData.analyzeScores(payload),
       applyPersonalDisplay,
+      bandsChartSvg: renderScoreBandsChart,
       bindUI: (scope) => bindUI(scope),
       classifyPrivacyLabel,
       courseColor,
@@ -9396,10 +9416,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       firstContentChar,
       getViewWeekNumber,
       ico,
+      isCleanAnalysisDirect,
       occupancyKindClass,
       occupancyTypeLabel,
       personalizedProfile,
+      scoreToNumber,
       summarizeCourses,
+      trendChartSvg: renderScoreTrendChart,
       weekBitActive,
     },
   });

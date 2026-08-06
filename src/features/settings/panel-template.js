@@ -29,6 +29,8 @@ export function buildSettingsPanelHtml(options) {
     '      <p class="urppp-set-tip" style="margin-top:8px">开启后按系统浅色/深色自动切换。浅色可选用下方动态配色，深色固定深邃暗。</p>',
     '      <button type="button" class="urppp-set-follow" id="urppp-set-clean-default" aria-pressed="false" style="margin-top:12px;width:100%">默认进入清爽模式：关</button>',
     '      <p class="urppp-set-tip" style="margin-top:8px">开启后，仅在首页自动打开清爽模式（其它页面不自动进入，可随时退出）。</p>',
+    '      <button type="button" class="urppp-set-follow" id="urppp-set-clean-analysis" aria-pressed="false" style="margin-top:12px;width:100%">清爽成绩分析展示：选项卡</button>',
+    '      <p class="urppp-set-tip" style="margin-top:8px">清爽模式成绩区域的展示方式：选项卡切换（默认）或直接显示学期趋势与成绩分段。</p>',
     '      <button type="button" class="urppp-set-follow" id="urppp-set-apple-edge" aria-pressed="true" style="margin-top:12px;width:100%">类Apple边缘线条：开</button>',
     '      <p class="urppp-set-tip" id="urppp-set-apple-edge-tip" style="margin-top:8px">仅类Apple风格生效。开启后卡片/面板带淡细边线，提升层次可读性。</p>',
     '    </section>',

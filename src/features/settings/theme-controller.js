@@ -84,6 +84,13 @@ export function createThemeSettingsController(options) {
       syncPanel();
     });
 
+    const cleanAnalysisButton = panel.querySelector('#urppp-set-clean-analysis');
+    if (cleanAnalysisButton) cleanAnalysisButton.addEventListener('click', () => {
+      const direct = preferences.getCleanAnalysis() === 'direct';
+      preferences.setCleanAnalysis(direct ? 'tab' : 'direct');
+      syncPanel();
+    });
+
     const appleEdgeButton = panel.querySelector('#urppp-set-apple-edge');
     if (appleEdgeButton) appleEdgeButton.addEventListener('click', () => {
       preferences.setAppleEdge(!preferences.getAppleEdge());

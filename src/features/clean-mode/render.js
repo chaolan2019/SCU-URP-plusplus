@@ -1,6 +1,14 @@
 export function createCleanModeRenderer({ state, deps }) {
   let cleanRenderFrame = 0;
 
+  // 清爽模式图表配色：跟随全局主题 token
+  const SA_PALETTE = {
+    gpaLine: 'var(--primary)',
+    scoreLine: 'var(--text-secondary)',
+    credit: 'var(--primary)',
+    primary: 'var(--primary)',
+  };
+
   function metricHtml(summary, scope) {
     const s = summary || deps.summarizeCourses([]);
     const items = [
@@ -16,6 +24,43 @@ export function createCleanModeRenderer({ state, deps }) {
       const editKey = scope && deps.DIRECT_EDIT_LABELS[scope + suffix] ? ` data-urppp-edit-key="${scope + suffix}"` : '';
       return `<div class="uc-metric"><em>${label}</em><b data-urppp-private="${field}"${editKey}>${value}</b></div>`;
     }).join('')}</div>`;
+  }
+
+  // 清爽模式成绩分析：仅学期趋势 + 成绩分段两张图
+  function analysisHtml() {
+    const scorePack = state.scores;
+    if (!scorePack || scorePack.error) {
+      return `<div class="uc-sa-empty">${deps.escapeHtml((scorePack && scorePack.error) || '暂无成绩数据')}</div>`;
+    }
+    let analysis = null;
+    try { analysis = deps.analyzeScores({ scorePack, profile: state.profile }); } catch (_) { /* ignore */ }
+    if (!analysis || analysis.empty) {
+      return '<div class="uc-sa-empty">暂无可用成绩数据，请先查询成绩后再试。</div>';
+    }
+    return `<div class="uc-sa-charts">
+      <div class="uc-sa-chart-card"><h5>学期趋势</h5>${deps.trendChartSvg({ trend: analysis.trend, palette: deps.scoreChartPalette || SA_PALETTE }) }</div>
+      <div class="uc-sa-chart-card"><h5>成绩分段分布</h5>${deps.bandsChartSvg({ bands: analysis.bands, palette: deps.scoreChartPalette || SA_PALETTE })}</div>
+    </div>`;
+  }
+
+  // 成绩总览卡：总览（指标网格）+ 分析（两图）。tab 模式默认切换，direct 模式同屏。
+  function scoreSectionHtml(scoreBody) {
+    const direct = !!deps.isCleanAnalysisDirect();
+    const activeAnalysis = state.scoreAnalysisTab === 'analysis';
+    if (direct) {
+      return `<div class="uc-sa-wrap">
+        <div class="uc-sa-pane">${scoreBody}</div>
+        <div class="uc-sa-pane uc-sa-pane-analysis">${analysisHtml()}</div>
+      </div>`;
+    }
+    return `<div class="uc-sa-wrap">
+      <div class="uc-sa-switch">
+        <button type="button" class="uc-sa-tab${activeAnalysis ? '' : ' ac'}" data-sa-tab="overview">成绩总览</button>
+        <button type="button" class="uc-sa-tab${activeAnalysis ? ' ac' : ''}" data-sa-tab="analysis">成绩分析</button>
+      </div>
+      <div class="uc-sa-pane"${activeAnalysis ? ' hidden' : ''}>${scoreBody}</div>
+      <div class="uc-sa-pane uc-sa-pane-analysis"${activeAnalysis ? '' : ' hidden'}>${analysisHtml()}</div>
+    </div>`;
   }
 
   function getScheduleRowHeight() {
@@ -123,6 +168,7 @@ export function createCleanModeRenderer({ state, deps }) {
             <div class="uc-score-pane" data-score="passing"><h5>全部及格成绩</h5>${metricHtml(pass.summary, 'passing')}</div>
             <div class="uc-score-pane" data-score="scheme"><h5>${deps.escapeHtml((scheme.title || '方案成绩').split(/通过|获得|不通过/)[0].trim() || '方案成绩')}</h5>${metricHtml(scheme.summary, 'scheme')}</div>
           </div>`);
+    const scoreSection = scoreSectionHtml(scoreBody);
 
     return `<div class="uc-desktop">
       <div class="uc-col">
@@ -151,7 +197,7 @@ export function createCleanModeRenderer({ state, deps }) {
       <div class="uc-col">
         <div class="uc-card">
           <div class="uc-hd"><span>成绩总览</span><span class="uc-sub">点击查看明细</span></div>
-          <div class="uc-bd">${scoreBody}</div>
+          <div class="uc-bd">${scoreSection}</div>
         </div>
         <div class="uc-card services">
           <div class="uc-hd">服务</div>
@@ -168,10 +214,11 @@ export function createCleanModeRenderer({ state, deps }) {
     const scheme = ((state.scores && state.scores.schemes) || [])[state.activeSchemeIdx] || { summary: deps.summarizeCourses([]) };
     const avatar = p.avatar ? `<img src="${deps.escapeHtml(p.avatar)}" alt="">` : `<span>${deps.escapeHtml((p.name || '同')[0])}</span>`;
     if (state.mobileTab === 'scores') {
-      return `<div class="uc-mobile"><div class="uc-card"><div class="uc-bd">
+      const scoreBody = `<div class="uc-score-grid uc-score-grid-mobile">
         <div class="uc-score-pane" data-score="passing" style="margin-bottom:12px"><h5>全部及格成绩</h5>${metricHtml(pass.summary, 'passing')}</div>
         <div class="uc-score-pane" data-score="scheme"><h5>方案成绩</h5>${metricHtml(scheme.summary, 'scheme')}</div>
-      </div></div></div>`;
+      </div>`;
+      return `<div class="uc-mobile"><div class="uc-card"><div class="uc-bd">${scoreSectionHtml(scoreBody)}</div></div></div>`;
     }
     if (state.mobileTab === 'room') {
       return `<div class="uc-mobile"><div class="uc-card"><div class="uc-hd">教室查询</div><div class="uc-bd" id="uc-room-panel">${roomPickerHtml()}</div></div></div>`;
@@ -303,11 +350,13 @@ export function createCleanModeRenderer({ state, deps }) {
   }
 
   return {
+    analysisHtml,
     metricHtml,
     occupancyHtml,
     render,
     renderScheduleBoard,
     roomPickerHtml,
     scheduleRender,
+    scoreSectionHtml,
   };
 }

@@ -2,6 +2,7 @@ export function createCleanModeState() {
   return {
     open: false,
     mobileTab: 'home',
+    scoreAnalysisTab: 'overview', // tab 模式下成绩分析子页：overview | analysis
     profile: null,
     schedule: null,
     scores: null,

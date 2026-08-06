@@ -64,3 +64,38 @@ test('openRoomModal falls back to the empty catalog state', async () => {
   await ui.openRoomModal();
   assert.equal(state.loading.room, false);
 });
+
+test('score analysis sub-tab switch updates state and re-renders', () => {
+  const { state } = uiFixture();
+  let rendered = 0;
+  const button = {
+    __urpppCleanUiBindings: null,
+    getAttribute: () => 'analysis',
+    addEventListener(type, fn) { this.onclick = fn; },
+  };
+  const scope = {
+    querySelector: () => null,
+    querySelectorAll(selector) {
+      if (selector === '[data-sa-tab]') return [button];
+      return [];
+    },
+  };
+  const ui2 = createCleanModeUI({
+    state,
+    deps: {
+      DAY_NAMES: [], applyPersonalDisplay() {}, bindScheduleExportHosts() {},
+      closeCleanMode() {}, ensureRoot: () => null, escapeHtml: (v) => String(v),
+      fetchText: async () => '{}', getCurrentWeekNumber: () => 0, getViewWeekNumber: () => 3,
+      inferMaxWeek: () => 20, isUnevaluatedScore: () => false, isValidOfficialGpa: () => false,
+      loadBuildingOccupancy: async () => ({ rooms: [] }), metricHtml: () => '', occupancyHtml: () => '',
+      render() { rendered += 1; }, rootEl: () => null, roomPickerHtml: () => '',
+      scoreToGpa: () => null, scoreToNumber: () => null, summarizeCourses: () => ({}),
+      summarizeCoursesPreferOfficial: () => ({}),
+    },
+  });
+  ui2.bindUI(scope);
+  assert.equal(typeof button.onclick, 'function');
+  button.onclick();
+  assert.equal(state.scoreAnalysisTab, 'analysis');
+  assert.equal(rendered, 1);
+});

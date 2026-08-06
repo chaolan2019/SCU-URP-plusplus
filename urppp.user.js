@@ -1265,6 +1265,8 @@
       '      <p class="urppp-set-tip" style="margin-top:8px">开启后按系统浅色/深色自动切换。浅色可选用下方动态配色，深色固定深邃暗。</p>',
       '      <button type="button" class="urppp-set-follow" id="urppp-set-clean-default" aria-pressed="false" style="margin-top:12px;width:100%">默认进入清爽模式：关</button>',
       '      <p class="urppp-set-tip" style="margin-top:8px">开启后，仅在首页自动打开清爽模式（其它页面不自动进入，可随时退出）。</p>',
+      '      <button type="button" class="urppp-set-follow" id="urppp-set-clean-analysis" aria-pressed="false" style="margin-top:12px;width:100%">清爽成绩分析展示：选项卡</button>',
+      '      <p class="urppp-set-tip" style="margin-top:8px">清爽模式成绩区域的展示方式：选项卡切换（默认）或直接显示学期趋势与成绩分段。</p>',
       '      <button type="button" class="urppp-set-follow" id="urppp-set-apple-edge" aria-pressed="true" style="margin-top:12px;width:100%">类Apple边缘线条：开</button>',
       '      <p class="urppp-set-tip" id="urppp-set-apple-edge-tip" style="margin-top:8px">仅类Apple风格生效。开启后卡片/面板带淡细边线，提升层次可读性。</p>',
       "    </section>",
@@ -1856,6 +1858,12 @@
         preferences.setCleanDefault(!preferences.getCleanDefault());
         syncPanel();
       });
+      const cleanAnalysisButton = panel.querySelector("#urppp-set-clean-analysis");
+      if (cleanAnalysisButton) cleanAnalysisButton.addEventListener("click", () => {
+        const direct = preferences.getCleanAnalysis() === "direct";
+        preferences.setCleanAnalysis(direct ? "tab" : "direct");
+        syncPanel();
+      });
       const appleEdgeButton = panel.querySelector("#urppp-set-apple-edge");
       if (appleEdgeButton) appleEdgeButton.addEventListener("click", () => {
         preferences.setAppleEdge(!preferences.getAppleEdge());
@@ -1931,6 +1939,7 @@
       fixedPalettes,
       followUseDynamic,
       cleanDefault,
+      cleanAnalysis,
       appleEdge,
       autoUpdate,
       modeAvailability
@@ -1992,6 +2001,13 @@
       cleanDefaultButton.classList.toggle("ac", cleanDefault);
       cleanDefaultButton.setAttribute("aria-pressed", cleanDefault ? "true" : "false");
       cleanDefaultButton.textContent = cleanDefault ? "默认进入清爽模式：开" : "默认进入清爽模式：关";
+    }
+    const cleanAnalysisButton = panel.querySelector("#urppp-set-clean-analysis");
+    if (cleanAnalysisButton) {
+      const direct = cleanAnalysis === "direct";
+      cleanAnalysisButton.classList.toggle("ac", direct);
+      cleanAnalysisButton.setAttribute("aria-pressed", direct ? "true" : "false");
+      cleanAnalysisButton.textContent = direct ? "清爽成绩分析展示：直接显示" : "清爽成绩分析展示：选项卡";
     }
     const appleEdgeButton = panel.querySelector("#urppp-set-apple-edge");
     const appleEdgeTip = panel.querySelector("#urppp-set-apple-edge-tip");
@@ -11574,6 +11590,30 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   #urppp-clean-root .uc-avatar,#urppp-clean-root .uc-avatar img{height:56px;max-width:72px}
   #urppp-clean-root .uc-name{font-size:16px}
 }
+
+      /* 清爽模式成绩分析（uc-sa） */
+      #urppp-clean-root .uc-sa-wrap{margin-top:10px}
+      #urppp-clean-root .uc-sa-switch{display:flex;gap:6px;margin-bottom:10px}
+      #urppp-clean-root .uc-sa-tab{
+        flex:1 1 auto;
+        padding:7px 10px;
+        border:1px solid var(--border);
+        border-radius:9px;
+        background:transparent;
+        color:var(--text-secondary);
+        font-size:12.5px;
+        font-weight:600;
+        cursor:pointer;
+        transition:background .15s,color .15s,border-color .15s;
+      }
+      #urppp-clean-root .uc-sa-tab.ac{background:color-mix(in srgb,var(--primary) 12%,transparent);border-color:var(--primary);color:var(--primary)}
+      #urppp-clean-root .uc-sa-pane[hidden]{display:none}
+      #urppp-clean-root .uc-sa-pane-analysis{margin-top:10px}
+      #urppp-clean-root .uc-sa-charts{display:grid;grid-template-columns:1fr;gap:10px}
+      #urppp-clean-root .uc-sa-chart-card{border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--surface)}
+      #urppp-clean-root .uc-sa-chart-card h5{margin:0 0 6px;font-size:12.5px;font-weight:700;color:var(--text)}
+      #urppp-clean-root .uc-sa-chart-card svg{width:100%;height:auto;display:block}
+      #urppp-clean-root .uc-sa-empty{padding:18px 8px;color:var(--text-muted);font-size:12.5px;text-align:center}
 `;
 
   // src/styles/dashboard.css
@@ -12035,6 +12075,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     return {
       open: false,
       mobileTab: "home",
+      scoreAnalysisTab: "overview",
+      // tab 模式下成绩分析子页：overview | analysis
       profile: null,
       schedule: null,
       scores: null,
@@ -12173,6 +12215,12 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   // src/features/clean-mode/render.js
   function createCleanModeRenderer({ state, deps }) {
     let cleanRenderFrame = 0;
+    const SA_PALETTE = {
+      gpaLine: "var(--primary)",
+      scoreLine: "var(--text-secondary)",
+      credit: "var(--primary)",
+      primary: "var(--primary)"
+    };
     function metricHtml(summary, scope) {
       const s = summary || deps.summarizeCourses([]);
       const items = [
@@ -12190,6 +12238,44 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       }).join("")}</div>`;
     }
     __name(metricHtml, "metricHtml");
+    function analysisHtml() {
+      const scorePack = state.scores;
+      if (!scorePack || scorePack.error) {
+        return `<div class="uc-sa-empty">${deps.escapeHtml(scorePack && scorePack.error || "暂无成绩数据")}</div>`;
+      }
+      let analysis = null;
+      try {
+        analysis = deps.analyzeScores({ scorePack, profile: state.profile });
+      } catch (_) {
+      }
+      if (!analysis || analysis.empty) {
+        return '<div class="uc-sa-empty">暂无可用成绩数据，请先查询成绩后再试。</div>';
+      }
+      return `<div class="uc-sa-charts">
+      <div class="uc-sa-chart-card"><h5>学期趋势</h5>${deps.trendChartSvg({ trend: analysis.trend, palette: deps.scoreChartPalette || SA_PALETTE })}</div>
+      <div class="uc-sa-chart-card"><h5>成绩分段分布</h5>${deps.bandsChartSvg({ bands: analysis.bands, palette: deps.scoreChartPalette || SA_PALETTE })}</div>
+    </div>`;
+    }
+    __name(analysisHtml, "analysisHtml");
+    function scoreSectionHtml(scoreBody) {
+      const direct = !!deps.isCleanAnalysisDirect();
+      const activeAnalysis = state.scoreAnalysisTab === "analysis";
+      if (direct) {
+        return `<div class="uc-sa-wrap">
+        <div class="uc-sa-pane">${scoreBody}</div>
+        <div class="uc-sa-pane uc-sa-pane-analysis">${analysisHtml()}</div>
+      </div>`;
+      }
+      return `<div class="uc-sa-wrap">
+      <div class="uc-sa-switch">
+        <button type="button" class="uc-sa-tab${activeAnalysis ? "" : " ac"}" data-sa-tab="overview">成绩总览</button>
+        <button type="button" class="uc-sa-tab${activeAnalysis ? " ac" : ""}" data-sa-tab="analysis">成绩分析</button>
+      </div>
+      <div class="uc-sa-pane"${activeAnalysis ? " hidden" : ""}>${scoreBody}</div>
+      <div class="uc-sa-pane uc-sa-pane-analysis"${activeAnalysis ? "" : " hidden"}>${analysisHtml()}</div>
+    </div>`;
+    }
+    __name(scoreSectionHtml, "scoreSectionHtml");
     function getScheduleRowHeight() {
       try {
         if (window.matchMedia && window.matchMedia("(max-width:900px)").matches) return 40;
@@ -12295,6 +12381,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
             <div class="uc-score-pane" data-score="passing"><h5>全部及格成绩</h5>${metricHtml(pass.summary, "passing")}</div>
             <div class="uc-score-pane" data-score="scheme"><h5>${deps.escapeHtml((scheme.title || "方案成绩").split(/通过|获得|不通过/)[0].trim() || "方案成绩")}</h5>${metricHtml(scheme.summary, "scheme")}</div>
           </div>`;
+      const scoreSection = scoreSectionHtml(scoreBody);
       return `<div class="uc-desktop">
       <div class="uc-col">
         <div class="uc-card"><div class="uc-bd"><div class="uc-profile">
@@ -12322,7 +12409,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       <div class="uc-col">
         <div class="uc-card">
           <div class="uc-hd"><span>成绩总览</span><span class="uc-sub">点击查看明细</span></div>
-          <div class="uc-bd">${scoreBody}</div>
+          <div class="uc-bd">${scoreSection}</div>
         </div>
         <div class="uc-card services">
           <div class="uc-hd">服务</div>
@@ -12339,10 +12426,11 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       const scheme = (state.scores && state.scores.schemes || [])[state.activeSchemeIdx] || { summary: deps.summarizeCourses([]) };
       const avatar = p.avatar ? `<img src="${deps.escapeHtml(p.avatar)}" alt="">` : `<span>${deps.escapeHtml((p.name || "同")[0])}</span>`;
       if (state.mobileTab === "scores") {
-        return `<div class="uc-mobile"><div class="uc-card"><div class="uc-bd">
+        const scoreBody = `<div class="uc-score-grid uc-score-grid-mobile">
         <div class="uc-score-pane" data-score="passing" style="margin-bottom:12px"><h5>全部及格成绩</h5>${metricHtml(pass.summary, "passing")}</div>
         <div class="uc-score-pane" data-score="scheme"><h5>方案成绩</h5>${metricHtml(scheme.summary, "scheme")}</div>
-      </div></div></div>`;
+      </div>`;
+        return `<div class="uc-mobile"><div class="uc-card"><div class="uc-bd">${scoreSectionHtml(scoreBody)}</div></div></div>`;
       }
       if (state.mobileTab === "room") {
         return `<div class="uc-mobile"><div class="uc-card"><div class="uc-hd">教室查询</div><div class="uc-bd" id="uc-room-panel">${roomPickerHtml()}</div></div></div>`;
@@ -12471,12 +12559,14 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     }
     __name(scheduleRender, "scheduleRender");
     return {
+      analysisHtml,
       metricHtml,
       occupancyHtml,
       render,
       renderScheduleBoard,
       roomPickerHtml,
-      scheduleRender
+      scheduleRender,
+      scoreSectionHtml
     };
   }
   __name(createCleanModeRenderer, "createCleanModeRenderer");
@@ -12501,6 +12591,13 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       scope.querySelectorAll("[data-score]").forEach((node) => {
         if (!markCleanUiBound(node, "score")) return;
         node.addEventListener("click", () => openScoreModal(node.getAttribute("data-score")));
+      });
+      scope.querySelectorAll("[data-sa-tab]").forEach((node) => {
+        if (!markCleanUiBound(node, "saTab")) return;
+        node.addEventListener("click", () => {
+          state.scoreAnalysisTab = node.getAttribute("data-sa-tab") === "analysis" ? "analysis" : "overview";
+          deps.render();
+        });
       });
       scope.querySelectorAll("[data-href]").forEach((node) => {
         if (!markCleanUiBound(node, "href")) return;
@@ -15082,6 +15179,7 @@ ${arcs}
     const SCHEME_KEY = "urppp_scheme_v1";
     const THEME_FOLLOW_KEY = "urppp_theme_follow_system_v1";
     const CLEAN_DEFAULT_KEY = "urppp_clean_default_v1";
+    const CLEAN_ANALYSIS_KEY = "urppp_clean_analysis_v1";
     const APPLE_EDGE_KEY = "urppp_apple_edge_line_v1";
     const FOLLOW_DYNAMIC_KEY = "urppp_follow_use_dynamic_v1";
     const BRUTAL_PALETTE_KEY = "urppp_brutal_palette_v1";
@@ -15633,6 +15731,19 @@ ${arcs}
       return !!on;
     }
     __name(setCleanDefault, "setCleanDefault");
+    function isCleanAnalysisDirect() {
+      try {
+        return GM_getValue(CLEAN_ANALYSIS_KEY, "tab") === "direct";
+      } catch (_) {
+        return false;
+      }
+    }
+    __name(isCleanAnalysisDirect, "isCleanAnalysisDirect");
+    function setCleanAnalysis(mode) {
+      GM_setValue(CLEAN_ANALYSIS_KEY, mode === "direct" ? "direct" : "tab");
+      return mode === "direct" ? "direct" : "tab";
+    }
+    __name(setCleanAnalysis, "setCleanAnalysis");
     function isAppleEdgeLine() {
       try {
         const v = GM_getValue(APPLE_EDGE_KEY, true);
@@ -20810,6 +20921,7 @@ ${arcs}
         fixedPalettes,
         followUseDynamic: isFollowUseDynamic(),
         cleanDefault: isCleanDefault(),
+        cleanAnalysis: isCleanAnalysisDirect() ? "direct" : "tab",
         appleEdge: isAppleEdgeLine(),
         autoUpdate: isAutoUpdateCheck(),
         modeAvailability
@@ -20920,6 +21032,8 @@ ${arcs}
       preferences: {
         getCleanDefault: isCleanDefault,
         setCleanDefault,
+        getCleanAnalysis: /* @__PURE__ */ __name(() => isCleanAnalysisDirect() ? "direct" : "tab", "getCleanAnalysis"),
+        setCleanAnalysis,
         getAppleEdge: isAppleEdgeLine,
         setAppleEdge: setAppleEdgeLine,
         applySkin: applySkinAttr,
@@ -23992,12 +24106,17 @@ ${arcs}
       (document.head || document.documentElement).appendChild(st);
     }
     __name(ensureStyle, "ensureStyle");
+    const cleanAnalysisData = createScoreAnalysisData({
+      deps: { scoreToNumber, scoreToGpa }
+    });
     const { metricHtml, occupancyHtml, render, renderScheduleBoard, roomPickerHtml, scheduleRender } = createCleanModeRenderer({
       state,
       deps: {
         DIRECT_EDIT_LABELS,
         DAY_NAMES,
+        analyzeScores: /* @__PURE__ */ __name((payload) => cleanAnalysisData.analyzeScores(payload), "analyzeScores"),
         applyPersonalDisplay,
+        bandsChartSvg,
         bindUI: /* @__PURE__ */ __name((scope) => bindUI(scope), "bindUI"),
         classifyPrivacyLabel,
         courseColor,
@@ -24006,10 +24125,13 @@ ${arcs}
         firstContentChar,
         getViewWeekNumber,
         ico,
+        isCleanAnalysisDirect,
         occupancyKindClass,
         occupancyTypeLabel,
         personalizedProfile,
+        scoreToNumber,
         summarizeCourses,
+        trendChartSvg,
         weekBitActive
       }
     });

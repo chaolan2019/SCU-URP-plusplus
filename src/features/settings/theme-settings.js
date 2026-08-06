@@ -11,6 +11,7 @@ export function syncThemeSettingsControls(panel, state) {
     fixedPalettes,
     followUseDynamic,
     cleanDefault,
+    cleanAnalysis,
     appleEdge,
     autoUpdate,
     modeAvailability,
@@ -80,6 +81,14 @@ export function syncThemeSettingsControls(panel, state) {
     cleanDefaultButton.classList.toggle('ac', cleanDefault);
     cleanDefaultButton.setAttribute('aria-pressed', cleanDefault ? 'true' : 'false');
     cleanDefaultButton.textContent = cleanDefault ? '默认进入清爽模式：开' : '默认进入清爽模式：关';
+  }
+
+  const cleanAnalysisButton = panel.querySelector('#urppp-set-clean-analysis');
+  if (cleanAnalysisButton) {
+    const direct = cleanAnalysis === 'direct';
+    cleanAnalysisButton.classList.toggle('ac', direct);
+    cleanAnalysisButton.setAttribute('aria-pressed', direct ? 'true' : 'false');
+    cleanAnalysisButton.textContent = direct ? '清爽成绩分析展示：直接显示' : '清爽成绩分析展示：选项卡';
   }
 
   const appleEdgeButton = panel.querySelector('#urppp-set-apple-edge');
