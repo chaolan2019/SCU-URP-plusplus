@@ -22,3 +22,15 @@ test('clean mode owns its root, card, and lesson styles', async () => {
   assert.match(cleanModeStyles, /\.uc-score-cell/);
   assert.match(cleanModeStyles, /\.uc-modal-stack-hint/);
 });
+
+test('clean mode css has no BOM (BOM drops the first rule in browsers)', async () => {
+  const [bundle, cleanModeStyles] = await Promise.all([
+    readFile(new URL('../urppp.user.js', import.meta.url), 'utf8'),
+    readFile(cleanModeStylesUrl, 'utf8'),
+  ]);
+  // 源码 CSS 不以 BOM 开头；构建产物中 root 定位规则前也不允许残留 U+FEFF
+  assert.equal(cleanModeStyles.charCodeAt(0) === 0xFEFF, false, 'clean-mode.css must not start with BOM');
+  const idx = bundle.indexOf('#urppp-clean-root{position');
+  assert.ok(idx > 0);
+  assert.equal(bundle.charCodeAt(idx - 1) === 0xFEFF, false, 'bundle css must not carry U+FEFF before root rule');
+});
