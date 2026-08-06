@@ -8,6 +8,7 @@ import {
   LOGIN_KEYS,
 } from '../assist/constants.js';
 import { getBase64FromImage, recognizeCaptcha as recognizeCaptchaWithRequest } from '../assist/ocr.js';
+import { recognizeLocalCaptcha } from '../assist/ocr-local.js';
 import { createAssistStorage } from '../assist/storage.js';
 import {
   escapeAssistHtml as escapeHtml,
@@ -103,6 +104,7 @@ import assistStyles from '../styles/assist.css';
       log,
       loginGuardStyles,
       recognizeCaptchaWithRequest,
+      recognizeLocalCaptcha,
       setInputValue,
       setStatus,
       sleep,

@@ -289,6 +289,139 @@
   }
   __name(recognizeCaptcha, "recognizeCaptcha");
 
+  // src/assist/ocr-local.js
+  var LOCAL_OCR_MODEL = { "chars": [{ "c": "2", "n": 20, "templates": [[0, 255, 255, 255, 255, 13, 255, 255, 255, 255, 255, 255, 0, 13, 26, 13, 13, 255, 13, 0, 13, 13, 0, 255, 13, 38, 13, 255, 255, 0, 0, 0, 255, 0, 0, 13, 0, 255, 255, 13, 13, 13, 255, 255, 255, 255, 255, 255, 78]] }, { "c": "3", "n": 24, "templates": [[0, 255, 255, 255, 255, 11, 255, 255, 255, 255, 255, 255, 21, 11, 0, 21, 0, 255, 21, 21, 11, 11, 255, 255, 21, 255, 255, 255, 255, 255, 0, 11, 21, 11, 21, 255, 11, 21, 11, 21, 0, 255, 255, 255, 255, 255, 255, 255, 78]] }, { "c": "4", "n": 29, "templates": [[26, 0, 9, 9, 255, 9, 26, 44, 9, 255, 255, 18, 0, 26, 255, 255, 255, 9, 0, 0, 255, 18, 255, 9, 9, 255, 18, 26, 255, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 26, 26, 18, 18, 255, 26, 88]] }, { "c": "5", "n": 30, "templates": [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 9, 9, 34, 26, 255, 255, 0, 9, 9, 17, 255, 255, 255, 255, 255, 255, 43, 9, 17, 0, 17, 255, 9, 34, 17, 9, 0, 255, 255, 255, 255, 255, 255, 255, 78]] }, { "c": "6", "n": 21, "templates": [[12, 24, 255, 255, 255, 36, 12, 0, 255, 255, 255, 255, 12, 255, 36, 12, 0, 0, 255, 255, 12, 49, 0, 12, 255, 255, 255, 255, 255, 255, 255, 255, 12, 0, 12, 255, 255, 255, 24, 0, 24, 255, 0, 255, 255, 255, 255, 255, 88]] }, { "c": "7", "n": 18, "templates": [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 14, 0, 14, 0, 255, 0, 0, 0, 14, 255, 255, 14, 0, 0, 255, 14, 14, 0, 14, 14, 0, 0, 0, 14, 0, 255, 0, 0, 0, 28, 255, 255, 0, 0, 0, 78]] }, { "c": "8", "n": 23, "templates": [[11, 11, 255, 255, 255, 0, 11, 255, 255, 255, 255, 255, 22, 255, 22, 11, 255, 255, 11, 255, 255, 11, 255, 0, 11, 0, 255, 255, 255, 11, 255, 255, 22, 22, 11, 255, 255, 255, 22, 22, 0, 255, 22, 255, 255, 255, 255, 255, 88]] }, { "c": "9", "n": 33, "templates": [[15, 15, 255, 255, 0, 0, 8, 255, 255, 255, 255, 255, 255, 255, 15, 15, 0, 255, 255, 255, 23, 23, 23, 255, 15, 255, 255, 255, 255, 255, 8, 15, 31, 31, 23, 255, 8, 8, 31, 0, 255, 255, 0, 255, 255, 255, 255, 0, 88]] }, { "c": "a", "n": 26, "templates": [[20, 10, 0, 255, 0, 20, 39, 20, 39, 255, 20, 10, 49, 20, 255, 39, 255, 39, 20, 39, 255, 10, 255, 49, 20, 20, 255, 0, 255, 0, 10, 255, 255, 255, 255, 255, 10, 255, 255, 255, 255, 255, 255, 255, 29, 20, 0, 255, 108]] }, { "c": "b", "n": 22, "templates": [[255, 255, 255, 255, 255, 23, 255, 255, 255, 255, 255, 255, 255, 255, 0, 23, 255, 255, 255, 255, 12, 255, 255, 0, 255, 255, 255, 255, 255, 12, 255, 255, 23, 35, 12, 255, 255, 255, 23, 23, 23, 255, 255, 255, 255, 255, 255, 255, 78]] }, { "c": "c", "n": 21, "templates": [[36, 12, 255, 255, 255, 255, 24, 24, 255, 255, 255, 255, 255, 255, 12, 24, 0, 0, 255, 255, 0, 12, 24, 0, 255, 255, 0, 0, 0, 12, 255, 255, 0, 0, 0, 0, 255, 255, 0, 0, 0, 0, 12, 12, 255, 255, 255, 255, 88]] }, { "c": "d", "n": 22, "templates": [[255, 255, 255, 255, 255, 0, 255, 255, 255, 255, 255, 23, 255, 255, 23, 23, 23, 255, 255, 255, 35, 12, 23, 255, 255, 255, 12, 23, 23, 255, 255, 255, 23, 35, 23, 255, 255, 255, 0, 12, 23, 255, 255, 255, 255, 255, 255, 0, 98]] }, { "c": "e", "n": 37, "templates": [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 14, 14, 0, 255, 255, 7, 21, 21, 21, 255, 255, 255, 255, 255, 255, 255, 255, 21, 7, 7, 14, 255, 255, 21, 7, 14, 14, 255, 255, 255, 255, 255, 255, 78]] }, { "c": "f", "n": 31, "templates": [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 16, 16, 16, 0, 255, 255, 25, 8, 33, 0, 255, 255, 255, 255, 255, 255, 255, 255, 0, 8, 25, 8, 255, 255, 0, 8, 8, 16, 255, 255, 8, 8, 16, 8, 69]] }, { "c": "g", "n": 27, "templates": [[0, 19, 255, 255, 255, 255, 19, 0, 255, 255, 255, 255, 9, 255, 0, 28, 28, 19, 255, 255, 38, 0, 9, 19, 255, 255, 19, 9, 9, 28, 255, 255, 0, 9, 19, 255, 255, 255, 9, 0, 0, 255, 19, 19, 255, 255, 255, 255, 98]] }, { "c": "h", "n": 28, "templates": [[255, 255, 0, 9, 9, 255, 255, 255, 9, 0, 18, 255, 255, 255, 9, 0, 9, 255, 255, 255, 0, 9, 18, 255, 255, 255, 255, 255, 255, 255, 255, 255, 9, 18, 27, 255, 255, 255, 0, 9, 18, 255, 255, 255, 9, 9, 0, 255, 98]] }, { "c": "j", "n": 28, "templates": [[9, 0, 0, 0, 255, 255, 18, 0, 0, 9, 255, 255, 9, 0, 0, 0, 255, 255, 9, 0, 0, 0, 255, 255, 0, 0, 9, 0, 255, 255, 0, 0, 0, 0, 255, 255, 18, 9, 0, 0, 255, 255, 255, 255, 255, 255, 255, 0, 48]] }, { "c": "k", "n": 16, "templates": [[255, 255, 16, 16, 0, 255, 255, 255, 0, 16, 255, 0, 255, 255, 16, 255, 0, 0, 255, 255, 0, 255, 16, 16, 255, 255, 255, 16, 0, 0, 255, 255, 0, 255, 16, 0, 255, 255, 0, 255, 255, 0, 255, 255, 16, 16, 16, 255, 98]] }, { "c": "l", "n": 28, "templates": [[255, 255, 9, 18, 0, 0, 255, 255, 9, 0, 18, 18, 255, 255, 0, 9, 0, 9, 255, 255, 18, 0, 18, 0, 255, 255, 9, 9, 18, 18, 255, 255, 0, 9, 0, 18, 255, 255, 0, 18, 0, 9, 255, 255, 255, 255, 255, 255, 78]] }, { "c": "m", "n": 21, "templates": [[255, 255, 0, 12, 12, 255, 255, 255, 0, 12, 24, 255, 255, 255, 0, 12, 24, 255, 255, 12, 255, 12, 255, 0, 255, 12, 255, 0, 255, 12, 255, 12, 255, 12, 255, 0, 255, 12, 255, 24, 255, 0, 255, 12, 24, 255, 36, 36, 128]] }, { "c": "n", "n": 32, "templates": [[255, 255, 0, 0, 0, 255, 255, 255, 8, 8, 0, 255, 255, 255, 255, 24, 0, 255, 255, 255, 255, 0, 24, 255, 255, 255, 16, 255, 0, 255, 255, 255, 16, 255, 255, 255, 255, 255, 8, 0, 255, 255, 255, 255, 16, 8, 8, 255, 98]] }, { "c": "p", "n": 27, "templates": [[255, 255, 255, 255, 255, 9, 255, 255, 255, 255, 255, 255, 255, 255, 19, 9, 28, 255, 255, 255, 28, 0, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 28, 19, 28, 9, 255, 255, 19, 19, 28, 19, 255, 255, 28, 9, 28, 19, 78]] }, { "c": "q", "n": 24, "templates": [[0, 0, 255, 255, 11, 0, 0, 255, 21, 0, 255, 11, 255, 11, 0, 0, 11, 255, 255, 11, 0, 11, 0, 255, 255, 11, 0, 0, 21, 255, 11, 255, 11, 0, 255, 21, 11, 11, 255, 255, 21, 0, 21, 0, 11, 11, 244, 255, 95]] }, { "c": "r", "n": 20, "templates": [[255, 255, 255, 255, 0, 0, 255, 255, 255, 255, 255, 0, 255, 255, 13, 0, 255, 13, 255, 255, 38, 0, 255, 13, 255, 255, 255, 255, 255, 0, 255, 255, 0, 255, 0, 0, 255, 255, 13, 255, 255, 0, 255, 255, 13, 13, 13, 255, 98]] }, { "c": "s", "n": 24, "templates": [[0, 255, 255, 255, 255, 11, 255, 255, 255, 255, 255, 255, 255, 255, 0, 11, 11, 11, 255, 255, 0, 11, 0, 11, 11, 0, 255, 255, 255, 255, 21, 21, 11, 0, 21, 255, 0, 21, 21, 11, 11, 255, 255, 255, 255, 255, 255, 255, 69]] }, { "c": "t", "n": 23, "templates": [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 11, 0, 0, 255, 0, 22, 22, 11, 11, 255, 0, 22, 11, 0, 0, 255, 11, 11, 55, 11, 0, 255, 0, 11, 22, 11, 0, 255, 0, 33, 11, 0, 11, 255, 0, 0, 98]] }, { "c": "u", "n": 18, "templates": [[255, 255, 14, 14, 28, 255, 255, 255, 0, 28, 14, 255, 255, 255, 14, 0, 28, 255, 255, 255, 28, 28, 14, 255, 255, 255, 0, 14, 14, 255, 255, 255, 28, 43, 14, 255, 255, 255, 28, 14, 43, 255, 14, 255, 255, 255, 255, 255, 88]] }, { "c": "v", "n": 24, "templates": [[255, 255, 11, 21, 21, 255, 32, 255, 11, 0, 21, 255, 11, 255, 21, 11, 11, 255, 21, 21, 255, 32, 255, 11, 11, 32, 255, 21, 255, 11, 0, 32, 255, 43, 255, 0, 21, 0, 255, 53, 255, 0, 32, 0, 11, 255, 11, 21, 117]] }, { "c": "w", "n": 26, "templates": [[255, 20, 10, 255, 10, 10, 255, 10, 0, 255, 29, 10, 29, 255, 0, 0, 10, 235, 20, 255, 235, 29, 39, 235, 10, 255, 235, 10, 29, 255, 39, 255, 235, 10, 29, 255, 0, 255, 245, 10, 20, 255, 20, 49, 255, 10, 255, 39, 146]] }, { "c": "x", "n": 25, "templates": [[255, 255, 20, 31, 0, 255, 20, 255, 10, 10, 41, 255, 31, 0, 255, 10, 255, 31, 31, 0, 255, 255, 255, 20, 20, 10, 0, 255, 0, 0, 10, 0, 255, 255, 255, 20, 41, 0, 255, 0, 255, 10, 31, 255, 10, 10, 10, 255, 98]] }, { "c": "y", "n": 24, "templates": [[255, 255, 0, 0, 0, 255, 11, 255, 21, 0, 0, 255, 21, 11, 255, 0, 255, 11, 0, 11, 255, 11, 255, 11, 0, 0, 11, 255, 11, 21, 0, 0, 0, 255, 0, 11, 11, 11, 11, 255, 11, 11, 0, 11, 11, 255, 11, 21, 106]] }, { "c": "z", "n": 28, "templates": [[255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 0, 18, 9, 27, 246, 255, 9, 9, 18, 255, 255, 18, 0, 9, 0, 255, 9, 0, 0, 18, 246, 36, 18, 36, 9, 246, 255, 9, 46, 18, 246, 255, 255, 255, 246, 246, 78]] }], "k": 1, "ar_weight": 25, "max_aspect_ratio": 2 };
+  var CHAR_H = 8;
+  var CHAR_W = 6;
+  var FEAT_DIM = CHAR_H * CHAR_W;
+  var FEAT_DIM_WITH_AR = FEAT_DIM + 1;
+  var AR_WEIGHT = LOCAL_OCR_MODEL.ar_weight || 25;
+  var MAX_ASPECT_RATIO = LOCAL_OCR_MODEL.max_aspect_ratio || 2;
+  var QUANT_STEP = 8;
+  var WHITE_THRESHOLD = 250;
+  var SAT_MIN = 10;
+  function loadRgb(image) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 80;
+    canvas.height = 26;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, 80, 26);
+    ctx.drawImage(image, 0, 0, 80, 26);
+    return ctx.getImageData(0, 0, 80, 26).data;
+  }
+  __name(loadRgb, "loadRgb");
+  function segmentByColor(rgba) {
+    const w = 80;
+    const h = 26;
+    const len = w * h;
+    const pixels = [];
+    for (let i = 0; i < len; i++) {
+      const r = rgba[i * 4], g = rgba[i * 4 + 1], b = rgba[i * 4 + 2];
+      if (r > WHITE_THRESHOLD && g > WHITE_THRESHOLD && b > WHITE_THRESHOLD) continue;
+      const sat = Math.max(r, g, b) - Math.min(r, g, b);
+      if (sat < SAT_MIN) continue;
+      pixels.push({ r, g, b, idx: i });
+    }
+    if (pixels.length < 20) return [];
+    const quant = /* @__PURE__ */ new Map();
+    for (const px of pixels) {
+      const key = `${Math.floor(px.r / QUANT_STEP) * QUANT_STEP},${Math.floor(px.g / QUANT_STEP) * QUANT_STEP},${Math.floor(px.b / QUANT_STEP) * QUANT_STEP}`;
+      const e = quant.get(key) || { r: 0, g: 0, b: 0, n: 0 };
+      e.r += px.r;
+      e.g += px.g;
+      e.b += px.b;
+      e.n++;
+      quant.set(key, e);
+    }
+    const centers = [...quant.values()].sort((a, b) => b.n - a.n).slice(0, 4).map((e) => ({ r: Math.round(e.r / e.n), g: Math.round(e.g / e.n), b: Math.round(e.b / e.n) }));
+    const labels = new Int32Array(len).fill(-1);
+    for (const px of pixels) {
+      let bi = 0, bd = Infinity;
+      for (let c = 0; c < centers.length; c++) {
+        const d = (px.r - centers[c].r) ** 2 + (px.g - centers[c].g) ** 2 + (px.b - centers[c].b) ** 2;
+        if (d < bd) {
+          bd = d;
+          bi = c;
+        }
+      }
+      labels[px.idx] = bi;
+    }
+    const chars = [];
+    for (let c = 0; c < centers.length; c++) {
+      let x1 = w, y1 = h, x2 = 0, y2 = 0, n = 0;
+      for (let i = 0; i < len; i++) {
+        if (labels[i] !== c) continue;
+        const x = i % w, y = i / w | 0;
+        if (x < x1) x1 = x;
+        if (x > x2) x2 = x;
+        if (y < y1) y1 = y;
+        if (y > y2) y2 = y;
+        n++;
+      }
+      if (n < 5) continue;
+      chars.push({ x1, y1, x2, y2 });
+    }
+    chars.sort((a, b) => (a.x1 + a.x2) / 2 - (b.x1 + b.x2) / 2);
+    return chars;
+  }
+  __name(segmentByColor, "segmentByColor");
+  function extractFeature(rgba, box) {
+    const w = 80;
+    const cw = box.x2 - box.x1 + 1;
+    const ch = box.y2 - box.y1 + 1;
+    const feat = new Float64Array(FEAT_DIM_WITH_AR);
+    for (let ty = 0; ty < CHAR_H; ty++) {
+      const sy = box.y1 + Math.min(ch - 1, Math.floor(ty / CHAR_H * ch));
+      for (let tx = 0; tx < CHAR_W; tx++) {
+        const sx = box.x1 + Math.min(cw - 1, Math.floor(tx / CHAR_W * cw));
+        const i = (sy * w + sx) * 4;
+        feat[ty * CHAR_W + tx] = rgba[i] > WHITE_THRESHOLD && rgba[i + 1] > WHITE_THRESHOLD && rgba[i + 2] > WHITE_THRESHOLD ? 0 : 1;
+      }
+    }
+    feat[FEAT_DIM] = Math.max(0, Math.min(1, cw / Math.max(ch, 1) / MAX_ASPECT_RATIO));
+    return feat;
+  }
+  __name(extractFeature, "extractFeature");
+  function classify(feat) {
+    let best = null;
+    let bestD = Infinity;
+    for (const m of LOCAL_OCR_MODEL.chars) {
+      for (const t of m.templates) {
+        let pixelDist = 0;
+        for (let i = 0; i < FEAT_DIM; i++) {
+          const d2 = feat[i] - t[i] / 255;
+          pixelDist += d2 * d2;
+        }
+        const arDiff = feat[FEAT_DIM] - t[FEAT_DIM] / 255;
+        const d = pixelDist + AR_WEIGHT * arDiff * arDiff;
+        if (d < bestD) {
+          bestD = d;
+          best = m.c;
+        }
+      }
+    }
+    return best;
+  }
+  __name(classify, "classify");
+  function recognizeLocalCaptcha(image) {
+    try {
+      const rgba = loadRgb(image);
+      const chars = segmentByColor(rgba);
+      if (chars.length !== 4) return null;
+      let text = "";
+      for (const box of chars) {
+        const c = classify(extractFeature(rgba, box));
+        if (!c) return null;
+        text += c;
+      }
+      return text;
+    } catch (_) {
+      return null;
+    }
+  }
+  __name(recognizeLocalCaptcha, "recognizeLocalCaptcha");
+
   // src/assist/storage.js
   function createAssistStorage(getValue, setValue) {
     function getBool(key, fallback) {
@@ -477,7 +610,7 @@
         <button type="button" class="urppp-set-follow" id="urpppp-login-persist-password">持久保存密码：${c.passwordStorage === "persistent" ? "开" : "关"}</button>
       </div>
       <div class="urpppp-grid">
-        <div class="urpppp-row"><label>OCR 服务</label><input type="url" id="urpppp-login-ocr" placeholder="${DEFAULT_OCR_EXAMPLE2}" value="${deps.escapeAttr(c.ocrUrl)}" spellcheck="false" /></div>
+        <div class="urpppp-row"><label>线上 OCR 服务（可选）</label><input type="url" id="urpppp-login-ocr" placeholder="https://..." value="${deps.escapeAttr(c.ocrUrl)}" spellcheck="false" /></div>
         <div class="urpppp-row"><label>提交延迟(ms)</label><input type="number" id="urpppp-login-delay" min="0" step="50" value="${deps.escapeAttr(String(c.submitDelay))}" /></div>
         <div class="urpppp-row"><label>教务学号</label><input type="text" id="urpppp-login-zhjw-user" value="${deps.escapeAttr(c.zhjwUser)}" autocomplete="username" /></div>
         <div class="urpppp-row"><label>教务密码</label><input type="password" id="urpppp-login-zhjw-pass" autocomplete="current-password" /></div>
@@ -485,8 +618,7 @@
         <div class="urpppp-row urpppp-cas-pass"><label>统一认证密码</label><input type="password" id="urpppp-login-cas-pass" /></div>
       </div>
       <p class="urpppp-tip">默认不保存密码；开关关闭时只保存学号，登录请使用浏览器密码管理器或手动输入。已有旧密码会兼容读取，关闭开关并保存后立即清除。</p>
-      <p class="urpppp-tip">可选 OCR：<code>${DEFAULT_OCR_EXAMPLE2}</code> · POST <code>{"image":"base64"}</code> → <code>{"status":"success","code":"..."}</code></p>
-      <p class="urpppp-tip">告示：OCR 服务会接收验证码图片，但插件不会向 OCR 服务发送学号或密码。该服务并非学校官方服务，请自行判断并承担使用风险。</p>
+      <p class="urpppp-tip">验证码默认本地识别；识别失败时若填写了线上 OCR 服务地址则自动改用线上。</p>
       <div class="urpppp-actions">
         <button type="button" class="urppp-set-btn" id="urpppp-login-save">保存登录设置</button>
         <button type="button" class="urppp-set-btn ghost" id="urpppp-login-clear">清除账密</button>
@@ -573,11 +705,25 @@
       };
     }
     __name(bindLoginSection, "bindLoginSection");
-    const recognizeCaptcha2 = /* @__PURE__ */ __name((base64, ocrUrl) => deps.recognizeCaptchaWithRequest(
-      base64,
-      ocrUrl,
-      typeof GM_xmlhttpRequest === "function" ? GM_xmlhttpRequest : null
-    ), "recognizeCaptcha");
+    const recognizeSmart = /* @__PURE__ */ __name(async (img, ocrUrl) => {
+      const local = typeof deps.recognizeLocalCaptcha === "function" ? deps.recognizeLocalCaptcha(img) : null;
+      if (local && /^[a-z0-9]{4}$/i.test(local)) {
+        deps.log("验证码（本地）", local);
+        return local;
+      }
+      const url = String(ocrUrl || "").trim();
+      if (!url) {
+        deps.log("本地识别失败且未配置线上 OCR，等待手动填写");
+        return "";
+      }
+      const code = await deps.recognizeCaptchaWithRequest(
+        deps.getBase64FromImage(img),
+        url,
+        typeof GM_xmlhttpRequest === "function" ? GM_xmlhttpRequest : null
+      );
+      deps.log("验证码（线上）", code);
+      return code;
+    }, "recognizeSmart");
     function credFor(kind, c) {
       if (c.shareCred || kind === "zhjw") return { username: c.zhjwUser, password: c.zhjwPass };
       return { username: c.casUser || c.zhjwUser, password: c.casPass || c.zhjwPass };
@@ -686,18 +832,14 @@
       const guard = config.beginLoginProcess("zhjw", cred.username);
       showLoginGuardNotice(guard);
       if (guard.paused) return true;
-      if (!c.ocrUrl) {
-        deps.log("未配置 OCR，已填充账密并等待手动登录");
-        return true;
-      }
       if (guard.failures > 0) refreshLoginCaptchaImage(captchaImg);
       fillLoginCaptcha(captchaInput, "");
       if (!captchaImg.complete) await new Promise((resolve) => {
         captchaImg.onload = resolve;
         setTimeout(resolve, 2e3);
       });
-      const code = await recognizeCaptcha2(deps.getBase64FromImage(captchaImg), c.ocrUrl);
-      fillLoginCaptcha(captchaInput, code);
+      const code = await recognizeSmart(captchaImg, c.ocrUrl);
+      if (!code) return true;
       deps.log("教务验证码：", code);
       if (c.autoSubmit && loginButton) {
         await deps.sleep(c.submitDelay);
@@ -733,16 +875,13 @@
       const guard = config.beginLoginProcess("cas", cred.username);
       showLoginGuardNotice(guard);
       if (guard.paused) return true;
-      if (!c.ocrUrl) {
-        deps.log("未配置 OCR，已填充账密并等待手动登录");
-        return true;
-      }
       fillLoginCaptcha(els.captchaInput, "");
       if (!els.captchaImg.complete) await new Promise((resolve) => {
         els.captchaImg.onload = resolve;
         setTimeout(resolve, 2e3);
       });
-      const code = await recognizeCaptcha2(deps.getBase64FromImage(els.captchaImg), c.ocrUrl);
+      const code = await recognizeSmart(els.captchaImg, c.ocrUrl);
+      if (!code) return true;
       fillLoginCaptcha(els.captchaInput, code);
       deps.log("统一认证验证码：", code);
       if (c.autoSubmit && els.loginButton) {
@@ -1856,6 +1995,7 @@
         log,
         loginGuardStyles: assist_login_guard_default,
         recognizeCaptchaWithRequest: recognizeCaptcha,
+        recognizeLocalCaptcha,
         setInputValue,
         setStatus,
         sleep,
