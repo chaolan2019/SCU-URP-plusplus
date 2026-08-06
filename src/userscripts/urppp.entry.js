@@ -2436,6 +2436,11 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           html[data-urppp-skin="editorial"] #urppp-clean-root .uc-card{
             background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;
           }
+          /* 编辑杂志：分析图表卡去掉背景框，融入版面 */
+          html[data-urppp-skin="editorial"] #urppp-clean-root .uc-sa-chart-card,
+          html[data-urppp-skin="editorial"] #urppp-score-analysis .urppp-sa-card{
+            background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;
+          }
           html[data-urppp-skin="editorial"] #urppp-clean-root .uc-card:hover{
             border:0!important;box-shadow:none!important;transform:none!important;
           }
