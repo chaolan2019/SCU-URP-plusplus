@@ -11,3 +11,9 @@ test-results/
 blob-report/
 
 Design/
+# captcha OCR: keep scripts in git, exclude samples/models (local only, not pushed)
+ocr-training/zhjw/
+ocr-training/scu-id/
+ocr-training/model/
+ocr-training/labels/
+ocr-training/contact/
