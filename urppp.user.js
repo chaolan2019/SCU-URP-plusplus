@@ -10951,6 +10951,23 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       }
       .urppp-sidebar-toggle:hover { background: var(--border); color: var(--text); }
 
+      /* apple / flat：侧边栏菜单文字跟随主题黑/白，避免主题强调色（系统蓝）
+         原始 ACE 菜单链接会被全局 a{color:var(--primary)} 染成主题色 */
+      html[data-urppp-skin="apple"] .sidebar .nav-list > li > a,
+      html[data-urppp-skin="apple"] .sidebar .nav-list > li.active > a,
+      html[data-urppp-skin="apple"] .sidebar .nav-list > li.open > a,
+      html[data-urppp-skin="apple"] .sidebar .nav-list .submenu > li > a,
+      html[data-urppp-skin="apple"] .sidebar .nav-list > li > a:hover,
+      html[data-urppp-skin="apple"] .sidebar .nav-list > li.active > a:hover,
+      html[data-urppp-skin="flat"] .sidebar .nav-list > li > a,
+      html[data-urppp-skin="flat"] .sidebar .nav-list > li.active > a,
+      html[data-urppp-skin="flat"] .sidebar .nav-list > li.open > a,
+      html[data-urppp-skin="flat"] .sidebar .nav-list .submenu > li > a,
+      html[data-urppp-skin="flat"] .sidebar .nav-list > li > a:hover,
+      html[data-urppp-skin="flat"] .sidebar .nav-list > li.active > a:hover {
+        color: var(--text) !important;
+      }
+
       /* 小屏汉堡按钮：贴合主题，不再用 ACE 默认灰/蓝 */
       /* 桌面隐藏汉堡；仅小屏显示（不要全局 display:flex 常驻） */
       @media (min-width: 992px) {
