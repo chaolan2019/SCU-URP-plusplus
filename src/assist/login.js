@@ -17,7 +17,7 @@ export function createLoginAssist({ config, storage, deps }) {
         <button type="button" class="urppp-set-follow" id="urpppp-login-persist-password">持久保存密码：${c.passwordStorage === 'persistent' ? '开' : '关'}</button>
       </div>
       <div class="urpppp-grid">
-        <div class="urpppp-row"><label>OCR 服务</label><input type="url" id="urpppp-login-ocr" placeholder="${DEFAULT_OCR_EXAMPLE}" value="${deps.escapeAttr(c.ocrUrl)}" spellcheck="false" /></div>
+        <div class="urpppp-row"><label>线上 OCR 服务（可选）</label><input type="url" id="urpppp-login-ocr" placeholder="https://..." value="${deps.escapeAttr(c.ocrUrl)}" spellcheck="false" /></div>
         <div class="urpppp-row"><label>提交延迟(ms)</label><input type="number" id="urpppp-login-delay" min="0" step="50" value="${deps.escapeAttr(String(c.submitDelay))}" /></div>
         <div class="urpppp-row"><label>教务学号</label><input type="text" id="urpppp-login-zhjw-user" value="${deps.escapeAttr(c.zhjwUser)}" autocomplete="username" /></div>
         <div class="urpppp-row"><label>教务密码</label><input type="password" id="urpppp-login-zhjw-pass" autocomplete="current-password" /></div>
@@ -25,8 +25,7 @@ export function createLoginAssist({ config, storage, deps }) {
         <div class="urpppp-row urpppp-cas-pass"><label>统一认证密码</label><input type="password" id="urpppp-login-cas-pass" /></div>
       </div>
       <p class="urpppp-tip">默认不保存密码；开关关闭时只保存学号，登录请使用浏览器密码管理器或手动输入。已有旧密码会兼容读取，关闭开关并保存后立即清除。</p>
-      <p class="urpppp-tip">可选 OCR：<code>${DEFAULT_OCR_EXAMPLE}</code> · POST <code>{"image":"base64"}</code> → <code>{"status":"success","code":"..."}</code></p>
-      <p class="urpppp-tip">告示：OCR 服务会接收验证码图片，但插件不会向 OCR 服务发送学号或密码。该服务并非学校官方服务，请自行判断并承担使用风险。</p>
+      <p class="urpppp-tip">验证码默认本地识别；识别失败时若填写了线上 OCR 服务地址则自动改用线上。</p>
       <div class="urpppp-actions">
         <button type="button" class="urppp-set-btn" id="urpppp-login-save">保存登录设置</button>
         <button type="button" class="urppp-set-btn ghost" id="urpppp-login-clear">清除账密</button>
@@ -111,11 +110,26 @@ export function createLoginAssist({ config, storage, deps }) {
     };
   }
 
-  const recognizeCaptcha = (base64, ocrUrl) => deps.recognizeCaptchaWithRequest(
-    base64,
-    ocrUrl,
-    typeof GM_xmlhttpRequest === 'function' ? GM_xmlhttpRequest : null,
-  );
+  // 验证码识别：本地优先（质心模板），本地失败且配置了线上服务时改用线上
+  const recognizeSmart = async (img, ocrUrl) => {
+    const local = typeof deps.recognizeLocalCaptcha === 'function' ? deps.recognizeLocalCaptcha(img) : null;
+    if (local && /^[a-z0-9]{4}$/i.test(local)) {
+      deps.log('验证码（本地）', local);
+      return local;
+    }
+    const url = String(ocrUrl || '').trim();
+    if (!url) {
+      deps.log('本地识别失败且未配置线上 OCR，等待手动填写');
+      return '';
+    }
+    const code = await deps.recognizeCaptchaWithRequest(
+      deps.getBase64FromImage(img),
+      url,
+      typeof GM_xmlhttpRequest === 'function' ? GM_xmlhttpRequest : null,
+    );
+    deps.log('验证码（线上）', code);
+    return code;
+  };
 
   function credFor(kind, c) {
     if (c.shareCred || kind === 'zhjw') return { username: c.zhjwUser, password: c.zhjwPass };
@@ -223,12 +237,11 @@ export function createLoginAssist({ config, storage, deps }) {
     const guard = config.beginLoginProcess('zhjw', cred.username);
     showLoginGuardNotice(guard);
     if (guard.paused) return true;
-    if (!c.ocrUrl) { deps.log('未配置 OCR，已填充账密并等待手动登录'); return true; }
     if (guard.failures > 0) refreshLoginCaptchaImage(captchaImg);
     fillLoginCaptcha(captchaInput, '');
     if (!captchaImg.complete) await new Promise((resolve) => { captchaImg.onload = resolve; setTimeout(resolve, 2000); });
-    const code = await recognizeCaptcha(deps.getBase64FromImage(captchaImg), c.ocrUrl);
-    fillLoginCaptcha(captchaInput, code);
+    const code = await recognizeSmart(captchaImg, c.ocrUrl);
+    if (!code) return true;
     deps.log('教务验证码：', code);
     if (c.autoSubmit && loginButton) {
       await deps.sleep(c.submitDelay);
@@ -275,10 +288,10 @@ export function createLoginAssist({ config, storage, deps }) {
     const guard = config.beginLoginProcess('cas', cred.username);
     showLoginGuardNotice(guard);
     if (guard.paused) return true;
-    if (!c.ocrUrl) { deps.log('未配置 OCR，已填充账密并等待手动登录'); return true; }
     fillLoginCaptcha(els.captchaInput, '');
     if (!els.captchaImg.complete) await new Promise((resolve) => { els.captchaImg.onload = resolve; setTimeout(resolve, 2000); });
-    const code = await recognizeCaptcha(deps.getBase64FromImage(els.captchaImg), c.ocrUrl);
+    const code = await recognizeSmart(els.captchaImg, c.ocrUrl);
+    if (!code) return true;
     fillLoginCaptcha(els.captchaInput, code);
     deps.log('统一认证验证码：', code);
     if (c.autoSubmit && els.loginButton) {
