@@ -1,7 +1,7 @@
 // 统一身份认证验证码样本收集：
 // GET https://id.scu.edu.cn/api/public/bff/v1.2/one_time_login/captcha?_enterprise_id=scdx
 // 返回 JSON { data: { captcha: <base64 png> } }，解码保存；每张间隔 200ms。
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -29,10 +29,13 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 let ok = 0;
 let fail = 0;
+let skip = 0;
 for (let i = 1; i <= COUNT; i++) {
+  const file = path.join(OUT, String(i).padStart(3, '0') + '.png');
+  if (existsSync(file)) { skip++; continue; }
   try {
     const buf = await fetchCaptcha();
-    writeFileSync(path.join(OUT, String(i).padStart(3, '0') + '.png'), buf);
+    writeFileSync(file, buf);
     ok++;
     if (i % 10 === 0) console.log(`collected ${i}/${COUNT}`);
   } catch (e) {
@@ -41,4 +44,4 @@ for (let i = 1; i <= COUNT; i++) {
   }
   await sleep(200);
 }
-console.log(`done: ${ok} ok, ${fail} fail -> ${OUT}`);
+console.log(`done: ${ok} ok, ${fail} fail, ${skip} skipped -> ${OUT}`);

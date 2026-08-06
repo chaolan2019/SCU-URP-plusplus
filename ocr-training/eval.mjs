@@ -147,9 +147,11 @@ function recognize(feat) {
   let best = null;
   let bestD = Infinity;
   for (const m of model.chars) {
-    let d = 0;
-    for (let k = 0; k < feat.length; k++) d += Math.abs(feat[k] * 255 - m.template[k]);
-    if (d < bestD) { bestD = d; best = m.c; }
+    for (const t of m.templates) {
+      let d = 0;
+      for (let k = 0; k < feat.length; k++) d += Math.abs(feat[k] * 255 - t[k]);
+      if (d < bestD) { bestD = d; best = m.c; }
+    }
   }
   return { c: best, d: bestD };
 }

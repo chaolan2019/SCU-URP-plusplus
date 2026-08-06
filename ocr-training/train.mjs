@@ -7,12 +7,14 @@ import { fileURLToPath } from 'node:url';
 import { Jimp } from 'jimp';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
-const FEAT_W = 8;
-const FEAT_H = 6;
+const FEAT_W = 16;
+const FEAT_H = 10;
 const TARGET = process.argv[2];
 const DRY = process.argv.includes('--dry');
+const FULL = process.argv.includes('--full'); // --full 用全部标注样本训练并输出最终模型
+const K = Number((process.argv.find((a) => a.startsWith('--k=')) || '').split('=')[1]) || 3; // 每类质心数（多模板）
 if (!TARGET || !['zhjw', 'scu-id'].includes(TARGET)) {
-  console.error('用法：node train.mjs <zhjw|scu-id> [--dry]');
+  console.error('用法：node train.mjs <zhjw|scu-id> [--dry] [--full] [--k=N]');
   process.exit(1);
 }
 
@@ -144,6 +146,46 @@ function connectedComponents({ w, h, mask }) {
   return areas;
 }
 
+function dist(a, b) {
+  let d = 0;
+  for (let k = 0; k < a.length; k++) d += Math.abs(a[k] - b[k]);
+  return d;
+}
+
+// k-means：每类字符聚成多个原型，覆盖旋转/粗细等形变
+function kmeans(feats, k, dim) {
+  const n = feats.length;
+  if (n <= k) return feats.map((f) => Array.from(f));
+  const centers = [...feats]
+    .sort(() => Math.random() - 0.5)
+    .slice(0, k)
+    .map((f) => Array.from(f));
+  for (let iter = 0; iter < 40; iter++) {
+    const assign = feats.map((f) => {
+      let bi = 0;
+      let bd = Infinity;
+      centers.forEach((c, i) => { const d = dist(f, c); if (d < bd) { bd = d; bi = i; } });
+      return bi;
+    });
+    const sums = centers.map(() => new Float64Array(dim));
+    const counts = centers.map(() => 0);
+    feats.forEach((f, i) => {
+      const ci = assign[i];
+      for (let k2 = 0; k2 < dim; k2++) sums[ci][k2] += f[k2];
+      counts[ci]++;
+    });
+    let moved = false;
+    for (let i = 0; i < k; i++) {
+      if (!counts[i]) continue;
+      const nc = Array.from(sums[i], (v) => v / counts[i]);
+      if (dist(nc, centers[i]) > 0.0001) moved = true;
+      centers[i] = nc;
+    }
+    if (!moved) break;
+  }
+  return centers;
+}
+
 function cropNormalize(img, comp, targetW = FEAT_W, targetH = FEAT_H) {
   const cw = comp.maxX - comp.minX + 1;
   const ch = comp.maxY - comp.minY + 1;
@@ -175,7 +217,10 @@ async function main() {
     .filter((f) => f.endsWith(SITE.ext))
     .sort();
   const stats = { total: files.length, chars: 0, failed: 0, compHist: {} };
-  const examples = []; // { label, feat }
+  const labeledIds = Object.keys(labels).sort();
+  const VALIDATE = !FULL && labeledIds.length >= 10;
+  const validSet = VALIDATE ? new Set(labeledIds.slice(Math.floor(labeledIds.length * 0.8))) : new Set();
+  const examples = []; // { ch, feat, valid }
   const charCentroids = new Map(); // char -> { sum: Float64Array, count }
 
   for (const f of files) {
@@ -206,13 +251,16 @@ async function main() {
           const ch = String(label[i] || '').toLowerCase();
           if (!ch) continue;
           stats.chars++;
-          examples.push({ ch, feat });
-          if (!charCentroids.has(ch)) {
-            charCentroids.set(ch, { sum: new Float64Array(FEAT_W * FEAT_H), count: 0 });
+          const valid = validSet.has(id);
+          examples.push({ ch, feat, valid, sampleId: id });
+          if (!valid) {
+            if (!charCentroids.has(ch)) {
+              charCentroids.set(ch, { sum: new Float64Array(FEAT_W * FEAT_H), count: 0 });
+            }
+            const c = charCentroids.get(ch);
+            for (let k = 0; k < feat.length; k++) c.sum[k] += feat[k];
+            c.count++;
           }
-          const c = charCentroids.get(ch);
-          for (let k = 0; k < feat.length; k++) c.sum[k] += feat[k];
-          c.count++;
         }
       }
     } catch (e) {
@@ -229,31 +277,71 @@ async function main() {
     return;
   }
 
-  // 聚合质心并输出模型
-  const model = { site: TARGET, size: [FEAT_W, FEAT_H], chars: [] };
-  for (const [ch, c] of [...charCentroids.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
-    const template = Array.from(c.sum, (v) => Math.round((v / c.count) * 255));
-    model.chars.push({ c: ch, n: c.count, template });
+  const charSamples = new Map(); // char -> Float64Array[]
+  for (const ex of examples) {
+    if (ex.valid) continue;
+    if (!charSamples.has(ex.ch)) charSamples.set(ex.ch, []);
+    charSamples.get(ex.ch).push(ex.feat);
+  }
+  // 聚合质心（每类 k 个模板）并输出模型
+  const model = { site: TARGET, size: [FEAT_W, FEAT_H], k: K, chars: [] };
+  for (const [ch, feats] of [...charSamples.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
+    const templates = kmeans(feats, Math.min(K, feats.length), FEAT_W * FEAT_H).map((t) =>
+      Array.from(t, (v) => Math.round(v * 255)));
+    model.chars.push({ c: ch, n: feats.length, templates });
   }
   mkdirSync(path.join(ROOT, 'model'), { recursive: true });
   const outFile = path.join(ROOT, 'model', TARGET + '.json');
   writeFileSync(outFile, JSON.stringify(model));
   console.log(`模型已生成: ${outFile}（${model.chars.length} 类）`);
 
-  // 训练集自检：最近质心距离识别率
+  // 训练集自检 + 留出验证：最近模板距离识别
+  const recognize = (feat) => {
+    let best = null;
+    let bestD = Infinity;
+    for (const m of model.chars) {
+      for (const t of m.templates) {
+        let d = 0;
+        for (let k = 0; k < feat.length; k++) d += Math.abs(feat[k] * 255 - t[k]);
+        if (d < bestD) { bestD = d; best = m.c; }
+      }
+    }
+    return best;
+  };
   if (examples.length) {
     let hit = 0;
     for (const ex of examples) {
-      let best = null;
-      let bestD = Infinity;
-      for (const m of model.chars) {
-        let d = 0;
-        for (let k = 0; k < ex.feat.length; k++) d += Math.abs(ex.feat[k] * 255 - m.template[k]);
-        if (d < bestD) { bestD = d; best = m.c; }
-      }
-      if (best === ex.ch) hit++;
+      if (recognize(ex.feat) === ex.ch) hit++;
     }
     console.log(`训练集自检识别率: ${(hit / examples.length * 100).toFixed(1)}% (${hit}/${examples.length})`);
+  }
+
+  // 留出验证：后 20% 标注样本未参与训练，报告字符级与整图准确率
+  const validEx = examples.filter((ex) => ex.valid);
+  if (VALIDATE && validEx.length) {
+    const bySample = new Map();
+    let charHit = 0;
+    let charTotal = 0;
+    for (const ex of validEx) {
+      const pred = recognize(ex.feat);
+      charTotal++;
+      if (pred === ex.ch) charHit++;
+      const arr = bySample.get(ex.sampleId) || { label: '', pred: '' };
+      arr.label += ex.ch;
+      arr.pred += pred || '';
+      bySample.set(ex.sampleId, arr);
+    }
+    let imgHit = 0;
+    let imgTotal = 0;
+    for (const arr of bySample.values()) {
+      imgTotal++;
+      if (arr.label === arr.pred) imgHit++;
+    }
+    console.log(`留出验证（${validSet.size} 张，未参与训练）: 字符级 ${(charHit / charTotal * 100).toFixed(1)}% (${charHit}/${charTotal})，整图 ${(imgHit / imgTotal * 100).toFixed(1)}% (${imgHit}/${imgTotal})`);
+  } else if (VALIDATE) {
+    console.log('[validate] 标注样本不足，无验证集');
+  } else if (!FULL && labeledIds.length) {
+    console.log('[note] 使用 --full 用全部标注样本训练；默认模式留出后 20% 作验证');
   }
 }
 
