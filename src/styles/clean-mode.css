@@ -285,7 +285,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       #urppp-clean-root .uc-sa-empty{padding:18px 8px;color:var(--text-muted);font-size:13px;text-align:center}
       #urppp-clean-root .uc-sa-more-row{margin-top:10px;text-align:right}
       #urppp-clean-root .uc-sa-more{
-        display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:8px;
+        display:inline-flex;align-items:center;gap:4px;padding:6px 14px;border-radius:999px;
         color:var(--primary);font-size:12.5px;font-weight:600;cursor:pointer;text-decoration:none;
         background:color-mix(in srgb,var(--primary) 8%,transparent);transition:background .15s;
       }

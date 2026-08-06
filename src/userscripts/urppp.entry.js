@@ -1349,7 +1349,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           'html[data-urppp-skin="flat"] #urppp-clean-root .uc-lesson,html[data-urppp-skin="flat"] #urppp-clean-root .uc-grid-cell,html[data-urppp-skin="flat"] #urppp-clean-root .uc-course-sub,html[data-urppp-skin="flat"] #urppp-clean-root .uc-attr-pill,html[data-urppp-skin="flat"] #urppp-clean-root .uc-gpa,html[data-urppp-skin="flat"] #urppp-clean-root .uc-cd-chip,html[data-urppp-skin="flat"] #urppp-clean-root .uc-avatar{border-radius:0!important;box-shadow:none!important;border:1px solid color-mix(in srgb,var(--text) 28%,var(--border))!important;}',
           'html[data-urppp-skin="flat"] #urppp-clean-root .uc-avatar img{border-radius:0!important;}',
           // 成绩分析：直角硬边（图卡 2px 黑框、跳转按钮），tab 走 flat 色块层次
-          'html[data-urppp-skin="flat"] #urppp-clean-root .uc-sa-more{border-radius:0!important;box-shadow:none!important;}',
+          'html[data-urppp-skin="flat"] #urppp-clean-root .uc-sa-more{border-radius:0!important;border:2px solid var(--text)!important;background:var(--surface)!important;color:var(--text)!important;box-shadow:none!important;text-decoration:none!important;}',
           'html[data-urppp-skin="flat"] #urppp-clean-root .uc-sa-chart-card{border-radius:0!important;border:2px solid var(--text)!important;box-shadow:none!important;}',
           // flat tab：选中反色（强调色底 + 表面色文字），无下划线，色块建立层次
           'html[data-urppp-skin="flat"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-tab{box-shadow:none!important;}',
@@ -1648,6 +1648,13 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac,
           html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-tab.ac{
             background:#000!important;color:#fff!important;box-shadow:2px 2px 0 #000!important;transform:translate(2px,2px)!important;
+          }
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-sa-more{
+            border:3px solid #000!important;border-radius:0!important;background:#fff!important;color:#000!important;
+            box-shadow:4px 4px 0 #000!important;text-decoration:none!important;transform:none!important;
+          }
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-sa-more:hover{
+            background:var(--brutal-secondary)!important;color:#000!important;box-shadow:6px 6px 0 #000!important;transform:translate(-2px,-2px)!important;
           }
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac::after,
           html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-tab.ac::after{display:none!important;}
@@ -2441,6 +2448,14 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           html[data-urppp-skin="editorial"] #urppp-score-analysis .urppp-sa-card{
             background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;
           }
+          /* 编辑杂志：跳转按钮去背景块，改细线文字链接 */
+          html[data-urppp-skin="editorial"] #urppp-clean-root .uc-sa-more{
+            background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;
+            color:var(--primary)!important;text-decoration:underline!important;text-underline-offset:3px!important;text-decoration-thickness:1px!important;
+          }
+          html[data-urppp-skin="editorial"] #urppp-clean-root .uc-sa-more:hover{
+            background:transparent!important;color:var(--text)!important;
+          }
           html[data-urppp-skin="editorial"] #urppp-clean-root .uc-card:hover{
             border:0!important;box-shadow:none!important;transform:none!important;
           }
@@ -2672,7 +2687,8 @@ import { createNavbarController } from '../features/navigation/navbar.js';
         ,
           'html[data-urppp-skin="organic"] #urppp-clean-root .uc-build-grid button{border-radius:14px!important;border:1px solid var(--border)!important;box-shadow:none!important;background:var(--input-bg)!important;color:var(--text)!important;}',
           'html[data-urppp-skin="organic"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab{border-radius:var(--radius-sm) var(--radius-sm) 0 0!important;border:0!important;box-shadow:none!important;background:transparent!important;color:var(--text-secondary)!important;}',
-          'html[data-urppp-skin="organic"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac,html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-set-tab.ac{background:color-mix(in srgb,var(--primary) 12%,var(--surface))!important;color:var(--primary)!important;border:0!important;box-shadow:none!important;border-radius:var(--radius-sm) var(--radius-sm) 0 0!important;}'].join('');
+          'html[data-urppp-skin="organic"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac,html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-set-tab.ac{background:color-mix(in srgb,var(--primary) 12%,var(--surface))!important;color:var(--primary)!important;border:0!important;box-shadow:none!important;border-radius:var(--radius-sm) var(--radius-sm) 0 0!important;}',
+          'html[data-urppp-skin="organic"] #urppp-clean-root .uc-sa-more{border-radius:999px!important;border:1px solid var(--border)!important;background:var(--input-bg)!important;color:var(--primary)!important;box-shadow:none!important;text-decoration:none!important;}'].join('');
       }
       else if (id === 'neu') {
         css += `
@@ -3193,6 +3209,11 @@ import { createNavbarController } from '../features/navigation/navbar.js';
             background:var(--neu-base)!important;color:var(--primary)!important;box-shadow:var(--neu-inset-soft)!important;
           }
           html[data-urppp-skin="neu"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac::after{display:none!important;}
+          html[data-urppp-skin="neu"] #urppp-clean-root .uc-sa-more{
+            background:var(--neu-base)!important;color:var(--primary)!important;border:0!important;border-radius:var(--radius-sm)!important;
+            box-shadow:var(--neu-raised-xs)!important;transform:none!important;text-decoration:none!important;
+          }
+          html[data-urppp-skin="neu"] #urppp-clean-root .uc-sa-more:hover{box-shadow:var(--neu-inset-soft)!important;transform:none!important;}
           html.urppp-theme-default[data-urppp-skin="neu"]:not(.urppp-theme-follow) body #urppp-settings-panel .urppp-set-mode[data-theme="default"],
           html.urppp-theme-dark[data-urppp-skin="neu"]:not(.urppp-theme-follow) body #urppp-settings-panel .urppp-set-mode[data-theme="dark"]{
             background:var(--neu-base)!important;color:var(--primary)!important;border:0!important;box-shadow:var(--neu-inset)!important;
