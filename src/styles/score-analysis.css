@@ -1,0 +1,174 @@
+      /* 成绩分析面板（score-analysis） */
+      #urppp-score-analysis.urppp-sa {
+        margin: 14px 0 20px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius, 14px);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      #urppp-score-analysis .urppp-sa-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 13px 18px;
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+        text-align: left;
+        font: inherit;
+        color: var(--text);
+      }
+      #urppp-score-analysis .urppp-sa-toggle:hover { background: color-mix(in srgb, var(--primary) 6%, transparent); }
+      #urppp-score-analysis .urppp-sa-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        background: color-mix(in srgb, var(--primary) 14%, transparent);
+        color: var(--primary);
+        flex: 0 0 auto;
+      }
+      #urppp-score-analysis .urppp-sa-title { font-size: 15px; font-weight: 700; flex: 0 0 auto; }
+      #urppp-score-analysis .urppp-sa-summary {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--text-muted);
+        font-size: 12.5px;
+      }
+      #urppp-score-analysis .urppp-sa-chevron {
+        display: inline-flex;
+        color: var(--text-secondary);
+        transition: transform .22s;
+        flex: 0 0 auto;
+      }
+      #urppp-score-analysis.urppp-sa[data-urppp-sa-state="expanded"] .urppp-sa-chevron { transform: rotate(180deg); }
+      #urppp-score-analysis .urppp-sa-body { border-top: 1px solid var(--border); background: color-mix(in srgb, var(--input-bg) 34%, var(--surface)); }
+      #urppp-score-analysis .urppp-sa-body[hidden] { display: none; }
+      #urppp-score-analysis .urppp-sa-content { padding: 16px 18px 18px; }
+
+      #urppp-score-analysis .urppp-sa-loading,
+      #urppp-score-analysis .urppp-sa-error,
+      #urppp-score-analysis .urppp-sa-empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 26px 12px;
+        color: var(--text-secondary);
+        font-size: 13.5px;
+      }
+      #urppp-score-analysis .urppp-sa-spinner {
+        width: 16px; height: 16px;
+        border: 2px solid var(--border);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: urppp-sa-spin .8s linear infinite;
+        flex: 0 0 auto;
+      }
+      @keyframes urppp-sa-spin { to { transform: rotate(360deg); } }
+      #urppp-score-analysis .urppp-sa-retry {
+        padding: 5px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--primary);
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      #urppp-score-analysis .urppp-sa-retry:hover { border-color: var(--primary); }
+
+      #urppp-score-analysis .urppp-sa-metrics {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      #urppp-score-analysis .urppp-sa-metric {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius, 12px);
+        padding: 12px 14px;
+        min-width: 0;
+      }
+      #urppp-score-analysis .urppp-sa-metric-value { font-size: 24px; font-weight: 700; color: var(--primary); line-height: 1.2; }
+      #urppp-score-analysis .urppp-sa-metric-label { font-size: 12.5px; font-weight: 600; color: var(--text); margin-top: 3px; }
+      #urppp-score-analysis .urppp-sa-metric-hint { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+      #urppp-score-analysis .urppp-sa-grid {
+        display: grid;
+        grid-template-columns: 7fr 4fr;
+        gap: 12px;
+        margin-bottom: 12px;
+        align-items: stretch;
+      }
+      #urppp-score-analysis .urppp-sa-grid:last-child { margin-bottom: 0; }
+      #urppp-score-analysis .urppp-sa-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius, 12px);
+        padding: 14px 16px;
+        min-width: 0;
+      }
+      #urppp-score-analysis .urppp-sa-card-title {
+        margin: 0 0 10px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      #urppp-score-analysis .urppp-sa-chart { width: 100%; height: auto; display: block; }
+
+      #urppp-score-analysis .urppp-sa-share-body { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+      #urppp-score-analysis .urppp-sa-donut { flex: 0 0 auto; }
+      #urppp-score-analysis .urppp-sa-legend { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+      #urppp-score-analysis .urppp-sa-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12.5px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+      }
+      #urppp-score-analysis .urppp-sa-legend-dot { width: 12px; height: 12px; border-radius: 4px; flex: 0 0 auto; }
+
+      #urppp-score-analysis .urppp-sa-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+      #urppp-score-analysis .urppp-sa-table th,
+      #urppp-score-analysis .urppp-sa-table td {
+        padding: 7px 10px;
+        border-bottom: 1px solid var(--border);
+        text-align: right;
+        color: var(--text);
+        white-space: nowrap;
+      }
+      #urppp-score-analysis .urppp-sa-table th:first-child,
+      #urppp-score-analysis .urppp-sa-table td:first-child { text-align: left; }
+      #urppp-score-analysis .urppp-sa-table th {
+        color: var(--text-muted);
+        font-weight: 600;
+        font-size: 11.5px;
+        position: sticky;
+        top: 0;
+        background: var(--surface);
+      }
+      #urppp-score-analysis .urppp-sa-table tbody tr:last-child td { border-bottom: 0; }
+      #urppp-score-analysis .urppp-sa-detail { overflow: auto; max-height: 320px; }
+
+      /* 分数段固定色在暗色下提高一档，保证柱体可读 */
+      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#15803d"] { fill: #4ade80; }
+      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#65a30d"] { fill: #a3e635; }
+      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#ca8a04"] { fill: #facc15; }
+      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#ea580c"] { fill: #fb923c; }
+      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#dc2626"] { fill: #f87171; }
+
+      @media (max-width: 900px) {
+        #urppp-score-analysis .urppp-sa-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        #urppp-score-analysis .urppp-sa-grid { grid-template-columns: 1fr; }
+        #urppp-score-analysis .urppp-sa-summary { display: none; }
+      }

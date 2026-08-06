@@ -11825,6 +11825,183 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       }
 `;
 
+  // src/styles/score-analysis.css
+  var score_analysis_default = `      /* 成绩分析面板（score-analysis） */
+      #urppp-score-analysis.urppp-sa {
+        margin: 14px 0 20px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius, 14px);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      #urppp-score-analysis .urppp-sa-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 13px 18px;
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+        text-align: left;
+        font: inherit;
+        color: var(--text);
+      }
+      #urppp-score-analysis .urppp-sa-toggle:hover { background: color-mix(in srgb, var(--primary) 6%, transparent); }
+      #urppp-score-analysis .urppp-sa-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        background: color-mix(in srgb, var(--primary) 14%, transparent);
+        color: var(--primary);
+        flex: 0 0 auto;
+      }
+      #urppp-score-analysis .urppp-sa-title { font-size: 15px; font-weight: 700; flex: 0 0 auto; }
+      #urppp-score-analysis .urppp-sa-summary {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--text-muted);
+        font-size: 12.5px;
+      }
+      #urppp-score-analysis .urppp-sa-chevron {
+        display: inline-flex;
+        color: var(--text-secondary);
+        transition: transform .22s;
+        flex: 0 0 auto;
+      }
+      #urppp-score-analysis.urppp-sa[data-urppp-sa-state="expanded"] .urppp-sa-chevron { transform: rotate(180deg); }
+      #urppp-score-analysis .urppp-sa-body { border-top: 1px solid var(--border); background: color-mix(in srgb, var(--input-bg) 34%, var(--surface)); }
+      #urppp-score-analysis .urppp-sa-body[hidden] { display: none; }
+      #urppp-score-analysis .urppp-sa-content { padding: 16px 18px 18px; }
+
+      #urppp-score-analysis .urppp-sa-loading,
+      #urppp-score-analysis .urppp-sa-error,
+      #urppp-score-analysis .urppp-sa-empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 26px 12px;
+        color: var(--text-secondary);
+        font-size: 13.5px;
+      }
+      #urppp-score-analysis .urppp-sa-spinner {
+        width: 16px; height: 16px;
+        border: 2px solid var(--border);
+        border-top-color: var(--primary);
+        border-radius: 50%;
+        animation: urppp-sa-spin .8s linear infinite;
+        flex: 0 0 auto;
+      }
+      @keyframes urppp-sa-spin { to { transform: rotate(360deg); } }
+      #urppp-score-analysis .urppp-sa-retry {
+        padding: 5px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--border);
+        background: var(--surface);
+        color: var(--primary);
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      #urppp-score-analysis .urppp-sa-retry:hover { border-color: var(--primary); }
+
+      #urppp-score-analysis .urppp-sa-metrics {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      #urppp-score-analysis .urppp-sa-metric {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius, 12px);
+        padding: 12px 14px;
+        min-width: 0;
+      }
+      #urppp-score-analysis .urppp-sa-metric-value { font-size: 24px; font-weight: 700; color: var(--primary); line-height: 1.2; }
+      #urppp-score-analysis .urppp-sa-metric-label { font-size: 12.5px; font-weight: 600; color: var(--text); margin-top: 3px; }
+      #urppp-score-analysis .urppp-sa-metric-hint { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+      #urppp-score-analysis .urppp-sa-grid {
+        display: grid;
+        grid-template-columns: 7fr 4fr;
+        gap: 12px;
+        margin-bottom: 12px;
+        align-items: stretch;
+      }
+      #urppp-score-analysis .urppp-sa-grid:last-child { margin-bottom: 0; }
+      #urppp-score-analysis .urppp-sa-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius, 12px);
+        padding: 14px 16px;
+        min-width: 0;
+      }
+      #urppp-score-analysis .urppp-sa-card-title {
+        margin: 0 0 10px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      #urppp-score-analysis .urppp-sa-chart { width: 100%; height: auto; display: block; }
+
+      #urppp-score-analysis .urppp-sa-share-body { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+      #urppp-score-analysis .urppp-sa-donut { flex: 0 0 auto; }
+      #urppp-score-analysis .urppp-sa-legend { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+      #urppp-score-analysis .urppp-sa-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12.5px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+      }
+      #urppp-score-analysis .urppp-sa-legend-dot { width: 12px; height: 12px; border-radius: 4px; flex: 0 0 auto; }
+
+      #urppp-score-analysis .urppp-sa-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+      #urppp-score-analysis .urppp-sa-table th,
+      #urppp-score-analysis .urppp-sa-table td {
+        padding: 7px 10px;
+        border-bottom: 1px solid var(--border);
+        text-align: right;
+        color: var(--text);
+        white-space: nowrap;
+      }
+      #urppp-score-analysis .urppp-sa-table th:first-child,
+      #urppp-score-analysis .urppp-sa-table td:first-child { text-align: left; }
+      #urppp-score-analysis .urppp-sa-table th {
+        color: var(--text-muted);
+        font-weight: 600;
+        font-size: 11.5px;
+        position: sticky;
+        top: 0;
+        background: var(--surface);
+      }
+      #urppp-score-analysis .urppp-sa-table tbody tr:last-child td { border-bottom: 0; }
+      #urppp-score-analysis .urppp-sa-detail { overflow: auto; max-height: 320px; }
+
+      /* 分数段固定色在暗色下提高一档，保证柱体可读 */
+      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#15803d"] { fill: #4ade80; }
+      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#65a30d"] { fill: #a3e635; }
+      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#ca8a04"] { fill: #facc15; }
+      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#ea580c"] { fill: #fb923c; }
+      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#dc2626"] { fill: #f87171; }
+
+      @media (max-width: 900px) {
+        #urppp-score-analysis .urppp-sa-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        #urppp-score-analysis .urppp-sa-grid { grid-template-columns: 1fr; }
+        #urppp-score-analysis .urppp-sa-summary { display: none; }
+      }
+`;
+
   // src/features/clean-mode/state.js
   function createCleanModeState() {
     return {
@@ -13177,6 +13354,504 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     };
   }
   __name(createDashboardController, "createDashboardController");
+
+  // src/features/score-analysis/data.js
+  function round2(value) {
+    return Math.round((Number(value) || 0) * 100) / 100;
+  }
+  __name(round2, "round2");
+  var SCORE_BANDS = [
+    { key: "s90", label: "90+", min: 90, max: 100 },
+    { key: "s80", label: "80-89", min: 80, max: 89.999 },
+    { key: "s70", label: "70-79", min: 70, max: 79.999 },
+    { key: "s60", label: "60-69", min: 60, max: 69.999 },
+    { key: "s59", label: "<60", min: 0, max: 59.999 }
+  ];
+  function shortTerm(term) {
+    const m = String(term || "").match(/^(\d{4})-(\d{4})-(\d+)/);
+    if (!m) return String(term || "");
+    return `${m[1].slice(2)}-${m[2].slice(2)}-${m[3]}`;
+  }
+  __name(shortTerm, "shortTerm");
+  function createScoreAnalysisData({ deps }) {
+    const scoreToNumber = deps.scoreToNumber;
+    const scoreToGpa = deps.scoreToGpa;
+    function hasScore(course) {
+      if (!course) return false;
+      if (course.unevaluated) return false;
+      return scoreToNumber(course.score) != null;
+    }
+    __name(hasScore, "hasScore");
+    function termOrderKey(term) {
+      const m = String(term || "").match(/^(\d{4})-(\d{4})-(\d+)/);
+      if (!m) return [9999, 9999];
+      return [Number(m[1]), Number(m[3])];
+    }
+    __name(termOrderKey, "termOrderKey");
+    function allCourses(scorePack) {
+      const group = scorePack && scorePack.passing && scorePack.passing[0];
+      return group && group.courses || [];
+    }
+    __name(allCourses, "allCourses");
+    function officialGpa(course) {
+      const value = course && course.officialGpa;
+      const number = Number(value);
+      if (value != null && Number.isFinite(number) && number >= 0 && number <= 5) return number;
+      return null;
+    }
+    __name(officialGpa, "officialGpa");
+    function computeMetrics({ scorePack, profile }) {
+      const courses = allCourses(scorePack);
+      const majorGpa = profile && profile.majorGpa ? String(profile.majorGpa).trim() : "";
+      let totalCredit = 0;
+      let scoreWeighted = 0;
+      let gpaWeighted = 0;
+      let gpaCredit = 0;
+      let requiredCredit = 0;
+      let requiredScoreWeighted = 0;
+      let requiredGpaWeighted = 0;
+      let requiredGpaCredit = 0;
+      courses.forEach((course) => {
+        if (!hasScore(course)) return;
+        const credit = Number(course.credit) || 0;
+        const score = scoreToNumber(course.score);
+        if (score == null || credit <= 0) return;
+        totalCredit += credit;
+        scoreWeighted += score * credit;
+        const gpa = officialGpa(course) != null ? officialGpa(course) : scoreToGpa(course.score);
+        if (gpa != null) {
+          gpaWeighted += gpa * credit;
+          gpaCredit += credit;
+        }
+        if (course.required) {
+          requiredCredit += credit;
+          requiredScoreWeighted += score * credit;
+          if (gpa != null) {
+            requiredGpaWeighted += gpa * credit;
+            requiredGpaCredit += credit;
+          }
+        }
+      });
+      const requiredGpa = round2(requiredGpaCredit ? requiredGpaWeighted / requiredGpaCredit : 0);
+      return {
+        majorGpa: majorGpa || (requiredGpa > 0 ? String(requiredGpa) : ""),
+        avgGpa: round2(gpaCredit ? gpaWeighted / gpaCredit : 0),
+        avgScore: round2(totalCredit ? scoreWeighted / totalCredit : 0),
+        totalCredit: round2(totalCredit),
+        requiredGpa,
+        courseCount: courses.length
+      };
+    }
+    __name(computeMetrics, "computeMetrics");
+    function computeTrend(courses) {
+      const byTerm = /* @__PURE__ */ new Map();
+      (courses || []).forEach((course) => {
+        if (!hasScore(course)) return;
+        const term = course.term || "未分组";
+        let bucket = byTerm.get(term);
+        if (!bucket) {
+          bucket = { term, count: 0, credit: 0, scoreW: 0, gpaW: 0, gpaCredit: 0 };
+          byTerm.set(term, bucket);
+        }
+        const credit = Number(course.credit) || 0;
+        const score = scoreToNumber(course.score);
+        if (score == null) return;
+        bucket.count += 1;
+        if (credit <= 0) return;
+        bucket.credit += credit;
+        bucket.scoreW += score * credit;
+        const gpa = officialGpa(course) != null ? officialGpa(course) : scoreToGpa(course.score);
+        if (gpa != null) {
+          bucket.gpaW += gpa * credit;
+          bucket.gpaCredit += credit;
+        }
+      });
+      return Array.from(byTerm.values()).map((bucket) => ({
+        term: bucket.term,
+        label: shortTerm(bucket.term),
+        count: bucket.count,
+        credit: round2(bucket.credit),
+        avgScore: round2(bucket.credit ? bucket.scoreW / bucket.credit : 0),
+        avgGpa: round2(bucket.gpaCredit ? bucket.gpaW / bucket.gpaCredit : 0)
+      })).sort((a, b) => {
+        const ka = termOrderKey(a.term);
+        const kb = termOrderKey(b.term);
+        return ka[0] - kb[0] || ka[1] - kb[1];
+      });
+    }
+    __name(computeTrend, "computeTrend");
+    function computeBands(courses) {
+      const buckets = SCORE_BANDS.map((band) => ({ ...band, count: 0, credit: 0 }));
+      (courses || []).forEach((course) => {
+        if (!hasScore(course)) return;
+        const score = scoreToNumber(course.score);
+        if (score == null) return;
+        const hit = buckets.find((band) => score >= band.min && score <= band.max);
+        if (!hit) return;
+        hit.count += 1;
+        hit.credit += Number(course.credit) || 0;
+      });
+      const maxCount = buckets.reduce((max, band) => Math.max(max, band.count), 1);
+      return buckets.map((band) => ({ ...band, ratio: Math.round(band.count / maxCount * 100) }));
+    }
+    __name(computeBands, "computeBands");
+    function computeShare(courses) {
+      let requiredCredit = 0;
+      let optionalCredit = 0;
+      let requiredCount = 0;
+      let optionalCount = 0;
+      (courses || []).forEach((course) => {
+        if (!hasScore(course)) return;
+        const credit = Number(course.credit) || 0;
+        if (course.required) {
+          requiredCredit += credit;
+          requiredCount += 1;
+        } else {
+          optionalCredit += credit;
+          optionalCount += 1;
+        }
+      });
+      const total = requiredCredit + optionalCredit || 1;
+      return {
+        requiredCredit: round2(requiredCredit),
+        optionalCredit: round2(optionalCredit),
+        requiredCount,
+        optionalCount,
+        requiredRatio: Math.round(requiredCredit / total * 100)
+      };
+    }
+    __name(computeShare, "computeShare");
+    function analyzeScores({ scorePack, profile }) {
+      const courses = allCourses(scorePack);
+      return {
+        metrics: computeMetrics({ scorePack, profile }),
+        trend: computeTrend(courses),
+        bands: computeBands(courses),
+        share: computeShare(courses),
+        empty: courses.length === 0
+      };
+    }
+    __name(analyzeScores, "analyzeScores");
+    return { analyzeScores, hasScore, officialGpa, shortTerm };
+  }
+  __name(createScoreAnalysisData, "createScoreAnalysisData");
+
+  // src/features/score-analysis/charts.js
+  var TEXT_FILL = "var(--text-secondary)";
+  var GRID_STROKE = "var(--border)";
+  function escapeLabel(value) {
+    return escapeHtml(String(value == null ? "" : value));
+  }
+  __name(escapeLabel, "escapeLabel");
+  function trendChartSvg({ trend, palette }) {
+    const width = 920;
+    const height = 330;
+    const pad = { top: 36, right: 30, bottom: 46, left: 30 };
+    const plotW = width - pad.left - pad.right;
+    const plotH = height - pad.top - pad.bottom;
+    const items = (trend || []).filter((item) => item && item.avgScore != null);
+    if (!items.length) {
+      return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="学期成绩趋势"></svg>`;
+    }
+    const n = items.length;
+    const xAt = /* @__PURE__ */ __name((index) => pad.left + (index + 0.5) * (plotW / n), "xAt");
+    const gpaValues = items.map((item) => Number(item.avgGpa) || 0);
+    const scoreValues = items.map((item) => Number(item.avgScore) || 0);
+    const creditValues = items.map((item) => Number(item.credit) || 0);
+    const gpaMin = Math.max(0, Math.min(...gpaValues) - 0.2);
+    const gpaMax = Math.min(5, Math.max(...gpaValues) + 0.2);
+    const scoreMin = Math.max(0, Math.min(...scoreValues) - 4);
+    const scoreMax = Math.min(100, Math.max(...scoreValues) + 4);
+    const maxCredit = Math.max(1, ...creditValues);
+    const gpaSpan = gpaMax - gpaMin || 1;
+    const scoreSpan = scoreMax - scoreMin || 1;
+    const yGpa = /* @__PURE__ */ __name((value) => pad.top + plotH - (value - gpaMin) / gpaSpan * plotH, "yGpa");
+    const yScore = /* @__PURE__ */ __name((value) => pad.top + plotH - (value - scoreMin) / scoreSpan * plotH, "yScore");
+    const yCredit = /* @__PURE__ */ __name((value) => pad.top + plotH - value / maxCredit * plotH * 0.9, "yCredit");
+    const gpaPoints = items.map((item, i) => `${xAt(i)},${yGpa(item.avgGpa)}`).join(" ");
+    const scorePoints = items.map((item, i) => `${xAt(i)},${yScore(item.avgScore)}`).join(" ");
+    const gridLines = [0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+      const y = pad.top + plotH - ratio * plotH;
+      return `<line x1="${pad.left}" y1="${y.toFixed(1)}" x2="${width - pad.right}" y2="${y.toFixed(1)}" stroke="${GRID_STROKE}" stroke-width="1" stroke-dasharray="3 4"/>`;
+    }).join("");
+    const creditBars = items.map((item, i) => {
+      const x = xAt(i);
+      const barW = Math.min(26, plotW / n * 0.32);
+      const y = yCredit(item.credit);
+      return `<rect x="${(x - barW / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${(pad.top + plotH - y).toFixed(1)}" rx="3" fill="${palette.credit}" opacity="0.55"/>`;
+    }).join("");
+    const xLabels = items.map((item, i) => `<text x="${xAt(i).toFixed(1)}" y="${height - 16}" text-anchor="middle" font-size="11" fill="${TEXT_FILL}">${escapeLabel(item.label)}</text>`).join("");
+    const gpaDots = items.map((item, i) => `<circle cx="${xAt(i).toFixed(1)}" cy="${yGpa(item.avgGpa).toFixed(1)}" r="3.5" fill="${palette.gpaLine}"/><text x="${xAt(i).toFixed(1)}" y="${(yGpa(item.avgGpa) - 9).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="600" fill="${palette.gpaLine}">${escapeLabel(item.avgGpa)}</text>`).join("");
+    const scoreDots = items.map((item, i) => `<circle cx="${xAt(i).toFixed(1)}" cy="${yScore(item.avgScore).toFixed(1)}" r="3" fill="${palette.scoreLine}"/><text x="${xAt(i).toFixed(1)}" y="${(yScore(item.avgScore) + 17).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="${palette.scoreLine}">${escapeLabel(item.avgScore)}</text>`).join("");
+    return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="学期成绩趋势">
+${gridLines}
+${creditBars}
+<text x="${pad.left}" y="18" font-size="11" fill="${TEXT_FILL}">每学期修读学分（柱）</text>
+<g stroke="${palette.gpaLine}" stroke-width="2.2" fill="none"><polyline points="${gpaPoints}"/></g>
+<g stroke="${palette.scoreLine}" stroke-width="1.8" stroke-dasharray="5 4" fill="none"><polyline points="${scorePoints}"/></g>
+<g>${gpaDots}</g>
+<g>${scoreDots}</g>
+<g>${xLabels}</g>
+<g font-size="11">
+  <rect x="${width - pad.right - 176}" y="8" width="12" height="12" rx="3" fill="${palette.gpaLine}"/><text x="${width - pad.right - 158}" y="18" fill="${TEXT_FILL}">学期平均绩点</text>
+  <rect x="${width - pad.right - 82}" y="8" width="12" height="12" rx="3" fill="${palette.scoreLine}"/><text x="${width - pad.right - 64}" y="18" fill="${TEXT_FILL}">加权均分</text>
+</g>
+</svg>`;
+  }
+  __name(trendChartSvg, "trendChartSvg");
+  function bandsChartSvg({ bands, palette }) {
+    const width = 400;
+    const height = 232;
+    const pad = { top: 28, right: 16, bottom: 34, left: 16 };
+    const plotW = width - pad.left - pad.right;
+    const plotH = height - pad.top - pad.bottom;
+    const items = bands || [];
+    const n = items.length || 1;
+    const maxCount = Math.max(1, ...items.map((item) => item.count));
+    const barW = Math.min(52, plotW / n * 0.5);
+    const bars = items.map((item, i) => {
+      const x = pad.left + (i + 0.5) * (plotW / n);
+      const h = item.count ? Math.max(8, item.count / maxCount * plotH) : 0;
+      const y = pad.top + plotH - h;
+      const color = palette.bands[i] || palette.primary;
+      return `<rect x="${(x - barW / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="5" fill="${color}"/>
+<text x="${x.toFixed(1)}" y="${(y - 6).toFixed(1)}" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--text)">${escapeLabel(item.count)}</text>
+<text x="${x.toFixed(1)}" y="${height - 12}" text-anchor="middle" font-size="10.5" fill="${TEXT_FILL}">${escapeLabel(item.label)}</text>`;
+    }).join("");
+    return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="分数段分布">
+<line x1="${pad.left}" y1="${(pad.top + plotH).toFixed(1)}" x2="${width - pad.right}" y2="${(pad.top + plotH).toFixed(1)}" stroke="${GRID_STROKE}" stroke-width="1"/>
+${bars}
+</svg>`;
+  }
+  __name(bandsChartSvg, "bandsChartSvg");
+  function donutSvg({ requiredRatio, palette }) {
+    const size = 190;
+    const center = size / 2;
+    const radius = 66;
+    const stroke = 26;
+    const ratio = Math.max(0, Math.min(100, Math.round(Number(requiredRatio) || 0)));
+    const circumference = 2 * Math.PI * radius;
+    const requiredLength = ratio / 100 * circumference;
+    const optionalLength = Math.max(0, circumference - requiredLength);
+    return `<svg viewBox="0 0 ${size} ${size}" class="urppp-sa-chart" role="img" aria-label="必修选修学分构成">
+<circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="${palette.optional}" stroke-width="${stroke}"/>
+<circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="${palette.required}" stroke-width="${stroke}"
+  stroke-dasharray="${requiredLength.toFixed(2)} ${circumference.toFixed(2)}"
+  stroke-linecap="butt" transform="rotate(-90 ${center} ${center})"/>
+<text x="${center}" y="${center - 6}" text-anchor="middle" font-size="24" font-weight="700" fill="var(--text)">${escapeLabel(ratio)}%</text>
+<text x="${center}" y="${center + 18}" text-anchor="middle" font-size="11" fill="${TEXT_FILL}">必修学分占比</text>
+</svg>`;
+  }
+  __name(donutSvg, "donutSvg");
+
+  // src/features/score-analysis/render.js
+  var DEFAULT_PALETTE = Object.freeze({
+    gpaLine: "var(--primary)",
+    scoreLine: "var(--text-secondary)",
+    credit: "var(--primary)",
+    required: "var(--primary)",
+    optional: "var(--text-muted)",
+    bands: ["#15803d", "#65a30d", "#ca8a04", "#ea580c", "#dc2626"]
+  });
+  var ICON_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-4 4 3 5-7"/></svg>';
+  var CHEVRON_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+  function createScoreAnalysisRenderer({ deps }) {
+    const palette = deps && deps.palette || DEFAULT_PALETTE;
+    function panelShellHtml() {
+      return `<div id="urppp-score-analysis" class="urppp-sa" data-urppp-sa-state="collapsed">
+  <button type="button" class="urppp-sa-toggle" aria-expanded="false">
+    <span class="urppp-sa-icon">${ICON_SVG}</span>
+    <span class="urppp-sa-title">成绩分析</span>
+    <span class="urppp-sa-summary" data-urppp-sa-summary>点击展开，查看成绩指标与学期变化</span>
+    <span class="urppp-sa-chevron">${CHEVRON_SVG}</span>
+  </button>
+  <div class="urppp-sa-body" data-urppp-sa-body hidden>
+    <div class="urppp-sa-content" data-urppp-sa-content></div>
+  </div>
+</div>`;
+    }
+    __name(panelShellHtml, "panelShellHtml");
+    function loadingHtml() {
+      return '<div class="urppp-sa-loading"><span class="urppp-sa-spinner"></span><span>正在计算成绩分析…</span></div>';
+    }
+    __name(loadingHtml, "loadingHtml");
+    function errorHtml(message) {
+      const detail = escapeHtml(String(message || "成绩数据加载失败"));
+      return `<div class="urppp-sa-error">${detail}
+  <button type="button" class="urppp-sa-retry" data-urppp-sa-retry>重试</button></div>`;
+    }
+    __name(errorHtml, "errorHtml");
+    function metricCards(metrics) {
+      const cards = [
+        { label: "主修绩点", value: metrics.majorGpa || "—", hint: "资料卡 GPA" },
+        { label: "平均绩点", value: metrics.avgGpa != null ? String(metrics.avgGpa) : "—", hint: "全部及格加权" },
+        { label: "加权均分", value: metrics.avgScore != null ? String(metrics.avgScore) : "—", hint: "学分加权" },
+        { label: "已修学分", value: metrics.totalCredit != null ? String(metrics.totalCredit) : "—", hint: "及格课程学分" },
+        { label: "已修课程", value: String(metrics.courseCount || 0), hint: "含未评估" }
+      ];
+      return cards.map((card) => `<div class="urppp-sa-metric">
+  <div class="urppp-sa-metric-value">${escapeHtml(card.value)}</div>
+  <div class="urppp-sa-metric-label">${escapeHtml(card.label)}</div>
+  <div class="urppp-sa-metric-hint">${escapeHtml(card.hint)}</div>
+</div>`).join("");
+    }
+    __name(metricCards, "metricCards");
+    function detailTable(trend) {
+      const rows = (trend || []).map((item) => `<tr><td>${escapeHtml(item.label)}</td><td>${escapeHtml(item.count)}</td><td>${escapeHtml(item.credit)}</td><td>${escapeHtml(item.avgScore)}</td><td>${escapeHtml(item.avgGpa)}</td></tr>`).join("");
+      return `<table class="urppp-sa-table">
+<thead><tr><th>学期</th><th>课程</th><th>学分</th><th>加权均分</th><th>平均绩点</th></tr></thead>
+<tbody>${rows}</tbody></table>`;
+    }
+    __name(detailTable, "detailTable");
+    function analysisHtml(analysis) {
+      if (!analysis || analysis.empty) {
+        return '<div class="urppp-sa-empty">暂无可用成绩数据，请先在教务系统查询成绩后再试。</div>';
+      }
+      const share = analysis.share || { requiredCredit: 0, optionalCredit: 0, requiredRatio: 0 };
+      return `<div class="urppp-sa-metrics">${metricCards(analysis.metrics)}</div>
+<div class="urppp-sa-grid">
+  <section class="urppp-sa-card urppp-sa-trend">
+    <h5 class="urppp-sa-card-title">学期趋势</h5>
+    ${trendChartSvg({ trend: analysis.trend, palette })}
+  </section>
+  <section class="urppp-sa-card urppp-sa-bands">
+    <h5 class="urppp-sa-card-title">分数段分布</h5>
+    ${bandsChartSvg({ bands: analysis.bands, palette })}
+  </section>
+</div>
+<div class="urppp-sa-grid">
+  <section class="urppp-sa-card urppp-sa-share">
+    <h5 class="urppp-sa-card-title">必修 / 选修构成</h5>
+    <div class="urppp-sa-share-body">
+      <div class="urppp-sa-donut">${donutSvg({ requiredRatio: share.requiredRatio, palette })}</div>
+      <div class="urppp-sa-legend">
+        <div class="urppp-sa-legend-item"><i class="urppp-sa-legend-dot" style="background:${palette.required}"></i>必修 ${escapeHtml(share.requiredCredit)} 学分 · ${escapeHtml(share.requiredCount)} 门</div>
+        <div class="urppp-sa-legend-item"><i class="urppp-sa-legend-dot" style="background:${palette.optional}"></i>选修/其他 ${escapeHtml(share.optionalCredit)} 学分 · ${escapeHtml(share.optionalCount)} 门</div>
+      </div>
+    </div>
+  </section>
+  <section class="urppp-sa-card urppp-sa-detail">
+    <h5 class="urppp-sa-card-title">各学期明细</h5>
+    ${detailTable(analysis.trend)}
+  </section>
+</div>`;
+    }
+    __name(analysisHtml, "analysisHtml");
+    return { panelShellHtml, loadingHtml, errorHtml, analysisHtml, palette };
+  }
+  __name(createScoreAnalysisRenderer, "createScoreAnalysisRenderer");
+
+  // src/features/score-analysis/ui.js
+  function createScoreAnalysisUI() {
+    function bindPanel(panel, handlers) {
+      const toggle = panel.querySelector(".urppp-sa-toggle");
+      const body = panel.querySelector("[data-urppp-sa-body]");
+      if (!toggle || !body) return { isExpanded: /* @__PURE__ */ __name(() => false, "isExpanded"), setExpanded: /* @__PURE__ */ __name(() => {
+      }, "setExpanded") };
+      const setExpanded = /* @__PURE__ */ __name((expanded) => {
+        const state = expanded ? "expanded" : "collapsed";
+        panel.dataset.urpppSaState = state;
+        toggle.setAttribute("aria-expanded", String(expanded));
+        body.hidden = !expanded;
+        if (expanded && typeof handlers.onExpand === "function") handlers.onExpand();
+      }, "setExpanded");
+      toggle.addEventListener("click", () => {
+        const expanded = toggle.getAttribute("aria-expanded") === "true";
+        setExpanded(!expanded);
+      });
+      body.addEventListener("click", (event) => {
+        const target = event.target;
+        const retry = target && target.closest ? target.closest("[data-urppp-sa-retry]") : null;
+        if (retry && typeof handlers.onRetry === "function") handlers.onRetry();
+      });
+      return {
+        setExpanded,
+        isExpanded: /* @__PURE__ */ __name(() => toggle.getAttribute("aria-expanded") === "true", "isExpanded")
+      };
+    }
+    __name(bindPanel, "bindPanel");
+    return { bindPanel };
+  }
+  __name(createScoreAnalysisUI, "createScoreAnalysisUI");
+
+  // src/features/score-analysis/controller.js
+  var PANEL_ID = "urppp-score-analysis";
+  function createScoreAnalysisController({ deps }) {
+    const dataApi = createScoreAnalysisData({ deps });
+    const renderer = createScoreAnalysisRenderer({ deps });
+    const ui = createScoreAnalysisUI();
+    let panel = null;
+    let loadState = "idle";
+    function ensureStyle() {
+      if (!deps.styles) return;
+      if (document.getElementById("urppp-score-analysis-style")) return;
+      const style = document.createElement("style");
+      style.id = "urppp-score-analysis-style";
+      style.textContent = deps.styles;
+      (document.head || document.documentElement).appendChild(style);
+    }
+    __name(ensureStyle, "ensureStyle");
+    function findHost() {
+      if (typeof deps.getInsertHost === "function") {
+        const host = deps.getInsertHost();
+        if (host) return host;
+      }
+      return document.querySelector(".page-content") || document.getElementById("page-content-template") || document.body;
+    }
+    __name(findHost, "findHost");
+    function contentEl() {
+      return panel && panel.querySelector("[data-urppp-sa-content]");
+    }
+    __name(contentEl, "contentEl");
+    async function handleExpand() {
+      if (loadState === "loading" || loadState === "ready") return;
+      const content = contentEl();
+      if (!content) return;
+      loadState = "loading";
+      content.innerHTML = renderer.loadingHtml();
+      try {
+        const [scorePack, profile] = await Promise.all([
+          deps.loadScores(),
+          deps.loadProfile()
+        ]);
+        if (scorePack && scorePack.error) throw new Error(scorePack.error);
+        const analysis = dataApi.analyzeScores({ scorePack, profile });
+        content.innerHTML = renderer.analysisHtml(analysis);
+        loadState = "ready";
+      } catch (error) {
+        content.innerHTML = renderer.errorHtml(error && error.message || String(error));
+        loadState = "error";
+      }
+    }
+    __name(handleExpand, "handleExpand");
+    function mount() {
+      ensureStyle();
+      if (panel && panel.isConnected) return panel;
+      if (document.getElementById(PANEL_ID)) return document.getElementById(PANEL_ID);
+      const host = findHost();
+      if (!host) return null;
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = renderer.panelShellHtml();
+      panel = wrapper.firstElementChild;
+      host.insertBefore(panel, host.firstChild);
+      ui.bindPanel(panel, { onExpand: handleExpand, onRetry: handleExpand });
+      return panel;
+    }
+    __name(mount, "mount");
+    function unmount() {
+      if (panel && panel.isConnected) panel.remove();
+      panel = null;
+      loadState = "idle";
+    }
+    __name(unmount, "unmount");
+    return {
+      mount,
+      unmount,
+      getPanel: /* @__PURE__ */ __name(() => panel, "getPanel"),
+      reset: unmount
+    };
+  }
+  __name(createScoreAnalysisController, "createScoreAnalysisController");
 
   // src/features/navigation/breadcrumb.js
   function createBreadcrumbController({
@@ -20914,10 +21589,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       return n;
     }
     __name(scoreToNumber, "scoreToNumber");
-    function round2(n) {
+    function round22(n) {
       return Math.round((Number(n) || 0) * 100) / 100;
     }
-    __name(round2, "round2");
+    __name(round22, "round2");
     function isRequiredAttr(attr) {
       return /必修/.test(String(attr || ""));
     }
@@ -20947,12 +21622,12 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         }
       });
       return {
-        totalCredit: round2(creditSum),
-        avgScore: round2(creditSum ? scoreW / creditSum : 0),
-        avgGpa: round2(gpaCredit ? gpaW / gpaCredit : 0),
-        requiredCredit: round2(reqCredit),
-        requiredGpa: round2(reqGpaCredit ? reqGpaW / reqGpaCredit : 0),
-        requiredAvg: round2(reqCredit ? reqScoreW / reqCredit : 0),
+        totalCredit: round22(creditSum),
+        avgScore: round22(creditSum ? scoreW / creditSum : 0),
+        avgGpa: round22(gpaCredit ? gpaW / gpaCredit : 0),
+        requiredCredit: round22(reqCredit),
+        requiredGpa: round22(reqGpaCredit ? reqGpaW / reqGpaCredit : 0),
+        requiredAvg: round22(reqCredit ? reqScoreW / reqCredit : 0),
         count: (list || []).length
       };
     }
@@ -21825,6 +22500,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       return /\/(?:student\/courseSelect\/(?:thisSemesterCurriculum|courseSelectResult|calendarSemesterCurriculum)|student\/personalSenate\/giveLessonInfo\/thisSemesterSchedule)\//.test(targetLocation.pathname);
     }
     __name(isPersonalSchedulePage, "isPersonalSchedulePage");
+    function isScoreQueryPage(targetLocation = location) {
+      return /\/student\/integratedQuery\/scoreQuery\/[^/]+\/index$/.test(targetLocation.pathname);
+    }
+    __name(isScoreQueryPage, "isScoreQueryPage");
     function patchNativeScheduleExport() {
       if (!isPersonalSchedulePage()) return;
       if (document.getElementById("urppp-native-schedule-export")) return;
@@ -21921,6 +22600,16 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       });
     }
     __name(removeNativeScheduleExport, "removeNativeScheduleExport");
+    const scoreAnalysisApi = createScoreAnalysisController({
+      deps: {
+        styles: score_analysis_default,
+        loadScores,
+        loadProfile,
+        scoreToNumber,
+        scoreToGpa,
+        getInsertHost: /* @__PURE__ */ __name(() => document.querySelector(".page-content") || document.getElementById("page-content-template") || null, "getInsertHost")
+      }
+    });
     const routeFeatureRuntime = createFeatureRuntime([
       defineFeature({
         id: "schedule-export",
@@ -21932,6 +22621,23 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         unmount: /* @__PURE__ */ __name((context) => {
           disconnectNativeScheduleExportObserver();
           removeNativeScheduleExport(context?.lifecycleKey);
+        }, "unmount")
+      }),
+      defineFeature({
+        id: "score-analysis",
+        matches: /* @__PURE__ */ __name((context) => isScoreQueryPage(context.location), "matches"),
+        mount: /* @__PURE__ */ __name(() => {
+          try {
+            scoreAnalysisApi.mount();
+          } catch (error) {
+            console.warn("[URP++] score analysis mount", error);
+          }
+        }, "mount"),
+        unmount: /* @__PURE__ */ __name(() => {
+          try {
+            scoreAnalysisApi.unmount();
+          } catch (_) {
+          }
         }, "unmount")
       })
     ]);
@@ -22622,7 +23328,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       const requiredGpa = Number(summary.requiredGpa);
       const currentGpa = Number(state.profile.majorGpa);
       if (requiredCredit > 0 && Number.isFinite(requiredGpa) && requiredGpa >= 0 && requiredGpa <= 5 && (!Number.isFinite(currentGpa) || currentGpa <= 0)) {
-        state.profile.majorGpa = String(round2(requiredGpa));
+        state.profile.majorGpa = String(round22(requiredGpa));
       }
     }
     __name(reconcileProfileAndScores, "reconcileProfileAndScores");

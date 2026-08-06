@@ -77,12 +77,14 @@ import tableBeautifyStyles from '../styles/table-beautify.css';
 import navigationStyles from '../styles/navigation.css';
 import cleanModeStyles from '../styles/clean-mode.css';
 import dashboardStyles from '../styles/dashboard.css';
+import scoreAnalysisStyles from '../styles/score-analysis.css';
 import { createCleanModeState, resetCleanModeData } from '../features/clean-mode/state.js';
 import { createCleanModeDataLoader } from '../features/clean-mode/data.js';
 import { createCleanModeRenderer } from '../features/clean-mode/render.js';
 import { createCleanModeUI } from '../features/clean-mode/ui.js';
 import { createCleanModeController } from '../features/clean-mode/controller.js';
 import { createDashboardController } from '../features/dashboard/dashboard.js';
+import { createScoreAnalysisController } from '../features/score-analysis/controller.js';
 import { createBreadcrumbController } from '../features/navigation/breadcrumb.js';
 import { createSidebarController } from '../features/navigation/sidebar.js';
 import { createNavbarController } from '../features/navigation/navbar.js';
@@ -8017,6 +8019,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return /\/(?:student\/courseSelect\/(?:thisSemesterCurriculum|courseSelectResult|calendarSemesterCurriculum)|student\/personalSenate\/giveLessonInfo\/thisSemesterSchedule)\//.test(targetLocation.pathname);
   }
 
+  function isScoreQueryPage(targetLocation = location) {
+    // 成绩查询模块内页面均挂分析面板：全部及格 / 方案成绩 / 历年成绩
+    return /\/student\/integratedQuery\/scoreQuery\/[^/]+\/index$/.test(targetLocation.pathname);
+  }
+
   function patchNativeScheduleExport() {
     if (!isPersonalSchedulePage()) return;
     if (document.getElementById('urppp-native-schedule-export')) return;
@@ -8113,6 +8120,19 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     });
   }
 
+  const scoreAnalysisApi = createScoreAnalysisController({
+    deps: {
+      styles: scoreAnalysisStyles,
+      loadScores,
+      loadProfile,
+      scoreToNumber,
+      scoreToGpa,
+      getInsertHost: () => document.querySelector('.page-content')
+        || document.getElementById('page-content-template')
+        || null,
+    },
+  });
+
   const routeFeatureRuntime = createFeatureRuntime([
     defineFeature({
       id: 'schedule-export',
@@ -8124,6 +8144,16 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       unmount: (context) => {
         disconnectNativeScheduleExportObserver();
         removeNativeScheduleExport(context?.lifecycleKey);
+      },
+    }),
+    defineFeature({
+      id: 'score-analysis',
+      matches: (context) => isScoreQueryPage(context.location),
+      mount: () => {
+        try { scoreAnalysisApi.mount(); } catch (error) { console.warn('[URP++] score analysis mount', error); }
+      },
+      unmount: () => {
+        try { scoreAnalysisApi.unmount(); } catch (_) { /* ignore */ }
       },
     }),
   ]);
