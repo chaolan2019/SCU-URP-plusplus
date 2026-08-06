@@ -43,24 +43,26 @@ export function createCleanModeRenderer({ state, deps }) {
     </div>`;
   }
 
-  // 成绩总览卡：总览（指标网格）+ 分析（两图）。tab 模式默认切换，direct 模式同屏。
+  // 成绩总览卡：标题位 tab（参考设置界面）。tab 模式标题栏为「成绩总览 | 成绩分析」，
+  // direct 模式标题为「成绩总览」且分析与总览同屏。返回整卡内容（标题 + 正文）。
   function scoreSectionHtml(scoreBody) {
     const direct = !!deps.isCleanAnalysisDirect();
     const activeAnalysis = state.scoreAnalysisTab === 'analysis';
     if (direct) {
-      return `<div class="uc-sa-wrap">
-        <div class="uc-sa-pane">${scoreBody}</div>
-        <div class="uc-sa-pane uc-sa-pane-analysis">${analysisHtml()}</div>
-      </div>`;
+      return `<div class="uc-hd"><span>成绩总览</span><span class="uc-sub">点击查看明细</span></div>
+  <div class="uc-bd">
+    <div class="uc-sa-pane">${scoreBody}</div>
+    <div class="uc-sa-pane uc-sa-pane-analysis">${analysisHtml()}</div>
+  </div>`;
     }
-    return `<div class="uc-sa-wrap">
-      <div class="uc-sa-switch">
-        <button type="button" class="uc-sa-tab${activeAnalysis ? '' : ' ac'}" data-sa-tab="overview">成绩总览</button>
-        <button type="button" class="uc-sa-tab${activeAnalysis ? ' ac' : ''}" data-sa-tab="analysis">成绩分析</button>
-      </div>
-      <div class="uc-sa-pane"${activeAnalysis ? ' hidden' : ''}>${scoreBody}</div>
-      <div class="uc-sa-pane uc-sa-pane-analysis"${activeAnalysis ? '' : ' hidden'}>${analysisHtml()}</div>
-    </div>`;
+    return `<div class="uc-hd uc-hd-tabs" role="tablist">
+    <button type="button" class="uc-sa-tab${activeAnalysis ? '' : ' ac'}" data-sa-tab="overview">成绩总览</button>
+    <button type="button" class="uc-sa-tab${activeAnalysis ? ' ac' : ''}" data-sa-tab="analysis">成绩分析</button>
+  </div>
+  <div class="uc-bd">
+    <div class="uc-sa-pane"${activeAnalysis ? ' hidden' : ''}>${scoreBody}</div>
+    <div class="uc-sa-pane uc-sa-pane-analysis"${activeAnalysis ? '' : ' hidden'}>${analysisHtml()}</div>
+  </div>`;
   }
 
   function getScheduleRowHeight() {
@@ -196,8 +198,7 @@ export function createCleanModeRenderer({ state, deps }) {
       </div>
       <div class="uc-col">
         <div class="uc-card">
-          <div class="uc-hd"><span>成绩总览</span><span class="uc-sub">点击查看明细</span></div>
-          <div class="uc-bd">${scoreSection}</div>
+          ${scoreSection}
         </div>
         <div class="uc-card services">
           <div class="uc-hd">服务</div>
@@ -218,7 +219,7 @@ export function createCleanModeRenderer({ state, deps }) {
         <div class="uc-score-pane" data-score="passing" style="margin-bottom:12px"><h5>全部及格成绩</h5>${metricHtml(pass.summary, 'passing')}</div>
         <div class="uc-score-pane" data-score="scheme"><h5>方案成绩</h5>${metricHtml(scheme.summary, 'scheme')}</div>
       </div>`;
-      return `<div class="uc-mobile"><div class="uc-card"><div class="uc-bd">${scoreSectionHtml(scoreBody)}</div></div></div>`;
+      return `<div class="uc-mobile"><div class="uc-card">${scoreSectionHtml(scoreBody)}</div></div>`;
     }
     if (state.mobileTab === 'room') {
       return `<div class="uc-mobile"><div class="uc-card"><div class="uc-hd">教室查询</div><div class="uc-bd" id="uc-room-panel">${roomPickerHtml()}</div></div></div>`;

@@ -150,6 +150,8 @@ export function createCleanModeController({ state, deps }) {
     close: closeCleanMode,
     inject: injectCleanEntry,
     refresh: deps.refreshCleanPersonalDisplay,
+    // 设置变更后即时重绘（如成绩分析展示方式切换）
+    refreshRender: () => { try { deps.render(); } catch (_) { /* ignore */ } },
     scoreToGpa: deps.scoreToGpa,
     summarizeCourses: deps.summarizeCourses,
   };

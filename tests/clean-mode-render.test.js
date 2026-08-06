@@ -62,17 +62,18 @@ test('render draws desktop layout and binds UI once per frame', () => {
   assert.equal(state.uiReady, true);
 });
 
-test('tab mode renders overview/analysis switch with analysis pane hidden by default', () => {
+test('tab mode renders header tabs with analysis pane hidden by default', () => {
   const { state, renderer } = rendererFixture();
   state.scores = scorePack();
   const html = renderer.scoreSectionHtml('<div class="uc-score-grid">x</div>');
-  assert.match(html, /uc-sa-switch/);
+  assert.match(html, /uc-hd uc-hd-tabs/);
   assert.match(html, /data-sa-tab="overview"/);
   assert.match(html, /data-sa-tab="analysis"/);
-  assert.match(html, /uc-sa-pane-analysis/);
+  assert.match(html, /uc-sa-pane-analysis"/);
   assert.match(html, /uc-sa-pane-analysis" hidden>/);
   // 分析 pane 内容已渲染但隐藏，切换时无需重新计算
   assert.match(html, /mock-trend/);
+  assert.doesNotMatch(html, /uc-sa-switch/);
 });
 
 test('tab mode with analysis selected shows charts and hides overview', () => {
@@ -85,11 +86,11 @@ test('tab mode with analysis selected shows charts and hides overview', () => {
   assert.match(html, /mock-bands/);
 });
 
-test('direct mode renders overview and analysis together without switch', () => {
+test('direct mode renders overview and analysis together without tabs', () => {
   const { state, renderer } = rendererFixture({ isCleanAnalysisDirect: () => true });
   state.scores = scorePack();
   const html = renderer.scoreSectionHtml('<div class="uc-score-grid">x</div>');
-  assert.doesNotMatch(html, /uc-sa-switch/);
+  assert.doesNotMatch(html, /uc-hd-tabs/);
   assert.match(html, /uc-sa-pane-analysis/);
   assert.match(html, /mock-trend/);
   assert.match(html, /mock-bands/);

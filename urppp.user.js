@@ -11317,7 +11317,7 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 `;
 
   // src/styles/clean-mode.css
-  var clean_mode_default = `#urppp-clean-root{position:fixed;inset:0;z-index:12000;display:none;background:var(--bg,#F4F6F9);color:var(--text,#111);font-family:inherit;opacity:0;transform:translateY(8px);transition:opacity .28s ease,transform .32s cubic-bezier(.22,1,.36,1)}
+  var clean_mode_default = `\uFEFF#urppp-clean-root{position:fixed;inset:0;z-index:12000;display:none;background:var(--bg,#F4F6F9);color:var(--text,#111);font-family:inherit;opacity:0;transform:translateY(8px);transition:opacity .28s ease,transform .32s cubic-bezier(.22,1,.36,1)}
 #urppp-clean-root.open{display:flex;flex-direction:column;opacity:1;transform:none}
 #urppp-clean-root *{box-sizing:border-box}
 #urppp-clean-root .uc-top{flex:0 0 60px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--border);background:var(--surface,#fff);animation:ucTopIn .36s cubic-bezier(.22,1,.36,1) both}
@@ -11339,7 +11339,7 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-clean-root .uc-desktop > .uc-col:last-child > .uc-card:nth-child(2){animation-delay:.13s}
 #urppp-clean-root .uc-mobile > .uc-card{animation-delay:.05s}
 #urppp-clean-root .uc-mobile > .uc-card:nth-child(2){animation-delay:.1s}
-#urppp-clean-root .uc-card.grow{flex:1;min-height:0;display:flex;flex-direction:column}
+#urppp-clean-root .uc-card.grow{flex:0 0 auto;min-height:0;display:flex;flex-direction:column}
 #urppp-clean-root .uc-hd{padding:12px 14px;border-bottom:1px solid var(--border);font-weight:700;font-size:16px;display:flex;justify-content:space-between;align-items:center}
 #urppp-clean-root .uc-bd{padding:14px}
 #urppp-clean-root .uc-card.grow .uc-bd{flex:1;overflow:auto}
@@ -11592,28 +11592,31 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
 }
 
       /* 清爽模式成绩分析（uc-sa） */
-      #urppp-clean-root .uc-sa-wrap{margin-top:10px}
-      #urppp-clean-root .uc-sa-switch{display:flex;gap:6px;margin-bottom:10px}
-      #urppp-clean-root .uc-sa-tab{
-        flex:1 1 auto;
-        padding:7px 10px;
-        border:1px solid var(--border);
-        border-radius:9px;
-        background:transparent;
-        color:var(--text-secondary);
-        font-size:12.5px;
-        font-weight:600;
-        cursor:pointer;
-        transition:background .15s,color .15s,border-color .15s;
-      }
-      #urppp-clean-root .uc-sa-tab.ac{background:color-mix(in srgb,var(--primary) 12%,transparent);border-color:var(--primary);color:var(--primary)}
       #urppp-clean-root .uc-sa-pane[hidden]{display:none}
       #urppp-clean-root .uc-sa-pane-analysis{margin-top:10px}
       #urppp-clean-root .uc-sa-charts{display:grid;grid-template-columns:1fr;gap:10px}
       #urppp-clean-root .uc-sa-chart-card{border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--surface)}
-      #urppp-clean-root .uc-sa-chart-card h5{margin:0 0 6px;font-size:12.5px;font-weight:700;color:var(--text)}
+      #urppp-clean-root .uc-sa-chart-card h5{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--text)}
       #urppp-clean-root .uc-sa-chart-card svg{width:100%;height:auto;display:block}
-      #urppp-clean-root .uc-sa-empty{padding:18px 8px;color:var(--text-muted);font-size:12.5px;text-align:center}
+      #urppp-clean-root .uc-sa-empty{padding:18px 8px;color:var(--text-muted);font-size:13px;text-align:center}
+
+      /* 成绩总览/成绩分析：标题位 tab（参考设置界面） */
+      #urppp-clean-root .uc-hd.uc-hd-tabs{padding:6px 8px 0;gap:6px;display:flex;justify-content:flex-start;align-items:flex-end;border-bottom:1px solid var(--border)}
+      #urppp-clean-root .uc-hd-tabs .uc-sa-tab{
+        height:34px;padding:0 16px;border:none;background:transparent;color:var(--text-secondary);
+        font-size:13px;font-weight:600;cursor:pointer;position:relative;border-radius:10px 10px 0 0;
+      }
+      #urppp-clean-root .uc-hd-tabs .uc-sa-tab:hover{color:var(--text);background:var(--input-bg)}
+      #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac{color:var(--primary);background:color-mix(in srgb,var(--primary) 8%,var(--surface))}
+      #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac::after{
+        content:'';position:absolute;left:18%;right:18%;bottom:0;height:2px;border-radius:2px 2px 0 0;background:var(--primary);
+      }
+      #urppp-clean-root .uc-sa-pane[hidden]{display:none}
+      #urppp-clean-root .uc-sa-pane-analysis{margin-top:10px}
+
+      /* 成绩分析图表 hover 遮罩跟随主题 */
+      #urppp-clean-root .urppp-sa-hover{cursor:pointer}
+      #urppp-clean-root .urppp-sa-hover:hover{fill:color-mix(in srgb,var(--primary) 7%,transparent)}
 `;
 
   // src/styles/dashboard.css
@@ -12261,19 +12264,20 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       const direct = !!deps.isCleanAnalysisDirect();
       const activeAnalysis = state.scoreAnalysisTab === "analysis";
       if (direct) {
-        return `<div class="uc-sa-wrap">
-        <div class="uc-sa-pane">${scoreBody}</div>
-        <div class="uc-sa-pane uc-sa-pane-analysis">${analysisHtml()}</div>
-      </div>`;
+        return `<div class="uc-hd"><span>成绩总览</span><span class="uc-sub">点击查看明细</span></div>
+  <div class="uc-bd">
+    <div class="uc-sa-pane">${scoreBody}</div>
+    <div class="uc-sa-pane uc-sa-pane-analysis">${analysisHtml()}</div>
+  </div>`;
       }
-      return `<div class="uc-sa-wrap">
-      <div class="uc-sa-switch">
-        <button type="button" class="uc-sa-tab${activeAnalysis ? "" : " ac"}" data-sa-tab="overview">成绩总览</button>
-        <button type="button" class="uc-sa-tab${activeAnalysis ? " ac" : ""}" data-sa-tab="analysis">成绩分析</button>
-      </div>
-      <div class="uc-sa-pane"${activeAnalysis ? " hidden" : ""}>${scoreBody}</div>
-      <div class="uc-sa-pane uc-sa-pane-analysis"${activeAnalysis ? "" : " hidden"}>${analysisHtml()}</div>
-    </div>`;
+      return `<div class="uc-hd uc-hd-tabs" role="tablist">
+    <button type="button" class="uc-sa-tab${activeAnalysis ? "" : " ac"}" data-sa-tab="overview">成绩总览</button>
+    <button type="button" class="uc-sa-tab${activeAnalysis ? " ac" : ""}" data-sa-tab="analysis">成绩分析</button>
+  </div>
+  <div class="uc-bd">
+    <div class="uc-sa-pane"${activeAnalysis ? " hidden" : ""}>${scoreBody}</div>
+    <div class="uc-sa-pane uc-sa-pane-analysis"${activeAnalysis ? "" : " hidden"}>${analysisHtml()}</div>
+  </div>`;
     }
     __name(scoreSectionHtml, "scoreSectionHtml");
     function getScheduleRowHeight() {
@@ -12408,8 +12412,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       </div>
       <div class="uc-col">
         <div class="uc-card">
-          <div class="uc-hd"><span>成绩总览</span><span class="uc-sub">点击查看明细</span></div>
-          <div class="uc-bd">${scoreSection}</div>
+          ${scoreSection}
         </div>
         <div class="uc-card services">
           <div class="uc-hd">服务</div>
@@ -12430,7 +12433,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         <div class="uc-score-pane" data-score="passing" style="margin-bottom:12px"><h5>全部及格成绩</h5>${metricHtml(pass.summary, "passing")}</div>
         <div class="uc-score-pane" data-score="scheme"><h5>方案成绩</h5>${metricHtml(scheme.summary, "scheme")}</div>
       </div>`;
-        return `<div class="uc-mobile"><div class="uc-card"><div class="uc-bd">${scoreSectionHtml(scoreBody)}</div></div></div>`;
+        return `<div class="uc-mobile"><div class="uc-card">${scoreSectionHtml(scoreBody)}</div></div>`;
       }
       if (state.mobileTab === "room") {
         return `<div class="uc-mobile"><div class="uc-card"><div class="uc-hd">教室查询</div><div class="uc-bd" id="uc-room-panel">${roomPickerHtml()}</div></div></div>`;
@@ -13222,6 +13225,13 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       close: closeCleanMode,
       inject: injectCleanEntry,
       refresh: deps.refreshCleanPersonalDisplay,
+      // 设置变更后即时重绘（如成绩分析展示方式切换）
+      refreshRender: /* @__PURE__ */ __name(() => {
+        try {
+          deps.render();
+        } catch (_) {
+        }
+      }, "refreshRender"),
       scoreToGpa: deps.scoreToGpa,
       summarizeCourses: deps.summarizeCourses
     };
@@ -13744,9 +13754,9 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       const barW = Math.min(26, plotW / n * 0.32);
       const y = yCredit(item.credit);
       return `<rect x="${(x - barW / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${(pad.top + plotH - y).toFixed(1)}" rx="3" fill="${palette.credit}" opacity="0.55"/>
-<text x="${x.toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="middle" font-size="10" fill="${TEXT_FILL}">${escapeLabel(item.credit)}</text>`;
+<text x="${x.toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="middle" font-size="12" fill="${TEXT_FILL}">${escapeLabel(item.credit)}</text>`;
     }).join("");
-    const xLabels = items.map((item, i) => `<text x="${xAt(i).toFixed(1)}" y="${height - 16}" text-anchor="middle" font-size="11" fill="${TEXT_FILL}">${escapeLabel(item.label)}</text>`).join("");
+    const xLabels = items.map((item, i) => `<text x="${xAt(i).toFixed(1)}" y="${height - 16}" text-anchor="middle" font-size="12" fill="${TEXT_FILL}">${escapeLabel(item.label)}</text>`).join("");
     const hoverZones = items.map((item, i) => {
       const colW = plotW / n;
       const x = xAt(i) - colW / 2;
@@ -13759,19 +13769,19 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       ].join("\n");
       return `<rect class="urppp-sa-hover" x="${x.toFixed(1)}" y="${pad.top}" width="${colW.toFixed(1)}" height="${plotH.toFixed(1)}" fill="transparent"><title>${escapeLabel(tip)}</title></rect>`;
     }).join("");
-    const gpaDots = items.map((item, i) => `<circle cx="${xAt(i).toFixed(1)}" cy="${yGpa(item.avgGpa).toFixed(1)}" r="3.5" fill="${palette.gpaLine}"/><text x="${xAt(i).toFixed(1)}" y="${(yGpa(item.avgGpa) - 9).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="600" fill="${palette.gpaLine}">${escapeLabel(item.avgGpa)}</text>`).join("");
-    const scoreDots = items.map((item, i) => `<circle cx="${xAt(i).toFixed(1)}" cy="${yScore(item.avgScore).toFixed(1)}" r="3" fill="${palette.scoreLine}"/><text x="${xAt(i).toFixed(1)}" y="${(yScore(item.avgScore) + 17).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="${palette.scoreLine}">${escapeLabel(item.avgScore)}</text>`).join("");
+    const gpaDots = items.map((item, i) => `<circle cx="${xAt(i).toFixed(1)}" cy="${yGpa(item.avgGpa).toFixed(1)}" r="3.5" fill="${palette.gpaLine}"/><text x="${xAt(i).toFixed(1)}" y="${(yGpa(item.avgGpa) - 9).toFixed(1)}" text-anchor="middle" font-size="11.5" font-weight="600" fill="${palette.gpaLine}">${escapeLabel(item.avgGpa)}</text>`).join("");
+    const scoreDots = items.map((item, i) => `<circle cx="${xAt(i).toFixed(1)}" cy="${yScore(item.avgScore).toFixed(1)}" r="3" fill="${palette.scoreLine}"/><text x="${xAt(i).toFixed(1)}" y="${(yScore(item.avgScore) + 17).toFixed(1)}" text-anchor="middle" font-size="11.5" fill="${palette.scoreLine}">${escapeLabel(item.avgScore)}</text>`).join("");
     return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="学期成绩趋势">
 ${gridLines}
 ${creditBars}
 <g>${hoverZones}</g>
-<text x="${pad.left}" y="18" font-size="11" fill="${TEXT_FILL}">每学期修读学分（柱）</text>
+<text x="${pad.left}" y="18" font-size="12" fill="${TEXT_FILL}">每学期修读学分（柱）</text>
 <g stroke="${palette.gpaLine}" stroke-width="2.2" fill="none"><polyline points="${gpaPoints}"/></g>
 <g stroke="${palette.scoreLine}" stroke-width="1.8" stroke-dasharray="5 4" fill="none"><polyline points="${scorePoints}"/></g>
 <g>${gpaDots}</g>
 <g>${scoreDots}</g>
 <g>${xLabels}</g>
-<g font-size="11">
+<g font-size="12">
   <rect x="${width - pad.right - 176}" y="8" width="12" height="12" rx="3" fill="${palette.gpaLine}"/><text x="${width - pad.right - 158}" y="18" fill="${TEXT_FILL}">学期平均绩点</text>
   <rect x="${width - pad.right - 82}" y="8" width="12" height="12" rx="3" fill="${palette.scoreLine}"/><text x="${width - pad.right - 64}" y="18" fill="${TEXT_FILL}">加权均分</text>
 </g>
@@ -13800,9 +13810,9 @@ ${creditBars}
         `课程 ${item.count} 门`
       ].join("\n");
       return `<rect class="urppp-sa-band" x="${(x - barW / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${palette.primary}" opacity="${opacity}"><title>${escapeLabel(tip)}</title></rect>
-<text x="${x.toFixed(1)}" y="${(y - 6).toFixed(1)}" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--text)">${escapeLabel(item.count)}</text>
-<text x="${x.toFixed(1)}" y="${height - 26}" text-anchor="middle" font-size="10" font-weight="600" fill="${TEXT_FILL}">${escapeLabel(rangeText)}</text>
-<text x="${x.toFixed(1)}" y="${height - 12}" text-anchor="middle" font-size="10" fill="${TEXT_FILL}">${escapeLabel(item.gpa)}</text>`;
+<text x="${x.toFixed(1)}" y="${(y - 6).toFixed(1)}" text-anchor="middle" font-size="12.5" font-weight="600" fill="var(--text)">${escapeLabel(item.count)}</text>
+<text x="${x.toFixed(1)}" y="${height - 26}" text-anchor="middle" font-size="11" font-weight="600" fill="${TEXT_FILL}">${escapeLabel(rangeText)}</text>
+<text x="${x.toFixed(1)}" y="${height - 12}" text-anchor="middle" font-size="12" fill="${TEXT_FILL}">${escapeLabel(item.gpa)}</text>`;
     }).join("");
     return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="成绩分段分布">
 <line x1="${pad.left}" y1="${(pad.top + plotH).toFixed(1)}" x2="${width - pad.right}" y2="${(pad.top + plotH).toFixed(1)}" stroke="${GRID_STROKE}" stroke-width="1"/>
@@ -13835,7 +13845,7 @@ ${bars}
 <circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="${GRID_STROKE}" stroke-width="${stroke}"/>
 ${arcs}
 <text x="${center}" y="${center - 6}" text-anchor="middle" font-size="22" font-weight="700" fill="var(--text)">${escapeLabel(ratio)}%</text>
-<text x="${center}" y="${center + 16}" text-anchor="middle" font-size="10.5" fill="${TEXT_FILL}">必修学分占比</text>
+<text x="${center}" y="${center + 16}" text-anchor="middle" font-size="11.5" fill="${TEXT_FILL}">必修学分占比</text>
 </svg>`;
   }
   __name(donutSvg, "donutSvg");
@@ -20933,6 +20943,12 @@ ${arcs}
       }
       try {
         syncScheduleJsonSettingsUI(panel);
+      } catch (_) {
+      }
+      try {
+        if (window.__urpppCleanMode && typeof window.__urpppCleanMode.refreshRender === "function") {
+          window.__urpppCleanMode.refreshRender();
+        }
       } catch (_) {
       }
       const presets = panel.querySelector("#urppp-set-presets");

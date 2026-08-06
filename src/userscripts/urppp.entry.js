@@ -6257,6 +6257,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     try { syncPrivacySettingsUI(panel); } catch (_) {}
     try { syncScheduleJsonSettingsUI(panel); } catch (_) {}
 
+    // 设置变更后即时刷新清爽模式（成绩分析展示方式等）
+    try {
+      if (window.__urpppCleanMode && typeof window.__urpppCleanMode.refreshRender === 'function') {
+        window.__urpppCleanMode.refreshRender();
+      }
+    } catch (_) { /* ignore */ }
+
     // 预设种子
     const presets = panel.querySelector('#urppp-set-presets');
     if (presets) {
