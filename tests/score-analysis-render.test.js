@@ -7,20 +7,28 @@ const renderer = createScoreAnalysisRenderer({ deps: {} });
 const sampleAnalysis = {
   empty: false,
   metrics: {
-    majorGpa: '3.6', avgGpa: 3.4, avgScore: 86.5, totalCredit: 42, courseCount: 18, requiredGpa: 3.6,
+    majorGpa: '3.6', requiredGpa: 3.6, avgGpa: 3.4, avgScore: 86.5, totalCredit: 42, courseCount: 18,
   },
   trend: [
     { term: '2024-2025-1', label: '24-25-1', count: 5, credit: 10, avgScore: 84, avgGpa: 3.3 },
     { term: '2024-2025-2', label: '24-25-2', count: 6, credit: 12, avgScore: 88, avgGpa: 3.6 },
   ],
-  bands: [
-    { key: 's90', label: '90+', count: 4, credit: 8, ratio: 100 },
-    { key: 's80', label: '80-89', count: 3, credit: 6, ratio: 75 },
-    { key: 's70', label: '70-79', count: 1, credit: 2, ratio: 25 },
-    { key: 's60', label: '60-69', count: 0, credit: 0, ratio: 0 },
-    { key: 's59', label: '<60', count: 0, credit: 0, ratio: 0 },
-  ],
-  share: { requiredCredit: 28, optionalCredit: 14, requiredCount: 12, optionalCount: 6, requiredRatio: 67 },
+  bands: Array.from({ length: 11 }, (_, i) => ({
+    key: `k${i}`,
+    label: ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'F'][i],
+    gpa: [4.0, 3.7, 3.3, 3.0, 2.7, 2.3, 2.0, 1.7, 1.3, 1.0, 0][i],
+    min: 90 - i * 5,
+    max: 100 - i * 5,
+    count: i % 3,
+  })),
+  share: {
+    items: [
+      { key: 'required', label: '必修', credit: 28, count: 12, ratio: 67 },
+      { key: 'elective', label: '任选', credit: 8, count: 3, ratio: 19 },
+      { key: 'optional', label: '选修', credit: 6, count: 3, ratio: 14 },
+    ],
+    requiredRatio: 67,
+  },
 };
 
 test('panel shell is collapsed with toggle and summary', () => {
@@ -47,16 +55,27 @@ test('empty analysis renders a friendly empty state', () => {
   assert.match(html, /urppp-sa-empty/);
 });
 
-test('analysis renders metrics, trend, bands, share and detail table', () => {
+test('analysis renders six metrics, share first row and bands second row', () => {
   const html = renderer.analysisHtml(sampleAnalysis);
-  assert.equal((html.match(/urppp-sa-metric-value/g) || []).length, 5);
-  assert.match(html, /学期趋势/);
-  assert.match(html, /分数段分布/);
-  assert.match(html, /必修 \/ 选修构成/);
+  assert.equal((html.match(/urppp-sa-metric-value/g) || []).length, 6);
+  assert.match(html, />主修绩点<\/div>/);
+  assert.match(html, />主修必修绩点<\/div>/);
+  assert.match(html, />3\.6<\/div>/);
+  // 布局：第一行趋势 + 构成，第二行绩点分段 + 明细
+  const trendIndex = html.indexOf('urppp-sa-trend');
+  const shareIndex = html.indexOf('urppp-sa-share');
+  const bandsIndex = html.indexOf('urppp-sa-bands');
+  const detailIndex = html.indexOf('urppp-sa-detail');
+  assert.ok(trendIndex > -1 && shareIndex > -1 && bandsIndex > -1 && detailIndex > -1);
+  assert.ok(trendIndex < shareIndex, 'trend card precedes share card in row one');
+  assert.ok(bandsIndex < detailIndex, 'bands card precedes detail card in row two');
+  assert.ok(shareIndex < bandsIndex, 'share row comes before bands row');
+  assert.match(html, /课程类型构成/);
+  assert.match(html, /绩点分段分布/);
   assert.match(html, /各学期明细/);
   assert.match(html, /urppp-sa-table/);
   assert.match(html, /67%/);
-  assert.match(html, /28 学分/);
+  assert.match(html, /任选 8 学分/);
   assert.match(html, /24-25-1/);
 });
 
@@ -69,4 +88,12 @@ test('analysis escapes course names and term labels', () => {
   assert.doesNotMatch(html, /<img onerror/);
   assert.doesNotMatch(html, /<svg\/onload/);
   assert.match(html, /&lt;svg\/onload=1&gt;/);
+});
+
+test('share legend renders every group with color dot', () => {
+  const html = renderer.analysisHtml(sampleAnalysis);
+  assert.equal((html.match(/urppp-sa-legend-item/g) || []).length, 3);
+  assert.match(html, /必修 28 学分 · 12 门/);
+  assert.match(html, /任选 8 学分 · 3 门/);
+  assert.match(html, /选修 6 学分 · 3 门/);
 });

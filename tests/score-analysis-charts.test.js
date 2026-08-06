@@ -6,10 +6,23 @@ const palette = {
   gpaLine: 'var(--primary)',
   scoreLine: 'var(--text-secondary)',
   credit: 'var(--primary)',
-  required: 'var(--primary)',
-  optional: 'var(--text-muted)',
-  bands: ['#15803d', '#65a30d', '#ca8a04', '#ea580c', '#dc2626'],
+  primary: 'var(--primary)',
+  share: {
+    required: 'var(--primary)',
+    elective: 'var(--text-muted)',
+    optional: 'var(--text-secondary)',
+    other: 'var(--border)',
+  },
 };
+
+const elevenBands = Array.from({ length: 11 }, (_, i) => ({
+  key: `k${i}`,
+  label: ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'F'][i],
+  gpa: [4.0, 3.7, 3.3, 3.0, 2.7, 2.3, 2.0, 1.7, 1.3, 1.0, 0][i],
+  min: 90 - i * 5,
+  max: 100 - i * 5,
+  count: i % 3,
+}));
 
 test('trendChartSvg renders an empty svg without data', () => {
   const svg = trendChartSvg({ trend: [], palette });
@@ -17,7 +30,7 @@ test('trendChartSvg renders an empty svg without data', () => {
   assert.doesNotMatch(svg, /polyline/);
 });
 
-test('trendChartSvg draws two polylines, dots and escaped labels', () => {
+test('trendChartSvg draws two polylines, credit labels and hover zones', () => {
   const svg = trendChartSvg({
     trend: [
       { term: '2024-2025-1', label: '24-25-1', count: 3, credit: 6, avgScore: 85, avgGpa: 3.5 },
@@ -25,13 +38,17 @@ test('trendChartSvg draws two polylines, dots and escaped labels', () => {
     ],
     palette,
   });
-  assert.match(svg, /polyline points="/);
   assert.equal((svg.match(/polyline points=/g) || []).length, 2);
-  assert.match(svg, /24-25-1/);
-  assert.match(svg, /aria-label="学期成绩趋势"/);
+  assert.equal((svg.match(/class="urppp-sa-hover"/g) || []).length, 2);
+  assert.match(svg, /<title>/);
+  assert.match(svg, /修读学分 6/);
+  assert.match(svg, /加权均分 85/);
+  // 学分柱顶标注
+  assert.match(svg, />6<\/text>/);
+  assert.match(svg, />8<\/text>/);
 });
 
-test('trendChartSvg escapes label text', () => {
+test('trendChartSvg escapes label and tooltip text', () => {
   const svg = trendChartSvg({
     trend: [{ term: '2024-2025-1', label: '24-25-1<script>', count: 1, credit: 2, avgScore: 90, avgGpa: 4 }],
     palette,
@@ -40,41 +57,49 @@ test('trendChartSvg escapes label text', () => {
   assert.match(svg, /&lt;script&gt;/);
 });
 
-test('bandsChartSvg renders five bars with counts', () => {
-  const svg = bandsChartSvg({
-    bands: [
-      { key: 's90', label: '90+', count: 3, min: 90, max: 100 },
-      { key: 's80', label: '80-89', count: 2, min: 80, max: 89.999 },
-      { key: 's70', label: '70-79', count: 1, min: 70, max: 79.999 },
-      { key: 's60', label: '60-69', count: 0, min: 60, max: 69.999 },
-      { key: 's59', label: '<60', count: 1, min: 0, max: 59.999 },
-    ],
-    palette,
-  });
-  assert.equal((svg.match(/<rect /g) || []).length, 5);
-  assert.match(svg, />3<\/text>/);
+test('bandsChartSvg renders eleven bars with grade point labels', () => {
+  const svg = bandsChartSvg({ bands: elevenBands, palette });
+  assert.equal((svg.match(/<rect /g) || []).length, 11);
+  assert.match(svg, /aria-label="绩点分段分布"/);
+  // 等级 + 绩点双行标注
+  assert.match(svg, />A<\/text>/);
+  assert.match(svg, />4<\/text>/);
+  assert.match(svg, />F<\/text>/);
   assert.match(svg, />0<\/text>/);
+  // 每柱 hover tooltip
+  assert.equal((svg.match(/<title>/g) || []).length, 11);
+  assert.match(svg, /绩点 3\.7/);
 });
 
-test('bandsChartSvg escapes labels and values', () => {
+test('bandsChartSvg escapes labels and tooltip text', () => {
   const svg = bandsChartSvg({
-    bands: [{ key: 'x', label: '90+<b>', count: 1, min: 90, max: 100 }],
+    bands: [{ key: 'x', label: 'A<b>', gpa: 4, count: 1, min: 90, max: 100 }],
     palette,
   });
   assert.doesNotMatch(svg, /<b>/);
   assert.match(svg, /&lt;b&gt;/);
 });
 
-test('donutSvg renders required ratio and safe texts', () => {
-  const svg = donutSvg({ requiredRatio: 72, palette });
-  assert.equal((svg.match(/<circle /g) || []).length, 2);
-  assert.match(svg, />72%<\/text>/);
+test('donutSvg renders multiple segments clockwise from top', () => {
+  const svg = donutSvg({
+    items: [
+      { key: 'required', ratio: 50 },
+      { key: 'elective', ratio: 30 },
+      { key: 'optional', ratio: 20 },
+    ],
+    requiredRatio: 50,
+    palette,
+  });
+  // 背景环 + 3 段
+  assert.equal((svg.match(/<circle /g) || []).length, 4);
+  assert.match(svg, />50%<\/text>/);
+  assert.match(svg, /rotate\(-90/);
   assert.match(svg, /必修学分占比/);
 });
 
-test('donutSvg clamps ratio outside 0-100', () => {
-  const over = donutSvg({ requiredRatio: 140, palette });
+test('donutSvg clamps ratio and renders empty svg without segments', () => {
+  const over = donutSvg({ items: [{ key: 'required', ratio: 90 }], requiredRatio: 140, palette });
   assert.match(over, />100%<\/text>/);
-  const under = donutSvg({ requiredRatio: -5, palette });
-  assert.match(under, />0%<\/text>/);
+  const empty = donutSvg({ items: [], requiredRatio: 0, palette });
+  assert.doesNotMatch(empty, /<circle/);
 });

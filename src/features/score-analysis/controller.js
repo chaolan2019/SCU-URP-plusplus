@@ -1,5 +1,5 @@
-// 成绩分析模块编排：在成绩查询页顶部插入折叠面板，首次展开时拉取成绩数据并渲染。
-// deps 注入：styles（CSS 字符串）、loadScores、loadProfile、analyzeScores、getInsertHost。
+// 成绩分析模块编排：在成绩查询页顶部插入折叠面板。
+// mount 时后台预热成绩数据，首次展开直接渲染缓存，感知零延迟。
 
 import { createScoreAnalysisData } from './data.js';
 import { createScoreAnalysisRenderer } from './render.js';
@@ -14,6 +14,8 @@ export function createScoreAnalysisController({ deps }) {
 
   let panel = null;
   let loadState = 'idle'; // idle | loading | ready | error
+  let loadPromise = null;
+  let cachedAnalysis = null;
 
   function ensureStyle() {
     if (!deps.styles) return;
@@ -38,25 +40,51 @@ export function createScoreAnalysisController({ deps }) {
     return panel && panel.querySelector('[data-urppp-sa-content]');
   }
 
+  function startLoad() {
+    if (loadPromise) return loadPromise;
+    loadState = 'loading';
+    loadPromise = (async () => {
+      try {
+        const [scorePack, profile] = await Promise.all([
+          deps.loadScores(),
+          deps.loadProfile(),
+        ]);
+        // loadScores 内部吞错后通过 error 字段回传，转成异常以进入错误态（可重试）
+        if (scorePack && scorePack.error) throw new Error(scorePack.error);
+        const analysis = dataApi.analyzeScores({ scorePack, profile });
+        cachedAnalysis = analysis;
+        loadState = 'ready';
+        return analysis;
+      } catch (error) {
+        loadState = 'error';
+        throw error;
+      } finally {
+        loadPromise = null;
+      }
+    })();
+    return loadPromise;
+  }
+
+  function warmup() {
+    // mount 时后台预热，失败保持 error 态，展开时给出重试入口
+    if (loadState === 'idle') {
+      startLoad().catch(() => { /* 预热失败交给展开路径展示 */ });
+    }
+  }
+
   async function handleExpand() {
-    if (loadState === 'loading' || loadState === 'ready') return;
     const content = contentEl();
     if (!content) return;
-    loadState = 'loading';
+    if (loadState === 'ready' && cachedAnalysis) {
+      content.innerHTML = renderer.analysisHtml(cachedAnalysis);
+      return;
+    }
     content.innerHTML = renderer.loadingHtml();
     try {
-      const [scorePack, profile] = await Promise.all([
-        deps.loadScores(),
-        deps.loadProfile(),
-      ]);
-      // loadScores 内部吞错后通过 error 字段回传，转成异常以进入错误态（可重试）
-      if (scorePack && scorePack.error) throw new Error(scorePack.error);
-      const analysis = dataApi.analyzeScores({ scorePack, profile });
+      const analysis = await startLoad();
       content.innerHTML = renderer.analysisHtml(analysis);
-      loadState = 'ready';
     } catch (error) {
       content.innerHTML = renderer.errorHtml(error && error.message || String(error));
-      loadState = 'error';
     }
   }
 
@@ -71,6 +99,7 @@ export function createScoreAnalysisController({ deps }) {
     panel = wrapper.firstElementChild;
     host.insertBefore(panel, host.firstChild);
     ui.bindPanel(panel, { onExpand: handleExpand, onRetry: handleExpand });
+    warmup();
     return panel;
   }
 
@@ -78,6 +107,8 @@ export function createScoreAnalysisController({ deps }) {
     if (panel && panel.isConnected) panel.remove();
     panel = null;
     loadState = 'idle';
+    loadPromise = null;
+    cachedAnalysis = null;
   }
 
   return {

@@ -8,12 +8,16 @@ export const DEFAULT_PALETTE = Object.freeze({
   gpaLine: 'var(--primary)',
   scoreLine: 'var(--text-secondary)',
   credit: 'var(--primary)',
-  required: 'var(--primary)',
-  optional: 'var(--text-muted)',
-  bands: ['#15803d', '#65a30d', '#ca8a04', '#ea580c', '#dc2626'],
+  primary: 'var(--primary)',
+  share: Object.freeze({
+    required: 'var(--primary)',
+    elective: 'var(--text-muted)',
+    optional: 'var(--text-secondary)',
+    other: 'var(--border)',
+  }),
 });
 
-const ICON_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-4 4 3 5-7"/></svg>';
+const ICON_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-8"/><path d="M22 20H2"/></svg>';
 const CHEVRON_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 
 export function createScoreAnalysisRenderer({ deps }) {
@@ -46,6 +50,7 @@ export function createScoreAnalysisRenderer({ deps }) {
   function metricCards(metrics) {
     const cards = [
       { label: '主修绩点', value: metrics.majorGpa || '—', hint: '资料卡 GPA' },
+      { label: '主修必修绩点', value: metrics.requiredGpa > 0 ? String(metrics.requiredGpa) : '—', hint: '必修课程加权' },
       { label: '平均绩点', value: metrics.avgGpa != null ? String(metrics.avgGpa) : '—', hint: '全部及格加权' },
       { label: '加权均分', value: metrics.avgScore != null ? String(metrics.avgScore) : '—', hint: '学分加权' },
       { label: '已修学分', value: metrics.totalCredit != null ? String(metrics.totalCredit) : '—', hint: '及格课程学分' },
@@ -69,32 +74,36 @@ export function createScoreAnalysisRenderer({ deps }) {
 <tbody>${rows}</tbody></table>`;
   }
 
+  function shareLegend(items) {
+    return (items || []).map((item) => {
+      const color = (palette.share && palette.share[item.key]) || palette.primary;
+      return `<div class="urppp-sa-legend-item"><i class="urppp-sa-legend-dot" style="background:${color}"></i>${escapeHtml(item.label)} ${escapeHtml(item.credit)} 学分 · ${escapeHtml(item.count)} 门</div>`;
+    }).join('');
+  }
+
   function analysisHtml(analysis) {
     if (!analysis || analysis.empty) {
       return '<div class="urppp-sa-empty">暂无可用成绩数据，请先在教务系统查询成绩后再试。</div>';
     }
-    const share = analysis.share || { requiredCredit: 0, optionalCredit: 0, requiredRatio: 0 };
+    const share = analysis.share || { items: [], requiredRatio: 0 };
     return `<div class="urppp-sa-metrics">${metricCards(analysis.metrics)}</div>
 <div class="urppp-sa-grid">
   <section class="urppp-sa-card urppp-sa-trend">
     <h5 class="urppp-sa-card-title">学期趋势</h5>
     ${trendChartSvg({ trend: analysis.trend, palette })}
   </section>
-  <section class="urppp-sa-card urppp-sa-bands">
-    <h5 class="urppp-sa-card-title">分数段分布</h5>
-    ${bandsChartSvg({ bands: analysis.bands, palette })}
+  <section class="urppp-sa-card urppp-sa-share">
+    <h5 class="urppp-sa-card-title">课程类型构成</h5>
+    <div class="urppp-sa-share-body">
+      <div class="urppp-sa-donut">${donutSvg({ items: share.items, requiredRatio: share.requiredRatio, palette })}</div>
+      <div class="urppp-sa-legend">${shareLegend(share.items)}</div>
+    </div>
   </section>
 </div>
 <div class="urppp-sa-grid">
-  <section class="urppp-sa-card urppp-sa-share">
-    <h5 class="urppp-sa-card-title">必修 / 选修构成</h5>
-    <div class="urppp-sa-share-body">
-      <div class="urppp-sa-donut">${donutSvg({ requiredRatio: share.requiredRatio, palette })}</div>
-      <div class="urppp-sa-legend">
-        <div class="urppp-sa-legend-item"><i class="urppp-sa-legend-dot" style="background:${palette.required}"></i>必修 ${escapeHtml(share.requiredCredit)} 学分 · ${escapeHtml(share.requiredCount)} 门</div>
-        <div class="urppp-sa-legend-item"><i class="urppp-sa-legend-dot" style="background:${palette.optional}"></i>选修/其他 ${escapeHtml(share.optionalCredit)} 学分 · ${escapeHtml(share.optionalCount)} 门</div>
-      </div>
-    </div>
+  <section class="urppp-sa-card urppp-sa-bands">
+    <h5 class="urppp-sa-card-title">绩点分段分布</h5>
+    ${bandsChartSvg({ bands: analysis.bands, palette })}
   </section>
   <section class="urppp-sa-card urppp-sa-detail">
     <h5 class="urppp-sa-card-title">各学期明细</h5>

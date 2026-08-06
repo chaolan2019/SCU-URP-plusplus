@@ -38,7 +38,7 @@ function scorePack(courses) {
     passing: [{
       title: '全部及格成绩',
       courses,
-      summary: { totalCredit: 0, avgScore: 0, avgGpa: 0, requiredCredit: 0, requiredGpa: 0 },
+      summary: {},
     }],
     schemes: [],
   };
@@ -55,10 +55,10 @@ test('analyzeScores reports empty state without courses', () => {
   const analysis = dataApi.analyzeScores({ scorePack: scorePack([]), profile: {} });
   assert.equal(analysis.empty, true);
   assert.equal(analysis.trend.length, 0);
-  assert.equal(analysis.bands.length, 5);
+  assert.equal(analysis.bands.length, 11);
 });
 
-test('metrics aggregate credit, score, gpa and course count', () => {
+test('metrics aggregate credit, score, gpa, required gpa and course count', () => {
   const pack = scorePack([
     course({ credit: 3, score: '90', officialGpa: 4.0 }),
     course({ credit: 2, score: '80', officialGpa: 3.0, term: '2024-2025-2' }),
@@ -71,13 +71,30 @@ test('metrics aggregate credit, score, gpa and course count', () => {
   assert.equal(analysis.metrics.totalCredit, 5);
   assert.equal(analysis.metrics.avgScore, (90 * 3 + 80 * 2) / 5);
   assert.equal(analysis.metrics.avgGpa, (4.0 * 3 + 3.0 * 2) / 5);
+  assert.equal(analysis.metrics.requiredGpa, (4.0 * 3 + 3.0 * 2) / 5);
 });
 
-test('metrics falls back to required GPA for major GPA', () => {
-  const pack = scorePack([course({ credit: 2, score: '90' })]);
-  pack.passing[0].summary = { requiredGpa: 4.0 };
+test('major GPA stays empty when profile lacks it; required GPA computed separately', () => {
+  const pack = scorePack([
+    course({ credit: 2, score: '90', required: true }),
+    course({ credit: 2, score: '80', required: false, attr: '任选' }),
+  ]);
   const analysis = dataApi.analyzeScores({ scorePack: pack, profile: {} });
-  assert.equal(analysis.metrics.majorGpa, '4');
+  assert.equal(analysis.metrics.majorGpa, '');
+  assert.equal(analysis.metrics.requiredGpa, 4.0);
+});
+
+test('letter grades convert into percentile bands', () => {
+  const pack = scorePack([
+    course({ score: 'A' }),
+    course({ score: 'B+', attr: '选修' }),
+    course({ score: 'F' }),
+  ]);
+  const analysis = dataApi.analyzeScores({ scorePack: pack, profile: {} });
+  const counts = Object.fromEntries(analysis.bands.map((b) => [b.key, b.count]));
+  assert.equal(counts.a, 1);   // A → 95 → 90-100
+  assert.equal(counts.bp, 1);  // B+ → 83 → 82-84
+  assert.equal(counts.f, 1);   // F → 50 → <60
 });
 
 test('trend groups courses by term and sorts chronologically', () => {
@@ -100,7 +117,7 @@ test('trend groups courses by term and sorts chronologically', () => {
   assert.equal(second.avgScore, 95);
 });
 
-test('bands distribute numeric and letter grades into five buckets', () => {
+test('bands distribute scores into eleven SCU grade point segments', () => {
   const pack = scorePack([
     course({ score: '98' }), course({ score: '优秀' }), course({ score: '91' }),
     course({ score: '88' }), course({ score: '82' }),
@@ -109,22 +126,33 @@ test('bands distribute numeric and letter grades into five buckets', () => {
   ]);
   const analysis = dataApi.analyzeScores({ scorePack: pack, profile: {} });
   const counts = Object.fromEntries(analysis.bands.map((b) => [b.key, b.count]));
-  assert.deepEqual(counts, { s90: 3, s80: 2, s70: 1, s60: 1, s59: 1 });
+  assert.deepEqual(counts, {
+    a: 3, am: 1, bp: 1, b: 0, bm: 1, cp: 0, c: 0, cm: 0, dp: 1, d: 0, f: 1,
+  });
 });
 
-test('share splits required and optional credits by required flag', () => {
+test('share classifies required, elective, optional and other by attribute', () => {
   const pack = scorePack([
-    course({ credit: 3, required: true }),
-    course({ credit: 2, required: false, attr: '任选' }),
-    course({ credit: 5, required: false, attr: '选修', term: '2024-2025-2' }),
-    course({ credit: 4, required: true, term: '2024-2025-2' }),
+    course({ credit: 3, attr: '必修', required: true }),
+    course({ credit: 2, attr: '任选', required: false }),
+    course({ credit: 5, attr: '选修', required: false, term: '2024-2025-2' }),
+    course({ credit: 1, attr: '通识实践', required: false, term: '2024-2025-2' }),
+    course({ credit: 4, attr: '必修', required: true, term: '2024-2025-2' }),
   ]);
   const analysis = dataApi.analyzeScores({ scorePack: pack, profile: {} });
-  assert.equal(analysis.share.requiredCredit, 7);
-  assert.equal(analysis.share.optionalCredit, 7);
-  assert.equal(analysis.share.requiredRatio, 50);
-  assert.equal(analysis.share.requiredCount, 2);
-  assert.equal(analysis.share.optionalCount, 2);
+  const byKey = Object.fromEntries(analysis.share.items.map((item) => [item.key, item]));
+  assert.equal(byKey.required.credit, 7);
+  assert.equal(byKey.elective.credit, 2);
+  assert.equal(byKey.optional.credit, 5);
+  assert.equal(byKey.other.credit, 1);
+  assert.equal(analysis.share.requiredRatio, Math.round(7 / 15 * 100));
+  assert.equal(analysis.share.items.length, 4);
+});
+
+test('share omits empty groups', () => {
+  const pack = scorePack([course({ credit: 3, attr: '必修', required: true })]);
+  const analysis = dataApi.analyzeScores({ scorePack: pack, profile: {} });
+  assert.deepEqual(analysis.share.items.map((item) => item.key), ['required']);
 });
 
 test('official GPA takes precedence over converted GPA', () => {
@@ -134,8 +162,11 @@ test('official GPA takes precedence over converted GPA', () => {
   assert.equal(analysis.trend[0].avgGpa, 3.9);
 });
 
-test('SCORE_BANDS covers the full numeric range', () => {
-  assert.equal(SCORE_BANDS.length, 5);
+test('SCORE_BANDS covers eleven SCU grade point levels in order', () => {
+  assert.equal(SCORE_BANDS.length, 11);
+  assert.deepEqual(SCORE_BANDS.map((b) => b.gpa), [4.0, 3.7, 3.3, 3.0, 2.7, 2.3, 2.0, 1.7, 1.3, 1.0, 0]);
+  assert.equal(SCORE_BANDS[0].label, 'A');
+  assert.equal(SCORE_BANDS[10].label, 'F');
   const min = Math.min(...SCORE_BANDS.map((b) => b.min));
   const max = Math.max(...SCORE_BANDS.map((b) => b.max));
   assert.equal(min, 0);

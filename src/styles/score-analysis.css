@@ -20,18 +20,20 @@
         font: inherit;
         color: var(--text);
       }
-      #urppp-score-analysis .urppp-sa-toggle:hover { background: color-mix(in srgb, var(--primary) 6%, transparent); }
+      #urppp-score-analysis .urppp-sa-toggle:hover { background: color-mix(in srgb, var(--primary, #2563eb) 6%, transparent); }
       #urppp-score-analysis .urppp-sa-icon {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         width: 30px;
         height: 30px;
-        border-radius: 9px;
-        background: color-mix(in srgb, var(--primary) 14%, transparent);
-        color: var(--primary);
+        border-radius: var(--radius-sm, 9px);
+        background: color-mix(in srgb, var(--primary, #2563eb) 14%, transparent);
+        color: var(--primary, #2563eb);
         flex: 0 0 auto;
+        transition: background-color .2s, color .2s;
       }
+      #urppp-score-analysis .urppp-sa-icon svg { display: block; }
       #urppp-score-analysis .urppp-sa-title { font-size: 15px; font-weight: 700; flex: 0 0 auto; }
       #urppp-score-analysis .urppp-sa-summary {
         flex: 1 1 auto;
@@ -87,7 +89,7 @@
 
       #urppp-score-analysis .urppp-sa-metrics {
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         gap: 12px;
         margin-bottom: 14px;
       }
@@ -124,10 +126,12 @@
         color: var(--text);
       }
       #urppp-score-analysis .urppp-sa-chart { width: 100%; height: auto; display: block; }
+      #urppp-score-analysis .urppp-sa-hover { cursor: pointer; }
+      #urppp-score-analysis .urppp-sa-hover:hover { fill: color-mix(in srgb, var(--primary) 7%, transparent); }
 
       #urppp-score-analysis .urppp-sa-share-body { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
       #urppp-score-analysis .urppp-sa-donut { flex: 0 0 auto; }
-      #urppp-score-analysis .urppp-sa-legend { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+      #urppp-score-analysis .urppp-sa-legend { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
       #urppp-score-analysis .urppp-sa-legend-item {
         display: flex;
         align-items: center;
@@ -160,13 +164,9 @@
       #urppp-score-analysis .urppp-sa-table tbody tr:last-child td { border-bottom: 0; }
       #urppp-score-analysis .urppp-sa-detail { overflow: auto; max-height: 320px; }
 
-      /* 分数段固定色在暗色下提高一档，保证柱体可读 */
-      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#15803d"] { fill: #4ade80; }
-      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#65a30d"] { fill: #a3e635; }
-      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#ca8a04"] { fill: #facc15; }
-      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#ea580c"] { fill: #fb923c; }
-      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#dc2626"] { fill: #f87171; }
-
+      @media (max-width: 1100px) {
+        #urppp-score-analysis .urppp-sa-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      }
       @media (max-width: 900px) {
         #urppp-score-analysis .urppp-sa-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         #urppp-score-analysis .urppp-sa-grid { grid-template-columns: 1fr; }

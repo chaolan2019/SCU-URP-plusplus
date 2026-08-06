@@ -9,6 +9,7 @@ const scorePayload = {
         { courseName: '高等数学', credit: 5, cj: '95', courseAttributeName: '必修', gradePointScore: 4.0, id: { courseNumber: 'C1' } },
         { courseName: '大学英语', credit: 3, cj: '86', courseAttributeName: '必修', gradePointScore: 3.5, id: { courseNumber: 'C2' } },
         { courseName: '大学体育', credit: 2, cj: '优秀', courseAttributeName: '选修', gradePointScore: 4.0, id: { courseNumber: 'C3' } },
+        { courseName: '通识任选', credit: 2, cj: '良好', courseAttributeName: '任选', gradePointScore: 3.7, id: { courseNumber: 'C5' } },
       ],
     },
     {
@@ -62,13 +63,20 @@ test('expanding renders metrics, trend, bands and detail rows', async ({ page })
   const panel = page.locator('#urppp-score-analysis');
   await panel.locator('.urppp-sa-toggle').click();
   await expect(panel).toHaveAttribute('data-urppp-sa-state', 'expanded');
-  await expect(panel.locator('.urppp-sa-metric')).toHaveCount(5);
+  await expect(panel.locator('.urppp-sa-metric')).toHaveCount(6);
   await expect(panel.locator('.urppp-sa-trend svg')).toHaveCount(1);
-  await expect(panel.locator('.urppp-sa-bands svg')).toHaveCount(1);
   await expect(panel.locator('.urppp-sa-share svg')).toHaveCount(1);
+  await expect(panel.locator('.urppp-sa-bands svg rect')).toHaveCount(11);
+  await expect(panel.locator('.urppp-sa-legend-item')).toHaveCount(3);
   await expect(panel.locator('.urppp-sa-table tbody tr')).toHaveCount(2);
   await expect(panel.locator('.urppp-sa-table tbody tr').first()).toContainText('24-25-1');
   await expect(panel.locator('.urppp-sa-table tbody tr').last()).toContainText('24-25-2');
+  // 布局：构成环图在趋势旁（第一行），绩点分段在明细前（第二行）
+  const shareBeforeBands = await panel.locator('.urppp-sa-share').evaluate((el) => {
+    const bands = document.querySelector('#urppp-score-analysis .urppp-sa-bands');
+    return !!(bands && el.compareDocumentPosition(bands) & Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+  expect(shareBeforeBands).toBe(true);
   expect(pageErrors).toEqual([]);
 });
 

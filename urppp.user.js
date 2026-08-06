@@ -11848,18 +11848,20 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         font: inherit;
         color: var(--text);
       }
-      #urppp-score-analysis .urppp-sa-toggle:hover { background: color-mix(in srgb, var(--primary) 6%, transparent); }
+      #urppp-score-analysis .urppp-sa-toggle:hover { background: color-mix(in srgb, var(--primary, #2563eb) 6%, transparent); }
       #urppp-score-analysis .urppp-sa-icon {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         width: 30px;
         height: 30px;
-        border-radius: 9px;
-        background: color-mix(in srgb, var(--primary) 14%, transparent);
-        color: var(--primary);
+        border-radius: var(--radius-sm, 9px);
+        background: color-mix(in srgb, var(--primary, #2563eb) 14%, transparent);
+        color: var(--primary, #2563eb);
         flex: 0 0 auto;
+        transition: background-color .2s, color .2s;
       }
+      #urppp-score-analysis .urppp-sa-icon svg { display: block; }
       #urppp-score-analysis .urppp-sa-title { font-size: 15px; font-weight: 700; flex: 0 0 auto; }
       #urppp-score-analysis .urppp-sa-summary {
         flex: 1 1 auto;
@@ -11915,7 +11917,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
 
       #urppp-score-analysis .urppp-sa-metrics {
         display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-template-columns: repeat(6, minmax(0, 1fr));
         gap: 12px;
         margin-bottom: 14px;
       }
@@ -11952,10 +11954,12 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         color: var(--text);
       }
       #urppp-score-analysis .urppp-sa-chart { width: 100%; height: auto; display: block; }
+      #urppp-score-analysis .urppp-sa-hover { cursor: pointer; }
+      #urppp-score-analysis .urppp-sa-hover:hover { fill: color-mix(in srgb, var(--primary) 7%, transparent); }
 
       #urppp-score-analysis .urppp-sa-share-body { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
       #urppp-score-analysis .urppp-sa-donut { flex: 0 0 auto; }
-      #urppp-score-analysis .urppp-sa-legend { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+      #urppp-score-analysis .urppp-sa-legend { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
       #urppp-score-analysis .urppp-sa-legend-item {
         display: flex;
         align-items: center;
@@ -11988,13 +11992,9 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       #urppp-score-analysis .urppp-sa-table tbody tr:last-child td { border-bottom: 0; }
       #urppp-score-analysis .urppp-sa-detail { overflow: auto; max-height: 320px; }
 
-      /* 分数段固定色在暗色下提高一档，保证柱体可读 */
-      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#15803d"] { fill: #4ade80; }
-      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#65a30d"] { fill: #a3e635; }
-      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#ca8a04"] { fill: #facc15; }
-      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#ea580c"] { fill: #fb923c; }
-      html.urppp-theme-dark #urppp-score-analysis .urppp-sa-chart rect[fill="#dc2626"] { fill: #f87171; }
-
+      @media (max-width: 1100px) {
+        #urppp-score-analysis .urppp-sa-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      }
       @media (max-width: 900px) {
         #urppp-score-analysis .urppp-sa-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         #urppp-score-analysis .urppp-sa-grid { grid-template-columns: 1fr; }
@@ -13361,11 +13361,42 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   }
   __name(round2, "round2");
   var SCORE_BANDS = [
-    { key: "s90", label: "90+", min: 90, max: 100 },
-    { key: "s80", label: "80-89", min: 80, max: 89.999 },
-    { key: "s70", label: "70-79", min: 70, max: 79.999 },
-    { key: "s60", label: "60-69", min: 60, max: 69.999 },
-    { key: "s59", label: "<60", min: 0, max: 59.999 }
+    { key: "a", label: "A", gpa: 4, min: 90, max: 100 },
+    { key: "am", label: "A-", gpa: 3.7, min: 85, max: 89.999 },
+    { key: "bp", label: "B+", gpa: 3.3, min: 82, max: 84.999 },
+    { key: "b", label: "B", gpa: 3, min: 78, max: 81.999 },
+    { key: "bm", label: "B-", gpa: 2.7, min: 75, max: 77.999 },
+    { key: "cp", label: "C+", gpa: 2.3, min: 72, max: 74.999 },
+    { key: "c", label: "C", gpa: 2, min: 68, max: 71.999 },
+    { key: "cm", label: "C-", gpa: 1.7, min: 64, max: 67.999 },
+    { key: "dp", label: "D+", gpa: 1.3, min: 60, max: 63.999 },
+    { key: "d", label: "D", gpa: 1, min: 60, max: 62.999 },
+    { key: "f", label: "F", gpa: 0, min: 0, max: 59.999 }
+  ];
+  var LEVEL_SCORES = {
+    "优秀": 95,
+    "A+": 98,
+    "A": 95,
+    "A-": 87,
+    "良好": 85,
+    "B+": 83,
+    "B": 79,
+    "B-": 76,
+    "中等": 73,
+    "C+": 73,
+    "C": 69,
+    "C-": 65,
+    "及格": 62,
+    "D+": 62,
+    "D": 60,
+    "不及格": 50,
+    "F": 50
+  };
+  var SHARE_GROUPS = [
+    { key: "required", label: "必修", test: /* @__PURE__ */ __name((attr) => /必修/.test(attr), "test") },
+    { key: "elective", label: "任选", test: /* @__PURE__ */ __name((attr) => /任选/.test(attr), "test") },
+    { key: "optional", label: "选修", test: /* @__PURE__ */ __name((attr) => /选修/.test(attr), "test") },
+    { key: "other", label: "其他", test: /* @__PURE__ */ __name(() => true, "test") }
   ];
   function shortTerm(term) {
     const m = String(term || "").match(/^(\d{4})-(\d{4})-(\d+)/);
@@ -13376,10 +13407,17 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   function createScoreAnalysisData({ deps }) {
     const scoreToNumber = deps.scoreToNumber;
     const scoreToGpa = deps.scoreToGpa;
+    function scoreToNumberWithLevels(raw) {
+      const base = scoreToNumber(raw);
+      if (base != null) return base;
+      const key = String(raw || "").trim().toUpperCase();
+      return LEVEL_SCORES[key] != null ? LEVEL_SCORES[key] : null;
+    }
+    __name(scoreToNumberWithLevels, "scoreToNumberWithLevels");
     function hasScore(course) {
       if (!course) return false;
       if (course.unevaluated) return false;
-      return scoreToNumber(course.score) != null;
+      return scoreToNumberWithLevels(course.score) != null;
     }
     __name(hasScore, "hasScore");
     function termOrderKey(term) {
@@ -13400,6 +13438,11 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       return null;
     }
     __name(officialGpa, "officialGpa");
+    function courseGpa(course) {
+      const official = officialGpa(course);
+      return official != null ? official : scoreToGpa(course.score);
+    }
+    __name(courseGpa, "courseGpa");
     function computeMetrics({ scorePack, profile }) {
       const courses = allCourses(scorePack);
       const majorGpa = profile && profile.majorGpa ? String(profile.majorGpa).trim() : "";
@@ -13407,38 +13450,31 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       let scoreWeighted = 0;
       let gpaWeighted = 0;
       let gpaCredit = 0;
-      let requiredCredit = 0;
-      let requiredScoreWeighted = 0;
       let requiredGpaWeighted = 0;
       let requiredGpaCredit = 0;
       courses.forEach((course) => {
         if (!hasScore(course)) return;
         const credit = Number(course.credit) || 0;
-        const score = scoreToNumber(course.score);
+        const score = scoreToNumberWithLevels(course.score);
         if (score == null || credit <= 0) return;
         totalCredit += credit;
         scoreWeighted += score * credit;
-        const gpa = officialGpa(course) != null ? officialGpa(course) : scoreToGpa(course.score);
+        const gpa = courseGpa(course);
         if (gpa != null) {
           gpaWeighted += gpa * credit;
           gpaCredit += credit;
-        }
-        if (course.required) {
-          requiredCredit += credit;
-          requiredScoreWeighted += score * credit;
-          if (gpa != null) {
+          if (course.required) {
             requiredGpaWeighted += gpa * credit;
             requiredGpaCredit += credit;
           }
         }
       });
-      const requiredGpa = round2(requiredGpaCredit ? requiredGpaWeighted / requiredGpaCredit : 0);
       return {
-        majorGpa: majorGpa || (requiredGpa > 0 ? String(requiredGpa) : ""),
+        majorGpa,
+        requiredGpa: round2(requiredGpaCredit ? requiredGpaWeighted / requiredGpaCredit : 0),
         avgGpa: round2(gpaCredit ? gpaWeighted / gpaCredit : 0),
         avgScore: round2(totalCredit ? scoreWeighted / totalCredit : 0),
         totalCredit: round2(totalCredit),
-        requiredGpa,
         courseCount: courses.length
       };
     }
@@ -13454,13 +13490,13 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           byTerm.set(term, bucket);
         }
         const credit = Number(course.credit) || 0;
-        const score = scoreToNumber(course.score);
+        const score = scoreToNumberWithLevels(course.score);
         if (score == null) return;
         bucket.count += 1;
         if (credit <= 0) return;
         bucket.credit += credit;
         bucket.scoreW += score * credit;
-        const gpa = officialGpa(course) != null ? officialGpa(course) : scoreToGpa(course.score);
+        const gpa = courseGpa(course);
         if (gpa != null) {
           bucket.gpaW += gpa * credit;
           bucket.gpaCredit += credit;
@@ -13484,7 +13520,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       const buckets = SCORE_BANDS.map((band) => ({ ...band, count: 0, credit: 0 }));
       (courses || []).forEach((course) => {
         if (!hasScore(course)) return;
-        const score = scoreToNumber(course.score);
+        const score = scoreToNumberWithLevels(course.score);
         if (score == null) return;
         const hit = buckets.find((band) => score >= band.min && score <= band.max);
         if (!hit) return;
@@ -13496,28 +13532,32 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     }
     __name(computeBands, "computeBands");
     function computeShare(courses) {
-      let requiredCredit = 0;
-      let optionalCredit = 0;
-      let requiredCount = 0;
-      let optionalCount = 0;
+      const groups = SHARE_GROUPS.map((group) => ({
+        ...group,
+        credit: 0,
+        count: 0
+      }));
       (courses || []).forEach((course) => {
         if (!hasScore(course)) return;
-        const credit = Number(course.credit) || 0;
-        if (course.required) {
-          requiredCredit += credit;
-          requiredCount += 1;
-        } else {
-          optionalCredit += credit;
-          optionalCount += 1;
-        }
+        const attr = String(course.attr || "");
+        const group = groups.find((item) => item.test(attr));
+        if (!group) return;
+        group.credit += Number(course.credit) || 0;
+        group.count += 1;
       });
-      const total = requiredCredit + optionalCredit || 1;
+      const total = groups.reduce((sum, group) => sum + group.credit, 0) || 1;
+      const items = groups.filter((group) => group.count > 0).map((group) => ({
+        key: group.key,
+        label: group.label,
+        credit: round2(group.credit),
+        count: group.count,
+        ratio: Math.round(group.credit / total * 100)
+      }));
+      const required = items.find((item) => item.key === "required");
       return {
-        requiredCredit: round2(requiredCredit),
-        optionalCredit: round2(optionalCredit),
-        requiredCount,
-        optionalCount,
-        requiredRatio: Math.round(requiredCredit / total * 100)
+        items,
+        requiredCredit: required ? required.credit : 0,
+        requiredRatio: required ? required.ratio : 0
       };
     }
     __name(computeShare, "computeShare");
@@ -13532,7 +13572,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       };
     }
     __name(analyzeScores, "analyzeScores");
-    return { analyzeScores, hasScore, officialGpa, shortTerm };
+    return { analyzeScores, hasScore, officialGpa, scoreToNumberWithLevels, shortTerm };
   }
   __name(createScoreAnalysisData, "createScoreAnalysisData");
 
@@ -13578,14 +13618,28 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       const x = xAt(i);
       const barW = Math.min(26, plotW / n * 0.32);
       const y = yCredit(item.credit);
-      return `<rect x="${(x - barW / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${(pad.top + plotH - y).toFixed(1)}" rx="3" fill="${palette.credit}" opacity="0.55"/>`;
+      return `<rect x="${(x - barW / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${(pad.top + plotH - y).toFixed(1)}" rx="3" fill="${palette.credit}" opacity="0.55"/>
+<text x="${x.toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="middle" font-size="10" fill="${TEXT_FILL}">${escapeLabel(item.credit)}</text>`;
     }).join("");
     const xLabels = items.map((item, i) => `<text x="${xAt(i).toFixed(1)}" y="${height - 16}" text-anchor="middle" font-size="11" fill="${TEXT_FILL}">${escapeLabel(item.label)}</text>`).join("");
+    const hoverZones = items.map((item, i) => {
+      const colW = plotW / n;
+      const x = xAt(i) - colW / 2;
+      const tip = [
+        `学期 ${item.label}`,
+        `课程 ${item.count} 门`,
+        `修读学分 ${item.credit}`,
+        `加权均分 ${item.avgScore}`,
+        `平均绩点 ${item.avgGpa}`
+      ].join("\n");
+      return `<rect class="urppp-sa-hover" x="${x.toFixed(1)}" y="${pad.top}" width="${colW.toFixed(1)}" height="${plotH.toFixed(1)}"><title>${escapeLabel(tip)}</title></rect>`;
+    }).join("");
     const gpaDots = items.map((item, i) => `<circle cx="${xAt(i).toFixed(1)}" cy="${yGpa(item.avgGpa).toFixed(1)}" r="3.5" fill="${palette.gpaLine}"/><text x="${xAt(i).toFixed(1)}" y="${(yGpa(item.avgGpa) - 9).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="600" fill="${palette.gpaLine}">${escapeLabel(item.avgGpa)}</text>`).join("");
     const scoreDots = items.map((item, i) => `<circle cx="${xAt(i).toFixed(1)}" cy="${yScore(item.avgScore).toFixed(1)}" r="3" fill="${palette.scoreLine}"/><text x="${xAt(i).toFixed(1)}" y="${(yScore(item.avgScore) + 17).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="${palette.scoreLine}">${escapeLabel(item.avgScore)}</text>`).join("");
     return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="学期成绩趋势">
 ${gridLines}
 ${creditBars}
+<g>${hoverZones}</g>
 <text x="${pad.left}" y="18" font-size="11" fill="${TEXT_FILL}">每学期修读学分（柱）</text>
 <g stroke="${palette.gpaLine}" stroke-width="2.2" fill="none"><polyline points="${gpaPoints}"/></g>
 <g stroke="${palette.scoreLine}" stroke-width="1.8" stroke-dasharray="5 4" fill="none"><polyline points="${scorePoints}"/></g>
@@ -13600,46 +13654,62 @@ ${creditBars}
   }
   __name(trendChartSvg, "trendChartSvg");
   function bandsChartSvg({ bands, palette }) {
-    const width = 400;
-    const height = 232;
-    const pad = { top: 28, right: 16, bottom: 34, left: 16 };
+    const width = 660;
+    const height = 236;
+    const pad = { top: 28, right: 14, bottom: 44, left: 14 };
     const plotW = width - pad.left - pad.right;
     const plotH = height - pad.top - pad.bottom;
     const items = bands || [];
     const n = items.length || 1;
     const maxCount = Math.max(1, ...items.map((item) => item.count));
-    const barW = Math.min(52, plotW / n * 0.5);
+    const barW = Math.min(40, plotW / n * 0.52);
     const bars = items.map((item, i) => {
       const x = pad.left + (i + 0.5) * (plotW / n);
       const h = item.count ? Math.max(8, item.count / maxCount * plotH) : 0;
       const y = pad.top + plotH - h;
-      const color = palette.bands[i] || palette.primary;
-      return `<rect x="${(x - barW / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="5" fill="${color}"/>
+      const opacity = (0.4 + (1 - i / (n - 1)) * 0.6).toFixed(2);
+      const tip = [
+        `${item.label}（绩点 ${item.gpa}）`,
+        `百分制 ${item.min === 0 ? "<60" : `${item.min}-${item.max === 100 ? "100" : item.max}`}`,
+        `课程 ${item.count} 门`
+      ].join("\n");
+      return `<rect class="urppp-sa-band" x="${(x - barW / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${palette.primary}" opacity="${opacity}"><title>${escapeLabel(tip)}</title></rect>
 <text x="${x.toFixed(1)}" y="${(y - 6).toFixed(1)}" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--text)">${escapeLabel(item.count)}</text>
-<text x="${x.toFixed(1)}" y="${height - 12}" text-anchor="middle" font-size="10.5" fill="${TEXT_FILL}">${escapeLabel(item.label)}</text>`;
+<text x="${x.toFixed(1)}" y="${height - 26}" text-anchor="middle" font-size="10.5" font-weight="600" fill="${TEXT_FILL}">${escapeLabel(item.label)}</text>
+<text x="${x.toFixed(1)}" y="${height - 12}" text-anchor="middle" font-size="10" fill="${TEXT_FILL}">${escapeLabel(item.gpa)}</text>`;
     }).join("");
-    return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="分数段分布">
+    return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="绩点分段分布">
 <line x1="${pad.left}" y1="${(pad.top + plotH).toFixed(1)}" x2="${width - pad.right}" y2="${(pad.top + plotH).toFixed(1)}" stroke="${GRID_STROKE}" stroke-width="1"/>
 ${bars}
 </svg>`;
   }
   __name(bandsChartSvg, "bandsChartSvg");
-  function donutSvg({ requiredRatio, palette }) {
-    const size = 190;
+  function donutSvg({ items, requiredRatio, palette }) {
+    const size = 150;
     const center = size / 2;
-    const radius = 66;
-    const stroke = 26;
-    const ratio = Math.max(0, Math.min(100, Math.round(Number(requiredRatio) || 0)));
+    const radius = 56;
+    const stroke = 24;
     const circumference = 2 * Math.PI * radius;
-    const requiredLength = ratio / 100 * circumference;
-    const optionalLength = Math.max(0, circumference - requiredLength);
-    return `<svg viewBox="0 0 ${size} ${size}" class="urppp-sa-chart" role="img" aria-label="必修选修学分构成">
-<circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="${palette.optional}" stroke-width="${stroke}"/>
-<circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="${palette.required}" stroke-width="${stroke}"
-  stroke-dasharray="${requiredLength.toFixed(2)} ${circumference.toFixed(2)}"
-  stroke-linecap="butt" transform="rotate(-90 ${center} ${center})"/>
-<text x="${center}" y="${center - 6}" text-anchor="middle" font-size="24" font-weight="700" fill="var(--text)">${escapeLabel(ratio)}%</text>
-<text x="${center}" y="${center + 18}" text-anchor="middle" font-size="11" fill="${TEXT_FILL}">必修学分占比</text>
+    const segments = (items || []).filter((item) => item && item.ratio > 0);
+    const ratio = Math.max(0, Math.min(100, Math.round(Number(requiredRatio) || 0)));
+    if (!segments.length) {
+      return `<svg viewBox="0 0 ${size} ${size}" class="urppp-sa-chart" role="img" aria-label="课程类型构成"></svg>`;
+    }
+    let cursor = -90;
+    const arcs = segments.map((item) => {
+      const length = item.ratio / 100 * circumference;
+      const color = palette.share && palette.share[item.key] || palette.required;
+      const arc = `<circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="${color}" stroke-width="${stroke}"
+  stroke-dasharray="${length.toFixed(2)} ${circumference.toFixed(2)}"
+  stroke-linecap="butt" transform="rotate(${cursor.toFixed(2)} ${center} ${center})"/>`;
+      cursor += item.ratio / 100 * 360;
+      return arc;
+    }).join("");
+    return `<svg viewBox="0 0 ${size} ${size}" class="urppp-sa-chart" role="img" aria-label="课程类型构成">
+<circle cx="${center}" cy="${center}" r="${radius}" fill="none" stroke="${GRID_STROKE}" stroke-width="${stroke}"/>
+${arcs}
+<text x="${center}" y="${center - 6}" text-anchor="middle" font-size="22" font-weight="700" fill="var(--text)">${escapeLabel(ratio)}%</text>
+<text x="${center}" y="${center + 16}" text-anchor="middle" font-size="10.5" fill="${TEXT_FILL}">必修学分占比</text>
 </svg>`;
   }
   __name(donutSvg, "donutSvg");
@@ -13649,11 +13719,15 @@ ${bars}
     gpaLine: "var(--primary)",
     scoreLine: "var(--text-secondary)",
     credit: "var(--primary)",
-    required: "var(--primary)",
-    optional: "var(--text-muted)",
-    bands: ["#15803d", "#65a30d", "#ca8a04", "#ea580c", "#dc2626"]
+    primary: "var(--primary)",
+    share: Object.freeze({
+      required: "var(--primary)",
+      elective: "var(--text-muted)",
+      optional: "var(--text-secondary)",
+      other: "var(--border)"
+    })
   });
-  var ICON_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 14l3-4 4 3 5-7"/></svg>';
+  var ICON_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-8"/><path d="M22 20H2"/></svg>';
   var CHEVRON_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
   function createScoreAnalysisRenderer({ deps }) {
     const palette = deps && deps.palette || DEFAULT_PALETTE;
@@ -13684,6 +13758,7 @@ ${bars}
     function metricCards(metrics) {
       const cards = [
         { label: "主修绩点", value: metrics.majorGpa || "—", hint: "资料卡 GPA" },
+        { label: "主修必修绩点", value: metrics.requiredGpa > 0 ? String(metrics.requiredGpa) : "—", hint: "必修课程加权" },
         { label: "平均绩点", value: metrics.avgGpa != null ? String(metrics.avgGpa) : "—", hint: "全部及格加权" },
         { label: "加权均分", value: metrics.avgScore != null ? String(metrics.avgScore) : "—", hint: "学分加权" },
         { label: "已修学分", value: metrics.totalCredit != null ? String(metrics.totalCredit) : "—", hint: "及格课程学分" },
@@ -13703,32 +13778,36 @@ ${bars}
 <tbody>${rows}</tbody></table>`;
     }
     __name(detailTable, "detailTable");
+    function shareLegend(items) {
+      return (items || []).map((item) => {
+        const color = palette.share && palette.share[item.key] || palette.primary;
+        return `<div class="urppp-sa-legend-item"><i class="urppp-sa-legend-dot" style="background:${color}"></i>${escapeHtml(item.label)} ${escapeHtml(item.credit)} 学分 · ${escapeHtml(item.count)} 门</div>`;
+      }).join("");
+    }
+    __name(shareLegend, "shareLegend");
     function analysisHtml(analysis) {
       if (!analysis || analysis.empty) {
         return '<div class="urppp-sa-empty">暂无可用成绩数据，请先在教务系统查询成绩后再试。</div>';
       }
-      const share = analysis.share || { requiredCredit: 0, optionalCredit: 0, requiredRatio: 0 };
+      const share = analysis.share || { items: [], requiredRatio: 0 };
       return `<div class="urppp-sa-metrics">${metricCards(analysis.metrics)}</div>
 <div class="urppp-sa-grid">
   <section class="urppp-sa-card urppp-sa-trend">
     <h5 class="urppp-sa-card-title">学期趋势</h5>
     ${trendChartSvg({ trend: analysis.trend, palette })}
   </section>
-  <section class="urppp-sa-card urppp-sa-bands">
-    <h5 class="urppp-sa-card-title">分数段分布</h5>
-    ${bandsChartSvg({ bands: analysis.bands, palette })}
+  <section class="urppp-sa-card urppp-sa-share">
+    <h5 class="urppp-sa-card-title">课程类型构成</h5>
+    <div class="urppp-sa-share-body">
+      <div class="urppp-sa-donut">${donutSvg({ items: share.items, requiredRatio: share.requiredRatio, palette })}</div>
+      <div class="urppp-sa-legend">${shareLegend(share.items)}</div>
+    </div>
   </section>
 </div>
 <div class="urppp-sa-grid">
-  <section class="urppp-sa-card urppp-sa-share">
-    <h5 class="urppp-sa-card-title">必修 / 选修构成</h5>
-    <div class="urppp-sa-share-body">
-      <div class="urppp-sa-donut">${donutSvg({ requiredRatio: share.requiredRatio, palette })}</div>
-      <div class="urppp-sa-legend">
-        <div class="urppp-sa-legend-item"><i class="urppp-sa-legend-dot" style="background:${palette.required}"></i>必修 ${escapeHtml(share.requiredCredit)} 学分 · ${escapeHtml(share.requiredCount)} 门</div>
-        <div class="urppp-sa-legend-item"><i class="urppp-sa-legend-dot" style="background:${palette.optional}"></i>选修/其他 ${escapeHtml(share.optionalCredit)} 学分 · ${escapeHtml(share.optionalCount)} 门</div>
-      </div>
-    </div>
+  <section class="urppp-sa-card urppp-sa-bands">
+    <h5 class="urppp-sa-card-title">绩点分段分布</h5>
+    ${bandsChartSvg({ bands: analysis.bands, palette })}
   </section>
   <section class="urppp-sa-card urppp-sa-detail">
     <h5 class="urppp-sa-card-title">各学期明细</h5>
@@ -13782,6 +13861,8 @@ ${bars}
     const ui = createScoreAnalysisUI();
     let panel = null;
     let loadState = "idle";
+    let loadPromise = null;
+    let cachedAnalysis = null;
     function ensureStyle() {
       if (!deps.styles) return;
       if (document.getElementById("urppp-score-analysis-style")) return;
@@ -13803,24 +13884,50 @@ ${bars}
       return panel && panel.querySelector("[data-urppp-sa-content]");
     }
     __name(contentEl, "contentEl");
+    function startLoad() {
+      if (loadPromise) return loadPromise;
+      loadState = "loading";
+      loadPromise = (async () => {
+        try {
+          const [scorePack, profile] = await Promise.all([
+            deps.loadScores(),
+            deps.loadProfile()
+          ]);
+          if (scorePack && scorePack.error) throw new Error(scorePack.error);
+          const analysis = dataApi.analyzeScores({ scorePack, profile });
+          cachedAnalysis = analysis;
+          loadState = "ready";
+          return analysis;
+        } catch (error) {
+          loadState = "error";
+          throw error;
+        } finally {
+          loadPromise = null;
+        }
+      })();
+      return loadPromise;
+    }
+    __name(startLoad, "startLoad");
+    function warmup() {
+      if (loadState === "idle") {
+        startLoad().catch(() => {
+        });
+      }
+    }
+    __name(warmup, "warmup");
     async function handleExpand() {
-      if (loadState === "loading" || loadState === "ready") return;
       const content = contentEl();
       if (!content) return;
-      loadState = "loading";
+      if (loadState === "ready" && cachedAnalysis) {
+        content.innerHTML = renderer.analysisHtml(cachedAnalysis);
+        return;
+      }
       content.innerHTML = renderer.loadingHtml();
       try {
-        const [scorePack, profile] = await Promise.all([
-          deps.loadScores(),
-          deps.loadProfile()
-        ]);
-        if (scorePack && scorePack.error) throw new Error(scorePack.error);
-        const analysis = dataApi.analyzeScores({ scorePack, profile });
+        const analysis = await startLoad();
         content.innerHTML = renderer.analysisHtml(analysis);
-        loadState = "ready";
       } catch (error) {
         content.innerHTML = renderer.errorHtml(error && error.message || String(error));
-        loadState = "error";
       }
     }
     __name(handleExpand, "handleExpand");
@@ -13835,6 +13942,7 @@ ${bars}
       panel = wrapper.firstElementChild;
       host.insertBefore(panel, host.firstChild);
       ui.bindPanel(panel, { onExpand: handleExpand, onRetry: handleExpand });
+      warmup();
       return panel;
     }
     __name(mount, "mount");
@@ -13842,6 +13950,8 @@ ${bars}
       if (panel && panel.isConnected) panel.remove();
       panel = null;
       loadState = "idle";
+      loadPromise = null;
+      cachedAnalysis = null;
     }
     __name(unmount, "unmount");
     return {

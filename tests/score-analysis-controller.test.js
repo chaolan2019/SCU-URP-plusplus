@@ -45,17 +45,13 @@ function controllerFixture({ loadScores, loadProfile } = {}) {
     passing: [{ title: '全部及格成绩', courses: [
       { name: '高数', credit: 4, score: '92', attr: '必修', required: true, term: '2024-2025-1', officialGpa: 4.0, unevaluated: false },
       { name: '英语', credit: 2, score: '85', attr: '必修', required: true, term: '2024-2025-1', officialGpa: 3.5, unevaluated: false },
-    ], summary: { totalCredit: 6, avgScore: 89.7, avgGpa: 3.83, requiredGpa: 3.83 } }],
+    ], summary: {} }],
     schemes: [],
   };
 
   globalThis.document = {
     head: makeHead(),
-    getElementById(id) {
-      if (id === 'urppp-score-analysis') return null;
-      if (id === 'urppp-score-analysis-style') return null;
-      return null;
-    },
+    getElementById() { return null; },
     createElement(tag) {
       if (tag === 'style') { styleEl.tagName = 'STYLE'; return styleEl; }
       return { innerHTML: '', firstElementChild: panel };
@@ -80,13 +76,20 @@ function controllerFixture({ loadScores, loadProfile } = {}) {
   return { controller, host, panel, toggle, body, content, styleEl, calls };
 }
 
-test('mount inserts a collapsed panel at the host top and injects style', () => {
-  const { controller, host, styleEl } = controllerFixture();
+async function settle() {
+  await new Promise((resolve) => setImmediate(resolve));
+}
+
+test('mount inserts a collapsed panel, injects style and warms up data', async () => {
+  const { controller, host, styleEl, calls } = controllerFixture();
   const panel = controller.mount();
   assert.ok(panel);
   assert.equal(host.children[0], panel);
   assert.equal(styleEl.textContent, '.urppp-sa{}');
   assert.equal(controller.getPanel(), panel);
+  // mount 触发预热加载
+  await settle();
+  assert.equal(calls.loadScores, 1);
 });
 
 test('mount is idempotent and reuses the existing panel', () => {
@@ -97,31 +100,34 @@ test('mount is idempotent and reuses the existing panel', () => {
   assert.equal(host.children.length, 1);
 });
 
-test('expanding loads scores once and renders analysis into content', async () => {
-  const { controller, toggle, content } = controllerFixture();
+test('expanding renders warm analysis without a second load', async () => {
+  const { controller, toggle, content, calls } = controllerFixture();
   controller.mount();
+  await settle();
+  assert.equal(calls.loadScores, 1);
   toggle.dispatch('click');
-  await new Promise((resolve) => setImmediate(resolve));
-  assert.equal(toggle.handlers.click !== undefined, true);
+  await settle();
   assert.match(content.innerHTML, /urppp-sa-metrics/);
   assert.match(content.innerHTML, /学期趋势/);
   assert.equal(controller.getPanel().dataset.urpppSaState, 'expanded');
+  assert.equal(calls.loadScores, 1);
 });
 
-test('re-expanding after ready does not reload data', async () => {
+test('re-expanding after ready renders cached analysis without reload', async () => {
   const { controller, toggle, calls } = controllerFixture();
   controller.mount();
+  await settle();
   toggle.dispatch('click');
-  await new Promise((resolve) => setImmediate(resolve));
+  await settle();
   assert.equal(calls.loadScores, 1);
   // 折叠再展开：命中 ready 缓存，不再请求
   toggle.dispatch('click');
   toggle.dispatch('click');
-  await new Promise((resolve) => setImmediate(resolve));
+  await settle();
   assert.equal(calls.loadScores, 1);
 });
 
-test('failed load renders error with retry that reloads', async () => {
+test('failed warmup renders error with retry that reloads', async () => {
   let fail = true;
   const { controller, toggle, body, content, calls } = controllerFixture({
     loadScores: async () => {
@@ -132,25 +138,30 @@ test('failed load renders error with retry that reloads', async () => {
     },
   });
   controller.mount();
+  await settle();
+  assert.equal(calls.loadScores, 1);
   toggle.dispatch('click');
-  await new Promise((resolve) => setImmediate(resolve));
+  await settle();
   assert.match(content.innerHTML, /urppp-sa-error/);
   assert.match(content.innerHTML, /接口超时/);
   // 重试：数据恢复后渲染成功
   fail = false;
   body.dispatch('click', { target: { closest: () => ({}) } });
-  await new Promise((resolve) => setImmediate(resolve));
+  await settle();
   assert.match(content.innerHTML, /urppp-sa-metrics/);
-  assert.equal(calls.loadScores, 2);
+  assert.equal(calls.loadScores, 3);
 });
 
-test('unmount removes the panel and resets load state', () => {
-  const { controller, panel } = controllerFixture();
+test('unmount removes the panel and resets load state', async () => {
+  const { controller, panel, calls } = controllerFixture();
   controller.mount();
+  await settle();
   controller.unmount();
   assert.equal(panel.isConnected, false);
   assert.equal(controller.getPanel(), null);
-  // 重新 mount 可再次使用
+  // 重新 mount 可再次使用并重新预热
   const again = controller.mount();
   assert.ok(again);
+  await settle();
+  assert.equal(calls.loadScores, 2);
 });

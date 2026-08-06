@@ -1,17 +1,41 @@
-// 成绩分析：从 scorePack 聚合指标、学期趋势、分数段与必修/选修构成。
+// 成绩分析：从 scorePack 聚合指标、学期趋势、绩点分段与课程类型构成。
 // 纯计算模块，不触碰 DOM；换算函数（scoreToNumber/scoreToGpa）由 deps 注入，
-// 与入口共用同一套成绩语义，避免重复实现漂移。
+// 与入口共用同一套成绩语义；字母等级成绩（A/B+/C- 等）在模块内补齐换算。
 
 function round2(value) {
   return Math.round((Number(value) || 0) * 100) / 100;
 }
 
+// 川大 2017-2018 秋季学期起等级制绩点分段（A 4.0 ~ F 0）。
+// D+（60-63, 1.3）与 D（60-62, 1.0）在官方表存在边界重叠，D+ 优先命中。
 export const SCORE_BANDS = [
-  { key: 's90', label: '90+', min: 90, max: 100 },
-  { key: 's80', label: '80-89', min: 80, max: 89.999 },
-  { key: 's70', label: '70-79', min: 70, max: 79.999 },
-  { key: 's60', label: '60-69', min: 60, max: 69.999 },
-  { key: 's59', label: '<60', min: 0, max: 59.999 },
+  { key: 'a',  label: 'A',  gpa: 4.0, min: 90, max: 100 },
+  { key: 'am', label: 'A-', gpa: 3.7, min: 85, max: 89.999 },
+  { key: 'bp', label: 'B+', gpa: 3.3, min: 82, max: 84.999 },
+  { key: 'b',  label: 'B',  gpa: 3.0, min: 78, max: 81.999 },
+  { key: 'bm', label: 'B-', gpa: 2.7, min: 75, max: 77.999 },
+  { key: 'cp', label: 'C+', gpa: 2.3, min: 72, max: 74.999 },
+  { key: 'c',  label: 'C',  gpa: 2.0, min: 68, max: 71.999 },
+  { key: 'cm', label: 'C-', gpa: 1.7, min: 64, max: 67.999 },
+  { key: 'dp', label: 'D+', gpa: 1.3, min: 60, max: 63.999 },
+  { key: 'd',  label: 'D',  gpa: 1.0, min: 60, max: 62.999 },
+  { key: 'f',  label: 'F',  gpa: 0,   min: 0,  max: 59.999 },
+];
+
+// 等级成绩 → 百分制换算（等级制课程无百分制分数，按川大对照表取段内代表值）
+const LEVEL_SCORES = {
+  '优秀': 95, 'A+': 98, 'A': 95, 'A-': 87,
+  '良好': 85, 'B+': 83, 'B': 79, 'B-': 76,
+  '中等': 73, 'C+': 73, 'C': 69, 'C-': 65,
+  '及格': 62, 'D+': 62, 'D': 60,
+  '不及格': 50, 'F': 50,
+};
+
+const SHARE_GROUPS = [
+  { key: 'required', label: '必修', test: (attr) => /必修/.test(attr) },
+  { key: 'elective', label: '任选', test: (attr) => /任选/.test(attr) },
+  { key: 'optional', label: '选修', test: (attr) => /选修/.test(attr) },
+  { key: 'other', label: '其他', test: () => true },
 ];
 
 export function shortTerm(term) {
@@ -24,10 +48,17 @@ export function createScoreAnalysisData({ deps }) {
   const scoreToNumber = deps.scoreToNumber;
   const scoreToGpa = deps.scoreToGpa;
 
+  function scoreToNumberWithLevels(raw) {
+    const base = scoreToNumber(raw);
+    if (base != null) return base;
+    const key = String(raw || '').trim().toUpperCase();
+    return LEVEL_SCORES[key] != null ? LEVEL_SCORES[key] : null;
+  }
+
   function hasScore(course) {
     if (!course) return false;
     if (course.unevaluated) return false;
-    return scoreToNumber(course.score) != null;
+    return scoreToNumberWithLevels(course.score) != null;
   }
 
   function termOrderKey(term) {
@@ -48,6 +79,11 @@ export function createScoreAnalysisData({ deps }) {
     return null;
   }
 
+  function courseGpa(course) {
+    const official = officialGpa(course);
+    return official != null ? official : scoreToGpa(course.score);
+  }
+
   function computeMetrics({ scorePack, profile }) {
     const courses = allCourses(scorePack);
     const majorGpa = profile && profile.majorGpa ? String(profile.majorGpa).trim() : '';
@@ -55,38 +91,31 @@ export function createScoreAnalysisData({ deps }) {
     let scoreWeighted = 0;
     let gpaWeighted = 0;
     let gpaCredit = 0;
-    let requiredCredit = 0;
-    let requiredScoreWeighted = 0;
     let requiredGpaWeighted = 0;
     let requiredGpaCredit = 0;
     courses.forEach((course) => {
       if (!hasScore(course)) return;
       const credit = Number(course.credit) || 0;
-      const score = scoreToNumber(course.score);
+      const score = scoreToNumberWithLevels(course.score);
       if (score == null || credit <= 0) return;
       totalCredit += credit;
       scoreWeighted += score * credit;
-      const gpa = officialGpa(course) != null ? officialGpa(course) : scoreToGpa(course.score);
+      const gpa = courseGpa(course);
       if (gpa != null) {
         gpaWeighted += gpa * credit;
         gpaCredit += credit;
-      }
-      if (course.required) {
-        requiredCredit += credit;
-        requiredScoreWeighted += score * credit;
-        if (gpa != null) {
+        if (course.required) {
           requiredGpaWeighted += gpa * credit;
           requiredGpaCredit += credit;
         }
       }
     });
-    const requiredGpa = round2(requiredGpaCredit ? requiredGpaWeighted / requiredGpaCredit : 0);
     return {
-      majorGpa: majorGpa || (requiredGpa > 0 ? String(requiredGpa) : ''),
+      majorGpa,
+      requiredGpa: round2(requiredGpaCredit ? requiredGpaWeighted / requiredGpaCredit : 0),
       avgGpa: round2(gpaCredit ? gpaWeighted / gpaCredit : 0),
       avgScore: round2(totalCredit ? scoreWeighted / totalCredit : 0),
       totalCredit: round2(totalCredit),
-      requiredGpa,
       courseCount: courses.length,
     };
   }
@@ -102,13 +131,13 @@ export function createScoreAnalysisData({ deps }) {
         byTerm.set(term, bucket);
       }
       const credit = Number(course.credit) || 0;
-      const score = scoreToNumber(course.score);
+      const score = scoreToNumberWithLevels(course.score);
       if (score == null) return;
       bucket.count += 1;
       if (credit <= 0) return;
       bucket.credit += credit;
       bucket.scoreW += score * credit;
-      const gpa = officialGpa(course) != null ? officialGpa(course) : scoreToGpa(course.score);
+      const gpa = courseGpa(course);
       if (gpa != null) {
         bucket.gpaW += gpa * credit;
         bucket.gpaCredit += credit;
@@ -134,7 +163,7 @@ export function createScoreAnalysisData({ deps }) {
     const buckets = SCORE_BANDS.map((band) => ({ ...band, count: 0, credit: 0 }));
     (courses || []).forEach((course) => {
       if (!hasScore(course)) return;
-      const score = scoreToNumber(course.score);
+      const score = scoreToNumberWithLevels(course.score);
       if (score == null) return;
       const hit = buckets.find((band) => score >= band.min && score <= band.max);
       if (!hit) return;
@@ -146,28 +175,34 @@ export function createScoreAnalysisData({ deps }) {
   }
 
   function computeShare(courses) {
-    let requiredCredit = 0;
-    let optionalCredit = 0;
-    let requiredCount = 0;
-    let optionalCount = 0;
+    const groups = SHARE_GROUPS.map((group) => ({
+      ...group,
+      credit: 0,
+      count: 0,
+    }));
     (courses || []).forEach((course) => {
       if (!hasScore(course)) return;
-      const credit = Number(course.credit) || 0;
-      if (course.required) {
-        requiredCredit += credit;
-        requiredCount += 1;
-      } else {
-        optionalCredit += credit;
-        optionalCount += 1;
-      }
+      const attr = String(course.attr || '');
+      const group = groups.find((item) => item.test(attr));
+      if (!group) return;
+      group.credit += Number(course.credit) || 0;
+      group.count += 1;
     });
-    const total = requiredCredit + optionalCredit || 1;
+    const total = groups.reduce((sum, group) => sum + group.credit, 0) || 1;
+    const items = groups
+      .filter((group) => group.count > 0)
+      .map((group) => ({
+        key: group.key,
+        label: group.label,
+        credit: round2(group.credit),
+        count: group.count,
+        ratio: Math.round((group.credit / total) * 100),
+      }));
+    const required = items.find((item) => item.key === 'required');
     return {
-      requiredCredit: round2(requiredCredit),
-      optionalCredit: round2(optionalCredit),
-      requiredCount,
-      optionalCount,
-      requiredRatio: Math.round((requiredCredit / total) * 100),
+      items,
+      requiredCredit: required ? required.credit : 0,
+      requiredRatio: required ? required.ratio : 0,
     };
   }
 
@@ -182,5 +217,5 @@ export function createScoreAnalysisData({ deps }) {
     };
   }
 
-  return { analyzeScores, hasScore, officialGpa, shortTerm };
+  return { analyzeScores, hasScore, officialGpa, scoreToNumberWithLevels, shortTerm };
 }
