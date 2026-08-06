@@ -9,7 +9,8 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 const SITE = process.argv[2];
 const START = Number(process.argv[3]) || 1;
 const END = Number(process.argv[4]) || START;
-if (!SITE || !['zhjw', 'scu-id'].includes(SITE)) { console.error('用法：node contact.mjs <zhjw|scu-id> <start> <end>'); process.exit(1); }
+const SCALE = Number(process.argv[5]) || 2;
+if (!SITE || !['zhjw', 'scu-id'].includes(SITE)) { console.error('用法：node contact.mjs <zhjw|scu-id> <start> <end> [scale]'); process.exit(1); }
 
 const dir = path.join(ROOT, SITE);
 const ext = SITE === 'zhjw' ? '.jpg' : '.png';
@@ -26,8 +27,8 @@ const imgs = [];
 let w = 0, h = 0;
 for (const f of picked) {
   const img = await Jimp.read(path.join(dir, f));
-  // 统一放大 2 倍便于标注
-  img.resize({ w: img.bitmap.width * 2, h: img.bitmap.height * 2 });
+  // 放大便于标注（默认 2 倍）
+  img.resize({ w: img.bitmap.width * SCALE, h: img.bitmap.height * SCALE });
   imgs.push(img);
   w = Math.max(w, img.bitmap.width);
   h = Math.max(h, img.bitmap.height);
