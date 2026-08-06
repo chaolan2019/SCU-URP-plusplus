@@ -1,179 +1,120 @@
-// 本地 OCR 验证：用训练好的质心模型识别一张验证码。
-// 用法：node eval.mjs <zhjw|scu-id> <image-path> [--verbose]
+// 本地 OCR 验证：用 v2 质心模板模型识别一张统一认证验证码。
+// 用法：node eval.mjs <图片路径> [--verbose]
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Jimp } from 'jimp';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
-const TARGET = process.argv[2];
-const IMG = process.argv[3];
+const IMG = process.argv[2];
 const VERBOSE = process.argv.includes('--verbose');
-if (!TARGET || !IMG || !['zhjw', 'scu-id'].includes(TARGET)) {
-  console.error('用法：node eval.mjs <zhjw|scu-id> <image-path>');
-  process.exit(1);
+if (!IMG) { console.error('用法：node eval.mjs <image-path>'); process.exit(1); }
+
+const model = JSON.parse(readFileSync(path.join(ROOT, 'model', 'scu-id.json'), 'utf8'));
+const CHAR_H = model.char_h || 8;
+const CHAR_W = model.char_w || 6;
+const FEAT_DIM = CHAR_H * CHAR_W;
+const FEAT_DIM_WITH_AR = FEAT_DIM + 1;
+const AR_WEIGHT = model.ar_weight || 25;
+const MAX_ASPECT_RATIO = model.max_aspect_ratio || 2;
+const QUANT_STEP = 8;
+const WHITE_THRESHOLD = 250;
+const SAT_MIN = 10; // 与训练一致：排除灰色斜线
+
+function dist(a, b) {
+  let pixelDist = 0;
+  for (let i = 0; i < FEAT_DIM; i++) {
+    const d = a[i] - b[i];
+    pixelDist += d * d;
+  }
+  const arDiff = a[FEAT_DIM] - b[FEAT_DIM];
+  return pixelDist + AR_WEIGHT * arDiff * arDiff;
 }
 
-const model = JSON.parse(readFileSync(path.join(ROOT, 'model', TARGET + '.json'), 'utf8'));
-const FEAT_W = model.size[0];
-const FEAT_H = model.size[1];
-
-const SITE = {
-  zhjw: { mask: (r, g, b) => r > 90 && (r - g) > 40 && (r - b) > 40, split: 'projection' },
-  'scu-id': {
-    mask: (r, g, b) => {
-      const max = Math.max(r, g, b);
-      const min = Math.min(r, g, b);
-      return (max - min) > 60 || max < 130;
-    },
-    split: 'components',
-  },
-}[TARGET];
-
-function maskOf(img) {
+function segmentByColor(img) {
   const { width: w, height: h, data } = img.bitmap;
-  const mask = new Uint8Array(w * h);
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    const i = (y * w + x) * 4;
-    mask[y * w + x] = SITE.mask(data[i], data[i + 1], data[i + 2]) ? 1 : 0;
+  const len = w * h;
+  const pixels = [];
+  for (let i = 0; i < len; i++) {
+    const r = data[i * 4], g = data[i * 4 + 1], b = data[i * 4 + 2];
+    if (r > WHITE_THRESHOLD && g > WHITE_THRESHOLD && b > WHITE_THRESHOLD) continue;
+    const sat = Math.max(r, g, b) - Math.min(r, g, b);
+    if (sat < SAT_MIN) continue;
+    pixels.push({ r, g, b, idx: i });
   }
-  return { w, h, mask };
+  if (pixels.length < 20) return [];
+  const quant = new Map();
+  for (const px of pixels) {
+    const key = `${Math.floor(px.r / QUANT_STEP) * QUANT_STEP},${Math.floor(px.g / QUANT_STEP) * QUANT_STEP},${Math.floor(px.b / QUANT_STEP) * QUANT_STEP}`;
+    const e = quant.get(key) || { r: 0, g: 0, b: 0, n: 0 };
+    e.r += px.r; e.g += px.g; e.b += px.b; e.n++;
+    quant.set(key, e);
+  }
+  const centers = [...quant.values()].sort((a, b) => b.n - a.n).slice(0, 4)
+    .map((e) => ({ r: Math.round(e.r / e.n), g: Math.round(e.g / e.n), b: Math.round(e.b / e.n) }));
+  const labels = new Int32Array(len).fill(-1);
+  for (const px of pixels) {
+    let bi = 0, bd = Infinity;
+    for (let c = 0; c < centers.length; c++) {
+      const d = (px.r - centers[c].r) ** 2 + (px.g - centers[c].g) ** 2 + (px.b - centers[c].b) ** 2;
+      if (d < bd) { bd = d; bi = c; }
+    }
+    labels[px.idx] = bi;
+  }
+  const chars = [];
+  for (let c = 0; c < centers.length; c++) {
+    let x1 = w, y1 = h, x2 = 0, y2 = 0, n = 0;
+    for (let i = 0; i < len; i++) {
+      if (labels[i] !== c) continue;
+      const x = i % w, y = (i / w) | 0;
+      if (x < x1) x1 = x;
+      if (x > x2) x2 = x;
+      if (y < y1) y1 = y;
+      if (y > y2) y2 = y;
+      n++;
+    }
+    if (n < 5) continue;
+    chars.push({ x1, y1, x2, y2 });
+  }
+  chars.sort((a, b) => (a.x1 + a.x2) / 2 - (b.x1 + b.x2) / 2);
+  return chars;
 }
 
-function connectedComponents({ w, h, mask }) {
-  const label = new Int32Array(w * h).fill(-1);
-  const areas = [];
-  const stack = [];
-  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-    const idx = y * w + x;
-    if (mask[idx] !== 1 || label[idx] !== -1) continue;
-    const comp = { minX: x, maxX: x, minY: y, maxY: y, count: 0 };
-    label[idx] = areas.length;
-    stack.push(idx);
-    while (stack.length) {
-      const cur = stack.pop();
-      const cx = cur % w;
-      const cy = (cur / w) | 0;
-      comp.minX = Math.min(comp.minX, cx);
-      comp.maxX = Math.max(comp.maxX, cx);
-      comp.minY = Math.min(comp.minY, cy);
-      comp.maxY = Math.max(comp.maxY, cy);
-      comp.count++;
-      for (const nb of [cur - w, cur + w, cur - 1, cur + 1]) {
-        if (nb < 0 || nb >= w * h) continue;
-        if (mask[nb] === 1 && label[nb] === -1) { label[nb] = areas.length; stack.push(nb); }
-      }
-    }
-    areas.push(comp);
-  }
-  return areas;
-}
-
-function splitProjection(col, w, h, n) {
-  const max = Math.max(...col);
-  if (max <= 0 || !n) return [];
-  const threshold = max * 0.2;
-  const isLow = col.map((v) => v < threshold);
-  const blocks = [];
-  let start = -1;
-  for (let x = 0; x <= w; x++) {
-    const low = x < w && isLow[x];
-    if (!low && start < 0) start = x;
-    if (low && start >= 0) {
-      if (x - start >= 2) blocks.push({ minX: start, maxX: x - 1, minY: 0, maxY: h - 1 });
-      start = -1;
+function extractFeature(img, box) {
+  const { width: w, data } = img.bitmap;
+  const cw = box.x2 - box.x1 + 1;
+  const ch = box.y2 - box.y1 + 1;
+  const feat = new Float64Array(FEAT_DIM_WITH_AR);
+  for (let ty = 0; ty < CHAR_H; ty++) {
+    const sy = box.y1 + Math.min(ch - 1, Math.floor((ty / CHAR_H) * ch));
+    for (let tx = 0; tx < CHAR_W; tx++) {
+      const sx = box.x1 + Math.min(cw - 1, Math.floor((tx / CHAR_W) * cw));
+      const i = (sy * w + sx) * 4;
+      feat[ty * CHAR_W + tx] = (data[i] > WHITE_THRESHOLD && data[i + 1] > WHITE_THRESHOLD && data[i + 2] > WHITE_THRESHOLD) ? 0 : 1;
     }
   }
-  if (start >= 0 && w - start >= 2) blocks.push({ minX: start, maxX: w - 1, minY: 0, maxY: h - 1 });
-  while (blocks.length > n && blocks.length > 1) {
-    let bi = 0;
-    let best = Infinity;
-    for (let i = 0; i < blocks.length - 1; i++) {
-      const sum = (blocks[i].maxX - blocks[i].minX) + (blocks[i + 1].maxX - blocks[i + 1].minX);
-      if (sum < best) { best = sum; bi = i; }
-    }
-    blocks[bi].maxX = blocks[bi + 1].maxX;
-    blocks.splice(bi + 1, 1);
-  }
-  while (blocks.length < n && blocks.length > 0) {
-    let bi = 0;
-    let widest = -1;
-    for (let i = 0; i < blocks.length; i++) {
-      const wdt = blocks[i].maxX - blocks[i].minX;
-      if (wdt > widest) { widest = wdt; bi = i; }
-    }
-    const b = blocks[bi];
-    const need = n - blocks.length + 1;
-    const seg = Math.round((b.maxX - b.minX + 1) / need);
-    for (let k = need - 1; k >= 1; k--) {
-      const cutAt = Math.min(b.maxX, b.minX + k * seg - 1);
-      blocks.splice(bi + 1, 0, { minX: cutAt + 1, maxX: b.maxX, minY: 0, maxY: h - 1 });
-      b.maxX = cutAt;
-    }
-  }
-  return blocks.slice(0, n);
-}
-
-function split(img, maskData, n) {
-  const { w, h, mask } = maskData;
-  if (SITE.split === 'projection') {
-    const col = new Array(w).fill(0);
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) col[x] += mask[y * w + x];
-    return splitProjection(col, w, h, n);
-  }
-  const comps = connectedComponents({ w, h, mask })
-    .filter((c) => c.count >= 6)
-    .sort((a, b) => b.count - a.count);
-  return comps.slice(0, n).sort((a, b) => a.minX - b.minX);
-}
-
-function cropNormalize(img, comp) {
-  const cw = comp.maxX - comp.minX + 1;
-  const ch = comp.maxY - comp.minY + 1;
-  const { data } = img.bitmap;
-  const out = new Uint8Array(FEAT_W * FEAT_H);
-  for (let ty = 0; ty < FEAT_H; ty++) {
-    for (let tx = 0; tx < FEAT_W; tx++) {
-      const sx = comp.minX + Math.min(cw - 1, Math.floor((tx / FEAT_W) * cw));
-      const sy = comp.minY + Math.min(ch - 1, Math.floor((ty / FEAT_H) * ch));
-      const i = (sy * img.bitmap.width + sx) * 4;
-      out[ty * FEAT_W + tx] = SITE.mask(data[i], data[i + 1], data[i + 2]) ? 1 : 0;
-    }
-  }
-  return out;
-}
-
-function recognize(feat) {
-  let best = null;
-  let bestD = Infinity;
-  for (const m of model.chars) {
-    for (const t of m.templates) {
-      let d = 0;
-      for (let k = 0; k < feat.length; k++) d += Math.abs(feat[k] * 255 - t[k]);
-      if (d < bestD) { bestD = d; best = m.c; }
-    }
-  }
-  return { c: best, d: bestD };
+  feat[FEAT_DIM] = Math.max(0, Math.min(1, (cw / Math.max(ch, 1)) / MAX_ASPECT_RATIO));
+  return feat;
 }
 
 const img = await Jimp.read(IMG);
-const maskData = maskOf(img);
-// 位数：统一认证固定 4；教务 4/5 取平均距离最优
-const LENGTHS = TARGET === 'scu-id' ? [4] : [4, 5];
-let bestGuess = '';
-let bestScore = Infinity;
-for (const n of LENGTHS) {
-  const comps = split(img, maskData, n);
-  if (comps.length !== n) continue;
-  let score = 0;
-  let text = '';
-  for (const comp of comps) {
-    const r = recognize(cropNormalize(img, comp));
-    text += r.c;
-    score += r.d;
-  }
-  const avg = score / n;
-  if (VERBOSE) console.log(`  n=${n}: ${text} (avg ${avg.toFixed(0)})`);
-  if (avg < bestScore) { bestScore = avg; bestGuess = text; }
+const chars = segmentByColor(img);
+if (chars.length !== 4) {
+  console.log(`分割失败（${chars.length} 块），无法识别`);
+  process.exit(0);
 }
-console.log(`识别结果: ${bestGuess}`);
+let text = '';
+for (const box of chars) {
+  const feat = extractFeature(img, box);
+  let best = '?';
+  let bestD = Infinity;
+  for (const m of model.chars) {
+    for (const t of m.templates) {
+      const d = dist(feat, t.map((v) => v / 255));
+      if (d < bestD) { bestD = d; best = m.c; }
+    }
+  }
+  if (VERBOSE) console.log(`  box [${box.x1},${box.y1},${box.x2},${box.y2}] -> ${best} (d=${bestD.toFixed(0)})`);
+  text += best;
+}
+console.log(`识别结果: ${text}`);
