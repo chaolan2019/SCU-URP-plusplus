@@ -32,8 +32,10 @@ test('navigation owns navbar, sidebar, and breadcrumb shell styles', async () =>
   assert.match(navigationStyles, /\.urppp-sidebar-header/);
   assert.match(navigationStyles, /\.urppp-nav-dot/);
   assert.match(navigationStyles, /#breadcrumbs/);
-  // apple/flat 侧边栏文字跟随主题黑/白，避免系统蓝
+  // apple/flat 侧边栏文字跟随主题黑/白，避免系统蓝（覆盖原始菜单与重构版）
   assert.match(navigationStyles, /data-urppp-skin="apple"\] \.sidebar \.nav-list > li > a/);
   assert.match(navigationStyles, /data-urppp-skin="flat"\] \.sidebar \.nav-list > li > a/);
+  assert.match(navigationStyles, /data-urppp-skin="apple"\] \.urppp-nav-link/);
+  assert.match(navigationStyles, /data-urppp-skin="flat"\] \.urppp-nav-link/);
   assert.match(navigationStyles, /color: var\(--text\) !important;/);
 });

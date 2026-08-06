@@ -470,19 +470,28 @@
       .urppp-sidebar-toggle:hover { background: var(--border); color: var(--text); }
 
       /* apple / flat：侧边栏菜单文字跟随主题黑/白，避免主题强调色（系统蓝）
-         原始 ACE 菜单链接会被全局 a{color:var(--primary)} 染成主题色 */
+         覆盖两套结构：原始 ACE 菜单（全局 a 规则染色）与重构版 urppp-nav-link
+         （其非 important 灰色文字同样被全局 a !important 压成主题色） */
       html[data-urppp-skin="apple"] .sidebar .nav-list > li > a,
       html[data-urppp-skin="apple"] .sidebar .nav-list > li.active > a,
       html[data-urppp-skin="apple"] .sidebar .nav-list > li.open > a,
       html[data-urppp-skin="apple"] .sidebar .nav-list .submenu > li > a,
       html[data-urppp-skin="apple"] .sidebar .nav-list > li > a:hover,
       html[data-urppp-skin="apple"] .sidebar .nav-list > li.active > a:hover,
+      html[data-urppp-skin="apple"] .urppp-nav-link,
+      html[data-urppp-skin="apple"] .urppp-nav-link:hover,
+      html[data-urppp-skin="apple"] .urppp-nav-item.active > .urppp-nav-link,
+      html[data-urppp-skin="apple"] .urppp-nav-item.open.active > .urppp-nav-link,
       html[data-urppp-skin="flat"] .sidebar .nav-list > li > a,
       html[data-urppp-skin="flat"] .sidebar .nav-list > li.active > a,
       html[data-urppp-skin="flat"] .sidebar .nav-list > li.open > a,
       html[data-urppp-skin="flat"] .sidebar .nav-list .submenu > li > a,
       html[data-urppp-skin="flat"] .sidebar .nav-list > li > a:hover,
-      html[data-urppp-skin="flat"] .sidebar .nav-list > li.active > a:hover {
+      html[data-urppp-skin="flat"] .sidebar .nav-list > li.active > a:hover,
+      html[data-urppp-skin="flat"] .urppp-nav-link,
+      html[data-urppp-skin="flat"] .urppp-nav-link:hover,
+      html[data-urppp-skin="flat"] .urppp-nav-item.active > .urppp-nav-link,
+      html[data-urppp-skin="flat"] .urppp-nav-item.open.active > .urppp-nav-link {
         color: var(--text) !important;
       }
 
