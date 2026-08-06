@@ -295,7 +295,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       #urppp-clean-root .uc-hd.uc-hd-tabs{padding:6px 8px 0;gap:6px;display:flex;justify-content:flex-start;align-items:flex-end;border-bottom:1px solid var(--border)}
       #urppp-clean-root .uc-hd-tabs .uc-sa-tab{
         height:36px;padding:0 18px;border:none;background:transparent;color:var(--text-secondary);
-        font-size:13px;font-weight:600;cursor:pointer;position:relative;border-radius:10px 10px 0 0;
+        font-size:13px;font-weight:600;cursor:pointer;position:relative;border-radius:var(--radius-sm, 10px) var(--radius-sm, 10px) 0 0;
         transition:color .15s,background .15s;
       }
       #urppp-clean-root .uc-hd-tabs .uc-sa-tab:hover{color:var(--text);background:var(--input-bg)}

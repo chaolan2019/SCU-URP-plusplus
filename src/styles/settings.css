@@ -353,7 +353,7 @@ html.urppp-theme-scu-red:not(.urppp-theme-follow) #urppp-settings-panel .urppp-s
 #urppp-settings-panel .urppp-set-tab {
   height: 34px !important;
   border: none !important;
-  border-radius: 10px 10px 0 0 !important;
+  border-radius: var(--radius-sm, 10px) var(--radius-sm, 10px) 0 0 !important;
   background: transparent !important;
   color: var(--text-secondary) !important;
   font-size: 12px !important;

@@ -9080,7 +9080,7 @@ html.urppp-theme-scu-red:not(.urppp-theme-follow) #urppp-settings-panel .urppp-s
 #urppp-settings-panel .urppp-set-tab {
   height: 34px !important;
   border: none !important;
-  border-radius: 10px 10px 0 0 !important;
+  border-radius: var(--radius-sm, 10px) var(--radius-sm, 10px) 0 0 !important;
   background: transparent !important;
   color: var(--text-secondary) !important;
   font-size: 12px !important;
@@ -11615,7 +11615,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       #urppp-clean-root .uc-hd.uc-hd-tabs{padding:6px 8px 0;gap:6px;display:flex;justify-content:flex-start;align-items:flex-end;border-bottom:1px solid var(--border)}
       #urppp-clean-root .uc-hd-tabs .uc-sa-tab{
         height:36px;padding:0 18px;border:none;background:transparent;color:var(--text-secondary);
-        font-size:13px;font-weight:600;cursor:pointer;position:relative;border-radius:10px 10px 0 0;
+        font-size:13px;font-weight:600;cursor:pointer;position:relative;border-radius:var(--radius-sm, 10px) var(--radius-sm, 10px) 0 0;
         transition:color .15s,background .15s;
       }
       #urppp-clean-root .uc-hd-tabs .uc-sa-tab:hover{color:var(--text);background:var(--input-bg)}
@@ -16214,6 +16214,13 @@ ${arcs}
             // 课表细控件：轻边，别画满 2px 黑框
             'html[data-urppp-skin="flat"] #urppp-clean-root .uc-lesson,html[data-urppp-skin="flat"] #urppp-clean-root .uc-grid-cell,html[data-urppp-skin="flat"] #urppp-clean-root .uc-course-sub,html[data-urppp-skin="flat"] #urppp-clean-root .uc-attr-pill,html[data-urppp-skin="flat"] #urppp-clean-root .uc-gpa,html[data-urppp-skin="flat"] #urppp-clean-root .uc-cd-chip,html[data-urppp-skin="flat"] #urppp-clean-root .uc-avatar{border-radius:0!important;box-shadow:none!important;border:1px solid color-mix(in srgb,var(--text) 28%,var(--border))!important;}',
             'html[data-urppp-skin="flat"] #urppp-clean-root .uc-avatar img{border-radius:0!important;}',
+            // 成绩分析：直角硬边（图卡 2px 黑框、跳转按钮），tab 走 flat 色块层次
+            'html[data-urppp-skin="flat"] #urppp-clean-root .uc-sa-more{border-radius:0!important;box-shadow:none!important;}',
+            'html[data-urppp-skin="flat"] #urppp-clean-root .uc-sa-chart-card{border-radius:0!important;border:2px solid var(--text)!important;box-shadow:none!important;}',
+            // flat tab：选中反色（强调色底 + 表面色文字），无下划线，色块建立层次
+            'html[data-urppp-skin="flat"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-tab{box-shadow:none!important;}',
+            'html[data-urppp-skin="flat"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-tab.ac{background:var(--primary)!important;color:var(--surface)!important;}',
+            'html[data-urppp-skin="flat"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac::after,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-tab.ac::after{display:none!important;}',
             'html[data-urppp-skin="flat"] #urppp-clean-root .uc-lesson{border:1px solid color-mix(in srgb,var(--primary) 35%,var(--text))!important;}',
             // 按钮/输入矩形
             'html[data-urppp-skin="flat"] .btn,html[data-urppp-skin="flat"] .btn-default,html[data-urppp-skin="flat"] .btn-white,html[data-urppp-skin="flat"] .btn-primary,html[data-urppp-skin="flat"] .btn-info,html[data-urppp-skin="flat"] .btn-success,html[data-urppp-skin="flat"] .btn-warning,html[data-urppp-skin="flat"] .btn-danger,html[data-urppp-skin="flat"] .btn-purple,html[data-urppp-skin="flat"] .btn-app,html[data-urppp-skin="flat"] a.btn,html[data-urppp-skin="flat"] button.btn,html[data-urppp-skin="flat"] input.btn,html[data-urppp-skin="flat"] .btn-group>.btn,html[data-urppp-skin="flat"] .btn-xs,html[data-urppp-skin="flat"] .btn-sm,html[data-urppp-skin="flat"] .btn-minier,html[data-urppp-skin="flat"] #urppp-root .ubtn,html[data-urppp-skin="flat"] #urppp-root .ut button,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-btn,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-mode,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-follow,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-scheme,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-tab,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-close,html[data-urppp-skin="flat"] #urppp-nav-theme .urppp-nav-settings,html[data-urppp-skin="flat"] #uc-settings,html[data-urppp-skin="flat"] #uc-exit,html[data-urppp-skin="flat"] #uc-refresh,html[data-urppp-skin="flat"] #urppp-clean-entry,html[data-urppp-skin="flat"] button.urppp-clean-entry,html[data-urppp-skin="flat"] .urppp-clean-entry,html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn,html[data-urppp-skin="flat"] #urppp-clean-root .uc-top-actions .uc-btn,html[data-urppp-skin="flat"] #urppp-clean-root .uc-tabbar button,html[data-urppp-skin="flat"] #urppp-clean-root button.uc-btn,html[data-urppp-skin="flat"] .chosen-container-single .chosen-single,html[data-urppp-skin="flat"] .chosen-container-multi .chosen-choices,html[data-urppp-skin="flat"] .form-control,html[data-urppp-skin="flat"] input[type="text"],html[data-urppp-skin="flat"] input[type="password"],html[data-urppp-skin="flat"] input[type="number"],html[data-urppp-skin="flat"] input[type="search"],html[data-urppp-skin="flat"] select,html[data-urppp-skin="flat"] textarea,html[data-urppp-skin="flat"] #urppp-root .ui{border-radius:0!important;box-shadow:none!important;border:2px solid var(--text)!important;}',
@@ -16467,6 +16474,7 @@ ${arcs}
           html[data-urppp-skin="brutal"] #urppp-settings-panel button:not(.urppp-nav-dot),
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-btn,
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-tabbar button,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab,
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-build-grid button{
             border:3px solid #000!important;border-radius:0!important;background:#fff!important;color:#000!important;
             box-shadow:4px 4px 0 #000!important;transform:none!important;
@@ -16494,9 +16502,16 @@ ${arcs}
           html[data-urppp-skin="brutal"] #urppp-settings-panel button:hover:not(:disabled),
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-btn:hover,
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-tabbar button:hover,
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab:hover,
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-build-grid button:hover{
             background:var(--brutal-secondary)!important;color:#000!important;box-shadow:6px 6px 0 #000!important;transform:translate(-2px,-2px)!important;
           }
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac,
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-tab.ac{
+            background:#000!important;color:#fff!important;box-shadow:2px 2px 0 #000!important;transform:translate(2px,2px)!important;
+          }
+          html[data-urppp-skin="brutal"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac::after,
+          html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-set-tab.ac::after{display:none!important;}
           html[data-urppp-skin="brutal"] .btn:active,
           html[data-urppp-skin="brutal"] a.btn:active,
           html[data-urppp-skin="brutal"] button.btn:active,
@@ -16909,7 +16924,9 @@ ${arcs}
           html[data-urppp-skin="editorial"] #urppp-nav-clean,
           html[data-urppp-skin="editorial"] #urppp-root .ut button,
           html[data-urppp-skin="editorial"] #urppp-clean-root .uc-btn,
-          html[data-urppp-skin="editorial"] #urppp-clean-root .uc-tabbar button{
+          html[data-urppp-skin="editorial"] #urppp-clean-root .uc-tabbar button,
+          html[data-urppp-skin="editorial"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab,
+          html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-set-tab{
             border:0!important;border-radius:0!important;background:transparent!important;color:var(--text)!important;
             box-shadow:none!important;transform:none!important;text-decoration-line:underline!important;
             text-decoration-color:transparent!important;text-underline-offset:3px!important;text-decoration-thickness:1px!important;
@@ -17263,6 +17280,12 @@ ${arcs}
           html[data-urppp-skin="editorial"] #urppp-clean-root .uc-tabbar button.ac{
             text-decoration-color:currentColor!important;
           }
+          html[data-urppp-skin="editorial"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac,
+          html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-set-tab.ac{
+            color:var(--primary)!important;text-decoration-color:currentColor!important;
+          }
+          html[data-urppp-skin="editorial"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac::after,
+          html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-set-tab.ac::after{display:none!important;}
           html[data-urppp-skin="editorial"] #urppp-clean-root .uc-shell{
             padding:28px 36px 36px!important;
           }
@@ -17499,7 +17522,9 @@ ${arcs}
             'html[data-urppp-skin="organic"] input.form-control,html[data-urppp-skin="organic"] select.form-control,html[data-urppp-skin="organic"] textarea.form-control,html[data-urppp-skin="organic"] #urppp-root .ui,html[data-urppp-skin="organic"] #form-search .nav-search-input,html[data-urppp-skin="organic"] input#search-input{border-radius:999px!important;border:1px solid var(--border)!important;background:var(--input-bg)!important;color:var(--text)!important;}',
             'html[data-urppp-skin="organic"] h1,html[data-urppp-skin="organic"] h2,html[data-urppp-skin="organic"] h3,html[data-urppp-skin="organic"] h4,html[data-urppp-skin="organic"] .page-header,html[data-urppp-skin="organic"] #urppp-clean-root .uc-brand,html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-set-title{font-family:Georgia,"Noto Serif SC","Songti SC","Times New Roman",serif!important;}',
             'html[data-urppp-skin="organic"] .urppp-nav-dot,html[data-urppp-skin="organic"] #urppp-nav-theme .urppp-nav-dot,html[data-urppp-skin="organic"] #urppp-clean-root .uc-top-theme .urppp-nav-dot{border-radius:50%!important;}',
-            'html[data-urppp-skin="organic"] #urppp-clean-root .uc-build-grid button{border-radius:14px!important;border:1px solid var(--border)!important;box-shadow:none!important;background:var(--input-bg)!important;color:var(--text)!important;}'
+            'html[data-urppp-skin="organic"] #urppp-clean-root .uc-build-grid button{border-radius:14px!important;border:1px solid var(--border)!important;box-shadow:none!important;background:var(--input-bg)!important;color:var(--text)!important;}',
+            'html[data-urppp-skin="organic"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab{border-radius:var(--radius-sm) var(--radius-sm) 0 0!important;border:0!important;box-shadow:none!important;background:transparent!important;color:var(--text-secondary)!important;}',
+            'html[data-urppp-skin="organic"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac,html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-set-tab.ac{background:color-mix(in srgb,var(--primary) 12%,var(--surface))!important;color:var(--primary)!important;border:0!important;box-shadow:none!important;border-radius:var(--radius-sm) var(--radius-sm) 0 0!important;}'
           ].join("");
         } else if (id === "neu") {
           css += `
@@ -18010,6 +18035,16 @@ ${arcs}
           html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-set-tab.ac{
             background:var(--neu-base)!important;color:var(--primary)!important;box-shadow:var(--neu-inset-soft)!important;
           }
+          html[data-urppp-skin="neu"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab{
+            background:transparent!important;color:var(--text-secondary)!important;border:0!important;border-radius:var(--radius-sm)!important;box-shadow:none!important;transform:none!important;
+          }
+          html[data-urppp-skin="neu"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab:hover{
+            color:var(--text)!important;box-shadow:var(--neu-raised-xs)!important;transform:none!important;
+          }
+          html[data-urppp-skin="neu"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac{
+            background:var(--neu-base)!important;color:var(--primary)!important;box-shadow:var(--neu-inset-soft)!important;
+          }
+          html[data-urppp-skin="neu"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac::after{display:none!important;}
           html.urppp-theme-default[data-urppp-skin="neu"]:not(.urppp-theme-follow) body #urppp-settings-panel .urppp-set-mode[data-theme="default"],
           html.urppp-theme-dark[data-urppp-skin="neu"]:not(.urppp-theme-follow) body #urppp-settings-panel .urppp-set-mode[data-theme="dark"]{
             background:var(--neu-base)!important;color:var(--primary)!important;border:0!important;box-shadow:var(--neu-inset)!important;
