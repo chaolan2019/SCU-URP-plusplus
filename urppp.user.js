@@ -10915,6 +10915,7 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       .navbar-fixed-top,
       .navbar-fixed-bottom { left: 0 !important; right: 0 !important; }
       .sidebar {
+        position: fixed !important; /* 固定定位上下文：sidebar-header 的 absolute 子元素不会溢出覆盖顶栏 */
         z-index: 1030 !important; /* 低于顶栏，避免盖住 navbar 底边 */
         top: var(--urppp-navbar-height) !important;
         height: calc(100vh - var(--urppp-navbar-height)) !important;
