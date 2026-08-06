@@ -11917,7 +11917,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
 
       #urppp-score-analysis .urppp-sa-metrics {
         display: grid;
-        grid-template-columns: repeat(6, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 12px;
         margin-bottom: 14px;
       }
@@ -11958,6 +11958,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       #urppp-score-analysis .urppp-sa-hover:hover { fill: color-mix(in srgb, var(--primary) 7%, transparent); }
 
       #urppp-score-analysis .urppp-sa-share-body { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+      #urppp-score-analysis.urppp-sa-share-stacked .urppp-sa-share-body { justify-content: center; }
+      #urppp-score-analysis.urppp-sa-share-stacked .urppp-sa-legend { align-items: center; }
       #urppp-score-analysis .urppp-sa-donut { flex: 0 0 auto; }
       #urppp-score-analysis .urppp-sa-legend { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
       #urppp-score-analysis .urppp-sa-legend-item {
@@ -13361,17 +13363,17 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   }
   __name(round2, "round2");
   var SCORE_BANDS = [
-    { key: "a", label: "A", gpa: 4, min: 90, max: 100 },
-    { key: "am", label: "A-", gpa: 3.7, min: 85, max: 89.999 },
-    { key: "bp", label: "B+", gpa: 3.3, min: 82, max: 84.999 },
-    { key: "b", label: "B", gpa: 3, min: 78, max: 81.999 },
-    { key: "bm", label: "B-", gpa: 2.7, min: 75, max: 77.999 },
-    { key: "cp", label: "C+", gpa: 2.3, min: 72, max: 74.999 },
-    { key: "c", label: "C", gpa: 2, min: 68, max: 71.999 },
-    { key: "cm", label: "C-", gpa: 1.7, min: 64, max: 67.999 },
-    { key: "dp", label: "D+", gpa: 1.3, min: 60, max: 63.999 },
-    { key: "d", label: "D", gpa: 1, min: 60, max: 62.999 },
-    { key: "f", label: "F", gpa: 0, min: 0, max: 59.999 }
+    { key: "a", level: "A", range: "90-100", gpa: 4, min: 90, max: 100 },
+    { key: "am", level: "A-", range: "85-89", gpa: 3.7, min: 85, max: 89.999 },
+    { key: "bp", level: "B+", range: "82-84", gpa: 3.3, min: 82, max: 84.999 },
+    { key: "b", level: "B", range: "78-81", gpa: 3, min: 78, max: 81.999 },
+    { key: "bm", level: "B-", range: "75-77", gpa: 2.7, min: 75, max: 77.999 },
+    { key: "cp", level: "C+", range: "72-74", gpa: 2.3, min: 72, max: 74.999 },
+    { key: "c", level: "C", range: "68-71", gpa: 2, min: 68, max: 71.999 },
+    { key: "cm", level: "C-", range: "64-67", gpa: 1.7, min: 64, max: 67.999 },
+    { key: "dp", level: "D+", range: "60-63", gpa: 1.3, min: 60, max: 63.999 },
+    { key: "d", level: "D", range: "60-62", gpa: 1, min: 60, max: 62.999 },
+    { key: "f", level: "F", range: "<60", gpa: 0, min: 0, max: 59.999 }
   ];
   var LEVEL_SCORES = {
     "优秀": 95,
@@ -13632,7 +13634,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         `加权均分 ${item.avgScore}`,
         `平均绩点 ${item.avgGpa}`
       ].join("\n");
-      return `<rect class="urppp-sa-hover" x="${x.toFixed(1)}" y="${pad.top}" width="${colW.toFixed(1)}" height="${plotH.toFixed(1)}"><title>${escapeLabel(tip)}</title></rect>`;
+      return `<rect class="urppp-sa-hover" x="${x.toFixed(1)}" y="${pad.top}" width="${colW.toFixed(1)}" height="${plotH.toFixed(1)}" fill="transparent"><title>${escapeLabel(tip)}</title></rect>`;
     }).join("");
     const gpaDots = items.map((item, i) => `<circle cx="${xAt(i).toFixed(1)}" cy="${yGpa(item.avgGpa).toFixed(1)}" r="3.5" fill="${palette.gpaLine}"/><text x="${xAt(i).toFixed(1)}" y="${(yGpa(item.avgGpa) - 9).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="600" fill="${palette.gpaLine}">${escapeLabel(item.avgGpa)}</text>`).join("");
     const scoreDots = items.map((item, i) => `<circle cx="${xAt(i).toFixed(1)}" cy="${yScore(item.avgScore).toFixed(1)}" r="3" fill="${palette.scoreLine}"/><text x="${xAt(i).toFixed(1)}" y="${(yScore(item.avgScore) + 17).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="${palette.scoreLine}">${escapeLabel(item.avgScore)}</text>`).join("");
@@ -13668,17 +13670,18 @@ ${creditBars}
       const h = item.count ? Math.max(8, item.count / maxCount * plotH) : 0;
       const y = pad.top + plotH - h;
       const opacity = (0.4 + (1 - i / (n - 1)) * 0.6).toFixed(2);
+      const rangeText = item.range || (item.min === 0 ? "<60" : `${item.min}-${item.max === 100 ? "100" : item.max}`);
       const tip = [
-        `${item.label}（绩点 ${item.gpa}）`,
-        `百分制 ${item.min === 0 ? "<60" : `${item.min}-${item.max === 100 ? "100" : item.max}`}`,
+        `${item.level || ""}（绩点 ${item.gpa}）`,
+        `百分制 ${rangeText}`,
         `课程 ${item.count} 门`
       ].join("\n");
       return `<rect class="urppp-sa-band" x="${(x - barW / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${palette.primary}" opacity="${opacity}"><title>${escapeLabel(tip)}</title></rect>
 <text x="${x.toFixed(1)}" y="${(y - 6).toFixed(1)}" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--text)">${escapeLabel(item.count)}</text>
-<text x="${x.toFixed(1)}" y="${height - 26}" text-anchor="middle" font-size="10.5" font-weight="600" fill="${TEXT_FILL}">${escapeLabel(item.label)}</text>
+<text x="${x.toFixed(1)}" y="${height - 26}" text-anchor="middle" font-size="10" font-weight="600" fill="${TEXT_FILL}">${escapeLabel(rangeText)}</text>
 <text x="${x.toFixed(1)}" y="${height - 12}" text-anchor="middle" font-size="10" fill="${TEXT_FILL}">${escapeLabel(item.gpa)}</text>`;
     }).join("");
-    return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="绩点分段分布">
+    return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="成绩分段分布">
 <line x1="${pad.left}" y1="${(pad.top + plotH).toFixed(1)}" x2="${width - pad.right}" y2="${(pad.top + plotH).toFixed(1)}" stroke="${GRID_STROKE}" stroke-width="1"/>
 ${bars}
 </svg>`;
@@ -13757,7 +13760,6 @@ ${arcs}
     __name(errorHtml, "errorHtml");
     function metricCards(metrics) {
       const cards = [
-        { label: "主修绩点", value: metrics.majorGpa || "—", hint: "资料卡 GPA" },
         { label: "主修必修绩点", value: metrics.requiredGpa > 0 ? String(metrics.requiredGpa) : "—", hint: "必修课程加权" },
         { label: "平均绩点", value: metrics.avgGpa != null ? String(metrics.avgGpa) : "—", hint: "全部及格加权" },
         { label: "加权均分", value: metrics.avgScore != null ? String(metrics.avgScore) : "—", hint: "学分加权" },
@@ -13806,7 +13808,7 @@ ${arcs}
 </div>
 <div class="urppp-sa-grid">
   <section class="urppp-sa-card urppp-sa-bands">
-    <h5 class="urppp-sa-card-title">绩点分段分布</h5>
+    <h5 class="urppp-sa-card-title">成绩分段分布</h5>
     ${bandsChartSvg({ bands: analysis.bands, palette })}
   </section>
   <section class="urppp-sa-card urppp-sa-detail">
@@ -13826,7 +13828,8 @@ ${arcs}
       const toggle = panel.querySelector(".urppp-sa-toggle");
       const body = panel.querySelector("[data-urppp-sa-body]");
       if (!toggle || !body) return { isExpanded: /* @__PURE__ */ __name(() => false, "isExpanded"), setExpanded: /* @__PURE__ */ __name(() => {
-      }, "setExpanded") };
+      }, "setExpanded"), syncShareLayout: /* @__PURE__ */ __name(() => {
+      }, "syncShareLayout") };
       const setExpanded = /* @__PURE__ */ __name((expanded) => {
         const state = expanded ? "expanded" : "collapsed";
         panel.dataset.urpppSaState = state;
@@ -13843,10 +13846,14 @@ ${arcs}
         const retry = target && target.closest ? target.closest("[data-urppp-sa-retry]") : null;
         if (retry && typeof handlers.onRetry === "function") handlers.onRetry();
       });
-      return {
-        setExpanded,
-        isExpanded: /* @__PURE__ */ __name(() => toggle.getAttribute("aria-expanded") === "true", "isExpanded")
-      };
+      function syncShareLayout() {
+        const donut = panel.querySelector(".urppp-sa-donut");
+        const legend = panel.querySelector(".urppp-sa-legend");
+        const stacked = !!(donut && legend && legend.getBoundingClientRect().top >= donut.getBoundingClientRect().bottom);
+        panel.classList.toggle("urppp-sa-share-stacked", stacked);
+      }
+      __name(syncShareLayout, "syncShareLayout");
+      return { setExpanded, syncShareLayout, isExpanded: /* @__PURE__ */ __name(() => toggle.getAttribute("aria-expanded") === "true", "isExpanded") };
     }
     __name(bindPanel, "bindPanel");
     return { bindPanel };
@@ -13863,6 +13870,8 @@ ${arcs}
     let loadState = "idle";
     let loadPromise = null;
     let cachedAnalysis = null;
+    let uiHandle = null;
+    let resizeBound = false;
     function ensureStyle() {
       if (!deps.styles) return;
       if (document.getElementById("urppp-score-analysis-style")) return;
@@ -13915,17 +13924,40 @@ ${arcs}
       }
     }
     __name(warmup, "warmup");
+    function syncShareLayout() {
+      if (uiHandle && typeof uiHandle.syncShareLayout === "function") {
+        try {
+          uiHandle.syncShareLayout();
+        } catch (_) {
+        }
+      }
+    }
+    __name(syncShareLayout, "syncShareLayout");
+    function bindResize() {
+      if (resizeBound) return;
+      resizeBound = true;
+      window.addEventListener("resize", syncShareLayout);
+    }
+    __name(bindResize, "bindResize");
+    function unbindResize() {
+      if (!resizeBound) return;
+      resizeBound = false;
+      window.removeEventListener("resize", syncShareLayout);
+    }
+    __name(unbindResize, "unbindResize");
     async function handleExpand() {
       const content = contentEl();
       if (!content) return;
       if (loadState === "ready" && cachedAnalysis) {
         content.innerHTML = renderer.analysisHtml(cachedAnalysis);
+        syncShareLayout();
         return;
       }
       content.innerHTML = renderer.loadingHtml();
       try {
         const analysis = await startLoad();
         content.innerHTML = renderer.analysisHtml(analysis);
+        syncShareLayout();
       } catch (error) {
         content.innerHTML = renderer.errorHtml(error && error.message || String(error));
       }
@@ -13941,14 +13973,17 @@ ${arcs}
       wrapper.innerHTML = renderer.panelShellHtml();
       panel = wrapper.firstElementChild;
       host.insertBefore(panel, host.firstChild);
-      ui.bindPanel(panel, { onExpand: handleExpand, onRetry: handleExpand });
+      uiHandle = ui.bindPanel(panel, { onExpand: handleExpand, onRetry: handleExpand });
+      bindResize();
       warmup();
       return panel;
     }
     __name(mount, "mount");
     function unmount() {
+      unbindResize();
       if (panel && panel.isConnected) panel.remove();
       panel = null;
+      uiHandle = null;
       loadState = "idle";
       loadPromise = null;
       cachedAnalysis = null;

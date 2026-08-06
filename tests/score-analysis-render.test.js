@@ -7,7 +7,7 @@ const renderer = createScoreAnalysisRenderer({ deps: {} });
 const sampleAnalysis = {
   empty: false,
   metrics: {
-    majorGpa: '3.6', requiredGpa: 3.6, avgGpa: 3.4, avgScore: 86.5, totalCredit: 42, courseCount: 18,
+    majorGpa: '', requiredGpa: 3.6, avgGpa: 3.4, avgScore: 86.5, totalCredit: 42, courseCount: 18,
   },
   trend: [
     { term: '2024-2025-1', label: '24-25-1', count: 5, credit: 10, avgScore: 84, avgGpa: 3.3 },
@@ -15,7 +15,8 @@ const sampleAnalysis = {
   ],
   bands: Array.from({ length: 11 }, (_, i) => ({
     key: `k${i}`,
-    label: ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'F'][i],
+    level: ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'F'][i],
+    range: ['90-100', '85-89', '82-84', '78-81', '75-77', '72-74', '68-71', '64-67', '60-63', '60-62', '<60'][i],
     gpa: [4.0, 3.7, 3.3, 3.0, 2.7, 2.3, 2.0, 1.7, 1.3, 1.0, 0][i],
     min: 90 - i * 5,
     max: 100 - i * 5,
@@ -55,13 +56,13 @@ test('empty analysis renders a friendly empty state', () => {
   assert.match(html, /urppp-sa-empty/);
 });
 
-test('analysis renders six metrics, share first row and bands second row', () => {
+test('analysis renders five metrics, share first row and bands second row', () => {
   const html = renderer.analysisHtml(sampleAnalysis);
-  assert.equal((html.match(/urppp-sa-metric-value/g) || []).length, 6);
-  assert.match(html, />主修绩点<\/div>/);
+  assert.equal((html.match(/urppp-sa-metric-value/g) || []).length, 5);
+  assert.doesNotMatch(html, />主修绩点<\/div>/);
   assert.match(html, />主修必修绩点<\/div>/);
   assert.match(html, />3\.6<\/div>/);
-  // 布局：第一行趋势 + 构成，第二行绩点分段 + 明细
+  // 布局：第一行趋势 + 构成，第二行成绩分段 + 明细
   const trendIndex = html.indexOf('urppp-sa-trend');
   const shareIndex = html.indexOf('urppp-sa-share');
   const bandsIndex = html.indexOf('urppp-sa-bands');
@@ -71,7 +72,7 @@ test('analysis renders six metrics, share first row and bands second row', () =>
   assert.ok(bandsIndex < detailIndex, 'bands card precedes detail card in row two');
   assert.ok(shareIndex < bandsIndex, 'share row comes before bands row');
   assert.match(html, /课程类型构成/);
-  assert.match(html, /绩点分段分布/);
+  assert.match(html, /成绩分段分布/);
   assert.match(html, /各学期明细/);
   assert.match(html, /urppp-sa-table/);
   assert.match(html, /67%/);

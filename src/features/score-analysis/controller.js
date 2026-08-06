@@ -16,6 +16,8 @@ export function createScoreAnalysisController({ deps }) {
   let loadState = 'idle'; // idle | loading | ready | error
   let loadPromise = null;
   let cachedAnalysis = null;
+  let uiHandle = null;
+  let resizeBound = false;
 
   function ensureStyle() {
     if (!deps.styles) return;
@@ -72,17 +74,37 @@ export function createScoreAnalysisController({ deps }) {
     }
   }
 
+  function syncShareLayout() {
+    if (uiHandle && typeof uiHandle.syncShareLayout === 'function') {
+      try { uiHandle.syncShareLayout(); } catch (_) { /* ignore */ }
+    }
+  }
+
+  function bindResize() {
+    if (resizeBound) return;
+    resizeBound = true;
+    window.addEventListener('resize', syncShareLayout);
+  }
+
+  function unbindResize() {
+    if (!resizeBound) return;
+    resizeBound = false;
+    window.removeEventListener('resize', syncShareLayout);
+  }
+
   async function handleExpand() {
     const content = contentEl();
     if (!content) return;
     if (loadState === 'ready' && cachedAnalysis) {
       content.innerHTML = renderer.analysisHtml(cachedAnalysis);
+      syncShareLayout();
       return;
     }
     content.innerHTML = renderer.loadingHtml();
     try {
       const analysis = await startLoad();
       content.innerHTML = renderer.analysisHtml(analysis);
+      syncShareLayout();
     } catch (error) {
       content.innerHTML = renderer.errorHtml(error && error.message || String(error));
     }
@@ -98,14 +120,17 @@ export function createScoreAnalysisController({ deps }) {
     wrapper.innerHTML = renderer.panelShellHtml();
     panel = wrapper.firstElementChild;
     host.insertBefore(panel, host.firstChild);
-    ui.bindPanel(panel, { onExpand: handleExpand, onRetry: handleExpand });
+    uiHandle = ui.bindPanel(panel, { onExpand: handleExpand, onRetry: handleExpand });
+    bindResize();
     warmup();
     return panel;
   }
 
   function unmount() {
+    unbindResize();
     if (panel && panel.isConnected) panel.remove();
     panel = null;
+    uiHandle = null;
     loadState = 'idle';
     loadPromise = null;
     cachedAnalysis = null;

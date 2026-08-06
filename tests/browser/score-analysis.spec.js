@@ -63,7 +63,7 @@ test('expanding renders metrics, trend, bands and detail rows', async ({ page })
   const panel = page.locator('#urppp-score-analysis');
   await panel.locator('.urppp-sa-toggle').click();
   await expect(panel).toHaveAttribute('data-urppp-sa-state', 'expanded');
-  await expect(panel.locator('.urppp-sa-metric')).toHaveCount(6);
+  await expect(panel.locator('.urppp-sa-metric')).toHaveCount(5);
   await expect(panel.locator('.urppp-sa-trend svg')).toHaveCount(1);
   await expect(panel.locator('.urppp-sa-share svg')).toHaveCount(1);
   await expect(panel.locator('.urppp-sa-bands svg rect')).toHaveCount(11);

@@ -89,7 +89,7 @@
 
       #urppp-score-analysis .urppp-sa-metrics {
         display: grid;
-        grid-template-columns: repeat(6, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 12px;
         margin-bottom: 14px;
       }
@@ -130,6 +130,8 @@
       #urppp-score-analysis .urppp-sa-hover:hover { fill: color-mix(in srgb, var(--primary) 7%, transparent); }
 
       #urppp-score-analysis .urppp-sa-share-body { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+      #urppp-score-analysis.urppp-sa-share-stacked .urppp-sa-share-body { justify-content: center; }
+      #urppp-score-analysis.urppp-sa-share-stacked .urppp-sa-legend { align-items: center; }
       #urppp-score-analysis .urppp-sa-donut { flex: 0 0 auto; }
       #urppp-score-analysis .urppp-sa-legend { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
       #urppp-score-analysis .urppp-sa-legend-item {

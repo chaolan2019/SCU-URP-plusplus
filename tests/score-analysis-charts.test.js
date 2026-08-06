@@ -17,7 +17,8 @@ const palette = {
 
 const elevenBands = Array.from({ length: 11 }, (_, i) => ({
   key: `k${i}`,
-  label: ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'F'][i],
+  level: ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'F'][i],
+  range: ['90-100', '85-89', '82-84', '78-81', '75-77', '72-74', '68-71', '64-67', '60-63', '60-62', '<60'][i],
   gpa: [4.0, 3.7, 3.3, 3.0, 2.7, 2.3, 2.0, 1.7, 1.3, 1.0, 0][i],
   min: 90 - i * 5,
   max: 100 - i * 5,
@@ -40,6 +41,8 @@ test('trendChartSvg draws two polylines, credit labels and hover zones', () => {
   });
   assert.equal((svg.match(/polyline points=/g) || []).length, 2);
   assert.equal((svg.match(/class="urppp-sa-hover"/g) || []).length, 2);
+  // hover 区必须透明，否则 SVG rect 默认黑色会遮住整张图
+  assert.equal((svg.match(/fill="transparent"/g) || []).length, 2);
   assert.match(svg, /<title>/);
   assert.match(svg, /修读学分 6/);
   assert.match(svg, /加权均分 85/);
@@ -57,23 +60,25 @@ test('trendChartSvg escapes label and tooltip text', () => {
   assert.match(svg, /&lt;script&gt;/);
 });
 
-test('bandsChartSvg renders eleven bars with grade point labels', () => {
+test('bandsChartSvg renders eleven bars with score range and gpa labels', () => {
   const svg = bandsChartSvg({ bands: elevenBands, palette });
   assert.equal((svg.match(/<rect /g) || []).length, 11);
-  assert.match(svg, /aria-label="绩点分段分布"/);
-  // 等级 + 绩点双行标注
-  assert.match(svg, />A<\/text>/);
+  assert.match(svg, /aria-label="成绩分段分布"/);
+  // 成绩分段 + 绩点双行标注，不再显示 ABCD 等级字母
+  assert.match(svg, />90-100<\/text>/);
+  assert.match(svg, /&lt;60<\/text>/);
   assert.match(svg, />4<\/text>/);
-  assert.match(svg, />F<\/text>/);
   assert.match(svg, />0<\/text>/);
-  // 每柱 hover tooltip
+  assert.doesNotMatch(svg, />A<\/text>/);
+  assert.doesNotMatch(svg, />F<\/text>/);
+  // 每柱 hover tooltip（等级仍保留在 tooltip 内）
   assert.equal((svg.match(/<title>/g) || []).length, 11);
-  assert.match(svg, /绩点 3\.7/);
+  assert.match(svg, /A-（绩点 3\.7）/);
 });
 
 test('bandsChartSvg escapes labels and tooltip text', () => {
   const svg = bandsChartSvg({
-    bands: [{ key: 'x', label: 'A<b>', gpa: 4, count: 1, min: 90, max: 100 }],
+    bands: [{ key: 'x', level: 'A', range: '90-100<b>', gpa: 4, count: 1, min: 90, max: 100 }],
     palette,
   });
   assert.doesNotMatch(svg, /<b>/);

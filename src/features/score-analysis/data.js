@@ -9,17 +9,17 @@ function round2(value) {
 // 川大 2017-2018 秋季学期起等级制绩点分段（A 4.0 ~ F 0）。
 // D+（60-63, 1.3）与 D（60-62, 1.0）在官方表存在边界重叠，D+ 优先命中。
 export const SCORE_BANDS = [
-  { key: 'a',  label: 'A',  gpa: 4.0, min: 90, max: 100 },
-  { key: 'am', label: 'A-', gpa: 3.7, min: 85, max: 89.999 },
-  { key: 'bp', label: 'B+', gpa: 3.3, min: 82, max: 84.999 },
-  { key: 'b',  label: 'B',  gpa: 3.0, min: 78, max: 81.999 },
-  { key: 'bm', label: 'B-', gpa: 2.7, min: 75, max: 77.999 },
-  { key: 'cp', label: 'C+', gpa: 2.3, min: 72, max: 74.999 },
-  { key: 'c',  label: 'C',  gpa: 2.0, min: 68, max: 71.999 },
-  { key: 'cm', label: 'C-', gpa: 1.7, min: 64, max: 67.999 },
-  { key: 'dp', label: 'D+', gpa: 1.3, min: 60, max: 63.999 },
-  { key: 'd',  label: 'D',  gpa: 1.0, min: 60, max: 62.999 },
-  { key: 'f',  label: 'F',  gpa: 0,   min: 0,  max: 59.999 },
+  { key: 'a',  level: 'A',  range: '90-100', gpa: 4.0, min: 90, max: 100 },
+  { key: 'am', level: 'A-', range: '85-89',  gpa: 3.7, min: 85, max: 89.999 },
+  { key: 'bp', level: 'B+', range: '82-84',  gpa: 3.3, min: 82, max: 84.999 },
+  { key: 'b',  level: 'B',  range: '78-81',  gpa: 3.0, min: 78, max: 81.999 },
+  { key: 'bm', level: 'B-', range: '75-77',  gpa: 2.7, min: 75, max: 77.999 },
+  { key: 'cp', level: 'C+', range: '72-74',  gpa: 2.3, min: 72, max: 74.999 },
+  { key: 'c',  level: 'C',  range: '68-71',  gpa: 2.0, min: 68, max: 71.999 },
+  { key: 'cm', level: 'C-', range: '64-67',  gpa: 1.7, min: 64, max: 67.999 },
+  { key: 'dp', level: 'D+', range: '60-63',  gpa: 1.3, min: 60, max: 63.999 },
+  { key: 'd',  level: 'D',  range: '60-62',  gpa: 1.0, min: 60, max: 62.999 },
+  { key: 'f',  level: 'F',  range: '<60',    gpa: 0,   min: 0,  max: 59.999 },
 ];
 
 // 等级成绩 → 百分制换算（等级制课程无百分制分数，按川大对照表取段内代表值）

@@ -165,8 +165,10 @@ test('official GPA takes precedence over converted GPA', () => {
 test('SCORE_BANDS covers eleven SCU grade point levels in order', () => {
   assert.equal(SCORE_BANDS.length, 11);
   assert.deepEqual(SCORE_BANDS.map((b) => b.gpa), [4.0, 3.7, 3.3, 3.0, 2.7, 2.3, 2.0, 1.7, 1.3, 1.0, 0]);
-  assert.equal(SCORE_BANDS[0].label, 'A');
-  assert.equal(SCORE_BANDS[10].label, 'F');
+  assert.equal(SCORE_BANDS[0].level, 'A');
+  assert.equal(SCORE_BANDS[0].range, '90-100');
+  assert.equal(SCORE_BANDS[10].level, 'F');
+  assert.equal(SCORE_BANDS[10].range, '<60');
   const min = Math.min(...SCORE_BANDS.map((b) => b.min));
   const max = Math.max(...SCORE_BANDS.map((b) => b.max));
   assert.equal(min, 0);

@@ -49,7 +49,6 @@ export function createScoreAnalysisRenderer({ deps }) {
 
   function metricCards(metrics) {
     const cards = [
-      { label: '主修绩点', value: metrics.majorGpa || '—', hint: '资料卡 GPA' },
       { label: '主修必修绩点', value: metrics.requiredGpa > 0 ? String(metrics.requiredGpa) : '—', hint: '必修课程加权' },
       { label: '平均绩点', value: metrics.avgGpa != null ? String(metrics.avgGpa) : '—', hint: '全部及格加权' },
       { label: '加权均分', value: metrics.avgScore != null ? String(metrics.avgScore) : '—', hint: '学分加权' },
@@ -102,7 +101,7 @@ export function createScoreAnalysisRenderer({ deps }) {
 </div>
 <div class="urppp-sa-grid">
   <section class="urppp-sa-card urppp-sa-bands">
-    <h5 class="urppp-sa-card-title">绩点分段分布</h5>
+    <h5 class="urppp-sa-card-title">成绩分段分布</h5>
     ${bandsChartSvg({ bands: analysis.bands, palette })}
   </section>
   <section class="urppp-sa-card urppp-sa-detail">

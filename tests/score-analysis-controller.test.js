@@ -24,12 +24,10 @@ function makeHead() {
   return head;
 }
 
-function controllerFixture({ loadScores, loadProfile } = {}) {
-  const toggle = makeEventTarget();
-  const body = makeEventTarget();
-  const content = makeEventTarget();
-  const panel = {
+function makePanel({ toggle, body, content }) {
+  return {
     dataset: { urpppSaState: 'collapsed' },
+    classList: { add() {}, remove() {}, toggle() {} },
     isConnected: true,
     remove() { this.isConnected = false; },
     querySelector(selector) {
@@ -39,6 +37,13 @@ function controllerFixture({ loadScores, loadProfile } = {}) {
       return null;
     },
   };
+}
+
+function controllerFixture({ loadScores, loadProfile } = {}) {
+  const toggle = makeEventTarget();
+  const body = makeEventTarget();
+  const content = makeEventTarget();
+  const panel = makePanel({ toggle, body, content });
   const host = { children: [], insertBefore(child) { this.children.unshift(child); } };
   const styleEl = makeEventTarget();
   const scorePack = {
@@ -57,6 +62,10 @@ function controllerFixture({ loadScores, loadProfile } = {}) {
       return { innerHTML: '', firstElementChild: panel };
     },
     querySelector() { return null; },
+  };
+  globalThis.window = {
+    addEventListener() {},
+    removeEventListener() {},
   };
 
   const calls = { loadScores: 0, loadProfile: 0 };

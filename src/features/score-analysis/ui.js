@@ -1,11 +1,11 @@
-// 成绩分析面板交互：折叠/展开、重试事件转发。
+// 成绩分析面板交互：折叠/展开、重试事件转发、课程构成布局自适应。
 // 数据加载由 controller 编排，本模块只负责 DOM 事件与状态切换。
 
 export function createScoreAnalysisUI() {
   function bindPanel(panel, handlers) {
     const toggle = panel.querySelector('.urppp-sa-toggle');
     const body = panel.querySelector('[data-urppp-sa-body]');
-    if (!toggle || !body) return { isExpanded: () => false, setExpanded: () => {} };
+    if (!toggle || !body) return { isExpanded: () => false, setExpanded: () => {}, syncShareLayout: () => {} };
 
     const setExpanded = (expanded) => {
       const state = expanded ? 'expanded' : 'collapsed';
@@ -27,10 +27,16 @@ export function createScoreAnalysisUI() {
       if (retry && typeof handlers.onRetry === 'function') handlers.onRetry();
     });
 
-    return {
-      setExpanded,
-      isExpanded: () => toggle.getAttribute('aria-expanded') === 'true',
-    };
+    // 课程构成：说明文字换行到环形图下方时，环图与说明整体左右居中
+    function syncShareLayout() {
+      const donut = panel.querySelector('.urppp-sa-donut');
+      const legend = panel.querySelector('.urppp-sa-legend');
+      const stacked = !!(donut && legend
+        && legend.getBoundingClientRect().top >= donut.getBoundingClientRect().bottom);
+      panel.classList.toggle('urppp-sa-share-stacked', stacked);
+    }
+
+    return { setExpanded, syncShareLayout, isExpanded: () => toggle.getAttribute('aria-expanded') === 'true' };
   }
 
   return { bindPanel };

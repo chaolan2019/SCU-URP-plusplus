@@ -72,7 +72,7 @@ export function trendChartSvg({ trend, palette }) {
       `加权均分 ${item.avgScore}`,
       `平均绩点 ${item.avgGpa}`,
     ].join('\n');
-    return `<rect class="urppp-sa-hover" x="${x.toFixed(1)}" y="${pad.top}" width="${colW.toFixed(1)}" height="${plotH.toFixed(1)}"><title>${escapeLabel(tip)}</title></rect>`;
+    return `<rect class="urppp-sa-hover" x="${x.toFixed(1)}" y="${pad.top}" width="${colW.toFixed(1)}" height="${plotH.toFixed(1)}" fill="transparent"><title>${escapeLabel(tip)}</title></rect>`;
   }).join('');
 
   const gpaDots = items.map((item, i) => (
@@ -100,8 +100,8 @@ ${creditBars}
 </svg>`;
 }
 
-// 绩点分段分布：川大等级制 11 段（A 4.0 ~ F 0），柱体跟随主题色，
-// 档位越高越实、越低越淡；柱下两行标注等级与绩点。
+// 成绩分段分布：川大等级制 11 段（4.0 ~ 0），柱体跟随主题色，
+// 档位越高越实、越低越淡；柱下两行标注成绩分段与对应绩点。
 export function bandsChartSvg({ bands, palette }) {
   const width = 660;
   const height = 236;
@@ -117,20 +117,21 @@ export function bandsChartSvg({ bands, palette }) {
     const x = pad.left + (i + 0.5) * (plotW / n);
     const h = item.count ? Math.max(8, (item.count / maxCount) * plotH) : 0;
     const y = pad.top + plotH - h;
-    // 档位越高越实：A 档 1.0 → F 档 0.4
+    // 档位越高越实：4.0 档 1.0 → 0 档 0.4
     const opacity = (0.4 + (1 - i / (n - 1)) * 0.6).toFixed(2);
+    const rangeText = item.range || (item.min === 0 ? '<60' : `${item.min}-${item.max === 100 ? '100' : item.max}`);
     const tip = [
-      `${item.label}（绩点 ${item.gpa}）`,
-      `百分制 ${item.min === 0 ? '<60' : `${item.min}-${item.max === 100 ? '100' : item.max}`}`,
+      `${item.level || ''}（绩点 ${item.gpa}）`,
+      `百分制 ${rangeText}`,
       `课程 ${item.count} 门`,
     ].join('\n');
     return `<rect class="urppp-sa-band" x="${(x - barW / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="4" fill="${palette.primary}" opacity="${opacity}"><title>${escapeLabel(tip)}</title></rect>
 <text x="${x.toFixed(1)}" y="${(y - 6).toFixed(1)}" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--text)">${escapeLabel(item.count)}</text>
-<text x="${x.toFixed(1)}" y="${height - 26}" text-anchor="middle" font-size="10.5" font-weight="600" fill="${TEXT_FILL}">${escapeLabel(item.label)}</text>
+<text x="${x.toFixed(1)}" y="${height - 26}" text-anchor="middle" font-size="10" font-weight="600" fill="${TEXT_FILL}">${escapeLabel(rangeText)}</text>
 <text x="${x.toFixed(1)}" y="${height - 12}" text-anchor="middle" font-size="10" fill="${TEXT_FILL}">${escapeLabel(item.gpa)}</text>`;
   }).join('');
 
-  return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="绩点分段分布">
+  return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="成绩分段分布">
 <line x1="${pad.left}" y1="${(pad.top + plotH).toFixed(1)}" x2="${width - pad.right}" y2="${(pad.top + plotH).toFixed(1)}" stroke="${GRID_STROKE}" stroke-width="1"/>
 ${bars}
 </svg>`;
