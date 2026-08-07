@@ -31,17 +31,37 @@ export function createUpdateAssist({ deps }) {
     });
   }
 
-  // 多源并发探测：取第一个成功响应（小文件，并发开销可忽略）
-  async function fetchAssistFirstAvailable(urls, opts) {
+  // 多源探测：主源（GitHub 权威）优先，primaryTimeout 内未响应则并发切换加速源；主源稍后返回也参与竞争
+  async function fetchAssistFirstAvailable(urls, opts, primaryTimeout = 1000) {
     const details = [];
-    const results = await Promise.all(urls.map((url) =>
-      fetchAssistUrl(url, opts)
-        .then((text) => ({ url, text }))
-        .catch((e) => { details.push((url.split('/')[2] || url) + ': ' + (e && e.message || e)); return null; })
-    ));
-    const ok = results.find((r) => r && r.text && r.text.length > 0);
-    if (ok) return ok.text;
-    throw new Error('所有更新源均不可用（' + details.join('; ') + '）');
+    const primary = urls[0];
+    const fallbacks = urls.slice(1);
+    const grab = (url) => fetchAssistUrl(url, opts)
+      .then((text) => ({ url, text }))
+      .catch((e) => { details.push((url.split('/')[2] || url) + ': ' + (e && e.message || e)); return null; });
+
+    const primaryJob = grab(primary);
+    const timeoutMark = new Promise((resolve) => setTimeout(() => resolve('__TIMEOUT__'), primaryTimeout));
+    const first = await Promise.race([primaryJob, timeoutMark]);
+    if (first !== '__TIMEOUT__') {
+      if (first && first.text && first.text.length > 0) return first.text;
+      const fb = await Promise.all(fallbacks.map(grab));
+      const ok = fb.find((r) => r && r.text && r.text.length > 0);
+      if (ok) return ok.text;
+      throw new Error('所有更新源均不可用（' + details.join('; ') + '）');
+    }
+    const fallbackJob = Promise.all(fallbacks.map(grab)).then((results) => {
+      const ok = results.find((r) => r && r.text && r.text.length > 0);
+      if (ok) return ok.text;
+      throw new Error('所有更新源均不可用（' + details.join('; ') + '）');
+    });
+    return Promise.race([
+      primaryJob.then((r) => {
+        if (r && r.text && r.text.length > 0) return r.text;
+        throw new Error('主源内容无效');
+      }),
+      fallbackJob,
+    ]);
   }
 
   // 远程版本探测：优先多源 version.json（assist 字段），失败回退 Range 拉脚本头

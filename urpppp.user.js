@@ -1991,17 +1991,36 @@
       });
     }
     __name(fetchAssistUrl, "fetchAssistUrl");
-    async function fetchAssistFirstAvailable(urls, opts) {
+    async function fetchAssistFirstAvailable(urls, opts, primaryTimeout = 1e3) {
       const details = [];
-      const results = await Promise.all(urls.map(
-        (url) => fetchAssistUrl(url, opts).then((text) => ({ url, text })).catch((e) => {
-          details.push((url.split("/")[2] || url) + ": " + (e && e.message || e));
-          return null;
-        })
-      ));
-      const ok = results.find((r) => r && r.text && r.text.length > 0);
-      if (ok) return ok.text;
-      throw new Error("所有更新源均不可用（" + details.join("; ") + "）");
+      const primary = urls[0];
+      const fallbacks = urls.slice(1);
+      const grab = /* @__PURE__ */ __name((url) => fetchAssistUrl(url, opts).then((text) => ({ url, text })).catch((e) => {
+        details.push((url.split("/")[2] || url) + ": " + (e && e.message || e));
+        return null;
+      }), "grab");
+      const primaryJob = grab(primary);
+      const timeoutMark = new Promise((resolve) => setTimeout(() => resolve("__TIMEOUT__"), primaryTimeout));
+      const first = await Promise.race([primaryJob, timeoutMark]);
+      if (first !== "__TIMEOUT__") {
+        if (first && first.text && first.text.length > 0) return first.text;
+        const fb = await Promise.all(fallbacks.map(grab));
+        const ok = fb.find((r) => r && r.text && r.text.length > 0);
+        if (ok) return ok.text;
+        throw new Error("所有更新源均不可用（" + details.join("; ") + "）");
+      }
+      const fallbackJob = Promise.all(fallbacks.map(grab)).then((results) => {
+        const ok = results.find((r) => r && r.text && r.text.length > 0);
+        if (ok) return ok.text;
+        throw new Error("所有更新源均不可用（" + details.join("; ") + "）");
+      });
+      return Promise.race([
+        primaryJob.then((r) => {
+          if (r && r.text && r.text.length > 0) return r.text;
+          throw new Error("主源内容无效");
+        }),
+        fallbackJob
+      ]);
     }
     __name(fetchAssistFirstAvailable, "fetchAssistFirstAvailable");
     async function fetchAssistRemoteVersion() {
@@ -2378,14 +2397,14 @@
     const URPPPP_VERSION = "1.4.0";
     const URPPPP_RAW_URL = "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js";
     const URPPPP_SOURCES = [
+      "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json",
       "https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/version.json",
-      "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json",
-      "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json"
+      "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json"
     ];
     const URPPPP_RAW_URLS = [
+      URPPPP_RAW_URL,
       "https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/urpppp.user.js",
-      "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js",
-      URPPPP_RAW_URL
+      "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js"
     ];
     const LOGIN = LOGIN_KEYS;
     const EVAL = EVALUATION_KEYS;

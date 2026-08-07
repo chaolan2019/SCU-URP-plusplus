@@ -14853,12 +14853,12 @@ ${arcs}
       repo: "https://github.com/chaolan2019/SCU-URP-plusplus",
       changelogPage: "https://github.com/chaolan2019/SCU-URP-plusplus/blob/main/CHANGELOG.md",
       greasySearch: "https://greasyfork.org/zh-CN/scripts?q=SCU+URP%2B%2B",
-      // 多源加速：jsDelivr（国内快，缓存分钟级延迟）→ gh-proxy（直通，无缓存）→ GitHub raw（权威兜底）
+      // 多源探测：GitHub（权威）优先，超过 1s 未响应自动切换 jsDelivr / gh-proxy 加速源
       versionJson: "version.json",
       sourceUrls: /* @__PURE__ */ __name((file) => [
+        `https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/${file}`,
         `https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/${file}`,
-        `https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/${file}`,
-        `https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/${file}`
+        `https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/${file}`
       ], "sourceUrls")
     };
     const AUTO_UPDATE_KEY = "urppp_auto_update_check_v1";
@@ -21327,17 +21327,36 @@ ${arcs}
       });
     }
     __name(fetchTextForUpdate, "fetchTextForUpdate");
-    async function fetchFirstAvailable(urls, opts) {
+    async function fetchFirstAvailable(urls, opts, primaryTimeout = 1e3) {
       const details = [];
-      const results = await Promise.all(urls.map(
-        (url) => fetchTextForUpdate(url, opts).then((text) => ({ url, text })).catch((e) => {
-          details.push((url.split("/")[2] || url) + ": " + (e && e.message || e));
-          return null;
-        })
-      ));
-      const ok = results.find((r) => r && r.text && r.text.length > 0);
-      if (ok) return ok.text;
-      throw new Error("所有更新源均不可用（" + details.join("; ") + "）");
+      const primary = urls[0];
+      const fallbacks = urls.slice(1);
+      const grab = /* @__PURE__ */ __name((url) => fetchTextForUpdate(url, opts).then((text) => ({ url, text })).catch((e) => {
+        details.push((url.split("/")[2] || url) + ": " + (e && e.message || e));
+        return null;
+      }), "grab");
+      const primaryJob = grab(primary);
+      const timeoutMark = new Promise((resolve) => setTimeout(() => resolve("__TIMEOUT__"), primaryTimeout));
+      const first = await Promise.race([primaryJob, timeoutMark]);
+      if (first !== "__TIMEOUT__") {
+        if (first && first.text && first.text.length > 0) return first.text;
+        const fb = await Promise.all(fallbacks.map(grab));
+        const ok = fb.find((r) => r && r.text && r.text.length > 0);
+        if (ok) return ok.text;
+        throw new Error("所有更新源均不可用（" + details.join("; ") + "）");
+      }
+      const fallbackJob = Promise.all(fallbacks.map(grab)).then((results) => {
+        const ok = results.find((r) => r && r.text && r.text.length > 0);
+        if (ok) return ok.text;
+        throw new Error("所有更新源均不可用（" + details.join("; ") + "）");
+      });
+      return Promise.race([
+        primaryJob.then((r) => {
+          if (r && r.text && r.text.length > 0) return r.text;
+          throw new Error("主源内容无效");
+        }),
+        fallbackJob
+      ]);
     }
     __name(fetchFirstAvailable, "fetchFirstAvailable");
     function setUpdateStatus(html, type) {
