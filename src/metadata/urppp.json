@@ -15,5 +15,11 @@
     "unsafeWindow",
     "GM_xmlhttpRequest"
   ],
-  "run-at": "document-start"
+  "run-at": "document-start",
+  "connect": [
+    "raw.githubusercontent.com",
+    "github.com",
+    "cdn.jsdelivr.net",
+    "gh-proxy.com"
+  ]
 }
