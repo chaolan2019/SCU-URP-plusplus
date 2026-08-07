@@ -12100,11 +12100,11 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
        *   - 业务表格横向滚动（table-beautify.css .urppp-table-wrap）
        * 本文件做移动端布局总体优化：容器加宽 + 元素整体缩小。 */
       html.urppp-mobile {
-        /* 教务硬编码宽度的内容允许横向滚动浏览，替代 980px 整体缩放 */
-        overflow-x: auto;
+        /* 禁止页面级横向滚动：溢出内容由区块内滚动承接 */
+        overflow-x: hidden !important;
       }
       html.urppp-mobile body {
-        overflow-x: auto !important;
+        overflow-x: hidden !important;
         /* 防止插件 fixed 元素在窄视口下把横向滚动条挤出来 */
         overflow-y: visible !important;
       }
@@ -12188,6 +12188,146 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         }
         html.urppp-mobile #urppp-dashboard .urppp-stats-grid {
           gap: 8px !important;
+        }
+      }
+
+      /* ============================================================
+       * 首页移动端排版优化（保持原有内容与相对结构）：
+       * 1. 顶栏紧凑化——按钮组收敛为纯图标，品牌名缩短，头像菜单保留
+       * 2. 禁止页面级横向滚动，溢出内容转为区块内滚动
+       * 3. 内容区 widget / dashboard 卡片全宽、内距收紧
+       * ============================================================ */
+      @media (max-width: 640px) {
+        /* --- 1. 顶栏 navbar 紧凑化 --- */
+        html.urppp-mobile #navbar,
+        html.urppp-mobile #navbar .navbar-container {
+          min-height: 44px !important;
+          height: 44px !important;
+        }
+        html.urppp-mobile #navbar .navbar-brand {
+          padding: 0 8px !important;
+          line-height: 44px !important;
+          height: 44px !important;
+          font-size: 0 !important;
+        }
+        html.urppp-mobile #navbar .navbar-brand small {
+          font-size: 14px !important;
+          line-height: 44px !important;
+        }
+        /* 右侧按钮组：只留图标（font-size:0 隐文本，i 显式恢复） */
+        html.urppp-mobile .navbar-buttons .ace-nav > li,
+        html.urppp-mobile .navbar-buttons .ace-nav > li > a {
+          height: 44px !important;
+          line-height: 44px !important;
+        }
+        html.urppp-mobile .navbar-buttons .ace-nav > li > a {
+          padding: 0 7px !important;
+          font-size: 0 !important;
+        }
+        html.urppp-mobile .navbar-buttons .ace-nav > li > a > i {
+          font-size: 15px !important;
+          margin: 0 !important;
+        }
+        /* 搜索滑块在移动端隐藏 */
+        html.urppp-mobile #intellegenceUDiv {
+          display: none !important;
+        }
+        /* 头像菜单：保留文字但压缩 */
+        html.urppp-mobile .navbar-buttons .nav-user-photo {
+          width: 26px !important;
+          height: 26px !important;
+          margin: 0 4px 0 0 !important;
+          vertical-align: middle !important;
+        }
+        html.urppp-mobile .navbar-buttons .ace-nav > li > a .user-info {
+          font-size: 12px !important;
+          line-height: 44px !important;
+          display: inline !important;
+          margin-right: 2px !important;
+        }
+        html.urppp-mobile .navbar-buttons .ace-nav > li > a .user-info small {
+          font-size: 11px !important;
+          display: inline !important;
+        }
+        html.urppp-mobile .navbar-buttons .ace-nav > li > a .caret {
+          display: none !important;
+        }
+        /* 汉堡按钮尺寸 */
+        html.urppp-mobile #navbar .menu-toggler {
+          width: 40px !important;
+          height: 44px !important;
+          line-height: 44px !important;
+        }
+
+        /* --- 2. 禁止页面级横向滚动，溢出转区块内 --- */
+        html.urppp-mobile body {
+          overflow-x: hidden !important;
+        }
+        html.urppp-mobile .widget-body,
+        html.urppp-mobile .widget-main,
+        html.urppp-mobile .tabContent {
+          overflow-x: auto !important;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        /* --- 3. 内容区布局：row/col 全宽、widget 紧凑 --- */
+        html.urppp-mobile .page-content .row {
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+        }
+        html.urppp-mobile .page-content [class*="col-"] {
+          padding-left: 4px !important;
+          padding-right: 4px !important;
+        }
+        html.urppp-mobile .widget-container-col,
+        html.urppp-mobile .widget-box {
+          width: 100% !important;
+          max-width: 100% !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+        }
+        html.urppp-mobile .widget-box {
+          margin-bottom: 10px !important;
+          border-radius: 10px !important;
+        }
+        html.urppp-mobile .widget-header {
+          padding: 6px 10px !important;
+          min-height: 32px !important;
+        }
+        html.urppp-mobile .widget-title {
+          font-size: 14px !important;
+          line-height: 20px !important;
+        }
+        html.urppp-mobile .widget-body,
+        html.urppp-mobile .widget-main {
+          padding: 8px 10px !important;
+        }
+
+        /* --- dashboard 统计卡紧凑化 --- */
+        html.urppp-mobile #urppp-dashboard .urppp-welcome {
+          margin: 2px 0 12px !important;
+        }
+        html.urppp-mobile #urppp-dashboard .urppp-stats-grid {
+          gap: 8px !important;
+          margin-bottom: 12px !important;
+        }
+        html.urppp-mobile #urppp-dashboard .urppp-stat-card {
+          padding: 10px 12px !important;
+          gap: 10px !important;
+          border-radius: 12px !important;
+        }
+        html.urppp-mobile #urppp-dashboard .urppp-stat-card .value {
+          font-size: 24px !important;
+        }
+        html.urppp-mobile #urppp-dashboard .urppp-stat-card .value.urppp-stat-value-text {
+          font-size: 20px !important;
+        }
+        html.urppp-mobile #urppp-dashboard .urppp-stat-card .label {
+          font-size: 13px !important;
+          max-width: none !important;
+        }
+        html.urppp-mobile #urppp-dashboard .urppp-main-grid {
+          gap: 12px !important;
         }
       }
 `;
