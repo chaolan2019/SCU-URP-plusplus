@@ -14,9 +14,25 @@
         }
         .widget-body,
         .widget-main,
-        .tabContent {
+        .tabContent,
+        #main-calendar {
           overflow-x: auto !important;
           -webkit-overflow-scrolling: touch;
+        }
+        /* 通知 / 待办列表：垂直堆叠，文字可换行，消除横向滚动根源 */
+        .tabContent {
+          overflow-x: hidden !important;
+        }
+        .tabContent h3,
+        .tabContent h3 a {
+          display: block !important;
+          white-space: normal !important;
+          line-height: 1.5 !important;
+        }
+        #tasks.item-list > li {
+          display: flex !important;
+          flex-wrap: wrap !important;
+          white-space: normal !important;
         }
       }
 
@@ -74,66 +90,100 @@
         }
       }
 
-      /* --- 2. 首页移动端排版（窄视口）：顶栏紧凑 / 内容全宽 --- */
+      /* ============================================================
+       * 首页移动端重构（≤640px）：顶栏两行式 + 内容卡片流
+       * 保持原有内容与相对结构，窄视口下重新排版
+       * ============================================================ */
       @media (max-width: 640px) {
-        /* 顶栏 navbar：高度压缩、品牌收敛、按钮组只留图标 */
+        /* ---------- 顶栏：第一行 汉堡+品牌+头像，第二行 功能图标 ---------- */
         #navbar,
         #navbar .navbar-container {
-          min-height: 44px !important;
-          height: 44px !important;
-        }
-        #navbar .navbar-brand {
-          padding: 0 8px !important;
-          line-height: 44px !important;
-          height: 44px !important;
-          font-size: 0 !important;
-        }
-        #navbar .navbar-brand small {
-          font-size: 14px !important;
-          line-height: 44px !important;
+          height: 84px !important;
+          min-height: 84px !important;
         }
         #navbar .menu-toggler {
           width: 40px !important;
           height: 44px !important;
           line-height: 44px !important;
         }
-        .navbar-buttons .ace-nav > li,
-        .navbar-buttons .ace-nav > li > a {
+        #navbar .navbar-header.pull-left {
+          height: 44px !important;
+        }
+        #navbar .navbar-brand {
+          padding: 0 8px !important;
+          height: 44px !important;
+          line-height: 44px !important;
+          font-size: 0 !important;
+        }
+        #navbar .navbar-brand small {
+          font-size: 14px !important;
+          line-height: 44px !important;
+        }
+        /* 功能按钮区整体移到第二行（图标条） */
+        #navbar .navbar-buttons {
+          position: absolute !important;
+          left: 0 !important;
+          right: 0 !important;
+          top: 44px !important;
+          height: 40px !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          background: var(--surface, #ffffff) !important;
+          border-bottom: 1px solid var(--border, #e8eaed) !important;
+        }
+        #navbar .navbar-buttons .ace-nav {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          gap: 2px !important;
+        }
+        #navbar .navbar-buttons .ace-nav > li {
+          height: 40px !important;
+          line-height: 40px !important;
+        }
+        #navbar .navbar-buttons .ace-nav > li > a {
+          padding: 0 8px !important;
+          height: 40px !important;
+          line-height: 40px !important;
+          font-size: 0 !important;
+        }
+        #navbar .navbar-buttons .ace-nav > li > a > i {
+          font-size: 14px !important;
+          margin: 0 !important;
+        }
+        /* 搜索滑块隐藏（搜索按钮保留在图标条） */
+        #navbar #intellegenceUDiv {
+          display: none !important;
+        }
+        /* 用户头像菜单回到第一行右侧 */
+        #navbar .navbar-buttons .ace-nav > li.light-blue {
+          position: absolute !important;
+          right: 4px !important;
+          top: -44px !important;
           height: 44px !important;
           line-height: 44px !important;
         }
-        .navbar-buttons .ace-nav > li > a {
-          padding: 0 7px !important;
-          font-size: 0 !important;
-        }
-        .navbar-buttons .ace-nav > li > a > i {
-          font-size: 15px !important;
-          margin: 0 !important;
-        }
-        #intellegenceUDiv {
-          display: none !important;
-        }
-        .navbar-buttons .nav-user-photo {
+        #navbar .navbar-buttons .nav-user-photo {
           width: 26px !important;
           height: 26px !important;
-          margin: 0 4px 0 0 !important;
+          margin: 0 3px 0 0 !important;
           vertical-align: middle !important;
         }
-        .navbar-buttons .ace-nav > li > a .user-info {
+        #navbar .navbar-buttons .ace-nav > li > a .user-info {
           font-size: 12px !important;
           line-height: 44px !important;
           display: inline !important;
-          margin-right: 2px !important;
         }
-        .navbar-buttons .ace-nav > li > a .user-info small {
+        #navbar .navbar-buttons .ace-nav > li > a .user-info small {
           font-size: 11px !important;
           display: inline !important;
         }
-        .navbar-buttons .ace-nav > li > a .caret {
+        #navbar .navbar-buttons .ace-nav > li > a .caret {
           display: none !important;
         }
 
-        /* 内容区：row/col 全宽、widget 卡片紧凑 */
+        /* ---------- 内容区：双列合并单列、卡片流 ---------- */
         .page-content .row {
           margin-left: 0 !important;
           margin-right: 0 !important;
@@ -142,20 +192,20 @@
           padding-left: 4px !important;
           padding-right: 4px !important;
         }
-        .widget-container-col,
-        .widget-box {
+        .page-content .widget-container-col {
           width: 100% !important;
           max-width: 100% !important;
-          margin-left: 0 !important;
-          margin-right: 0 !important;
+          margin: 0 !important;
         }
         .widget-box {
           margin-bottom: 10px !important;
-          border-radius: 10px !important;
+          border-radius: 12px !important;
+          border: 1px solid var(--border, #e8eaed) !important;
+          overflow: hidden !important;
         }
         .widget-header {
           padding: 6px 10px !important;
-          min-height: 32px !important;
+          min-height: 34px !important;
         }
         .widget-title {
           font-size: 14px !important;
@@ -166,7 +216,48 @@
           padding: 8px 10px !important;
         }
 
-        /* dashboard 统计卡紧凑化 */
+        /* ---------- 学业信息 infobox：两列网格 ---------- */
+        .studyinfo-width {
+          width: calc(50% - 4px) !important;
+          max-width: calc(50% - 4px) !important;
+          margin: 0 !important;
+          padding: 8px 10px !important;
+          box-sizing: border-box !important;
+          display: inline-block !important;
+          vertical-align: top !important;
+        }
+        .infobox-icon {
+          width: 26px !important;
+          font-size: 16px !important;
+        }
+        .infobox-data-number {
+          font-size: 20px !important;
+          line-height: 1.1 !important;
+        }
+        .infobox-content {
+          font-size: 12px !important;
+          line-height: 1.4 !important;
+        }
+        .infobox > a {
+          float: none !important;
+          display: block !important;
+          margin-top: 2px !important;
+          font-size: 11px !important;
+        }
+        /* 双列之间的行间距 */
+        .widget-main {
+          display: flex !important;
+          flex-wrap: wrap !important;
+          gap: 8px !important;
+        }
+
+        /* ---------- 日程卡片 ---------- */
+        #main-calendar {
+          overflow-x: auto !important;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        /* ---------- 插件仪表板（若存在）紧凑化 ---------- */
         #urppp-dashboard .urppp-welcome {
           margin: 2px 0 12px !important;
         }
