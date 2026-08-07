@@ -46,6 +46,25 @@ export function extractChangelogSection(changelog, version) {
   return changelog.slice(start, end).replace(/\n$/, '').trimEnd();
 }
 
+export async function purgeJsdelivr({ version, assistVersion }) {
+  // jsDelivr 缓存刷新：发布后立即让 CDN 返回新内容，避免缓存延迟窗口误报旧版本
+  const files = ['version.json', 'urppp.user.js', 'urpppp.user.js', 'CHANGELOG.md'];
+  const paths = files.map((f) => `/gh/chaolan2019/SCU-URP-plusplus@main/${f}`);
+  try {
+    const res = await fetch('https://purge.jsdelivr.net/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: paths }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const body = await res.json();
+    console.log(`jsDelivr purge: id=${body.id} status=${body.status}（${paths.length} 个文件）`);
+  } catch (error) {
+    console.warn(`jsDelivr purge 失败（不影响发布，缓存数分钟内自动同步）：${error instanceof Error ? error.message : error}`);
+  }
+}
+
 export function parseReleaseArgs(args) {
   const values = Array.from(args || []);
   const version = values.shift();
@@ -211,6 +230,7 @@ export async function prepareRelease(version, options = {}) {
     )));
     run(process.execPath, [path.join(ROOT, 'tools/build.mjs')]);
     runNpm(['run', 'check']);
+    await purgeJsdelivr({ version, assistVersion });
   } catch (error) {
     await restoreSnapshots(snapshots);
     throw new Error(`发布准备失败，已恢复所有文件：${error instanceof Error ? error.message : error}`);
