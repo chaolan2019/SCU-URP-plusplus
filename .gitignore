@@ -18,3 +18,6 @@ ocr-training/model/
 ocr-training/labels/
 ocr-training/contact/
 ocr-training/labels-auto/
+ocr-training/chars-km32/
+ocr-training/.tmp-scu-test/
+ocr-training/zhjw-v4/
