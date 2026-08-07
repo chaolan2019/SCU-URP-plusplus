@@ -21357,7 +21357,7 @@ ${arcs}
       } catch (_) {
       }
       if (!remote) {
-        const head = await fetchTextForUpdate(URPPP_UPDATE.mainRaw, { range: "bytes=0-2048" });
+        const head = await fetchFirstAvailable(URPPP_UPDATE.sourceUrls("urppp.user.js"), { range: "bytes=0-2048" });
         remote = parseUserscriptVersion(head);
       }
       if (!remote) throw new Error("无法解析远程主插件版本");

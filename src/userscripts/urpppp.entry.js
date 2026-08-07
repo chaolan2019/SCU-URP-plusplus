@@ -57,6 +57,11 @@ import assistStyles from '../styles/assist.css';
     'https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json',
     'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json',
   ];
+  const URPPPP_RAW_URLS = [
+    'https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/urpppp.user.js',
+    'https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js',
+    URPPPP_RAW_URL,
+  ];
 
   // ===================== 公共工具与配置 =====================
   const LOGIN = LOGIN_KEYS;
@@ -150,6 +155,7 @@ import assistStyles from '../styles/assist.css';
       URPPPP_VERSION,
       URPPPP_RAW_URL,
       URPPPP_SOURCES,
+      URPPPP_RAW_URLS,
       compareStandaloneVersions,
       parseVersionFromSource,
     },

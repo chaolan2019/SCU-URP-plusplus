@@ -1991,9 +1991,9 @@
       });
     }
     __name(fetchAssistUrl, "fetchAssistUrl");
-    async function fetchAssistFirstAvailable(urls) {
+    async function fetchAssistFirstAvailable(urls, opts) {
       const results = await Promise.all(urls.map(
-        (url) => fetchAssistUrl(url).then((text) => ({ url, text })).catch(() => null)
+        (url) => fetchAssistUrl(url, opts).then((text) => ({ url, text })).catch(() => null)
       ));
       const ok = results.find((r) => r && r.text && r.text.length > 0);
       if (ok) return ok.text;
@@ -2008,7 +2008,7 @@
         if (assist) return assist;
       } catch (_) {
       }
-      const head = await fetchAssistUrl(deps.URPPPP_RAW_URL, { range: "bytes=0-2048" });
+      const head = await fetchAssistFirstAvailable(deps.URPPPP_RAW_URLS, { range: "bytes=0-2048" });
       const remote = deps.parseVersionFromSource(head);
       if (!remote) throw new Error("无法解析远程辅助插件版本");
       return remote;
@@ -2378,6 +2378,11 @@
       "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json",
       "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json"
     ];
+    const URPPPP_RAW_URLS = [
+      "https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/urpppp.user.js",
+      "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js",
+      URPPPP_RAW_URL
+    ];
     const LOGIN = LOGIN_KEYS;
     const EVAL = EVALUATION_KEYS;
     const storage = createAssistStorage(GM_getValue, GM_setValue);
@@ -2464,6 +2469,7 @@
         URPPPP_VERSION,
         URPPPP_RAW_URL,
         URPPPP_SOURCES,
+        URPPPP_RAW_URLS,
         compareStandaloneVersions: compareVersions,
         parseVersionFromSource: parseUserscriptVersion
       }

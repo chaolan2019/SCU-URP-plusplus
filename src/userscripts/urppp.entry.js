@@ -6633,8 +6633,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       if (j && typeof j.changelog === 'string' && j.changelog.trim()) changelogMd = j.changelog;
     } catch (_) { /* version.json 失败，走 Range 回退 */ }
     if (!remote) {
-      // 回退：Range 只拉脚本头解析 @version（约 2KB，避免全量 1.2MB）
-      const head = await fetchTextForUpdate(URPPP_UPDATE.mainRaw, { range: 'bytes=0-2048' });
+      // 回退：Range 只拉脚本头解析 @version（约 2KB，避免全量 1.2MB），同样多源探测
+      const head = await fetchFirstAvailable(URPPP_UPDATE.sourceUrls('urppp.user.js'), { range: 'bytes=0-2048' });
       remote = parseUserscriptVersion(head);
     }
     if (!remote) throw new Error('无法解析远程主插件版本');

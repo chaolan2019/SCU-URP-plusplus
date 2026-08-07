@@ -31,10 +31,10 @@ export function createUpdateAssist({ deps }) {
     });
   }
 
-  // 多源并发探测：取第一个成功响应（version.json 小文件，并发开销可忽略）
-  async function fetchAssistFirstAvailable(urls) {
+  // 多源并发探测：取第一个成功响应（小文件，并发开销可忽略）
+  async function fetchAssistFirstAvailable(urls, opts) {
     const results = await Promise.all(urls.map((url) =>
-      fetchAssistUrl(url).then((text) => ({ url, text })).catch(() => null)
+      fetchAssistUrl(url, opts).then((text) => ({ url, text })).catch(() => null)
     ));
     const ok = results.find((r) => r && r.text && r.text.length > 0);
     if (ok) return ok.text;
@@ -49,7 +49,7 @@ export function createUpdateAssist({ deps }) {
       const assist = String((j && j.assist) || '').trim();
       if (assist) return assist;
     } catch (_) { /* 回退 */ }
-    const head = await fetchAssistUrl(deps.URPPPP_RAW_URL, { range: 'bytes=0-2048' });
+    const head = await fetchAssistFirstAvailable(deps.URPPPP_RAW_URLS, { range: 'bytes=0-2048' });
     const remote = deps.parseVersionFromSource(head);
     if (!remote) throw new Error('无法解析远程辅助插件版本');
     return remote;
