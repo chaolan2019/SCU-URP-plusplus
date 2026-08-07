@@ -105,7 +105,14 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     changelogRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/CHANGELOG.md',
     repo: 'https://github.com/chaolan2019/SCU-URP-plusplus',
     changelogPage: 'https://github.com/chaolan2019/SCU-URP-plusplus/blob/main/CHANGELOG.md',
-    greasySearch: 'https://greasyfork.org/zh-CN/scripts?q=SCU+URP%2B%2B'
+    greasySearch: 'https://greasyfork.org/zh-CN/scripts?q=SCU+URP%2B%2B',
+    // 多源加速：jsDelivr（国内快，缓存分钟级延迟）→ gh-proxy（直通，无缓存）→ GitHub raw（权威兜底）
+    versionJson: 'version.json',
+    sourceUrls: (file) => [
+      `https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/${file}`,
+      `https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/${file}`,
+      `https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/${file}`,
+    ],
   };
   const AUTO_UPDATE_KEY = 'urppp_auto_update_check_v1';
   const SKIN_KEY = 'urppp_skin_v1';
@@ -6559,16 +6566,18 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   const __urpppUpdateCheckers = [];
   let __urpppUpdateBusy = false;
 
-  function fetchTextForUpdate(url) {
+  function fetchTextForUpdate(url, opts) {
     return new Promise((resolve, reject) => {
       const done = (ok, val) => (ok ? resolve(val) : reject(new Error(val || 'fetch failed')));
+      const headers = { 'Cache-Control': 'no-cache' };
+      if (opts && opts.range) headers.Range = opts.range;
       try {
         if (typeof GM_xmlhttpRequest === 'function') {
           GM_xmlhttpRequest({
             method: 'GET',
             url,
-            timeout: 15000,
-            headers: { 'Cache-Control': 'no-cache' },
+            timeout: 12000,
+            headers,
             onload: (r) => {
               if (r.status >= 200 && r.status < 400) done(true, r.responseText || '');
               else done(false, 'HTTP ' + r.status);
@@ -6579,7 +6588,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           return;
         }
       } catch (_) {}
-      fetch(url, { cache: 'no-store' })
+      fetch(url, { cache: 'no-store', headers })
         .then((r) => {
           if (!r.ok) throw new Error('HTTP ' + r.status);
           return r.text();
@@ -6587,6 +6596,18 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         .then((t) => done(true, t))
         .catch((e) => done(false, e && e.message));
     });
+  }
+
+  // 多源并发探测：取第一个成功（2xx 且非空）的响应；全部失败则抛出
+  async function fetchFirstAvailable(urls, opts) {
+    const results = await Promise.all(urls.map((url) =>
+      fetchTextForUpdate(url, opts)
+        .then((text) => ({ url, text }))
+        .catch(() => null)
+    ));
+    const ok = results.find((r) => r && r.text && r.text.length > 0);
+    if (ok) return ok.text;
+    throw new Error('所有更新源均不可用');
   }
 
   function setUpdateStatus(html, type) {
@@ -6601,8 +6622,21 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   async function checkMainUpdate() {
     const local = URPPP_VERSION;
-    const remoteSource = await fetchTextForUpdate(URPPP_UPDATE.mainRaw);
-    const remote = parseUserscriptVersion(remoteSource);
+    let remote = '';
+    let singleStep = false; // 本地与远程相邻：version.json 内嵌日志可直接展示
+    let changelogMd = '';
+    try {
+      const text = await fetchFirstAvailable(URPPP_UPDATE.sourceUrls(URPPP_UPDATE.versionJson));
+      const j = JSON.parse(text);
+      remote = String((j && j.version) || '').trim();
+      if (j && String(j.prevVersion || '').trim() === local) singleStep = true;
+      if (j && typeof j.changelog === 'string' && j.changelog.trim()) changelogMd = j.changelog;
+    } catch (_) { /* version.json 失败，走 Range 回退 */ }
+    if (!remote) {
+      // 回退：Range 只拉脚本头解析 @version（约 2KB，避免全量 1.2MB）
+      const head = await fetchTextForUpdate(URPPP_UPDATE.mainRaw, { range: 'bytes=0-2048' });
+      remote = parseUserscriptVersion(head);
+    }
     if (!remote) throw new Error('无法解析远程主插件版本');
     const cmp = compareVersions(remote, local);
     return {
@@ -6612,7 +6646,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       remote,
       status: cmp > 0 ? 'update' : (cmp === 0 ? 'latest' : 'ahead'),
       updateUrl: URPPP_UPDATE.mainRaw,
-      pageUrl: URPPP_UPDATE.greasySearch
+      pageUrl: URPPP_UPDATE.greasySearch,
+      // 单版本更新直接带内嵌日志；跨多版本留空，点击「更新日志」时拉全文
+      changelogMd: singleStep ? changelogMd : '',
     };
   }
 
@@ -6955,7 +6991,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           try {
             let md = pack.changelogMd;
             if (!md) {
-              md = await fetchTextForUpdate(URPPP_UPDATE.changelogRaw);
+              md = await fetchFirstAvailable(URPPP_UPDATE.sourceUrls('CHANGELOG.md'));
               pack.changelogMd = md;
             }
             const range = extractChangelogRange(md, pack.local, pack.remote);
@@ -7011,7 +7047,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       btn.disabled = true;
       btn.textContent = '检查中…';
     }
-    setUpdateStatus('正在从 GitHub 检查更新…');
+    setUpdateStatus('正在从多源检查更新…');
     try {
       const jobs = [checkMainUpdate()];
       // 副插件注册的额外检查项

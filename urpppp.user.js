@@ -1961,25 +1961,57 @@
 
   // src/assist/update.js
   function createUpdateAssist({ deps }) {
-    function fetchAssistRemoteVersion() {
+    function fetchAssistUrl(url, opts) {
       return new Promise((resolve, reject) => {
+        const done = /* @__PURE__ */ __name((ok, val) => ok ? resolve(val) : reject(new Error(val || "fetch failed")), "done");
+        const headers = { "Cache-Control": "no-cache" };
+        if (opts && opts.range) headers.Range = opts.range;
         try {
-          GM_xmlhttpRequest({
-            method: "GET",
-            url: deps.URPPPP_RAW_URL,
-            timeout: 15e3,
-            headers: { "Cache-Control": "no-cache" },
-            onload: /* @__PURE__ */ __name((r) => {
-              if (r.status >= 200 && r.status < 400) resolve(r.responseText || "");
-              else reject(new Error("HTTP " + r.status));
-            }, "onload"),
-            onerror: /* @__PURE__ */ __name(() => reject(new Error("network error")), "onerror"),
-            ontimeout: /* @__PURE__ */ __name(() => reject(new Error("timeout")), "ontimeout")
-          });
+          if (typeof GM_xmlhttpRequest === "function") {
+            GM_xmlhttpRequest({
+              method: "GET",
+              url,
+              timeout: 12e3,
+              headers,
+              onload: /* @__PURE__ */ __name((r) => {
+                if (r.status >= 200 && r.status < 400) done(true, r.responseText || "");
+                else done(false, "HTTP " + r.status);
+              }, "onload"),
+              onerror: /* @__PURE__ */ __name(() => done(false, "network error"), "onerror"),
+              ontimeout: /* @__PURE__ */ __name(() => done(false, "timeout"), "ontimeout")
+            });
+            return;
+          }
         } catch (e) {
-          reject(e);
         }
+        fetch(url, { cache: "no-store", headers }).then((r) => {
+          if (!r.ok) throw new Error("HTTP " + r.status);
+          return r.text();
+        }).then((t) => done(true, t)).catch((e) => done(false, e && e.message));
       });
+    }
+    __name(fetchAssistUrl, "fetchAssistUrl");
+    async function fetchAssistFirstAvailable(urls) {
+      const results = await Promise.all(urls.map(
+        (url) => fetchAssistUrl(url).then((text) => ({ url, text })).catch(() => null)
+      ));
+      const ok = results.find((r) => r && r.text && r.text.length > 0);
+      if (ok) return ok.text;
+      throw new Error("所有更新源均不可用");
+    }
+    __name(fetchAssistFirstAvailable, "fetchAssistFirstAvailable");
+    async function fetchAssistRemoteVersion() {
+      try {
+        const text = await fetchAssistFirstAvailable(deps.URPPPP_SOURCES);
+        const j = JSON.parse(text);
+        const assist = String(j && j.assist || "").trim();
+        if (assist) return assist;
+      } catch (_) {
+      }
+      const head = await fetchAssistUrl(deps.URPPPP_RAW_URL, { range: "bytes=0-2048" });
+      const remote = deps.parseVersionFromSource(head);
+      if (!remote) throw new Error("无法解析远程辅助插件版本");
+      return remote;
     }
     __name(fetchAssistRemoteVersion, "fetchAssistRemoteVersion");
     function compareSemver(a, b) {
@@ -1995,9 +2027,7 @@
     __name(compareSemver, "compareSemver");
     async function checkAssistUpdate() {
       const local = deps.URPPPP_VERSION;
-      const remoteSource = await fetchAssistRemoteVersion();
-      const remote = deps.parseVersionFromSource(remoteSource);
-      if (!remote) throw new Error("无法解析远程辅助插件版本");
+      const remote = await fetchAssistRemoteVersion();
       const cmp = compareSemver(remote, local);
       return {
         id: "assist",
@@ -2343,6 +2373,11 @@
     "use strict";
     const URPPPP_VERSION = "1.4.0";
     const URPPPP_RAW_URL = "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js";
+    const URPPPP_SOURCES = [
+      "https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/version.json",
+      "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json",
+      "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json"
+    ];
     const LOGIN = LOGIN_KEYS;
     const EVAL = EVALUATION_KEYS;
     const storage = createAssistStorage(GM_getValue, GM_setValue);
@@ -2428,6 +2463,7 @@
       deps: {
         URPPPP_VERSION,
         URPPPP_RAW_URL,
+        URPPPP_SOURCES,
         compareStandaloneVersions: compareVersions,
         parseVersionFromSource: parseUserscriptVersion
       }

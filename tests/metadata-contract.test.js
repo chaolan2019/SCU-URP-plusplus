@@ -50,3 +50,26 @@ test('package and lockfile versions follow the main userscript version', async (
   assert.equal(lockfile.version, packageVersion);
   assert.equal(lockfile.packages?.['']?.version, packageVersion);
 });
+
+test('version.json follows metadata versions and embeds changelog section', async () => {
+  const [versionJsonText, mainMetadataText, assistMetadataText, changelog] = await Promise.all([
+    readFile(new URL('../version.json', import.meta.url), 'utf8'),
+    readFile(new URL('../src/metadata/urppp.json', import.meta.url), 'utf8'),
+    readFile(new URL('../src/metadata/urpppp.json', import.meta.url), 'utf8'),
+    readFile(new URL('../CHANGELOG.md', import.meta.url), 'utf8'),
+  ]);
+  const vj = JSON.parse(versionJsonText);
+  const mainVersion = JSON.parse(mainMetadataText).version;
+  const assistVersion = JSON.parse(assistMetadataText).version;
+  assert.equal(vj.version, mainVersion, 'version.json.version');
+  assert.equal(vj.assist, assistVersion, 'version.json.assist');
+  assert.match(vj.updated, /^\d{4}-\d{2}-\d{2}$/, 'version.json.updated');
+  assert.ok(vj.changelog && vj.changelog.includes(`## [${mainVersion}]`), 'version.json 内嵌当前版本 changelog');
+  // 内嵌段落应与 CHANGELOG.md 中对应版本段落一致
+  assert.ok(changelog.includes(vj.changelog.replace(/\n+$/, '')), 'version.json.changelog 与 CHANGELOG.md 段落一致');
+  // prevVersion 应对应 CHANGELOG.md 中的上一个版本
+  const versions = [...changelog.matchAll(/^## \[([0-9]+(?:\.[0-9]+){0,3})\]/gm)].map((m) => m[1]);
+  const idx = versions.indexOf(mainVersion);
+  assert.ok(idx >= 0 && idx < versions.length - 1, '当前版本在 CHANGELOG 中存在');
+  assert.equal(vj.prevVersion, versions[idx + 1], 'version.json.prevVersion 为上一版本');
+});

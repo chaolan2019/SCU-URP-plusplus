@@ -51,6 +51,12 @@ import assistStyles from '../styles/assist.css';
   // 与脚本头 @version 保持同步
   const URPPPP_VERSION = '1.4.0';
   const URPPPP_RAW_URL = 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js';
+  // 多源加速：jsDelivr（国内快，缓存分钟级延迟）→ gh-proxy（直通，无缓存）→ GitHub raw（权威兜底）
+  const URPPPP_SOURCES = [
+    'https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/version.json',
+    'https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json',
+    'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json',
+  ];
 
   // ===================== 公共工具与配置 =====================
   const LOGIN = LOGIN_KEYS;
@@ -143,6 +149,7 @@ import assistStyles from '../styles/assist.css';
     deps: {
       URPPPP_VERSION,
       URPPPP_RAW_URL,
+      URPPPP_SOURCES,
       compareStandaloneVersions,
       parseVersionFromSource,
     },

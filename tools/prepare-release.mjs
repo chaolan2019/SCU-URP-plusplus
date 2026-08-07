@@ -13,6 +13,7 @@ const MAIN_FILES = {
   readme: 'README.md',
   changelog: 'CHANGELOG.md',
 };
+const VERSION_JSON = 'version.json';
 const ASSIST_FILES = {
   metadata: 'src/metadata/urpppp.json',
   entry: 'src/userscripts/urpppp.entry.js',
@@ -33,6 +34,16 @@ export function compareVersions(left, right) {
     if (a[index] !== b[index]) return a[index] > b[index] ? 1 : -1;
   }
   return 0;
+}
+
+export function extractChangelogSection(changelog, version) {
+  const headingRe = /^## \[[^\]]+\] - \d{4}-\d{2}-\d{2}/gm;
+  const headings = [...changelog.matchAll(headingRe)];
+  const target = headings.findIndex((m) => m[0].includes(`## [${version}]`));
+  if (target < 0) throw new Error(`无法从 CHANGELOG.md 提取 ${version} 段落`);
+  const start = headings[target].index;
+  const end = target + 1 < headings.length ? headings[target + 1].index : changelog.length;
+  return changelog.slice(start, end).replace(/\n$/, '').trimEnd();
 }
 
 export function parseReleaseArgs(args) {
@@ -116,6 +127,7 @@ export async function prepareRelease(version, options = {}) {
     ...Object.values(MAIN_FILES),
     ...Object.values(ASSIST_FILES),
     ...GENERATED_FILES,
+    VERSION_JSON,
   ])];
   const snapshots = await readSnapshots(trackedPaths);
   const packageData = JSON.parse(snapshots.get(MAIN_FILES.package));
@@ -183,6 +195,15 @@ export async function prepareRelease(version, options = {}) {
     updates.set(ASSIST_FILES.metadata, `${JSON.stringify(assistMetadataData, null, 2)}\n`);
     updates.set(ASSIST_FILES.entry, assistEntry);
   }
+  // 生成 version.json：多源更新检测专用（只含最新版本段落，跨多版本时客户端拉 CHANGELOG.md 全文）
+  const versionJson = {
+    version,
+    prevVersion: currentVersion,
+    assist: assistVersion || currentAssistVersion,
+    updated: date,
+    changelog: extractChangelogSection(changelog, version),
+  };
+  updates.set(VERSION_JSON, `${JSON.stringify(versionJson, null, 2)}\n`);
 
   try {
     await Promise.all(Array.from(updates, ([relativePath, content]) => (
