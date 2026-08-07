@@ -50,18 +50,19 @@ export function createUpdateAssist({ deps }) {
       if (ok) return ok.text;
       throw new Error('所有更新源均不可用（' + details.join('; ') + '）');
     }
+    // 主源超时：加速源并发；主源迟到成功才参与竞争（失败/无效不影响 fallback，避免抢先 reject）
     const fallbackJob = Promise.all(fallbacks.map(grab)).then((results) => {
       const ok = results.find((r) => r && r.text && r.text.length > 0);
       if (ok) return ok.text;
       throw new Error('所有更新源均不可用（' + details.join('; ') + '）');
     });
-    return Promise.race([
-      primaryJob.then((r) => {
+    const latePrimary = primaryJob
+      .then((r) => {
         if (r && r.text && r.text.length > 0) return r.text;
         throw new Error('主源内容无效');
-      }),
-      fallbackJob,
-    ]);
+      })
+      .catch(() => new Promise(() => {})); // 主源失败/无效：让位给 fallback
+    return Promise.race([latePrimary, fallbackJob]);
   }
 
   // 远程版本探测：优先多源 version.json（assist 字段），失败回退 Range 拉脚本头

@@ -6617,19 +6617,19 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       if (ok) return ok.text;
       throw new Error('所有更新源均不可用（' + details.join('; ') + '）');
     }
-    // 主源超时：加速源并发，主源迟到（如网络抖动恢复）也参与竞争，先到先得
+    // 主源超时：加速源并发；主源迟到成功才参与竞争（失败/无效不影响 fallback，避免抢先 reject）
     const fallbackJob = Promise.all(fallbacks.map(grab)).then((results) => {
       const ok = results.find((r) => r && r.text && r.text.length > 0);
       if (ok) return ok.text;
       throw new Error('所有更新源均不可用（' + details.join('; ') + '）');
     });
-    return Promise.race([
-      primaryJob.then((r) => {
+    const latePrimary = primaryJob
+      .then((r) => {
         if (r && r.text && r.text.length > 0) return r.text;
         throw new Error('主源内容无效');
-      }),
-      fallbackJob,
-    ]);
+      })
+      .catch(() => new Promise(() => {})); // 主源失败/无效：让位给 fallback
+    return Promise.race([latePrimary, fallbackJob]);
   }
 
   function setUpdateStatus(html, type) {

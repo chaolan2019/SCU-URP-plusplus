@@ -55,6 +55,27 @@ test('checkAssistUpdate falls back to script header when version.json is invalid
   assert.equal(report.status, 'update');
 });
 
+test('checkAssistUpdate falls back when primary times out then returns invalid', async () => {
+  const { assist } = updateFixture({
+    URPPPP_SOURCES: ['https://slow.test/version.json', 'https://fast.test/version.json'],
+    URPPPP_RAW_URLS: ['https://slow.test/urpppp.user.js', 'https://fast.test/urpppp.user.js'],
+  });
+  globalThis.GM_xmlhttpRequest = (opts) => {
+    const host = opts.url.split('/')[2];
+    if (host === 'slow.test') {
+      // 主源迟到且内容无效：不应抢先于 fallback 使整体失败
+      setTimeout(() => opts.onload({ status: 200, responseText: '' }), 1200);
+    } else {
+      opts.onload({ status: 200, responseText: JSON.stringify({ version: '1.4.0', assist: '1.4.0' }) });
+    }
+  };
+  const t0 = Date.now();
+  const report = await assist.checkAssistUpdate();
+  assert.equal(report.remote, '1.4.0');
+  assert.equal(report.status, 'update');
+  assert.ok(Date.now() - t0 < 1500, '应在主源 1s 超时后由加速源返回');
+});
+
 test('registerAssistUpdateChecker skips when main plugin is absent', () => {
   const { assist } = updateFixture();
   globalThis.window = {};

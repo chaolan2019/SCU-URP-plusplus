@@ -21350,13 +21350,12 @@ ${arcs}
         if (ok) return ok.text;
         throw new Error("所有更新源均不可用（" + details.join("; ") + "）");
       });
-      return Promise.race([
-        primaryJob.then((r) => {
-          if (r && r.text && r.text.length > 0) return r.text;
-          throw new Error("主源内容无效");
-        }),
-        fallbackJob
-      ]);
+      const latePrimary = primaryJob.then((r) => {
+        if (r && r.text && r.text.length > 0) return r.text;
+        throw new Error("主源内容无效");
+      }).catch(() => new Promise(() => {
+      }));
+      return Promise.race([latePrimary, fallbackJob]);
     }
     __name(fetchFirstAvailable, "fetchFirstAvailable");
     function setUpdateStatus(html, type) {
