@@ -250,7 +250,7 @@ URP++/
 1. 仅供个人学习与效率用途，请遵守学校教务使用规范  
 2. 教务改版可能导致选择器 / 接口失效，需跟进适配  
 3. 辅助插件相关风险与免责见 [README_.md](./README_.md)  
-4. **更新检测与跨域授权提示**：开启「自动检测更新」后，首次加载教务页面会静默检查新版本；点击「检查更新」或首次触发更新检测时，Tampermonkey 可能弹出跨域访问确认。更新检测使用 `github.com` / `raw.githubusercontent.com` / `cdn.jsdelivr.net` / `gh-proxy.com` 四个域名，主插件与辅助插件各请求一次（合计最多 6 次确认）。确认均为一次性，允许后 Tampermonkey 会记住授权，之后不再提示。若希望完全免提示，可关闭「自动检测更新」，或在 Tampermonkey 的脚本设置 → 连接中预授权上述域名。
+4. **更新检测与跨域授权提示**：开启「自动检测更新」后，首次加载教务页面会静默检查新版本；点击「检查更新」或首次触发更新检测时，Tampermonkey 可能会出现跨域访问确认（更新检测使用 `github.com` / `raw.githubusercontent.com` / `cdn.jsdelivr.net` / `gh-proxy.com` 等更新源域名）。确认均为一次性，允许后 Tampermonkey 会记住授权，之后不再提示。若希望完全免提示，可关闭「自动检测更新」，或在 Tampermonkey 的脚本设置 → 连接中预授权相关域名。
 
 ---
 
