@@ -12098,7 +12098,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
        *   - 清爽模式移动版（clean-mode.css ≤900px）
        *   - 设置面板贴边全屏（settings.css ≤640px）
        *   - 业务表格横向滚动（table-beautify.css .urppp-table-wrap）
-       * 本文件只做跨断点兜底与窄视口下的通用保险。 */
+       * 本文件做移动端布局总体优化：容器加宽 + 元素整体缩小。 */
       html.urppp-mobile {
         /* 教务硬编码宽度的内容允许横向滚动浏览，替代 980px 整体缩放 */
         overflow-x: auto;
@@ -12126,6 +12126,68 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           width: auto !important;
           max-width: none !important;
           transform: none !important;
+        }
+      }
+
+      /* ============================================================
+       * 移动端布局总体优化：
+       * 1. 内容容器加宽——吃回桌面端 64px 左右留白（internal.css），
+       *    移动视口下内容从 262px 宽提升到接近全宽
+       * 2. 元素整体缩小——字号、面板内距、表格单元格 padding 适度收紧
+       * ============================================================ */
+      @media (max-width: 991px) {
+        html.urppp-mobile .main-content .page-content,
+        html.urppp-mobile #page-content-template.page-content,
+        html.urppp-mobile div.page-content {
+          padding: 8px 8px 24px !important;
+          max-width: 100% !important;
+        }
+        html.urppp-mobile .breadcrumbs,
+        html.urppp-mobile #breadcrumbs {
+          padding-left: 8px !important;
+          padding-right: 8px !important;
+          margin: 4px 0 !important;
+        }
+        /* 元素整体缩小 */
+        html.urppp-mobile body {
+          font-size: 13px !important;
+          line-height: 1.5 !important;
+        }
+        html.urppp-mobile .page-content h1,
+        html.urppp-mobile .page-content h2,
+        html.urppp-mobile .page-content .panel-title,
+        html.urppp-mobile .page-content .box-title {
+          font-size: 17px !important;
+        }
+        html.urppp-mobile .page-content h3,
+        html.urppp-mobile .page-content h4,
+        html.urppp-mobile .page-content h5 {
+          font-size: 14px !important;
+        }
+        html.urppp-mobile .page-content .panel,
+        html.urppp-mobile .page-content .widget,
+        html.urppp-mobile .page-content form {
+          padding: 8px 8px !important;
+        }
+        html.urppp-mobile .table > thead > tr > th,
+        html.urppp-mobile .table > tbody > tr > td,
+        html.urppp-mobile .table-box td,
+        html.urppp-mobile .table-box th {
+          padding: 6px 8px !important;
+          white-space: nowrap !important;
+        }
+        /* 分页工具条在移动端紧凑排列 */
+        html.urppp-mobile .pagination,
+        html.urppp-mobile .pagebar {
+          flex-wrap: wrap !important;
+          gap: 4px !important;
+        }
+        /* 插件首页仪表板：标题与卡片间距收紧 */
+        html.urppp-mobile #urppp-dashboard .urppp-welcome h2 {
+          font-size: 19px !important;
+        }
+        html.urppp-mobile #urppp-dashboard .urppp-stats-grid {
+          gap: 8px !important;
         }
       }
 `;
