@@ -17,6 +17,12 @@
     "GM_registerMenuCommand",
     "unsafeWindow"
   ],
-  "connect": "*",
+  "connect": [
+    "*",
+    "raw.githubusercontent.com",
+    "github.com",
+    "cdn.jsdelivr.net",
+    "gh-proxy.com"
+  ],
   "run-at": "document-idle"
 }

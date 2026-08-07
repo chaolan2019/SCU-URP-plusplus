@@ -18,6 +18,10 @@
 // @grant        GM_registerMenuCommand
 // @grant        unsafeWindow
 // @connect      *
+// @connect      raw.githubusercontent.com
+// @connect      github.com
+// @connect      cdn.jsdelivr.net
+// @connect      gh-proxy.com
 // @run-at       document-idle
 // ==/UserScript==
 
