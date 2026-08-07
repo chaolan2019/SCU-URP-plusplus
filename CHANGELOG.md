@@ -7,6 +7,16 @@
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-08-07
+
+### Changed
+- 更新检测多源加速：新增 jsDelivr / gh-proxy 镜像源，GitHub 权威源 1 秒内未响应自动切换；version.json 轻量探测替代全量脚本拉取，单版本更新日志直接内嵌展示
+- 更新请求改 fetch 优先（CORS 机制），避免 Tampermonkey 跨域授权弹窗；GM_xmlhttpRequest 仅作兜底
+- 更新源 @connect 白名单精确列出更新域名
+
+### 辅助插件 [1.4.1]
+- 更新检测同步多源加速与 version.json 探测，@connect 同步列出更新域名
+
 ## [1.6.0] - 2026-08-07
 
 ### Added
