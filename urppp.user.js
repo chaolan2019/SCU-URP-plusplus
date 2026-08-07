@@ -14850,7 +14850,6 @@ ${arcs}
     const URPPP_UPDATE = {
       mainRaw: "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js",
       assistRaw: "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js",
-      changelogRaw: "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/CHANGELOG.md",
       repo: "https://github.com/chaolan2019/SCU-URP-plusplus",
       changelogPage: "https://github.com/chaolan2019/SCU-URP-plusplus/blob/main/CHANGELOG.md",
       greasySearch: "https://greasyfork.org/zh-CN/scripts?q=SCU+URP%2B%2B",
