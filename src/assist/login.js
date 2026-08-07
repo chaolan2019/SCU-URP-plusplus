@@ -251,6 +251,7 @@ export function createLoginAssist({ config, storage, deps }) {
     if (!captchaImg.complete) await new Promise((resolve) => { captchaImg.onload = resolve; setTimeout(resolve, 2000); });
     const code = await recognizeSmart(captchaImg, c.ocrUrl, 'zhjw');
     if (!code) return true;
+    fillLoginCaptcha(captchaInput, code);
     deps.log('教务验证码：', code);
     if (c.autoSubmit && loginButton) {
       await deps.sleep(c.submitDelay);
