@@ -21297,33 +21297,44 @@ ${arcs}
     __name(renderSkinCards, "renderSkinCards");
     const __urpppUpdateCheckers = [];
     let __urpppUpdateBusy = false;
-    function fetchTextForUpdate(url, opts) {
+    function fetchWithTimeout(url, headers, timeoutMs) {
+      const ctrl = typeof AbortController === "function" ? new AbortController() : null;
+      const timer = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
+      return fetch(url, { cache: "no-store", headers, signal: ctrl ? ctrl.signal : void 0 }).then((r) => {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.text();
+      }).finally(() => {
+        if (timer) clearTimeout(timer);
+      });
+    }
+    __name(fetchWithTimeout, "fetchWithTimeout");
+    function gmRequestForUpdate(url, headers) {
       return new Promise((resolve, reject) => {
-        const done = /* @__PURE__ */ __name((ok, val) => ok ? resolve(val) : reject(new Error(val || "fetch failed")), "done");
-        const headers = { "Cache-Control": "no-cache" };
-        if (opts && opts.range) headers.Range = opts.range;
         try {
-          if (typeof GM_xmlhttpRequest === "function") {
-            GM_xmlhttpRequest({
-              method: "GET",
-              url,
-              timeout: 12e3,
-              headers,
-              onload: /* @__PURE__ */ __name((r) => {
-                if (r.status >= 200 && r.status < 400) done(true, r.responseText || "");
-                else done(false, "HTTP " + r.status);
-              }, "onload"),
-              onerror: /* @__PURE__ */ __name(() => done(false, "network error"), "onerror"),
-              ontimeout: /* @__PURE__ */ __name(() => done(false, "timeout"), "ontimeout")
-            });
-            return;
-          }
-        } catch (_) {
+          GM_xmlhttpRequest({
+            method: "GET",
+            url,
+            timeout: 12e3,
+            headers,
+            onload: /* @__PURE__ */ __name((r) => {
+              if (r.status >= 200 && r.status < 400) resolve(r.responseText || "");
+              else reject(new Error("HTTP " + r.status));
+            }, "onload"),
+            onerror: /* @__PURE__ */ __name(() => reject(new Error("network error")), "onerror"),
+            ontimeout: /* @__PURE__ */ __name(() => reject(new Error("timeout")), "ontimeout")
+          });
+        } catch (e) {
+          reject(e);
         }
-        fetch(url, { cache: "no-store", headers }).then((r) => {
-          if (!r.ok) throw new Error("HTTP " + r.status);
-          return r.text();
-        }).then((t) => done(true, t)).catch((e) => done(false, e && e.message));
+      });
+    }
+    __name(gmRequestForUpdate, "gmRequestForUpdate");
+    function fetchTextForUpdate(url, opts) {
+      const headers = { "Cache-Control": "no-cache" };
+      if (opts && opts.range) headers.Range = opts.range;
+      return fetchWithTimeout(url, headers, 12e3).catch((fetchError) => {
+        if (typeof GM_xmlhttpRequest === "function") return gmRequestForUpdate(url, headers);
+        throw fetchError;
       });
     }
     __name(fetchTextForUpdate, "fetchTextForUpdate");

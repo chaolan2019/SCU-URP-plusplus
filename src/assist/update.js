@@ -1,34 +1,43 @@
 export function createUpdateAssist({ deps }) {
-  function fetchAssistUrl(url, opts) {
+  // fetch 优先（CORS 机制，无需 GM 跨域授权弹窗）；失败再降级 GM_xmlhttpRequest（@connect 白名单兜底）
+  function fetchAssistWithTimeout(url, headers, timeoutMs) {
+    const ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    const timer = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
+    return fetch(url, { cache: 'no-store', headers, signal: ctrl ? ctrl.signal : undefined })
+      .then((r) => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+      })
+      .finally(() => { if (timer) clearTimeout(timer); });
+  }
+
+  function gmAssistRequest(url, headers) {
     return new Promise((resolve, reject) => {
-      const done = (ok, val) => (ok ? resolve(val) : reject(new Error(val || 'fetch failed')));
-      const headers = { 'Cache-Control': 'no-cache' };
-      if (opts && opts.range) headers.Range = opts.range;
       try {
-        if (typeof GM_xmlhttpRequest === 'function') {
-          GM_xmlhttpRequest({
-            method: 'GET',
-            url,
-            timeout: 12000,
-            headers,
-            onload: (r) => {
-              if (r.status >= 200 && r.status < 400) done(true, r.responseText || '');
-              else done(false, 'HTTP ' + r.status);
-            },
-            onerror: () => done(false, 'network error'),
-            ontimeout: () => done(false, 'timeout'),
-          });
-          return;
-        }
-      } catch (e) { /* fallthrough */ }
-      fetch(url, { cache: 'no-store', headers })
-        .then((r) => {
-          if (!r.ok) throw new Error('HTTP ' + r.status);
-          return r.text();
-        })
-        .then((t) => done(true, t))
-        .catch((e) => done(false, e && e.message));
+        GM_xmlhttpRequest({
+          method: 'GET',
+          url,
+          timeout: 12000,
+          headers,
+          onload: (r) => {
+            if (r.status >= 200 && r.status < 400) resolve(r.responseText || '');
+            else reject(new Error('HTTP ' + r.status));
+          },
+          onerror: () => reject(new Error('network error')),
+          ontimeout: () => reject(new Error('timeout')),
+        });
+      } catch (e) { reject(e); }
     });
+  }
+
+  function fetchAssistUrl(url, opts) {
+    const headers = { 'Cache-Control': 'no-cache' };
+    if (opts && opts.range) headers.Range = opts.range;
+    return fetchAssistWithTimeout(url, headers, 12000)
+      .catch((fetchError) => {
+        if (typeof GM_xmlhttpRequest === 'function') return gmAssistRequest(url, headers);
+        throw fetchError;
+      });
   }
 
   // 多源探测：主源（GitHub 权威）优先，primaryTimeout 内未响应则并发切换加速源；主源稍后返回也参与竞争
