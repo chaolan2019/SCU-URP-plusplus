@@ -15,10 +15,6 @@
 // @grant        GM_setValue
 // @grant        unsafeWindow
 // @grant        GM_xmlhttpRequest
-// @connect      raw.githubusercontent.com
-// @connect      github.com
-// @connect      cdn.jsdelivr.net
-// @connect      gh-proxy.com
 // @run-at       document-start
 // ==/UserScript==
 
