@@ -11,13 +11,9 @@ test-results/
 blob-report/
 
 Design/
-# captcha OCR: keep scripts in git, exclude samples/models (local only, not pushed)
-ocr-training/zhjw/
-ocr-training/scu-id/
-ocr-training/model/
-ocr-training/labels/
-ocr-training/contact/
-ocr-training/labels-auto/
-ocr-training/chars-km32/
-ocr-training/.tmp-scu-test/
-ocr-training/zhjw-v4/
+# captcha OCR: 仅保留两个训练模型，其余（脚本/样本/文档）本地保留不上传
+ocr-training/*
+!ocr-training/model/
+ocr-training/model/*
+!ocr-training/model/scu-id-v3-compact.json
+!ocr-training/model/zhjw-char-tiny71-int16.json
