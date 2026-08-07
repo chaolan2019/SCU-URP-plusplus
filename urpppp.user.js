@@ -1992,12 +1992,16 @@
     }
     __name(fetchAssistUrl, "fetchAssistUrl");
     async function fetchAssistFirstAvailable(urls, opts) {
+      const details = [];
       const results = await Promise.all(urls.map(
-        (url) => fetchAssistUrl(url, opts).then((text) => ({ url, text })).catch(() => null)
+        (url) => fetchAssistUrl(url, opts).then((text) => ({ url, text })).catch((e) => {
+          details.push((url.split("/")[2] || url) + ": " + (e && e.message || e));
+          return null;
+        })
       ));
       const ok = results.find((r) => r && r.text && r.text.length > 0);
       if (ok) return ok.text;
-      throw new Error("所有更新源均不可用");
+      throw new Error("所有更新源均不可用（" + details.join("; ") + "）");
     }
     __name(fetchAssistFirstAvailable, "fetchAssistFirstAvailable");
     async function fetchAssistRemoteVersion() {
@@ -2375,12 +2379,16 @@
     const URPPPP_RAW_URL = "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js";
     const URPPPP_SOURCES = [
       "https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/version.json",
+      "https://fastly.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/version.json",
       "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json",
+      "https://ghproxy.net/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json",
       "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json"
     ];
     const URPPPP_RAW_URLS = [
       "https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/urpppp.user.js",
+      "https://fastly.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/urpppp.user.js",
       "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js",
+      "https://ghproxy.net/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js",
       URPPPP_RAW_URL
     ];
     const LOGIN = LOGIN_KEYS;

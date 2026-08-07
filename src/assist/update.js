@@ -33,12 +33,15 @@ export function createUpdateAssist({ deps }) {
 
   // 多源并发探测：取第一个成功响应（小文件，并发开销可忽略）
   async function fetchAssistFirstAvailable(urls, opts) {
+    const details = [];
     const results = await Promise.all(urls.map((url) =>
-      fetchAssistUrl(url, opts).then((text) => ({ url, text })).catch(() => null)
+      fetchAssistUrl(url, opts)
+        .then((text) => ({ url, text }))
+        .catch((e) => { details.push((url.split('/')[2] || url) + ': ' + (e && e.message || e)); return null; })
     ));
     const ok = results.find((r) => r && r.text && r.text.length > 0);
     if (ok) return ok.text;
-    throw new Error('所有更新源均不可用');
+    throw new Error('所有更新源均不可用（' + details.join('; ') + '）');
   }
 
   // 远程版本探测：优先多源 version.json（assist 字段），失败回退 Range 拉脚本头

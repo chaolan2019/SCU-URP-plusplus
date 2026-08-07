@@ -14852,11 +14852,13 @@ ${arcs}
       repo: "https://github.com/chaolan2019/SCU-URP-plusplus",
       changelogPage: "https://github.com/chaolan2019/SCU-URP-plusplus/blob/main/CHANGELOG.md",
       greasySearch: "https://greasyfork.org/zh-CN/scripts?q=SCU+URP%2B%2B",
-      // 多源加速：jsDelivr（国内快，缓存分钟级延迟）→ gh-proxy（直通，无缓存）→ GitHub raw（权威兜底）
+      // 多源加速：jsDelivr 双域名（国内快，缓存分钟级延迟）→ 多个 gh-proxy 镜像（直通，无缓存）→ GitHub raw（权威兜底）
       versionJson: "version.json",
       sourceUrls: /* @__PURE__ */ __name((file) => [
         `https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/${file}`,
+        `https://fastly.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/${file}`,
         `https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/${file}`,
+        `https://ghproxy.net/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/${file}`,
         `https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/${file}`
       ], "sourceUrls")
     };
@@ -21327,12 +21329,16 @@ ${arcs}
     }
     __name(fetchTextForUpdate, "fetchTextForUpdate");
     async function fetchFirstAvailable(urls, opts) {
+      const details = [];
       const results = await Promise.all(urls.map(
-        (url) => fetchTextForUpdate(url, opts).then((text) => ({ url, text })).catch(() => null)
+        (url) => fetchTextForUpdate(url, opts).then((text) => ({ url, text })).catch((e) => {
+          details.push((url.split("/")[2] || url) + ": " + (e && e.message || e));
+          return null;
+        })
       ));
       const ok = results.find((r) => r && r.text && r.text.length > 0);
       if (ok) return ok.text;
-      throw new Error("所有更新源均不可用");
+      throw new Error("所有更新源均不可用（" + details.join("; ") + "）");
     }
     __name(fetchFirstAvailable, "fetchFirstAvailable");
     function setUpdateStatus(html, type) {
