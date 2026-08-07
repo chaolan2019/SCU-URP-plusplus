@@ -16,8 +16,7 @@
     "GM_xmlhttpRequest"
   ],
   "connect": [
-    "raw.githubusercontent.com",
-    "github.com"
+    "*"
   ],
   "run-at": "document-start"
 }

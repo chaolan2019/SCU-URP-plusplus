@@ -106,13 +106,11 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     repo: 'https://github.com/chaolan2019/SCU-URP-plusplus',
     changelogPage: 'https://github.com/chaolan2019/SCU-URP-plusplus/blob/main/CHANGELOG.md',
     greasySearch: 'https://greasyfork.org/zh-CN/scripts?q=SCU+URP%2B%2B',
-    // 多源加速：jsDelivr 双域名（国内快，缓存分钟级延迟）→ 多个 gh-proxy 镜像（直通，无缓存）→ GitHub raw（权威兜底）
+    // 多源加速：jsDelivr（国内快，缓存分钟级延迟）→ gh-proxy（直通，无缓存）→ GitHub raw（权威兜底）
     versionJson: 'version.json',
     sourceUrls: (file) => [
       `https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/${file}`,
-      `https://fastly.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/${file}`,
       `https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/${file}`,
-      `https://ghproxy.net/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/${file}`,
       `https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/${file}`,
     ],
   };

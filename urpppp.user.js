@@ -2379,16 +2379,12 @@
     const URPPPP_RAW_URL = "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js";
     const URPPPP_SOURCES = [
       "https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/version.json",
-      "https://fastly.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/version.json",
       "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json",
-      "https://ghproxy.net/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json",
       "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json"
     ];
     const URPPPP_RAW_URLS = [
       "https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/urpppp.user.js",
-      "https://fastly.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/urpppp.user.js",
       "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js",
-      "https://ghproxy.net/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js",
       URPPPP_RAW_URL
     ];
     const LOGIN = LOGIN_KEYS;
