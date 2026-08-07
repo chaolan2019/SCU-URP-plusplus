@@ -46,6 +46,14 @@
 | `export-tiny-int16.py` | int16 量化导出 |
 | `eval-v10-32.py` | 独立批次评估 |
 
+## 集成状态（2026-08-07）
+
+已集成进辅助插件 `src/assist/`（构建产物 `urpppp.user.js` ~180KB）：
+
+- `ocr-local.js`：scu-id v3（质心模板 2.1KB），210 张标注验证**整图 98.1%/字符 99.6%**
+- `ocr-zhjw.js` + `zhjw-model.json`：教务 CNN（71KB），79 张人工标注验证**整图 81.0%/字符 94.0%**（完整复现 Python k-means+双三次管线）
+- `login.js`：cas 本地优先；zhjw 本地优先，联合置信度 <0.5 自动走线上 OCR 兜底
+
 ## 关键技术结论
 
 1. **HSV 红色掩码是教务预处理正解**（hue∈[170,179]∪[0,12]，sat≥50，cv2 语义），免疫黑线。
