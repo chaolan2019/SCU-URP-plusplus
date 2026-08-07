@@ -6162,9 +6162,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     // 完全重构侧边栏为 Hanako 风格
     rebuildSidebarCompletely();
     syncSidebarUnderNavbar();
-    // 强制内容区内边距（ACE 偶发内联样式覆盖）
+    // 强制内容区内边距（ACE 偶发内联样式覆盖）；移动端用紧凑内距
+    const urpppMobileLayout = document.documentElement && document.documentElement.classList.contains('urppp-mobile');
+    const urpppContentPadding = urpppMobileLayout ? '8px 8px 24px' : '16px 64px 40px';
     document.querySelectorAll('.page-content, #page-content-template').forEach((el) => {
-      el.style.setProperty('padding', '16px 64px 40px', 'important');
+      el.style.setProperty('padding', urpppContentPadding, 'important');
       el.style.setProperty('box-sizing', 'border-box', 'important');
     });
     alignRollInfoLayout();
@@ -9807,7 +9809,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         scheduleBeautifyNoticeTables();
         scheduleScrubTableInlineBg();
         document.querySelectorAll('.page-content, #page-content-template').forEach((el) => {
-          el.style.setProperty('padding', '16px 64px 40px', 'important');
+          const urpppMobileLayout = document.documentElement && document.documentElement.classList.contains('urppp-mobile');
+          el.style.setProperty('padding', urpppMobileLayout ? '8px 8px 24px' : '16px 64px 40px', 'important');
           el.style.setProperty('box-sizing', 'border-box', 'important');
         });
         alignRollInfoLayout();

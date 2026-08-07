@@ -20972,8 +20972,10 @@ ${arcs}
       }
       rebuildSidebarCompletely();
       syncSidebarUnderNavbar();
+      const urpppMobileLayout = document.documentElement && document.documentElement.classList.contains("urppp-mobile");
+      const urpppContentPadding = urpppMobileLayout ? "8px 8px 24px" : "16px 64px 40px";
       document.querySelectorAll(".page-content, #page-content-template").forEach((el) => {
-        el.style.setProperty("padding", "16px 64px 40px", "important");
+        el.style.setProperty("padding", urpppContentPadding, "important");
         el.style.setProperty("box-sizing", "border-box", "important");
       });
       alignRollInfoLayout();
@@ -24662,7 +24664,8 @@ ${arcs}
           scheduleBeautifyNoticeTables();
           scheduleScrubTableInlineBg();
           document.querySelectorAll(".page-content, #page-content-template").forEach((el) => {
-            el.style.setProperty("padding", "16px 64px 40px", "important");
+            const urpppMobileLayout = document.documentElement && document.documentElement.classList.contains("urppp-mobile");
+            el.style.setProperty("padding", urpppMobileLayout ? "8px 8px 24px" : "16px 64px 40px", "important");
             el.style.setProperty("box-sizing", "border-box", "important");
           });
           alignRollInfoLayout();
