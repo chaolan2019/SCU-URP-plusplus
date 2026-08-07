@@ -98,38 +98,22 @@ import { createNavbarController } from '../features/navigation/navbar.js';
 (function () {
   'use strict';
 
-  // ===== 移动端早期适配（UA + 视口宽度双条件，document-start 阶段执行） =====
+  // ===== 移动端早期适配（UA 检测，document-start 阶段执行） =====
   // 教务系统部分页面无 viewport meta：手机浏览器默认按 980px 布局渲染再整体缩放，
-  // 叠加插件媒体查询后布局错乱。UA 命中移动端时注入 viewport 让视口等于真实设备宽度；
-  // 给 <html> 打 urppp-mobile 标记供样式与后续功能引用。
-  // 标记条件：UA 为移动端，或视口宽度 ≤768px（覆盖 Responsive 模拟/拖窄窗口/平板竖屏）。
+  // 叠加插件媒体查询后布局错乱。UA 命中移动端时注入 viewport 让视口等于真实设备宽度，
+  // 并给 <html> 打 urppp-mobile 标记供后续功能（如移动端清爽模式）引用。
   try {
     const UA = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
-    const uaMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(UA);
-    const docEl = document.documentElement;
-    if (uaMobile && docEl) {
-      docEl.classList.add('urppp-mobile');
+    if (/Android|iPhone|iPad|iPod|Mobile/i.test(UA)) {
+      if (document.documentElement) {
+        document.documentElement.classList.add('urppp-mobile');
+      }
       let viewportMeta = document.querySelector('meta[name="viewport"]');
       if (!viewportMeta) {
         viewportMeta = document.createElement('meta');
         viewportMeta.name = 'viewport';
         viewportMeta.content = 'width=device-width, initial-scale=1';
-        (document.head || docEl || document).appendChild(viewportMeta);
-      }
-    } else if (docEl && window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
-      // 桌面 UA 但视口很窄（设备模拟 / 拖窄窗口）：同样按移动端布局处理
-      docEl.classList.add('urppp-mobile');
-    }
-    // 动态监听视口宽度变化：设备模式切换、窗口缩放时同步标记
-    if (window.matchMedia && !uaMobile) {
-      const mobileMq = window.matchMedia('(max-width: 768px)');
-      const syncMobileMark = () => {
-        if (docEl) docEl.classList.toggle('urppp-mobile', mobileMq.matches);
-      };
-      if (typeof mobileMq.addEventListener === 'function') {
-        mobileMq.addEventListener('change', syncMobileMark);
-      } else if (typeof mobileMq.addListener === 'function') {
-        mobileMq.addListener(syncMobileMark);
+        (document.head || document.documentElement || document).appendChild(viewportMeta);
       }
     }
   } catch (_) { /* viewport 注入失败不影响插件其余功能 */ }

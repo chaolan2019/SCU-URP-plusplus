@@ -12091,242 +12091,198 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
 `;
 
   // src/styles/mobile.css
-  var mobile_default = `      /* 移动端适配（html.urppp-mobile：UA 检测标记）
-       * 入口脚本在 document-start 注入 viewport meta（width=device-width）后，
-       * 视口等于真实设备宽度，教务与插件的媒体查询（991/900/640px 断点）全部正常触发：
-       *   - 侧边栏抽屉化、内容区全宽（navigation.css ≤991px）
-       *   - 清爽模式移动版（clean-mode.css ≤900px）
-       *   - 设置面板贴边全屏（settings.css ≤640px）
-       *   - 业务表格横向滚动（table-beautify.css .urppp-table-wrap）
-       * 本文件做移动端布局总体优化：容器加宽 + 元素整体缩小。 */
-      html.urppp-mobile {
-        /* 禁止页面级横向滚动：溢出内容由区块内滚动承接 */
-        overflow-x: hidden !important;
-      }
-      html.urppp-mobile body {
-        overflow-x: hidden !important;
-        /* 防止插件 fixed 元素在窄视口下把横向滚动条挤出来 */
-        overflow-y: visible !important;
-      }
-
-      /* 侧边栏抽屉化兜底：与 navigation.css ≤991px 规则一致，防视口恰好跨断点 */
-      @media (max-width: 991px) {
-        html.urppp-mobile .sidebar:not(.display) ~ .main-content,
-        html.urppp-mobile .sidebar.display ~ .main-content,
-        html.urppp-mobile body.menu-min .main-content {
-          margin-left: 0 !important;
-        }
-      }
-
-      /* 浮层兜底：插件全局 toast / 弹层在窄视口贴边，避免溢出 */
-      @media (max-width: 640px) {
-        html.urppp-mobile #urppp-feature-toast {
-          left: 12px !important;
-          right: 12px !important;
-          width: auto !important;
-          max-width: none !important;
-          transform: none !important;
-        }
-      }
-
-      /* ============================================================
-       * 移动端布局总体优化：
-       * 1. 内容容器加宽——吃回桌面端 64px 左右留白（internal.css），
-       *    移动视口下内容从 262px 宽提升到接近全宽
-       * 2. 元素整体缩小——字号、面板内距、表格单元格 padding 适度收紧
+  var mobile_default = `      /* ============================================================
+       * 移动端 / 窄视口适配（纯媒体查询，不依赖 JS 标记）
+       *
+       * 教务系统部分页面无 viewport meta：真实手机 UA 时脚本会注入
+       * viewport（见 entry），视口 = 设备宽度；桌面 Chrome 用 Responsive
+       * 模拟或拖窄窗口时，浏览器直接以窄视口渲染。
+       * 两种情况都由本文件的媒体查询接管，保证窄视口下布局可读。
        * ============================================================ */
+
+      /* --- 0. 窄视口通用：禁止页面级横向滚动，溢出转区块内滚动 --- */
       @media (max-width: 991px) {
-        html.urppp-mobile .main-content .page-content,
-        html.urppp-mobile #page-content-template.page-content,
-        html.urppp-mobile div.page-content {
+        body {
+          overflow-x: hidden !important;
+        }
+        .widget-body,
+        .widget-main,
+        .tabContent {
+          overflow-x: auto !important;
+          -webkit-overflow-scrolling: touch;
+        }
+      }
+
+      /* --- 1. 内容容器加宽 + 元素整体缩小（窄视口） --- */
+      @media (max-width: 991px) {
+        .main-content .page-content,
+        #page-content-template.page-content,
+        div.page-content {
           padding: 8px 8px 24px !important;
           max-width: 100% !important;
         }
-        html.urppp-mobile .breadcrumbs,
-        html.urppp-mobile #breadcrumbs {
+        .breadcrumbs,
+        #breadcrumbs {
           padding-left: 8px !important;
           padding-right: 8px !important;
           margin: 4px 0 !important;
         }
-        /* 元素整体缩小 */
-        html.urppp-mobile body {
+        body {
           font-size: 13px !important;
           line-height: 1.5 !important;
         }
-        html.urppp-mobile .page-content h1,
-        html.urppp-mobile .page-content h2,
-        html.urppp-mobile .page-content .panel-title,
-        html.urppp-mobile .page-content .box-title {
+        .page-content h1,
+        .page-content h2,
+        .page-content .panel-title,
+        .page-content .box-title {
           font-size: 17px !important;
         }
-        html.urppp-mobile .page-content h3,
-        html.urppp-mobile .page-content h4,
-        html.urppp-mobile .page-content h5 {
+        .page-content h3,
+        .page-content h4,
+        .page-content h5 {
           font-size: 14px !important;
         }
-        html.urppp-mobile .page-content .panel,
-        html.urppp-mobile .page-content .widget,
-        html.urppp-mobile .page-content form {
+        .page-content .panel,
+        .page-content .widget,
+        .page-content form {
           padding: 8px 8px !important;
         }
-        html.urppp-mobile .table > thead > tr > th,
-        html.urppp-mobile .table > tbody > tr > td,
-        html.urppp-mobile .table-box td,
-        html.urppp-mobile .table-box th {
+        .table > thead > tr > th,
+        .table > tbody > tr > td,
+        .table-box td,
+        .table-box th {
           padding: 6px 8px !important;
           white-space: nowrap !important;
         }
-        /* 分页工具条在移动端紧凑排列 */
-        html.urppp-mobile .pagination,
-        html.urppp-mobile .pagebar {
+        .pagination,
+        .pagebar {
           flex-wrap: wrap !important;
           gap: 4px !important;
         }
-        /* 插件首页仪表板：标题与卡片间距收紧 */
-        html.urppp-mobile #urppp-dashboard .urppp-welcome h2 {
+        #urppp-dashboard .urppp-welcome h2 {
           font-size: 19px !important;
         }
-        html.urppp-mobile #urppp-dashboard .urppp-stats-grid {
+        #urppp-dashboard .urppp-stats-grid {
           gap: 8px !important;
         }
       }
 
-      /* ============================================================
-       * 首页移动端排版优化（保持原有内容与相对结构）：
-       * 1. 顶栏紧凑化——按钮组收敛为纯图标，品牌名缩短，头像菜单保留
-       * 2. 禁止页面级横向滚动，溢出内容转为区块内滚动
-       * 3. 内容区 widget / dashboard 卡片全宽、内距收紧
-       * ============================================================ */
+      /* --- 2. 首页移动端排版（窄视口）：顶栏紧凑 / 内容全宽 --- */
       @media (max-width: 640px) {
-        /* --- 1. 顶栏 navbar 紧凑化 --- */
-        html.urppp-mobile #navbar,
-        html.urppp-mobile #navbar .navbar-container {
+        /* 顶栏 navbar：高度压缩、品牌收敛、按钮组只留图标 */
+        #navbar,
+        #navbar .navbar-container {
           min-height: 44px !important;
           height: 44px !important;
         }
-        html.urppp-mobile #navbar .navbar-brand {
+        #navbar .navbar-brand {
           padding: 0 8px !important;
           line-height: 44px !important;
           height: 44px !important;
           font-size: 0 !important;
         }
-        html.urppp-mobile #navbar .navbar-brand small {
+        #navbar .navbar-brand small {
           font-size: 14px !important;
           line-height: 44px !important;
         }
-        /* 右侧按钮组：只留图标（font-size:0 隐文本，i 显式恢复） */
-        html.urppp-mobile .navbar-buttons .ace-nav > li,
-        html.urppp-mobile .navbar-buttons .ace-nav > li > a {
+        #navbar .menu-toggler {
+          width: 40px !important;
           height: 44px !important;
           line-height: 44px !important;
         }
-        html.urppp-mobile .navbar-buttons .ace-nav > li > a {
+        .navbar-buttons .ace-nav > li,
+        .navbar-buttons .ace-nav > li > a {
+          height: 44px !important;
+          line-height: 44px !important;
+        }
+        .navbar-buttons .ace-nav > li > a {
           padding: 0 7px !important;
           font-size: 0 !important;
         }
-        html.urppp-mobile .navbar-buttons .ace-nav > li > a > i {
+        .navbar-buttons .ace-nav > li > a > i {
           font-size: 15px !important;
           margin: 0 !important;
         }
-        /* 搜索滑块在移动端隐藏 */
-        html.urppp-mobile #intellegenceUDiv {
+        #intellegenceUDiv {
           display: none !important;
         }
-        /* 头像菜单：保留文字但压缩 */
-        html.urppp-mobile .navbar-buttons .nav-user-photo {
+        .navbar-buttons .nav-user-photo {
           width: 26px !important;
           height: 26px !important;
           margin: 0 4px 0 0 !important;
           vertical-align: middle !important;
         }
-        html.urppp-mobile .navbar-buttons .ace-nav > li > a .user-info {
+        .navbar-buttons .ace-nav > li > a .user-info {
           font-size: 12px !important;
           line-height: 44px !important;
           display: inline !important;
           margin-right: 2px !important;
         }
-        html.urppp-mobile .navbar-buttons .ace-nav > li > a .user-info small {
+        .navbar-buttons .ace-nav > li > a .user-info small {
           font-size: 11px !important;
           display: inline !important;
         }
-        html.urppp-mobile .navbar-buttons .ace-nav > li > a .caret {
+        .navbar-buttons .ace-nav > li > a .caret {
           display: none !important;
         }
-        /* 汉堡按钮尺寸 */
-        html.urppp-mobile #navbar .menu-toggler {
-          width: 40px !important;
-          height: 44px !important;
-          line-height: 44px !important;
-        }
 
-        /* --- 2. 禁止页面级横向滚动，溢出转区块内 --- */
-        html.urppp-mobile body {
-          overflow-x: hidden !important;
-        }
-        html.urppp-mobile .widget-body,
-        html.urppp-mobile .widget-main,
-        html.urppp-mobile .tabContent {
-          overflow-x: auto !important;
-          -webkit-overflow-scrolling: touch;
-        }
-
-        /* --- 3. 内容区布局：row/col 全宽、widget 紧凑 --- */
-        html.urppp-mobile .page-content .row {
+        /* 内容区：row/col 全宽、widget 卡片紧凑 */
+        .page-content .row {
           margin-left: 0 !important;
           margin-right: 0 !important;
         }
-        html.urppp-mobile .page-content [class*="col-"] {
+        .page-content [class*="col-"] {
           padding-left: 4px !important;
           padding-right: 4px !important;
         }
-        html.urppp-mobile .widget-container-col,
-        html.urppp-mobile .widget-box {
+        .widget-container-col,
+        .widget-box {
           width: 100% !important;
           max-width: 100% !important;
           margin-left: 0 !important;
           margin-right: 0 !important;
         }
-        html.urppp-mobile .widget-box {
+        .widget-box {
           margin-bottom: 10px !important;
           border-radius: 10px !important;
         }
-        html.urppp-mobile .widget-header {
+        .widget-header {
           padding: 6px 10px !important;
           min-height: 32px !important;
         }
-        html.urppp-mobile .widget-title {
+        .widget-title {
           font-size: 14px !important;
           line-height: 20px !important;
         }
-        html.urppp-mobile .widget-body,
-        html.urppp-mobile .widget-main {
+        .widget-body,
+        .widget-main {
           padding: 8px 10px !important;
         }
 
-        /* --- dashboard 统计卡紧凑化 --- */
-        html.urppp-mobile #urppp-dashboard .urppp-welcome {
+        /* dashboard 统计卡紧凑化 */
+        #urppp-dashboard .urppp-welcome {
           margin: 2px 0 12px !important;
         }
-        html.urppp-mobile #urppp-dashboard .urppp-stats-grid {
+        #urppp-dashboard .urppp-stats-grid {
           gap: 8px !important;
           margin-bottom: 12px !important;
         }
-        html.urppp-mobile #urppp-dashboard .urppp-stat-card {
+        #urppp-dashboard .urppp-stat-card {
           padding: 10px 12px !important;
           gap: 10px !important;
           border-radius: 12px !important;
         }
-        html.urppp-mobile #urppp-dashboard .urppp-stat-card .value {
+        #urppp-dashboard .urppp-stat-card .value {
           font-size: 24px !important;
         }
-        html.urppp-mobile #urppp-dashboard .urppp-stat-card .value.urppp-stat-value-text {
+        #urppp-dashboard .urppp-stat-card .value.urppp-stat-value-text {
           font-size: 20px !important;
         }
-        html.urppp-mobile #urppp-dashboard .urppp-stat-card .label {
+        #urppp-dashboard .urppp-stat-card .label {
           font-size: 13px !important;
           max-width: none !important;
         }
-        html.urppp-mobile #urppp-dashboard .urppp-main-grid {
+        #urppp-dashboard .urppp-main-grid {
           gap: 12px !important;
         }
       }
@@ -15090,29 +15046,16 @@ ${arcs}
     "use strict";
     try {
       const UA = typeof navigator !== "undefined" && navigator.userAgent || "";
-      const uaMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(UA);
-      const docEl = document.documentElement;
-      if (uaMobile && docEl) {
-        docEl.classList.add("urppp-mobile");
+      if (/Android|iPhone|iPad|iPod|Mobile/i.test(UA)) {
+        if (document.documentElement) {
+          document.documentElement.classList.add("urppp-mobile");
+        }
         let viewportMeta = document.querySelector('meta[name="viewport"]');
         if (!viewportMeta) {
           viewportMeta = document.createElement("meta");
           viewportMeta.name = "viewport";
           viewportMeta.content = "width=device-width, initial-scale=1";
-          (document.head || docEl || document).appendChild(viewportMeta);
-        }
-      } else if (docEl && window.matchMedia && window.matchMedia("(max-width: 768px)").matches) {
-        docEl.classList.add("urppp-mobile");
-      }
-      if (window.matchMedia && !uaMobile) {
-        const mobileMq = window.matchMedia("(max-width: 768px)");
-        const syncMobileMark = /* @__PURE__ */ __name(() => {
-          if (docEl) docEl.classList.toggle("urppp-mobile", mobileMq.matches);
-        }, "syncMobileMark");
-        if (typeof mobileMq.addEventListener === "function") {
-          mobileMq.addEventListener("change", syncMobileMark);
-        } else if (typeof mobileMq.addListener === "function") {
-          mobileMq.addListener(syncMobileMark);
+          (document.head || document.documentElement || document).appendChild(viewportMeta);
         }
       }
     } catch (_) {
