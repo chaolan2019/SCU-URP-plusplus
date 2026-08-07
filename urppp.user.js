@@ -15090,16 +15090,29 @@ ${arcs}
     "use strict";
     try {
       const UA = typeof navigator !== "undefined" && navigator.userAgent || "";
-      if (/Android|iPhone|iPad|iPod|Mobile/i.test(UA)) {
-        if (document.documentElement) {
-          document.documentElement.classList.add("urppp-mobile");
-        }
+      const uaMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(UA);
+      const docEl = document.documentElement;
+      if (uaMobile && docEl) {
+        docEl.classList.add("urppp-mobile");
         let viewportMeta = document.querySelector('meta[name="viewport"]');
         if (!viewportMeta) {
           viewportMeta = document.createElement("meta");
           viewportMeta.name = "viewport";
           viewportMeta.content = "width=device-width, initial-scale=1";
-          (document.head || document.documentElement || document).appendChild(viewportMeta);
+          (document.head || docEl || document).appendChild(viewportMeta);
+        }
+      } else if (docEl && window.matchMedia && window.matchMedia("(max-width: 768px)").matches) {
+        docEl.classList.add("urppp-mobile");
+      }
+      if (window.matchMedia && !uaMobile) {
+        const mobileMq = window.matchMedia("(max-width: 768px)");
+        const syncMobileMark = /* @__PURE__ */ __name(() => {
+          if (docEl) docEl.classList.toggle("urppp-mobile", mobileMq.matches);
+        }, "syncMobileMark");
+        if (typeof mobileMq.addEventListener === "function") {
+          mobileMq.addEventListener("change", syncMobileMark);
+        } else if (typeof mobileMq.addListener === "function") {
+          mobileMq.addListener(syncMobileMark);
         }
       }
     } catch (_) {
