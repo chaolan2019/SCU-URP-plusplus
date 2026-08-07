@@ -16,7 +16,10 @@
     "GM_xmlhttpRequest"
   ],
   "connect": [
-    "*"
+    "raw.githubusercontent.com",
+    "github.com",
+    "cdn.jsdelivr.net",
+    "gh-proxy.com"
   ],
   "run-at": "document-start"
 }
