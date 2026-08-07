@@ -12090,6 +12090,46 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       }
 `;
 
+  // src/styles/mobile.css
+  var mobile_default = `      /* 移动端适配（html.urppp-mobile：UA 检测标记）
+       * 入口脚本在 document-start 注入 viewport meta（width=device-width）后，
+       * 视口等于真实设备宽度，教务与插件的媒体查询（991/900/640px 断点）全部正常触发：
+       *   - 侧边栏抽屉化、内容区全宽（navigation.css ≤991px）
+       *   - 清爽模式移动版（clean-mode.css ≤900px）
+       *   - 设置面板贴边全屏（settings.css ≤640px）
+       *   - 业务表格横向滚动（table-beautify.css .urppp-table-wrap）
+       * 本文件只做跨断点兜底与窄视口下的通用保险。 */
+      html.urppp-mobile {
+        /* 教务硬编码宽度的内容允许横向滚动浏览，替代 980px 整体缩放 */
+        overflow-x: auto;
+      }
+      html.urppp-mobile body {
+        overflow-x: auto !important;
+        /* 防止插件 fixed 元素在窄视口下把横向滚动条挤出来 */
+        overflow-y: visible !important;
+      }
+
+      /* 侧边栏抽屉化兜底：与 navigation.css ≤991px 规则一致，防视口恰好跨断点 */
+      @media (max-width: 991px) {
+        html.urppp-mobile .sidebar:not(.display) ~ .main-content,
+        html.urppp-mobile .sidebar.display ~ .main-content,
+        html.urppp-mobile body.menu-min .main-content {
+          margin-left: 0 !important;
+        }
+      }
+
+      /* 浮层兜底：插件全局 toast / 弹层在窄视口贴边，避免溢出 */
+      @media (max-width: 640px) {
+        html.urppp-mobile #urppp-feature-toast {
+          left: 12px !important;
+          right: 12px !important;
+          width: auto !important;
+          max-width: none !important;
+          transform: none !important;
+        }
+      }
+`;
+
   // src/features/clean-mode/state.js
   function createCleanModeState() {
     return {
@@ -14846,6 +14886,22 @@ ${arcs}
   // src/userscripts/urppp.entry.js
   (function() {
     "use strict";
+    try {
+      const UA = typeof navigator !== "undefined" && navigator.userAgent || "";
+      if (/Android|iPhone|iPad|iPod|Mobile/i.test(UA)) {
+        if (document.documentElement) {
+          document.documentElement.classList.add("urppp-mobile");
+        }
+        let viewportMeta = document.querySelector('meta[name="viewport"]');
+        if (!viewportMeta) {
+          viewportMeta = document.createElement("meta");
+          viewportMeta.name = "viewport";
+          viewportMeta.content = "width=device-width, initial-scale=1";
+          (document.head || document.documentElement || document).appendChild(viewportMeta);
+        }
+      }
+    } catch (_) {
+    }
     const URPPP_VERSION = "1.6.1";
     const URPPP_UPDATE = {
       mainRaw: "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js",
@@ -20810,6 +20866,13 @@ ${arcs}
         document.head.appendChild(scheduleCardStyle);
       }
       scheduleCardStyle.textContent = schedule_cards_default;
+      let mobileStyle = document.getElementById("urppp-mobile-style");
+      if (!mobileStyle) {
+        mobileStyle = document.createElement("style");
+        mobileStyle.id = "urppp-mobile-style";
+        document.head.appendChild(mobileStyle);
+      }
+      mobileStyle.textContent = mobile_default;
       try {
         applySkinAttr();
       } catch (_) {

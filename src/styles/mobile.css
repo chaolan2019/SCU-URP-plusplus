@@ -1,0 +1,37 @@
+      /* 移动端适配（html.urppp-mobile：UA 检测标记）
+       * 入口脚本在 document-start 注入 viewport meta（width=device-width）后，
+       * 视口等于真实设备宽度，教务与插件的媒体查询（991/900/640px 断点）全部正常触发：
+       *   - 侧边栏抽屉化、内容区全宽（navigation.css ≤991px）
+       *   - 清爽模式移动版（clean-mode.css ≤900px）
+       *   - 设置面板贴边全屏（settings.css ≤640px）
+       *   - 业务表格横向滚动（table-beautify.css .urppp-table-wrap）
+       * 本文件只做跨断点兜底与窄视口下的通用保险。 */
+      html.urppp-mobile {
+        /* 教务硬编码宽度的内容允许横向滚动浏览，替代 980px 整体缩放 */
+        overflow-x: auto;
+      }
+      html.urppp-mobile body {
+        overflow-x: auto !important;
+        /* 防止插件 fixed 元素在窄视口下把横向滚动条挤出来 */
+        overflow-y: visible !important;
+      }
+
+      /* 侧边栏抽屉化兜底：与 navigation.css ≤991px 规则一致，防视口恰好跨断点 */
+      @media (max-width: 991px) {
+        html.urppp-mobile .sidebar:not(.display) ~ .main-content,
+        html.urppp-mobile .sidebar.display ~ .main-content,
+        html.urppp-mobile body.menu-min .main-content {
+          margin-left: 0 !important;
+        }
+      }
+
+      /* 浮层兜底：插件全局 toast / 弹层在窄视口贴边，避免溢出 */
+      @media (max-width: 640px) {
+        html.urppp-mobile #urppp-feature-toast {
+          left: 12px !important;
+          right: 12px !important;
+          width: auto !important;
+          max-width: none !important;
+          transform: none !important;
+        }
+      }

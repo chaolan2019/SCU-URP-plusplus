@@ -78,6 +78,7 @@ import navigationStyles from '../styles/navigation.css';
 import cleanModeStyles from '../styles/clean-mode.css';
 import dashboardStyles from '../styles/dashboard.css';
 import scoreAnalysisStyles from '../styles/score-analysis.css';
+import mobileStyles from '../styles/mobile.css';
 import { createCleanModeState, resetCleanModeData } from '../features/clean-mode/state.js';
 import { createCleanModeDataLoader } from '../features/clean-mode/data.js';
 import { createCleanModeRenderer } from '../features/clean-mode/render.js';
@@ -96,6 +97,27 @@ import { createNavbarController } from '../features/navigation/navbar.js';
 
 (function () {
   'use strict';
+
+  // ===== 移动端早期适配（UA 检测，document-start 阶段执行） =====
+  // 教务系统无 viewport meta：手机浏览器默认按 980px 布局渲染再整体缩放，
+  // 叠加插件媒体查询后布局错乱（元素挤成一条）。注入 viewport 让视口等于
+  // 真实设备宽度，教务与插件的媒体查询才能正确触发；
+  // 再给 <html> 打 urppp-mobile 标记供样式与后续功能（如移动端清爽模式）引用。
+  try {
+    const UA = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+    if (/Android|iPhone|iPad|iPod|Mobile/i.test(UA)) {
+      if (document.documentElement) {
+        document.documentElement.classList.add('urppp-mobile');
+      }
+      let viewportMeta = document.querySelector('meta[name="viewport"]');
+      if (!viewportMeta) {
+        viewportMeta = document.createElement('meta');
+        viewportMeta.name = 'viewport';
+        viewportMeta.content = 'width=device-width, initial-scale=1';
+        (document.head || document.documentElement || document).appendChild(viewportMeta);
+      }
+    }
+  } catch (_) { /* viewport 注入失败不影响插件其余功能 */ }
 
   // 与脚本头 @version 保持同步
   const URPPP_VERSION = '1.6.1';
@@ -6095,6 +6117,14 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       document.head.appendChild(scheduleCardStyle);
     }
     scheduleCardStyle.textContent = scheduleCardStyles;
+    // 移动端兑底样式最后注入（urppp-mobile 标记类已在 document-start 设置）
+    let mobileStyle = document.getElementById('urppp-mobile-style');
+    if (!mobileStyle) {
+      mobileStyle = document.createElement('style');
+      mobileStyle.id = 'urppp-mobile-style';
+      document.head.appendChild(mobileStyle);
+    }
+    mobileStyle.textContent = mobileStyles;
     try { applySkinAttr(); } catch (_) {}
 
     // 给表格包一层 wrapper：圆角 + 完整外框，绕过 Bootstrap thead border-top:0 和 overflow 裁剪
