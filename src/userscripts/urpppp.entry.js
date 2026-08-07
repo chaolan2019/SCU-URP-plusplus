@@ -9,6 +9,7 @@ import {
 } from '../assist/constants.js';
 import { getBase64FromImage, recognizeCaptcha as recognizeCaptchaWithRequest } from '../assist/ocr.js';
 import { recognizeLocalCaptcha } from '../assist/ocr-local.js';
+import { recognizeZhjwCaptcha } from '../assist/ocr-zhjw.js';
 import { createAssistStorage } from '../assist/storage.js';
 import {
   escapeAssistHtml as escapeHtml,
@@ -105,6 +106,7 @@ import assistStyles from '../styles/assist.css';
       loginGuardStyles,
       recognizeCaptchaWithRequest,
       recognizeLocalCaptcha,
+      recognizeZhjwCaptcha,
       setInputValue,
       setStatus,
       sleep,

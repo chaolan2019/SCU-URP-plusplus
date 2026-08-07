@@ -110,16 +110,25 @@ export function createLoginAssist({ config, storage, deps }) {
     };
   }
 
-  // 验证码识别：本地优先（质心模板），本地失败且配置了线上服务时改用线上
-  const recognizeSmart = async (img, ocrUrl) => {
-    const local = typeof deps.recognizeLocalCaptcha === 'function' ? deps.recognizeLocalCaptcha(img) : null;
-    if (local && /^[a-z0-9]{4}$/i.test(local)) {
+  // 验证码识别：统一认证（cas）本地优先（v3 质心模板，97.8%）；
+  // 教务（zhjw）本地 CNN 优先（~81%），低置信走线上兜底。
+  const recognizeSmart = async (img, ocrUrl, kind) => {
+    let local = null;
+    let conf = 1;
+    if (kind === 'cas' && typeof deps.recognizeLocalCaptcha === 'function') {
+      local = deps.recognizeLocalCaptcha(img);
+    } else if (kind === 'zhjw' && typeof deps.recognizeZhjwCaptcha === 'function') {
+      const r = deps.recognizeZhjwCaptcha(img);
+      if (r) { local = r.code; conf = r.conf; }
+    }
+    const confThreshold = 0.5; // 四字符联合置信度：zhjw 低置信走线上，cas 本地已足够可靠
+    if (local && /^[a-z0-9]{4}$/i.test(local) && (kind === 'cas' || conf >= confThreshold)) {
       deps.log('验证码（本地）', local);
       return local;
     }
     const url = String(ocrUrl || '').trim();
     if (!url) {
-      deps.log('本地识别失败且未配置线上 OCR，等待手动填写');
+      deps.log(kind === 'cas' ? '本地识别失败且未配置线上 OCR，等待手动填写' : '本地识别低置信且未配置线上 OCR，等待手动填写');
       return '';
     }
     const code = await deps.recognizeCaptchaWithRequest(
@@ -240,7 +249,7 @@ export function createLoginAssist({ config, storage, deps }) {
     if (guard.failures > 0) refreshLoginCaptchaImage(captchaImg);
     fillLoginCaptcha(captchaInput, '');
     if (!captchaImg.complete) await new Promise((resolve) => { captchaImg.onload = resolve; setTimeout(resolve, 2000); });
-    const code = await recognizeSmart(captchaImg, c.ocrUrl);
+    const code = await recognizeSmart(captchaImg, c.ocrUrl, 'zhjw');
     if (!code) return true;
     deps.log('教务验证码：', code);
     if (c.autoSubmit && loginButton) {
@@ -290,7 +299,7 @@ export function createLoginAssist({ config, storage, deps }) {
     if (guard.paused) return true;
     fillLoginCaptcha(els.captchaInput, '');
     if (!els.captchaImg.complete) await new Promise((resolve) => { els.captchaImg.onload = resolve; setTimeout(resolve, 2000); });
-    const code = await recognizeSmart(els.captchaImg, c.ocrUrl);
+    const code = await recognizeSmart(els.captchaImg, c.ocrUrl, 'cas');
     if (!code) return true;
     fillLoginCaptcha(els.captchaInput, code);
     deps.log('统一认证验证码：', code);
