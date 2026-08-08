@@ -6,6 +6,7 @@ export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 export const USERSCRIPT_PATH = path.join(ROOT, 'urppp.user.js');
 export const FIXTURE_URLS = {
   home: 'http://zhjw.scu.edu.cn/index',
+  'mobile-home': 'http://zhjw.scu.edu.cn/index',
   schedule: 'http://zhjw.scu.edu.cn/student/courseSelect/thisSemesterCurriculum/index',
   grades: 'http://zhjw.scu.edu.cn/student/integratedQuery/scoreQuery/allTermScores/index',
   evaluation: 'http://zhjw.scu.edu.cn/student/teachingEvaluation/teachingEvaluation/search',

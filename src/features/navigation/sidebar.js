@@ -105,33 +105,52 @@ export function createSidebarController({
     const header = documentRef.createElement('div');
     header.className = 'urppp-sidebar-header';
     header.style.cssText = 'position:absolute;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:flex-end;padding:14px 14px 12px;border-bottom:1px solid var(--border);background:var(--surface)';
-    const toggle = documentRef.createElement('div');
+    const toggle = documentRef.createElement('button');
+    toggle.type = 'button';
     toggle.className = 'urppp-sidebar-toggle';
-    toggle.innerHTML = '<i class="fa fa-angle-left"></i>';
+    toggle.innerHTML = '<i class="fa fa-angle-left" aria-hidden="true"></i>';
     toggle.title = '收起侧边栏';
-    const doToggle = () => {
+    if (typeof toggle.setAttribute === 'function') toggle.setAttribute('aria-label', '收起侧边栏');
+    const isNarrow = () => !!(windowRef.matchMedia && windowRef.matchMedia('(max-width: 991px)').matches);
+    const doToggle = (event) => {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      if (isNarrow()) {
+        sidebar.classList.remove('display');
+        syncMobileContentOffset();
+        return;
+      }
       const origToggle = documentRef.getElementById('sidebar-collapse');
       if (origToggle) origToggle.click();
     };
     toggle.addEventListener('click', doToggle);
     header.appendChild(toggle);
 
-    // 监听折叠状态，切换箭头
-    const observer = new MutationObserverRef(() => {
+    // 监听折叠状态，切换箭头；移动端始终表示关闭抽屉
+    const syncToggle = () => {
+      const narrow = isNarrow();
       const isMin = documentRef.body.classList.contains('menu-min') || sidebar.classList.contains('menu-min');
-      toggle.innerHTML = isMin ? '<i class="fa fa-angle-right"></i>' : '<i class="fa fa-angle-left"></i>';
-      toggle.title = isMin ? '展开侧边栏' : '收起侧边栏';
-      if (isMin) {
+      const label = narrow ? '关闭菜单' : (isMin ? '展开侧边栏' : '收起侧边栏');
+      toggle.innerHTML = narrow
+        ? '<i class="fa fa-times" aria-hidden="true"></i>'
+        : (isMin ? '<i class="fa fa-angle-right" aria-hidden="true"></i>' : '<i class="fa fa-angle-left" aria-hidden="true"></i>');
+      toggle.title = label;
+      if (typeof toggle.setAttribute === 'function') toggle.setAttribute('aria-label', label);
+      if (!narrow && isMin) {
         header.style.justifyContent = 'center';
         header.style.padding = '12px 0';
       } else {
         header.style.justifyContent = 'flex-end';
         header.style.padding = '';
       }
-    });
+    };
+    const observer = new MutationObserverRef(syncToggle);
     observer.observe(documentRef.body, { attributes: true, attributeFilter: ['class'] });
     observer.observe(sidebar, { attributes: true, attributeFilter: ['class'] });
     windowRef.__urpppSidebarMenuObserver = observer;
+    syncToggle();
 
     const newMenus = documentRef.createElement('ul');
     newMenus.id = 'urppp-menus';

@@ -11543,10 +11543,13 @@ html.urppp-clean-lock,html.urppp-clean-lock body{overflow:hidden!important}
 }
 html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#urppp-nav-clean{
   margin-left:8px!important;height:28px!important;min-height:28px!important;max-height:28px!important;
-  padding:0 10px!important;border-radius:999px!important;border:1px solid color-mix(in srgb,var(--primary) 45%,var(--border))!important;
-  background:color-mix(in srgb,var(--primary) 8%,var(--surface))!important;color:var(--primary)!important;font-size:12px!important;
+  padding:0 10px!important;border-radius:var(--urppp-action-radius,999px)!important;
+  border:var(--urppp-action-border,none)!important;
+  background:var(--urppp-action-bg,var(--primary))!important;
+  color:var(--urppp-action-color,var(--surface))!important;font-size:12px!important;
   display:inline-flex!important;align-items:center!important;gap:6px!important;width:auto!important;
-  box-shadow:none!important;line-height:26px!important;cursor:pointer!important;float:none!important
+  box-shadow:var(--urppp-action-shadow,0 2px 6px var(--ring))!important;
+  line-height:26px!important;cursor:pointer!important;float:none!important
 }
 #urppp-nav-clean svg{width:14px!important;height:14px!important;display:block!important}
 @media (max-width:900px){
@@ -12221,22 +12224,30 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           min-height: 44px !important;
         }
         #navbar .menu-toggler {
-          width: 36px !important;
-          height: 36px !important;
-          line-height: 36px !important;
+          width: 40px !important;
+          height: 40px !important;
+          min-width: 40px !important;
+          line-height: 40px !important;
           padding: 0 !important;
-          margin: 4px 0 0 4px !important;
-          border-radius: 9px !important;
-          background: var(--input-bg, #f5f5f7) !important;
-          border: 1px solid var(--border, #e2e8f0) !important;
-          box-shadow: none !important;
+          margin: 2px 0 0 4px !important;
+          border-radius: var(--urppp-menu-radius, 12px) !important;
+          background: var(--urppp-menu-bg, var(--input-bg, #f5f5f7)) !important;
+          color: var(--urppp-menu-color, var(--text, #1d1d1f)) !important;
+          border: var(--urppp-menu-border, 1px solid var(--border, #e2e8f0)) !important;
+          box-shadow: var(--urppp-menu-shadow, none) !important;
+          touch-action: manipulation;
         }
-        /* 汉堡按钮主题化：细线条、紧凑 */
+        /* 汉堡图标：短、细、紧凑，避免 ACE 默认粗线和大间距 */
         #navbar .menu-toggler .icon-bar {
-          background: var(--text, #1d1d1f) !important;
+          display: block !important;
+          width: 14px !important;
+          height: 1px !important;
+          min-height: 1px !important;
+          margin: 2px auto !important;
+          border: 0 !important;
+          border-radius: 0 !important;
+          background: currentColor !important;
           box-shadow: none !important;
-          width: 16px !important;
-          margin: 3px auto !important;
         }
         #navbar .navbar-header.pull-left {
           height: 44px !important;
@@ -12259,9 +12270,13 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         #urppp-nav-theme #urppp-nav-clean {
           height: 30px !important;
           min-height: 30px !important;
-          margin: 0 0 0 6px !important;
-          padding: 0 9px !important;
+          margin: 0 10px 0 6px !important;
+          padding: 0 10px !important;
           font-size: 12px !important;
+        }
+        /* 顶栏只保留菜单、品牌与清爽按钮；主题切换在设置面板中保留 */
+        #navbar #urppp-nav-theme {
+          display: none !important;
         }
         /* 功能按钮区（含用户头像）整体隐藏：收进抽屉 */
         #navbar .navbar-buttons {
@@ -12271,110 +12286,179 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         #navbar #intellegenceUDiv {
           display: none !important;
         }
-        /* 抽屉内快捷功能区（JS 生成）：恢复被教务 CSS 隐藏的 span 文字 */
-        #sidebar .urppp-mobile-quick {
-          padding: 8px 12px 10px !important;
+        /* 抽屉覆盖层必须高于固定顶栏，保证关闭按钮可触摸 */
+        #sidebar.display:not(.menu-min) {
+          z-index: 1200 !important;
+        }
+        /* 抽屉 Header 固定占位；用户资料紧随其后，菜单不再重复留 50px 空白 */
+        #sidebar .urppp-sidebar-header {
+          height: 50px !important;
+          padding: 9px 12px !important;
+        }
+        #sidebar .urppp-sidebar-toggle {
+          width: 32px !important;
+          height: 32px !important;
+          min-width: 32px !important;
+          padding: 0 !important;
+          border-radius: var(--urppp-menu-radius, 12px) !important;
+          border: var(--urppp-menu-border, 1px solid var(--border)) !important;
+          background: var(--urppp-menu-bg, var(--input-bg)) !important;
+          color: var(--urppp-menu-color, var(--text)) !important;
+          box-shadow: var(--urppp-menu-shadow, none) !important;
+        }
+        #sidebar #urppp-menus {
+          margin-top: 0 !important;
+        }
+
+        /* 抽屉内用户资料与四个原始操作按钮 */
+        #urppp-mobile-user {
+          margin-top: 50px !important;
+          padding: 12px !important;
           border-bottom: 1px solid var(--border, #e8eaed) !important;
-          margin-bottom: 4px !important;
+          background: var(--surface, #fff) !important;
         }
-        #sidebar .urppp-mobile-quick .urppp-mobile-quick-title {
+        #urppp-mobile-user .urppp-mobile-user-identity {
+          display: flex !important;
+          align-items: center !important;
+          gap: 10px !important;
+          min-height: 38px !important;
+        }
+        #urppp-mobile-user .nav-user-photo {
+          width: 38px !important;
+          height: 38px !important;
+          min-width: 38px !important;
+          max-width: 38px !important;
+          min-height: 38px !important;
+          max-height: 38px !important;
+          display: block !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          border-radius: 50% !important;
+          border: 1px solid var(--border, #e8eaed) !important;
+          object-fit: cover !important;
+          object-position: center !important;
+        }
+        #urppp-mobile-user .user-info {
+          min-width: 0 !important;
+          color: var(--text, #1d1d1f) !important;
+          font-size: 13px !important;
+          font-weight: 600 !important;
+          line-height: 1.35 !important;
+          white-space: normal !important;
+        }
+        #urppp-mobile-user .urppp-mobile-user-actions {
+          display: grid !important;
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          gap: 6px !important;
+          margin-top: 10px !important;
+        }
+        #urppp-mobile-user .urppp-mobile-user-action {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: flex-start !important;
+          gap: 7px !important;
+          min-width: 0 !important;
+          min-height: 34px !important;
+          padding: 7px 9px !important;
+          border-radius: var(--radius-sm, 8px) !important;
+          border: 1px solid var(--border, #e8eaed) !important;
+          background: var(--input-bg, #f5f5f7) !important;
+          color: var(--text, #1d1d1f) !important;
           font-size: 12px !important;
-          color: var(--text-secondary, #6b7280) !important;
-          margin-bottom: 6px !important;
-          letter-spacing: 1px !important;
+          line-height: 1.2 !important;
+          text-decoration: none !important;
         }
-        #sidebar .urppp-mobile-quick a {
+        #urppp-mobile-user .urppp-mobile-user-action i {
+          width: 14px !important;
+          color: var(--primary, #b53434) !important;
+          text-align: center !important;
+        }
+
+        /* 抽屉内快捷功能：客服与搜索同一行，搜索框在下方展开 */
+        #sidebar .urppp-mobile-quick {
+          padding: 10px 12px !important;
+          border-bottom: 1px solid var(--border, #e8eaed) !important;
+          background: var(--surface, #fff) !important;
+        }
+        #sidebar .urppp-mobile-quick-title {
+          margin-bottom: 7px !important;
+          color: var(--text-secondary, #6b7280) !important;
+          font-size: 12px !important;
+          letter-spacing: 0 !important;
+        }
+        #sidebar .urppp-mobile-tool-row {
+          display: grid !important;
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          gap: 8px !important;
+          margin-bottom: 6px !important;
+        }
+        #sidebar .urppp-mobile-tool-button {
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          gap: 7px !important;
+          min-height: 36px !important;
+          padding: 0 10px !important;
+          border-radius: var(--radius-sm, 8px) !important;
+          border: 1px solid var(--border, #e8eaed) !important;
+          background: var(--input-bg, #f5f5f7) !important;
+          color: var(--text, #1d1d1f) !important;
+          font-size: 12px !important;
+          text-decoration: none !important;
+          cursor: pointer !important;
+        }
+        #sidebar .urppp-mobile-tool-button i {
+          color: var(--primary, #b53434) !important;
+          font-size: 14px !important;
+        }
+        #sidebar .urppp-mobile-quick-links {
+          display: grid !important;
+          gap: 2px !important;
+        }
+        #sidebar .urppp-mobile-quick-link {
           display: flex !important;
           align-items: center !important;
           gap: 8px !important;
-          padding: 7px 4px !important;
-          font-size: 13px !important;
+          min-height: 32px !important;
+          padding: 6px 4px !important;
           color: var(--text, #1d1d1f) !important;
-          text-decoration: none !important;
+          font-size: 13px !important;
           line-height: 1.3 !important;
+          text-decoration: none !important;
         }
-        #sidebar .urppp-mobile-quick a i {
+        #sidebar .urppp-mobile-quick-link i {
           width: 18px !important;
-          text-align: center !important;
           color: var(--primary, #b53434) !important;
           font-size: 14px !important;
+          text-align: center !important;
         }
         #sidebar .urppp-mobile-quick .span_bbzx {
           display: inline !important;
           font-size: 13px !important;
         }
-        /* 抽屉内用户区（JS 生成，id 选择器保证匹配） */
-        #urppp-mobile-user {
-          padding: 10px 12px 10px !important;
-          border-bottom: 1px solid var(--border, #e8eaed) !important;
-          list-style: none !important;
-        }
-        #urppp-mobile-user > a {
-          display: flex !important;
-          align-items: center !important;
-          gap: 10px !important;
-          color: var(--text, #1d1d1f) !important;
-          font-size: 13px !important;
-          text-decoration: none !important;
-          line-height: 1.3 !important;
-          padding: 2px 0 !important;
-          min-height: 36px !important;
-        }
-        #urppp-mobile-user .nav-user-photo {
-          width: 36px !important;
-          height: 36px !important;
-          max-width: 36px !important;
-          max-height: 36px !important;
-          min-width: 36px !important;
-          min-height: 36px !important;
-          border-radius: 50% !important;
-          object-fit: cover !important;
-          overflow: hidden !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          display: block !important;
-        }
-        #urppp-mobile-user .user-info {
-          display: inline !important;
-          font-size: 13px !important;
-          line-height: 1.3 !important;
-          margin: 0 !important;
-        }
-        #urppp-mobile-user .user-info small {
-          display: inline !important;
-          font-size: 11px !important;
-          color: var(--text-secondary, #6b7280) !important;
-          margin: 0 !important;
-        }
-        #urppp-mobile-user .caret {
-          margin-left: auto !important;
-        }
-        #urppp-mobile-user .user-menu,
-        #urppp-mobile-user .dropdown-menu {
-          position: static !important;
-          box-shadow: none !important;
-          border: 1px solid var(--border, #e8eaed) !important;
-          border-radius: 10px !important;
-          margin: 8px 0 0 !important;
-          padding: 6px !important;
-          background: var(--surface, #fff) !important;
-          float: none !important;
-          min-width: 0 !important;
+        #sidebar .urppp-mobile-search-panel[hidden] {
           display: none !important;
         }
-        #urppp-mobile-user .user-menu.open,
-        #urppp-mobile-user .dropdown-menu.open {
+        #sidebar .urppp-mobile-search-panel.open {
           display: block !important;
+          margin-top: 8px !important;
         }
-        #urppp-mobile-user .user-menu a,
-        #urppp-mobile-user .dropdown-menu a {
-          padding: 8px 10px !important;
-          display: flex !important;
-          align-items: center !important;
-          gap: 8px !important;
-          font-size: 13px !important;
-          color: var(--text, #1d1d1f) !important;
-          text-decoration: none !important;
+        #sidebar .urppp-mobile-search-panel #form-search.nav-search {
+          position: relative !important;
+          inset: auto !important;
+          width: 100% !important;
+          height: 34px !important;
+          margin: 0 !important;
+          opacity: 1 !important;
+          overflow: visible !important;
+          transform: none !important;
+          z-index: 1 !important;
+          pointer-events: auto !important;
+        }
+        #sidebar .urppp-mobile-search-panel #search-input {
+          width: 100% !important;
+          height: 34px !important;
+          box-sizing: border-box !important;
         }
 
         /* ---------- 内容区：双列合并单列、卡片流 ---------- */
@@ -12480,8 +12564,13 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           justify-content: center !important;
           gap: 3px !important;
           padding: 10px 12px !important;
-          border-radius: 12px !important;
+          border-radius: var(--radius, 12px) !important;
           min-height: 54px !important;
+        }
+        html[data-urppp-skin="flat"] #urppp-dashboard .urppp-stat-card {
+          border-radius: 0 !important;
+          border: 2px solid var(--text) !important;
+          box-shadow: none !important;
         }
         #urppp-dashboard .urppp-stat-card .value {
           font-size: 22px !important;
@@ -13659,6 +13748,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     __name(closeCleanMode, "closeCleanMode");
     function injectCleanEntry() {
       try {
+        deps.ensureStyle();
         let btn = document.getElementById("urppp-nav-clean");
         if (!deps.isHomePage()) {
           if (btn) btn.remove();
@@ -13679,23 +13769,15 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           });
           host.appendChild(btn);
         }
-        const skin = typeof deps.getSkin === "function" ? deps.getSkin() : "apple";
-        const isFlat = skin === "flat";
         Object.entries({
           display: "inline-flex",
           "align-items": "center",
           height: "28px",
           "min-height": "28px",
           padding: "0 12px",
-          border: isFlat ? "2px solid var(--text)" : "none",
-          "border-radius": isFlat ? "0" : "999px",
-          background: isFlat ? "var(--surface)" : "var(--primary)",
-          color: isFlat ? "var(--text)" : "var(--surface)",
           "font-size": "12px",
           gap: "6px",
           width: "auto",
-          "box-shadow": isFlat ? "none" : "0 2px 6px var(--ring)",
-          margin: "0 0 0 8px",
           float: "none"
         }).forEach(([key, value]) => btn.style.setProperty(key, value, "important"));
       } catch (error) {
@@ -14887,31 +14969,48 @@ ${arcs}
       const header = documentRef.createElement("div");
       header.className = "urppp-sidebar-header";
       header.style.cssText = "position:absolute;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:flex-end;padding:14px 14px 12px;border-bottom:1px solid var(--border);background:var(--surface)";
-      const toggle = documentRef.createElement("div");
+      const toggle = documentRef.createElement("button");
+      toggle.type = "button";
       toggle.className = "urppp-sidebar-toggle";
-      toggle.innerHTML = '<i class="fa fa-angle-left"></i>';
+      toggle.innerHTML = '<i class="fa fa-angle-left" aria-hidden="true"></i>';
       toggle.title = "收起侧边栏";
-      const doToggle = /* @__PURE__ */ __name(() => {
+      if (typeof toggle.setAttribute === "function") toggle.setAttribute("aria-label", "收起侧边栏");
+      const isNarrow = /* @__PURE__ */ __name(() => !!(windowRef.matchMedia && windowRef.matchMedia("(max-width: 991px)").matches), "isNarrow");
+      const doToggle = /* @__PURE__ */ __name((event) => {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        if (isNarrow()) {
+          sidebar.classList.remove("display");
+          syncMobileContentOffset();
+          return;
+        }
         const origToggle = documentRef.getElementById("sidebar-collapse");
         if (origToggle) origToggle.click();
       }, "doToggle");
       toggle.addEventListener("click", doToggle);
       header.appendChild(toggle);
-      const observer = new MutationObserverRef(() => {
+      const syncToggle = /* @__PURE__ */ __name(() => {
+        const narrow = isNarrow();
         const isMin = documentRef.body.classList.contains("menu-min") || sidebar.classList.contains("menu-min");
-        toggle.innerHTML = isMin ? '<i class="fa fa-angle-right"></i>' : '<i class="fa fa-angle-left"></i>';
-        toggle.title = isMin ? "展开侧边栏" : "收起侧边栏";
-        if (isMin) {
+        const label = narrow ? "关闭菜单" : isMin ? "展开侧边栏" : "收起侧边栏";
+        toggle.innerHTML = narrow ? '<i class="fa fa-times" aria-hidden="true"></i>' : isMin ? '<i class="fa fa-angle-right" aria-hidden="true"></i>' : '<i class="fa fa-angle-left" aria-hidden="true"></i>';
+        toggle.title = label;
+        if (typeof toggle.setAttribute === "function") toggle.setAttribute("aria-label", label);
+        if (!narrow && isMin) {
           header.style.justifyContent = "center";
           header.style.padding = "12px 0";
         } else {
           header.style.justifyContent = "flex-end";
           header.style.padding = "";
         }
-      });
+      }, "syncToggle");
+      const observer = new MutationObserverRef(syncToggle);
       observer.observe(documentRef.body, { attributes: true, attributeFilter: ["class"] });
       observer.observe(sidebar, { attributes: true, attributeFilter: ["class"] });
       windowRef.__urpppSidebarMenuObserver = observer;
+      syncToggle();
       const newMenus = documentRef.createElement("ul");
       newMenus.id = "urppp-menus";
       newMenus.style.cssText = "margin-top:50px;list-style:none;padding:10px 12px 24px;overflow-y:auto;max-height:calc(100vh - 64px)";
@@ -16574,7 +16673,17 @@ ${arcs}
           "--shadow": "none",
           "--border-w": "2px",
           "--urppp-card-border": "2px solid var(--text)",
-          "--urppp-input-border": "2px solid var(--text)"
+          "--urppp-input-border": "2px solid var(--text)",
+          "--urppp-action-radius": "0px",
+          "--urppp-action-border": "2px solid var(--text)",
+          "--urppp-action-shadow": "none",
+          "--urppp-action-bg": "var(--surface)",
+          "--urppp-action-color": "var(--text)",
+          "--urppp-menu-radius": "0px",
+          "--urppp-menu-border": "2px solid var(--text)",
+          "--urppp-menu-shadow": "none",
+          "--urppp-menu-bg": "var(--surface)",
+          "--urppp-menu-color": "var(--text)"
         };
       }
       if (id === "organic") {
@@ -16584,7 +16693,17 @@ ${arcs}
           "--shadow": "0 2px 10px rgba(92,64,51,0.06)",
           "--border-w": "1px",
           "--urppp-card-border": "1px solid #E7E0D6",
-          "--urppp-input-border": "1px solid var(--border)"
+          "--urppp-input-border": "1px solid var(--border)",
+          "--urppp-action-radius": "999px",
+          "--urppp-action-border": "1px solid var(--border)",
+          "--urppp-action-shadow": "none",
+          "--urppp-action-bg": "var(--input-bg)",
+          "--urppp-action-color": "var(--primary)",
+          "--urppp-menu-radius": "14px",
+          "--urppp-menu-border": "1px solid var(--border)",
+          "--urppp-menu-shadow": "none",
+          "--urppp-menu-bg": "var(--input-bg)",
+          "--urppp-menu-color": "var(--text)"
         };
       }
       if (id === "editorial") {
@@ -16594,7 +16713,17 @@ ${arcs}
           "--shadow": "none",
           "--border-w": "0px",
           "--urppp-card-border": "none",
-          "--urppp-input-border": "none"
+          "--urppp-input-border": "none",
+          "--urppp-action-radius": "0px",
+          "--urppp-action-border": "1px solid var(--text)",
+          "--urppp-action-shadow": "none",
+          "--urppp-action-bg": "transparent",
+          "--urppp-action-color": "var(--text)",
+          "--urppp-menu-radius": "0px",
+          "--urppp-menu-border": "1px solid var(--text)",
+          "--urppp-menu-shadow": "none",
+          "--urppp-menu-bg": "transparent",
+          "--urppp-menu-color": "var(--text)"
         };
       }
       if (id === "brutal") {
@@ -16604,7 +16733,17 @@ ${arcs}
           "--shadow": "6px 6px 0 #000",
           "--border-w": "3px",
           "--urppp-card-border": "3px solid #000",
-          "--urppp-input-border": "2px solid #000"
+          "--urppp-input-border": "2px solid #000",
+          "--urppp-action-radius": "0px",
+          "--urppp-action-border": "2px solid var(--text)",
+          "--urppp-action-shadow": "3px 3px 0 var(--text)",
+          "--urppp-action-bg": "var(--surface)",
+          "--urppp-action-color": "var(--text)",
+          "--urppp-menu-radius": "0px",
+          "--urppp-menu-border": "2px solid var(--text)",
+          "--urppp-menu-shadow": "3px 3px 0 var(--text)",
+          "--urppp-menu-bg": "var(--surface)",
+          "--urppp-menu-color": "var(--text)"
         };
       }
       if (id === "neu") {
@@ -16614,7 +16753,17 @@ ${arcs}
           "--shadow": "5px 5px 10px #BEC3CA, -5px -5px 10px #F7F9FC",
           "--border-w": "0px",
           "--urppp-card-border": "none",
-          "--urppp-input-border": "none"
+          "--urppp-input-border": "none",
+          "--urppp-action-radius": "12px",
+          "--urppp-action-border": "none",
+          "--urppp-action-shadow": "var(--shadow)",
+          "--urppp-action-bg": "var(--bg)",
+          "--urppp-action-color": "var(--text)",
+          "--urppp-menu-radius": "12px",
+          "--urppp-menu-border": "none",
+          "--urppp-menu-shadow": "var(--shadow)",
+          "--urppp-menu-bg": "var(--bg)",
+          "--urppp-menu-color": "var(--text)"
         };
       }
       return {
@@ -16623,7 +16772,17 @@ ${arcs}
         "--shadow": "0 4px 16px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)",
         "--border-w": "0px",
         "--urppp-card-border": id === "apple" && isAppleEdgeLine() ? "1px solid rgba(0,0,0,0.08)" : "none",
-        "--urppp-input-border": "1px solid var(--border)"
+        "--urppp-input-border": "1px solid var(--border)",
+        "--urppp-action-radius": "999px",
+        "--urppp-action-border": "none",
+        "--urppp-action-shadow": "0 2px 6px var(--ring)",
+        "--urppp-action-bg": "var(--primary)",
+        "--urppp-action-color": "var(--surface)",
+        "--urppp-menu-radius": "12px",
+        "--urppp-menu-border": id === "apple" && isAppleEdgeLine() ? "1px solid var(--border)" : "none",
+        "--urppp-menu-shadow": "0 1px 3px rgba(0,0,0,.08)",
+        "--urppp-menu-bg": "var(--input-bg)",
+        "--urppp-menu-color": "var(--text)"
       };
     }
     __name(getSkinShapeOverrides, "getSkinShapeOverrides");
@@ -21337,125 +21496,267 @@ ${arcs}
       syncSidebarUnderNavbar();
       setupMobileNavbar();
       function setupMobileNavbar() {
-        const bindTogglerFallback = /* @__PURE__ */ __name(() => {
+        const mobileQuery = "(max-width: 640px)";
+        const isNarrow = /* @__PURE__ */ __name(() => !!(window.matchMedia && window.matchMedia(mobileQuery).matches), "isNarrow");
+        const closeDrawer = /* @__PURE__ */ __name(() => {
+          const sidebar = document.getElementById("sidebar");
+          if (sidebar) sidebar.classList.remove("display");
+          try {
+            syncMobileContentOffset();
+          } catch (_) {
+          }
+        }, "closeDrawer");
+        const syncMobileSearchLayout = /* @__PURE__ */ __name(() => {
+          const panel = document.getElementById("urppp-mobile-search-panel");
+          const formSearch = panel?.querySelector("#form-search");
+          if (!formSearch) return;
+          Object.entries({
+            position: "relative",
+            right: "auto",
+            top: "auto",
+            left: "auto",
+            transform: "none",
+            width: "100%",
+            height: "34px",
+            opacity: "1",
+            margin: "0",
+            overflow: "visible",
+            "z-index": "1"
+          }).forEach(([key, value]) => formSearch.style.setProperty(key, value, "important"));
+        }, "syncMobileSearchLayout");
+        const restoreMobileSearch = /* @__PURE__ */ __name(() => {
+          const formSearch = document.getElementById("form-search");
+          if (!formSearch || !formSearch.__urpppMobileParent) return;
+          const parent = formSearch.__urpppMobileParent;
+          const next = formSearch.__urpppMobileNext;
+          if (parent.isConnected) {
+            if (next && next.parentElement === parent) parent.insertBefore(formSearch, next);
+            else parent.appendChild(formSearch);
+          }
+          formSearch.classList.remove("urppp-mobile-form-search");
+          formSearch.dataset.open = "0";
+          Object.entries({
+            position: "absolute",
+            right: "34px",
+            top: "50%",
+            left: "auto",
+            transform: "translateY(-50%)",
+            width: "0px",
+            opacity: "0",
+            margin: "0",
+            overflow: "hidden",
+            "z-index": "10"
+          }).forEach(([key, value]) => formSearch.style.setProperty(key, value, "important"));
+        }, "restoreMobileSearch");
+        const bindDrawerControls = /* @__PURE__ */ __name(() => {
           const toggler = document.querySelector("#navbar .menu-toggler");
           const sidebar = document.getElementById("sidebar");
-          if (!toggler || !sidebar || toggler.dataset.urpppToggleBound) return;
-          toggler.dataset.urpppToggleBound = "1";
-          toggler.addEventListener("click", (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            sidebar.classList.toggle("display");
+          if (toggler && sidebar && !toggler.dataset.urpppToggleBound) {
+            toggler.dataset.urpppToggleBound = "1";
+            toggler.setAttribute("aria-label", "打开菜单");
+            toggler.addEventListener("click", (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              const open = sidebar.classList.toggle("display");
+              sidebar.style.setProperty("z-index", open ? "1200" : "1030", "important");
+              toggler.setAttribute("aria-expanded", open ? "true" : "false");
+              try {
+                syncMobileContentOffset();
+              } catch (_) {
+              }
+            });
+          }
+          if (!document.__urpppMobileDrawerOutsideBound) {
+            document.__urpppMobileDrawerOutsideBound = true;
+            document.addEventListener("click", (event) => {
+              const activeSidebar = document.getElementById("sidebar");
+              if (!activeSidebar || !activeSidebar.classList.contains("display")) return;
+              if (event.target.closest && event.target.closest("#sidebar, #navbar .menu-toggler")) return;
+              closeDrawer();
+            }, true);
+          }
+        }, "bindDrawerControls");
+        const createActionLink = /* @__PURE__ */ __name((source, fallback) => {
+          const link = source ? source.cloneNode(true) : document.createElement("a");
+          link.className = "urppp-mobile-user-action";
+          link.removeAttribute("style");
+          link.removeAttribute("id");
+          if (!source && fallback) {
+            link.href = fallback.href;
+            if (fallback.onclick) link.setAttribute("onclick", fallback.onclick);
+            link.innerHTML = '<i class="ace-icon fa ' + fallback.icon + '" aria-hidden="true"></i><span>' + fallback.label + "</span>";
+          }
+          return link;
+        }, "createActionLink");
+        const ensureMobileUser = /* @__PURE__ */ __name((btns, sidebar) => {
+          if (document.getElementById("urppp-mobile-user")) return;
+          const userLi = btns.querySelector(":scope > li.light-blue") || Array.from(btns.children).find((li) => li.querySelector && li.querySelector(".nav-user-photo, .user-menu, .dropdown-menu"));
+          const area = document.createElement("section");
+          area.id = "urppp-mobile-user";
+          area.className = "urppp-mobile-user";
+          const identity = document.createElement("div");
+          identity.className = "urppp-mobile-user-identity";
+          const sourcePhoto = userLi?.querySelector(".nav-user-photo") || document.querySelector("#navbar .nav-user-photo");
+          const photo = sourcePhoto ? sourcePhoto.cloneNode(true) : document.createElement("img");
+          photo.className = "nav-user-photo";
+          photo.removeAttribute("style");
+          if (!photo.getAttribute("src")) photo.setAttribute("src", "/main/queryStudent/img");
+          photo.setAttribute("data-urppp-private", "avatar");
+          photo.alt = sourcePhoto?.alt?.replace(/\s+/g, " ").trim() || "用户头像";
+          const sourceInfo = userLi?.querySelector(".user-info") || document.querySelector("#navbar .user-info");
+          const name = document.createElement("span");
+          name.className = "user-info urppp-user-name-value";
+          name.setAttribute("data-urppp-private", "name");
+          name.textContent = sourceInfo?.textContent?.replace(/\s+/g, " ").trim() || sourcePhoto?.alt?.replace(/\s+/g, " ").trim() || "我的账户";
+          identity.append(photo, name);
+          area.appendChild(identity);
+          const actions = document.createElement("div");
+          actions.className = "urppp-mobile-user-actions";
+          const sourceActions = userLi ? Array.from(userLi.querySelectorAll(".user-menu a, .dropdown-menu a")) : [];
+          const fallbacks = [
+            { label: "首页", href: "/", icon: "fa-home" },
+            { label: "在线反馈", href: "/main/systemQuestion/index", icon: "fa-question-circle" },
+            { label: "修改密码", href: "javascript:changePassword('/student/rollManagement/personalInfoUpdate/updatePassword')", icon: "fa-user" },
+            { label: "注销", href: "/logout", icon: "fa-power-off" }
+          ];
+          if (sourceActions.length) sourceActions.forEach((link) => actions.appendChild(createActionLink(link)));
+          else fallbacks.forEach((item) => actions.appendChild(createActionLink(null, item)));
+          area.appendChild(actions);
+          const header = sidebar.querySelector(".urppp-sidebar-header");
+          if (header && header.nextSibling) sidebar.insertBefore(area, header.nextSibling);
+          else if (header) sidebar.appendChild(area);
+          else sidebar.insertBefore(area, sidebar.firstChild);
+          try {
+            applyPersonalDisplay(area);
+          } catch (_) {
+          }
+        }, "ensureMobileUser");
+        const ensureMobileQuick = /* @__PURE__ */ __name((btns, sidebar, menus) => {
+          if (!menus || document.getElementById("urppp-mobile-quick")) return;
+          const quick = document.createElement("section");
+          quick.id = "urppp-mobile-quick";
+          quick.className = "urppp-mobile-quick";
+          quick.innerHTML = '<div class="urppp-mobile-quick-title">快捷功能</div>';
+          const toolRow = document.createElement("div");
+          toolRow.className = "urppp-mobile-tool-row";
+          const serviceSource = btns.querySelector(':scope > li > a[href*="customerServiceCenter"]');
+          const service = serviceSource ? serviceSource.cloneNode(true) : document.createElement("a");
+          service.className = "urppp-mobile-tool-button urppp-mobile-service-button";
+          service.removeAttribute("style");
+          if (!serviceSource) service.href = "/main/customerServiceCenter";
+          if (!service.querySelector("i")) service.innerHTML = '<i class="ace-icon glyphicon glyphicon-headphones" aria-hidden="true"></i>';
+          if (!service.querySelector("span")) service.insertAdjacentHTML("beforeend", "<span>客服</span>");
+          toolRow.appendChild(service);
+          const searchButton = document.createElement("button");
+          searchButton.type = "button";
+          searchButton.id = "urppp-mobile-search-button";
+          searchButton.className = "urppp-mobile-tool-button";
+          searchButton.setAttribute("aria-expanded", "false");
+          searchButton.innerHTML = '<i class="ace-icon fa fa-search" aria-hidden="true"></i><span>搜索</span>';
+          toolRow.appendChild(searchButton);
+          quick.appendChild(toolRow);
+          const links = document.createElement("div");
+          links.className = "urppp-mobile-quick-links";
+          Array.from(btns.querySelectorAll(":scope > li > a")).forEach((anchor) => {
+            const owner = anchor.closest("li");
+            if (owner?.classList.contains("light-blue")) return;
+            if (owner?.querySelector("#intellegenceUDiv, #form-search")) return;
+            if (anchor === serviceSource || anchor.classList.contains("dropdown-toggle")) return;
+            if (!anchor.getAttribute("href") && !anchor.getAttribute("onclick")) return;
+            const clone = anchor.cloneNode(true);
+            clone.className = "urppp-mobile-quick-link";
+            clone.removeAttribute("style");
+            links.appendChild(clone);
           });
-          document.addEventListener("click", (e) => {
-            if (!sidebar.classList.contains("display")) return;
-            if (e.target.closest && e.target.closest("#sidebar, #navbar .menu-toggler")) return;
-            sidebar.classList.remove("display");
-          }, true);
-        }, "bindTogglerFallback");
+          if (links.children.length) quick.appendChild(links);
+          const searchPanel = document.createElement("div");
+          searchPanel.id = "urppp-mobile-search-panel";
+          searchPanel.className = "urppp-mobile-search-panel";
+          searchPanel.hidden = true;
+          const formSearch = document.getElementById("form-search");
+          if (formSearch) {
+            if (!formSearch.__urpppMobileParent) {
+              formSearch.__urpppMobileParent = formSearch.parentElement;
+              formSearch.__urpppMobileNext = formSearch.nextSibling;
+            }
+            formSearch.classList.add("urppp-mobile-form-search");
+            formSearch.dataset.open = "0";
+            searchPanel.appendChild(formSearch);
+            syncMobileSearchLayout();
+          }
+          quick.appendChild(searchPanel);
+          searchButton.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const open = searchPanel.hidden;
+            if (open) syncMobileSearchLayout();
+            searchPanel.hidden = !open;
+            searchPanel.classList.toggle("open", open);
+            searchButton.setAttribute("aria-expanded", open ? "true" : "false");
+            if (open) setTimeout(() => searchPanel.querySelector("#search-input")?.focus(), 30);
+          });
+          sidebar.insertBefore(quick, menus);
+        }, "ensureMobileQuick");
         const apply = /* @__PURE__ */ __name(() => {
-          const narrow = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
+          const narrow = isNarrow();
           const btns = document.querySelector("#navbar .navbar-buttons .ace-nav");
-          bindTogglerFallback();
-          if (!btns) return;
-          btns.querySelectorAll("li").forEach((li) => {
-            const isUser = li.querySelector(".user-menu, .nav-user-photo, .dropdown-menu");
-            li.style.setProperty("display", narrow && !isUser ? "none" : "", narrow && !isUser ? "important" : "");
-          });
           const sidebar = document.getElementById("sidebar");
           const menus = document.getElementById("urppp-menus");
+          bindDrawerControls();
           if (!narrow) {
-            const q = document.getElementById("urppp-mobile-quick");
-            const u = document.getElementById("urppp-mobile-user");
-            if (q) q.remove();
-            if (u) u.remove();
+            restoreMobileSearch();
+            document.getElementById("urppp-mobile-quick")?.remove();
+            document.getElementById("urppp-mobile-user")?.remove();
+            const cleanBtn = document.getElementById("urppp-nav-clean");
+            const desktopHost = document.getElementById("urppp-nav-theme");
+            if (cleanBtn && desktopHost && cleanBtn.parentElement !== desktopHost) desktopHost.appendChild(cleanBtn);
+            if (desktopHost) desktopHost.style.setProperty("display", "inline-flex", "important");
             return;
           }
-          if (!sidebar) return;
+          if (!btns || !sidebar) return;
           try {
             const cleanBtn = document.getElementById("urppp-nav-clean");
             const brandHost = document.querySelector("#navbar .navbar-header");
-            if (cleanBtn && brandHost && cleanBtn.parentElement !== brandHost) {
-              brandHost.appendChild(cleanBtn);
-            }
+            const themeHost = document.getElementById("urppp-nav-theme");
+            if (cleanBtn && brandHost && cleanBtn.parentElement !== brandHost) brandHost.appendChild(cleanBtn);
+            if (themeHost) themeHost.style.setProperty("display", "none", "important");
           } catch (_) {
           }
-          if (menus && !document.getElementById("urppp-mobile-quick")) {
-            const quick = document.createElement("div");
-            quick.id = "urppp-mobile-quick";
-            quick.className = "urppp-mobile-quick";
-            quick.innerHTML = '<div class="urppp-mobile-quick-title">快捷功能</div>';
-            btns.querySelectorAll("li a").forEach((a) => {
-              if (a.closest(".user-menu, .dropdown-menu")) return;
-              if (a.classList.contains("dropdown-toggle")) return;
-              if (!a.href && !a.getAttribute("onclick")) return;
-              const clone = a.cloneNode(true);
-              clone.removeAttribute("style");
-              quick.appendChild(clone);
-            });
-            if (quick.querySelectorAll("a").length > 0) sidebar.insertBefore(quick, menus);
-          }
-          if (!document.getElementById("urppp-mobile-user")) {
-            const userLi = btns.querySelector("li:has(.user-menu), li:has(.nav-user-photo), li:has(.dropdown-menu)");
-            let area = null;
-            if (userLi) {
-              area = userLi.cloneNode(true);
-              area.removeAttribute("style");
-              area.className = "urppp-mobile-user";
-            } else {
-              area = document.createElement("div");
-              area.className = "urppp-mobile-user";
-              const photo = document.querySelector("#navbar .nav-user-photo");
-              const info = document.querySelector("#navbar .user-info");
-              area.innerHTML = '<a href="javascript:void(0)">' + (photo ? photo.outerHTML : "") + '<span class="user-info">' + (info ? info.textContent.trim() : "我的账户") + '</span><i class="ace-icon fa fa-caret-down"></i></a>';
-              const menuItems = Array.from(document.querySelectorAll("#navbar .user-menu a, #navbar .dropdown-menu a"));
-              if (menuItems.length) {
-                const ul = document.createElement("ul");
-                ul.className = "dropdown-menu";
-                menuItems.forEach((a) => {
-                  const li = document.createElement("li");
-                  li.appendChild(a.cloneNode(true));
-                  ul.appendChild(li);
-                });
-                ul.classList.remove("open");
-                area.appendChild(ul);
-              }
-            }
-            if (area) {
-              area.id = "urppp-mobile-user";
-              const photo = area.querySelector(".nav-user-photo, img");
-              if (photo) photo.setAttribute("data-urppp-private", "avatar");
-              const info = area.querySelector(".user-info");
-              if (info) info.setAttribute("data-urppp-private", "name");
-              try {
-                if (typeof applyPersonalDisplay === "function") applyPersonalDisplay(area);
-              } catch (_) {
-              }
-              const toggle = area.querySelector("a.dropdown-toggle, a");
-              const menu = area.querySelector(".user-menu, .dropdown-menu");
-              if (menu) menu.classList.remove("open");
-              if (toggle && menu) {
-                toggle.addEventListener("click", (e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  menu.classList.toggle("open");
-                });
-              }
-              sidebar.insertBefore(area, sidebar.firstChild);
-            }
-          }
+          ensureMobileUser(btns, sidebar);
+          ensureMobileQuick(btns, sidebar, menus);
+          syncMobileSearchLayout();
         }, "apply");
         try {
           apply();
         } catch (_) {
         }
-        setTimeout(apply, 600);
-        setTimeout(apply, 1500);
+        setTimeout(apply, 300);
+        setTimeout(apply, 900);
+        setTimeout(apply, 1800);
         if (window.matchMedia) {
-          const mq = window.matchMedia("(max-width: 640px)");
-          const onChg = /* @__PURE__ */ __name(() => apply(), "onChg");
-          if (typeof mq.addEventListener === "function") mq.addEventListener("change", onChg);
-          else if (typeof mq.addListener === "function") mq.addListener(onChg);
+          const mq = window.matchMedia(mobileQuery);
+          const onChange = /* @__PURE__ */ __name(() => apply(), "onChange");
+          if (typeof mq.addEventListener === "function") mq.addEventListener("change", onChange);
+          else if (typeof mq.addListener === "function") mq.addListener(onChange);
+        }
+        try {
+          if (window.__urpppMobileNavbarObserver) window.__urpppMobileNavbarObserver.disconnect();
+          let timer = 0;
+          const observer = new MutationObserver(() => {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+              try {
+                apply();
+              } catch (_) {
+              }
+            }, 40);
+          });
+          const navbar = document.getElementById("navbar");
+          const sidebar = document.getElementById("sidebar");
+          if (navbar) observer.observe(navbar, { childList: true, subtree: true });
+          if (sidebar) observer.observe(sidebar, { childList: true });
+          window.__urpppMobileNavbarObserver = observer;
+        } catch (_) {
         }
       }
       __name(setupMobileNavbar, "setupMobileNavbar");
@@ -23053,7 +23354,7 @@ ${arcs}
       });
       const avatar = validCustomAvatar(custom.avatar);
       const avatarActive = custom.avatarEnabled && !!avatar;
-      scope.querySelectorAll("#navbar img.nav-user-photo, img#avatar, .profile-picture img").forEach((img) => {
+      scope.querySelectorAll("#navbar img.nav-user-photo, #urppp-mobile-user img.nav-user-photo, img#avatar, .profile-picture img").forEach((img) => {
         const current = img.getAttribute("src") || "";
         if (current && current !== img.__urpppAppliedCustomSrc) img.__urpppOriginalSrc = current;
         if (avatarActive) {

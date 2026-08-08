@@ -105,6 +105,7 @@ export function createCleanModeController({ state, deps }) {
 
   function injectCleanEntry() {
     try {
+      deps.ensureStyle();
       let btn = document.getElementById('urppp-nav-clean');
       // 仅首页展示清爽入口；业务页移除残留按钮
       if (!deps.isHomePage()) {
@@ -128,17 +129,11 @@ export function createCleanModeController({ state, deps }) {
         });
         host.appendChild(btn);
       }
-      const skin = (typeof deps.getSkin === 'function' ? deps.getSkin() : 'apple');
-      const isFlat = skin === 'flat';
+      // 尺寸与布局由组件控制；形状、边框、材质由 Skin token 控制
       Object.entries({
         display: 'inline-flex', 'align-items': 'center', height: '28px', 'min-height': '28px',
-        padding: '0 12px',
-        border: isFlat ? '2px solid var(--text)' : 'none',
-        'border-radius': isFlat ? '0' : '999px',
-        background: isFlat ? 'var(--surface)' : 'var(--primary)',
-        color: isFlat ? 'var(--text)' : 'var(--surface)', 'font-size': '12px', gap: '6px',
-        width: 'auto', 'box-shadow': isFlat ? 'none' : '0 2px 6px var(--ring)',
-        margin: '0 0 0 8px', float: 'none',
+        padding: '0 12px', 'font-size': '12px', gap: '6px',
+        width: 'auto', float: 'none',
       }).forEach(([key, value]) => btn.style.setProperty(key, value, 'important'));
     } catch (error) {
       console.warn('[URP++] clean entry', error);
