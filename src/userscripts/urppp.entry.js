@@ -6246,18 +6246,44 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         }
       };
 
-      const closeDrawer = () => {
-        const sidebar = document.getElementById('sidebar');
-        const toggler = document.querySelector('#navbar .menu-toggler');
-        if (sidebar) {
-          sidebar.classList.remove('display');
+      const drawerCloseTimers = new WeakMap();
+      const setDrawerOpen = (sidebar, toggler, open) => {
+        if (!sidebar) return;
+        const pending = drawerCloseTimers.get(sidebar);
+        if (pending) {
+          clearTimeout(pending);
+          drawerCloseTimers.delete(sidebar);
+        }
+        if (open) {
+          sidebar.classList.remove('urppp-drawer-closing');
+          sidebar.classList.add('display');
+          sidebar.style.setProperty('z-index', '1200', 'important');
+        } else if (sidebar.classList.contains('display')) {
+          sidebar.classList.add('urppp-drawer-closing');
+          sidebar.style.setProperty('z-index', '1200', 'important');
+          const timer = setTimeout(() => {
+            sidebar.classList.remove('display', 'urppp-drawer-closing');
+            sidebar.style.setProperty('z-index', '1030', 'important');
+            drawerCloseTimers.delete(sidebar);
+          }, 280);
+          drawerCloseTimers.set(sidebar, timer);
+        } else {
+          sidebar.classList.remove('urppp-drawer-closing');
           sidebar.style.setProperty('z-index', '1030', 'important');
         }
         if (toggler) {
-          toggler.setAttribute('aria-expanded', 'false');
-          toggler.setAttribute('aria-label', '打开菜单');
+          toggler.setAttribute('aria-expanded', open ? 'true' : 'false');
+          toggler.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
         }
         try { syncMobileContentOffset(); } catch (_) { /* ignore */ }
+      };
+
+      const closeDrawer = () => {
+        setDrawerOpen(
+          document.getElementById('sidebar'),
+          document.querySelector('#navbar .menu-toggler'),
+          false,
+        );
       };
 
       const syncMobileSearchLayout = () => {
@@ -6334,11 +6360,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
             event.preventDefault();
             event.stopPropagation();
             if (isNarrow()) syncMobileSidebarMode(sidebar, true);
-            const open = sidebar.classList.toggle('display');
-            sidebar.style.setProperty('z-index', open ? '1200' : '1030', 'important');
-            toggler.setAttribute('aria-expanded', open ? 'true' : 'false');
-            toggler.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
-            try { syncMobileContentOffset(); } catch (_) { /* ignore */ }
+            const open = !sidebar.classList.contains('display')
+              || sidebar.classList.contains('urppp-drawer-closing');
+            setDrawerOpen(sidebar, toggler, open);
           });
         }
         if (!document.__urpppMobileDrawerOutsideBound) {
@@ -6395,13 +6419,19 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         photo.alt = sourcePhoto?.alt?.replace(/\s+/g, ' ').trim() || '用户头像';
 
         const sourceInfo = userLi?.querySelector('.user-info') || document.querySelector('#navbar .user-info');
+        const copy = document.createElement('span');
+        copy.className = 'urppp-mobile-user-copy';
+        const welcome = document.createElement('small');
+        welcome.className = 'urppp-mobile-user-welcome';
+        welcome.textContent = '欢迎您，';
         const name = document.createElement('span');
         name.className = 'user-info urppp-user-name-value';
         name.setAttribute('data-urppp-private', 'name');
-        name.textContent = sourceInfo?.textContent?.replace(/\s+/g, ' ').trim()
+        name.textContent = sourceInfo?.textContent?.replace(/^\s*欢迎您[，,]?\s*/g, '').replace(/\s+/g, ' ').trim()
           || sourcePhoto?.alt?.replace(/\s+/g, ' ').trim()
           || '我的账户';
-        identity.append(photo, name);
+        copy.append(welcome, name);
+        identity.append(photo, copy);
         area.appendChild(identity);
 
         const actions = document.createElement('div');

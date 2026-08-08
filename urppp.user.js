@@ -12389,6 +12389,12 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           pointer-events: auto !important;
           transition: transform .26s cubic-bezier(.4, 0, .2, 1), visibility 0s linear 0s !important;
         }
+        #sidebar.display.urppp-drawer-closing {
+          transform: translate3d(-100%, 0, 0) !important;
+          visibility: visible !important;
+          pointer-events: none !important;
+          z-index: 1200 !important;
+        }
         /* 移动抽屉始终使用完整宽度；menu-min 仅属于桌面折叠状态 */
         #sidebar.display,
         #sidebar.display.menu-min,
@@ -12463,7 +12469,22 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           object-fit: cover !important;
           object-position: center !important;
         }
+        #urppp-mobile-user .urppp-mobile-user-copy {
+          display: flex !important;
+          min-width: 0 !important;
+          flex-direction: column !important;
+          justify-content: center !important;
+          gap: 2px !important;
+        }
+        #urppp-mobile-user .urppp-mobile-user-welcome {
+          display: block !important;
+          color: var(--text-secondary, #6b7280) !important;
+          font-size: 11px !important;
+          font-weight: 400 !important;
+          line-height: 1.2 !important;
+        }
         #urppp-mobile-user .user-info {
+          display: block !important;
           min-width: 0 !important;
           color: var(--text, #1d1d1f) !important;
           font-size: 13px !important;
@@ -21655,21 +21676,46 @@ ${arcs}
             delete sidebar.dataset.urpppDesktopBodyMin;
           }
         }, "syncMobileSidebarMode");
-        const closeDrawer = /* @__PURE__ */ __name(() => {
-          const sidebar = document.getElementById("sidebar");
-          const toggler = document.querySelector("#navbar .menu-toggler");
-          if (sidebar) {
-            sidebar.classList.remove("display");
+        const drawerCloseTimers = /* @__PURE__ */ new WeakMap();
+        const setDrawerOpen = /* @__PURE__ */ __name((sidebar, toggler, open) => {
+          if (!sidebar) return;
+          const pending = drawerCloseTimers.get(sidebar);
+          if (pending) {
+            clearTimeout(pending);
+            drawerCloseTimers.delete(sidebar);
+          }
+          if (open) {
+            sidebar.classList.remove("urppp-drawer-closing");
+            sidebar.classList.add("display");
+            sidebar.style.setProperty("z-index", "1200", "important");
+          } else if (sidebar.classList.contains("display")) {
+            sidebar.classList.add("urppp-drawer-closing");
+            sidebar.style.setProperty("z-index", "1200", "important");
+            const timer = setTimeout(() => {
+              sidebar.classList.remove("display", "urppp-drawer-closing");
+              sidebar.style.setProperty("z-index", "1030", "important");
+              drawerCloseTimers.delete(sidebar);
+            }, 280);
+            drawerCloseTimers.set(sidebar, timer);
+          } else {
+            sidebar.classList.remove("urppp-drawer-closing");
             sidebar.style.setProperty("z-index", "1030", "important");
           }
           if (toggler) {
-            toggler.setAttribute("aria-expanded", "false");
-            toggler.setAttribute("aria-label", "打开菜单");
+            toggler.setAttribute("aria-expanded", open ? "true" : "false");
+            toggler.setAttribute("aria-label", open ? "关闭菜单" : "打开菜单");
           }
           try {
             syncMobileContentOffset();
           } catch (_) {
           }
+        }, "setDrawerOpen");
+        const closeDrawer = /* @__PURE__ */ __name(() => {
+          setDrawerOpen(
+            document.getElementById("sidebar"),
+            document.querySelector("#navbar .menu-toggler"),
+            false
+          );
         }, "closeDrawer");
         const syncMobileSearchLayout = /* @__PURE__ */ __name(() => {
           const panel = document.getElementById("urppp-mobile-search-panel");
@@ -21756,14 +21802,8 @@ ${arcs}
               event.preventDefault();
               event.stopPropagation();
               if (isNarrow()) syncMobileSidebarMode(sidebar, true);
-              const open = sidebar.classList.toggle("display");
-              sidebar.style.setProperty("z-index", open ? "1200" : "1030", "important");
-              toggler.setAttribute("aria-expanded", open ? "true" : "false");
-              toggler.setAttribute("aria-label", open ? "关闭菜单" : "打开菜单");
-              try {
-                syncMobileContentOffset();
-              } catch (_) {
-              }
+              const open = !sidebar.classList.contains("display") || sidebar.classList.contains("urppp-drawer-closing");
+              setDrawerOpen(sidebar, toggler, open);
             });
           }
           if (!document.__urpppMobileDrawerOutsideBound) {
@@ -21815,11 +21855,17 @@ ${arcs}
           photo.setAttribute("data-urppp-private", "avatar");
           photo.alt = sourcePhoto?.alt?.replace(/\s+/g, " ").trim() || "用户头像";
           const sourceInfo = userLi?.querySelector(".user-info") || document.querySelector("#navbar .user-info");
+          const copy = document.createElement("span");
+          copy.className = "urppp-mobile-user-copy";
+          const welcome = document.createElement("small");
+          welcome.className = "urppp-mobile-user-welcome";
+          welcome.textContent = "欢迎您，";
           const name = document.createElement("span");
           name.className = "user-info urppp-user-name-value";
           name.setAttribute("data-urppp-private", "name");
-          name.textContent = sourceInfo?.textContent?.replace(/\s+/g, " ").trim() || sourcePhoto?.alt?.replace(/\s+/g, " ").trim() || "我的账户";
-          identity.append(photo, name);
+          name.textContent = sourceInfo?.textContent?.replace(/^\s*欢迎您[，,]?\s*/g, "").replace(/\s+/g, " ").trim() || sourcePhoto?.alt?.replace(/\s+/g, " ").trim() || "我的账户";
+          copy.append(welcome, name);
+          identity.append(photo, copy);
           area.appendChild(identity);
           const actions = document.createElement("div");
           actions.className = "urppp-mobile-user-actions";

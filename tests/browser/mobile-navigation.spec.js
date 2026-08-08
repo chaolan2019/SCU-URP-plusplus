@@ -105,6 +105,8 @@ for (const [skin, expectedShape] of Object.entries(skinShapes)) {
     await expect(page.locator('#sidebar')).toHaveCSS('width', '260px');
     await expect(page.locator('#sidebar #urppp-menus .urppp-nav-text').first()).toBeVisible();
     await expect(page.locator('#urppp-mobile-user')).toBeVisible();
+    await expect(page.locator('#urppp-mobile-user .urppp-mobile-user-welcome')).toHaveText('欢迎您，');
+    await expect(page.locator('#urppp-mobile-user .urppp-user-name-value')).toHaveText('测试用户');
     await expect(page.locator('#urppp-mobile-user .urppp-mobile-user-action')).toHaveText([
       '首页', '在线反馈', '修改密码', '注销',
     ]);

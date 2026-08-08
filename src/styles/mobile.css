@@ -281,6 +281,12 @@
           pointer-events: auto !important;
           transition: transform .26s cubic-bezier(.4, 0, .2, 1), visibility 0s linear 0s !important;
         }
+        #sidebar.display.urppp-drawer-closing {
+          transform: translate3d(-100%, 0, 0) !important;
+          visibility: visible !important;
+          pointer-events: none !important;
+          z-index: 1200 !important;
+        }
         /* 移动抽屉始终使用完整宽度；menu-min 仅属于桌面折叠状态 */
         #sidebar.display,
         #sidebar.display.menu-min,
@@ -355,7 +361,22 @@
           object-fit: cover !important;
           object-position: center !important;
         }
+        #urppp-mobile-user .urppp-mobile-user-copy {
+          display: flex !important;
+          min-width: 0 !important;
+          flex-direction: column !important;
+          justify-content: center !important;
+          gap: 2px !important;
+        }
+        #urppp-mobile-user .urppp-mobile-user-welcome {
+          display: block !important;
+          color: var(--text-secondary, #6b7280) !important;
+          font-size: 11px !important;
+          font-weight: 400 !important;
+          line-height: 1.2 !important;
+        }
         #urppp-mobile-user .user-info {
+          display: block !important;
           min-width: 0 !important;
           color: var(--text, #1d1d1f) !important;
           font-size: 13px !important;
