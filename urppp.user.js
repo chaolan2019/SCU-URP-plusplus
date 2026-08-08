@@ -12102,13 +12102,18 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
 
       /* --- 0. 窄视口通用：禁止页面级横向滚动，溢出转区块内滚动 --- */
       @media (max-width: 991px) {
-        body {
+        html,
+        body,
+        .main-container,
+        .main-content,
+        #main-container {
           overflow-x: hidden !important;
         }
         .widget-body,
         .widget-main,
         .tabContent,
-        #main-calendar {
+        #main-calendar,
+        #urppp-dashboard .urppp-card-body {
           overflow-x: auto !important;
           -webkit-overflow-scrolling: touch;
         }
@@ -12218,31 +12223,36 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           left: 0 !important;
           right: 0 !important;
           top: 44px !important;
-          height: 40px !important;
+          height: 38px !important;
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
           background: var(--surface, #ffffff) !important;
           border-bottom: 1px solid var(--border, #e8eaed) !important;
+          box-sizing: border-box !important;
         }
         #navbar .navbar-buttons .ace-nav {
           display: flex !important;
           align-items: center !important;
           justify-content: center !important;
-          gap: 2px !important;
+          gap: 4px !important;
+          flex-wrap: nowrap !important;
         }
         #navbar .navbar-buttons .ace-nav > li {
-          height: 40px !important;
-          line-height: 40px !important;
+          height: 38px !important;
+          line-height: 38px !important;
+          flex: 0 0 auto !important;
         }
         #navbar .navbar-buttons .ace-nav > li > a {
-          padding: 0 8px !important;
-          height: 40px !important;
-          line-height: 40px !important;
+          padding: 0 9px !important;
+          height: 38px !important;
+          line-height: 38px !important;
           font-size: 0 !important;
+          display: inline-flex !important;
+          align-items: center !important;
         }
         #navbar .navbar-buttons .ace-nav > li > a > i {
-          font-size: 14px !important;
+          font-size: 15px !important;
           margin: 0 !important;
         }
         /* 搜索滑块隐藏（搜索按钮保留在图标条） */
