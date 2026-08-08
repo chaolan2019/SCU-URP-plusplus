@@ -128,14 +128,17 @@
           min-height: 44px !important;
         }
         #navbar .menu-toggler {
-          width: 40px !important;
-          height: 44px !important;
-          line-height: 44px !important;
+          width: 36px !important;
+          height: 40px !important;
+          line-height: 40px !important;
+          padding: 0 !important;
         }
-        /* 汉堡按钮主题化 */
+        /* 汉堡按钮主题化：细线条、紧凑 */
         #navbar .menu-toggler .icon-bar {
           background: var(--text, #1d1d1f) !important;
           box-shadow: none !important;
+          width: 16px !important;
+          margin: 3px auto !important;
         }
         #navbar .navbar-header.pull-left {
           height: 44px !important;

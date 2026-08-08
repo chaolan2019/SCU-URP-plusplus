@@ -6164,20 +6164,51 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     setupMobileNavbar();
 
     function setupMobileNavbar() {
+      // 兜底：汉堡按钮点击切换抽屉（ace 原生绑定失效时生效）
+      const bindTogglerFallback = () => {
+        const toggler = document.querySelector('#navbar .menu-toggler');
+        const sidebar = document.getElementById('sidebar');
+        if (!toggler || !sidebar || toggler.dataset.urpppToggleBound) return;
+        toggler.dataset.urpppToggleBound = '1';
+        toggler.addEventListener('click', () => {
+          const before = sidebar.classList.contains('display');
+          setTimeout(() => {
+            if (sidebar.classList.contains('display') === before) {
+              sidebar.classList.toggle('display', !before);
+            }
+          }, 30);
+        });
+      };
       const apply = () => {
         const narrow = window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
         const btns = document.querySelector('#navbar .navbar-buttons .ace-nav');
+        bindTogglerFallback();
         if (!btns) return;
-        // 功能按钮在窄视口隐藏；用户区保留（后续收进抽屉）
+        // 功能按钮窄视口隐藏；用户区保留（收进抽屉）
         btns.querySelectorAll('li').forEach((li) => {
           const isUser = li.querySelector('.user-menu, .nav-user-photo, .dropdown-menu');
           li.style.setProperty('display', narrow && !isUser ? 'none' : '', narrow && !isUser ? 'important' : '');
         });
-        if (!narrow) return;
         const sidebar = document.getElementById('sidebar');
-        if (!sidebar) return;
         const menus = document.getElementById('urppp-menus');
-        // 快捷功能区（校历/作息/假期/客服/搜索）：只克隆功能链接，排除用户菜单项
+        // 非窄视口：清理移动端生成物，避免桌面残留
+        if (!narrow) {
+          const q = document.getElementById('urppp-mobile-quick');
+          const u = document.getElementById('urppp-mobile-user');
+          if (q) q.remove();
+          if (u) u.remove();
+          return;
+        }
+        if (!sidebar) return;
+        // 清爽按钮归位：移动到 navbar-header（汉堡旁），不贴右缘
+        try {
+          const cleanBtn = document.getElementById('urppp-nav-clean');
+          const brandHost = document.querySelector('#navbar .navbar-header');
+          if (cleanBtn && brandHost && cleanBtn.parentElement !== brandHost) {
+            brandHost.appendChild(cleanBtn);
+          }
+        } catch (_) { /* ignore */ }
+        // 快捷功能区（校历/作息/假期/客服/搜索）
         if (menus && !document.getElementById('urppp-mobile-quick')) {
           const quick = document.createElement('div');
           quick.id = 'urppp-mobile-quick';
@@ -6193,28 +6224,52 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           });
           if (quick.querySelectorAll('a').length > 0) sidebar.insertBefore(quick, menus);
         }
-        // 用户区收进抽屉顶部（点击展开用户菜单）
-        const userLi = btns.querySelector('li:has(.user-menu), li:has(.nav-user-photo), li:has(.dropdown-menu)');
-        if (userLi && !document.getElementById('urppp-mobile-user')) {
-          const clone = userLi.cloneNode(true);
-          clone.id = 'urppp-mobile-user';
-          clone.className = 'urppp-mobile-user';
-          clone.removeAttribute('style');
-          const toggle = clone.querySelector('a.dropdown-toggle, a');
-          const menu = clone.querySelector('.user-menu, .dropdown-menu');
-          if (menu) menu.style.display = 'none';
-          if (toggle && menu) {
-            toggle.addEventListener('click', (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-            });
+        // 用户区收进抽屉顶部（含 fallback：原生用户 li 结构不匹配时手动构造）
+        if (!document.getElementById('urppp-mobile-user')) {
+          const userLi = btns.querySelector('li:has(.user-menu), li:has(.nav-user-photo), li:has(.dropdown-menu)');
+          let area = null;
+          if (userLi) {
+            area = userLi.cloneNode(true);
+            area.removeAttribute('style');
+          } else {
+            // fallback：手动构造用户区
+            area = document.createElement('div');
+            area.className = 'urppp-mobile-user';
+            const photo = document.querySelector('#navbar .nav-user-photo');
+            const info = document.querySelector('#navbar .user-info');
+            area.innerHTML = '<a href="javascript:void(0)">' + (photo ? photo.outerHTML : '') + '<span class="user-info">' + (info ? info.textContent.trim() : '我的账户') + '</span><i class="ace-icon fa fa-caret-down"></i></a>';
+            const menuItems = Array.from(document.querySelectorAll('#navbar .user-menu a, #navbar .dropdown-menu a'));
+            if (menuItems.length) {
+              const ul = document.createElement('ul');
+              ul.className = 'dropdown-menu';
+              menuItems.forEach((a) => {
+                const li = document.createElement('li');
+                li.appendChild(a.cloneNode(true));
+                ul.appendChild(li);
+              });
+              ul.style.display = 'none';
+              area.appendChild(ul);
+            }
           }
-          sidebar.insertBefore(clone, sidebar.firstChild);
+          if (area) {
+            area.id = 'urppp-mobile-user';
+            const toggle = area.querySelector('a.dropdown-toggle, a');
+            const menu = area.querySelector('.user-menu, .dropdown-menu');
+            if (menu) menu.style.display = 'none';
+            if (toggle && menu) {
+              toggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+              });
+            }
+            sidebar.insertBefore(area, sidebar.firstChild);
+          }
         }
       };
       try { apply(); } catch (_) { /* ignore */ }
       setTimeout(apply, 600);
+      setTimeout(apply, 1500);
       if (window.matchMedia) {
         const mq = window.matchMedia('(max-width: 640px)');
         const onChg = () => apply();

@@ -12221,14 +12221,17 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           min-height: 44px !important;
         }
         #navbar .menu-toggler {
-          width: 40px !important;
-          height: 44px !important;
-          line-height: 44px !important;
+          width: 36px !important;
+          height: 40px !important;
+          line-height: 40px !important;
+          padding: 0 !important;
         }
-        /* 汉堡按钮主题化 */
+        /* 汉堡按钮主题化：细线条、紧凑 */
         #navbar .menu-toggler .icon-bar {
           background: var(--text, #1d1d1f) !important;
           box-shadow: none !important;
+          width: 16px !important;
+          margin: 3px auto !important;
         }
         #navbar .navbar-header.pull-left {
           height: 44px !important;
@@ -21312,18 +21315,47 @@ ${arcs}
       syncSidebarUnderNavbar();
       setupMobileNavbar();
       function setupMobileNavbar() {
+        const bindTogglerFallback = /* @__PURE__ */ __name(() => {
+          const toggler = document.querySelector("#navbar .menu-toggler");
+          const sidebar = document.getElementById("sidebar");
+          if (!toggler || !sidebar || toggler.dataset.urpppToggleBound) return;
+          toggler.dataset.urpppToggleBound = "1";
+          toggler.addEventListener("click", () => {
+            const before = sidebar.classList.contains("display");
+            setTimeout(() => {
+              if (sidebar.classList.contains("display") === before) {
+                sidebar.classList.toggle("display", !before);
+              }
+            }, 30);
+          });
+        }, "bindTogglerFallback");
         const apply = /* @__PURE__ */ __name(() => {
           const narrow = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
           const btns = document.querySelector("#navbar .navbar-buttons .ace-nav");
+          bindTogglerFallback();
           if (!btns) return;
           btns.querySelectorAll("li").forEach((li) => {
             const isUser = li.querySelector(".user-menu, .nav-user-photo, .dropdown-menu");
             li.style.setProperty("display", narrow && !isUser ? "none" : "", narrow && !isUser ? "important" : "");
           });
-          if (!narrow) return;
           const sidebar = document.getElementById("sidebar");
-          if (!sidebar) return;
           const menus = document.getElementById("urppp-menus");
+          if (!narrow) {
+            const q = document.getElementById("urppp-mobile-quick");
+            const u = document.getElementById("urppp-mobile-user");
+            if (q) q.remove();
+            if (u) u.remove();
+            return;
+          }
+          if (!sidebar) return;
+          try {
+            const cleanBtn = document.getElementById("urppp-nav-clean");
+            const brandHost = document.querySelector("#navbar .navbar-header");
+            if (cleanBtn && brandHost && cleanBtn.parentElement !== brandHost) {
+              brandHost.appendChild(cleanBtn);
+            }
+          } catch (_) {
+          }
           if (menus && !document.getElementById("urppp-mobile-quick")) {
             const quick = document.createElement("div");
             quick.id = "urppp-mobile-quick";
@@ -21339,23 +21371,45 @@ ${arcs}
             });
             if (quick.querySelectorAll("a").length > 0) sidebar.insertBefore(quick, menus);
           }
-          const userLi = btns.querySelector("li:has(.user-menu), li:has(.nav-user-photo), li:has(.dropdown-menu)");
-          if (userLi && !document.getElementById("urppp-mobile-user")) {
-            const clone = userLi.cloneNode(true);
-            clone.id = "urppp-mobile-user";
-            clone.className = "urppp-mobile-user";
-            clone.removeAttribute("style");
-            const toggle = clone.querySelector("a.dropdown-toggle, a");
-            const menu = clone.querySelector(".user-menu, .dropdown-menu");
-            if (menu) menu.style.display = "none";
-            if (toggle && menu) {
-              toggle.addEventListener("click", (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                menu.style.display = menu.style.display === "block" ? "none" : "block";
-              });
+          if (!document.getElementById("urppp-mobile-user")) {
+            const userLi = btns.querySelector("li:has(.user-menu), li:has(.nav-user-photo), li:has(.dropdown-menu)");
+            let area = null;
+            if (userLi) {
+              area = userLi.cloneNode(true);
+              area.removeAttribute("style");
+            } else {
+              area = document.createElement("div");
+              area.className = "urppp-mobile-user";
+              const photo = document.querySelector("#navbar .nav-user-photo");
+              const info = document.querySelector("#navbar .user-info");
+              area.innerHTML = '<a href="javascript:void(0)">' + (photo ? photo.outerHTML : "") + '<span class="user-info">' + (info ? info.textContent.trim() : "我的账户") + '</span><i class="ace-icon fa fa-caret-down"></i></a>';
+              const menuItems = Array.from(document.querySelectorAll("#navbar .user-menu a, #navbar .dropdown-menu a"));
+              if (menuItems.length) {
+                const ul = document.createElement("ul");
+                ul.className = "dropdown-menu";
+                menuItems.forEach((a) => {
+                  const li = document.createElement("li");
+                  li.appendChild(a.cloneNode(true));
+                  ul.appendChild(li);
+                });
+                ul.style.display = "none";
+                area.appendChild(ul);
+              }
             }
-            sidebar.insertBefore(clone, sidebar.firstChild);
+            if (area) {
+              area.id = "urppp-mobile-user";
+              const toggle = area.querySelector("a.dropdown-toggle, a");
+              const menu = area.querySelector(".user-menu, .dropdown-menu");
+              if (menu) menu.style.display = "none";
+              if (toggle && menu) {
+                toggle.addEventListener("click", (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  menu.style.display = menu.style.display === "block" ? "none" : "block";
+                });
+              }
+              sidebar.insertBefore(area, sidebar.firstChild);
+            }
           }
         }, "apply");
         try {
@@ -21363,6 +21417,7 @@ ${arcs}
         } catch (_) {
         }
         setTimeout(apply, 600);
+        setTimeout(apply, 1500);
         if (window.matchMedia) {
           const mq = window.matchMedia("(max-width: 640px)");
           const onChg = /* @__PURE__ */ __name(() => apply(), "onChg");
