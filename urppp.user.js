@@ -10772,11 +10772,20 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
         margin: 0 !important;
         padding: 0 !important;
       }
-      /* 搜索按钮向右微调，靠近客服 */
+      /* 搜索按钮与帮助/客服项紧贴，去掉多余间距 */
+      #navbar .ace-nav > li.urppp-search-item {
+        margin: 0 !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+      }
+      #navbar .ace-nav > li.urppp-search-item + li,
+      #navbar .ace-nav > li + li.urppp-search-item {
+        margin-left: 0 !important;
+      }
       #navbar #intellegenceUDiv #clickdiv {
         transform: none !important;
       }
-      #intellegenceUDiv > .nav-search { position: absolute !important; right: 34px !important; top: 50% !important; transform: translateY(-50%) !important; }
 
       /* 用户项：头像和文字一行 */
       #navbar .ace-nav > li.light-blue > a {
@@ -10862,7 +10871,7 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
-        overflow: hidden !important;
+        overflow: visible !important;
         padding: 0 !important;
         transition: width .2s ease, opacity .2s ease;
       }
@@ -10890,12 +10899,12 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       #form-search.nav-search .ace-icon.fa-search { color: var(--text-secondary) !important; }
       #form-search.nav-search .nav-search-input:focus + .ace-icon.fa-search { color: var(--text) !important; }
 
-      /* 桌面搜索：由插件生成的独立弹出面板，保留宽度/透明度展开节奏 */
+      /* 桌面搜索：form-search 只是输入框容器，结果列表独立浮层 */
       #form-search.urppp-desktop-search {
         box-sizing: border-box !important;
         min-width: 0 !important;
         border: 0 !important;
-        border-radius: var(--radius-sm) !important;
+        border-radius: 0 !important;
       }
       #form-search.urppp-desktop-search .form-search,
       #form-search.urppp-desktop-search .input-icon {
@@ -16201,8 +16210,23 @@ ${arcs}
           host = document.createElement("div");
           host.id = "intellegenceUDiv";
           item.appendChild(host);
-          aceNav.insertBefore(item, aceNav.firstChild);
+          aceNav.appendChild(item);
         }
+        const searchItem = host.closest("li") || host.parentElement;
+        const helpItem = Array.from(aceNav.children).find((li) => {
+          const a = li.querySelector(":scope > a");
+          if (!a) return false;
+          const href = a.getAttribute("href") || "";
+          return href.includes("customerServiceCenter") || !!a.querySelector(".glyphicon-headphones");
+        });
+        if (helpItem && searchItem && helpItem !== searchItem) {
+          const isBefore = (searchItem.compareDocumentPosition(helpItem) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+          if (!isBefore) {
+            aceNav.insertBefore(searchItem, helpItem);
+          }
+        }
+        if (searchItem && !searchItem.classList.contains("urppp-search-item")) searchItem.classList.add("urppp-search-item");
+        const hostItem = searchItem;
         if (!button) {
           button = document.createElement("button");
           button.type = "button";
@@ -16221,26 +16245,24 @@ ${arcs}
           formSearch.className = "nav-search";
           formSearch.innerHTML = '<form class="form-search"><span class="input-icon"><input type="text" placeholder="查找功能..." class="nav-search-input" id="search-input" autocomplete="off"><i class="ace-icon fa fa-search" aria-hidden="true"></i></span></form>';
         }
-        if (formSearch.parentElement !== navbar) navbar.appendChild(formSearch);
+        if (hostItem && formSearch.parentElement !== hostItem) hostItem.appendChild(formSearch);
+        if (hostItem) hostItem.style.setProperty("position", "relative", "important");
         formSearch.classList.add("urppp-desktop-search");
         formSearch.style.setProperty("position", "absolute", "important");
-        formSearch.style.setProperty("top", "44px", "important");
-        formSearch.style.setProperty("right", "16px", "important");
+        formSearch.style.setProperty("top", "50%", "important");
+        formSearch.style.setProperty("right", "40px", "important");
         formSearch.style.setProperty("left", "auto", "important");
-        formSearch.style.setProperty("width", formSearch.dataset.open === "1" ? "min(360px, calc(100vw - 24px))" : "0px", "important");
+        formSearch.style.setProperty("transform", "translateY(-50%)", "important");
+        formSearch.style.setProperty("width", formSearch.dataset.open === "1" ? "min(320px, calc(100vw - 24px))" : "0px", "important");
         formSearch.style.setProperty("max-width", "calc(100vw - 24px)", "important");
-        formSearch.style.setProperty("max-height", formSearch.dataset.open === "1" ? "min(420px, calc(100vh - 72px))" : "0px", "important");
         formSearch.style.setProperty("opacity", formSearch.dataset.open === "1" ? "1" : "0", "important");
-        formSearch.style.setProperty("overflow", "hidden", "important");
         formSearch.style.setProperty("pointer-events", formSearch.dataset.open === "1" ? "auto" : "none", "important");
         formSearch.style.setProperty("z-index", "1200", "important");
         formSearch.style.setProperty("margin", "0", "important");
-        formSearch.style.setProperty("background", "var(--surface)", "important");
-        formSearch.style.setProperty("border", formSearch.dataset.open === "1" ? "1px solid var(--border)" : "0 solid transparent", "important");
-        formSearch.style.setProperty("border-radius", "var(--radius-sm)", "important");
-        formSearch.style.setProperty("box-shadow", formSearch.dataset.open === "1" ? "var(--shadow)" : "none", "important");
-        formSearch.style.setProperty("transform", "none", "important");
-        formSearch.style.setProperty("transition", "width .2s ease, opacity .2s ease, max-height .2s ease", "important");
+        formSearch.style.setProperty("background", "transparent", "important");
+        formSearch.style.setProperty("border", "0 solid transparent", "important");
+        formSearch.style.setProperty("box-shadow", "none", "important");
+        formSearch.style.setProperty("transition", "width .2s ease, opacity .2s ease", "important");
         const input = formSearch.querySelector("#search-input");
         const innerForm = formSearch.querySelector("form");
         if (!input || !innerForm) return;
@@ -16267,9 +16289,20 @@ ${arcs}
           results.id = "urppp-search-results";
           formSearch.appendChild(results);
         }
-        results.style.setProperty("display", "grid", "important");
+        results.style.setProperty("display", formSearch.dataset.open === "1" ? "grid" : "none", "important");
+        results.style.setProperty("position", "absolute", "important");
+        results.style.setProperty("top", "calc(100% + 8px)", "important");
+        results.style.setProperty("left", "0", "important");
+        results.style.setProperty("right", "0", "important");
         results.style.setProperty("gap", "2px", "important");
-        results.style.setProperty("padding", "0 6px 6px", "important");
+        results.style.setProperty("padding", "6px", "important");
+        results.style.setProperty("background", "var(--surface)", "important");
+        results.style.setProperty("border", "1px solid var(--border)", "important");
+        results.style.setProperty("border-radius", "var(--radius-sm)", "important");
+        results.style.setProperty("box-shadow", "var(--shadow)", "important");
+        results.style.setProperty("z-index", "1201", "important");
+        results.style.setProperty("max-height", "min(350px, calc(100vh - 120px))", "important");
+        results.style.setProperty("overflow-y", "auto", "important");
         const collectEntries = /* @__PURE__ */ __name(() => {
           const seen = /* @__PURE__ */ new Set();
           const entries = [];
@@ -16312,12 +16345,10 @@ ${arcs}
         }, "renderResults");
         const setOpen = /* @__PURE__ */ __name((open) => {
           formSearch.dataset.open = open ? "1" : "0";
-          formSearch.style.setProperty("width", open ? "min(360px, calc(100vw - 24px))" : "0px", "important");
-          formSearch.style.setProperty("max-height", open ? "min(420px, calc(100vh - 72px))" : "0px", "important");
+          formSearch.style.setProperty("width", open ? "min(320px, calc(100vw - 24px))" : "0px", "important");
           formSearch.style.setProperty("opacity", open ? "1" : "0", "important");
           formSearch.style.setProperty("pointer-events", open ? "auto" : "none", "important");
-          formSearch.style.setProperty("border", open ? "1px solid var(--border)" : "0 solid transparent", "important");
-          formSearch.style.setProperty("box-shadow", open ? "var(--shadow)" : "none", "important");
+          results.style.setProperty("display", open ? "grid" : "none", "important");
           button.setAttribute("aria-expanded", open ? "true" : "false");
           if (open) {
             renderResults();

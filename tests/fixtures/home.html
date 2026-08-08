@@ -13,9 +13,15 @@
   </style>
 </head>
 <body>
-  <nav class="navbar" id="navbar">
+  <nav class="navbar" id="navbar" style="position: relative;">
     <div class="navbar-header"><a class="navbar-brand" href="/index">URP Fixture</a></div>
-    <ul class="ace-nav"><li class="light-blue"><a><span class="user-info">测试用户</span></a></li></ul>
+    <ul class="ace-nav" style="list-style: none; margin: 0; padding: 0; float: right; display: flex; align-items: center;">
+      <li><a href="/calendar"><i class="ace-icon fa fa-calendar"></i><span>校历</span></a></li>
+      <li><a href="/schedule"><i class="ace-icon fa fa-clock-o"></i><span>作息</span></a></li>
+      <li><a href="/holiday"><i class="ace-icon fa fa-flag"></i><span>假期</span></a></li>
+      <li><a href="/main/customerServiceCenter"><i class="ace-icon glyphicon glyphicon-headphones"></i></a></li>
+      <li class="light-blue"><a><span class="user-info">测试用户</span></a></li>
+    </ul>
   </nav>
   <aside class="sidebar" id="sidebar">
     <ul class="nav nav-list" id="menus"><li id="menu-home" class="active"><a href="/index"><span class="menu-text">首页</span></a></li></ul>

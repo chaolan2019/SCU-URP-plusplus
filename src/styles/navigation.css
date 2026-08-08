@@ -221,11 +221,20 @@
         margin: 0 !important;
         padding: 0 !important;
       }
-      /* 搜索按钮向右微调，靠近客服 */
+      /* 搜索按钮与帮助/客服项紧贴，去掉多余间距 */
+      #navbar .ace-nav > li.urppp-search-item {
+        margin: 0 !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+      }
+      #navbar .ace-nav > li.urppp-search-item + li,
+      #navbar .ace-nav > li + li.urppp-search-item {
+        margin-left: 0 !important;
+      }
       #navbar #intellegenceUDiv #clickdiv {
         transform: none !important;
       }
-      #intellegenceUDiv > .nav-search { position: absolute !important; right: 34px !important; top: 50% !important; transform: translateY(-50%) !important; }
 
       /* 用户项：头像和文字一行 */
       #navbar .ace-nav > li.light-blue > a {
@@ -311,7 +320,7 @@
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
-        overflow: hidden !important;
+        overflow: visible !important;
         padding: 0 !important;
         transition: width .2s ease, opacity .2s ease;
       }
@@ -339,12 +348,12 @@
       #form-search.nav-search .ace-icon.fa-search { color: var(--text-secondary) !important; }
       #form-search.nav-search .nav-search-input:focus + .ace-icon.fa-search { color: var(--text) !important; }
 
-      /* 桌面搜索：由插件生成的独立弹出面板，保留宽度/透明度展开节奏 */
+      /* 桌面搜索：form-search 只是输入框容器，结果列表独立浮层 */
       #form-search.urppp-desktop-search {
         box-sizing: border-box !important;
         min-width: 0 !important;
         border: 0 !important;
-        border-radius: var(--radius-sm) !important;
+        border-radius: 0 !important;
       }
       #form-search.urppp-desktop-search .form-search,
       #form-search.urppp-desktop-search .input-icon {

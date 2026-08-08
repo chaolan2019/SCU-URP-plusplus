@@ -15,6 +15,26 @@ test('desktop search opens with stable styling and renders menu results', async 
   await expect(panel).toHaveCSS('width', '0px');
   await expect(input).toHaveCSS('border-top-width', '1px');
 
+  // 按钮插在“帮助/客服”按钮左边，form-search 留在按钮所在 li 内
+  const positions = await page.evaluate(() => {
+    const searchItem = document.querySelector('#intellegenceUDiv')?.closest('li');
+    const helpItem = Array.from(document.querySelectorAll('.ace-nav > li')).find((li) => {
+      const a = li.querySelector(':scope > a');
+      return a && (a.getAttribute('href') || '').includes('customerServiceCenter');
+    });
+    const order = [...document.querySelectorAll('.ace-nav > li')].map((li) => li.className || li.textContent.trim().slice(0, 10));
+    return {
+      order,
+      searchBeforeHelp: searchItem && helpItem ? (searchItem.compareDocumentPosition(helpItem) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0 : false,
+      cmp: searchItem && helpItem ? searchItem.compareDocumentPosition(helpItem) : -1,
+      formInsideLi: document.getElementById('form-search')?.closest('li') === searchItem,
+      resultsAbsolute: getComputedStyle(document.getElementById('urppp-search-results')).position === 'absolute',
+    };
+  });
+  expect(positions.searchBeforeHelp).toBeTruthy();
+  expect(positions.formInsideLi).toBeTruthy();
+  expect(positions.resultsAbsolute).toBeTruthy();
+
   await button.click();
   await expect(panel).toHaveAttribute('data-open', '1');
   await expect(input).toBeFocused();
