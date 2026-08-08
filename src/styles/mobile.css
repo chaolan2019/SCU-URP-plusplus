@@ -259,9 +259,43 @@
         #navbar #intellegenceUDiv {
           display: none !important;
         }
-        /* 抽屉覆盖层必须高于固定顶栏，保证关闭按钮可触摸 */
-        #sidebar.display:not(.menu-min) {
+        /* 移动抽屉始终使用完整宽度；menu-min 仅属于桌面折叠状态 */
+        #sidebar.display,
+        #sidebar.display.menu-min,
+        body.menu-min #sidebar.display {
+          width: 260px !important;
+          min-width: 260px !important;
+          max-width: 260px !important;
           z-index: 1200 !important;
+        }
+        #sidebar.display #urppp-menus,
+        body.menu-min #sidebar.display #urppp-menus {
+          padding: 10px 12px 24px !important;
+        }
+        #sidebar.display .urppp-nav-link,
+        body.menu-min #sidebar.display .urppp-nav-link {
+          padding: 11px 13px !important;
+          justify-content: flex-start !important;
+        }
+        #sidebar.display .urppp-nav-text,
+        #sidebar.display .urppp-nav-arrow,
+        body.menu-min #sidebar.display .urppp-nav-text,
+        body.menu-min #sidebar.display .urppp-nav-arrow {
+          display: block !important;
+          width: auto !important;
+          max-width: 200px !important;
+          margin-left: 0 !important;
+          opacity: 1 !important;
+          overflow: hidden !important;
+          pointer-events: auto !important;
+        }
+        #sidebar.display .urppp-nav-link > .fa,
+        body.menu-min #sidebar.display .urppp-nav-link > .fa {
+          margin-right: 11px !important;
+        }
+        #sidebar.display .urppp-nav-submenu,
+        body.menu-min #sidebar.display .urppp-nav-submenu {
+          display: block !important;
         }
         /* 移动端由顶栏菜单按钮双向开合，移除抽屉内重复关闭头 */
         #sidebar .urppp-sidebar-header {

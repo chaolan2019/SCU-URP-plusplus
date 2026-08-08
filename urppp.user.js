@@ -12355,9 +12355,43 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         #navbar #intellegenceUDiv {
           display: none !important;
         }
-        /* 抽屉覆盖层必须高于固定顶栏，保证关闭按钮可触摸 */
-        #sidebar.display:not(.menu-min) {
+        /* 移动抽屉始终使用完整宽度；menu-min 仅属于桌面折叠状态 */
+        #sidebar.display,
+        #sidebar.display.menu-min,
+        body.menu-min #sidebar.display {
+          width: 260px !important;
+          min-width: 260px !important;
+          max-width: 260px !important;
           z-index: 1200 !important;
+        }
+        #sidebar.display #urppp-menus,
+        body.menu-min #sidebar.display #urppp-menus {
+          padding: 10px 12px 24px !important;
+        }
+        #sidebar.display .urppp-nav-link,
+        body.menu-min #sidebar.display .urppp-nav-link {
+          padding: 11px 13px !important;
+          justify-content: flex-start !important;
+        }
+        #sidebar.display .urppp-nav-text,
+        #sidebar.display .urppp-nav-arrow,
+        body.menu-min #sidebar.display .urppp-nav-text,
+        body.menu-min #sidebar.display .urppp-nav-arrow {
+          display: block !important;
+          width: auto !important;
+          max-width: 200px !important;
+          margin-left: 0 !important;
+          opacity: 1 !important;
+          overflow: hidden !important;
+          pointer-events: auto !important;
+        }
+        #sidebar.display .urppp-nav-link > .fa,
+        body.menu-min #sidebar.display .urppp-nav-link > .fa {
+          margin-right: 11px !important;
+        }
+        #sidebar.display .urppp-nav-submenu,
+        body.menu-min #sidebar.display .urppp-nav-submenu {
+          display: block !important;
         }
         /* 移动端由顶栏菜单按钮双向开合，移除抽屉内重复关闭头 */
         #sidebar .urppp-sidebar-header {
@@ -21569,6 +21603,24 @@ ${arcs}
       function setupMobileNavbar() {
         const mobileQuery = "(max-width: 640px)";
         const isNarrow = /* @__PURE__ */ __name(() => !!(window.matchMedia && window.matchMedia(mobileQuery).matches), "isNarrow");
+        const syncMobileSidebarMode = /* @__PURE__ */ __name((sidebar, narrow) => {
+          if (!sidebar || !document.body) return;
+          if (narrow) {
+            if (!Object.hasOwn(sidebar.dataset, "urpppDesktopSidebarMin")) {
+              sidebar.dataset.urpppDesktopSidebarMin = sidebar.classList.contains("menu-min") ? "1" : "0";
+              sidebar.dataset.urpppDesktopBodyMin = document.body.classList.contains("menu-min") ? "1" : "0";
+            }
+            sidebar.classList.remove("menu-min");
+            document.body.classList.remove("menu-min");
+            return;
+          }
+          if (Object.hasOwn(sidebar.dataset, "urpppDesktopSidebarMin")) {
+            sidebar.classList.toggle("menu-min", sidebar.dataset.urpppDesktopSidebarMin === "1");
+            document.body.classList.toggle("menu-min", sidebar.dataset.urpppDesktopBodyMin === "1");
+            delete sidebar.dataset.urpppDesktopSidebarMin;
+            delete sidebar.dataset.urpppDesktopBodyMin;
+          }
+        }, "syncMobileSidebarMode");
         const closeDrawer = /* @__PURE__ */ __name(() => {
           const sidebar = document.getElementById("sidebar");
           const toggler = document.querySelector("#navbar .menu-toggler");
@@ -21669,6 +21721,7 @@ ${arcs}
             toggler.addEventListener("click", (event) => {
               event.preventDefault();
               event.stopPropagation();
+              if (isNarrow()) syncMobileSidebarMode(sidebar, true);
               const open = sidebar.classList.toggle("display");
               sidebar.style.setProperty("z-index", open ? "1200" : "1030", "important");
               toggler.setAttribute("aria-expanded", open ? "true" : "false");
@@ -21828,6 +21881,7 @@ ${arcs}
           const btns = document.querySelector("#navbar .navbar-buttons .ace-nav");
           const sidebar = document.getElementById("sidebar");
           const menus = document.getElementById("urppp-menus");
+          if (sidebar) syncMobileSidebarMode(sidebar, narrow);
           bindDrawerControls();
           if (!narrow) {
             restoreMobileSearch();

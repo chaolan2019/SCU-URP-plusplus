@@ -19,6 +19,8 @@ for (const [skin, expectedShape] of Object.entries(skinShapes)) {
     });
 
     await expect(page.locator('html')).toHaveAttribute('data-urppp-skin', skin);
+    await expect(page.locator('body')).not.toHaveClass(/\bmenu-min\b/);
+    await expect(page.locator('#sidebar')).not.toHaveClass(/\bmenu-min\b/);
     await expect(page.locator('#urppp-mobile-user')).toHaveCount(1);
     await expect(page.locator('#urppp-mobile-user .urppp-mobile-user-action')).toHaveCount(4);
     await expect(page.locator('#urppp-mobile-quick .urppp-mobile-tool-button')).toHaveText(['帮助', '搜索']);
@@ -100,6 +102,8 @@ for (const [skin, expectedShape] of Object.entries(skinShapes)) {
     await expect(page.locator('#navbar .menu-toggler .urppp-menu-icon-open')).toBeHidden();
     await expect(page.locator('#navbar .menu-toggler .urppp-menu-icon-close')).toBeVisible();
     await expect(page.locator('#sidebar')).toHaveClass(/\bdisplay\b/);
+    await expect(page.locator('#sidebar')).toHaveCSS('width', '260px');
+    await expect(page.locator('#sidebar #urppp-menus .urppp-nav-text').first()).toBeVisible();
     await expect(page.locator('#urppp-mobile-user')).toBeVisible();
     await expect(page.locator('#urppp-mobile-user .urppp-mobile-user-action')).toHaveText([
       '首页', '在线反馈', '修改密码', '注销',

@@ -6227,6 +6227,25 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const mobileQuery = '(max-width: 640px)';
       const isNarrow = () => !!(window.matchMedia && window.matchMedia(mobileQuery).matches);
 
+      const syncMobileSidebarMode = (sidebar, narrow) => {
+        if (!sidebar || !document.body) return;
+        if (narrow) {
+          if (!Object.hasOwn(sidebar.dataset, 'urpppDesktopSidebarMin')) {
+            sidebar.dataset.urpppDesktopSidebarMin = sidebar.classList.contains('menu-min') ? '1' : '0';
+            sidebar.dataset.urpppDesktopBodyMin = document.body.classList.contains('menu-min') ? '1' : '0';
+          }
+          sidebar.classList.remove('menu-min');
+          document.body.classList.remove('menu-min');
+          return;
+        }
+        if (Object.hasOwn(sidebar.dataset, 'urpppDesktopSidebarMin')) {
+          sidebar.classList.toggle('menu-min', sidebar.dataset.urpppDesktopSidebarMin === '1');
+          document.body.classList.toggle('menu-min', sidebar.dataset.urpppDesktopBodyMin === '1');
+          delete sidebar.dataset.urpppDesktopSidebarMin;
+          delete sidebar.dataset.urpppDesktopBodyMin;
+        }
+      };
+
       const closeDrawer = () => {
         const sidebar = document.getElementById('sidebar');
         const toggler = document.querySelector('#navbar .menu-toggler');
@@ -6314,6 +6333,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           toggler.addEventListener('click', (event) => {
             event.preventDefault();
             event.stopPropagation();
+            if (isNarrow()) syncMobileSidebarMode(sidebar, true);
             const open = sidebar.classList.toggle('display');
             sidebar.style.setProperty('z-index', open ? '1200' : '1030', 'important');
             toggler.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -6481,6 +6501,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         const btns = document.querySelector('#navbar .navbar-buttons .ace-nav');
         const sidebar = document.getElementById('sidebar');
         const menus = document.getElementById('urppp-menus');
+        if (sidebar) syncMobileSidebarMode(sidebar, narrow);
         bindDrawerControls();
         if (!narrow) {
           restoreMobileSearch();
