@@ -20,6 +20,11 @@
         .main-content {
           overflow-x: hidden !important;
         }
+        /* 抽屉内容过长时可滚动 */
+        .sidebar {
+          overflow-y: auto !important;
+          -webkit-overflow-scrolling: touch;
+        }
         .widget-body,
         .widget-main,
         .tabContent,
@@ -114,7 +119,9 @@
         .navbar-fixed-top {
           padding-top: 0 !important;
         }
-        /* ---------- 顶栏：单行 44px，汉堡 + 品牌 + 用户 ---------- */
+        /* ---------- 顶栏：单行 44px，汉堡 + 品牌 + 清爽按钮 ----------
+         * 功能按钮与用户区由 JS 收进抽屉（原生 sidebar 用户区已在抽屉内），
+         * 顶栏保持极简。 */
         #navbar,
         #navbar .navbar-container {
           height: 44px !important;
@@ -125,69 +132,45 @@
           height: 44px !important;
           line-height: 44px !important;
         }
+        /* 汉堡按钮主题化 */
+        #navbar .menu-toggler .icon-bar {
+          background: var(--text, #1d1d1f) !important;
+          box-shadow: none !important;
+        }
         #navbar .navbar-header.pull-left {
           height: 44px !important;
+          display: flex !important;
+          align-items: center !important;
         }
         #navbar .navbar-brand {
-          padding: 0 8px !important;
+          padding: 0 6px !important;
           height: 44px !important;
           line-height: 44px !important;
           font-size: 0 !important;
+          margin: 0 !important;
         }
         #navbar .navbar-brand small {
           font-size: 13px !important;
           line-height: 44px !important;
         }
-        /* 功能按钮由 JS 隐藏（收进抽屉快捷区）；顶栏按钮区恢复单行 */
+        /* 清爽按钮：移动端紧凑 */
+        #navbar #urppp-nav-clean,
+        #urppp-nav-theme #urppp-nav-clean {
+          height: 30px !important;
+          min-height: 30px !important;
+          margin: 0 0 0 6px !important;
+          padding: 0 9px !important;
+          font-size: 12px !important;
+        }
+        /* 功能按钮区（含用户头像）整体隐藏：收进抽屉 */
         #navbar .navbar-buttons {
-          position: static !important;
-          float: right !important;
-          height: 44px !important;
-          background: transparent !important;
-          border: none !important;
-          display: block !important;
-        }
-        #navbar .navbar-buttons .ace-nav {
-          display: inline-block !important;
-        }
-        #navbar .navbar-buttons .ace-nav > li {
-          height: 44px !important;
-          line-height: 44px !important;
-        }
-        #navbar .navbar-buttons .ace-nav > li > a {
-          padding: 0 7px !important;
-          height: 44px !important;
-          line-height: 44px !important;
-          font-size: 0 !important;
-        }
-        #navbar .navbar-buttons .ace-nav > li > a > i {
-          font-size: 15px !important;
-          margin: 0 !important;
+          display: none !important;
         }
         /* 搜索滑块隐藏 */
         #navbar #intellegenceUDiv {
           display: none !important;
         }
-        /* 用户区：头像 + 名字，紧凑 */
-        #navbar .navbar-buttons .nav-user-photo {
-          width: 26px !important;
-          height: 26px !important;
-          margin: 0 3px 0 0 !important;
-          vertical-align: middle !important;
-        }
-        #navbar .navbar-buttons .ace-nav > li > a .user-info {
-          font-size: 12px !important;
-          line-height: 44px !important;
-          display: inline !important;
-        }
-        #navbar .navbar-buttons .ace-nav > li > a .user-info small {
-          font-size: 11px !important;
-          display: inline !important;
-        }
-        #navbar .navbar-buttons .ace-nav > li > a .caret {
-          display: none !important;
-        }
-        /* 抽屉内快捷功能区（JS 生成） */
+        /* 抽屉内快捷功能区（JS 生成）：恢复被教务 CSS 隐藏的 span 文字 */
         #sidebar .urppp-mobile-quick {
           padding: 8px 12px 10px !important;
           border-bottom: 1px solid var(--border, #e8eaed) !important;
@@ -214,6 +197,66 @@
           text-align: center !important;
           color: var(--primary, #b53434) !important;
           font-size: 14px !important;
+        }
+        #sidebar .urppp-mobile-quick .span_bbzx {
+          display: inline !important;
+          font-size: 13px !important;
+        }
+        /* 抽屉内用户区（JS 从顶栏克隆，点击展开用户菜单） */
+        #sidebar .urppp-mobile-user {
+          padding: 10px 12px 10px !important;
+          border-bottom: 1px solid var(--border, #e8eaed) !important;
+        }
+        #sidebar .urppp-mobile-user > a {
+          display: flex !important;
+          align-items: center !important;
+          gap: 10px !important;
+          color: var(--text, #1d1d1f) !important;
+          font-size: 13px !important;
+          text-decoration: none !important;
+          line-height: 1.3 !important;
+          padding: 2px 0 !important;
+        }
+        #sidebar .urppp-mobile-user .nav-user-photo {
+          width: 34px !important;
+          height: 34px !important;
+          border-radius: 50% !important;
+          margin: 0 !important;
+        }
+        #sidebar .urppp-mobile-user .user-info {
+          display: inline !important;
+          font-size: 13px !important;
+          line-height: 1.3 !important;
+        }
+        #sidebar .urppp-mobile-user .user-info small {
+          display: inline !important;
+          font-size: 11px !important;
+          color: var(--text-secondary, #6b7280) !important;
+        }
+        #sidebar .urppp-mobile-user .caret {
+          margin-left: auto !important;
+        }
+        #sidebar .urppp-mobile-user .user-menu,
+        #sidebar .urppp-mobile-user .dropdown-menu {
+          position: static !important;
+          box-shadow: none !important;
+          border: 1px solid var(--border, #e8eaed) !important;
+          border-radius: 10px !important;
+          margin-top: 8px !important;
+          padding: 6px !important;
+          background: var(--surface, #fff) !important;
+          float: none !important;
+          min-width: 0 !important;
+        }
+        #sidebar .urppp-mobile-user .user-menu a,
+        #sidebar .urppp-mobile-user .dropdown-menu a {
+          padding: 8px 10px !important;
+          display: flex !important;
+          align-items: center !important;
+          gap: 8px !important;
+          font-size: 13px !important;
+          color: var(--text, #1d1d1f) !important;
+          text-decoration: none !important;
         }
 
         /* ---------- 内容区：双列合并单列、卡片流 ---------- */

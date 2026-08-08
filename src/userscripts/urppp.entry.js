@@ -6168,26 +6168,50 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         const narrow = window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
         const btns = document.querySelector('#navbar .navbar-buttons .ace-nav');
         if (!btns) return;
-        // 功能按钮（校历/作息/假期/客服/搜索）在窄视口隐藏，收进抽屉快捷区
-        btns.querySelectorAll('li:not(.light-blue)').forEach((li) => {
-          li.style.setProperty('display', narrow ? 'none' : '', narrow ? 'important' : '');
+        // 功能按钮在窄视口隐藏；用户区保留（后续收进抽屉）
+        btns.querySelectorAll('li').forEach((li) => {
+          const isUser = li.querySelector('.user-menu, .nav-user-photo, .dropdown-menu');
+          li.style.setProperty('display', narrow && !isUser ? 'none' : '', narrow && !isUser ? 'important' : '');
         });
         if (!narrow) return;
-        // 抽屉内快捷功能区（仅生成一次）
         const sidebar = document.getElementById('sidebar');
+        if (!sidebar) return;
         const menus = document.getElementById('urppp-menus');
-        if (!sidebar || !menus || document.getElementById('urppp-mobile-quick')) return;
-        const quick = document.createElement('div');
-        quick.id = 'urppp-mobile-quick';
-        quick.className = 'urppp-mobile-quick';
-        quick.innerHTML = '<div class="urppp-mobile-quick-title">快捷功能</div>';
-        btns.querySelectorAll('li:not(.light-blue) a').forEach((a) => {
-          if (!a.href && !a.getAttribute('onclick')) return;
-          const clone = a.cloneNode(true);
+        // 快捷功能区（校历/作息/假期/客服/搜索）：只克隆功能链接，排除用户菜单项
+        if (menus && !document.getElementById('urppp-mobile-quick')) {
+          const quick = document.createElement('div');
+          quick.id = 'urppp-mobile-quick';
+          quick.className = 'urppp-mobile-quick';
+          quick.innerHTML = '<div class="urppp-mobile-quick-title">快捷功能</div>';
+          btns.querySelectorAll('li a').forEach((a) => {
+            if (a.closest('.user-menu, .dropdown-menu')) return;
+            if (a.classList.contains('dropdown-toggle')) return;
+            if (!a.href && !a.getAttribute('onclick')) return;
+            const clone = a.cloneNode(true);
+            clone.removeAttribute('style');
+            quick.appendChild(clone);
+          });
+          if (quick.querySelectorAll('a').length > 0) sidebar.insertBefore(quick, menus);
+        }
+        // 用户区收进抽屉顶部（点击展开用户菜单）
+        const userLi = btns.querySelector('li:has(.user-menu), li:has(.nav-user-photo), li:has(.dropdown-menu)');
+        if (userLi && !document.getElementById('urppp-mobile-user')) {
+          const clone = userLi.cloneNode(true);
+          clone.id = 'urppp-mobile-user';
+          clone.className = 'urppp-mobile-user';
           clone.removeAttribute('style');
-          quick.appendChild(clone);
-        });
-        sidebar.insertBefore(quick, menus);
+          const toggle = clone.querySelector('a.dropdown-toggle, a');
+          const menu = clone.querySelector('.user-menu, .dropdown-menu');
+          if (menu) menu.style.display = 'none';
+          if (toggle && menu) {
+            toggle.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            });
+          }
+          sidebar.insertBefore(clone, sidebar.firstChild);
+        }
       };
       try { apply(); } catch (_) { /* ignore */ }
       setTimeout(apply, 600);

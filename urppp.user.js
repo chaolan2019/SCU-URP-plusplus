@@ -11543,8 +11543,8 @@ html.urppp-clean-lock,html.urppp-clean-lock body{overflow:hidden!important}
 }
 html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#urppp-nav-clean{
   margin-left:8px!important;height:28px!important;min-height:28px!important;max-height:28px!important;
-  padding:0 10px!important;border-radius:8px!important;border:1px solid var(--border)!important;
-  background:var(--input-bg)!important;color:var(--text)!important;font-size:12px!important;
+  padding:0 10px!important;border-radius:999px!important;border:1px solid color-mix(in srgb,var(--primary) 45%,var(--border))!important;
+  background:color-mix(in srgb,var(--primary) 8%,var(--surface))!important;color:var(--primary)!important;font-size:12px!important;
   display:inline-flex!important;align-items:center!important;gap:6px!important;width:auto!important;
   box-shadow:none!important;line-height:26px!important;cursor:pointer!important;float:none!important
 }
@@ -12113,6 +12113,11 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         .main-content {
           overflow-x: hidden !important;
         }
+        /* 抽屉内容过长时可滚动 */
+        .sidebar {
+          overflow-y: auto !important;
+          -webkit-overflow-scrolling: touch;
+        }
         .widget-body,
         .widget-main,
         .tabContent,
@@ -12207,7 +12212,9 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         .navbar-fixed-top {
           padding-top: 0 !important;
         }
-        /* ---------- 顶栏：单行 44px，汉堡 + 品牌 + 用户 ---------- */
+        /* ---------- 顶栏：单行 44px，汉堡 + 品牌 + 清爽按钮 ----------
+         * 功能按钮与用户区由 JS 收进抽屉（原生 sidebar 用户区已在抽屉内），
+         * 顶栏保持极简。 */
         #navbar,
         #navbar .navbar-container {
           height: 44px !important;
@@ -12218,69 +12225,45 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           height: 44px !important;
           line-height: 44px !important;
         }
+        /* 汉堡按钮主题化 */
+        #navbar .menu-toggler .icon-bar {
+          background: var(--text, #1d1d1f) !important;
+          box-shadow: none !important;
+        }
         #navbar .navbar-header.pull-left {
           height: 44px !important;
+          display: flex !important;
+          align-items: center !important;
         }
         #navbar .navbar-brand {
-          padding: 0 8px !important;
+          padding: 0 6px !important;
           height: 44px !important;
           line-height: 44px !important;
           font-size: 0 !important;
+          margin: 0 !important;
         }
         #navbar .navbar-brand small {
           font-size: 13px !important;
           line-height: 44px !important;
         }
-        /* 功能按钮由 JS 隐藏（收进抽屉快捷区）；顶栏按钮区恢复单行 */
+        /* 清爽按钮：移动端紧凑 */
+        #navbar #urppp-nav-clean,
+        #urppp-nav-theme #urppp-nav-clean {
+          height: 30px !important;
+          min-height: 30px !important;
+          margin: 0 0 0 6px !important;
+          padding: 0 9px !important;
+          font-size: 12px !important;
+        }
+        /* 功能按钮区（含用户头像）整体隐藏：收进抽屉 */
         #navbar .navbar-buttons {
-          position: static !important;
-          float: right !important;
-          height: 44px !important;
-          background: transparent !important;
-          border: none !important;
-          display: block !important;
-        }
-        #navbar .navbar-buttons .ace-nav {
-          display: inline-block !important;
-        }
-        #navbar .navbar-buttons .ace-nav > li {
-          height: 44px !important;
-          line-height: 44px !important;
-        }
-        #navbar .navbar-buttons .ace-nav > li > a {
-          padding: 0 7px !important;
-          height: 44px !important;
-          line-height: 44px !important;
-          font-size: 0 !important;
-        }
-        #navbar .navbar-buttons .ace-nav > li > a > i {
-          font-size: 15px !important;
-          margin: 0 !important;
+          display: none !important;
         }
         /* 搜索滑块隐藏 */
         #navbar #intellegenceUDiv {
           display: none !important;
         }
-        /* 用户区：头像 + 名字，紧凑 */
-        #navbar .navbar-buttons .nav-user-photo {
-          width: 26px !important;
-          height: 26px !important;
-          margin: 0 3px 0 0 !important;
-          vertical-align: middle !important;
-        }
-        #navbar .navbar-buttons .ace-nav > li > a .user-info {
-          font-size: 12px !important;
-          line-height: 44px !important;
-          display: inline !important;
-        }
-        #navbar .navbar-buttons .ace-nav > li > a .user-info small {
-          font-size: 11px !important;
-          display: inline !important;
-        }
-        #navbar .navbar-buttons .ace-nav > li > a .caret {
-          display: none !important;
-        }
-        /* 抽屉内快捷功能区（JS 生成） */
+        /* 抽屉内快捷功能区（JS 生成）：恢复被教务 CSS 隐藏的 span 文字 */
         #sidebar .urppp-mobile-quick {
           padding: 8px 12px 10px !important;
           border-bottom: 1px solid var(--border, #e8eaed) !important;
@@ -12307,6 +12290,66 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           text-align: center !important;
           color: var(--primary, #b53434) !important;
           font-size: 14px !important;
+        }
+        #sidebar .urppp-mobile-quick .span_bbzx {
+          display: inline !important;
+          font-size: 13px !important;
+        }
+        /* 抽屉内用户区（JS 从顶栏克隆，点击展开用户菜单） */
+        #sidebar .urppp-mobile-user {
+          padding: 10px 12px 10px !important;
+          border-bottom: 1px solid var(--border, #e8eaed) !important;
+        }
+        #sidebar .urppp-mobile-user > a {
+          display: flex !important;
+          align-items: center !important;
+          gap: 10px !important;
+          color: var(--text, #1d1d1f) !important;
+          font-size: 13px !important;
+          text-decoration: none !important;
+          line-height: 1.3 !important;
+          padding: 2px 0 !important;
+        }
+        #sidebar .urppp-mobile-user .nav-user-photo {
+          width: 34px !important;
+          height: 34px !important;
+          border-radius: 50% !important;
+          margin: 0 !important;
+        }
+        #sidebar .urppp-mobile-user .user-info {
+          display: inline !important;
+          font-size: 13px !important;
+          line-height: 1.3 !important;
+        }
+        #sidebar .urppp-mobile-user .user-info small {
+          display: inline !important;
+          font-size: 11px !important;
+          color: var(--text-secondary, #6b7280) !important;
+        }
+        #sidebar .urppp-mobile-user .caret {
+          margin-left: auto !important;
+        }
+        #sidebar .urppp-mobile-user .user-menu,
+        #sidebar .urppp-mobile-user .dropdown-menu {
+          position: static !important;
+          box-shadow: none !important;
+          border: 1px solid var(--border, #e8eaed) !important;
+          border-radius: 10px !important;
+          margin-top: 8px !important;
+          padding: 6px !important;
+          background: var(--surface, #fff) !important;
+          float: none !important;
+          min-width: 0 !important;
+        }
+        #sidebar .urppp-mobile-user .user-menu a,
+        #sidebar .urppp-mobile-user .dropdown-menu a {
+          padding: 8px 10px !important;
+          display: flex !important;
+          align-items: center !important;
+          gap: 8px !important;
+          font-size: 13px !important;
+          color: var(--text, #1d1d1f) !important;
+          text-decoration: none !important;
         }
 
         /* ---------- 内容区：双列合并单列、卡片流 ---------- */
@@ -13619,10 +13662,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           height: "28px",
           "min-height": "28px",
           padding: "0 10px",
-          border: isFlat ? "2px solid var(--text)" : "1px solid transparent",
+          border: isFlat ? "2px solid var(--text)" : "1px solid color-mix(in srgb, var(--primary) 45%, var(--border))",
           "border-radius": isFlat ? "0" : "999px",
-          background: isFlat ? "var(--surface)" : "var(--input-bg)",
-          color: "var(--text)",
+          background: isFlat ? "var(--surface)" : "color-mix(in srgb, var(--primary) 8%, var(--surface))",
+          color: isFlat ? "var(--text)" : "var(--primary)",
           "font-size": "12px",
           gap: "6px",
           width: "auto",
@@ -21273,24 +21316,47 @@ ${arcs}
           const narrow = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
           const btns = document.querySelector("#navbar .navbar-buttons .ace-nav");
           if (!btns) return;
-          btns.querySelectorAll("li:not(.light-blue)").forEach((li) => {
-            li.style.setProperty("display", narrow ? "none" : "", narrow ? "important" : "");
+          btns.querySelectorAll("li").forEach((li) => {
+            const isUser = li.querySelector(".user-menu, .nav-user-photo, .dropdown-menu");
+            li.style.setProperty("display", narrow && !isUser ? "none" : "", narrow && !isUser ? "important" : "");
           });
           if (!narrow) return;
           const sidebar = document.getElementById("sidebar");
+          if (!sidebar) return;
           const menus = document.getElementById("urppp-menus");
-          if (!sidebar || !menus || document.getElementById("urppp-mobile-quick")) return;
-          const quick = document.createElement("div");
-          quick.id = "urppp-mobile-quick";
-          quick.className = "urppp-mobile-quick";
-          quick.innerHTML = '<div class="urppp-mobile-quick-title">快捷功能</div>';
-          btns.querySelectorAll("li:not(.light-blue) a").forEach((a) => {
-            if (!a.href && !a.getAttribute("onclick")) return;
-            const clone = a.cloneNode(true);
+          if (menus && !document.getElementById("urppp-mobile-quick")) {
+            const quick = document.createElement("div");
+            quick.id = "urppp-mobile-quick";
+            quick.className = "urppp-mobile-quick";
+            quick.innerHTML = '<div class="urppp-mobile-quick-title">快捷功能</div>';
+            btns.querySelectorAll("li a").forEach((a) => {
+              if (a.closest(".user-menu, .dropdown-menu")) return;
+              if (a.classList.contains("dropdown-toggle")) return;
+              if (!a.href && !a.getAttribute("onclick")) return;
+              const clone = a.cloneNode(true);
+              clone.removeAttribute("style");
+              quick.appendChild(clone);
+            });
+            if (quick.querySelectorAll("a").length > 0) sidebar.insertBefore(quick, menus);
+          }
+          const userLi = btns.querySelector("li:has(.user-menu), li:has(.nav-user-photo), li:has(.dropdown-menu)");
+          if (userLi && !document.getElementById("urppp-mobile-user")) {
+            const clone = userLi.cloneNode(true);
+            clone.id = "urppp-mobile-user";
+            clone.className = "urppp-mobile-user";
             clone.removeAttribute("style");
-            quick.appendChild(clone);
-          });
-          sidebar.insertBefore(quick, menus);
+            const toggle = clone.querySelector("a.dropdown-toggle, a");
+            const menu = clone.querySelector(".user-menu, .dropdown-menu");
+            if (menu) menu.style.display = "none";
+            if (toggle && menu) {
+              toggle.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                menu.style.display = menu.style.display === "block" ? "none" : "block";
+              });
+            }
+            sidebar.insertBefore(clone, sidebar.firstChild);
+          }
         }, "apply");
         try {
           apply();

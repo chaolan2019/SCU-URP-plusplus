@@ -133,10 +133,10 @@ export function createCleanModeController({ state, deps }) {
       Object.entries({
         display: 'inline-flex', 'align-items': 'center', height: '28px', 'min-height': '28px',
         padding: '0 10px',
-        border: isFlat ? '2px solid var(--text)' : '1px solid transparent',
+        border: isFlat ? '2px solid var(--text)' : '1px solid color-mix(in srgb, var(--primary) 45%, var(--border))',
         'border-radius': isFlat ? '0' : '999px',
-        background: isFlat ? 'var(--surface)' : 'var(--input-bg)',
-        color: 'var(--text)', 'font-size': '12px', gap: '6px',
+        background: isFlat ? 'var(--surface)' : 'color-mix(in srgb, var(--primary) 8%, var(--surface))',
+        color: isFlat ? 'var(--text)' : 'var(--primary)', 'font-size': '12px', gap: '6px',
         width: 'auto', 'box-shadow': isFlat ? 'none' : '0 1px 2px rgba(0,0,0,.05)',
         margin: '0 0 0 8px', float: 'none',
       }).forEach(([key, value]) => btn.style.setProperty(key, value, 'important'));
