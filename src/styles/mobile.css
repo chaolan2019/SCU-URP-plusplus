@@ -7,13 +7,17 @@
        * 两种情况都由本文件的媒体查询接管，保证窄视口下布局可读。
        * ============================================================ */
 
-      /* --- 0. 窄视口通用：禁止页面级横向滚动，溢出转区块内滚动 --- */
+      /* --- 0. 窄视口通用：禁止页面级横向滚动，垂直滚动保持正常 --- */
       @media (max-width: 991px) {
-        html,
-        body,
+        html {
+          overflow-x: hidden !important;
+        }
+        body {
+          overflow-x: hidden !important;
+          overflow-y: auto !important;
+        }
         .main-container,
-        .main-content,
-        #main-container {
+        .main-content {
           overflow-x: hidden !important;
         }
         .widget-body,
@@ -100,6 +104,15 @@
        * 保持原有内容与相对结构，窄视口下重新排版
        * ============================================================ */
       @media (max-width: 640px) {
+        /* ---------- 布局骨架：顶栏 84px，内容区让位，不再重叠 ---------- */
+        .main-container,
+        #main-container,
+        .navbar-fixed-top + .main-container {
+          padding-top: 84px !important;
+        }
+        .navbar-fixed-top {
+          padding-top: 0 !important;
+        }
         /* ---------- 顶栏：第一行 汉堡+品牌+头像，第二行 功能图标 ---------- */
         #navbar,
         #navbar .navbar-container {
