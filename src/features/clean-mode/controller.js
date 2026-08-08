@@ -132,12 +132,12 @@ export function createCleanModeController({ state, deps }) {
       const isFlat = skin === 'flat';
       Object.entries({
         display: 'inline-flex', 'align-items': 'center', height: '28px', 'min-height': '28px',
-        padding: '0 10px',
-        border: isFlat ? '2px solid var(--text)' : '1px solid color-mix(in srgb, var(--primary) 45%, var(--border))',
+        padding: '0 12px',
+        border: isFlat ? '2px solid var(--text)' : 'none',
         'border-radius': isFlat ? '0' : '999px',
-        background: isFlat ? 'var(--surface)' : 'color-mix(in srgb, var(--primary) 8%, var(--surface))',
-        color: isFlat ? 'var(--text)' : 'var(--primary)', 'font-size': '12px', gap: '6px',
-        width: 'auto', 'box-shadow': isFlat ? 'none' : '0 1px 2px rgba(0,0,0,.05)',
+        background: isFlat ? 'var(--surface)' : 'var(--primary)',
+        color: isFlat ? 'var(--text)' : 'var(--surface)', 'font-size': '12px', gap: '6px',
+        width: 'auto', 'box-shadow': isFlat ? 'none' : '0 2px 6px var(--ring)',
         margin: '0 0 0 8px', float: 'none',
       }).forEach(([key, value]) => btn.style.setProperty(key, value, 'important'));
     } catch (error) {

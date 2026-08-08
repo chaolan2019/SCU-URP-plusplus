@@ -12222,9 +12222,14 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         }
         #navbar .menu-toggler {
           width: 36px !important;
-          height: 40px !important;
-          line-height: 40px !important;
+          height: 36px !important;
+          line-height: 36px !important;
           padding: 0 !important;
+          margin: 4px 0 0 4px !important;
+          border-radius: 9px !important;
+          background: var(--input-bg, #f5f5f7) !important;
+          border: 1px solid var(--border, #e2e8f0) !important;
+          box-shadow: none !important;
         }
         /* 汉堡按钮主题化：细线条、紧凑 */
         #navbar .menu-toggler .icon-bar {
@@ -12298,12 +12303,13 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           display: inline !important;
           font-size: 13px !important;
         }
-        /* 抽屉内用户区（JS 从顶栏克隆，点击展开用户菜单） */
-        #sidebar .urppp-mobile-user {
+        /* 抽屉内用户区（JS 生成，id 选择器保证匹配） */
+        #urppp-mobile-user {
           padding: 10px 12px 10px !important;
           border-bottom: 1px solid var(--border, #e8eaed) !important;
+          list-style: none !important;
         }
-        #sidebar .urppp-mobile-user > a {
+        #urppp-mobile-user > a {
           display: flex !important;
           align-items: center !important;
           gap: 10px !important;
@@ -12312,40 +12318,56 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           text-decoration: none !important;
           line-height: 1.3 !important;
           padding: 2px 0 !important;
+          min-height: 36px !important;
         }
-        #sidebar .urppp-mobile-user .nav-user-photo {
-          width: 34px !important;
-          height: 34px !important;
+        #urppp-mobile-user .nav-user-photo {
+          width: 36px !important;
+          height: 36px !important;
+          max-width: 36px !important;
+          max-height: 36px !important;
+          min-width: 36px !important;
+          min-height: 36px !important;
           border-radius: 50% !important;
+          object-fit: cover !important;
+          overflow: hidden !important;
           margin: 0 !important;
+          padding: 0 !important;
+          display: block !important;
         }
-        #sidebar .urppp-mobile-user .user-info {
+        #urppp-mobile-user .user-info {
           display: inline !important;
           font-size: 13px !important;
           line-height: 1.3 !important;
+          margin: 0 !important;
         }
-        #sidebar .urppp-mobile-user .user-info small {
+        #urppp-mobile-user .user-info small {
           display: inline !important;
           font-size: 11px !important;
           color: var(--text-secondary, #6b7280) !important;
+          margin: 0 !important;
         }
-        #sidebar .urppp-mobile-user .caret {
+        #urppp-mobile-user .caret {
           margin-left: auto !important;
         }
-        #sidebar .urppp-mobile-user .user-menu,
-        #sidebar .urppp-mobile-user .dropdown-menu {
+        #urppp-mobile-user .user-menu,
+        #urppp-mobile-user .dropdown-menu {
           position: static !important;
           box-shadow: none !important;
           border: 1px solid var(--border, #e8eaed) !important;
           border-radius: 10px !important;
-          margin-top: 8px !important;
+          margin: 8px 0 0 !important;
           padding: 6px !important;
           background: var(--surface, #fff) !important;
           float: none !important;
           min-width: 0 !important;
+          display: none !important;
         }
-        #sidebar .urppp-mobile-user .user-menu a,
-        #sidebar .urppp-mobile-user .dropdown-menu a {
+        #urppp-mobile-user .user-menu.open,
+        #urppp-mobile-user .dropdown-menu.open {
+          display: block !important;
+        }
+        #urppp-mobile-user .user-menu a,
+        #urppp-mobile-user .dropdown-menu a {
           padding: 8px 10px !important;
           display: flex !important;
           align-items: center !important;
@@ -13664,15 +13686,15 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           "align-items": "center",
           height: "28px",
           "min-height": "28px",
-          padding: "0 10px",
-          border: isFlat ? "2px solid var(--text)" : "1px solid color-mix(in srgb, var(--primary) 45%, var(--border))",
+          padding: "0 12px",
+          border: isFlat ? "2px solid var(--text)" : "none",
           "border-radius": isFlat ? "0" : "999px",
-          background: isFlat ? "var(--surface)" : "color-mix(in srgb, var(--primary) 8%, var(--surface))",
-          color: isFlat ? "var(--text)" : "var(--primary)",
+          background: isFlat ? "var(--surface)" : "var(--primary)",
+          color: isFlat ? "var(--text)" : "var(--surface)",
           "font-size": "12px",
           gap: "6px",
           width: "auto",
-          "box-shadow": isFlat ? "none" : "0 1px 2px rgba(0,0,0,.05)",
+          "box-shadow": isFlat ? "none" : "0 2px 6px var(--ring)",
           margin: "0 0 0 8px",
           float: "none"
         }).forEach(([key, value]) => btn.style.setProperty(key, value, "important"));
@@ -21320,14 +21342,16 @@ ${arcs}
           const sidebar = document.getElementById("sidebar");
           if (!toggler || !sidebar || toggler.dataset.urpppToggleBound) return;
           toggler.dataset.urpppToggleBound = "1";
-          toggler.addEventListener("click", () => {
-            const before = sidebar.classList.contains("display");
-            setTimeout(() => {
-              if (sidebar.classList.contains("display") === before) {
-                sidebar.classList.toggle("display", !before);
-              }
-            }, 30);
+          toggler.addEventListener("click", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            sidebar.classList.toggle("display");
           });
+          document.addEventListener("click", (e) => {
+            if (!sidebar.classList.contains("display")) return;
+            if (e.target.closest && e.target.closest("#sidebar, #navbar .menu-toggler")) return;
+            sidebar.classList.remove("display");
+          }, true);
         }, "bindTogglerFallback");
         const apply = /* @__PURE__ */ __name(() => {
           const narrow = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
@@ -21377,6 +21401,7 @@ ${arcs}
             if (userLi) {
               area = userLi.cloneNode(true);
               area.removeAttribute("style");
+              area.className = "urppp-mobile-user";
             } else {
               area = document.createElement("div");
               area.className = "urppp-mobile-user";
@@ -21392,20 +21417,28 @@ ${arcs}
                   li.appendChild(a.cloneNode(true));
                   ul.appendChild(li);
                 });
-                ul.style.display = "none";
+                ul.classList.remove("open");
                 area.appendChild(ul);
               }
             }
             if (area) {
               area.id = "urppp-mobile-user";
+              const photo = area.querySelector(".nav-user-photo, img");
+              if (photo) photo.setAttribute("data-urppp-private", "avatar");
+              const info = area.querySelector(".user-info");
+              if (info) info.setAttribute("data-urppp-private", "name");
+              try {
+                if (typeof applyPersonalDisplay === "function") applyPersonalDisplay(area);
+              } catch (_) {
+              }
               const toggle = area.querySelector("a.dropdown-toggle, a");
               const menu = area.querySelector(".user-menu, .dropdown-menu");
-              if (menu) menu.style.display = "none";
+              if (menu) menu.classList.remove("open");
               if (toggle && menu) {
                 toggle.addEventListener("click", (e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  menu.style.display = menu.style.display === "block" ? "none" : "block";
+                  menu.classList.toggle("open");
                 });
               }
               sidebar.insertBefore(area, sidebar.firstChild);
