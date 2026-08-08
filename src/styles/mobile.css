@@ -219,6 +219,7 @@
         /* ---------- 学业信息 infobox：两列网格 ---------- */
         .studyinfo-width {
           width: calc(50% - 4px) !important;
+          min-width: calc(50% - 4px) !important; /* 覆盖 ace 的 min-width: 95% */
           max-width: calc(50% - 4px) !important;
           margin: 0 !important;
           padding: 8px 10px !important;
