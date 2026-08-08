@@ -348,12 +348,12 @@
       #form-search.nav-search .ace-icon.fa-search { color: var(--text-secondary) !important; }
       #form-search.nav-search .nav-search-input:focus + .ace-icon.fa-search { color: var(--text) !important; }
 
-      /* 桌面搜索：form-search 只是输入框容器，结果列表独立浮层 */
+      /* 桌面搜索：form-search 即原生弹出窗口（背景/圆角/阴影），结果列表内嵌 */
       #form-search.urppp-desktop-search {
         box-sizing: border-box !important;
         min-width: 0 !important;
-        border: 0 !important;
-        border-radius: 0 !important;
+        border: 0 solid transparent !important;
+        border-radius: var(--radius-sm) !important;
       }
       #form-search.urppp-desktop-search .form-search,
       #form-search.urppp-desktop-search .input-icon {

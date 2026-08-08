@@ -10899,12 +10899,12 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       #form-search.nav-search .ace-icon.fa-search { color: var(--text-secondary) !important; }
       #form-search.nav-search .nav-search-input:focus + .ace-icon.fa-search { color: var(--text) !important; }
 
-      /* 桌面搜索：form-search 只是输入框容器，结果列表独立浮层 */
+      /* 桌面搜索：form-search 即原生弹出窗口（背景/圆角/阴影），结果列表内嵌 */
       #form-search.urppp-desktop-search {
         box-sizing: border-box !important;
         min-width: 0 !important;
-        border: 0 !important;
-        border-radius: 0 !important;
+        border: 0 solid transparent !important;
+        border-radius: var(--radius-sm) !important;
       }
       #form-search.urppp-desktop-search .form-search,
       #form-search.urppp-desktop-search .input-icon {
@@ -16217,12 +16217,15 @@ ${arcs}
           const a = li.querySelector(":scope > a");
           if (!a) return false;
           const href = a.getAttribute("href") || "";
-          return href.includes("customerServiceCenter") || !!a.querySelector(".glyphicon-headphones");
+          const title = (a.getAttribute("title") || "") + " " + (a.textContent || "");
+          return href.includes("customerServiceCenter") || /help|service|support/i.test(href) || !!a.querySelector(".glyphicon-headphones, .fa-headphones, .fa-question-circle, .fa-life-ring") || /帮助|客服|服务|帮助中心/i.test(title);
         });
-        if (helpItem && searchItem && helpItem !== searchItem) {
-          const isBefore = (searchItem.compareDocumentPosition(helpItem) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+        const userItem = Array.from(aceNav.children).find((li) => li.classList.contains("light-blue"));
+        const anchor = helpItem || userItem || null;
+        if (anchor && searchItem && anchor !== searchItem) {
+          const isBefore = (searchItem.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
           if (!isBefore) {
-            aceNav.insertBefore(searchItem, helpItem);
+            aceNav.insertBefore(searchItem, anchor);
           }
         }
         if (searchItem && !searchItem.classList.contains("urppp-search-item")) searchItem.classList.add("urppp-search-item");
@@ -16259,9 +16262,11 @@ ${arcs}
         formSearch.style.setProperty("pointer-events", formSearch.dataset.open === "1" ? "auto" : "none", "important");
         formSearch.style.setProperty("z-index", "1200", "important");
         formSearch.style.setProperty("margin", "0", "important");
-        formSearch.style.setProperty("background", "transparent", "important");
-        formSearch.style.setProperty("border", "0 solid transparent", "important");
-        formSearch.style.setProperty("box-shadow", "none", "important");
+        formSearch.style.setProperty("background", "var(--surface)", "important");
+        formSearch.style.setProperty("border", formSearch.dataset.open === "1" ? "1px solid var(--border)" : "0 solid transparent", "important");
+        formSearch.style.setProperty("border-radius", "var(--radius-sm)", "important");
+        formSearch.style.setProperty("box-shadow", formSearch.dataset.open === "1" ? "var(--shadow)" : "none", "important");
+        formSearch.style.setProperty("overflow", "hidden", "important");
         formSearch.style.setProperty("transition", "width .2s ease, opacity .2s ease", "important");
         const input = formSearch.querySelector("#search-input");
         const innerForm = formSearch.querySelector("form");
@@ -16289,26 +16294,17 @@ ${arcs}
           results.id = "urppp-search-results";
           formSearch.appendChild(results);
         }
-        results.style.setProperty("display", formSearch.dataset.open === "1" ? "grid" : "none", "important");
-        results.style.setProperty("position", "absolute", "important");
-        results.style.setProperty("top", "calc(100% + 8px)", "important");
-        results.style.setProperty("left", "0", "important");
-        results.style.setProperty("right", "0", "important");
+        results.style.setProperty("display", "none", "important");
         results.style.setProperty("gap", "2px", "important");
-        results.style.setProperty("padding", "6px", "important");
-        results.style.setProperty("background", "var(--surface)", "important");
-        results.style.setProperty("border", "1px solid var(--border)", "important");
-        results.style.setProperty("border-radius", "var(--radius-sm)", "important");
-        results.style.setProperty("box-shadow", "var(--shadow)", "important");
-        results.style.setProperty("z-index", "1201", "important");
-        results.style.setProperty("max-height", "min(350px, calc(100vh - 120px))", "important");
+        results.style.setProperty("padding", "0 10px 10px", "important");
+        results.style.setProperty("max-height", "min(320px, calc(100vh - 120px))", "important");
         results.style.setProperty("overflow-y", "auto", "important");
         const collectEntries = /* @__PURE__ */ __name(() => {
           const seen = /* @__PURE__ */ new Set();
           const entries = [];
-          document.querySelectorAll("#urppp-menus a[href], #menus a[href]").forEach((anchor) => {
-            const href = String(anchor.getAttribute("href") || "").trim();
-            const text = String(anchor.textContent || "").replace(/\s+/g, " ").trim();
+          document.querySelectorAll("#urppp-menus a[href], #menus a[href]").forEach((anchor2) => {
+            const href = String(anchor2.getAttribute("href") || "").trim();
+            const text = String(anchor2.textContent || "").replace(/\s+/g, " ").trim();
             if (!text || !href || href === "#" || /^javascript:/i.test(href)) return;
             const key = href + "\\n" + text;
             if (seen.has(key)) return;
@@ -16321,20 +16317,19 @@ ${arcs}
           const query = input.value.replace(/\s+/g, " ").trim().toLowerCase();
           results.replaceChildren();
           if (!query) {
-            const hint = document.createElement("div");
-            hint.className = "urppp-search-empty";
-            hint.textContent = "输入功能名称";
-            results.appendChild(hint);
+            results.style.setProperty("display", "none", "important");
             return;
           }
           const matches = collectEntries().filter((entry) => entry.text.toLowerCase().includes(query)).slice(0, 8);
           if (!matches.length) {
+            results.style.setProperty("display", "grid", "important");
             const empty = document.createElement("div");
             empty.className = "urppp-search-empty";
             empty.textContent = "没有找到相关功能";
             results.appendChild(empty);
             return;
           }
+          results.style.setProperty("display", "grid", "important");
           matches.forEach(({ href, text }) => {
             const link = document.createElement("a");
             link.className = "urppp-search-result";
@@ -16348,11 +16343,14 @@ ${arcs}
           formSearch.style.setProperty("width", open ? "min(320px, calc(100vw - 24px))" : "0px", "important");
           formSearch.style.setProperty("opacity", open ? "1" : "0", "important");
           formSearch.style.setProperty("pointer-events", open ? "auto" : "none", "important");
-          results.style.setProperty("display", open ? "grid" : "none", "important");
+          formSearch.style.setProperty("border", open ? "1px solid var(--border)" : "0 solid transparent", "important");
+          formSearch.style.setProperty("box-shadow", open ? "var(--shadow)" : "none", "important");
           button.setAttribute("aria-expanded", open ? "true" : "false");
           if (open) {
             renderResults();
             setTimeout(() => input.focus(), 30);
+          } else {
+            results.style.setProperty("display", "none", "important");
           }
         }, "setOpen");
         if (!button.__urpppSearchBound) {

@@ -28,19 +28,22 @@ test('desktop search opens with stable styling and renders menu results', async 
       searchBeforeHelp: searchItem && helpItem ? (searchItem.compareDocumentPosition(helpItem) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0 : false,
       cmp: searchItem && helpItem ? searchItem.compareDocumentPosition(helpItem) : -1,
       formInsideLi: document.getElementById('form-search')?.closest('li') === searchItem,
-      resultsAbsolute: getComputedStyle(document.getElementById('urppp-search-results')).position === 'absolute',
+      resultsInline: getComputedStyle(document.getElementById('urppp-search-results')).position !== 'absolute',
     };
   });
   expect(positions.searchBeforeHelp).toBeTruthy();
   expect(positions.formInsideLi).toBeTruthy();
-  expect(positions.resultsAbsolute).toBeTruthy();
+  expect(positions.resultsInline).toBeTruthy();
 
   await button.click();
   await expect(panel).toHaveAttribute('data-open', '1');
   await expect(input).toBeFocused();
   await expect(panel).toHaveCSS('width', /px/);
+  // 未输入时不显示任何结果框，保持原生弹出窗口形态
+  await expect(page.locator('#urppp-search-results')).toHaveCSS('display', 'none');
 
   await input.fill('首页');
+  await expect(page.locator('#urppp-search-results')).toHaveCSS('display', 'grid');
   await expect(page.locator('#urppp-search-results .urppp-search-result')).toHaveCount(1);
   await expect(page.locator('#urppp-search-results .urppp-search-result')).toHaveText('首页');
   expect(pageErrors).toEqual([]);

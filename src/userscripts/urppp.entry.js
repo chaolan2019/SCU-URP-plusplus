@@ -590,18 +590,24 @@ import { createNavbarController } from '../features/navigation/navbar.js';
         item.appendChild(host);
         aceNav.appendChild(item);
       }
-      // 无论新建还是已有，搜索项都紧贴“帮助/客服”按钮左边
+      // 无论新建还是已有，搜索项都紧贴“帮助/客服”按钮左边；找不到则放到用户项前靠右
       const searchItem = host.closest('li') || host.parentElement;
       const helpItem = Array.from(aceNav.children).find((li) => {
         const a = li.querySelector(':scope > a');
         if (!a) return false;
         const href = a.getAttribute('href') || '';
-        return href.includes('customerServiceCenter') || !!a.querySelector('.glyphicon-headphones');
+        const title = (a.getAttribute('title') || '') + ' ' + (a.textContent || '');
+        return href.includes('customerServiceCenter')
+          || /help|service|support/i.test(href)
+          || !!a.querySelector('.glyphicon-headphones, .fa-headphones, .fa-question-circle, .fa-life-ring')
+          || /帮助|客服|服务|帮助中心/i.test(title);
       });
-      if (helpItem && searchItem && helpItem !== searchItem) {
-        const isBefore = (searchItem.compareDocumentPosition(helpItem) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+      const userItem = Array.from(aceNav.children).find((li) => li.classList.contains('light-blue'));
+      const anchor = helpItem || userItem || null;
+      if (anchor && searchItem && anchor !== searchItem) {
+        const isBefore = (searchItem.compareDocumentPosition(anchor) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
         if (!isBefore) {
-          aceNav.insertBefore(searchItem, helpItem);
+          aceNav.insertBefore(searchItem, anchor);
         }
       }
       if (searchItem && !searchItem.classList.contains('urppp-search-item')) searchItem.classList.add('urppp-search-item');
@@ -639,9 +645,12 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       formSearch.style.setProperty('pointer-events', formSearch.dataset.open === '1' ? 'auto' : 'none', 'important');
       formSearch.style.setProperty('z-index', '1200', 'important');
       formSearch.style.setProperty('margin', '0', 'important');
-      formSearch.style.setProperty('background', 'transparent', 'important');
-      formSearch.style.setProperty('border', '0 solid transparent', 'important');
-      formSearch.style.setProperty('box-shadow', 'none', 'important');
+      // 原生弹出窗口形态：自身就是带背景的面板，结果列表内嵌其中
+      formSearch.style.setProperty('background', 'var(--surface)', 'important');
+      formSearch.style.setProperty('border', formSearch.dataset.open === '1' ? '1px solid var(--border)' : '0 solid transparent', 'important');
+      formSearch.style.setProperty('border-radius', 'var(--radius-sm)', 'important');
+      formSearch.style.setProperty('box-shadow', formSearch.dataset.open === '1' ? 'var(--shadow)' : 'none', 'important');
+      formSearch.style.setProperty('overflow', 'hidden', 'important');
       formSearch.style.setProperty('transition', 'width .2s ease, opacity .2s ease', 'important');
 
       const input = formSearch.querySelector('#search-input');
@@ -671,19 +680,11 @@ import { createNavbarController } from '../features/navigation/navbar.js';
         results.id = 'urppp-search-results';
         formSearch.appendChild(results);
       }
-      results.style.setProperty('display', formSearch.dataset.open === '1' ? 'grid' : 'none', 'important');
-      results.style.setProperty('position', 'absolute', 'important');
-      results.style.setProperty('top', 'calc(100% + 8px)', 'important');
-      results.style.setProperty('left', '0', 'important');
-      results.style.setProperty('right', '0', 'important');
+      // 结果列表作为 form-search 弹出窗口的一部分：仅输入时显示，不额外套独立浮层框
+      results.style.setProperty('display', 'none', 'important');
       results.style.setProperty('gap', '2px', 'important');
-      results.style.setProperty('padding', '6px', 'important');
-      results.style.setProperty('background', 'var(--surface)', 'important');
-      results.style.setProperty('border', '1px solid var(--border)', 'important');
-      results.style.setProperty('border-radius', 'var(--radius-sm)', 'important');
-      results.style.setProperty('box-shadow', 'var(--shadow)', 'important');
-      results.style.setProperty('z-index', '1201', 'important');
-      results.style.setProperty('max-height', 'min(350px, calc(100vh - 120px))', 'important');
+      results.style.setProperty('padding', '0 10px 10px', 'important');
+      results.style.setProperty('max-height', 'min(320px, calc(100vh - 120px))', 'important');
       results.style.setProperty('overflow-y', 'auto', 'important');
 
       const collectEntries = () => {
@@ -704,20 +705,20 @@ import { createNavbarController } from '../features/navigation/navbar.js';
         const query = input.value.replace(/\s+/g, ' ').trim().toLowerCase();
         results.replaceChildren();
         if (!query) {
-          const hint = document.createElement('div');
-          hint.className = 'urppp-search-empty';
-          hint.textContent = '输入功能名称';
-          results.appendChild(hint);
+          // 未输入时不显示任何结果框，保持原生弹出窗口形态
+          results.style.setProperty('display', 'none', 'important');
           return;
         }
         const matches = collectEntries().filter((entry) => entry.text.toLowerCase().includes(query)).slice(0, 8);
         if (!matches.length) {
+          results.style.setProperty('display', 'grid', 'important');
           const empty = document.createElement('div');
           empty.className = 'urppp-search-empty';
           empty.textContent = '没有找到相关功能';
           results.appendChild(empty);
           return;
         }
+        results.style.setProperty('display', 'grid', 'important');
         matches.forEach(({ href, text }) => {
           const link = document.createElement('a');
           link.className = 'urppp-search-result';
@@ -731,11 +732,14 @@ import { createNavbarController } from '../features/navigation/navbar.js';
         formSearch.style.setProperty('width', open ? 'min(320px, calc(100vw - 24px))' : '0px', 'important');
         formSearch.style.setProperty('opacity', open ? '1' : '0', 'important');
         formSearch.style.setProperty('pointer-events', open ? 'auto' : 'none', 'important');
-        results.style.setProperty('display', open ? 'grid' : 'none', 'important');
+        formSearch.style.setProperty('border', open ? '1px solid var(--border)' : '0 solid transparent', 'important');
+        formSearch.style.setProperty('box-shadow', open ? 'var(--shadow)' : 'none', 'important');
         button.setAttribute('aria-expanded', open ? 'true' : 'false');
         if (open) {
           renderResults();
           setTimeout(() => input.focus(), 30);
+        } else {
+          results.style.setProperty('display', 'none', 'important');
         }
       };
       if (!button.__urpppSearchBound) {
