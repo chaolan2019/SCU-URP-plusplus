@@ -130,14 +130,12 @@ export function createCleanModeController({ state, deps }) {
       }
       const skin = (typeof deps.getSkin === 'function' ? deps.getSkin() : 'apple');
       const isFlat = skin === 'flat';
+      // 只保留尺寸与布局的内联样式；形态（边框/圆角/背景/阴影）交给 CSS 按皮肤控制
       Object.entries({
         display: 'inline-flex', 'align-items': 'center', height: '28px', 'min-height': '28px',
         padding: '0 12px',
-        border: isFlat ? '2px solid var(--text)' : 'none',
-        'border-radius': isFlat ? '0' : '999px',
-        background: isFlat ? 'var(--surface)' : 'var(--primary)',
-        color: isFlat ? 'var(--text)' : 'var(--surface)', 'font-size': '12px', gap: '6px',
-        width: 'auto', 'box-shadow': isFlat ? 'none' : '0 2px 6px var(--ring)',
+        'font-size': '12px', gap: '6px',
+        width: 'auto',
         margin: '0 0 0 8px', float: 'none',
       }).forEach(([key, value]) => btn.style.setProperty(key, value, 'important'));
     } catch (error) {

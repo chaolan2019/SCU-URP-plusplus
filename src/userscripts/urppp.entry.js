@@ -6280,6 +6280,20 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       try { apply(); } catch (_) { /* ignore */ }
       setTimeout(apply, 600);
       setTimeout(apply, 1500);
+      // 侧边栏重建后自动补齐用户区/快捷区（PJAX / 重建场景）
+      try {
+        const watch = document.getElementById('sidebar') || document.body;
+        if (watch && !watch.dataset.urpppMobileObserved) {
+          watch.dataset.urpppMobileObserved = '1';
+          const obs = new MutationObserver(() => {
+            try {
+              const narrow = window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
+              if (narrow && !document.getElementById('urppp-mobile-user')) apply();
+            } catch (_) { /* ignore */ }
+          });
+          obs.observe(watch, { childList: true, subtree: true });
+        }
+      } catch (_) { /* ignore */ }
       if (window.matchMedia) {
         const mq = window.matchMedia('(max-width: 640px)');
         const onChg = () => apply();
@@ -9680,7 +9694,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   // ---- icons ----
   const ICO = {
-    clean: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h11M4 17h14"/></svg>',
+    clean: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 3.5 8.5 14"/><path d="M16 6.5 17.5 8"/><path d="M14 8.5 15.5 10"/><path d="M12 10.5 13.5 12"/><path d="M4.5 19.5c1.5-1.5 3.5-2 5.5-1.5l-4-4c-.5 2 0 4-1.5 5.5z"/></svg>',
     exit: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 6H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/><path d="M14 12H8"/><path d="m14 8 4 4-4 4"/></svg>',
     refresh: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.2-5.5"/><path d="M20 4v5h-5"/></svg>',
     schedule: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3.5v4M16 3.5v4"/></svg>',

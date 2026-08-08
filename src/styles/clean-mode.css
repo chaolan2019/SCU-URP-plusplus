@@ -221,10 +221,10 @@ html.urppp-clean-lock,html.urppp-clean-lock body{overflow:hidden!important}
 }
 html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#urppp-nav-clean{
   margin-left:8px!important;height:28px!important;min-height:28px!important;max-height:28px!important;
-  padding:0 10px!important;border-radius:999px!important;border:1px solid color-mix(in srgb,var(--primary) 45%,var(--border))!important;
-  background:color-mix(in srgb,var(--primary) 8%,var(--surface))!important;color:var(--primary)!important;font-size:12px!important;
+  padding:0 12px!important;border-radius:999px!important;border:none!important;
+  background:var(--primary)!important;color:var(--surface)!important;font-size:12px!important;
   display:inline-flex!important;align-items:center!important;gap:6px!important;width:auto!important;
-  box-shadow:none!important;line-height:26px!important;cursor:pointer!important;float:none!important
+  box-shadow:0 2px 6px var(--ring)!important;line-height:26px!important;cursor:pointer!important;float:none!important
 }
 #urppp-nav-clean svg{width:14px!important;height:14px!important;display:block!important}
 @media (max-width:900px){
