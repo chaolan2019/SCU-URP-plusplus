@@ -31,7 +31,7 @@ for (const [skin, expectedShape] of Object.entries(skinShapes)) {
 
     const shape = await page.evaluate(() => {
       const root = getComputedStyle(document.documentElement);
-      const menu = getComputedStyle(document.querySelector('#navbar .menu-toggler'));
+      const menu = getComputedStyle(document.getElementById('urppp-mobile-menu-button'));
       const clean = getComputedStyle(document.querySelector('#urppp-nav-clean'));
       return {
         actionToken: root.getPropertyValue('--urppp-action-radius').trim(),
@@ -55,7 +55,7 @@ for (const [skin, expectedShape] of Object.entries(skinShapes)) {
     }
 
     const compactLayout = await page.evaluate(() => {
-      const menuRect = document.querySelector('#navbar .menu-toggler').getBoundingClientRect();
+      const menuRect = document.getElementById('urppp-mobile-menu-button').getBoundingClientRect();
       const cleanRect = document.querySelector('#urppp-nav-clean').getBoundingClientRect();
       const navbarRect = document.querySelector('#navbar').getBoundingClientRect();
       const breadcrumb = document.querySelector('#breadcrumbs, .breadcrumb');
@@ -80,10 +80,12 @@ for (const [skin, expectedShape] of Object.entries(skinShapes)) {
     expect(compactLayout.cleanGap).toBeGreaterThanOrEqual(8);
     expect(compactLayout.breadcrumbGap).toBeLessThanOrEqual(20);
 
-    await expect(page.locator('#navbar .menu-toggler .urppp-menu-icon-open path')).toHaveCount(2);
-    await expect(page.locator('#navbar .menu-toggler .urppp-menu-icon-close path')).toHaveCount(2);
-    await expect(page.locator('#navbar .menu-toggler .urppp-menu-icon-open')).toBeVisible();
-    await expect(page.locator('#navbar .menu-toggler .urppp-menu-icon-close')).toBeHidden();
+    await expect(page.locator('#urppp-mobile-menu-button')).toHaveCount(1);
+    await expect(page.locator('#navbar .menu-toggler')).toBeHidden();
+    await expect(page.locator('#urppp-mobile-menu-button .urppp-menu-icon-open path')).toHaveCount(2);
+    await expect(page.locator('#urppp-mobile-menu-button .urppp-menu-icon-close path')).toHaveCount(2);
+    await expect(page.locator('#urppp-mobile-menu-button .urppp-menu-icon-open')).toBeVisible();
+    await expect(page.locator('#urppp-mobile-menu-button .urppp-menu-icon-close')).toBeHidden();
 
     const helpAlignment = await page.locator('#urppp-mobile-quick .urppp-mobile-help-button').evaluate((button) => {
       const icon = button.querySelector('i');
@@ -97,10 +99,10 @@ for (const [skin, expectedShape] of Object.entries(skinShapes)) {
     expect(helpAlignment.offset).toBeLessThanOrEqual(1);
     expect(helpAlignment.top).toBe('auto');
 
-    await page.locator('#navbar .menu-toggler').click();
-    await expect(page.locator('#navbar .menu-toggler')).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator('#navbar .menu-toggler .urppp-menu-icon-open')).toBeHidden();
-    await expect(page.locator('#navbar .menu-toggler .urppp-menu-icon-close')).toBeVisible();
+    await page.locator('#urppp-mobile-menu-button').click();
+    await expect(page.locator('#urppp-mobile-menu-button')).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('#urppp-mobile-menu-button .urppp-menu-icon-open')).toBeHidden();
+    await expect(page.locator('#urppp-mobile-menu-button .urppp-menu-icon-close')).toBeVisible();
     await expect(page.locator('#sidebar')).toHaveClass(/\bdisplay\b/);
     await expect(page.locator('#sidebar')).toHaveCSS('width', '260px');
     await expect(page.locator('#sidebar #urppp-menus .urppp-nav-text').first()).toBeVisible();
@@ -133,8 +135,8 @@ for (const [skin, expectedShape] of Object.entries(skinShapes)) {
     expect(searchPlacement.directlyAfterTools).toBe(true);
     expect(searchPlacement.widthDifference).toBeLessThanOrEqual(1);
 
-    await page.locator('#navbar .menu-toggler').click();
-    await expect(page.locator('#navbar .menu-toggler')).toHaveAttribute('aria-expanded', 'false');
+    await page.locator('#urppp-mobile-menu-button').click();
+    await expect(page.locator('#urppp-mobile-menu-button')).toHaveAttribute('aria-expanded', 'false');
     await expect(page.locator('#sidebar')).not.toHaveClass(/\bdisplay\b/);
 
     if (skin === 'flat') {
@@ -161,7 +163,7 @@ for (const skin of Object.keys(skinShapes)) {
     });
 
     const sidebar = page.locator('#sidebar');
-    const toggler = page.locator('#navbar .menu-toggler');
+    const toggler = page.locator('#urppp-mobile-menu-button');
     await expect.poll(async () => sidebar.evaluate((element) => Math.round(element.getBoundingClientRect().right))).toBe(0);
 
     await toggler.click();
@@ -195,7 +197,7 @@ test('mobile drawer owns menu clicks ahead of native ACE handlers', async ({ pag
   });
 
   const sidebar = page.locator('#sidebar');
-  const toggler = page.locator('#navbar .menu-toggler');
+  const toggler = page.locator('#urppp-mobile-menu-button');
   await toggler.click();
   await expect(sidebar).toHaveClass(/\bdisplay\b/);
   await expect(sidebar).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
@@ -251,7 +253,7 @@ test('mobile navbar and sidebar survive business-page route replacement', async 
     values: { urppp_skin_v1: 'apple', urppp_theme_v3: 'default' },
   });
 
-  await page.locator('#navbar .menu-toggler').click();
+  await page.locator('#urppp-mobile-menu-button').click();
   await expect(page.locator('#sidebar')).toHaveClass(/\bdisplay\b/);
 
   await page.evaluate((nextUrl) => {
@@ -267,7 +269,8 @@ test('mobile navbar and sidebar survive business-page route replacement', async 
   }, FIXTURE_URLS.grades);
 
   await expect(page.locator('#navbar')).toBeVisible();
-  await expect(page.locator('#navbar .menu-toggler')).toHaveCount(1);
+  await expect(page.locator('#urppp-mobile-menu-button')).toHaveCount(1);
+  await expect(page.locator('#navbar .menu-toggler')).toBeHidden();
   await expect(page.locator('#navbar #urppp-nav-theme')).toBeVisible();
   await expect(page.locator('#sidebar')).not.toHaveClass(/\bdisplay\b/);
 
@@ -278,10 +281,10 @@ test('mobile navbar and sidebar survive business-page route replacement', async 
   });
   expect(navbarStyle).toEqual({ position: 'fixed', top: 0, height: 44 });
 
-  await page.locator('#navbar .menu-toggler').click();
+  await page.locator('#urppp-mobile-menu-button').click();
   await expect(page.locator('#sidebar')).toHaveClass(/\bdisplay\b/);
   await expect(page.locator('#sidebar #urppp-menus .urppp-nav-link').first()).toBeVisible();
-  await page.locator('#navbar .menu-toggler').click();
+  await page.locator('#urppp-mobile-menu-button').click();
   await expect(page.locator('#sidebar')).not.toHaveClass(/\bdisplay\b/);
 
   for (const routeUrl of [FIXTURE_URLS.schedule, FIXTURE_URLS.evaluation, FIXTURE_URLS['free-classroom']]) {
@@ -291,12 +294,13 @@ test('mobile navbar and sidebar survive business-page route replacement', async 
       history.pushState({ fixture: true }, '', nextUrl);
     }, routeUrl);
     await expect(page.locator('#navbar')).toBeVisible();
-    await expect(page.locator('#navbar .menu-toggler')).toHaveCount(1);
+    await expect(page.locator('#urppp-mobile-menu-button')).toHaveCount(1);
+    await expect(page.locator('#navbar .menu-toggler')).toBeHidden();
     await expect(page.locator('#navbar #urppp-nav-theme')).toBeVisible();
     await expect(page.locator('#sidebar')).not.toHaveClass(/\bdisplay\b/);
-    await page.locator('#navbar .menu-toggler').click();
+    await page.locator('#urppp-mobile-menu-button').click();
     await expect(page.locator('#sidebar')).toHaveClass(/\bdisplay\b/);
-    await page.locator('#navbar .menu-toggler').click();
+    await page.locator('#urppp-mobile-menu-button').click();
     await expect(page.locator('#sidebar')).not.toHaveClass(/\bdisplay\b/);
   }
   expect(pageErrors).toEqual([]);

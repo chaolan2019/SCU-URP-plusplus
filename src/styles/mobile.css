@@ -143,6 +143,9 @@
           min-height: 44px !important;
         }
         #navbar .menu-toggler {
+          display: none !important;
+        }
+        #navbar #urppp-mobile-menu-button {
           position: absolute !important;
           top: 8px !important;
           left: 6px !important;
@@ -159,30 +162,34 @@
           color: var(--urppp-menu-color, var(--text, #1d1d1f)) !important;
           border: var(--urppp-menu-border, 1px solid var(--border, #e2e8f0)) !important;
           box-shadow: var(--urppp-menu-shadow, none) !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          appearance: none !important;
           touch-action: manipulation;
         }
         /* 新菜单图标：两条错落圆线；打开后切换为关闭图标 */
-        #navbar .menu-toggler .urppp-menu-icon,
-        #navbar .menu-toggler .urppp-menu-icon svg {
+        #navbar #urppp-mobile-menu-button .urppp-menu-icon,
+        #navbar #urppp-mobile-menu-button .urppp-menu-icon svg {
           display: block !important;
           width: 16px !important;
           height: 16px !important;
           margin: 0 auto !important;
         }
-        #navbar .menu-toggler .urppp-menu-icon svg {
+        #navbar #urppp-mobile-menu-button .urppp-menu-icon svg {
           fill: none !important;
           stroke: currentColor !important;
           stroke-width: 1.8 !important;
           stroke-linecap: round !important;
           stroke-linejoin: round !important;
         }
-        #navbar .menu-toggler .urppp-menu-icon svg.urppp-menu-icon-close {
+        #navbar #urppp-mobile-menu-button .urppp-menu-icon svg.urppp-menu-icon-close {
           display: none !important;
         }
-        #navbar .menu-toggler[aria-expanded="true"] .urppp-menu-icon svg.urppp-menu-icon-open {
+        #navbar #urppp-mobile-menu-button[aria-expanded="true"] .urppp-menu-icon svg.urppp-menu-icon-open {
           display: none !important;
         }
-        #navbar .menu-toggler[aria-expanded="true"] .urppp-menu-icon svg.urppp-menu-icon-close {
+        #navbar #urppp-mobile-menu-button[aria-expanded="true"] .urppp-menu-icon svg.urppp-menu-icon-close {
           display: block !important;
         }
         #navbar .navbar-header.pull-left,
@@ -364,8 +371,6 @@
         #urppp-mobile-user .urppp-mobile-user-copy {
           display: flex !important;
           min-width: 0 !important;
-          position: relative !important;
-          top: -1px !important;
           flex-direction: column !important;
           justify-content: center !important;
           gap: 1px !important;
@@ -379,6 +384,8 @@
         }
         #urppp-mobile-user .user-info {
           display: block !important;
+          position: relative !important;
+          top: -1px !important;
           min-width: 0 !important;
           color: var(--text, #1d1d1f) !important;
           font-size: 16px !important;

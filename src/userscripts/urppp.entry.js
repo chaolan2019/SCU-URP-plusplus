@@ -6320,7 +6320,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const closeDrawer = () => {
         setDrawerOpen(
           document.getElementById('sidebar'),
-          document.querySelector('#navbar .menu-toggler'),
+          document.getElementById('urppp-mobile-menu-button'),
           false,
         );
       };
@@ -6354,19 +6354,47 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         }).forEach(([key, value]) => formSearch.style.setProperty(key, value, 'important'));
       };
 
+      const restoreNativeMenuToggler = () => {
+        const nativeToggler = document.querySelector('#navbar .menu-toggler');
+        if (!nativeToggler || nativeToggler.dataset.urpppMobileHidden !== '1') return;
+        nativeToggler.style.removeProperty('display');
+        nativeToggler.removeAttribute('aria-hidden');
+        if (nativeToggler.dataset.urpppPreviousTabindex) {
+          nativeToggler.setAttribute('tabindex', nativeToggler.dataset.urpppPreviousTabindex);
+        } else {
+          nativeToggler.removeAttribute('tabindex');
+        }
+        delete nativeToggler.dataset.urpppPreviousTabindex;
+        delete nativeToggler.dataset.urpppMobileHidden;
+      };
+
       const ensureMenuToggler = () => {
-        let toggler = document.querySelector('#navbar .menu-toggler');
-        if (toggler || !isNarrow()) return toggler;
+        const existing = document.getElementById('urppp-mobile-menu-button');
+        if (!isNarrow()) {
+          existing?.remove();
+          restoreNativeMenuToggler();
+          return null;
+        }
+        if (existing) return existing;
         const navbar = document.getElementById('navbar');
         const sidebar = document.getElementById('sidebar');
         if (!navbar || !sidebar) return null;
-        toggler = document.createElement('button');
+
+        const nativeToggler = navbar.querySelector('.menu-toggler');
+        if (nativeToggler) {
+          nativeToggler.dataset.urpppMobileHidden = '1';
+          nativeToggler.dataset.urpppPreviousTabindex = nativeToggler.getAttribute('tabindex') || '';
+          nativeToggler.style.setProperty('display', 'none', 'important');
+          nativeToggler.setAttribute('aria-hidden', 'true');
+          nativeToggler.setAttribute('tabindex', '-1');
+        }
+
+        const toggler = document.createElement('button');
         toggler.type = 'button';
-        toggler.id = 'menu-toggler';
-        toggler.className = 'navbar-toggle menu-toggler pull-left';
+        toggler.id = 'urppp-mobile-menu-button';
+        toggler.className = 'urppp-mobile-menu-button';
         toggler.setAttribute('aria-label', '打开菜单');
         toggler.setAttribute('aria-expanded', 'false');
-        toggler.dataset.urpppGenerated = '1';
         const host = navbar.querySelector('.navbar-container') || navbar;
         host.insertBefore(toggler, host.firstChild);
         return toggler;
@@ -6409,7 +6437,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           document.addEventListener('click', (event) => {
             const activeSidebar = document.getElementById('sidebar');
             if (!activeSidebar || !activeSidebar.classList.contains('display')) return;
-            if (event.target.closest && event.target.closest('#sidebar, #navbar .menu-toggler')) return;
+            if (event.target.closest && event.target.closest('#sidebar, #urppp-mobile-menu-button')) return;
             closeDrawer();
           }, true);
         }

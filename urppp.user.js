@@ -12251,6 +12251,9 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           min-height: 44px !important;
         }
         #navbar .menu-toggler {
+          display: none !important;
+        }
+        #navbar #urppp-mobile-menu-button {
           position: absolute !important;
           top: 8px !important;
           left: 6px !important;
@@ -12267,30 +12270,34 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           color: var(--urppp-menu-color, var(--text, #1d1d1f)) !important;
           border: var(--urppp-menu-border, 1px solid var(--border, #e2e8f0)) !important;
           box-shadow: var(--urppp-menu-shadow, none) !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          appearance: none !important;
           touch-action: manipulation;
         }
         /* 新菜单图标：两条错落圆线；打开后切换为关闭图标 */
-        #navbar .menu-toggler .urppp-menu-icon,
-        #navbar .menu-toggler .urppp-menu-icon svg {
+        #navbar #urppp-mobile-menu-button .urppp-menu-icon,
+        #navbar #urppp-mobile-menu-button .urppp-menu-icon svg {
           display: block !important;
           width: 16px !important;
           height: 16px !important;
           margin: 0 auto !important;
         }
-        #navbar .menu-toggler .urppp-menu-icon svg {
+        #navbar #urppp-mobile-menu-button .urppp-menu-icon svg {
           fill: none !important;
           stroke: currentColor !important;
           stroke-width: 1.8 !important;
           stroke-linecap: round !important;
           stroke-linejoin: round !important;
         }
-        #navbar .menu-toggler .urppp-menu-icon svg.urppp-menu-icon-close {
+        #navbar #urppp-mobile-menu-button .urppp-menu-icon svg.urppp-menu-icon-close {
           display: none !important;
         }
-        #navbar .menu-toggler[aria-expanded="true"] .urppp-menu-icon svg.urppp-menu-icon-open {
+        #navbar #urppp-mobile-menu-button[aria-expanded="true"] .urppp-menu-icon svg.urppp-menu-icon-open {
           display: none !important;
         }
-        #navbar .menu-toggler[aria-expanded="true"] .urppp-menu-icon svg.urppp-menu-icon-close {
+        #navbar #urppp-mobile-menu-button[aria-expanded="true"] .urppp-menu-icon svg.urppp-menu-icon-close {
           display: block !important;
         }
         #navbar .navbar-header.pull-left,
@@ -12472,8 +12479,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         #urppp-mobile-user .urppp-mobile-user-copy {
           display: flex !important;
           min-width: 0 !important;
-          position: relative !important;
-          top: -1px !important;
           flex-direction: column !important;
           justify-content: center !important;
           gap: 1px !important;
@@ -12487,6 +12492,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         }
         #urppp-mobile-user .user-info {
           display: block !important;
+          position: relative !important;
+          top: -1px !important;
           min-width: 0 !important;
           color: var(--text, #1d1d1f) !important;
           font-size: 16px !important;
@@ -21749,7 +21756,7 @@ ${arcs}
         const closeDrawer = /* @__PURE__ */ __name(() => {
           setDrawerOpen(
             document.getElementById("sidebar"),
-            document.querySelector("#navbar .menu-toggler"),
+            document.getElementById("urppp-mobile-menu-button"),
             false
           );
         }, "closeDrawer");
@@ -21795,19 +21802,44 @@ ${arcs}
             "z-index": "10"
           }).forEach(([key, value]) => formSearch.style.setProperty(key, value, "important"));
         }, "restoreMobileSearch");
+        const restoreNativeMenuToggler = /* @__PURE__ */ __name(() => {
+          const nativeToggler = document.querySelector("#navbar .menu-toggler");
+          if (!nativeToggler || nativeToggler.dataset.urpppMobileHidden !== "1") return;
+          nativeToggler.style.removeProperty("display");
+          nativeToggler.removeAttribute("aria-hidden");
+          if (nativeToggler.dataset.urpppPreviousTabindex) {
+            nativeToggler.setAttribute("tabindex", nativeToggler.dataset.urpppPreviousTabindex);
+          } else {
+            nativeToggler.removeAttribute("tabindex");
+          }
+          delete nativeToggler.dataset.urpppPreviousTabindex;
+          delete nativeToggler.dataset.urpppMobileHidden;
+        }, "restoreNativeMenuToggler");
         const ensureMenuToggler = /* @__PURE__ */ __name(() => {
-          let toggler = document.querySelector("#navbar .menu-toggler");
-          if (toggler || !isNarrow()) return toggler;
+          const existing = document.getElementById("urppp-mobile-menu-button");
+          if (!isNarrow()) {
+            existing?.remove();
+            restoreNativeMenuToggler();
+            return null;
+          }
+          if (existing) return existing;
           const navbar = document.getElementById("navbar");
           const sidebar = document.getElementById("sidebar");
           if (!navbar || !sidebar) return null;
-          toggler = document.createElement("button");
+          const nativeToggler = navbar.querySelector(".menu-toggler");
+          if (nativeToggler) {
+            nativeToggler.dataset.urpppMobileHidden = "1";
+            nativeToggler.dataset.urpppPreviousTabindex = nativeToggler.getAttribute("tabindex") || "";
+            nativeToggler.style.setProperty("display", "none", "important");
+            nativeToggler.setAttribute("aria-hidden", "true");
+            nativeToggler.setAttribute("tabindex", "-1");
+          }
+          const toggler = document.createElement("button");
           toggler.type = "button";
-          toggler.id = "menu-toggler";
-          toggler.className = "navbar-toggle menu-toggler pull-left";
+          toggler.id = "urppp-mobile-menu-button";
+          toggler.className = "urppp-mobile-menu-button";
           toggler.setAttribute("aria-label", "打开菜单");
           toggler.setAttribute("aria-expanded", "false");
-          toggler.dataset.urpppGenerated = "1";
           const host = navbar.querySelector(".navbar-container") || navbar;
           host.insertBefore(toggler, host.firstChild);
           return toggler;
@@ -21847,7 +21879,7 @@ ${arcs}
             document.addEventListener("click", (event) => {
               const activeSidebar = document.getElementById("sidebar");
               if (!activeSidebar || !activeSidebar.classList.contains("display")) return;
-              if (event.target.closest && event.target.closest("#sidebar, #navbar .menu-toggler")) return;
+              if (event.target.closest && event.target.closest("#sidebar, #urppp-mobile-menu-button")) return;
               closeDrawer();
             }, true);
           }
