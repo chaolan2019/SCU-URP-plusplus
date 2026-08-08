@@ -86,6 +86,17 @@
         .page-content form {
           padding: 8px 8px !important;
         }
+        .page-content form:has(.urppp-query-row),
+        #page-content-template form:has(.urppp-query-row) {
+          display: block !important;
+          float: none !important;
+          width: 100% !important;
+          min-width: 0 !important;
+          max-width: 100% !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          box-sizing: border-box !important;
+        }
         .table > thead > tr > th,
         .table > tbody > tr > td,
         .table-box td,
@@ -595,6 +606,37 @@
         #main-calendar {
           overflow-x: auto !important;
           -webkit-overflow-scrolling: touch;
+        }
+
+        /* ---------- 本学期课表：保持列宽，在局部视口内横向滑动 ---------- */
+        #mycoursetable.urppp-mobile-schedule-scroll {
+          width: 100% !important;
+          max-width: 100% !important;
+          overflow-x: auto !important;
+          overflow-y: auto !important;
+          overscroll-behavior-x: contain;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: thin;
+        }
+        #mycoursetable.urppp-mobile-schedule-scroll #courseTable {
+          width: 760px !important;
+          min-width: 760px !important;
+          max-width: none !important;
+          table-layout: fixed !important;
+        }
+        #mycoursetable.urppp-mobile-schedule-scroll #courseTable tr > :first-child {
+          position: sticky !important;
+          left: 0 !important;
+          z-index: 4 !important;
+          width: 58px !important;
+          min-width: 58px !important;
+          max-width: 58px !important;
+          background: var(--surface, #fff) !important;
+          box-shadow: 1px 0 0 var(--border, #e8eaed) !important;
+        }
+        #mycoursetable.urppp-mobile-schedule-scroll #courseTable thead tr > :first-child {
+          z-index: 6 !important;
+          background: var(--input-bg, #f5f5f7) !important;
         }
 
         /* ---------- 插件仪表板（#urppp-dashboard）移动端重构 ----------

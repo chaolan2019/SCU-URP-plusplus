@@ -1,0 +1,82 @@
+import { expect, test } from '@playwright/test';
+import { loadUrpFixture } from './support/urp-fixture.js';
+
+test('mobile week schedule keeps readable columns inside a horizontal viewport', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'schedule',
+    viewport: { width: 390, height: 844 },
+    values: { urppp_skin_v1: 'neu', urppp_theme_v3: 'default' },
+  });
+
+  const host = page.locator('#mycoursetable');
+  const table = page.locator('#courseTable');
+  await expect(host).toHaveClass(/\burppp-mobile-schedule-scroll\b/);
+  await expect(table).toHaveCSS('width', '760px');
+
+  const metrics = await page.evaluate(() => {
+    const schedule = document.getElementById('mycoursetable');
+    const courseTable = document.getElementById('courseTable');
+    const row = document.querySelector('#courseTableBody tr');
+    return {
+      clientWidth: schedule.clientWidth,
+      scrollWidth: schedule.scrollWidth,
+      tableWidth: courseTable.getBoundingClientRect().width,
+      rowHeight: row.getBoundingClientRect().height,
+      pageOverflow: document.documentElement.scrollWidth - window.innerWidth,
+    };
+  });
+  expect(metrics.clientWidth).toBeLessThan(390);
+  expect(metrics.scrollWidth).toBeGreaterThan(metrics.clientWidth + 250);
+  expect(metrics.tableWidth).toBeGreaterThanOrEqual(759);
+  expect(metrics.rowHeight).toBeLessThanOrEqual(90);
+  expect(metrics.pageOverflow).toBeLessThanOrEqual(1);
+
+  const stickyOffset = await page.evaluate(async () => {
+    const schedule = document.getElementById('mycoursetable');
+    schedule.scrollLeft = 180;
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    const hostRect = schedule.getBoundingClientRect();
+    const firstColumnRect = document.querySelector('#courseTableBody tr > :first-child').getBoundingClientRect();
+    return Math.abs(firstColumnRect.left - hostRect.left);
+  });
+  expect(stickyOffset).toBeLessThanOrEqual(3);
+  expect(pageErrors).toEqual([]);
+});
+
+test('mobile query fields use two columns and collapse to one on extra-narrow screens', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'grades',
+    viewport: { width: 390, height: 844 },
+    values: { urppp_skin_v1: 'neu', urppp_theme_v3: 'default' },
+  });
+
+  const row = page.locator('.profile-info-row.urppp-query-row');
+  await expect(row.locator(':scope > .urppp-query-pair')).toHaveCount(4);
+
+  const mobileLayout = await row.evaluate((element) => {
+    const columns = getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean);
+    const pair = element.querySelector('.urppp-query-pair');
+    const label = pair.querySelector('.profile-info-name').getBoundingClientRect();
+    const value = pair.querySelector('.profile-info-value').getBoundingClientRect();
+    const form = element.closest('.urppp-query-form, .profile-user-info');
+    return {
+      columns: columns.length,
+      pairWidth: pair.getBoundingClientRect().width,
+      labelAboveValue: label.bottom <= value.top + 1,
+      clipped: form.scrollWidth > form.clientWidth + 1,
+    };
+  });
+  expect(mobileLayout).toEqual({
+    columns: 2,
+    pairWidth: expect.any(Number),
+    labelAboveValue: true,
+    clipped: false,
+  });
+  expect(mobileLayout.pairWidth).toBeGreaterThan(140);
+
+  await page.setViewportSize({ width: 350, height: 844 });
+  await expect.poll(async () => row.evaluate((element) => (
+    getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length
+  ))).toBe(1);
+  expect(pageErrors).toEqual([]);
+});

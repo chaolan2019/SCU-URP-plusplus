@@ -20,7 +20,21 @@
     <div class="page-content" id="page-content-template">
       <div class="breadcrumb">综合查询 / 成绩查询</div>
       <h4 class="header">历年成绩</h4>
-      <form id="score-query-form"><div class="form-group"><label for="term">学期</label><select id="term"><option>2025-2026-1</option></select><button type="submit">查询</button></div></form>
+      <form id="score-query-form">
+        <div class="profile-user-info self">
+          <div class="profile-info-row">
+            <div class="profile-info-name">学年学期</div>
+            <div class="profile-info-value"><select class="value_element" id="term"><option>2025-2026-1</option></select></div>
+            <div class="profile-info-name">成绩类型</div>
+            <div class="profile-info-value"><select class="value_element" id="score-type"><option>全部</option></select></div>
+            <div class="profile-info-name">课程号</div>
+            <div class="profile-info-value"><input class="value_element" id="course-code" type="text"></div>
+            <div class="profile-info-name">课程名</div>
+            <div class="profile-info-value"><input class="value_element" id="course-name" type="text"></div>
+          </div>
+        </div>
+        <div class="form-group"><button type="submit">查询</button></div>
+      </form>
       <table class="table table-bordered" id="score-table"><thead><tr><th>课程</th><th>成绩</th><th>学分</th></tr></thead><tbody><tr><td>示例课程</td><td>95</td><td>3</td></tr></tbody></table>
     </div>
   </main>

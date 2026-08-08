@@ -5458,8 +5458,44 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
           grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         }
       }
-      @media (max-width: 700px) {
+      @media (max-width: 640px) {
+        .profile-user-info.urppp-query-form,
+        .profile-user-info.self.urppp-query-form,
+        .profile-user-info-striped.self.urppp-query-form {
+          padding: 10px 12px 6px !important;
+        }
         .profile-info-row.urppp-query-row {
+          column-gap: 10px !important;
+          row-gap: 10px !important;
+        }
+        .urppp-query-pair {
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 4px !important;
+        }
+        .urppp-query-pair .profile-info-name {
+          flex: none !important;
+          width: 100% !important;
+          min-width: 0 !important;
+          max-width: 100% !important;
+          height: auto !important;
+          min-height: 18px !important;
+          padding: 0 !important;
+          justify-content: flex-start !important;
+          text-align: left !important;
+          white-space: normal !important;
+          overflow: visible !important;
+          text-overflow: clip !important;
+        }
+        .urppp-query-pair .profile-info-value {
+          width: 100% !important;
+          min-width: 0 !important;
+          max-width: 100% !important;
+        }
+      }
+      @media (max-width: 359px) {
+        .profile-info-row.urppp-query-row,
+        .profile-info-row.urppp-query-row[data-urppp-query-cols] {
           grid-template-columns: minmax(0, 1fr) !important;
         }
       }
@@ -12194,6 +12230,17 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         .page-content form {
           padding: 8px 8px !important;
         }
+        .page-content form:has(.urppp-query-row),
+        #page-content-template form:has(.urppp-query-row) {
+          display: block !important;
+          float: none !important;
+          width: 100% !important;
+          min-width: 0 !important;
+          max-width: 100% !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          box-sizing: border-box !important;
+        }
         .table > thead > tr > th,
         .table > tbody > tr > td,
         .table-box td,
@@ -12703,6 +12750,37 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         #main-calendar {
           overflow-x: auto !important;
           -webkit-overflow-scrolling: touch;
+        }
+
+        /* ---------- 本学期课表：保持列宽，在局部视口内横向滑动 ---------- */
+        #mycoursetable.urppp-mobile-schedule-scroll {
+          width: 100% !important;
+          max-width: 100% !important;
+          overflow-x: auto !important;
+          overflow-y: auto !important;
+          overscroll-behavior-x: contain;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: thin;
+        }
+        #mycoursetable.urppp-mobile-schedule-scroll #courseTable {
+          width: 760px !important;
+          min-width: 760px !important;
+          max-width: none !important;
+          table-layout: fixed !important;
+        }
+        #mycoursetable.urppp-mobile-schedule-scroll #courseTable tr > :first-child {
+          position: sticky !important;
+          left: 0 !important;
+          z-index: 4 !important;
+          width: 58px !important;
+          min-width: 58px !important;
+          max-width: 58px !important;
+          background: var(--surface, #fff) !important;
+          box-shadow: 1px 0 0 var(--border, #e8eaed) !important;
+        }
+        #mycoursetable.urppp-mobile-schedule-scroll #courseTable thead tr > :first-child {
+          z-index: 6 !important;
+          background: var(--input-bg, #f5f5f7) !important;
         }
 
         /* ---------- 插件仪表板（#urppp-dashboard）移动端重构 ----------
@@ -19976,11 +20054,10 @@ ${arcs}
         }, "getFormQueryCols");
         const applyRowLayout = /* @__PURE__ */ __name((row) => {
           const pairs = Array.from(row.querySelectorAll(":scope > .urppp-query-pair"));
-          const n = Math.max(pairs.length, 1);
           const cols = getFormQueryCols(row);
           row.classList.add("urppp-query-row");
           row.style.setProperty("display", "grid", "important");
-          row.style.setProperty("grid-template-columns", "repeat(" + cols + ", minmax(0, 1fr))", "important");
+          row.style.removeProperty("grid-template-columns");
           row.style.setProperty("column-gap", "14px", "important");
           row.style.setProperty("row-gap", "10px", "important");
           row.style.setProperty("align-items", "center", "important");
@@ -19988,8 +20065,8 @@ ${arcs}
           row.style.setProperty("max-width", "100%", "important");
           row.style.setProperty("box-sizing", "border-box", "important");
           row.dataset.urpppQueryCols = String(cols);
-          pairs.forEach((pair, i) => {
-            pair.style.setProperty("grid-column", String(i + 1), "important");
+          pairs.forEach((pair) => {
+            pair.style.removeProperty("grid-column");
           });
           pairs.forEach((pair) => {
             pair.style.setProperty("display", "flex", "important");
@@ -20872,21 +20949,32 @@ ${arcs}
         }
         const host = document.getElementById("mycoursetable");
         if (!host) return;
+        const mobileSchedule = !!(window.matchMedia && window.matchMedia("(max-width: 640px)").matches);
+        host.classList.toggle("urppp-mobile-schedule-scroll", mobileSchedule);
         host.style.setProperty("position", "relative", "important");
         host.style.setProperty("width", "100%", "important");
         let unitH = 72;
-        host.querySelectorAll("#courseTableBody tr, table tbody tr").forEach((tr) => {
-          const h = tr.offsetHeight || 0;
-          if (h > unitH) unitH = h;
-        });
+        if (!mobileSchedule) {
+          host.querySelectorAll("#courseTableBody tr, table tbody tr").forEach((tr) => {
+            const h = tr.offsetHeight || 0;
+            if (h > unitH) unitH = h;
+          });
+        }
         if (unitH < 56) unitH = 72;
         host.querySelectorAll("div.class_div").forEach((div) => {
           const n = parseInt(div.getAttribute("classNum") || "1", 10) || 1;
           const h = div.scrollHeight || 0;
-          if (h > 0) unitH = Math.max(unitH, Math.ceil(h / n));
+          if (h > 0) {
+            const required = Math.ceil(h / n);
+            unitH = mobileSchedule ? Math.max(unitH, Math.min(required, 88)) : Math.max(unitH, required);
+          }
         });
-        if (unitH < 64) unitH = 72;
-        if (unitH > 160) unitH = 120;
+        if (mobileSchedule) {
+          unitH = Math.min(Math.max(unitH, 72), 88);
+        } else {
+          if (unitH < 64) unitH = 72;
+          if (unitH > 160) unitH = 120;
+        }
         host.querySelectorAll("#courseTableBody tr, table tbody tr").forEach((tr) => {
           tr.style.setProperty("height", unitH + "px", "important");
         });
@@ -21862,17 +21950,17 @@ ${arcs}
           const toggler = ensureMenuToggler();
           const sidebar = document.getElementById("sidebar");
           if (toggler) ensureMenuButtonIcon(toggler);
-          if (toggler && sidebar && !toggler.dataset.urpppToggleBound) {
-            toggler.dataset.urpppToggleBound = "1";
+          if (toggler && sidebar && !toggler.__urpppToggleHandler) {
             toggler.setAttribute("aria-label", "打开菜单");
             toggler.setAttribute("aria-expanded", sidebar.classList.contains("display") ? "true" : "false");
-            toggler.addEventListener("click", (event) => {
+            toggler.__urpppToggleHandler = (event) => {
               event.preventDefault();
               event.stopImmediatePropagation();
               if (isNarrow()) syncMobileSidebarMode(sidebar, true);
-              const open = !sidebar.classList.contains("display") || sidebar.classList.contains("urppp-drawer-closing");
+              const open = toggler.getAttribute("aria-expanded") !== "true";
               setDrawerOpen(sidebar, toggler, open);
-            }, true);
+            };
+            toggler.addEventListener("click", toggler.__urpppToggleHandler, true);
           }
           if (!document.__urpppMobileDrawerOutsideBound) {
             document.__urpppMobileDrawerOutsideBound = true;
@@ -22090,7 +22178,7 @@ ${arcs}
         }
       }
       __name(setupMobileNavbar, "setupMobileNavbar");
-      const urpppMobileLayout = document.documentElement && document.documentElement.classList.contains("urppp-mobile");
+      const urpppMobileLayout = !!(window.matchMedia && window.matchMedia("(max-width: 991px)").matches);
       const urpppContentPadding = urpppMobileLayout ? "8px 8px 24px" : "16px 64px 40px";
       document.querySelectorAll(".page-content, #page-content-template").forEach((el) => {
         el.style.setProperty("padding", urpppContentPadding, "important");
@@ -25766,15 +25854,15 @@ ${arcs}
       window.__urpppRouteWatchBound = true;
       let routeRefreshTimer = 0;
       const run = /* @__PURE__ */ __name(() => {
+        try {
+          if (window.__urpppCloseMobileDrawer) window.__urpppCloseMobileDrawer();
+        } catch (_) {
+        }
         clearTimeout(routeRefreshTimer);
         routeRefreshTimer = setTimeout(() => {
           state._termWeekResolved = false;
           const sidebar = document.getElementById("sidebar");
           if (!sidebar) return;
-          try {
-            if (window.__urpppCloseMobileDrawer) window.__urpppCloseMobileDrawer();
-          } catch (_) {
-          }
           syncSidebarUnderNavbar();
           rebuildSidebarCompletely();
           rebuildNavbar();
@@ -25797,7 +25885,7 @@ ${arcs}
           scheduleBeautifyNoticeTables();
           scheduleScrubTableInlineBg();
           document.querySelectorAll(".page-content, #page-content-template").forEach((el) => {
-            const urpppMobileLayout = document.documentElement && document.documentElement.classList.contains("urppp-mobile");
+            const urpppMobileLayout = !!(window.matchMedia && window.matchMedia("(max-width: 991px)").matches);
             el.style.setProperty("padding", urpppMobileLayout ? "8px 8px 24px" : "16px 64px 40px", "important");
             el.style.setProperty("box-sizing", "border-box", "important");
           });

@@ -4430,11 +4430,10 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       };
       const applyRowLayout = (row) => {
         const pairs = Array.from(row.querySelectorAll(':scope > .urppp-query-pair'));
-        const n = Math.max(pairs.length, 1);
         const cols = getFormQueryCols(row);
         row.classList.add('urppp-query-row');
         row.style.setProperty('display', 'grid', 'important');
-        row.style.setProperty('grid-template-columns', 'repeat(' + cols + ', minmax(0, 1fr))', 'important');
+        row.style.removeProperty('grid-template-columns');
         row.style.setProperty('column-gap', '14px', 'important');
         row.style.setProperty('row-gap', '10px', 'important');
         row.style.setProperty('align-items', 'center', 'important');
@@ -4442,9 +4441,9 @@ import { createNavbarController } from '../features/navigation/navbar.js';
         row.style.setProperty('max-width', '100%', 'important');
         row.style.setProperty('box-sizing', 'border-box', 'important');
         row.dataset.urpppQueryCols = String(cols);
-        // 字段只占前 n 格，其余留空，与上行同宽对齐
-        pairs.forEach((pair, i) => {
-          pair.style.setProperty('grid-column', String(i + 1), 'important');
+        // 由 CSS Grid 自动放置，媒体查询可在移动端安全换列。
+        pairs.forEach((pair) => {
+          pair.style.removeProperty('grid-column');
         });
 
         pairs.forEach((pair) => {
@@ -5379,15 +5378,19 @@ import { createNavbarController } from '../features/navigation/navbar.js';
 
       const host = document.getElementById('mycoursetable');
       if (!host) return;
+      const mobileSchedule = !!(window.matchMedia && window.matchMedia('(max-width: 640px)').matches);
+      host.classList.toggle('urppp-mobile-schedule-scroll', mobileSchedule);
       host.style.setProperty('position', 'relative', 'important');
       host.style.setProperty('width', '100%', 'important');
 
-      // 不把课程块改 static 测高（会闪）；用估算 + 已有高度
+      // 移动端先给课表稳定列宽，避免窄列换行反向抬高整张课表。
       let unitH = 72;
-      host.querySelectorAll('#courseTableBody tr, table tbody tr').forEach((tr) => {
-        const h = tr.offsetHeight || 0;
-        if (h > unitH) unitH = h;
-      });
+      if (!mobileSchedule) {
+        host.querySelectorAll('#courseTableBody tr, table tbody tr').forEach((tr) => {
+          const h = tr.offsetHeight || 0;
+          if (h > unitH) unitH = h;
+        });
+      }
       // 若行还没内容高度，保持 72
       if (unitH < 56) unitH = 72;
 
@@ -5396,10 +5399,19 @@ import { createNavbarController } from '../features/navigation/navbar.js';
         const n = parseInt(div.getAttribute('classNum') || '1', 10) || 1;
         // 当前若已有宽度，scrollHeight 可用
         const h = div.scrollHeight || 0;
-        if (h > 0) unitH = Math.max(unitH, Math.ceil(h / n));
+        if (h > 0) {
+          const required = Math.ceil(h / n);
+          unitH = mobileSchedule
+            ? Math.max(unitH, Math.min(required, 88))
+            : Math.max(unitH, required);
+        }
       });
-      if (unitH < 64) unitH = 72;
-      if (unitH > 160) unitH = 120; // 防止异常撑爆
+      if (mobileSchedule) {
+        unitH = Math.min(Math.max(unitH, 72), 88);
+      } else {
+        if (unitH < 64) unitH = 72;
+        if (unitH > 160) unitH = 120; // 防止异常撑爆
+      }
 
       host.querySelectorAll('#courseTableBody tr, table tbody tr').forEach((tr) => {
         tr.style.setProperty('height', unitH + 'px', 'important');
@@ -6419,18 +6431,17 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         const toggler = ensureMenuToggler();
         const sidebar = document.getElementById('sidebar');
         if (toggler) ensureMenuButtonIcon(toggler);
-        if (toggler && sidebar && !toggler.dataset.urpppToggleBound) {
-          toggler.dataset.urpppToggleBound = '1';
+        if (toggler && sidebar && !toggler.__urpppToggleHandler) {
           toggler.setAttribute('aria-label', '打开菜单');
           toggler.setAttribute('aria-expanded', sidebar.classList.contains('display') ? 'true' : 'false');
-          toggler.addEventListener('click', (event) => {
+          toggler.__urpppToggleHandler = (event) => {
             event.preventDefault();
             event.stopImmediatePropagation();
             if (isNarrow()) syncMobileSidebarMode(sidebar, true);
-            const open = !sidebar.classList.contains('display')
-              || sidebar.classList.contains('urppp-drawer-closing');
+            const open = toggler.getAttribute('aria-expanded') !== 'true';
             setDrawerOpen(sidebar, toggler, open);
-          }, true);
+          };
+          toggler.addEventListener('click', toggler.__urpppToggleHandler, true);
         }
         if (!document.__urpppMobileDrawerOutsideBound) {
           document.__urpppMobileDrawerOutsideBound = true;
@@ -6650,7 +6661,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       } catch (_) { /* ignore */ }
     }
     // 强制内容区内边距（ACE 偶发内联样式覆盖）；移动端用紧凑内距
-    const urpppMobileLayout = document.documentElement && document.documentElement.classList.contains('urppp-mobile');
+    const urpppMobileLayout = !!(window.matchMedia && window.matchMedia('(max-width: 991px)').matches);
     const urpppContentPadding = urpppMobileLayout ? '8px 8px 24px' : '16px 64px 40px';
     document.querySelectorAll('.page-content, #page-content-template').forEach((el) => {
       el.style.setProperty('padding', urpppContentPadding, 'important');
@@ -10280,12 +10291,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     window.__urpppRouteWatchBound = true;
     let routeRefreshTimer = 0;
     const run = () => {
+      try { if (window.__urpppCloseMobileDrawer) window.__urpppCloseMobileDrawer(); } catch (_) { /* ignore */ }
       clearTimeout(routeRefreshTimer);
       routeRefreshTimer = setTimeout(() => {
         state._termWeekResolved = false;
         const sidebar = document.getElementById('sidebar');
         if (!sidebar) return;
-        try { if (window.__urpppCloseMobileDrawer) window.__urpppCloseMobileDrawer(); } catch (_) { /* ignore */ }
         syncSidebarUnderNavbar();
         rebuildSidebarCompletely();
         rebuildNavbar();
@@ -10302,7 +10313,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         scheduleBeautifyNoticeTables();
         scheduleScrubTableInlineBg();
         document.querySelectorAll('.page-content, #page-content-template').forEach((el) => {
-          const urpppMobileLayout = document.documentElement && document.documentElement.classList.contains('urppp-mobile');
+          const urpppMobileLayout = !!(window.matchMedia && window.matchMedia('(max-width: 991px)').matches);
           el.style.setProperty('padding', urpppMobileLayout ? '8px 8px 24px' : '16px 64px 40px', 'important');
           el.style.setProperty('box-sizing', 'border-box', 'important');
         });
