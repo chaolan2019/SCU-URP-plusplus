@@ -12487,7 +12487,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           display: block !important;
           min-width: 0 !important;
           color: var(--text, #1d1d1f) !important;
-          font-size: 13px !important;
+          font-size: 15px !important;
           font-weight: 600 !important;
           line-height: 1.35 !important;
           white-space: normal !important;
@@ -21800,11 +21800,11 @@ ${arcs}
             toggler.setAttribute("aria-expanded", sidebar.classList.contains("display") ? "true" : "false");
             toggler.addEventListener("click", (event) => {
               event.preventDefault();
-              event.stopPropagation();
+              event.stopImmediatePropagation();
               if (isNarrow()) syncMobileSidebarMode(sidebar, true);
               const open = !sidebar.classList.contains("display") || sidebar.classList.contains("urppp-drawer-closing");
               setDrawerOpen(sidebar, toggler, open);
-            });
+            }, true);
           }
           if (!document.__urpppMobileDrawerOutsideBound) {
             document.__urpppMobileDrawerOutsideBound = true;

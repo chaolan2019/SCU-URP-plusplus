@@ -107,6 +107,7 @@ for (const [skin, expectedShape] of Object.entries(skinShapes)) {
     await expect(page.locator('#urppp-mobile-user')).toBeVisible();
     await expect(page.locator('#urppp-mobile-user .urppp-mobile-user-welcome')).toHaveText('欢迎您，');
     await expect(page.locator('#urppp-mobile-user .urppp-user-name-value')).toHaveText('测试用户');
+    await expect(page.locator('#urppp-mobile-user .urppp-user-name-value')).toHaveCSS('font-size', '15px');
     await expect(page.locator('#urppp-mobile-user .urppp-mobile-user-action')).toHaveText([
       '首页', '在线反馈', '修改密码', '注销',
     ]);
@@ -145,30 +146,64 @@ for (const [skin, expectedShape] of Object.entries(skinShapes)) {
   });
 }
 
-test('mobile sidebar animates in both directions', async ({ page }) => {
+for (const skin of Object.keys(skinShapes)) {
+  test(`mobile sidebar animates in both directions with ${skin} skin`, async ({ page }) => {
+    await loadUrpFixture(page, {
+      fixture: 'mobile-home',
+      viewport: { width: 390, height: 844 },
+      values: { urppp_skin_v1: skin, urppp_theme_v3: 'default' },
+    });
+
+    const sidebar = page.locator('#sidebar');
+    const toggler = page.locator('#navbar .menu-toggler');
+    await expect.poll(async () => sidebar.evaluate((element) => Math.round(element.getBoundingClientRect().right))).toBe(0);
+
+    await toggler.click();
+    await page.waitForTimeout(100);
+    const openingLeft = await sidebar.evaluate((element) => element.getBoundingClientRect().left);
+    expect(openingLeft).toBeGreaterThan(-250);
+    expect(openingLeft).toBeLessThan(-10);
+    await expect(sidebar).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+
+    await toggler.click();
+    await page.waitForTimeout(100);
+    const closingLeft = await sidebar.evaluate((element) => element.getBoundingClientRect().left);
+    expect(closingLeft).toBeGreaterThan(-250);
+    expect(closingLeft).toBeLessThan(-10);
+    await expect.poll(async () => sidebar.evaluate((element) => Math.round(element.getBoundingClientRect().right))).toBe(0);
+  });
+}
+
+test('mobile drawer owns menu clicks ahead of native ACE handlers', async ({ page }) => {
   await loadUrpFixture(page, {
     fixture: 'mobile-home',
     viewport: { width: 390, height: 844 },
-    values: { urppp_skin_v1: 'apple', urppp_theme_v3: 'default' },
+    values: { urppp_skin_v1: 'neu', urppp_theme_v3: 'default' },
+    beforeUserscript: async (fixturePage) => fixturePage.evaluate(() => {
+      window.__nativeAceMenuClicks = 0;
+      document.getElementById('menu-toggler').addEventListener('click', () => {
+        window.__nativeAceMenuClicks += 1;
+        document.getElementById('sidebar').classList.toggle('display');
+      });
+    }),
   });
 
   const sidebar = page.locator('#sidebar');
   const toggler = page.locator('#navbar .menu-toggler');
-  await expect.poll(async () => sidebar.evaluate((element) => Math.round(element.getBoundingClientRect().right))).toBe(0);
-
   await toggler.click();
-  await page.waitForTimeout(100);
-  const openingLeft = await sidebar.evaluate((element) => element.getBoundingClientRect().left);
-  expect(openingLeft).toBeGreaterThan(-250);
-  expect(openingLeft).toBeLessThan(-10);
+  await expect(sidebar).toHaveClass(/\bdisplay\b/);
   await expect(sidebar).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+  await expect.poll(() => page.evaluate(() => window.__nativeAceMenuClicks)).toBe(0);
 
   await toggler.click();
   await page.waitForTimeout(100);
+  await expect(sidebar).toHaveClass(/\burppp-drawer-closing\b/);
+  await expect(sidebar).toHaveCSS('z-index', '1200');
   const closingLeft = await sidebar.evaluate((element) => element.getBoundingClientRect().left);
   expect(closingLeft).toBeGreaterThan(-250);
   expect(closingLeft).toBeLessThan(-10);
-  await expect.poll(async () => sidebar.evaluate((element) => Math.round(element.getBoundingClientRect().right))).toBe(0);
+  await expect(sidebar).not.toHaveClass(/\bdisplay\b/);
+  await expect.poll(() => page.evaluate(() => window.__nativeAceMenuClicks)).toBe(0);
 });
 
 test('desktop sidebar animates expansion and collapse', async ({ page }) => {

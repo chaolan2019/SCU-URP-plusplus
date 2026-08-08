@@ -6358,12 +6358,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           toggler.setAttribute('aria-expanded', sidebar.classList.contains('display') ? 'true' : 'false');
           toggler.addEventListener('click', (event) => {
             event.preventDefault();
-            event.stopPropagation();
+            event.stopImmediatePropagation();
             if (isNarrow()) syncMobileSidebarMode(sidebar, true);
             const open = !sidebar.classList.contains('display')
               || sidebar.classList.contains('urppp-drawer-closing');
             setDrawerOpen(sidebar, toggler, open);
-          });
+          }, true);
         }
         if (!document.__urpppMobileDrawerOutsideBound) {
           document.__urpppMobileDrawerOutsideBound = true;

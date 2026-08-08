@@ -130,6 +130,7 @@ export async function loadUrpFixture(page, options = {}) {
 
   const pageRoot = page.locator('#page-content-template, .page-content').first();
   const nativePageHtml = await pageRoot.evaluate((element) => element.outerHTML);
+  if (options.beforeUserscript) await options.beforeUserscript(page);
   await page.addScriptTag({ path: USERSCRIPT_PATH });
   await expect(page.locator('html')).toHaveClass(/urppp-ready/);
 
