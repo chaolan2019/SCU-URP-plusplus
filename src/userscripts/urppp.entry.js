@@ -6161,6 +6161,43 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     // 完全重构侧边栏为 Hanako 风格
     rebuildSidebarCompletely();
     syncSidebarUnderNavbar();
+    setupMobileNavbar();
+
+    function setupMobileNavbar() {
+      const apply = () => {
+        const narrow = window.matchMedia && window.matchMedia('(max-width: 640px)').matches;
+        const btns = document.querySelector('#navbar .navbar-buttons .ace-nav');
+        if (!btns) return;
+        // 功能按钮（校历/作息/假期/客服/搜索）在窄视口隐藏，收进抽屉快捷区
+        btns.querySelectorAll('li:not(.light-blue)').forEach((li) => {
+          li.style.setProperty('display', narrow ? 'none' : '', narrow ? 'important' : '');
+        });
+        if (!narrow) return;
+        // 抽屉内快捷功能区（仅生成一次）
+        const sidebar = document.getElementById('sidebar');
+        const menus = document.getElementById('urppp-menus');
+        if (!sidebar || !menus || document.getElementById('urppp-mobile-quick')) return;
+        const quick = document.createElement('div');
+        quick.id = 'urppp-mobile-quick';
+        quick.className = 'urppp-mobile-quick';
+        quick.innerHTML = '<div class="urppp-mobile-quick-title">快捷功能</div>';
+        btns.querySelectorAll('li:not(.light-blue) a').forEach((a) => {
+          if (!a.href && !a.getAttribute('onclick')) return;
+          const clone = a.cloneNode(true);
+          clone.removeAttribute('style');
+          quick.appendChild(clone);
+        });
+        sidebar.insertBefore(quick, menus);
+      };
+      try { apply(); } catch (_) { /* ignore */ }
+      setTimeout(apply, 600);
+      if (window.matchMedia) {
+        const mq = window.matchMedia('(max-width: 640px)');
+        const onChg = () => apply();
+        if (typeof mq.addEventListener === 'function') mq.addEventListener('change', onChg);
+        else if (typeof mq.addListener === 'function') mq.addListener(onChg);
+      }
+    }
     // 强制内容区内边距（ACE 偶发内联样式覆盖）；移动端用紧凑内距
     const urpppMobileLayout = document.documentElement && document.documentElement.classList.contains('urppp-mobile');
     const urpppContentPadding = urpppMobileLayout ? '8px 8px 24px' : '16px 64px 40px';

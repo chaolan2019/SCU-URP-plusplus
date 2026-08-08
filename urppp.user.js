@@ -11686,7 +11686,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       .urppp-stat-skeleton .value { background: var(--input-bg); color: transparent !important; border-radius: 4px; width: 48px; height: 34px; }
       .urppp-stat-skeleton .label { background: var(--input-bg); color: transparent !important; border-radius: 4px; width: 80px; height: 20px; }
       .urppp-main-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
-      @media (max-width: 1100px) { .urppp-main-grid { grid-template-columns: 1fr; } }
+      @media (max-width: 1100px) { .urppp-main-grid { grid-template-columns: minmax(0, 1fr); } }
       /* 日程卡：必须 overflow:hidden 才能裁出底角圆角；滚动交给 FC 内部 .fc-scroller */
       #urppp-left .urppp-card {
         background: var(--surface) !important;
@@ -12193,24 +12193,25 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       }
 
       /* ============================================================
-       * 首页移动端重构（≤640px）：顶栏两行式 + 内容卡片流
-       * 保持原有内容与相对结构，窄视口下重新排版
+       * 首页移动端重构（≤640px）：单行顶栏 + 内容卡片流
+       * 功能按钮（校历/作息/假期/搜索/客服）由 JS 收进汉堡抽屉，
+       * 顶栏保持 44px 单行简洁；内容区随顶栏高度让位。
        * ============================================================ */
       @media (max-width: 640px) {
-        /* ---------- 布局骨架：顶栏 84px，内容区让位，不再重叠 ---------- */
+        /* ---------- 布局骨架：顶栏 44px，内容区让位，不重叠 ---------- */
         .main-container,
         #main-container,
         .navbar-fixed-top + .main-container {
-          padding-top: 84px !important;
+          padding-top: 44px !important;
         }
         .navbar-fixed-top {
           padding-top: 0 !important;
         }
-        /* ---------- 顶栏：第一行 汉堡+品牌+头像，第二行 功能图标 ---------- */
+        /* ---------- 顶栏：单行 44px，汉堡 + 品牌 + 用户 ---------- */
         #navbar,
         #navbar .navbar-container {
-          height: 84px !important;
-          min-height: 84px !important;
+          height: 44px !important;
+          min-height: 44px !important;
         }
         #navbar .menu-toggler {
           width: 40px !important;
@@ -12227,59 +12228,40 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           font-size: 0 !important;
         }
         #navbar .navbar-brand small {
-          font-size: 14px !important;
+          font-size: 13px !important;
           line-height: 44px !important;
         }
-        /* 功能按钮区整体移到第二行（图标条） */
+        /* 功能按钮由 JS 隐藏（收进抽屉快捷区）；顶栏按钮区恢复单行 */
         #navbar .navbar-buttons {
-          position: absolute !important;
-          left: 0 !important;
-          right: 0 !important;
-          top: 44px !important;
-          height: 38px !important;
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          background: var(--surface, #ffffff) !important;
-          border-bottom: 1px solid var(--border, #e8eaed) !important;
-          box-sizing: border-box !important;
+          position: static !important;
+          float: right !important;
+          height: 44px !important;
+          background: transparent !important;
+          border: none !important;
+          display: block !important;
         }
         #navbar .navbar-buttons .ace-nav {
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
-          gap: 4px !important;
-          flex-wrap: nowrap !important;
+          display: inline-block !important;
         }
         #navbar .navbar-buttons .ace-nav > li {
-          height: 38px !important;
-          line-height: 38px !important;
-          flex: 0 0 auto !important;
+          height: 44px !important;
+          line-height: 44px !important;
         }
         #navbar .navbar-buttons .ace-nav > li > a {
-          padding: 0 9px !important;
-          height: 38px !important;
-          line-height: 38px !important;
+          padding: 0 7px !important;
+          height: 44px !important;
+          line-height: 44px !important;
           font-size: 0 !important;
-          display: inline-flex !important;
-          align-items: center !important;
         }
         #navbar .navbar-buttons .ace-nav > li > a > i {
           font-size: 15px !important;
           margin: 0 !important;
         }
-        /* 搜索滑块隐藏（搜索按钮保留在图标条） */
+        /* 搜索滑块隐藏 */
         #navbar #intellegenceUDiv {
           display: none !important;
         }
-        /* 用户头像菜单回到第一行右侧 */
-        #navbar .navbar-buttons .ace-nav > li.light-blue {
-          position: absolute !important;
-          right: 4px !important;
-          top: -44px !important;
-          height: 44px !important;
-          line-height: 44px !important;
-        }
+        /* 用户区：头像 + 名字，紧凑 */
         #navbar .navbar-buttons .nav-user-photo {
           width: 26px !important;
           height: 26px !important;
@@ -12297,6 +12279,34 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         }
         #navbar .navbar-buttons .ace-nav > li > a .caret {
           display: none !important;
+        }
+        /* 抽屉内快捷功能区（JS 生成） */
+        #sidebar .urppp-mobile-quick {
+          padding: 8px 12px 10px !important;
+          border-bottom: 1px solid var(--border, #e8eaed) !important;
+          margin-bottom: 4px !important;
+        }
+        #sidebar .urppp-mobile-quick .urppp-mobile-quick-title {
+          font-size: 12px !important;
+          color: var(--text-secondary, #6b7280) !important;
+          margin-bottom: 6px !important;
+          letter-spacing: 1px !important;
+        }
+        #sidebar .urppp-mobile-quick a {
+          display: flex !important;
+          align-items: center !important;
+          gap: 8px !important;
+          padding: 7px 4px !important;
+          font-size: 13px !important;
+          color: var(--text, #1d1d1f) !important;
+          text-decoration: none !important;
+          line-height: 1.3 !important;
+        }
+        #sidebar .urppp-mobile-quick a i {
+          width: 18px !important;
+          text-align: center !important;
+          color: var(--primary, #b53434) !important;
+          font-size: 14px !important;
         }
 
         /* ---------- 内容区：双列合并单列、卡片流 ---------- */
@@ -12422,10 +12432,15 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         #urppp-dashboard .urppp-stats-grid .urppp-stat-card:last-child:nth-child(odd) {
           grid-column: 1 / -1 !important;
         }
-        /* 主网格单列 + 卡片紧凑 */
+        /* 主网格单列 + 卡片紧凑（minmax(0,1fr) 防止宽内容把列撑出视口） */
         #urppp-dashboard .urppp-main-grid {
-          grid-template-columns: 1fr !important;
+          grid-template-columns: minmax(0, 1fr) !important;
           gap: 10px !important;
+        }
+        #urppp-dashboard .urppp-left,
+        #urppp-dashboard .urppp-right {
+          min-width: 0 !important;
+          max-width: 100% !important;
         }
         #urppp-dashboard .urppp-card {
           border-radius: 12px !important;
@@ -12441,7 +12456,13 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         #urppp-dashboard .urppp-card-body {
           padding: 6px 12px 12px !important;
         }
-        /* 日程日历适配窄屏 */
+        /* 日程日历适配窄屏：容器限宽 100%，宽内容在卡片内滚动 */
+        #urppp-dashboard .fc,
+        #urppp-dashboard .fc-view-container,
+        #urppp-dashboard #main-calendar {
+          max-width: 100% !important;
+          min-width: 0 !important;
+        }
         #urppp-dashboard .fc-toolbar {
           margin-bottom: 6px !important;
         }
@@ -21246,6 +21267,44 @@ ${arcs}
       }
       rebuildSidebarCompletely();
       syncSidebarUnderNavbar();
+      setupMobileNavbar();
+      function setupMobileNavbar() {
+        const apply = /* @__PURE__ */ __name(() => {
+          const narrow = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
+          const btns = document.querySelector("#navbar .navbar-buttons .ace-nav");
+          if (!btns) return;
+          btns.querySelectorAll("li:not(.light-blue)").forEach((li) => {
+            li.style.setProperty("display", narrow ? "none" : "", narrow ? "important" : "");
+          });
+          if (!narrow) return;
+          const sidebar = document.getElementById("sidebar");
+          const menus = document.getElementById("urppp-menus");
+          if (!sidebar || !menus || document.getElementById("urppp-mobile-quick")) return;
+          const quick = document.createElement("div");
+          quick.id = "urppp-mobile-quick";
+          quick.className = "urppp-mobile-quick";
+          quick.innerHTML = '<div class="urppp-mobile-quick-title">快捷功能</div>';
+          btns.querySelectorAll("li:not(.light-blue) a").forEach((a) => {
+            if (!a.href && !a.getAttribute("onclick")) return;
+            const clone = a.cloneNode(true);
+            clone.removeAttribute("style");
+            quick.appendChild(clone);
+          });
+          sidebar.insertBefore(quick, menus);
+        }, "apply");
+        try {
+          apply();
+        } catch (_) {
+        }
+        setTimeout(apply, 600);
+        if (window.matchMedia) {
+          const mq = window.matchMedia("(max-width: 640px)");
+          const onChg = /* @__PURE__ */ __name(() => apply(), "onChg");
+          if (typeof mq.addEventListener === "function") mq.addEventListener("change", onChg);
+          else if (typeof mq.addListener === "function") mq.addListener(onChg);
+        }
+      }
+      __name(setupMobileNavbar, "setupMobileNavbar");
       const urpppMobileLayout = document.documentElement && document.documentElement.classList.contains("urppp-mobile");
       const urpppContentPadding = urpppMobileLayout ? "8px 8px 24px" : "16px 64px 40px";
       document.querySelectorAll(".page-content, #page-content-template").forEach((el) => {
