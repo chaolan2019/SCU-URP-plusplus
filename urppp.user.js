@@ -12220,8 +12220,21 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         /* ---------- 顶栏：单行 44px，汉堡 + 品牌 + 清爽按钮 ----------
          * 功能按钮与用户区由 JS 收进抽屉（原生 sidebar 用户区已在抽屉内），
          * 顶栏保持极简。 */
-        #navbar,
+        #navbar {
+          position: fixed !important;
+          top: 0 !important;
+          right: 0 !important;
+          left: 0 !important;
+          z-index: 1100 !important;
+          width: 100% !important;
+          height: 44px !important;
+          min-height: 44px !important;
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        }
         #navbar .navbar-container {
+          width: 100% !important;
           height: 44px !important;
           min-height: 44px !important;
         }
@@ -12268,7 +12281,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         #navbar .menu-toggler[aria-expanded="true"] .urppp-menu-icon svg.urppp-menu-icon-close {
           display: block !important;
         }
-        #navbar .navbar-header.pull-left {
+        #navbar .navbar-header.pull-left,
+        #navbar .navbar-header:not(.navbar-buttons) {
           position: absolute !important;
           top: 0 !important;
           right: 0 !important;
@@ -21613,6 +21627,23 @@ ${arcs}
             "z-index": "10"
           }).forEach(([key, value]) => formSearch.style.setProperty(key, value, "important"));
         }, "restoreMobileSearch");
+        const ensureMenuToggler = /* @__PURE__ */ __name(() => {
+          let toggler = document.querySelector("#navbar .menu-toggler");
+          if (toggler || !isNarrow()) return toggler;
+          const navbar = document.getElementById("navbar");
+          const sidebar = document.getElementById("sidebar");
+          if (!navbar || !sidebar) return null;
+          toggler = document.createElement("button");
+          toggler.type = "button";
+          toggler.id = "menu-toggler";
+          toggler.className = "navbar-toggle menu-toggler pull-left";
+          toggler.setAttribute("aria-label", "打开菜单");
+          toggler.setAttribute("aria-expanded", "false");
+          toggler.dataset.urpppGenerated = "1";
+          const host = navbar.querySelector(".navbar-container") || navbar;
+          host.insertBefore(toggler, host.firstChild);
+          return toggler;
+        }, "ensureMenuToggler");
         const ensureMenuButtonIcon = /* @__PURE__ */ __name((toggler) => {
           if (!toggler || toggler.dataset.urpppIconReady) return;
           toggler.dataset.urpppIconReady = "1";
@@ -21628,7 +21659,7 @@ ${arcs}
           ].join("");
         }, "ensureMenuButtonIcon");
         const bindDrawerControls = /* @__PURE__ */ __name(() => {
-          const toggler = document.querySelector("#navbar .menu-toggler");
+          const toggler = ensureMenuToggler();
           const sidebar = document.getElementById("sidebar");
           if (toggler) ensureMenuButtonIcon(toggler);
           if (toggler && sidebar && !toggler.dataset.urpppToggleBound) {
@@ -21656,6 +21687,17 @@ ${arcs}
               if (event.target.closest && event.target.closest("#sidebar, #navbar .menu-toggler")) return;
               closeDrawer();
             }, true);
+          }
+          if (!document.__urpppMobileRouteCloseBound) {
+            document.__urpppMobileRouteCloseBound = true;
+            document.addEventListener("click", (event) => {
+              if (!isNarrow() || !event.target.closest) return;
+              const link = event.target.closest("#sidebar a[href]");
+              if (!link) return;
+              const href = String(link.getAttribute("href") || "").trim();
+              if (!href || href === "#" || href.startsWith("javascript")) return;
+              closeDrawer();
+            });
           }
         }, "bindDrawerControls");
         const createActionLink = /* @__PURE__ */ __name((source, fallback) => {
@@ -21810,6 +21852,8 @@ ${arcs}
           ensureMobileQuick(btns, sidebar, menus);
           syncMobileSearchLayout();
         }, "apply");
+        window.__urpppRefreshMobileNavbar = apply;
+        window.__urpppCloseMobileDrawer = closeDrawer;
         try {
           apply();
         } catch (_) {
@@ -25525,9 +25569,24 @@ ${arcs}
           state._termWeekResolved = false;
           const sidebar = document.getElementById("sidebar");
           if (!sidebar) return;
+          try {
+            if (window.__urpppCloseMobileDrawer) window.__urpppCloseMobileDrawer();
+          } catch (_) {
+          }
           syncSidebarUnderNavbar();
           rebuildSidebarCompletely();
           rebuildNavbar();
+          syncSidebarUnderNavbar();
+          try {
+            if (window.__urpppRefreshMobileNavbar) window.__urpppRefreshMobileNavbar();
+          } catch (_) {
+          }
+          [250, 700].forEach((delay) => setTimeout(() => {
+            try {
+              if (window.__urpppRefreshMobileNavbar) window.__urpppRefreshMobileNavbar();
+            } catch (_) {
+            }
+          }, delay));
           patchSchoolCalendarLink();
           wrapTables();
           bindTableWrapObserver();

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { loadUrpFixture } from './support/urp-fixture.js';
+import { FIXTURE_URLS, loadUrpFixture } from './support/urp-fixture.js';
 
 const skinShapes = {
   apple: { actionRadius: '999px', menuRadius: '12px', shadow: true },
@@ -138,3 +138,61 @@ for (const [skin, expectedShape] of Object.entries(skinShapes)) {
     expect(pageErrors).toEqual([]);
   });
 }
+
+test('mobile navbar and sidebar survive business-page route replacement', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'mobile-home',
+    viewport: { width: 390, height: 844 },
+    values: { urppp_skin_v1: 'apple', urppp_theme_v3: 'default' },
+  });
+
+  await page.locator('#navbar .menu-toggler').click();
+  await expect(page.locator('#sidebar')).toHaveClass(/\bdisplay\b/);
+
+  await page.evaluate((nextUrl) => {
+    const navbar = document.getElementById('navbar');
+    navbar.outerHTML = `
+      <nav class="navbar navbar-default navbar-fixed-top" id="navbar">
+        <div class="navbar-header"><a class="navbar-brand" href="/index"><small>四川大学教务管理系统</small></a></div>
+        <ul class="ace-nav"></ul>
+      </nav>`;
+    const root = document.getElementById('page-content-template');
+    root.innerHTML = '<div class="breadcrumb">综合查询 / 成绩查询</div><h4>历年成绩</h4><table><tr><td>fixture</td></tr></table>';
+    history.pushState({ fixture: true }, '', nextUrl);
+  }, FIXTURE_URLS.grades);
+
+  await expect(page.locator('#navbar')).toBeVisible();
+  await expect(page.locator('#navbar .menu-toggler')).toHaveCount(1);
+  await expect(page.locator('#navbar #urppp-nav-theme')).toBeVisible();
+  await expect(page.locator('#sidebar')).not.toHaveClass(/\bdisplay\b/);
+
+  const navbarStyle = await page.locator('#navbar').evaluate((navbar) => {
+    const style = getComputedStyle(navbar);
+    const rect = navbar.getBoundingClientRect();
+    return { position: style.position, top: Math.round(rect.top), height: Math.round(rect.height) };
+  });
+  expect(navbarStyle).toEqual({ position: 'fixed', top: 0, height: 44 });
+
+  await page.locator('#navbar .menu-toggler').click();
+  await expect(page.locator('#sidebar')).toHaveClass(/\bdisplay\b/);
+  await expect(page.locator('#sidebar #urppp-menus .urppp-nav-link').first()).toBeVisible();
+  await page.locator('#navbar .menu-toggler').click();
+  await expect(page.locator('#sidebar')).not.toHaveClass(/\bdisplay\b/);
+
+  for (const routeUrl of [FIXTURE_URLS.schedule, FIXTURE_URLS.evaluation, FIXTURE_URLS['free-classroom']]) {
+    await page.evaluate((nextUrl) => {
+      const root = document.getElementById('page-content-template');
+      root.innerHTML = '<div class="breadcrumb">业务页面</div><h4>页面内容</h4>';
+      history.pushState({ fixture: true }, '', nextUrl);
+    }, routeUrl);
+    await expect(page.locator('#navbar')).toBeVisible();
+    await expect(page.locator('#navbar .menu-toggler')).toHaveCount(1);
+    await expect(page.locator('#navbar #urppp-nav-theme')).toBeVisible();
+    await expect(page.locator('#sidebar')).not.toHaveClass(/\bdisplay\b/);
+    await page.locator('#navbar .menu-toggler').click();
+    await expect(page.locator('#sidebar')).toHaveClass(/\bdisplay\b/);
+    await page.locator('#navbar .menu-toggler').click();
+    await expect(page.locator('#sidebar')).not.toHaveClass(/\bdisplay\b/);
+  }
+  expect(pageErrors).toEqual([]);
+});

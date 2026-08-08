@@ -6270,6 +6270,24 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         }).forEach(([key, value]) => formSearch.style.setProperty(key, value, 'important'));
       };
 
+      const ensureMenuToggler = () => {
+        let toggler = document.querySelector('#navbar .menu-toggler');
+        if (toggler || !isNarrow()) return toggler;
+        const navbar = document.getElementById('navbar');
+        const sidebar = document.getElementById('sidebar');
+        if (!navbar || !sidebar) return null;
+        toggler = document.createElement('button');
+        toggler.type = 'button';
+        toggler.id = 'menu-toggler';
+        toggler.className = 'navbar-toggle menu-toggler pull-left';
+        toggler.setAttribute('aria-label', '打开菜单');
+        toggler.setAttribute('aria-expanded', 'false');
+        toggler.dataset.urpppGenerated = '1';
+        const host = navbar.querySelector('.navbar-container') || navbar;
+        host.insertBefore(toggler, host.firstChild);
+        return toggler;
+      };
+
       const ensureMenuButtonIcon = (toggler) => {
         if (!toggler || toggler.dataset.urpppIconReady) return;
         toggler.dataset.urpppIconReady = '1';
@@ -6286,7 +6304,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       };
 
       const bindDrawerControls = () => {
-        const toggler = document.querySelector('#navbar .menu-toggler');
+        const toggler = ensureMenuToggler();
         const sidebar = document.getElementById('sidebar');
         if (toggler) ensureMenuButtonIcon(toggler);
         if (toggler && sidebar && !toggler.dataset.urpppToggleBound) {
@@ -6311,6 +6329,17 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
             if (event.target.closest && event.target.closest('#sidebar, #navbar .menu-toggler')) return;
             closeDrawer();
           }, true);
+        }
+        if (!document.__urpppMobileRouteCloseBound) {
+          document.__urpppMobileRouteCloseBound = true;
+          document.addEventListener('click', (event) => {
+            if (!isNarrow() || !event.target.closest) return;
+            const link = event.target.closest('#sidebar a[href]');
+            if (!link) return;
+            const href = String(link.getAttribute('href') || '').trim();
+            if (!href || href === '#' || href.startsWith('javascript')) return;
+            closeDrawer();
+          });
         }
       };
 
@@ -6476,6 +6505,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         syncMobileSearchLayout();
       };
 
+      window.__urpppRefreshMobileNavbar = apply;
+      window.__urpppCloseMobileDrawer = closeDrawer;
       try { apply(); } catch (_) { /* ignore */ }
       setTimeout(apply, 300);
       setTimeout(apply, 900);
@@ -10136,9 +10167,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         state._termWeekResolved = false;
         const sidebar = document.getElementById('sidebar');
         if (!sidebar) return;
+        try { if (window.__urpppCloseMobileDrawer) window.__urpppCloseMobileDrawer(); } catch (_) { /* ignore */ }
         syncSidebarUnderNavbar();
         rebuildSidebarCompletely();
         rebuildNavbar();
+        syncSidebarUnderNavbar();
+        try { if (window.__urpppRefreshMobileNavbar) window.__urpppRefreshMobileNavbar(); } catch (_) { /* ignore */ }
+        [250, 700].forEach((delay) => setTimeout(() => {
+          try { if (window.__urpppRefreshMobileNavbar) window.__urpppRefreshMobileNavbar(); } catch (_) { /* ignore */ }
+        }, delay));
         patchSchoolCalendarLink();
         wrapTables();
         bindTableWrapObserver();
