@@ -6246,31 +6246,70 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         }
       };
 
-      const drawerCloseTimers = new WeakMap();
+      const drawerAnimations = new WeakMap();
+      const stopDrawerAnimation = (sidebar) => {
+        const frame = drawerAnimations.get(sidebar);
+        if (frame) cancelAnimationFrame(frame);
+        drawerAnimations.delete(sidebar);
+      };
+      const animateDrawer = (sidebar, open) => {
+        stopDrawerAnimation(sidebar);
+        const rect = sidebar.getBoundingClientRect();
+        const width = Math.max(rect.width, sidebar.offsetWidth || 0, 260);
+        const startX = Math.max(-width, Math.min(0, rect.left));
+        const endX = open ? 0 : -width;
+        const distance = Math.abs(endX - startX);
+        const duration = Math.max(140, Math.round(260 * distance / width));
+        const startAt = performance.now();
+
+        sidebar.style.setProperty('display', 'block', 'important');
+        sidebar.style.setProperty('transition', 'none', 'important');
+        sidebar.style.setProperty('visibility', 'visible', 'important');
+        sidebar.style.setProperty('pointer-events', open ? 'auto' : 'none', 'important');
+        sidebar.style.setProperty('z-index', '1200', 'important');
+        sidebar.style.setProperty('transform', `translate3d(${startX}px, 0, 0)`, 'important');
+        sidebar.classList.toggle('urppp-drawer-closing', !open);
+        sidebar.classList.add('display');
+
+        const finish = () => {
+          sidebar.style.setProperty('transform', `translate3d(${endX}px, 0, 0)`, 'important');
+          if (open) {
+            sidebar.classList.remove('urppp-drawer-closing');
+            sidebar.style.setProperty('pointer-events', 'auto', 'important');
+          } else {
+            sidebar.classList.remove('display', 'urppp-drawer-closing');
+            sidebar.style.setProperty('visibility', 'hidden', 'important');
+            sidebar.style.setProperty('z-index', '1030', 'important');
+          }
+          drawerAnimations.delete(sidebar);
+        };
+        if (distance < 1) {
+          finish();
+          return;
+        }
+
+        const step = (now) => {
+          if (!sidebar.isConnected) {
+            drawerAnimations.delete(sidebar);
+            return;
+          }
+          const progress = Math.min(1, (now - startAt) / duration);
+          const eased = progress < 0.5
+            ? 4 * progress * progress * progress
+            : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+          const x = startX + (endX - startX) * eased;
+          sidebar.style.setProperty('transform', `translate3d(${x}px, 0, 0)`, 'important');
+          if (progress >= 1) {
+            finish();
+            return;
+          }
+          drawerAnimations.set(sidebar, requestAnimationFrame(step));
+        };
+        drawerAnimations.set(sidebar, requestAnimationFrame(step));
+      };
       const setDrawerOpen = (sidebar, toggler, open) => {
         if (!sidebar) return;
-        const pending = drawerCloseTimers.get(sidebar);
-        if (pending) {
-          clearTimeout(pending);
-          drawerCloseTimers.delete(sidebar);
-        }
-        if (open) {
-          sidebar.classList.remove('urppp-drawer-closing');
-          sidebar.classList.add('display');
-          sidebar.style.setProperty('z-index', '1200', 'important');
-        } else if (sidebar.classList.contains('display')) {
-          sidebar.classList.add('urppp-drawer-closing');
-          sidebar.style.setProperty('z-index', '1200', 'important');
-          const timer = setTimeout(() => {
-            sidebar.classList.remove('display', 'urppp-drawer-closing');
-            sidebar.style.setProperty('z-index', '1030', 'important');
-            drawerCloseTimers.delete(sidebar);
-          }, 280);
-          drawerCloseTimers.set(sidebar, timer);
-        } else {
-          sidebar.classList.remove('urppp-drawer-closing');
-          sidebar.style.setProperty('z-index', '1030', 'important');
-        }
+        animateDrawer(sidebar, open);
         if (toggler) {
           toggler.setAttribute('aria-expanded', open ? 'true' : 'false');
           toggler.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');

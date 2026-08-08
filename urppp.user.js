@@ -12472,9 +12472,11 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         #urppp-mobile-user .urppp-mobile-user-copy {
           display: flex !important;
           min-width: 0 !important;
+          position: relative !important;
+          top: -1px !important;
           flex-direction: column !important;
           justify-content: center !important;
-          gap: 2px !important;
+          gap: 1px !important;
         }
         #urppp-mobile-user .urppp-mobile-user-welcome {
           display: block !important;
@@ -12487,7 +12489,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           display: block !important;
           min-width: 0 !important;
           color: var(--text, #1d1d1f) !important;
-          font-size: 15px !important;
+          font-size: 16px !important;
           font-weight: 600 !important;
           line-height: 1.35 !important;
           white-space: normal !important;
@@ -21676,31 +21678,65 @@ ${arcs}
             delete sidebar.dataset.urpppDesktopBodyMin;
           }
         }, "syncMobileSidebarMode");
-        const drawerCloseTimers = /* @__PURE__ */ new WeakMap();
+        const drawerAnimations = /* @__PURE__ */ new WeakMap();
+        const stopDrawerAnimation = /* @__PURE__ */ __name((sidebar) => {
+          const frame = drawerAnimations.get(sidebar);
+          if (frame) cancelAnimationFrame(frame);
+          drawerAnimations.delete(sidebar);
+        }, "stopDrawerAnimation");
+        const animateDrawer = /* @__PURE__ */ __name((sidebar, open) => {
+          stopDrawerAnimation(sidebar);
+          const rect = sidebar.getBoundingClientRect();
+          const width = Math.max(rect.width, sidebar.offsetWidth || 0, 260);
+          const startX = Math.max(-width, Math.min(0, rect.left));
+          const endX = open ? 0 : -width;
+          const distance = Math.abs(endX - startX);
+          const duration = Math.max(140, Math.round(260 * distance / width));
+          const startAt = performance.now();
+          sidebar.style.setProperty("display", "block", "important");
+          sidebar.style.setProperty("transition", "none", "important");
+          sidebar.style.setProperty("visibility", "visible", "important");
+          sidebar.style.setProperty("pointer-events", open ? "auto" : "none", "important");
+          sidebar.style.setProperty("z-index", "1200", "important");
+          sidebar.style.setProperty("transform", `translate3d(${startX}px, 0, 0)`, "important");
+          sidebar.classList.toggle("urppp-drawer-closing", !open);
+          sidebar.classList.add("display");
+          const finish = /* @__PURE__ */ __name(() => {
+            sidebar.style.setProperty("transform", `translate3d(${endX}px, 0, 0)`, "important");
+            if (open) {
+              sidebar.classList.remove("urppp-drawer-closing");
+              sidebar.style.setProperty("pointer-events", "auto", "important");
+            } else {
+              sidebar.classList.remove("display", "urppp-drawer-closing");
+              sidebar.style.setProperty("visibility", "hidden", "important");
+              sidebar.style.setProperty("z-index", "1030", "important");
+            }
+            drawerAnimations.delete(sidebar);
+          }, "finish");
+          if (distance < 1) {
+            finish();
+            return;
+          }
+          const step = /* @__PURE__ */ __name((now) => {
+            if (!sidebar.isConnected) {
+              drawerAnimations.delete(sidebar);
+              return;
+            }
+            const progress = Math.min(1, (now - startAt) / duration);
+            const eased = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+            const x = startX + (endX - startX) * eased;
+            sidebar.style.setProperty("transform", `translate3d(${x}px, 0, 0)`, "important");
+            if (progress >= 1) {
+              finish();
+              return;
+            }
+            drawerAnimations.set(sidebar, requestAnimationFrame(step));
+          }, "step");
+          drawerAnimations.set(sidebar, requestAnimationFrame(step));
+        }, "animateDrawer");
         const setDrawerOpen = /* @__PURE__ */ __name((sidebar, toggler, open) => {
           if (!sidebar) return;
-          const pending = drawerCloseTimers.get(sidebar);
-          if (pending) {
-            clearTimeout(pending);
-            drawerCloseTimers.delete(sidebar);
-          }
-          if (open) {
-            sidebar.classList.remove("urppp-drawer-closing");
-            sidebar.classList.add("display");
-            sidebar.style.setProperty("z-index", "1200", "important");
-          } else if (sidebar.classList.contains("display")) {
-            sidebar.classList.add("urppp-drawer-closing");
-            sidebar.style.setProperty("z-index", "1200", "important");
-            const timer = setTimeout(() => {
-              sidebar.classList.remove("display", "urppp-drawer-closing");
-              sidebar.style.setProperty("z-index", "1030", "important");
-              drawerCloseTimers.delete(sidebar);
-            }, 280);
-            drawerCloseTimers.set(sidebar, timer);
-          } else {
-            sidebar.classList.remove("urppp-drawer-closing");
-            sidebar.style.setProperty("z-index", "1030", "important");
-          }
+          animateDrawer(sidebar, open);
           if (toggler) {
             toggler.setAttribute("aria-expanded", open ? "true" : "false");
             toggler.setAttribute("aria-label", open ? "关闭菜单" : "打开菜单");

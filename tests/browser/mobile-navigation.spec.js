@@ -107,7 +107,13 @@ for (const [skin, expectedShape] of Object.entries(skinShapes)) {
     await expect(page.locator('#urppp-mobile-user')).toBeVisible();
     await expect(page.locator('#urppp-mobile-user .urppp-mobile-user-welcome')).toHaveText('欢迎您，');
     await expect(page.locator('#urppp-mobile-user .urppp-user-name-value')).toHaveText('测试用户');
-    await expect(page.locator('#urppp-mobile-user .urppp-user-name-value')).toHaveCSS('font-size', '15px');
+    await expect(page.locator('#urppp-mobile-user .urppp-user-name-value')).toHaveCSS('font-size', '16px');
+    const identityAlignment = await page.locator('#urppp-mobile-user .urppp-mobile-user-identity').evaluate((identity) => {
+      const photo = identity.querySelector('.nav-user-photo').getBoundingClientRect();
+      const copy = identity.querySelector('.urppp-mobile-user-copy').getBoundingClientRect();
+      return Math.abs((photo.top + photo.height / 2) - (copy.top + copy.height / 2));
+    });
+    expect(identityAlignment).toBeLessThanOrEqual(2);
     await expect(page.locator('#urppp-mobile-user .urppp-mobile-user-action')).toHaveText([
       '首页', '在线反馈', '修改密码', '注销',
     ]);
