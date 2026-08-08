@@ -59,10 +59,12 @@
           max-width: 100% !important;
         }
         .breadcrumbs,
-        #breadcrumbs {
+        #breadcrumbs,
+        .breadcrumb {
           padding-left: 8px !important;
           padding-right: 8px !important;
-          margin: 4px 0 !important;
+          margin-top: 0 !important;
+          margin-bottom: 4px !important;
         }
         body {
           font-size: 13px !important;
@@ -114,7 +116,7 @@
         .main-container,
         #main-container,
         .navbar-fixed-top + .main-container {
-          padding-top: 44px !important;
+          padding-top: 0 !important;
         }
         .navbar-fixed-top {
           padding-top: 0 !important;
@@ -129,13 +131,14 @@
         }
         #navbar .menu-toggler {
           position: absolute !important;
-          top: 2px !important;
-          left: 4px !important;
+          top: 8px !important;
+          left: 6px !important;
           z-index: 5 !important;
-          width: 40px !important;
-          height: 40px !important;
-          min-width: 40px !important;
-          line-height: 40px !important;
+          width: 28px !important;
+          height: 28px !important;
+          min-width: 28px !important;
+          min-height: 28px !important;
+          line-height: 28px !important;
           padding: 0 !important;
           margin: 0 !important;
           border-radius: var(--urppp-menu-radius, 12px) !important;
@@ -149,8 +152,8 @@
         #navbar .menu-toggler .urppp-menu-icon,
         #navbar .menu-toggler .urppp-menu-icon svg {
           display: block !important;
-          width: 20px !important;
-          height: 20px !important;
+          width: 16px !important;
+          height: 16px !important;
           margin: 0 auto !important;
         }
         #navbar .menu-toggler .urppp-menu-icon svg {
@@ -173,7 +176,7 @@
           position: absolute !important;
           top: 0 !important;
           right: 0 !important;
-          left: 48px !important;
+          left: 38px !important;
           z-index: 4 !important;
           width: auto !important;
           min-width: 0 !important;

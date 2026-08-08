@@ -52,10 +52,31 @@ for (const [skin, expectedShape] of Object.entries(skinShapes)) {
       expect(shape.menuShadow).toBe('none');
     }
 
-    const cleanGap = await page.locator('#urppp-nav-clean').evaluate((button) => (
-      Math.round(window.innerWidth - button.getBoundingClientRect().right)
-    ));
-    expect(cleanGap).toBeGreaterThanOrEqual(8);
+    const compactLayout = await page.evaluate(() => {
+      const menuRect = document.querySelector('#navbar .menu-toggler').getBoundingClientRect();
+      const cleanRect = document.querySelector('#urppp-nav-clean').getBoundingClientRect();
+      const navbarRect = document.querySelector('#navbar').getBoundingClientRect();
+      const breadcrumb = document.querySelector('#breadcrumbs, .breadcrumb');
+      const breadcrumbRect = breadcrumb?.getBoundingClientRect();
+      return {
+        menuWidth: Math.round(menuRect.width),
+        menuHeight: Math.round(menuRect.height),
+        cleanHeight: Math.round(cleanRect.height),
+        cleanGap: Math.round(window.innerWidth - cleanRect.right),
+        breadcrumbGap: breadcrumbRect ? Math.round(breadcrumbRect.top - navbarRect.bottom) : null,
+        containerPaddingTop: getComputedStyle(document.querySelector('#main-container')).paddingTop,
+      };
+    });
+    expect(compactLayout).toEqual({
+      menuWidth: 28,
+      menuHeight: 28,
+      cleanHeight: 28,
+      cleanGap: expect.any(Number),
+      breadcrumbGap: expect.any(Number),
+      containerPaddingTop: '0px',
+    });
+    expect(compactLayout.cleanGap).toBeGreaterThanOrEqual(8);
+    expect(compactLayout.breadcrumbGap).toBeLessThanOrEqual(20);
 
     await expect(page.locator('#navbar .menu-toggler .urppp-menu-icon-open path')).toHaveCount(2);
     await expect(page.locator('#navbar .menu-toggler .urppp-menu-icon-close path')).toHaveCount(2);
