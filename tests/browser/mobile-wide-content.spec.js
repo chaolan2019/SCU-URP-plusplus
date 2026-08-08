@@ -52,6 +52,12 @@ test('mobile query fields use two columns and collapse to one on extra-narrow sc
 
   const row = page.locator('.profile-info-row.urppp-query-row');
   await expect(row.locator(':scope > .urppp-query-pair')).toHaveCount(4);
+  const inputStyle = await page.locator('#course-name').evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { borderTopWidth: style.borderTopWidth, boxShadow: style.boxShadow };
+  });
+  expect(inputStyle.borderTopWidth).toBe('1px');
+  expect(inputStyle.boxShadow).not.toBe('none');
 
   const mobileLayout = await row.evaluate((element) => {
     const columns = getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean);

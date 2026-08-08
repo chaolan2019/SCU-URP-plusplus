@@ -2113,6 +2113,21 @@
         }
       }
 
+      /* Neu 输入控件：静态态必须有可见边界，焦点态再增强为主色 */
+      html[data-urppp-skin="neu"] .profile-info-value input[type="text"],
+      html[data-urppp-skin="neu"] .profile-info-value input[type="search"],
+      html[data-urppp-skin="neu"] .profile-info-value input[type="number"],
+      html[data-urppp-skin="neu"] .profile-info-value input[type="password"],
+      html[data-urppp-skin="neu"] #form-search .nav-search-input {
+        border: 1px solid rgba(38, 49, 66, .18) !important;
+        box-shadow: inset 2px 2px 4px rgba(38, 49, 66, .16), inset -2px -2px 4px rgba(255, 255, 255, .72) !important;
+      }
+      html[data-urppp-skin="neu"] .profile-info-value input:focus,
+      html[data-urppp-skin="neu"] #form-search .nav-search-input:focus {
+        border-color: var(--primary) !important;
+        box-shadow: inset 4px 4px 8px rgba(38, 49, 66, .22), inset -4px -4px 8px rgba(255, 255, 255, .72) !important;
+      }
+
       /* 查询 pair：最后覆盖 commoncss / 旧规则的 150px 固定宽 */
       .profile-user-info.urppp-query-form .urppp-query-pair .chosen-container,
       .profile-user-info.urppp-query-form .urppp-query-pair .chosen-container-single,
@@ -2567,7 +2582,7 @@
         line-height: 1.4 !important;
         height: auto !important;
         min-height: 32px !important;
-        box-shadow: none !important;
+        box-shadow: var(--urppp-input-shadow, none) !important;
         box-sizing: border-box !important;
       }
       select,
@@ -2583,7 +2598,7 @@
         height: 32px !important;
         min-height: 32px !important;
         max-width: 100% !important;
-        box-shadow: none !important;
+        box-shadow: var(--urppp-input-shadow, none) !important;
         box-sizing: border-box !important;
         cursor: pointer !important;
         -webkit-appearance: menulist !important;

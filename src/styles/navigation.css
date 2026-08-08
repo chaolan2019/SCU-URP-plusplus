@@ -223,7 +223,7 @@
       }
       /* 搜索按钮向右微调，靠近客服 */
       #navbar #intellegenceUDiv #clickdiv {
-        transform: translateX(42px) !important;
+        transform: none !important;
       }
       #intellegenceUDiv > .nav-search { position: absolute !important; right: 34px !important; top: 50% !important; transform: translateY(-50%) !important; }
 
@@ -338,6 +338,50 @@
       #form-search.nav-search .nav-search-input:focus { border-color: var(--border-focus) !important; box-shadow: 0 0 0 3px var(--ring) !important; }
       #form-search.nav-search .ace-icon.fa-search { color: var(--text-secondary) !important; }
       #form-search.nav-search .nav-search-input:focus + .ace-icon.fa-search { color: var(--text) !important; }
+
+      /* 桌面搜索：由插件生成的独立弹出面板，保留宽度/透明度展开节奏 */
+      #form-search.urppp-desktop-search {
+        box-sizing: border-box !important;
+        min-width: 0 !important;
+        border: 0 !important;
+        border-radius: var(--radius-sm) !important;
+      }
+      #form-search.urppp-desktop-search .form-search,
+      #form-search.urppp-desktop-search .input-icon {
+        width: 100% !important;
+        box-sizing: border-box !important;
+      }
+      #form-search.urppp-desktop-search .nav-search-input {
+        outline: none !important;
+        box-shadow: none !important;
+      }
+      #urppp-search-results {
+        max-height: 350px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+      }
+      #urppp-search-results .urppp-search-result,
+      #urppp-search-results .urppp-search-empty {
+        display: block !important;
+        min-height: 34px;
+        box-sizing: border-box;
+        padding: 8px 10px;
+        border-radius: var(--radius-sm);
+        color: var(--text-secondary) !important;
+        font-size: 13px;
+        line-height: 18px;
+        text-decoration: none !important;
+      }
+      #urppp-search-results .urppp-search-result:hover,
+      #urppp-search-results .urppp-search-result:focus-visible {
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+        outline: none;
+      }
+      #urppp-search-results .urppp-search-empty {
+        color: var(--text-muted) !important;
+        text-align: center;
+      }
 
       /* 用户下拉菜单 */
       .ace-nav > li.light-blue .dropdown-menu {

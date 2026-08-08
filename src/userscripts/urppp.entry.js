@@ -571,6 +571,188 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     },
   });
 
+  function bindDesktopNavbarSearch() {
+    try {
+      const narrow = !!(window.matchMedia && window.matchMedia('(max-width: 640px)').matches);
+      if (narrow) return;
+      const navbar = document.getElementById('navbar');
+      const aceNav = navbar?.querySelector('.ace-nav');
+      if (!navbar || !aceNav) return;
+
+      let host = document.getElementById('intellegenceUDiv');
+      let button = document.getElementById('clickdiv');
+      let formSearch = document.getElementById('form-search');
+      if (!host) {
+        const item = document.createElement('li');
+        item.className = 'green urppp-search-item';
+        host = document.createElement('div');
+        host.id = 'intellegenceUDiv';
+        item.appendChild(host);
+        aceNav.insertBefore(item, aceNav.firstChild);
+      }
+      if (!button) {
+        button = document.createElement('button');
+        button.type = 'button';
+        button.id = 'clickdiv';
+        button.setAttribute('aria-label', '搜索功能');
+        button.innerHTML = '<i class="fa fa-search" id="clicki" aria-hidden="true"></i>';
+        host.appendChild(button);
+      } else {
+        button.removeAttribute('onclick');
+        button.setAttribute('role', 'button');
+        button.setAttribute('aria-label', '搜索功能');
+      }
+      if (!formSearch) {
+        formSearch = document.createElement('div');
+        formSearch.id = 'form-search';
+        formSearch.className = 'nav-search';
+        formSearch.innerHTML = '<form class="form-search"><span class="input-icon"><input type="text" placeholder="查找功能..." class="nav-search-input" id="search-input" autocomplete="off"><i class="ace-icon fa fa-search" aria-hidden="true"></i></span></form>';
+      }
+      if (formSearch.parentElement !== navbar) navbar.appendChild(formSearch);
+      formSearch.classList.add('urppp-desktop-search');
+      formSearch.style.setProperty('position', 'absolute', 'important');
+      formSearch.style.setProperty('top', '44px', 'important');
+      formSearch.style.setProperty('right', '16px', 'important');
+      formSearch.style.setProperty('left', 'auto', 'important');
+      formSearch.style.setProperty('width', formSearch.dataset.open === '1' ? 'min(360px, calc(100vw - 24px))' : '0px', 'important');
+      formSearch.style.setProperty('max-width', 'calc(100vw - 24px)', 'important');
+      formSearch.style.setProperty('max-height', formSearch.dataset.open === '1' ? 'min(420px, calc(100vh - 72px))' : '0px', 'important');
+      formSearch.style.setProperty('opacity', formSearch.dataset.open === '1' ? '1' : '0', 'important');
+      formSearch.style.setProperty('overflow', 'hidden', 'important');
+      formSearch.style.setProperty('pointer-events', formSearch.dataset.open === '1' ? 'auto' : 'none', 'important');
+      formSearch.style.setProperty('z-index', '1200', 'important');
+      formSearch.style.setProperty('margin', '0', 'important');
+      formSearch.style.setProperty('background', 'var(--surface)', 'important');
+      formSearch.style.setProperty('border', formSearch.dataset.open === '1' ? '1px solid var(--border)' : '0 solid transparent', 'important');
+      formSearch.style.setProperty('border-radius', 'var(--radius-sm)', 'important');
+      formSearch.style.setProperty('box-shadow', formSearch.dataset.open === '1' ? 'var(--shadow)' : 'none', 'important');
+      formSearch.style.setProperty('transform', 'none', 'important');
+      formSearch.style.setProperty('transition', 'width .2s ease, opacity .2s ease, max-height .2s ease', 'important');
+
+      const input = formSearch.querySelector('#search-input');
+      const innerForm = formSearch.querySelector('form');
+      if (!input || !innerForm) return;
+      innerForm.style.setProperty('display', 'block', 'important');
+      innerForm.style.setProperty('margin', '0', 'important');
+      innerForm.style.setProperty('padding', '10px', 'important');
+      const icon = formSearch.querySelector('.input-icon');
+      if (icon) {
+        icon.style.setProperty('display', 'block', 'important');
+        icon.style.setProperty('position', 'relative', 'important');
+      }
+      input.style.setProperty('display', 'block', 'important');
+      input.style.setProperty('width', '100%', 'important');
+      input.style.setProperty('height', '36px', 'important');
+      input.style.setProperty('box-sizing', 'border-box', 'important');
+      input.style.setProperty('padding', '0 12px', 'important');
+      input.style.setProperty('border', '1px solid var(--border)', 'important');
+      input.style.setProperty('border-radius', 'var(--radius-sm)', 'important');
+      input.style.setProperty('background', 'var(--input-bg)', 'important');
+      input.style.setProperty('color', 'var(--text)', 'important');
+
+      let results = formSearch.querySelector('#urppp-search-results');
+      if (!results) {
+        results = document.createElement('div');
+        results.id = 'urppp-search-results';
+        formSearch.appendChild(results);
+      }
+      results.style.setProperty('display', 'grid', 'important');
+      results.style.setProperty('gap', '2px', 'important');
+      results.style.setProperty('padding', '0 6px 6px', 'important');
+
+      const collectEntries = () => {
+        const seen = new Set();
+        const entries = [];
+        document.querySelectorAll('#urppp-menus a[href], #menus a[href]').forEach((anchor) => {
+          const href = String(anchor.getAttribute('href') || '').trim();
+          const text = String(anchor.textContent || '').replace(/\s+/g, ' ').trim();
+          if (!text || !href || href === '#' || /^javascript:/i.test(href)) return;
+          const key = href + '\\n' + text;
+          if (seen.has(key)) return;
+          seen.add(key);
+          entries.push({ href, text });
+        });
+        return entries;
+      };
+      const renderResults = () => {
+        const query = input.value.replace(/\s+/g, ' ').trim().toLowerCase();
+        results.replaceChildren();
+        if (!query) {
+          const hint = document.createElement('div');
+          hint.className = 'urppp-search-empty';
+          hint.textContent = '输入功能名称';
+          results.appendChild(hint);
+          return;
+        }
+        const matches = collectEntries().filter((entry) => entry.text.toLowerCase().includes(query)).slice(0, 8);
+        if (!matches.length) {
+          const empty = document.createElement('div');
+          empty.className = 'urppp-search-empty';
+          empty.textContent = '没有找到相关功能';
+          results.appendChild(empty);
+          return;
+        }
+        matches.forEach(({ href, text }) => {
+          const link = document.createElement('a');
+          link.className = 'urppp-search-result';
+          link.href = href;
+          link.textContent = text;
+          results.appendChild(link);
+        });
+      };
+      const setOpen = (open) => {
+        formSearch.dataset.open = open ? '1' : '0';
+        formSearch.style.setProperty('width', open ? 'min(360px, calc(100vw - 24px))' : '0px', 'important');
+        formSearch.style.setProperty('max-height', open ? 'min(420px, calc(100vh - 72px))' : '0px', 'important');
+        formSearch.style.setProperty('opacity', open ? '1' : '0', 'important');
+        formSearch.style.setProperty('pointer-events', open ? 'auto' : 'none', 'important');
+        formSearch.style.setProperty('border', open ? '1px solid var(--border)' : '0 solid transparent', 'important');
+        formSearch.style.setProperty('box-shadow', open ? 'var(--shadow)' : 'none', 'important');
+        button.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open) {
+          renderResults();
+          setTimeout(() => input.focus(), 30);
+        }
+      };
+      if (!button.__urpppSearchBound) {
+        button.__urpppSearchBound = true;
+        button.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          setOpen(formSearch.dataset.open !== '1');
+        }, true);
+      }
+      if (!input.__urpppSearchBound) {
+        input.__urpppSearchBound = true;
+        input.addEventListener('input', renderResults);
+        input.addEventListener('keydown', (event) => {
+          if (event.key !== 'Enter') return;
+          const first = results.querySelector('.urppp-search-result');
+          if (first) {
+            event.preventDefault();
+            first.click();
+          }
+        });
+        innerForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          results.querySelector('.urppp-search-result')?.click();
+        });
+      }
+      if (!document.__urpppDesktopSearchOutsideBound) {
+        document.__urpppDesktopSearchOutsideBound = true;
+        document.addEventListener('click', (event) => {
+          const panel = document.getElementById('form-search');
+          const searchButton = document.getElementById('clickdiv');
+          if (!panel || panel.dataset.open !== '1') return;
+          if (panel.contains(event.target) || searchButton?.contains(event.target)) return;
+          setOpen(false);
+        }, true);
+      }
+    } catch (error) {
+      console.warn('[URP++] desktop search bind failed', error);
+    }
+  }
+
   function ensureBootLoader() {
     if (document.getElementById('urppp-boot-loader')) return;
     const el = document.createElement('div');
@@ -1322,7 +1504,8 @@ import { createNavbarController } from '../features/navigation/navbar.js';
         '--shadow': '5px 5px 10px #BEC3CA, -5px -5px 10px #F7F9FC',
         '--border-w': '0px',
         '--urppp-card-border': 'none',
-        '--urppp-input-border': 'none',
+        '--urppp-input-border': '1px solid rgba(38,49,66,.16)',
+        '--urppp-input-shadow': 'inset 2px 2px 4px rgba(38,49,66,.16), inset -2px -2px 4px rgba(255,255,255,.72)',
         '--urppp-action-radius': '12px',
         '--urppp-action-border': 'none',
         '--urppp-action-shadow': 'var(--shadow)',
@@ -3071,8 +3254,8 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           html[data-urppp-skin="neu"] #urppp-root .ui,
           html[data-urppp-skin="neu"] .chosen-container-single .chosen-single,
           html[data-urppp-skin="neu"] .chosen-container-multi .chosen-choices{
-            background:var(--neu-base)!important;color:var(--text)!important;border:0!important;border-radius:var(--radius-sm)!important;
-            box-shadow:var(--neu-inset)!important;background-image:none!important;
+            background:var(--neu-base)!important;color:var(--text)!important;border:1px solid rgba(38,49,66,.18)!important;border-radius:var(--radius-sm)!important;
+            box-shadow:inset 2px 2px 4px rgba(38,49,66,.16),inset -2px -2px 4px rgba(255,255,255,.72)!important;background-image:none!important;
             transition:box-shadow 280ms ease-in-out,outline-color 280ms ease-in-out!important;
           }
           html[data-urppp-skin="neu"] input::placeholder,
@@ -3086,7 +3269,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           html[data-urppp-skin="neu"] input[type="password"]:focus,
           html[data-urppp-skin="neu"] #urppp-root .ui:focus,
           html[data-urppp-skin="neu"] .chosen-container-active .chosen-single{
-            border:0!important;box-shadow:var(--neu-inset-deep)!important;outline:2px solid var(--primary)!important;outline-offset:2px!important;
+            border:1px solid var(--primary)!important;box-shadow:inset 4px 4px 8px rgba(38,49,66,.22),inset -4px -4px 8px rgba(255,255,255,.72)!important;outline:2px solid var(--primary)!important;outline-offset:2px!important;
           }
           html[data-urppp-skin="neu"] .dropdown-menu,
           html[data-urppp-skin="neu"] .popover,
@@ -6724,6 +6907,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }
     beautifyBreadcrumbs();
     rebuildNavbar();
+    bindDesktopNavbarSearch();
     patchSchoolCalendarLink();
 
     // 非查询/公告关键路径：合并延迟波，减少重复 DOM 扫描（不改最终样式）
@@ -6739,6 +6923,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       window.__urpppLoadBound = true;
       window.addEventListener('load', () => {
         rebuildNavbar();
+        bindDesktopNavbarSearch();
         injectNavbarThemeSwitch();
         patchSchoolCalendarLink();
         beautifyBreadcrumbs();
@@ -10302,6 +10487,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         rebuildNavbar();
         syncSidebarUnderNavbar();
         try { if (window.__urpppRefreshMobileNavbar) window.__urpppRefreshMobileNavbar(); } catch (_) { /* ignore */ }
+        bindDesktopNavbarSearch();
         [250, 700].forEach((delay) => setTimeout(() => {
           try { if (window.__urpppRefreshMobileNavbar) window.__urpppRefreshMobileNavbar(); } catch (_) { /* ignore */ }
         }, delay));
