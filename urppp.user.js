@@ -11543,10 +11543,10 @@ html.urppp-clean-lock,html.urppp-clean-lock body{overflow:hidden!important}
 }
 html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#urppp-nav-clean{
   margin-left:8px!important;height:28px!important;min-height:28px!important;max-height:28px!important;
-  padding:0 12px!important;border-radius:999px!important;border:none!important;
-  background:var(--primary)!important;color:var(--surface)!important;font-size:12px!important;
+  padding:0 10px!important;border-radius:999px!important;border:1px solid color-mix(in srgb,var(--primary) 45%,var(--border))!important;
+  background:color-mix(in srgb,var(--primary) 8%,var(--surface))!important;color:var(--primary)!important;font-size:12px!important;
   display:inline-flex!important;align-items:center!important;gap:6px!important;width:auto!important;
-  box-shadow:0 2px 6px var(--ring)!important;line-height:26px!important;cursor:pointer!important;float:none!important
+  box-shadow:none!important;line-height:26px!important;cursor:pointer!important;float:none!important
 }
 #urppp-nav-clean svg{width:14px!important;height:14px!important;display:block!important}
 @media (max-width:900px){
@@ -12552,59 +12552,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           padding: 6px 0 !important;
           font-size: 13px !important;
         }
-      }
-
-      /* ============================================================
-       * ��ˬ��ť / ������ť����Ƥ����̬���䣨design/ ����Ƥ���淶��
-       * Ĭ��Ƥ������ data-urppp-skin���� clean-mode.css / mobile.css ����
-       * ============================================================ */
-      html[data-urppp-skin="brutal"] #urppp-nav-clean,
-      html[data-urppp-skin="brutal"] #navbar .menu-toggler {
-        border-radius: 0 !important;
-        border: 2px solid var(--text, #000) !important;
-        background: var(--surface, #fff) !important;
-        box-shadow: 3px 3px 0 var(--text, #000) !important;
-      }
-      html[data-urppp-skin="flat"] #urppp-nav-clean,
-      html[data-urppp-skin="flat"] #navbar .menu-toggler {
-        border-radius: 0 !important;
-        border: 2px solid var(--text, #000) !important;
-        background: var(--surface, #fff) !important;
-        box-shadow: none !important;
-      }
-      html[data-urppp-skin="organic"] #urppp-nav-clean,
-      html[data-urppp-skin="organic"] #navbar .menu-toggler {
-        border-radius: 12px !important;
-        border: 1px solid var(--border, #e7e0d6) !important;
-        background: var(--input-bg, #f3ede4) !important;
-        box-shadow: none !important;
-      }
-      html[data-urppp-skin="neu"] #urppp-nav-clean,
-      html[data-urppp-skin="neu"] #navbar .menu-toggler {
-        border-radius: 10px !important;
-        border: none !important;
-        background: var(--bg, #e8e8e8) !important;
-        box-shadow: 2px 2px 5px rgba(0,0,0,.14), -2px -2px 5px rgba(255,255,255,.75) !important;
-      }
-      html[data-urppp-skin="editorial"] #urppp-nav-clean,
-      html[data-urppp-skin="editorial"] #navbar .menu-toggler {
-        border-radius: 0 !important;
-        border: 1px solid var(--text, #333) !important;
-        background: transparent !important;
-        box-shadow: none !important;
-      }
-      html[data-urppp-skin="apple"] #urppp-nav-clean {
-        border-radius: 999px !important;
-        border: none !important;
-        background: var(--primary, #0071e3) !important;
-        color: var(--surface, #fff) !important;
-        box-shadow: 0 2px 6px var(--ring) !important;
-      }
-      html[data-urppp-skin="apple"] #navbar .menu-toggler {
-        border-radius: 9px !important;
-        border: none !important;
-        background: var(--input-bg, #f5f5f7) !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,.08) !important;
       }
 `;
 
@@ -13740,9 +13687,14 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           height: "28px",
           "min-height": "28px",
           padding: "0 12px",
+          border: isFlat ? "2px solid var(--text)" : "none",
+          "border-radius": isFlat ? "0" : "999px",
+          background: isFlat ? "var(--surface)" : "var(--primary)",
+          color: isFlat ? "var(--text)" : "var(--surface)",
           "font-size": "12px",
           gap: "6px",
           width: "auto",
+          "box-shadow": isFlat ? "none" : "0 2px 6px var(--ring)",
           margin: "0 0 0 8px",
           float: "none"
         }).forEach(([key, value]) => btn.style.setProperty(key, value, "important"));
@@ -21499,21 +21451,6 @@ ${arcs}
         }
         setTimeout(apply, 600);
         setTimeout(apply, 1500);
-        try {
-          const watch = document.getElementById("sidebar") || document.body;
-          if (watch && !watch.dataset.urpppMobileObserved) {
-            watch.dataset.urpppMobileObserved = "1";
-            const obs = new MutationObserver(() => {
-              try {
-                const narrow = window.matchMedia && window.matchMedia("(max-width: 640px)").matches;
-                if (narrow && !document.getElementById("urppp-mobile-user")) apply();
-              } catch (_) {
-              }
-            });
-            obs.observe(watch, { childList: true, subtree: true });
-          }
-        } catch (_) {
-        }
         if (window.matchMedia) {
           const mq = window.matchMedia("(max-width: 640px)");
           const onChg = /* @__PURE__ */ __name(() => apply(), "onChg");
@@ -24944,7 +24881,7 @@ ${arcs}
     }
     __name(parseLocalDate, "parseLocalDate");
     const ICO = {
-      clean: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 3.5 8.5 14"/><path d="M16 6.5 17.5 8"/><path d="M14 8.5 15.5 10"/><path d="M12 10.5 13.5 12"/><path d="M4.5 19.5c1.5-1.5 3.5-2 5.5-1.5l-4-4c-.5 2 0 4-1.5 5.5z"/></svg>',
+      clean: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h11M4 17h14"/></svg>',
       exit: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 6H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h3"/><path d="M14 12H8"/><path d="m14 8 4 4-4 4"/></svg>',
       refresh: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.2-5.5"/><path d="M20 4v5h-5"/></svg>',
       schedule: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3.5v4M16 3.5v4"/></svg>',
