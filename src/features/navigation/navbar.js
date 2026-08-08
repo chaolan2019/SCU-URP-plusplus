@@ -177,11 +177,11 @@ export function createNavbarController({
       force(icon, { top: 'auto', 'vertical-align': 'middle', 'line-height': '1', 'margin-top': '0' });
     });
 
-    // 客服图标所在的 a 标签保持最小宽度
-    const serviceLink = aceNav.querySelector(':scope > li > a[href*="customerServiceCenter"]');
-    if (serviceLink) {
-      force(serviceLink, { width: '28px', 'justify-content': 'center' });
-      serviceLink.style.padding = '0 4px';
+    // 帮助图标所在的 a 标签保持最小宽度
+    const helpLink = aceNav.querySelector(':scope > li > a[href*="customerServiceCenter"]');
+    if (helpLink) {
+      force(helpLink, { width: '28px', 'justify-content': 'center' });
+      helpLink.style.padding = '0 4px';
     }
 
     // 3. 搜索区域（事件只绑定一次）

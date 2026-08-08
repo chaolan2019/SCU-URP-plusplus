@@ -21,7 +21,11 @@ for (const [skin, expectedShape] of Object.entries(skinShapes)) {
     await expect(page.locator('html')).toHaveAttribute('data-urppp-skin', skin);
     await expect(page.locator('#urppp-mobile-user')).toHaveCount(1);
     await expect(page.locator('#urppp-mobile-user .urppp-mobile-user-action')).toHaveCount(4);
-    await expect(page.locator('#urppp-mobile-quick .urppp-mobile-tool-button')).toHaveText(['客服', '搜索']);
+    await expect(page.locator('#urppp-mobile-quick .urppp-mobile-tool-button')).toHaveText(['帮助', '搜索']);
+    await expect(page.locator('#navbar #urppp-nav-theme')).toBeVisible();
+    await expect(page.locator('#navbar #urppp-nav-theme .urppp-nav-dot')).toHaveCount(3);
+    await expect(page.locator('#navbar #urppp-nav-settings')).toBeVisible();
+    await expect(page.locator('#sidebar .urppp-sidebar-header')).toBeHidden();
 
     const shape = await page.evaluate(() => {
       const root = getComputedStyle(document.documentElement);
@@ -53,18 +57,27 @@ for (const [skin, expectedShape] of Object.entries(skinShapes)) {
     ));
     expect(cleanGap).toBeGreaterThanOrEqual(8);
 
-    const lines = await page.locator('#navbar .menu-toggler .icon-bar').evaluateAll((elements) => (
-      elements.map((element) => {
-        const style = getComputedStyle(element);
-        return { width: style.width, height: style.height, marginTop: style.marginTop, marginBottom: style.marginBottom };
-      })
-    ));
-    expect(lines).toHaveLength(3);
-    for (const line of lines) {
-      expect(line).toEqual({ width: '14px', height: '1px', marginTop: '2px', marginBottom: '2px' });
-    }
+    await expect(page.locator('#navbar .menu-toggler .urppp-menu-icon-open path')).toHaveCount(2);
+    await expect(page.locator('#navbar .menu-toggler .urppp-menu-icon-close path')).toHaveCount(2);
+    await expect(page.locator('#navbar .menu-toggler .urppp-menu-icon-open')).toBeVisible();
+    await expect(page.locator('#navbar .menu-toggler .urppp-menu-icon-close')).toBeHidden();
+
+    const helpAlignment = await page.locator('#urppp-mobile-quick .urppp-mobile-help-button').evaluate((button) => {
+      const icon = button.querySelector('i');
+      const buttonRect = button.getBoundingClientRect();
+      const iconRect = icon.getBoundingClientRect();
+      return {
+        offset: Math.abs((buttonRect.top + buttonRect.height / 2) - (iconRect.top + iconRect.height / 2)),
+        top: getComputedStyle(icon).top,
+      };
+    });
+    expect(helpAlignment.offset).toBeLessThanOrEqual(1);
+    expect(helpAlignment.top).toBe('auto');
 
     await page.locator('#navbar .menu-toggler').click();
+    await expect(page.locator('#navbar .menu-toggler')).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('#navbar .menu-toggler .urppp-menu-icon-open')).toBeHidden();
+    await expect(page.locator('#navbar .menu-toggler .urppp-menu-icon-close')).toBeVisible();
     await expect(page.locator('#sidebar')).toHaveClass(/\bdisplay\b/);
     await expect(page.locator('#urppp-mobile-user')).toBeVisible();
     await expect(page.locator('#urppp-mobile-user .urppp-mobile-user-action')).toHaveText([
@@ -74,8 +87,20 @@ for (const [skin, expectedShape] of Object.entries(skinShapes)) {
     await page.locator('#urppp-mobile-search-button').click();
     await expect(page.locator('#urppp-mobile-search-panel')).toBeVisible();
     await expect(page.locator('#urppp-mobile-search-panel #search-input')).toBeFocused();
+    const searchPlacement = await page.locator('#urppp-mobile-search-panel').evaluate((panel) => {
+      const row = panel.previousElementSibling;
+      const panelRect = panel.getBoundingClientRect();
+      const rowRect = row.getBoundingClientRect();
+      return {
+        directlyAfterTools: row.classList.contains('urppp-mobile-tool-row'),
+        widthDifference: Math.abs(panelRect.width - rowRect.width),
+      };
+    });
+    expect(searchPlacement.directlyAfterTools).toBe(true);
+    expect(searchPlacement.widthDifference).toBeLessThanOrEqual(1);
 
-    await page.locator('#sidebar .urppp-sidebar-toggle').click();
+    await page.locator('#navbar .menu-toggler').click();
+    await expect(page.locator('#navbar .menu-toggler')).toHaveAttribute('aria-expanded', 'false');
     await expect(page.locator('#sidebar')).not.toHaveClass(/\bdisplay\b/);
 
     if (skin === 'flat') {

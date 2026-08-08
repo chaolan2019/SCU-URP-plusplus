@@ -12202,7 +12202,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
 
       /* ============================================================
        * 首页移动端重构（≤640px）：单行顶栏 + 内容卡片流
-       * 功能按钮（校历/作息/假期/搜索/客服）由 JS 收进汉堡抽屉，
+       * 功能按钮（校历/作息/假期/搜索/帮助）由 JS 收进汉堡抽屉，
        * 顶栏保持 44px 单行简洁；内容区随顶栏高度让位。
        * ============================================================ */
       @media (max-width: 640px) {
@@ -12224,12 +12224,16 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           min-height: 44px !important;
         }
         #navbar .menu-toggler {
+          position: absolute !important;
+          top: 2px !important;
+          left: 4px !important;
+          z-index: 5 !important;
           width: 40px !important;
           height: 40px !important;
           min-width: 40px !important;
           line-height: 40px !important;
           padding: 0 !important;
-          margin: 2px 0 0 4px !important;
+          margin: 0 !important;
           border-radius: var(--urppp-menu-radius, 12px) !important;
           background: var(--urppp-menu-bg, var(--input-bg, #f5f5f7)) !important;
           color: var(--urppp-menu-color, var(--text, #1d1d1f)) !important;
@@ -12237,31 +12241,60 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           box-shadow: var(--urppp-menu-shadow, none) !important;
           touch-action: manipulation;
         }
-        /* 汉堡图标：短、细、紧凑，避免 ACE 默认粗线和大间距 */
-        #navbar .menu-toggler .icon-bar {
+        /* 新菜单图标：两条错落圆线；打开后切换为关闭图标 */
+        #navbar .menu-toggler .urppp-menu-icon,
+        #navbar .menu-toggler .urppp-menu-icon svg {
           display: block !important;
-          width: 14px !important;
-          height: 1px !important;
-          min-height: 1px !important;
-          margin: 2px auto !important;
-          border: 0 !important;
-          border-radius: 0 !important;
-          background: currentColor !important;
-          box-shadow: none !important;
+          width: 20px !important;
+          height: 20px !important;
+          margin: 0 auto !important;
+        }
+        #navbar .menu-toggler .urppp-menu-icon svg {
+          fill: none !important;
+          stroke: currentColor !important;
+          stroke-width: 1.8 !important;
+          stroke-linecap: round !important;
+          stroke-linejoin: round !important;
+        }
+        #navbar .menu-toggler .urppp-menu-icon svg.urppp-menu-icon-close {
+          display: none !important;
+        }
+        #navbar .menu-toggler[aria-expanded="true"] .urppp-menu-icon svg.urppp-menu-icon-open {
+          display: none !important;
+        }
+        #navbar .menu-toggler[aria-expanded="true"] .urppp-menu-icon svg.urppp-menu-icon-close {
+          display: block !important;
         }
         #navbar .navbar-header.pull-left {
+          position: absolute !important;
+          top: 0 !important;
+          right: 0 !important;
+          left: 48px !important;
+          z-index: 4 !important;
+          width: auto !important;
+          min-width: 0 !important;
           height: 44px !important;
+          min-height: 44px !important;
+          margin: 0 !important;
           display: flex !important;
           align-items: center !important;
+          overflow: hidden !important;
         }
         #navbar .navbar-brand {
-          padding: 0 6px !important;
+          flex: 1 1 auto !important;
+          min-width: 0 !important;
+          padding: 0 4px !important;
           height: 44px !important;
           line-height: 44px !important;
           font-size: 0 !important;
           margin: 0 !important;
+          overflow: hidden !important;
         }
         #navbar .navbar-brand small {
+          display: block !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
+          white-space: nowrap !important;
           font-size: 13px !important;
           line-height: 44px !important;
         }
@@ -12270,13 +12303,32 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         #urppp-nav-theme #urppp-nav-clean {
           height: 30px !important;
           min-height: 30px !important;
-          margin: 0 10px 0 6px !important;
+          margin: 0 8px 0 4px !important;
           padding: 0 10px !important;
           font-size: 12px !important;
         }
-        /* 顶栏只保留菜单、品牌与清爽按钮；主题切换在设置面板中保留 */
+        /* 主题配色与设置保留在顶栏，移动端压缩间距和控件尺寸 */
         #navbar #urppp-nav-theme {
-          display: none !important;
+          display: inline-flex !important;
+          flex: 0 0 auto !important;
+          align-items: center !important;
+          gap: 4px !important;
+          height: 44px !important;
+          min-height: 44px !important;
+          margin: 0 0 0 4px !important;
+        }
+        #navbar #urppp-nav-theme .urppp-nav-dot,
+        #navbar #urppp-nav-theme button.urppp-nav-dot {
+          width: 14px !important;
+          height: 14px !important;
+          min-width: 14px !important;
+          min-height: 14px !important;
+          flex-basis: 14px !important;
+        }
+        #navbar #urppp-nav-theme .urppp-nav-settings {
+          width: 22px !important;
+          height: 22px !important;
+          margin-left: 2px !important;
         }
         /* 功能按钮区（含用户头像）整体隐藏：收进抽屉 */
         #navbar .navbar-buttons {
@@ -12290,21 +12342,9 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         #sidebar.display:not(.menu-min) {
           z-index: 1200 !important;
         }
-        /* 抽屉 Header 固定占位；用户资料紧随其后，菜单不再重复留 50px 空白 */
+        /* 移动端由顶栏菜单按钮双向开合，移除抽屉内重复关闭头 */
         #sidebar .urppp-sidebar-header {
-          height: 50px !important;
-          padding: 9px 12px !important;
-        }
-        #sidebar .urppp-sidebar-toggle {
-          width: 32px !important;
-          height: 32px !important;
-          min-width: 32px !important;
-          padding: 0 !important;
-          border-radius: var(--urppp-menu-radius, 12px) !important;
-          border: var(--urppp-menu-border, 1px solid var(--border)) !important;
-          background: var(--urppp-menu-bg, var(--input-bg)) !important;
-          color: var(--urppp-menu-color, var(--text)) !important;
-          box-shadow: var(--urppp-menu-shadow, none) !important;
+          display: none !important;
         }
         #sidebar #urppp-menus {
           margin-top: 0 !important;
@@ -12312,7 +12352,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
 
         /* 抽屉内用户资料与四个原始操作按钮 */
         #urppp-mobile-user {
-          margin-top: 50px !important;
+          margin-top: 0 !important;
           padding: 12px !important;
           border-bottom: 1px solid var(--border, #e8eaed) !important;
           background: var(--surface, #fff) !important;
@@ -12374,7 +12414,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           text-align: center !important;
         }
 
-        /* 抽屉内快捷功能：客服与搜索同一行，搜索框在下方展开 */
+        /* 抽屉内快捷功能：帮助与搜索同一行，搜索框紧随其后 */
         #sidebar .urppp-mobile-quick {
           padding: 10px 12px !important;
           border-bottom: 1px solid var(--border, #e8eaed) !important;
@@ -12408,8 +12448,18 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           cursor: pointer !important;
         }
         #sidebar .urppp-mobile-tool-button i {
+          position: static !important;
+          top: auto !important;
+          width: 16px !important;
+          height: 16px !important;
+          margin: 0 !important;
+          display: inline-flex !important;
+          align-items: center !important;
+          justify-content: center !important;
           color: var(--primary, #b53434) !important;
           font-size: 14px !important;
+          line-height: 1 !important;
+          vertical-align: middle !important;
         }
         #sidebar .urppp-mobile-quick-links {
           display: grid !important;
@@ -12439,9 +12489,13 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         #sidebar .urppp-mobile-search-panel[hidden] {
           display: none !important;
         }
+        #sidebar .urppp-mobile-search-panel {
+          width: 100% !important;
+          box-sizing: border-box !important;
+        }
         #sidebar .urppp-mobile-search-panel.open {
           display: block !important;
-          margin-top: 8px !important;
+          margin: 8px 0 !important;
         }
         #sidebar .urppp-mobile-search-panel #form-search.nav-search {
           position: relative !important;
@@ -15261,10 +15315,10 @@ ${arcs}
       aceNav.querySelectorAll(":scope > li > a > .ace-icon, :scope > li > a > .glyphicon, :scope > li > a > .fa").forEach((icon) => {
         force(icon, { top: "auto", "vertical-align": "middle", "line-height": "1", "margin-top": "0" });
       });
-      const serviceLink = aceNav.querySelector(':scope > li > a[href*="customerServiceCenter"]');
-      if (serviceLink) {
-        force(serviceLink, { width: "28px", "justify-content": "center" });
-        serviceLink.style.padding = "0 4px";
+      const helpLink = aceNav.querySelector(':scope > li > a[href*="customerServiceCenter"]');
+      if (helpLink) {
+        force(helpLink, { width: "28px", "justify-content": "center" });
+        helpLink.style.padding = "0 4px";
       }
       const clickDiv = documentRef.getElementById("clickdiv");
       const formSearch = documentRef.getElementById("form-search");
@@ -21500,7 +21554,15 @@ ${arcs}
         const isNarrow = /* @__PURE__ */ __name(() => !!(window.matchMedia && window.matchMedia(mobileQuery).matches), "isNarrow");
         const closeDrawer = /* @__PURE__ */ __name(() => {
           const sidebar = document.getElementById("sidebar");
-          if (sidebar) sidebar.classList.remove("display");
+          const toggler = document.querySelector("#navbar .menu-toggler");
+          if (sidebar) {
+            sidebar.classList.remove("display");
+            sidebar.style.setProperty("z-index", "1030", "important");
+          }
+          if (toggler) {
+            toggler.setAttribute("aria-expanded", "false");
+            toggler.setAttribute("aria-label", "打开菜单");
+          }
           try {
             syncMobileContentOffset();
           } catch (_) {
@@ -21548,18 +21610,35 @@ ${arcs}
             "z-index": "10"
           }).forEach(([key, value]) => formSearch.style.setProperty(key, value, "important"));
         }, "restoreMobileSearch");
+        const ensureMenuButtonIcon = /* @__PURE__ */ __name((toggler) => {
+          if (!toggler || toggler.dataset.urpppIconReady) return;
+          toggler.dataset.urpppIconReady = "1";
+          toggler.innerHTML = [
+            '<span class="urppp-menu-icon" aria-hidden="true">',
+            '<svg class="urppp-menu-icon-open" viewBox="0 0 24 24" focusable="false">',
+            '<path d="M5 8h14"></path><path d="M5 16h10"></path>',
+            "</svg>",
+            '<svg class="urppp-menu-icon-close" viewBox="0 0 24 24" focusable="false">',
+            '<path d="M7 7l10 10"></path><path d="M17 7 7 17"></path>',
+            "</svg>",
+            "</span>"
+          ].join("");
+        }, "ensureMenuButtonIcon");
         const bindDrawerControls = /* @__PURE__ */ __name(() => {
           const toggler = document.querySelector("#navbar .menu-toggler");
           const sidebar = document.getElementById("sidebar");
+          if (toggler) ensureMenuButtonIcon(toggler);
           if (toggler && sidebar && !toggler.dataset.urpppToggleBound) {
             toggler.dataset.urpppToggleBound = "1";
             toggler.setAttribute("aria-label", "打开菜单");
+            toggler.setAttribute("aria-expanded", sidebar.classList.contains("display") ? "true" : "false");
             toggler.addEventListener("click", (event) => {
               event.preventDefault();
               event.stopPropagation();
               const open = sidebar.classList.toggle("display");
               sidebar.style.setProperty("z-index", open ? "1200" : "1030", "important");
               toggler.setAttribute("aria-expanded", open ? "true" : "false");
+              toggler.setAttribute("aria-label", open ? "关闭菜单" : "打开菜单");
               try {
                 syncMobileContentOffset();
               } catch (_) {
@@ -21639,14 +21718,16 @@ ${arcs}
           quick.innerHTML = '<div class="urppp-mobile-quick-title">快捷功能</div>';
           const toolRow = document.createElement("div");
           toolRow.className = "urppp-mobile-tool-row";
-          const serviceSource = btns.querySelector(':scope > li > a[href*="customerServiceCenter"]');
-          const service = serviceSource ? serviceSource.cloneNode(true) : document.createElement("a");
-          service.className = "urppp-mobile-tool-button urppp-mobile-service-button";
-          service.removeAttribute("style");
-          if (!serviceSource) service.href = "/main/customerServiceCenter";
-          if (!service.querySelector("i")) service.innerHTML = '<i class="ace-icon glyphicon glyphicon-headphones" aria-hidden="true"></i>';
-          if (!service.querySelector("span")) service.insertAdjacentHTML("beforeend", "<span>客服</span>");
-          toolRow.appendChild(service);
+          const helpSource = btns.querySelector(':scope > li > a[href*="customerServiceCenter"]');
+          const help = helpSource ? helpSource.cloneNode(true) : document.createElement("a");
+          help.className = "urppp-mobile-tool-button urppp-mobile-help-button";
+          help.removeAttribute("style");
+          help.querySelectorAll("[style]").forEach((element) => element.removeAttribute("style"));
+          if (!helpSource) help.href = "/main/customerServiceCenter";
+          if (!help.querySelector("i")) help.innerHTML = '<i class="ace-icon glyphicon glyphicon-headphones" aria-hidden="true"></i>';
+          help.querySelectorAll("span").forEach((span) => span.remove());
+          help.insertAdjacentHTML("beforeend", "<span>帮助</span>");
+          toolRow.appendChild(help);
           const searchButton = document.createElement("button");
           searchButton.type = "button";
           searchButton.id = "urppp-mobile-search-button";
@@ -21661,14 +21742,13 @@ ${arcs}
             const owner = anchor.closest("li");
             if (owner?.classList.contains("light-blue")) return;
             if (owner?.querySelector("#intellegenceUDiv, #form-search")) return;
-            if (anchor === serviceSource || anchor.classList.contains("dropdown-toggle")) return;
+            if (anchor === helpSource || anchor.classList.contains("dropdown-toggle")) return;
             if (!anchor.getAttribute("href") && !anchor.getAttribute("onclick")) return;
             const clone = anchor.cloneNode(true);
             clone.className = "urppp-mobile-quick-link";
             clone.removeAttribute("style");
             links.appendChild(clone);
           });
-          if (links.children.length) quick.appendChild(links);
           const searchPanel = document.createElement("div");
           searchPanel.id = "urppp-mobile-search-panel";
           searchPanel.className = "urppp-mobile-search-panel";
@@ -21685,6 +21765,7 @@ ${arcs}
             syncMobileSearchLayout();
           }
           quick.appendChild(searchPanel);
+          if (links.children.length) quick.appendChild(links);
           searchButton.addEventListener("click", (event) => {
             event.preventDefault();
             event.stopPropagation();
@@ -21719,7 +21800,7 @@ ${arcs}
             const brandHost = document.querySelector("#navbar .navbar-header");
             const themeHost = document.getElementById("urppp-nav-theme");
             if (cleanBtn && brandHost && cleanBtn.parentElement !== brandHost) brandHost.appendChild(cleanBtn);
-            if (themeHost) themeHost.style.setProperty("display", "none", "important");
+            if (themeHost) themeHost.style.setProperty("display", "inline-flex", "important");
           } catch (_) {
           }
           ensureMobileUser(btns, sidebar);

@@ -6229,7 +6229,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
       const closeDrawer = () => {
         const sidebar = document.getElementById('sidebar');
-        if (sidebar) sidebar.classList.remove('display');
+        const toggler = document.querySelector('#navbar .menu-toggler');
+        if (sidebar) {
+          sidebar.classList.remove('display');
+          sidebar.style.setProperty('z-index', '1030', 'important');
+        }
+        if (toggler) {
+          toggler.setAttribute('aria-expanded', 'false');
+          toggler.setAttribute('aria-label', '打开菜单');
+        }
         try { syncMobileContentOffset(); } catch (_) { /* ignore */ }
       };
 
@@ -6262,18 +6270,36 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         }).forEach(([key, value]) => formSearch.style.setProperty(key, value, 'important'));
       };
 
+      const ensureMenuButtonIcon = (toggler) => {
+        if (!toggler || toggler.dataset.urpppIconReady) return;
+        toggler.dataset.urpppIconReady = '1';
+        toggler.innerHTML = [
+          '<span class="urppp-menu-icon" aria-hidden="true">',
+          '<svg class="urppp-menu-icon-open" viewBox="0 0 24 24" focusable="false">',
+          '<path d="M5 8h14"></path><path d="M5 16h10"></path>',
+          '</svg>',
+          '<svg class="urppp-menu-icon-close" viewBox="0 0 24 24" focusable="false">',
+          '<path d="M7 7l10 10"></path><path d="M17 7 7 17"></path>',
+          '</svg>',
+          '</span>',
+        ].join('');
+      };
+
       const bindDrawerControls = () => {
         const toggler = document.querySelector('#navbar .menu-toggler');
         const sidebar = document.getElementById('sidebar');
+        if (toggler) ensureMenuButtonIcon(toggler);
         if (toggler && sidebar && !toggler.dataset.urpppToggleBound) {
           toggler.dataset.urpppToggleBound = '1';
           toggler.setAttribute('aria-label', '打开菜单');
+          toggler.setAttribute('aria-expanded', sidebar.classList.contains('display') ? 'true' : 'false');
           toggler.addEventListener('click', (event) => {
             event.preventDefault();
             event.stopPropagation();
             const open = sidebar.classList.toggle('display');
             sidebar.style.setProperty('z-index', open ? '1200' : '1030', 'important');
             toggler.setAttribute('aria-expanded', open ? 'true' : 'false');
+            toggler.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
             try { syncMobileContentOffset(); } catch (_) { /* ignore */ }
           });
         }
@@ -6358,14 +6384,16 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
         const toolRow = document.createElement('div');
         toolRow.className = 'urppp-mobile-tool-row';
-        const serviceSource = btns.querySelector(':scope > li > a[href*="customerServiceCenter"]');
-        const service = serviceSource ? serviceSource.cloneNode(true) : document.createElement('a');
-        service.className = 'urppp-mobile-tool-button urppp-mobile-service-button';
-        service.removeAttribute('style');
-        if (!serviceSource) service.href = '/main/customerServiceCenter';
-        if (!service.querySelector('i')) service.innerHTML = '<i class="ace-icon glyphicon glyphicon-headphones" aria-hidden="true"></i>';
-        if (!service.querySelector('span')) service.insertAdjacentHTML('beforeend', '<span>客服</span>');
-        toolRow.appendChild(service);
+        const helpSource = btns.querySelector(':scope > li > a[href*="customerServiceCenter"]');
+        const help = helpSource ? helpSource.cloneNode(true) : document.createElement('a');
+        help.className = 'urppp-mobile-tool-button urppp-mobile-help-button';
+        help.removeAttribute('style');
+        help.querySelectorAll('[style]').forEach((element) => element.removeAttribute('style'));
+        if (!helpSource) help.href = '/main/customerServiceCenter';
+        if (!help.querySelector('i')) help.innerHTML = '<i class="ace-icon glyphicon glyphicon-headphones" aria-hidden="true"></i>';
+        help.querySelectorAll('span').forEach((span) => span.remove());
+        help.insertAdjacentHTML('beforeend', '<span>帮助</span>');
+        toolRow.appendChild(help);
 
         const searchButton = document.createElement('button');
         searchButton.type = 'button';
@@ -6382,15 +6410,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           const owner = anchor.closest('li');
           if (owner?.classList.contains('light-blue')) return;
           if (owner?.querySelector('#intellegenceUDiv, #form-search')) return;
-          if (anchor === serviceSource || anchor.classList.contains('dropdown-toggle')) return;
+          if (anchor === helpSource || anchor.classList.contains('dropdown-toggle')) return;
           if (!anchor.getAttribute('href') && !anchor.getAttribute('onclick')) return;
           const clone = anchor.cloneNode(true);
           clone.className = 'urppp-mobile-quick-link';
           clone.removeAttribute('style');
           links.appendChild(clone);
         });
-        if (links.children.length) quick.appendChild(links);
-
         const searchPanel = document.createElement('div');
         searchPanel.id = 'urppp-mobile-search-panel';
         searchPanel.className = 'urppp-mobile-search-panel';
@@ -6407,6 +6433,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           syncMobileSearchLayout();
         }
         quick.appendChild(searchPanel);
+        if (links.children.length) quick.appendChild(links);
         searchButton.addEventListener('click', (event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -6442,7 +6469,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           const brandHost = document.querySelector('#navbar .navbar-header');
           const themeHost = document.getElementById('urppp-nav-theme');
           if (cleanBtn && brandHost && cleanBtn.parentElement !== brandHost) brandHost.appendChild(cleanBtn);
-          if (themeHost) themeHost.style.setProperty('display', 'none', 'important');
+          if (themeHost) themeHost.style.setProperty('display', 'inline-flex', 'important');
         } catch (_) { /* ignore */ }
         ensureMobileUser(btns, sidebar);
         ensureMobileQuick(btns, sidebar, menus);
