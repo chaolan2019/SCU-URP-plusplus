@@ -259,6 +259,28 @@
         #navbar #intellegenceUDiv {
           display: none !important;
         }
+        /* 移动抽屉常驻渲染，以 transform 实现可逆的滑入/滑出动画 */
+        #sidebar {
+          display: block !important;
+          position: fixed !important;
+          left: 0 !important;
+          top: var(--urppp-navbar-height, 44px) !important;
+          width: 260px !important;
+          min-width: 260px !important;
+          max-width: 260px !important;
+          height: calc(100vh - var(--urppp-navbar-height, 44px)) !important;
+          transform: translate3d(-100%, 0, 0) !important;
+          visibility: hidden !important;
+          pointer-events: none !important;
+          will-change: transform;
+          transition: transform .26s cubic-bezier(.4, 0, .2, 1), visibility 0s linear .26s !important;
+        }
+        #sidebar.display {
+          transform: translate3d(0, 0, 0) !important;
+          visibility: visible !important;
+          pointer-events: auto !important;
+          transition: transform .26s cubic-bezier(.4, 0, .2, 1), visibility 0s linear 0s !important;
+        }
         /* 移动抽屉始终使用完整宽度；menu-min 仅属于桌面折叠状态 */
         #sidebar.display,
         #sidebar.display.menu-min,

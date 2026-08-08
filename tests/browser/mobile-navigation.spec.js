@@ -143,6 +143,64 @@ for (const [skin, expectedShape] of Object.entries(skinShapes)) {
   });
 }
 
+test('mobile sidebar animates in both directions', async ({ page }) => {
+  await loadUrpFixture(page, {
+    fixture: 'mobile-home',
+    viewport: { width: 390, height: 844 },
+    values: { urppp_skin_v1: 'apple', urppp_theme_v3: 'default' },
+  });
+
+  const sidebar = page.locator('#sidebar');
+  const toggler = page.locator('#navbar .menu-toggler');
+  await expect.poll(async () => sidebar.evaluate((element) => Math.round(element.getBoundingClientRect().right))).toBe(0);
+
+  await toggler.click();
+  await page.waitForTimeout(100);
+  const openingLeft = await sidebar.evaluate((element) => element.getBoundingClientRect().left);
+  expect(openingLeft).toBeGreaterThan(-250);
+  expect(openingLeft).toBeLessThan(-10);
+  await expect(sidebar).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+
+  await toggler.click();
+  await page.waitForTimeout(100);
+  const closingLeft = await sidebar.evaluate((element) => element.getBoundingClientRect().left);
+  expect(closingLeft).toBeGreaterThan(-250);
+  expect(closingLeft).toBeLessThan(-10);
+  await expect.poll(async () => sidebar.evaluate((element) => Math.round(element.getBoundingClientRect().right))).toBe(0);
+});
+
+test('desktop sidebar animates expansion and collapse', async ({ page }) => {
+  await loadUrpFixture(page, {
+    fixture: 'home',
+    viewport: { width: 1280, height: 800 },
+    values: { urppp_skin_v1: 'apple', urppp_theme_v3: 'default' },
+  });
+
+  const sidebar = page.locator('#sidebar');
+  const text = sidebar.locator('.urppp-nav-text').first();
+  await expect(sidebar).toHaveCSS('width', '260px');
+
+  await page.evaluate(() => document.getElementById('sidebar').classList.add('menu-min'));
+  await page.waitForTimeout(100);
+  const collapsing = await sidebar.evaluate((element) => element.getBoundingClientRect().width);
+  const fadingOut = Number(await text.evaluate((element) => getComputedStyle(element).opacity));
+  expect(collapsing).toBeGreaterThan(55);
+  expect(collapsing).toBeLessThan(255);
+  expect(fadingOut).toBeGreaterThan(0);
+  expect(fadingOut).toBeLessThan(1);
+  await expect(sidebar).toHaveCSS('width', '50px');
+
+  await page.evaluate(() => document.getElementById('sidebar').classList.remove('menu-min'));
+  await page.waitForTimeout(100);
+  const expanding = await sidebar.evaluate((element) => element.getBoundingClientRect().width);
+  const fadingIn = Number(await text.evaluate((element) => getComputedStyle(element).opacity));
+  expect(expanding).toBeGreaterThan(55);
+  expect(expanding).toBeLessThan(255);
+  expect(fadingIn).toBeGreaterThan(0);
+  expect(fadingIn).toBeLessThan(1);
+  await expect(sidebar).toHaveCSS('width', '260px');
+});
+
 test('mobile navbar and sidebar survive business-page route replacement', async ({ page }) => {
   const { pageErrors } = await loadUrpFixture(page, {
     fixture: 'mobile-home',

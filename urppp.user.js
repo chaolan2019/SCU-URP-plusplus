@@ -10860,7 +10860,11 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       /* 侧边栏 —— Hanako 风格完全重构 */
       :root { --urppp-navbar-height: 45px; }
       /* 内容左边距只跟随侧栏状态，不跟随汉堡按钮 */
-      .sidebar:not(.menu-min) { width: 260px !important; }
+      .sidebar:not(.menu-min) {
+        width: 260px !important;
+        min-width: 260px !important;
+        max-width: 260px !important;
+      }
       .sidebar.menu-min,
       .sidebar.menu-min.display,
       body.menu-min .sidebar,
@@ -10928,7 +10932,8 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
         border-top: none !important;
         /* 阴影只向右，不向上侵入顶栏 */
         box-shadow: 2px 0 10px rgba(15, 23, 42, 0.06) !important;
-        transition: width .25s ease;
+        overflow-x: hidden !important;
+        transition: width .26s cubic-bezier(.4, 0, .2, 1), min-width .26s cubic-bezier(.4, 0, .2, 1), max-width .26s cubic-bezier(.4, 0, .2, 1) !important;
       }
       .sidebar:before { display: none !important; }
       .main-content { transition: margin-left .25s ease; }
@@ -11109,22 +11114,27 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
         transition: margin .25s ease;
       }
       .urppp-nav-text {
+        display: block;
         flex: 1;
+        width: auto;
         font-size: 15px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         opacity: 1;
         max-width: 200px;
-        transition: opacity .2s ease, max-width .25s ease;
+        transition: opacity .2s ease, max-width .26s cubic-bezier(.4, 0, .2, 1), margin .26s cubic-bezier(.4, 0, .2, 1);
       }
       .urppp-nav-arrow {
+        display: block;
+        width: auto;
         font-size: 13px;
         color: var(--text-muted);
         margin-left: 8px;
         opacity: 1;
         max-width: 20px;
-        transition: transform .2s, opacity .2s ease, max-width .25s ease;
+        overflow: hidden;
+        transition: transform .2s, opacity .2s ease, max-width .26s cubic-bezier(.4, 0, .2, 1), margin .26s cubic-bezier(.4, 0, .2, 1);
         flex-shrink: 0;
       }
       .urppp-nav-item.open > .urppp-nav-link .urppp-nav-arrow { transform: rotate(180deg); }
@@ -11164,7 +11174,9 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
         margin-right: 0 !important;
         overflow: hidden !important;
         pointer-events: none !important;
-        display: none !important;
+      }
+      .urppp-nav-link > .fa {
+        transition: margin-right .26s cubic-bezier(.4, 0, .2, 1), font-size .26s cubic-bezier(.4, 0, .2, 1);
       }
       .sidebar.menu-min .urppp-nav-link > .fa,
       body.menu-min .sidebar .urppp-nav-link > .fa { margin-right: 0; font-size: 18px; }
@@ -12354,6 +12366,28 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         /* 搜索滑块隐藏 */
         #navbar #intellegenceUDiv {
           display: none !important;
+        }
+        /* 移动抽屉常驻渲染，以 transform 实现可逆的滑入/滑出动画 */
+        #sidebar {
+          display: block !important;
+          position: fixed !important;
+          left: 0 !important;
+          top: var(--urppp-navbar-height, 44px) !important;
+          width: 260px !important;
+          min-width: 260px !important;
+          max-width: 260px !important;
+          height: calc(100vh - var(--urppp-navbar-height, 44px)) !important;
+          transform: translate3d(-100%, 0, 0) !important;
+          visibility: hidden !important;
+          pointer-events: none !important;
+          will-change: transform;
+          transition: transform .26s cubic-bezier(.4, 0, .2, 1), visibility 0s linear .26s !important;
+        }
+        #sidebar.display {
+          transform: translate3d(0, 0, 0) !important;
+          visibility: visible !important;
+          pointer-events: auto !important;
+          transition: transform .26s cubic-bezier(.4, 0, .2, 1), visibility 0s linear 0s !important;
         }
         /* 移动抽屉始终使用完整宽度；menu-min 仅属于桌面折叠状态 */
         #sidebar.display,
