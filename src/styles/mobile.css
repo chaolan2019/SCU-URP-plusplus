@@ -206,24 +206,24 @@
         .wrapper.fadeInDown #formContent,
         .form-signin {
           width: auto !important;
-          max-width: 92vw !important;
+          max-width: 88vw !important;
           min-width: 0 !important;
-          padding: 14px 14px 10px !important;
+          padding: 12px 12px 8px !important;
           box-sizing: border-box !important;
         }
         .form-signin input[type="text"],
         .form-signin input[type="password"],
         .form-signin input[type="submit"] {
-          height: 42px !important;
-          min-height: 42px !important;
-          padding: 8px 14px !important;
-          margin-top: 4px !important;
-          margin-bottom: 4px !important;
+          height: 38px !important;
+          min-height: 38px !important;
+          padding: 6px 12px !important;
+          margin-top: 3px !important;
+          margin-bottom: 3px !important;
           box-sizing: border-box !important;
-          font-size: 14px !important;
+          font-size: 13px !important;
         }
         .form-signin .form-group {
-          margin-bottom: 6px !important;
+          margin-bottom: 5px !important;
         }
         /* 验证码行：输入框全宽，验证码图片/登录按钮/EN 链接独立成行，避免 390px 下重叠挤压 */
         .form-signin input#input_checkcode {
@@ -239,8 +239,8 @@
         .form-signin img[src*="captcha"] {
           display: inline-block !important;
           max-width: 100% !important;
-          height: 38px !important;
-          margin: 4px 4px 4px 0 !important;
+          height: 34px !important;
+          margin: 3px 3px 3px 0 !important;
           vertical-align: middle !important;
           box-sizing: border-box !important;
         }
@@ -248,7 +248,7 @@
           display: block !important;
           width: 100% !important;
           max-width: 100% !important;
-          margin-top: 6px !important;
+          margin-top: 5px !important;
           box-sizing: border-box !important;
         }
         /* 收紧表格与分页条之间的空白，空容器隐藏后底栏跟随上移 */

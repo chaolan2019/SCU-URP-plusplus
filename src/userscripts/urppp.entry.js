@@ -296,31 +296,6 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       content: none !important;
       display: none !important;
     }
-    /* 空分页容器（无任何子节点）不占位，消除列表下方的空白条 */
-    [id^="sample-table-2_paginate"]:empty,
-    .dataTables_paginate:empty,
-    [id^="sample-table-2_paginate"]:not(:has(*)),
-    .dataTables_paginate:not(:has(*)) {
-      display: none !important;
-    }
-    /* 页脚内文本/标签容器允许换行；控件保持内联 */
-    [id^="div_page_loading"][id*="urppagebar"] span,
-    [id*="page_loading"][id*="urppagebar"] span,
-    [id^="div_page_loading"][id*="urppagebar"] div,
-    [id*="page_loading"][id*="urppagebar"] div,
-    [id^="div_page_loading"][id*="urppagebar"] label,
-    [id*="page_loading"][id*="urppagebar"] label {
-      display: inline !important;
-      white-space: normal !important;
-      vertical-align: middle !important;
-    }
-    [id^="div_page_loading"][id*="urppagebar"] select,
-    [id*="page_loading"][id*="urppagebar"] select,
-    [id^="div_page_loading"][id*="urppagebar"] input,
-    [id*="page_loading"][id*="urppagebar"] input {
-      display: inline-block !important;
-      vertical-align: middle !important;
-    }
     .urppp-inline-loader .urppp-cube-scene {
       width: 40px !important;
       height: 40px !important;
