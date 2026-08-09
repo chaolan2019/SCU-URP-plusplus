@@ -9788,6 +9788,20 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
         margin-top: 12px !important;
         z-index: 2 !important;
       }
+      /* 滚动加载遮罩（div_page_loading_urppagebar）：完全隐藏不占位，
+       * 避免列表下方的空白条；站点加载指示已由 img/伪元素规则处理。 */
+      #urppagebar [id^="div_page_loading"][id*="urppagebar"],
+      #urppagebar [id*="page_loading"][id*="urppagebar"],
+      [id^="div_page_loading"][id*="urppagebar"],
+      [id*="page_loading"][id*="urppagebar"],
+      div[id*="page_loading"][id*="urppagebar"] {
+        display: none !important;
+        position: static !important;
+        width: auto !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
 
       /* 分页「确定」：禁止全局 .btn 的 display:inline-flex 盖掉 display:none */
       #urppagebar [id^="btn_turnpageto_"].btn,
@@ -12424,6 +12438,29 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         #urppagebar [id^="endflag_"],
         #urppagebar div:empty {
           display: none !important;
+        }
+        /* 移动端登录页：卡片自适应，输入控件紧凑不拉长 */
+        .wrapper.fadeInDown #formContent,
+        .form-signin {
+          width: auto !important;
+          max-width: 92vw !important;
+          min-width: 0 !important;
+          padding: 14px 14px 10px !important;
+          box-sizing: border-box !important;
+        }
+        .form-signin input[type="text"],
+        .form-signin input[type="password"],
+        .form-signin input[type="submit"] {
+          height: 42px !important;
+          min-height: 42px !important;
+          padding: 8px 14px !important;
+          margin-top: 4px !important;
+          margin-bottom: 4px !important;
+          box-sizing: border-box !important;
+          font-size: 14px !important;
+        }
+        .form-signin .form-group {
+          margin-bottom: 6px !important;
         }
         /* 收紧表格与分页条之间的空白，空容器隐藏后底栏跟随上移 */
         #urppagebar {
@@ -16034,25 +16071,6 @@ ${arcs}
     [id^="sample-table-2_paginate"]:not(:has(*)),
     .dataTables_paginate:not(:has(*)) {
       display: none !important;
-    }
-    /* 滚动加载遮罩（如 div_page_loading_urppagebar）：完全隐藏，不占位、不覆盖列表。
-     * 站点加载指示本身已由上方 img/伪元素规则处理。 */
-    #urppagebar [id^="div_page_loading"][id*="urppagebar"],
-    #urppagebar [id*="page_loading"][id*="urppagebar"],
-    [id^="div_page_loading"][id*="urppagebar"],
-    [id*="page_loading"][id*="urppagebar"],
-    div[id*="page_loading"][id*="urppagebar"] {
-      position: static !important;
-      left: auto !important;
-      top: auto !important;
-      display: none !important;
-      width: auto !important;
-      max-width: 100% !important;
-      box-sizing: border-box !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      overflow: visible !important;
-      z-index: auto !important;
     }
     /* 页脚内文本/标签容器允许换行；控件保持内联 */
     [id^="div_page_loading"][id*="urppagebar"] span,

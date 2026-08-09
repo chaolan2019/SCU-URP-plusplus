@@ -342,6 +342,20 @@
         margin-top: 12px !important;
         z-index: 2 !important;
       }
+      /* 滚动加载遮罩（div_page_loading_urppagebar）：完全隐藏不占位，
+       * 避免列表下方的空白条；站点加载指示已由 img/伪元素规则处理。 */
+      #urppagebar [id^="div_page_loading"][id*="urppagebar"],
+      #urppagebar [id*="page_loading"][id*="urppagebar"],
+      [id^="div_page_loading"][id*="urppagebar"],
+      [id*="page_loading"][id*="urppagebar"],
+      div[id*="page_loading"][id*="urppagebar"] {
+        display: none !important;
+        position: static !important;
+        width: auto !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
 
       /* 分页「确定」：禁止全局 .btn 的 display:inline-flex 盖掉 display:none */
       #urppagebar [id^="btn_turnpageto_"].btn,

@@ -303,25 +303,6 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     .dataTables_paginate:not(:has(*)) {
       display: none !important;
     }
-    /* 滚动加载遮罩（如 div_page_loading_urppagebar）：完全隐藏，不占位、不覆盖列表。
-     * 站点加载指示本身已由上方 img/伪元素规则处理。 */
-    #urppagebar [id^="div_page_loading"][id*="urppagebar"],
-    #urppagebar [id*="page_loading"][id*="urppagebar"],
-    [id^="div_page_loading"][id*="urppagebar"],
-    [id*="page_loading"][id*="urppagebar"],
-    div[id*="page_loading"][id*="urppagebar"] {
-      position: static !important;
-      left: auto !important;
-      top: auto !important;
-      display: none !important;
-      width: auto !important;
-      max-width: 100% !important;
-      box-sizing: border-box !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      overflow: visible !important;
-      z-index: auto !important;
-    }
     /* 页脚内文本/标签容器允许换行；控件保持内联 */
     [id^="div_page_loading"][id*="urppagebar"] span,
     [id*="page_loading"][id*="urppagebar"] span,
