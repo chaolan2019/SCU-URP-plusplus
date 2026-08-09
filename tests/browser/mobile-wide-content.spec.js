@@ -67,8 +67,10 @@ test('mobile query fields use two columns and collapse to one on extra-narrow sc
     values: { urppp_skin_v1: 'neu', urppp_theme_v3: 'default' },
   });
 
-  const row = page.locator('.profile-info-row.urppp-query-row');
-  await expect(row.locator(':scope > .urppp-query-pair')).toHaveCount(4);
+  const rows = page.locator('.profile-info-row.urppp-query-row');
+  await expect(rows).toHaveCount(2);
+  await expect(rows.nth(0).locator(':scope > .urppp-query-pair')).toHaveCount(3);
+  await expect(rows.nth(1).locator(':scope > .urppp-query-pair')).toHaveCount(1);
   const inputStyle = await page.locator('#course-name').evaluate((element) => {
     const style = getComputedStyle(element);
     return { borderTopWidth: style.borderTopWidth, boxShadow: style.boxShadow };
@@ -76,30 +78,38 @@ test('mobile query fields use two columns and collapse to one on extra-narrow sc
   expect(inputStyle.borderTopWidth).toBe('1px');
   expect(inputStyle.boxShadow).not.toBe('none');
 
-  const mobileLayout = await row.evaluate((element) => {
-    const columns = getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean);
-    const pair = element.querySelector('.urppp-query-pair');
+  const mobileLayout = await page.evaluate(() => {
+    const rows = [...document.querySelectorAll('.profile-info-row.urppp-query-row')];
+    const first = rows[0];
+    const second = rows[1];
+    const pair = first.querySelector('.urppp-query-pair');
     const label = pair.querySelector('.profile-info-name').getBoundingClientRect();
     const value = pair.querySelector('.profile-info-value').getBoundingClientRect();
-    const form = element.closest('.urppp-query-form, .profile-user-info');
+    const form = first.closest('.urppp-query-form, .profile-user-info');
+    const firstStyle = getComputedStyle(first);
+    const secondStyle = getComputedStyle(second);
+    const firstRect = first.getBoundingClientRect();
+    const secondRect = second.getBoundingClientRect();
     return {
-      columns: columns.length,
+      firstColumns: firstStyle.gridTemplateColumns.split(' ').filter(Boolean).length,
+      secondColumns: secondStyle.gridTemplateColumns.split(' ').filter(Boolean).length,
       pairWidth: pair.getBoundingClientRect().width,
       labelAboveValue: label.bottom <= value.top + 1,
       clipped: form.scrollWidth > form.clientWidth + 1,
+      secondSpansFullRow: Math.abs(secondRect.width - firstRect.width) < 2,
     };
   });
-  expect(mobileLayout).toEqual({
-    columns: 2,
-    pairWidth: expect.any(Number),
-    labelAboveValue: true,
-    clipped: false,
-  });
+  expect(mobileLayout.firstColumns).toBe(2);
+  expect(mobileLayout.secondColumns).toBe(2);
+  expect(mobileLayout.labelAboveValue).toBeTruthy();
+  expect(mobileLayout.clipped).toBeFalsy();
   expect(mobileLayout.pairWidth).toBeGreaterThan(140);
+  // 单字段行占满整行（grid-column 1 / -1）
+  expect(mobileLayout.secondSpansFullRow).toBeTruthy();
 
   await page.setViewportSize({ width: 350, height: 844 });
-  await expect.poll(async () => row.evaluate((element) => (
-    getComputedStyle(element).gridTemplateColumns.split(' ').filter(Boolean).length
+  await expect.poll(async () => page.evaluate(() => (
+    getComputedStyle(document.querySelectorAll('.profile-info-row.urppp-query-row')[0]).gridTemplateColumns.split(' ').filter(Boolean).length
   ))).toBe(1);
   expect(pageErrors).toEqual([]);
 });

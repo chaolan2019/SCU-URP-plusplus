@@ -5457,6 +5457,23 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
         .profile-info-row.urppp-query-row[data-urppp-query-cols="3"] {
           grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         }
+        .profile-info-row.urppp-query-row[data-urppp-query-cols="2"] {
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+      }
+      /* 移动端：查询表单每行最多两个筛选项，一个就占一行 */
+      @media (max-width: 991px) {
+        .profile-info-row.urppp-query-row,
+        .profile-info-row.urppp-query-row[data-urppp-query-cols],
+        .profile-info-row.urppp-query-row[data-urppp-query-cols="2"],
+        .profile-info-row.urppp-query-row[data-urppp-query-cols="3"],
+        .profile-info-row.urppp-query-row[data-urppp-query-cols="4"] {
+          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+        /* 单字段行（只有一项）：占满整行，不孤零零站半格 */
+        .profile-info-row.urppp-query-row > .urppp-query-pair:only-child {
+          grid-column: 1 / -1 !important;
+        }
       }
       @media (max-width: 640px) {
         .profile-user-info.urppp-query-form,
