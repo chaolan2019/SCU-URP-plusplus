@@ -94,14 +94,14 @@ test('mobile query fields use two columns and collapse to one on extra-narrow sc
       firstColumns: firstStyle.gridTemplateColumns.split(' ').filter(Boolean).length,
       secondColumns: secondStyle.gridTemplateColumns.split(' ').filter(Boolean).length,
       pairWidth: pair.getBoundingClientRect().width,
-      labelAboveValue: label.bottom <= value.top + 1,
+      labelWithValue: Math.abs(label.top - value.top) < 12 && label.bottom <= value.bottom,
       clipped: form.scrollWidth > form.clientWidth + 1,
       secondSpansFullRow: Math.abs(secondRect.width - firstRect.width) < 2,
     };
   });
   expect(mobileLayout.firstColumns).toBe(2);
   expect(mobileLayout.secondColumns).toBe(2);
-  expect(mobileLayout.labelAboveValue).toBeTruthy();
+  expect(mobileLayout.labelWithValue).toBeTruthy();
   expect(mobileLayout.clipped).toBeFalsy();
   expect(mobileLayout.pairWidth).toBeGreaterThan(140);
   // 单字段行占满整行（grid-column 1 / -1）

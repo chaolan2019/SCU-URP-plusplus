@@ -2099,26 +2099,26 @@
           row-gap: 10px !important;
         }
         .urppp-query-pair {
-          flex-direction: column !important;
-          align-items: stretch !important;
-          gap: 4px !important;
+          flex-direction: row !important;
+          align-items: center !important;
+          gap: 6px !important;
         }
         .urppp-query-pair .profile-info-name {
-          flex: none !important;
-          width: 100% !important;
+          flex: 0 0 auto !important;
+          width: auto !important;
           min-width: 0 !important;
-          max-width: 100% !important;
+          max-width: 40% !important;
           height: auto !important;
-          min-height: 18px !important;
-          padding: 0 !important;
+          min-height: 0 !important;
+          padding: 0 6px 0 0 !important;
           justify-content: flex-start !important;
           text-align: left !important;
-          white-space: normal !important;
-          overflow: visible !important;
-          text-overflow: clip !important;
+          white-space: nowrap !important;
+          overflow: hidden !important;
+          text-overflow: ellipsis !important;
         }
         .urppp-query-pair .profile-info-value {
-          width: 100% !important;
+          flex: 1 1 auto !important;
           min-width: 0 !important;
           max-width: 100% !important;
         }
