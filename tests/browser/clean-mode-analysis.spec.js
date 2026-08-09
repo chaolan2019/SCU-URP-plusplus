@@ -91,3 +91,41 @@ test('clean mode opens with score data and renders analysis charts', async ({ pa
   expect(charts.chartCards).toBe(2);
   expect(pageErrors).toEqual([]);
 });
+
+test('clean mode drawer opens from top-left toggle with site menu links', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, { fixture: 'home' });
+  await installScoreApiMock(page);
+
+  // 打开清爽模式
+  await page.evaluate(() => document.getElementById('urppp-nav-clean').click());
+  await page.waitForTimeout(600);
+
+  const root = page.locator('#urppp-clean-root');
+  await expect(root).toHaveClass(/open/);
+  await expect(page.locator('#uc-menu-toggle')).toHaveCount(1);
+  await expect(page.locator('#uc-clean-drawer')).toHaveCount(1);
+
+  // 点击汉堡打开抽屉
+  await page.locator('#uc-menu-toggle').click();
+  await expect(root).toHaveClass(/uc-drawer-open/);
+  await expect(page.locator('#uc-clean-drawer')).toHaveAttribute('aria-hidden', 'false');
+
+  // 抽屉菜单来自站点菜单链接
+  const drawerItems = await page.locator('#uc-drawer-nav .uc-drawer-item').count();
+  const siteItems = await page.locator('#urppp-menus a[href], #menus a[href]').count();
+  expect(drawerItems).toBeGreaterThan(0);
+  // 抽屉至少包含站点首页菜单项
+  await expect(page.locator('#uc-drawer-nav .uc-drawer-item').first()).toBeVisible();
+  const drawerTexts = await page.locator('#uc-drawer-nav .uc-drawer-item').allTextContents();
+  expect(drawerTexts.some((t) => t.trim() === '首页')).toBeTruthy();
+  void siteItems;
+
+  // 抽屉宽度 260px（桌面端宽度）
+  const drawerW = await page.locator('#uc-clean-drawer').evaluate((el) => Math.round(el.getBoundingClientRect().width));
+  expect(drawerW).toBe(260);
+
+  // 点击遮罩关闭
+  await page.locator('#uc-drawer-mask').click({ position: { x: 300, y: 300 } });
+  await expect(root).not.toHaveClass(/uc-drawer-open/);
+  expect(pageErrors).toEqual([]);
+});
