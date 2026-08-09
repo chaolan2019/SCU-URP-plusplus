@@ -130,4 +130,21 @@ test('section headers keep title on one line with actions on a second line', asy
   expect(layout.operBelowTitle).toBeTruthy();
   expect(layout.operInViewport).toBeTruthy();
   expect(pageErrors).toEqual([]);
+
+  // 标题区内的长注释 label：窄屏下换行显示，不溢出标题卡框
+  const labelInfo = await page.evaluate(() => {
+    const h4 = document.getElementById('h4_id1');
+    const label = h4.querySelector('.label');
+    const h4Rect = h4.getBoundingClientRect();
+    const labelRect = label.getBoundingClientRect();
+    return {
+      whiteSpace: getComputedStyle(label).whiteSpace,
+      labelWithinH4: labelRect.left >= h4Rect.left - 1 && labelRect.right <= h4Rect.right + 1,
+      labelLines: Math.round(labelRect.height / 20),
+      labelText: label.textContent.trim().slice(0, 12),
+    };
+  });
+  expect(labelInfo.whiteSpace).toBe('normal');
+  expect(labelInfo.labelWithinH4).toBeTruthy();
+  expect(labelInfo.labelLines).toBeGreaterThan(1);
 });

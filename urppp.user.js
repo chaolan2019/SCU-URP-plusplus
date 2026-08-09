@@ -3726,6 +3726,25 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
       h4.header.grey, .header.lighter.grey, .header.smaller.lighter {
         color: var(--text) !important;
       }
+      /* 标题区内的提示标签（如 .label arrowed-in 注释）：强制换行，防止长文本溢出标题卡框 */
+      h4.header > .label,
+      h3.header > .label,
+      .header.smaller > .label,
+      .header > .label,
+      h4.header .label,
+      .header .label {
+        white-space: normal !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        flex: 0 1 auto !important;
+        height: auto !important;
+        line-height: 1.5 !important;
+        opacity: 1 !important;
+        top: auto !important;
+        vertical-align: middle !important;
+      }
 
       /*
        * 学籍双栏标题去卡壳（必须写在全局 h4.header 卡片规则之后，才能压过）
