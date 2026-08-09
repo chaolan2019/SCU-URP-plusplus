@@ -14051,11 +14051,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         deps.ensureStyle();
         let btn = document.getElementById("urppp-nav-clean");
         if (!deps.isHomePage()) {
-          const narrow = !!(deps.isNarrowViewport && deps.isNarrowViewport());
-          if (!narrow) {
-            if (btn) btn.remove();
-            return;
-          }
+          if (btn) btn.remove();
+          return;
         }
         const host = document.getElementById("urppp-nav-theme") || document.querySelector("#navbar .navbar-header") || document.querySelector("#navbar");
         if (!host) return;
@@ -25916,7 +25913,6 @@ ${arcs}
         handleThemeDotClick,
         ico,
         isHomePage,
-        isNarrowViewport: /* @__PURE__ */ __name(() => !!(window.matchMedia && window.matchMedia("(max-width: 991px)").matches), "isNarrowViewport"),
         loadAll,
         openSettingsPanel,
         readRememberedTermWeek,

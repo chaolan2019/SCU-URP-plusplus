@@ -43,7 +43,6 @@ function controllerFixture() {
       handleThemeDotClick() {},
       ico: () => '',
       isHomePage: () => true,
-      isNarrowViewport: () => false,
       loadAll(force) { calls.loadAll += 1; },
       openSettingsPanel() {},
       readRememberedTermWeek: () => 0,
