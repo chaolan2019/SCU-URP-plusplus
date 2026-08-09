@@ -16035,22 +16035,22 @@ ${arcs}
     .dataTables_paginate:not(:has(*)) {
       display: none !important;
     }
-    /* 滚动加载页脚（如 div_page_loading_urppagebar）：流式显示在列表下方，不覆盖列表，文字换行 */
+    /* 滚动加载遮罩（如 div_page_loading_urppagebar）：完全隐藏，不占位、不覆盖列表。
+     * 站点加载指示本身已由上方 img/伪元素规则处理。 */
+    #urppagebar [id^="div_page_loading"][id*="urppagebar"],
+    #urppagebar [id*="page_loading"][id*="urppagebar"],
     [id^="div_page_loading"][id*="urppagebar"],
     [id*="page_loading"][id*="urppagebar"],
     div[id*="page_loading"][id*="urppagebar"] {
       position: static !important;
       left: auto !important;
       top: auto !important;
-      display: block !important;
-      width: 100% !important;
+      display: none !important;
+      width: auto !important;
       max-width: 100% !important;
       box-sizing: border-box !important;
-      text-align: left !important;
-      white-space: normal !important;
-      line-height: 1.5 !important;
-      padding: 6px 2px !important;
-      margin: 4px 0 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
       overflow: visible !important;
       z-index: auto !important;
     }
@@ -20172,7 +20172,7 @@ ${arcs}
     function bindChosenPickGuard() {
       if (chosenPickGuardBound) return;
       chosenPickGuardBound = true;
-      document.addEventListener("click", (event) => {
+      const guard = /* @__PURE__ */ __name((event) => {
         if (Date.now() < chosenPickGuardUntil) {
           try {
             event.preventDefault();
@@ -20183,7 +20183,10 @@ ${arcs}
           } catch (_) {
           }
         }
-      }, true);
+      }, "guard");
+      document.addEventListener("mousedown", guard, true);
+      document.addEventListener("mouseup", guard, true);
+      document.addEventListener("click", guard, true);
     }
     __name(bindChosenPickGuard, "bindChosenPickGuard");
     function bindChosenNoPierce(cont) {
@@ -20194,10 +20197,14 @@ ${arcs}
       const onPick = /* @__PURE__ */ __name((event) => {
         const t = event.target;
         if (!t || !t.closest || !t.closest(".chosen-results li")) return;
-        chosenPickGuardUntil = Date.now() + 300;
+        chosenPickGuardUntil = Date.now() + 350;
       }, "onPick");
-      cont.addEventListener("mousedown", onPick, false);
-      if (drop) drop.addEventListener("mousedown", onPick, false);
+      cont.addEventListener("mouseup", onPick, false);
+      cont.addEventListener("touchend", onPick, false);
+      if (drop) {
+        drop.addEventListener("mouseup", onPick, false);
+        drop.addEventListener("touchend", onPick, false);
+      }
     }
     __name(bindChosenNoPierce, "bindChosenNoPierce");
     function bindAllChosenNoPierce(root = document) {

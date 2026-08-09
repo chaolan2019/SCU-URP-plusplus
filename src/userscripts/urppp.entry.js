@@ -303,22 +303,22 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     .dataTables_paginate:not(:has(*)) {
       display: none !important;
     }
-    /* 滚动加载页脚（如 div_page_loading_urppagebar）：流式显示在列表下方，不覆盖列表，文字换行 */
+    /* 滚动加载遮罩（如 div_page_loading_urppagebar）：完全隐藏，不占位、不覆盖列表。
+     * 站点加载指示本身已由上方 img/伪元素规则处理。 */
+    #urppagebar [id^="div_page_loading"][id*="urppagebar"],
+    #urppagebar [id*="page_loading"][id*="urppagebar"],
     [id^="div_page_loading"][id*="urppagebar"],
     [id*="page_loading"][id*="urppagebar"],
     div[id*="page_loading"][id*="urppagebar"] {
       position: static !important;
       left: auto !important;
       top: auto !important;
-      display: block !important;
-      width: 100% !important;
+      display: none !important;
+      width: auto !important;
       max-width: 100% !important;
       box-sizing: border-box !important;
-      text-align: left !important;
-      white-space: normal !important;
-      line-height: 1.5 !important;
-      padding: 6px 2px !important;
-      margin: 4px 0 0 !important;
+      margin: 0 !important;
+      padding: 0 !important;
       overflow: visible !important;
       z-index: auto !important;
     }
@@ -4355,19 +4355,24 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   let chosenPickGuardUntil = 0;
   let chosenPickGuardBound = false;
 
-  // document 捕获阶段拦截：Chosen 在 mousedown 选择并隐藏下拉后，
-  // 浏览器会对同一物理位置重新命中测试派发 click。此时下拉已关，
-  // click 会落到下方被覆盖的控件上（穿透）。捕获阶段先于目标执行，
-  // 拦截选择后短窗口内的 click，阻止其触发下层选择框。
+  // 穿透根因（Chosen 1.1.0）：选项选择由 mouseup/touchend 触发，选择后
+  // 立即 results_hide() 关闭下拉；浏览器随后合成的 mousedown/mouseup/click
+  // 会重新命中测试到关闭后露出的下层控件（如另一个选择框），触发它打开。
+  // 修复：选择事件后设保护窗口，document 捕获阶段拦截窗口内的 mousedown/mouseup/click。
+  // 捕获阶段先于任意目标执行，无论事件重定向到哪个下层元素都能拦住；
+  // Chosen 自身的选择已完成，不受影响。
   function bindChosenPickGuard() {
     if (chosenPickGuardBound) return;
     chosenPickGuardBound = true;
-    document.addEventListener('click', (event) => {
+    const guard = (event) => {
       if (Date.now() < chosenPickGuardUntil) {
         try { event.preventDefault(); } catch (_) { /* ignore */ }
         try { event.stopPropagation(); } catch (_) { /* ignore */ }
       }
-    }, true);
+    };
+    document.addEventListener('mousedown', guard, true);
+    document.addEventListener('mouseup', guard, true);
+    document.addEventListener('click', guard, true);
   }
 
   function bindChosenNoPierce(cont) {
@@ -4375,14 +4380,19 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     cont.__urpppChosenNoPierce = true;
     bindChosenPickGuard();
     const drop = cont.querySelector('.chosen-drop');
-    // 选项 mousedown：选择并关闭下拉的瞬间，为随后的重定向 click 设保护窗口
+    // Chosen 用 mouseup/touchend 选择选项（search_results_mouseup / touchend）。
+    // 选项被点选后立即设保护窗口，覆盖浏览器随后合成的鼠标事件。
     const onPick = (event) => {
       const t = event.target;
       if (!t || !t.closest || !t.closest('.chosen-results li')) return;
-      chosenPickGuardUntil = Date.now() + 300;
+      chosenPickGuardUntil = Date.now() + 350;
     };
-    cont.addEventListener('mousedown', onPick, false);
-    if (drop) drop.addEventListener('mousedown', onPick, false);
+    cont.addEventListener('mouseup', onPick, false);
+    cont.addEventListener('touchend', onPick, false);
+    if (drop) {
+      drop.addEventListener('mouseup', onPick, false);
+      drop.addEventListener('touchend', onPick, false);
+    }
   }
 
   // 扫描页面所有 Chosen 容器绑定防穿透（覆盖站点自带/插件初始化的所有情况）
