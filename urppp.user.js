@@ -16242,6 +16242,9 @@ ${arcs}
           button.setAttribute("role", "button");
           button.setAttribute("aria-label", "搜索功能");
         }
+        button.style.setProperty("left", "8px", "important");
+        button.style.setProperty("position", "relative", "important");
+        button.style.setProperty("z-index", "31", "important");
         if (!formSearch) {
           formSearch = document.createElement("div");
           formSearch.id = "form-search";
@@ -16262,11 +16265,10 @@ ${arcs}
         formSearch.style.setProperty("pointer-events", formSearch.dataset.open === "1" ? "auto" : "none", "important");
         formSearch.style.setProperty("z-index", "1200", "important");
         formSearch.style.setProperty("margin", "0", "important");
-        formSearch.style.setProperty("background", "var(--surface)", "important");
-        formSearch.style.setProperty("border", formSearch.dataset.open === "1" ? "1px solid var(--border)" : "0 solid transparent", "important");
-        formSearch.style.setProperty("border-radius", "var(--radius-sm)", "important");
-        formSearch.style.setProperty("box-shadow", formSearch.dataset.open === "1" ? "var(--shadow)" : "none", "important");
-        formSearch.style.setProperty("overflow", "hidden", "important");
+        formSearch.style.setProperty("background", "transparent", "important");
+        formSearch.style.setProperty("border", "0 solid transparent", "important");
+        formSearch.style.setProperty("box-shadow", "none", "important");
+        formSearch.style.setProperty("overflow", "visible", "important");
         formSearch.style.setProperty("transition", "width .2s ease, opacity .2s ease", "important");
         const input = formSearch.querySelector("#search-input");
         const innerForm = formSearch.querySelector("form");
@@ -16295,8 +16297,17 @@ ${arcs}
           formSearch.appendChild(results);
         }
         results.style.setProperty("display", "none", "important");
+        results.style.setProperty("position", "absolute", "important");
+        results.style.setProperty("top", "calc(100% + 4px)", "important");
+        results.style.setProperty("left", "10px", "important");
+        results.style.setProperty("right", "10px", "important");
         results.style.setProperty("gap", "2px", "important");
-        results.style.setProperty("padding", "0 10px 10px", "important");
+        results.style.setProperty("padding", "6px", "important");
+        results.style.setProperty("background", "var(--surface)", "important");
+        results.style.setProperty("border", "1px solid var(--border)", "important");
+        results.style.setProperty("border-radius", "var(--radius-sm)", "important");
+        results.style.setProperty("box-shadow", "var(--shadow)", "important");
+        results.style.setProperty("z-index", "1201", "important");
         results.style.setProperty("max-height", "min(320px, calc(100vh - 120px))", "important");
         results.style.setProperty("overflow-y", "auto", "important");
         const collectEntries = /* @__PURE__ */ __name(() => {
@@ -16343,8 +16354,6 @@ ${arcs}
           formSearch.style.setProperty("width", open ? "min(320px, calc(100vw - 24px))" : "0px", "important");
           formSearch.style.setProperty("opacity", open ? "1" : "0", "important");
           formSearch.style.setProperty("pointer-events", open ? "auto" : "none", "important");
-          formSearch.style.setProperty("border", open ? "1px solid var(--border)" : "0 solid transparent", "important");
-          formSearch.style.setProperty("box-shadow", open ? "var(--shadow)" : "none", "important");
           button.setAttribute("aria-expanded", open ? "true" : "false");
           if (open) {
             renderResults();

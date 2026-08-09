@@ -28,12 +28,14 @@ test('desktop search opens with stable styling and renders menu results', async 
       searchBeforeHelp: searchItem && helpItem ? (searchItem.compareDocumentPosition(helpItem) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0 : false,
       cmp: searchItem && helpItem ? searchItem.compareDocumentPosition(helpItem) : -1,
       formInsideLi: document.getElementById('form-search')?.closest('li') === searchItem,
-      resultsInline: getComputedStyle(document.getElementById('urppp-search-results')).position !== 'absolute',
+      buttonLeft: getComputedStyle(document.getElementById('clickdiv')).left,
+      formTransparent: getComputedStyle(document.getElementById('form-search')).backgroundColor === 'rgba(0, 0, 0, 0)',
     };
   });
   expect(positions.searchBeforeHelp).toBeTruthy();
   expect(positions.formInsideLi).toBeTruthy();
-  expect(positions.resultsInline).toBeTruthy();
+  expect(positions.buttonLeft).toBe('8px');
+  expect(positions.formTransparent).toBeTruthy();
 
   await button.click();
   await expect(panel).toHaveAttribute('data-open', '1');

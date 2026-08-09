@@ -624,6 +624,10 @@ import { createNavbarController } from '../features/navigation/navbar.js';
         button.setAttribute('role', 'button');
         button.setAttribute('aria-label', '搜索功能');
       }
+      // 按钮水平位置：原生 left:-32px 会重叠进输入框区域，调到 8px 靠右贴帮助按钮
+      button.style.setProperty('left', '8px', 'important');
+      button.style.setProperty('position', 'relative', 'important');
+      button.style.setProperty('z-index', '31', 'important');
       if (!formSearch) {
         formSearch = document.createElement('div');
         formSearch.id = 'form-search';
@@ -645,12 +649,11 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       formSearch.style.setProperty('pointer-events', formSearch.dataset.open === '1' ? 'auto' : 'none', 'important');
       formSearch.style.setProperty('z-index', '1200', 'important');
       formSearch.style.setProperty('margin', '0', 'important');
-      // 原生弹出窗口形态：自身就是带背景的面板，结果列表内嵌其中
-      formSearch.style.setProperty('background', 'var(--surface)', 'important');
-      formSearch.style.setProperty('border', formSearch.dataset.open === '1' ? '1px solid var(--border)' : '0 solid transparent', 'important');
-      formSearch.style.setProperty('border-radius', 'var(--radius-sm)', 'important');
-      formSearch.style.setProperty('box-shadow', formSearch.dataset.open === '1' ? 'var(--shadow)' : 'none', 'important');
-      formSearch.style.setProperty('overflow', 'hidden', 'important');
+      // 只保留原生搜索框本身，外围不再包面板背景
+      formSearch.style.setProperty('background', 'transparent', 'important');
+      formSearch.style.setProperty('border', '0 solid transparent', 'important');
+      formSearch.style.setProperty('box-shadow', 'none', 'important');
+      formSearch.style.setProperty('overflow', 'visible', 'important');
       formSearch.style.setProperty('transition', 'width .2s ease, opacity .2s ease', 'important');
 
       const input = formSearch.querySelector('#search-input');
@@ -680,10 +683,19 @@ import { createNavbarController } from '../features/navigation/navbar.js';
         results.id = 'urppp-search-results';
         formSearch.appendChild(results);
       }
-      // 结果列表作为 form-search 弹出窗口的一部分：仅输入时显示，不额外套独立浮层框
+      // 结果列表：唯一需要背景的元素，定位在输入框正下方，仅输入时显示
       results.style.setProperty('display', 'none', 'important');
+      results.style.setProperty('position', 'absolute', 'important');
+      results.style.setProperty('top', 'calc(100% + 4px)', 'important');
+      results.style.setProperty('left', '10px', 'important');
+      results.style.setProperty('right', '10px', 'important');
       results.style.setProperty('gap', '2px', 'important');
-      results.style.setProperty('padding', '0 10px 10px', 'important');
+      results.style.setProperty('padding', '6px', 'important');
+      results.style.setProperty('background', 'var(--surface)', 'important');
+      results.style.setProperty('border', '1px solid var(--border)', 'important');
+      results.style.setProperty('border-radius', 'var(--radius-sm)', 'important');
+      results.style.setProperty('box-shadow', 'var(--shadow)', 'important');
+      results.style.setProperty('z-index', '1201', 'important');
       results.style.setProperty('max-height', 'min(320px, calc(100vh - 120px))', 'important');
       results.style.setProperty('overflow-y', 'auto', 'important');
 
@@ -732,8 +744,6 @@ import { createNavbarController } from '../features/navigation/navbar.js';
         formSearch.style.setProperty('width', open ? 'min(320px, calc(100vw - 24px))' : '0px', 'important');
         formSearch.style.setProperty('opacity', open ? '1' : '0', 'important');
         formSearch.style.setProperty('pointer-events', open ? 'auto' : 'none', 'important');
-        formSearch.style.setProperty('border', open ? '1px solid var(--border)' : '0 solid transparent', 'important');
-        formSearch.style.setProperty('box-shadow', open ? 'var(--shadow)' : 'none', 'important');
         button.setAttribute('aria-expanded', open ? 'true' : 'false');
         if (open) {
           renderResults();
