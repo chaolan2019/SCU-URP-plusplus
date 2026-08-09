@@ -225,6 +225,32 @@
         .form-signin .form-group {
           margin-bottom: 6px !important;
         }
+        /* 验证码行：输入框全宽，验证码图片/登录按钮/EN 链接独立成行，避免 390px 下重叠挤压 */
+        .form-signin input#input_checkcode {
+          display: block !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
+        }
+        .form-signin a.fadeIn.fourth,
+        .form-signin a.fadeInFourth,
+        .form-signin a[href*="checkcode"],
+        .form-signin a:has(> img[src*="captcha"]),
+        .form-signin img[src*="captcha"] {
+          display: inline-block !important;
+          max-width: 100% !important;
+          height: 38px !important;
+          margin: 4px 4px 4px 0 !important;
+          vertical-align: middle !important;
+          box-sizing: border-box !important;
+        }
+        .form-signin input#loginButton {
+          display: block !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          margin-top: 6px !important;
+          box-sizing: border-box !important;
+        }
         /* 收紧表格与分页条之间的空白，空容器隐藏后底栏跟随上移 */
         #urppagebar {
           margin-top: 2px !important;
