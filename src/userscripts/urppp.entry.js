@@ -296,6 +296,13 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       content: none !important;
       display: none !important;
     }
+    /* 空分页容器（无任何子节点）不占位，消除列表下方的空白条 */
+    [id^="sample-table-2_paginate"]:empty,
+    .dataTables_paginate:empty,
+    [id^="sample-table-2_paginate"]:not(:has(*)),
+    .dataTables_paginate:not(:has(*)) {
+      display: none !important;
+    }
     /* 滚动加载页脚（如 div_page_loading_urppagebar）：流式显示在列表下方，不覆盖列表，文字换行 */
     [id^="div_page_loading"][id*="urppagebar"],
     [id*="page_loading"][id*="urppagebar"],
@@ -4340,6 +4347,31 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     sel.style.setProperty('display', 'inline-block', 'important');
   }
 
+  // 防穿透：下拉选项的 mousedown/click 冒泡到容器即停，
+  // 不影响 Chosen 内部选项处理器，但不会继续冒泡触发下层控件
+  function bindChosenNoPierce(cont) {
+    if (!cont || cont.__urpppChosenNoPierce) return;
+    cont.__urpppChosenNoPierce = true;
+    const stop = (event) => {
+      try { event.stopPropagation(); } catch (_) { /* ignore */ }
+    };
+    cont.addEventListener('mousedown', stop, false);
+    cont.addEventListener('click', stop, false);
+    cont.addEventListener('mouseup', stop, false);
+    const drop = cont.querySelector('.chosen-drop');
+    if (drop) {
+      drop.addEventListener('mousedown', stop, false);
+      drop.addEventListener('click', stop, false);
+    }
+  }
+
+  // 扫描页面所有 Chosen 容器绑定防穿透（覆盖站点自带/插件初始化的所有情况）
+  function bindAllChosenNoPierce(root = document) {
+    try {
+      root.querySelectorAll('.chosen-container').forEach(bindChosenNoPierce);
+    } catch (_) { /* ignore */ }
+  }
+
   function ensureQueryChosen() {
     try {
       const $ = pageJQuery();
@@ -4382,6 +4414,11 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           sel.dataset.urpppChosen = '1';
           sel.classList.add('urppp-chosen-hidden');
           sel.style.setProperty('display', 'none', 'important');
+          const existingCont =
+            sel.nextElementSibling && sel.nextElementSibling.classList.contains('chosen-container')
+              ? sel.nextElementSibling
+              : (sel.parentElement && sel.parentElement.querySelector(':scope > .chosen-container'));
+          if (existingCont) bindChosenNoPierce(existingCont);
           return;
         }
         try {
@@ -4407,6 +4444,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
             cont.style.setProperty('min-width', '0', 'important');
             cont.style.setProperty('display', 'block', 'important');
           }
+          if (cont) bindChosenNoPierce(cont);
         } catch (e) {
           console.warn('[URP++] chosen init failed', sel, e);
         }
@@ -4442,11 +4480,15 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     if (window.__urpppChosenScheduleBound) return;
     window.__urpppChosenScheduleBound = true;
     const delays = [0, 200, 600, 1500, 3000];
-    delays.forEach((ms) => setTimeout(() => { ensureQueryChosen(); }, ms));
+    delays.forEach((ms) => setTimeout(() => {
+      ensureQueryChosen();
+      bindAllChosenNoPierce();
+    }, ms));
     let tries = 0;
     const timer = setInterval(() => {
       tries += 1;
       const ok = ensureQueryChosen();
+      bindAllChosenNoPierce();
       // jQuery/chosen 就绪后多试几次，不必无限跑
       if ((ok && tries > 3) || tries > 15) clearInterval(timer);
     }, 500);
@@ -6857,6 +6899,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     // 查询表：首屏立刻布局（CSS 已预横排）；延迟只补 Chosen / 漏网行，次数收敛防闪
     scheduleEnsureQueryChosen();
     ensureQueryChosen();
+    bindAllChosenNoPierce();
     beautifyQueryForms();
     patchChosenDropdownAlign();
     setTimeout(() => { ensureQueryChosen(); beautifyQueryForms(); }, 200);

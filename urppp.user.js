@@ -12418,6 +12418,13 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         #urppagebar input {
           max-width: 120px !important;
         }
+        /* pagebar 内无内容的子容器不占位，消除列表下方空白 */
+        #urppagebar [id^="currNum_"],
+        #urppagebar [id^="selectNum_"],
+        #urppagebar [id^="endflag_"],
+        #urppagebar div:empty {
+          display: none !important;
+        }
         #urppp-dashboard .urppp-welcome h2 {
           font-size: 19px !important;
         }
@@ -16011,6 +16018,13 @@ ${arcs}
     [id^="div_page_loading"]::before,
     [id*="page_loading"]::before {
       content: none !important;
+      display: none !important;
+    }
+    /* 空分页容器（无任何子节点）不占位，消除列表下方的空白条 */
+    [id^="sample-table-2_paginate"]:empty,
+    .dataTables_paginate:empty,
+    [id^="sample-table-2_paginate"]:not(:has(*)),
+    .dataTables_paginate:not(:has(*)) {
       display: none !important;
     }
     /* 滚动加载页脚（如 div_page_loading_urppagebar）：流式显示在列表下方，不覆盖列表，文字换行 */
@@ -20145,6 +20159,32 @@ ${arcs}
       sel.style.setProperty("display", "inline-block", "important");
     }
     __name(destroyPagebarChosen, "destroyPagebarChosen");
+    function bindChosenNoPierce(cont) {
+      if (!cont || cont.__urpppChosenNoPierce) return;
+      cont.__urpppChosenNoPierce = true;
+      const stop = /* @__PURE__ */ __name((event) => {
+        try {
+          event.stopPropagation();
+        } catch (_) {
+        }
+      }, "stop");
+      cont.addEventListener("mousedown", stop, false);
+      cont.addEventListener("click", stop, false);
+      cont.addEventListener("mouseup", stop, false);
+      const drop = cont.querySelector(".chosen-drop");
+      if (drop) {
+        drop.addEventListener("mousedown", stop, false);
+        drop.addEventListener("click", stop, false);
+      }
+    }
+    __name(bindChosenNoPierce, "bindChosenNoPierce");
+    function bindAllChosenNoPierce(root = document) {
+      try {
+        root.querySelectorAll(".chosen-container").forEach(bindChosenNoPierce);
+      } catch (_) {
+      }
+    }
+    __name(bindAllChosenNoPierce, "bindAllChosenNoPierce");
     function ensureQueryChosen() {
       try {
         const $ = pageJQuery();
@@ -20179,6 +20219,8 @@ ${arcs}
             sel.dataset.urpppChosen = "1";
             sel.classList.add("urppp-chosen-hidden");
             sel.style.setProperty("display", "none", "important");
+            const existingCont = sel.nextElementSibling && sel.nextElementSibling.classList.contains("chosen-container") ? sel.nextElementSibling : sel.parentElement && sel.parentElement.querySelector(":scope > .chosen-container");
+            if (existingCont) bindChosenNoPierce(existingCont);
             return;
           }
           try {
@@ -20203,6 +20245,7 @@ ${arcs}
               cont.style.setProperty("min-width", "0", "important");
               cont.style.setProperty("display", "block", "important");
             }
+            if (cont) bindChosenNoPierce(cont);
           } catch (e) {
             console.warn("[URP++] chosen init failed", sel, e);
           }
@@ -20242,11 +20285,13 @@ ${arcs}
       const delays = [0, 200, 600, 1500, 3e3];
       delays.forEach((ms) => setTimeout(() => {
         ensureQueryChosen();
+        bindAllChosenNoPierce();
       }, ms));
       let tries = 0;
       const timer = setInterval(() => {
         tries += 1;
         const ok = ensureQueryChosen();
+        bindAllChosenNoPierce();
         if (ok && tries > 3 || tries > 15) clearInterval(timer);
       }, 500);
     }
@@ -22533,6 +22578,7 @@ ${arcs}
       beautifyPagebar();
       scheduleEnsureQueryChosen();
       ensureQueryChosen();
+      bindAllChosenNoPierce();
       beautifyQueryForms();
       patchChosenDropdownAlign();
       setTimeout(() => {

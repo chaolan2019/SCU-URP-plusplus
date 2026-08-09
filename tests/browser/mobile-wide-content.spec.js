@@ -212,6 +212,16 @@ test('chosen dropdown stays above neighboring controls to avoid click-through', 
     expect(Math.max(...ruleZ)).toBeGreaterThanOrEqual(1000);
   }
   expect(info.containerOverflow).toBe('visible');
+  // 防穿透绑定：chosen 容器已挂 no-pierce 标记，选项点击不会冒泡触发下层控件
+  const noPierce = await page.evaluate(() => {
+    const containers = [...document.querySelectorAll('.chosen-container')];
+    return {
+      count: containers.length,
+      bound: containers.filter((c) => c.__urpppChosenNoPierce).length,
+    };
+  });
+  expect(noPierce.count).toBeGreaterThan(0);
+  expect(noPierce.bound).toBe(noPierce.count);
   expect(pageErrors).toEqual([]);
 });
 

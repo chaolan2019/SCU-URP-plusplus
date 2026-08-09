@@ -195,6 +195,13 @@
         #urppagebar input {
           max-width: 120px !important;
         }
+        /* pagebar 内无内容的子容器不占位，消除列表下方空白 */
+        #urppagebar [id^="currNum_"],
+        #urppagebar [id^="selectNum_"],
+        #urppagebar [id^="endflag_"],
+        #urppagebar div:empty {
+          display: none !important;
+        }
         #urppp-dashboard .urppp-welcome h2 {
           font-size: 19px !important;
         }
