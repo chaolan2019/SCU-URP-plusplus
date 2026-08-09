@@ -11557,21 +11557,37 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
 #urppp-clean-root .uc-top-left{display:flex;align-items:center;gap:10px}
 #urppp-clean-root .uc-menu-toggle{width:34px;height:34px;border:0;background:transparent;color:var(--text);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;border-radius:10px;transition:background .15s ease}
 #urppp-clean-root .uc-menu-toggle:hover{background:var(--input-bg,#f7f7f8)}
-/* 清爽模式侧边栏抽屉：260px 覆盖滑出，桌面/移动一致 */
-#urppp-clean-root .uc-drawer-mask{position:fixed;inset:0;z-index:12010;background:rgba(15,23,42,.32);opacity:0;pointer-events:none;transition:opacity .24s ease}
-#urppp-clean-root.uc-drawer-open .uc-drawer-mask{opacity:1;pointer-events:auto}
-#urppp-clean-root .uc-clean-drawer{position:fixed;top:0;left:0;bottom:0;width:260px;max-width:82vw;z-index:12020;background:var(--surface,#fff);border-right:1px solid var(--border,#e7e7ea);box-shadow:8px 0 28px rgba(15,23,42,.14);display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .28s cubic-bezier(.22,1,.36,1);visibility:hidden}
-#urppp-clean-root.uc-drawer-open .uc-clean-drawer{transform:translateX(0);visibility:visible}
-#urppp-clean-root .uc-drawer-head{flex:0 0 56px;display:flex;align-items:center;justify-content:space-between;padding:0 14px 0 18px;border-bottom:1px solid var(--border,#e7e7ea);font-weight:600;font-size:15px}
-#urppp-clean-root .uc-drawer-close{width:30px;height:30px;border:0;background:transparent;color:var(--text-secondary);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;border-radius:8px}
-#urppp-clean-root .uc-drawer-close:hover{background:var(--input-bg,#f7f7f8);color:var(--text)}
-#urppp-clean-root .uc-drawer-nav{flex:1;min-height:0;overflow-y:auto;padding:8px 10px}
-#urppp-clean-root .uc-drawer-item{display:block;padding:10px 12px;border-radius:10px;color:var(--text);font-size:14px;text-decoration:none;transition:background .15s ease,color .15s ease}
-#urppp-clean-root .uc-drawer-item:hover{background:var(--input-bg,#f7f7f8);color:var(--primary)}
-@media (max-width:900px){
-  #urppp-clean-root .uc-clean-drawer{width:260px}
-  #urppp-clean-root .uc-drawer-head{flex-basis:50px}
+#urppp-clean-root .uc-menu-toggle .urppp-menu-icon,
+#urppp-clean-root .uc-menu-toggle .urppp-menu-icon svg{display:block;width:18px;height:18px}
+#urppp-clean-root .uc-menu-toggle .urppp-menu-icon svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#urppp-clean-root .uc-menu-toggle .urppp-menu-icon svg.urppp-menu-icon-close{display:none}
+#urppp-clean-root .uc-menu-toggle[aria-expanded="true"] .urppp-menu-icon svg.urppp-menu-icon-open{display:none}
+#urppp-clean-root .uc-menu-toggle[aria-expanded="true"] .urppp-menu-icon svg.urppp-menu-icon-close{display:block}
+/* 清爽模式下复用站点侧边栏抽屉：固定左侧 260px 滑出，z-index 在清爽模式之上 */
+#sidebar.urppp-clean-sidebar{
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  bottom: 0 !important;
+  width: 260px !important;
+  min-width: 260px !important;
+  max-width: 260px !important;
+  height: 100vh !important;
+  z-index: 12030 !important;
+  transform: translate3d(-100%, 0, 0) !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transition: transform .26s cubic-bezier(.4, 0, .2, 1), visibility 0s linear .26s !important;
+  margin: 0 !important;
+  box-shadow: 8px 0 28px rgba(15,23,42,.14) !important;
 }
+#sidebar.urppp-clean-sidebar.display{
+  transform: translate3d(0, 0, 0) !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  transition: transform .26s cubic-bezier(.4, 0, .2, 1), visibility 0s linear 0s !important;
+}
+#urppp-clean-root .uc-top{flex:0 0 60px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--border);background:var(--surface,#fff);animation:ucTopIn .36s cubic-bezier(.22,1,.36,1) both}
 #urppp-clean-root .uc-score-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 #urppp-clean-root .uc-score-pane{border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;background:var(--input-bg);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease}
 #urppp-clean-root .uc-score-pane:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.06);background:color-mix(in srgb,var(--primary) 5%,var(--input-bg))}
@@ -14147,8 +14163,11 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       el.innerHTML = `
       <div class="uc-top">
         <div class="uc-top-left">
-          <button type="button" class="uc-menu-toggle" id="uc-menu-toggle" title="侧边栏" aria-label="侧边栏" aria-expanded="false">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          <button type="button" class="uc-menu-toggle" id="uc-menu-toggle" title="侧边栏" aria-label="打开菜单" aria-expanded="false">
+            <span class="urppp-menu-icon" aria-hidden="true">
+              <svg class="urppp-menu-icon-open" viewBox="0 0 24 24" focusable="false"><path d="M5 8h14"></path><path d="M5 16h10"></path></svg>
+              <svg class="urppp-menu-icon-close" viewBox="0 0 24 24" focusable="false"><path d="M7 7l10 10"></path><path d="M17 7 7 17"></path></svg>
+            </span>
           </button>
           <div class="uc-top-theme" id="uc-top-theme">
             <button type="button" class="urppp-nav-dot" data-theme="default" title="简约白" style="background:#F1F5F9"></button>
@@ -14171,14 +14190,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         <button type="button" data-tab="room">${deps.ico("room")}<span>教室</span></button>
         <button type="button" data-tab="more">${deps.ico("more")}<span>其他</span></button>
       </div>
-      <div class="uc-drawer-mask" id="uc-drawer-mask"></div>
-      <aside class="uc-clean-drawer" id="uc-clean-drawer" aria-hidden="true">
-        <div class="uc-drawer-head">
-          <span>功能导航</span>
-          <button type="button" class="uc-drawer-close" id="uc-drawer-close" aria-label="关闭">${deps.ico("close")}</button>
-        </div>
-        <nav class="uc-drawer-nav" id="uc-drawer-nav"></nav>
-      </aside>
       <div class="uc-mask" id="uc-mask"></div>
       <div class="uc-modal" id="uc-modal">
         <div class="uc-modal-hd"><span id="uc-modal-title">详情</span><button type="button" class="uc-btn" id="uc-modal-close">${deps.ico("close")}</button></div>
@@ -14216,48 +14227,76 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         } catch (_) {
         }
       });
-      const drawer = el.querySelector("#uc-clean-drawer");
-      const drawerMask = el.querySelector("#uc-drawer-mask");
       const menuToggle = el.querySelector("#uc-menu-toggle");
-      const drawerClose = el.querySelector("#uc-drawer-close");
-      const drawerNav = el.querySelector("#uc-drawer-nav");
-      const closeDrawer = /* @__PURE__ */ __name(() => {
-        el.classList.remove("uc-drawer-open");
-        drawer.setAttribute("aria-hidden", "true");
-        menuToggle.setAttribute("aria-expanded", "false");
-      }, "closeDrawer");
-      const openDrawer = /* @__PURE__ */ __name(() => {
-        if (!drawerNav.children.length) {
-          const menuRoot = document.getElementById("urppp-menus") || document.getElementById("menus");
-          const links = menuRoot ? menuRoot.querySelectorAll("a[href]") : [];
-          links.forEach((anchor) => {
-            const href = String(anchor.getAttribute("href") || "").trim();
-            const text = String(anchor.textContent || "").replace(/\s+/g, " ").trim();
-            if (!text || !href || href === "#" || /^javascript:/i.test(href)) return;
-            const item = document.createElement("a");
-            item.className = "uc-drawer-item";
-            item.href = href;
-            item.textContent = text;
-            item.addEventListener("click", () => {
-              closeCleanMode();
-              location.href = href;
-            });
-            drawerNav.appendChild(item);
-          });
+      const syncCleanSidebarZ = /* @__PURE__ */ __name(() => {
+        const sidebar = document.getElementById("sidebar");
+        if (!sidebar) return;
+        if (state.open) {
+          sidebar.classList.add("urppp-clean-sidebar");
+          if (!sidebar.__urpppCleanZ) {
+            const s = sidebar.style;
+            sidebar.__urpppCleanZ = s.getPropertyValue("z-index");
+            sidebar.__urpppCleanZP = s.getPropertyPriority("z-index");
+            sidebar.__urpppCleanPos = s.getPropertyValue("position");
+            sidebar.__urpppCleanPosP = s.getPropertyPriority("position");
+          }
+          sidebar.style.setProperty("z-index", "12030", "important");
+          sidebar.style.setProperty("position", "fixed", "important");
+        } else {
+          sidebar.classList.remove("urppp-clean-sidebar");
+          if (sidebar.__urpppCleanZ !== void 0) {
+            if (sidebar.__urpppCleanZ) sidebar.style.setProperty("z-index", sidebar.__urpppCleanZ, sidebar.__urpppCleanZP || "");
+            else sidebar.style.removeProperty("z-index");
+            if (sidebar.__urpppCleanPos) sidebar.style.setProperty("position", sidebar.__urpppCleanPos, sidebar.__urpppCleanPosP || "");
+            else sidebar.style.removeProperty("position");
+            delete sidebar.__urpppCleanZ;
+            delete sidebar.__urpppCleanZP;
+            delete sidebar.__urpppCleanPos;
+            delete sidebar.__urpppCleanPosP;
+          }
         }
-        el.classList.add("uc-drawer-open");
-        drawer.setAttribute("aria-hidden", "false");
-        menuToggle.setAttribute("aria-expanded", "true");
-      }, "openDrawer");
+      }, "syncCleanSidebarZ");
+      const closeCleanSidebar = /* @__PURE__ */ __name(() => {
+        const sidebar = document.getElementById("sidebar");
+        if (!sidebar) return;
+        if (sidebar.classList.contains("display")) {
+          const toggler = document.getElementById("urppp-mobile-menu-button");
+          if (toggler) {
+            toggler.setAttribute("aria-expanded", "false");
+            toggler.setAttribute("aria-label", "打开菜单");
+          }
+          sidebar.classList.remove("display");
+        }
+        sidebar.classList.remove("urppp-clean-sidebar");
+      }, "closeCleanSidebar");
       if (menuToggle) menuToggle.addEventListener("click", (event) => {
         event.preventDefault();
-        event.stopPropagation();
-        if (el.classList.contains("uc-drawer-open")) closeDrawer();
-        else openDrawer();
+        event.stopImmediatePropagation();
+        const sidebar = document.getElementById("sidebar");
+        if (!sidebar) return;
+        if (!sidebar.__urpppCleanMenuBound) {
+          sidebar.__urpppCleanMenuBound = true;
+          sidebar.addEventListener("click", (ev) => {
+            if (!state.open) return;
+            const link = ev.target && ev.target.closest ? ev.target.closest("a[href]") : null;
+            if (!link) return;
+            const href = String(link.getAttribute("href") || "").trim();
+            if (!href || href === "#" || href.startsWith("javascript")) return;
+            closeCleanMode();
+          });
+        }
+        const toggler = document.getElementById("urppp-mobile-menu-button");
+        if (toggler && toggler.__urpppToggleHandler) {
+          toggler.__urpppToggleHandler(event);
+        } else {
+          const open = !sidebar.classList.contains("display");
+          sidebar.classList.toggle("display", open);
+          menuToggle.setAttribute("aria-expanded", open ? "true" : "false");
+        }
+        syncCleanSidebarZ();
       });
-      if (drawerClose) drawerClose.addEventListener("click", closeDrawer);
-      if (drawerMask) drawerMask.addEventListener("click", closeDrawer);
-      el.__closeCleanDrawer = closeDrawer;
+      el.__closeCleanDrawer = closeCleanSidebar;
+      el.__syncCleanSidebarZ = syncCleanSidebarZ;
       el.__syncCleanThemeDots = syncCleanThemeDots;
       try {
         deps.applySkinAttr();
@@ -14289,6 +14328,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       el.classList.add("open");
       try {
         if (el.__syncCleanThemeDots) el.__syncCleanThemeDots();
+      } catch (_) {
+      }
+      try {
+        if (el.__syncCleanSidebarZ) el.__syncCleanSidebarZ();
       } catch (_) {
       }
       deps.loadAll(!!force);

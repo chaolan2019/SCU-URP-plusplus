@@ -92,7 +92,7 @@ test('clean mode opens with score data and renders analysis charts', async ({ pa
   expect(pageErrors).toEqual([]);
 });
 
-test('clean mode drawer opens from top-left toggle with site menu links', async ({ page }) => {
+test('clean mode top-left toggle opens the site sidebar drawer', async ({ page }) => {
   const { pageErrors } = await loadUrpFixture(page, { fixture: 'home' });
   await installScoreApiMock(page);
 
@@ -103,29 +103,27 @@ test('clean mode drawer opens from top-left toggle with site menu links', async 
   const root = page.locator('#urppp-clean-root');
   await expect(root).toHaveClass(/open/);
   await expect(page.locator('#uc-menu-toggle')).toHaveCount(1);
-  await expect(page.locator('#uc-clean-drawer')).toHaveCount(1);
 
-  // 点击汉堡打开抽屉
+  // 清爽模式下站点侧边栏进入抽屉隐藏态
+  const sidebar = page.locator('#sidebar');
+  await expect(sidebar).toHaveClass(/urppp-clean-sidebar/);
+
+  // 点击汉堡：站点侧边栏滑出（display + 宽度 260px）
   await page.locator('#uc-menu-toggle').click();
-  await expect(root).toHaveClass(/uc-drawer-open/);
-  await expect(page.locator('#uc-clean-drawer')).toHaveAttribute('aria-hidden', 'false');
+  await expect(sidebar).toHaveClass(/display/);
+  const sidebarW = await sidebar.evaluate((el) => Math.round(el.getBoundingClientRect().width));
+  expect(sidebarW).toBeGreaterThanOrEqual(259);
+  expect(sidebarW).toBeLessThanOrEqual(262);
 
-  // 抽屉菜单来自站点菜单链接
-  const drawerItems = await page.locator('#uc-drawer-nav .uc-drawer-item').count();
-  const siteItems = await page.locator('#urppp-menus a[href], #menus a[href]').count();
-  expect(drawerItems).toBeGreaterThan(0);
-  // 抽屉至少包含站点首页菜单项
-  await expect(page.locator('#uc-drawer-nav .uc-drawer-item').first()).toBeVisible();
-  const drawerTexts = await page.locator('#uc-drawer-nav .uc-drawer-item').allTextContents();
-  expect(drawerTexts.some((t) => t.trim() === '首页')).toBeTruthy();
-  void siteItems;
+  // 侧边栏菜单含站点菜单项（首页）
+  const menuTexts = await sidebar.locator('#urppp-menus a[href], #menus a[href]').allTextContents();
+  expect(menuTexts.some((t) => t.includes('首页'))).toBeTruthy();
+  expect(await sidebar.locator('a[href]').count()).toBeGreaterThan(0);
 
-  // 抽屉宽度 260px（桌面端宽度）
-  const drawerW = await page.locator('#uc-clean-drawer').evaluate((el) => Math.round(el.getBoundingClientRect().width));
-  expect(drawerW).toBe(260);
-
-  // 点击遮罩关闭
-  await page.locator('#uc-drawer-mask').click({ position: { x: 300, y: 300 } });
-  await expect(root).not.toHaveClass(/uc-drawer-open/);
+  // 关闭清爽模式后 sidebar 恢复原状（移除 urppp-clean-sidebar 和 display）
+  await page.evaluate(() => document.getElementById('uc-exit').click());
+  await page.waitForTimeout(400);
+  await expect(sidebar).not.toHaveClass(/urppp-clean-sidebar/);
+  await expect(sidebar).not.toHaveClass(/display/);
   expect(pageErrors).toEqual([]);
 });
