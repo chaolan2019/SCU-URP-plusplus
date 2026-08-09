@@ -180,3 +180,72 @@ test('desktop section headers keep title and actions on one row', async ({ page 
   expect(layout.operInViewport).toBeTruthy();
   expect(pageErrors).toEqual([]);
 });
+
+test('chosen dropdown stays above neighboring controls to avoid click-through', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'grades',
+    viewport: { width: 390, height: 844 },
+    values: { urppp_skin_v1: 'neu', urppp_theme_v3: 'default' },
+  });
+
+  const info = await page.evaluate(() => {
+    const drop = document.querySelector('.chosen-drop');
+    const container = document.querySelector('.chosen-container');
+    return {
+      dropZ: drop ? getComputedStyle(drop).zIndex : null,
+      containerOverflow: container ? getComputedStyle(container).overflow : null,
+      dropRuleZ: [...document.querySelectorAll('style')].flatMap((s) => {
+        try { return [...s.sheet.cssRules]; } catch (e) { return []; }
+      }).filter((r) => r.selectorText && r.selectorText.includes('.chosen-drop')).map((r) => ({
+        sel: r.selectorText.slice(0, 40),
+        z: r.style.getPropertyValue('z-index'),
+      })),
+    };
+  });
+  // 下拉浮层 z-index 规则必须高于普通控件，点击选项不会穿透到下层表单
+  const dropZ = info.dropZ ? parseInt(info.dropZ, 10) : null;
+  const ruleZ = info.dropRuleZ.map((r) => parseInt(r.z, 10)).filter((z) => !Number.isNaN(z));
+  if (dropZ !== null) {
+    expect(dropZ).toBeGreaterThanOrEqual(1000);
+  } else {
+    // 静态 fixture 无运行时 drop：至少 CSS 规则里有高 z-index
+    expect(Math.max(...ruleZ)).toBeGreaterThanOrEqual(1000);
+  }
+  expect(info.containerOverflow).toBe('visible');
+  expect(pageErrors).toEqual([]);
+});
+
+test('scroll pagebar wraps on narrow viewports so info text is not clipped', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'grades',
+    viewport: { width: 390, height: 844 },
+    values: { urppp_skin_v1: 'neu', urppp_theme_v3: 'default' },
+  });
+
+  // 注入一个滚动态分页条，验证窄屏下换行、不左截断
+  await page.evaluate(() => {
+    const bar = document.createElement('div');
+    bar.id = 'urppagebar';
+    bar.className = 'urppp-pagebar urppp-pagebar-scroll';
+    bar.innerHTML = '<div class="dataTables_paginate"><div>页显示 <select><option>30</option></select> 条 当前显示第1~90条, 共276条</div></div>';
+    document.body.appendChild(bar);
+  });
+
+  const info = await page.evaluate(() => {
+    const bar = document.getElementById('urppagebar');
+    const paginate = bar.querySelector('.dataTables_paginate');
+    const inner = paginate.querySelector('div');
+    const barRect = bar.getBoundingClientRect();
+    return {
+      flexWrap: getComputedStyle(paginate).flexWrap,
+      justify: getComputedStyle(paginate).justifyContent,
+      innerWrap: getComputedStyle(inner).flexWrap,
+      textAlign: getComputedStyle(bar).textAlign,
+      clipped: inner.scrollWidth > inner.clientWidth + 1 || inner.getBoundingClientRect().left < barRect.left - 1,
+    };
+  });
+  expect(info.flexWrap).toBe('wrap');
+  expect(info.innerWrap).toBe('wrap');
+  expect(info.clipped).toBeFalsy();
+  expect(pageErrors).toEqual([]);
+});

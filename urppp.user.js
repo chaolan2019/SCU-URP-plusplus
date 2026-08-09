@@ -6156,7 +6156,7 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
         position: absolute !important;
         top: calc(100% + 6px) !important; /* 下移，避免挡住触发框 */
         left: 0 !important;
-        z-index: 1010 !important;
+        z-index: 2000 !important; /* 高于相邻表单控件，点击选项不会穿透到下层 */
         box-sizing: border-box !important;
         border-radius: var(--radius-sm) !important;
         background: var(--surface) !important;
@@ -6164,6 +6164,11 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
         box-shadow: var(--shadow) !important;
         margin-top: 0 !important;
         /* 不要写 display:block，否则关闭态也会一直露出来 */
+      }
+      .chosen-container,
+      .chosen-container-single,
+      .chosen-container-active {
+        overflow: visible !important;
       }
       .chosen-container.chosen-with-drop .chosen-drop,
       .chosen-container-active.chosen-with-drop .chosen-drop {
@@ -12365,6 +12370,21 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         .pagebar {
           flex-wrap: wrap !important;
           gap: 4px !important;
+        }
+        /* 滚动态分页条：窄屏下换行、左对齐，避免左侧信息被截断 */
+        #urppagebar.urppp-pagebar-scroll,
+        #urppagebar.urppp-pagebar-scroll .dataTables_paginate,
+        #urppagebar:has([id^="turnpageto_"][readonly]),
+        #urppagebar:has([id^="turnpageto_"][readonly]) .dataTables_paginate {
+          flex-wrap: wrap !important;
+          justify-content: flex-start !important;
+          text-align: left !important;
+          white-space: normal !important;
+        }
+        #urppagebar.urppp-pagebar-scroll .dataTables_paginate > div,
+        #urppagebar:has([id^="turnpageto_"][readonly]) .dataTables_paginate > div {
+          flex-wrap: wrap !important;
+          justify-content: flex-start !important;
         }
         #urppp-dashboard .urppp-welcome h2 {
           font-size: 19px !important;

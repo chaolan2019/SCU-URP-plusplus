@@ -148,6 +148,21 @@
           flex-wrap: wrap !important;
           gap: 4px !important;
         }
+        /* 滚动态分页条：窄屏下换行、左对齐，避免左侧信息被截断 */
+        #urppagebar.urppp-pagebar-scroll,
+        #urppagebar.urppp-pagebar-scroll .dataTables_paginate,
+        #urppagebar:has([id^="turnpageto_"][readonly]),
+        #urppagebar:has([id^="turnpageto_"][readonly]) .dataTables_paginate {
+          flex-wrap: wrap !important;
+          justify-content: flex-start !important;
+          text-align: left !important;
+          white-space: normal !important;
+        }
+        #urppagebar.urppp-pagebar-scroll .dataTables_paginate > div,
+        #urppagebar:has([id^="turnpageto_"][readonly]) .dataTables_paginate > div {
+          flex-wrap: wrap !important;
+          justify-content: flex-start !important;
+        }
         #urppp-dashboard .urppp-welcome h2 {
           font-size: 19px !important;
         }
