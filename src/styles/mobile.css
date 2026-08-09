@@ -102,12 +102,6 @@
           gap: 8px 12px !important;
           row-gap: 8px !important;
         }
-        .page-content h4.header .right_top_oper,
-        .page-content .header .right_top_oper {
-          flex-basis: 100% !important;
-          max-width: 100% !important;
-          min-width: 0 !important;
-        }
         .page-content h4.header > .label,
         .page-content h3.header > .label,
         .page-content .header.smaller > .label,

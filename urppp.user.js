@@ -5261,7 +5261,6 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
       .profile-user-info.urppp-query-form .profile-info-row.urppp-query-row,
       .profile-info-row.urppp-query-row {
         display: grid !important;
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
         column-gap: 14px !important;
         row-gap: 10px !important;
         align-items: center !important;
@@ -5463,15 +5462,16 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
       }
       /* 移动端：查询表单每行最多两个筛选项，一个就占一行 */
       @media (max-width: 991px) {
-        .profile-info-row.urppp-query-row,
-        .profile-info-row.urppp-query-row[data-urppp-query-cols],
-        .profile-info-row.urppp-query-row[data-urppp-query-cols="2"],
-        .profile-info-row.urppp-query-row[data-urppp-query-cols="3"],
-        .profile-info-row.urppp-query-row[data-urppp-query-cols="4"] {
+        .page-content .profile-info-row.urppp-query-row,
+        .page-content .profile-info-row.urppp-query-row[data-urppp-query-cols],
+        .page-content .profile-info-row.urppp-query-row[data-urppp-query-cols="2"],
+        .page-content .profile-info-row.urppp-query-row[data-urppp-query-cols="3"],
+        .page-content .profile-info-row.urppp-query-row[data-urppp-query-cols="4"],
+        .profile-user-info.urppp-query-form .profile-info-row.urppp-query-row {
           grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         }
         /* 单字段行（只有一项）：占满整行，不孤零零站半格 */
-        .profile-info-row.urppp-query-row > .urppp-query-pair:only-child {
+        .page-content .profile-info-row.urppp-query-row > .urppp-query-pair:only-child {
           grid-column: 1 / -1 !important;
         }
       }
@@ -5480,6 +5480,11 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
         .profile-user-info.self.urppp-query-form,
         .profile-user-info-striped.self.urppp-query-form {
           padding: 10px 12px 6px !important;
+        }
+        /* 窄视口标签收窄，控件拿更多宽度 */
+        .urppp-query-row {
+          --urppp-qlabel: 52px !important;
+          --urppp-qlabel-max: 60px !important;
         }
         .profile-info-row.urppp-query-row {
           column-gap: 10px !important;
@@ -5494,7 +5499,7 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
           flex: 0 0 auto !important;
           width: auto !important;
           min-width: 0 !important;
-          max-width: 40% !important;
+          max-width: 42% !important;
           height: auto !important;
           min-height: 0 !important;
           padding: 0 6px 0 0 !important;
@@ -5511,8 +5516,8 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
         }
       }
       @media (max-width: 359px) {
-        .profile-info-row.urppp-query-row,
-        .profile-info-row.urppp-query-row[data-urppp-query-cols] {
+        .page-content .profile-info-row.urppp-query-row,
+        .page-content .profile-info-row.urppp-query-row[data-urppp-query-cols] {
           grid-template-columns: minmax(0, 1fr) !important;
         }
       }
@@ -12305,12 +12310,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           flex-wrap: wrap !important;
           gap: 8px 12px !important;
           row-gap: 8px !important;
-        }
-        .page-content h4.header .right_top_oper,
-        .page-content .header .right_top_oper {
-          flex-basis: 100% !important;
-          max-width: 100% !important;
-          min-width: 0 !important;
         }
         .page-content h4.header > .label,
         .page-content h3.header > .label,
@@ -20318,10 +20317,10 @@ ${arcs}
               name.style.setProperty("display", "flex", "important");
               name.style.setProperty("align-items", "center", "important");
               name.style.setProperty("justify-content", "flex-end", "important");
-              name.style.setProperty("flex", "0 0 84px", "important");
-              name.style.setProperty("width", "84px", "important");
-              name.style.setProperty("min-width", "84px", "important");
-              name.style.setProperty("max-width", "96px", "important");
+              name.style.setProperty("flex", "0 0 var(--urppp-qlabel, 84px)", "important");
+              name.style.setProperty("width", "var(--urppp-qlabel, 84px)", "important");
+              name.style.setProperty("min-width", "var(--urppp-qlabel, 84px)", "important");
+              name.style.setProperty("max-width", "var(--urppp-qlabel-max, 96px)", "important");
               name.style.setProperty("margin", "0", "important");
               name.style.setProperty("margin-left", "0", "important");
               name.style.setProperty("padding", "0 8px 0 0", "important");

@@ -4602,10 +4602,11 @@ import { createNavbarController } from '../features/navigation/navbar.js';
             name.style.setProperty('display', 'flex', 'important');
             name.style.setProperty('align-items', 'center', 'important');
             name.style.setProperty('justify-content', 'flex-end', 'important');
-            name.style.setProperty('flex', '0 0 84px', 'important');
-            name.style.setProperty('width', '84px', 'important');
-            name.style.setProperty('min-width', '84px', 'important');
-            name.style.setProperty('max-width', '96px', 'important');
+            // 标签宽度走 CSS 变量，媒体查询可在窄视口收窄，控件拿到更多空间
+            name.style.setProperty('flex', '0 0 var(--urppp-qlabel, 84px)', 'important');
+            name.style.setProperty('width', 'var(--urppp-qlabel, 84px)', 'important');
+            name.style.setProperty('min-width', 'var(--urppp-qlabel, 84px)', 'important');
+            name.style.setProperty('max-width', 'var(--urppp-qlabel-max, 96px)', 'important');
             name.style.setProperty('margin', '0', 'important');
             name.style.setProperty('margin-left', '0', 'important');
             name.style.setProperty('padding', '0 8px 0 0', 'important');
