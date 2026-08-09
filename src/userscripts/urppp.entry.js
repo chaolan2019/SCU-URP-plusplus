@@ -640,10 +640,10 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       formSearch.classList.add('urppp-desktop-search');
       formSearch.style.setProperty('position', 'absolute', 'important');
       formSearch.style.setProperty('top', '50%', 'important');
-      formSearch.style.setProperty('right', '40px', 'important');
+      formSearch.style.setProperty('right', '24px', 'important');
       formSearch.style.setProperty('left', 'auto', 'important');
       formSearch.style.setProperty('transform', 'translateY(-50%)', 'important');
-      formSearch.style.setProperty('width', formSearch.dataset.open === '1' ? 'min(320px, calc(100vw - 24px))' : '0px', 'important');
+      formSearch.style.setProperty('width', formSearch.dataset.open === '1' ? 'min(240px, calc(100vw - 24px))' : '0px', 'important');
       formSearch.style.setProperty('max-width', 'calc(100vw - 24px)', 'important');
       formSearch.style.setProperty('opacity', formSearch.dataset.open === '1' ? '1' : '0', 'important');
       formSearch.style.setProperty('pointer-events', formSearch.dataset.open === '1' ? 'auto' : 'none', 'important');
@@ -677,79 +677,14 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       input.style.setProperty('background', 'var(--input-bg)', 'important');
       input.style.setProperty('color', 'var(--text)', 'important');
 
-      let results = formSearch.querySelector('#urppp-search-results');
-      if (!results) {
-        results = document.createElement('div');
-        results.id = 'urppp-search-results';
-        formSearch.appendChild(results);
-      }
-      // 结果列表：唯一需要背景的元素，定位在输入框正下方，仅输入时显示
-      results.style.setProperty('display', 'none', 'important');
-      results.style.setProperty('position', 'absolute', 'important');
-      results.style.setProperty('top', 'calc(100% + 4px)', 'important');
-      results.style.setProperty('left', '10px', 'important');
-      results.style.setProperty('right', '10px', 'important');
-      results.style.setProperty('gap', '2px', 'important');
-      results.style.setProperty('padding', '6px', 'important');
-      results.style.setProperty('background', 'var(--surface)', 'important');
-      results.style.setProperty('border', '1px solid var(--border)', 'important');
-      results.style.setProperty('border-radius', 'var(--radius-sm)', 'important');
-      results.style.setProperty('box-shadow', 'var(--shadow)', 'important');
-      results.style.setProperty('z-index', '1201', 'important');
-      results.style.setProperty('max-height', 'min(320px, calc(100vh - 120px))', 'important');
-      results.style.setProperty('overflow-y', 'auto', 'important');
-
-      const collectEntries = () => {
-        const seen = new Set();
-        const entries = [];
-        document.querySelectorAll('#urppp-menus a[href], #menus a[href]').forEach((anchor) => {
-          const href = String(anchor.getAttribute('href') || '').trim();
-          const text = String(anchor.textContent || '').replace(/\s+/g, ' ').trim();
-          if (!text || !href || href === '#' || /^javascript:/i.test(href)) return;
-          const key = href + '\\n' + text;
-          if (seen.has(key)) return;
-          seen.add(key);
-          entries.push({ href, text });
-        });
-        return entries;
-      };
-      const renderResults = () => {
-        const query = input.value.replace(/\s+/g, ' ').trim().toLowerCase();
-        results.replaceChildren();
-        if (!query) {
-          // 未输入时不显示任何结果框，保持原生弹出窗口形态
-          results.style.setProperty('display', 'none', 'important');
-          return;
-        }
-        const matches = collectEntries().filter((entry) => entry.text.toLowerCase().includes(query)).slice(0, 8);
-        if (!matches.length) {
-          results.style.setProperty('display', 'grid', 'important');
-          const empty = document.createElement('div');
-          empty.className = 'urppp-search-empty';
-          empty.textContent = '没有找到相关功能';
-          results.appendChild(empty);
-          return;
-        }
-        results.style.setProperty('display', 'grid', 'important');
-        matches.forEach(({ href, text }) => {
-          const link = document.createElement('a');
-          link.className = 'urppp-search-result';
-          link.href = href;
-          link.textContent = text;
-          results.appendChild(link);
-        });
-      };
       const setOpen = (open) => {
         formSearch.dataset.open = open ? '1' : '0';
-        formSearch.style.setProperty('width', open ? 'min(320px, calc(100vw - 24px))' : '0px', 'important');
+        formSearch.style.setProperty('width', open ? 'min(240px, calc(100vw - 24px))' : '0px', 'important');
         formSearch.style.setProperty('opacity', open ? '1' : '0', 'important');
         formSearch.style.setProperty('pointer-events', open ? 'auto' : 'none', 'important');
         button.setAttribute('aria-expanded', open ? 'true' : 'false');
         if (open) {
-          renderResults();
           setTimeout(() => input.focus(), 30);
-        } else {
-          results.style.setProperty('display', 'none', 'important');
         }
       };
       if (!button.__urpppSearchBound) {
@@ -759,22 +694,6 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           event.stopImmediatePropagation();
           setOpen(formSearch.dataset.open !== '1');
         }, true);
-      }
-      if (!input.__urpppSearchBound) {
-        input.__urpppSearchBound = true;
-        input.addEventListener('input', renderResults);
-        input.addEventListener('keydown', (event) => {
-          if (event.key !== 'Enter') return;
-          const first = results.querySelector('.urppp-search-result');
-          if (first) {
-            event.preventDefault();
-            first.click();
-          }
-        });
-        innerForm.addEventListener('submit', (event) => {
-          event.preventDefault();
-          results.querySelector('.urppp-search-result')?.click();
-        });
       }
       if (!document.__urpppDesktopSearchOutsideBound) {
         document.__urpppDesktopSearchOutsideBound = true;

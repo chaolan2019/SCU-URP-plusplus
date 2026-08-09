@@ -364,33 +364,6 @@
         outline: none !important;
         box-shadow: none !important;
       }
-      #urppp-search-results {
-        max-height: 350px;
-        overflow-y: auto;
-        scrollbar-width: thin;
-      }
-      #urppp-search-results .urppp-search-result,
-      #urppp-search-results .urppp-search-empty {
-        display: block !important;
-        min-height: 34px;
-        box-sizing: border-box;
-        padding: 8px 10px;
-        border-radius: var(--radius-sm);
-        color: var(--text-secondary) !important;
-        font-size: 13px;
-        line-height: 18px;
-        text-decoration: none !important;
-      }
-      #urppp-search-results .urppp-search-result:hover,
-      #urppp-search-results .urppp-search-result:focus-visible {
-        background: var(--input-bg) !important;
-        color: var(--text) !important;
-        outline: none;
-      }
-      #urppp-search-results .urppp-search-empty {
-        color: var(--text-muted) !important;
-        text-align: center;
-      }
 
       /* 用户下拉菜单 */
       .ace-nav > li.light-blue .dropdown-menu {

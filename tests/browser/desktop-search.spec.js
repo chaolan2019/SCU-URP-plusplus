@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { FIXTURE_URLS, loadUrpFixture } from './support/urp-fixture.js';
 
-test('desktop search opens with stable styling and renders menu results', async ({ page }) => {
+test('desktop search opens native input with stable placement and no self-built list', async ({ page }) => {
   const { pageErrors } = await loadUrpFixture(page, {
     fixture: 'home',
     viewport: { width: 1280, height: 900 },
@@ -22,32 +22,36 @@ test('desktop search opens with stable styling and renders menu results', async 
       const a = li.querySelector(':scope > a');
       return a && (a.getAttribute('href') || '').includes('customerServiceCenter');
     });
-    const order = [...document.querySelectorAll('.ace-nav > li')].map((li) => li.className || li.textContent.trim().slice(0, 10));
     return {
-      order,
       searchBeforeHelp: searchItem && helpItem ? (searchItem.compareDocumentPosition(helpItem) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0 : false,
-      cmp: searchItem && helpItem ? searchItem.compareDocumentPosition(helpItem) : -1,
       formInsideLi: document.getElementById('form-search')?.closest('li') === searchItem,
       buttonLeft: getComputedStyle(document.getElementById('clickdiv')).left,
       formTransparent: getComputedStyle(document.getElementById('form-search')).backgroundColor === 'rgba(0, 0, 0, 0)',
+      noSelfBuiltList: !document.getElementById('urppp-search-results'),
     };
   });
   expect(positions.searchBeforeHelp).toBeTruthy();
   expect(positions.formInsideLi).toBeTruthy();
   expect(positions.buttonLeft).toBe('8px');
   expect(positions.formTransparent).toBeTruthy();
+  expect(positions.noSelfBuiltList).toBeTruthy();
 
   await button.click();
   await expect(panel).toHaveAttribute('data-open', '1');
   await expect(input).toBeFocused();
   await expect(panel).toHaveCSS('width', /px/);
-  // 未输入时不显示任何结果框，保持原生弹出窗口形态
-  await expect(page.locator('#urppp-search-results')).toHaveCSS('display', 'none');
-
-  await input.fill('首页');
-  await expect(page.locator('#urppp-search-results')).toHaveCSS('display', 'grid');
-  await expect(page.locator('#urppp-search-results .urppp-search-result')).toHaveCount(1);
-  await expect(page.locator('#urppp-search-results .urppp-search-result')).toHaveText('首页');
+  // 宽度上限 240px（短一点），right 24px（往右一点）
+  const rects = await page.evaluate(() => {
+    const panelEl = document.getElementById('form-search');
+    const inputEl = document.getElementById('search-input');
+    return {
+      panelWidth: Math.round(panelEl.getBoundingClientRect().width),
+      inputWidth: Math.round(inputEl.getBoundingClientRect().width),
+      right: getComputedStyle(panelEl).right,
+    };
+  });
+  expect(rects.panelWidth).toBeLessThanOrEqual(240);
+  expect(rects.right).toBe('24px');
   expect(pageErrors).toEqual([]);
 });
 
@@ -74,7 +78,6 @@ test('desktop search is rebound after business-page navbar replacement', async (
   const input = page.locator('#search-input');
   await expect(button).toHaveCount(1);
   await button.click();
-  await input.fill('首页');
-  await expect(page.locator('#urppp-search-results .urppp-search-result')).toHaveText('首页');
+  await expect(input).toBeFocused();
   expect(pageErrors).toEqual([]);
 });

@@ -10915,33 +10915,6 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
         outline: none !important;
         box-shadow: none !important;
       }
-      #urppp-search-results {
-        max-height: 350px;
-        overflow-y: auto;
-        scrollbar-width: thin;
-      }
-      #urppp-search-results .urppp-search-result,
-      #urppp-search-results .urppp-search-empty {
-        display: block !important;
-        min-height: 34px;
-        box-sizing: border-box;
-        padding: 8px 10px;
-        border-radius: var(--radius-sm);
-        color: var(--text-secondary) !important;
-        font-size: 13px;
-        line-height: 18px;
-        text-decoration: none !important;
-      }
-      #urppp-search-results .urppp-search-result:hover,
-      #urppp-search-results .urppp-search-result:focus-visible {
-        background: var(--input-bg) !important;
-        color: var(--text) !important;
-        outline: none;
-      }
-      #urppp-search-results .urppp-search-empty {
-        color: var(--text-muted) !important;
-        text-align: center;
-      }
 
       /* 用户下拉菜单 */
       .ace-nav > li.light-blue .dropdown-menu {
@@ -16256,10 +16229,10 @@ ${arcs}
         formSearch.classList.add("urppp-desktop-search");
         formSearch.style.setProperty("position", "absolute", "important");
         formSearch.style.setProperty("top", "50%", "important");
-        formSearch.style.setProperty("right", "40px", "important");
+        formSearch.style.setProperty("right", "24px", "important");
         formSearch.style.setProperty("left", "auto", "important");
         formSearch.style.setProperty("transform", "translateY(-50%)", "important");
-        formSearch.style.setProperty("width", formSearch.dataset.open === "1" ? "min(320px, calc(100vw - 24px))" : "0px", "important");
+        formSearch.style.setProperty("width", formSearch.dataset.open === "1" ? "min(240px, calc(100vw - 24px))" : "0px", "important");
         formSearch.style.setProperty("max-width", "calc(100vw - 24px)", "important");
         formSearch.style.setProperty("opacity", formSearch.dataset.open === "1" ? "1" : "0", "important");
         formSearch.style.setProperty("pointer-events", formSearch.dataset.open === "1" ? "auto" : "none", "important");
@@ -16290,76 +16263,14 @@ ${arcs}
         input.style.setProperty("border-radius", "var(--radius-sm)", "important");
         input.style.setProperty("background", "var(--input-bg)", "important");
         input.style.setProperty("color", "var(--text)", "important");
-        let results = formSearch.querySelector("#urppp-search-results");
-        if (!results) {
-          results = document.createElement("div");
-          results.id = "urppp-search-results";
-          formSearch.appendChild(results);
-        }
-        results.style.setProperty("display", "none", "important");
-        results.style.setProperty("position", "absolute", "important");
-        results.style.setProperty("top", "calc(100% + 4px)", "important");
-        results.style.setProperty("left", "10px", "important");
-        results.style.setProperty("right", "10px", "important");
-        results.style.setProperty("gap", "2px", "important");
-        results.style.setProperty("padding", "6px", "important");
-        results.style.setProperty("background", "var(--surface)", "important");
-        results.style.setProperty("border", "1px solid var(--border)", "important");
-        results.style.setProperty("border-radius", "var(--radius-sm)", "important");
-        results.style.setProperty("box-shadow", "var(--shadow)", "important");
-        results.style.setProperty("z-index", "1201", "important");
-        results.style.setProperty("max-height", "min(320px, calc(100vh - 120px))", "important");
-        results.style.setProperty("overflow-y", "auto", "important");
-        const collectEntries = /* @__PURE__ */ __name(() => {
-          const seen = /* @__PURE__ */ new Set();
-          const entries = [];
-          document.querySelectorAll("#urppp-menus a[href], #menus a[href]").forEach((anchor2) => {
-            const href = String(anchor2.getAttribute("href") || "").trim();
-            const text = String(anchor2.textContent || "").replace(/\s+/g, " ").trim();
-            if (!text || !href || href === "#" || /^javascript:/i.test(href)) return;
-            const key = href + "\\n" + text;
-            if (seen.has(key)) return;
-            seen.add(key);
-            entries.push({ href, text });
-          });
-          return entries;
-        }, "collectEntries");
-        const renderResults = /* @__PURE__ */ __name(() => {
-          const query = input.value.replace(/\s+/g, " ").trim().toLowerCase();
-          results.replaceChildren();
-          if (!query) {
-            results.style.setProperty("display", "none", "important");
-            return;
-          }
-          const matches = collectEntries().filter((entry) => entry.text.toLowerCase().includes(query)).slice(0, 8);
-          if (!matches.length) {
-            results.style.setProperty("display", "grid", "important");
-            const empty = document.createElement("div");
-            empty.className = "urppp-search-empty";
-            empty.textContent = "没有找到相关功能";
-            results.appendChild(empty);
-            return;
-          }
-          results.style.setProperty("display", "grid", "important");
-          matches.forEach(({ href, text }) => {
-            const link = document.createElement("a");
-            link.className = "urppp-search-result";
-            link.href = href;
-            link.textContent = text;
-            results.appendChild(link);
-          });
-        }, "renderResults");
         const setOpen = /* @__PURE__ */ __name((open) => {
           formSearch.dataset.open = open ? "1" : "0";
-          formSearch.style.setProperty("width", open ? "min(320px, calc(100vw - 24px))" : "0px", "important");
+          formSearch.style.setProperty("width", open ? "min(240px, calc(100vw - 24px))" : "0px", "important");
           formSearch.style.setProperty("opacity", open ? "1" : "0", "important");
           formSearch.style.setProperty("pointer-events", open ? "auto" : "none", "important");
           button.setAttribute("aria-expanded", open ? "true" : "false");
           if (open) {
-            renderResults();
             setTimeout(() => input.focus(), 30);
-          } else {
-            results.style.setProperty("display", "none", "important");
           }
         }, "setOpen");
         if (!button.__urpppSearchBound) {
@@ -16369,22 +16280,6 @@ ${arcs}
             event.stopImmediatePropagation();
             setOpen(formSearch.dataset.open !== "1");
           }, true);
-        }
-        if (!input.__urpppSearchBound) {
-          input.__urpppSearchBound = true;
-          input.addEventListener("input", renderResults);
-          input.addEventListener("keydown", (event) => {
-            if (event.key !== "Enter") return;
-            const first = results.querySelector(".urppp-search-result");
-            if (first) {
-              event.preventDefault();
-              first.click();
-            }
-          });
-          innerForm.addEventListener("submit", (event) => {
-            event.preventDefault();
-            results.querySelector(".urppp-search-result")?.click();
-          });
         }
         if (!document.__urpppDesktopSearchOutsideBound) {
           document.__urpppDesktopSearchOutsideBound = true;
