@@ -41,6 +41,23 @@ test('mobile week schedule keeps readable columns inside a horizontal viewport',
   });
   expect(stickyOffset).toBeLessThanOrEqual(3);
   expect(pageErrors).toEqual([]);
+
+  // 纯媒体查询兜底：即使 JS 未加 class，课表仍保持固定列宽可横向滚动，不压缩溢出
+  await page.evaluate(() => {
+    document.getElementById('mycoursetable').classList.remove('urppp-mobile-schedule-scroll');
+  });
+  const fallback = await page.evaluate(() => {
+    const schedule = document.getElementById('mycoursetable');
+    const courseTable = document.getElementById('courseTable');
+    return {
+      overflowX: getComputedStyle(schedule).overflowX,
+      tableWidth: courseTable.getBoundingClientRect().width,
+      pageOverflow: document.documentElement.scrollWidth - window.innerWidth,
+    };
+  });
+  expect(fallback.overflowX).toBe('auto');
+  expect(fallback.tableWidth).toBeGreaterThanOrEqual(759);
+  expect(fallback.pageOverflow).toBeLessThanOrEqual(1);
 });
 
 test('mobile query fields use two columns and collapse to one on extra-narrow screens', async ({ page }) => {

@@ -620,8 +620,8 @@
           -webkit-overflow-scrolling: touch;
         }
 
-        /* ---------- 本学期课表：保持列宽，在局部视口内横向滑动 ---------- */
-        #mycoursetable.urppp-mobile-schedule-scroll {
+        /* ---------- 本学期课表：保持列宽，在局部视口内横向滑动（纯媒体查询，不依赖 JS class） ---------- */
+        #mycoursetable {
           width: 100% !important;
           max-width: 100% !important;
           overflow-x: auto !important;
@@ -630,13 +630,13 @@
           -webkit-overflow-scrolling: touch;
           scrollbar-width: thin;
         }
-        #mycoursetable.urppp-mobile-schedule-scroll #courseTable {
+        #mycoursetable #courseTable {
           width: 760px !important;
           min-width: 760px !important;
           max-width: none !important;
           table-layout: fixed !important;
         }
-        #mycoursetable.urppp-mobile-schedule-scroll #courseTable tr > :first-child {
+        #mycoursetable #courseTable tr > :first-child {
           position: sticky !important;
           left: 0 !important;
           z-index: 4 !important;
@@ -646,7 +646,7 @@
           background: var(--surface, #fff) !important;
           box-shadow: 1px 0 0 var(--border, #e8eaed) !important;
         }
-        #mycoursetable.urppp-mobile-schedule-scroll #courseTable thead tr > :first-child {
+        #mycoursetable #courseTable thead tr > :first-child {
           z-index: 6 !important;
           background: var(--input-bg, #f5f5f7) !important;
         }

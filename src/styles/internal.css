@@ -4521,6 +4521,8 @@
         margin: 2px 4px !important;
         line-height: 1.35 !important;
         word-break: break-word !important;
+        overflow-wrap: break-word !important;
+        white-space: normal !important;
       }
       /* 作息表弹窗：禁止锁 display，否则 Bootstrap 关不掉 */
       #work_rest_schedule_modal.modal {

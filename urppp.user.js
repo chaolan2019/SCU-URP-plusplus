@@ -7908,6 +7908,8 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
         margin: 2px 4px !important;
         line-height: 1.35 !important;
         word-break: break-word !important;
+        overflow-wrap: break-word !important;
+        white-space: normal !important;
       }
       /* 作息表弹窗：禁止锁 display，否则 Bootstrap 关不掉 */
       #work_rest_schedule_modal.modal {
@@ -12811,8 +12813,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           -webkit-overflow-scrolling: touch;
         }
 
-        /* ---------- 本学期课表：保持列宽，在局部视口内横向滑动 ---------- */
-        #mycoursetable.urppp-mobile-schedule-scroll {
+        /* ---------- 本学期课表：保持列宽，在局部视口内横向滑动（纯媒体查询，不依赖 JS class） ---------- */
+        #mycoursetable {
           width: 100% !important;
           max-width: 100% !important;
           overflow-x: auto !important;
@@ -12821,13 +12823,13 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           -webkit-overflow-scrolling: touch;
           scrollbar-width: thin;
         }
-        #mycoursetable.urppp-mobile-schedule-scroll #courseTable {
+        #mycoursetable #courseTable {
           width: 760px !important;
           min-width: 760px !important;
           max-width: none !important;
           table-layout: fixed !important;
         }
-        #mycoursetable.urppp-mobile-schedule-scroll #courseTable tr > :first-child {
+        #mycoursetable #courseTable tr > :first-child {
           position: sticky !important;
           left: 0 !important;
           z-index: 4 !important;
@@ -12837,7 +12839,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           background: var(--surface, #fff) !important;
           box-shadow: 1px 0 0 var(--border, #e8eaed) !important;
         }
-        #mycoursetable.urppp-mobile-schedule-scroll #courseTable thead tr > :first-child {
+        #mycoursetable #courseTable thead tr > :first-child {
           z-index: 6 !important;
           background: var(--input-bg, #f5f5f7) !important;
         }
