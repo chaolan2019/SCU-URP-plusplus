@@ -163,6 +163,38 @@
           flex-wrap: wrap !important;
           justify-content: flex-start !important;
         }
+        /* 纯 CSS 兜底：JS 未打 class 的页脚也在窄屏换行、不截断 */
+        #urppagebar,
+        #urppagebar .dataTables_paginate {
+          display: block !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          white-space: normal !important;
+          text-align: left !important;
+        }
+        #urppagebar .dataTables_paginate > div,
+        #urppagebar [id^="sample-table-2_paginate_"] > div,
+        #urppagebar > div {
+          display: flex !important;
+          flex-wrap: wrap !important;
+          justify-content: flex-start !important;
+          align-items: center !important;
+          gap: 4px 10px !important;
+          white-space: normal !important;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
+        }
+        #urppagebar span,
+        #urppagebar label,
+        #urppagebar em,
+        #urppagebar b,
+        #urppagebar p {
+          white-space: normal !important;
+        }
+        #urppagebar select,
+        #urppagebar input {
+          max-width: 120px !important;
+        }
         #urppp-dashboard .urppp-welcome h2 {
           font-size: 19px !important;
         }

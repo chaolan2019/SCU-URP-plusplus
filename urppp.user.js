@@ -12386,6 +12386,38 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           flex-wrap: wrap !important;
           justify-content: flex-start !important;
         }
+        /* 纯 CSS 兜底：JS 未打 class 的页脚也在窄屏换行、不截断 */
+        #urppagebar,
+        #urppagebar .dataTables_paginate {
+          display: block !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          white-space: normal !important;
+          text-align: left !important;
+        }
+        #urppagebar .dataTables_paginate > div,
+        #urppagebar [id^="sample-table-2_paginate_"] > div,
+        #urppagebar > div {
+          display: flex !important;
+          flex-wrap: wrap !important;
+          justify-content: flex-start !important;
+          align-items: center !important;
+          gap: 4px 10px !important;
+          white-space: normal !important;
+          max-width: 100% !important;
+          box-sizing: border-box !important;
+        }
+        #urppagebar span,
+        #urppagebar label,
+        #urppagebar em,
+        #urppagebar b,
+        #urppagebar p {
+          white-space: normal !important;
+        }
+        #urppagebar select,
+        #urppagebar input {
+          max-width: 120px !important;
+        }
         #urppp-dashboard .urppp-welcome h2 {
           font-size: 19px !important;
         }
@@ -15980,6 +16012,43 @@ ${arcs}
     [id*="page_loading"]::before {
       content: none !important;
       display: none !important;
+    }
+    /* 滚动加载页脚（如 div_page_loading_urppagebar）：流式显示在列表下方，不覆盖列表，文字换行 */
+    [id^="div_page_loading"][id*="urppagebar"],
+    [id*="page_loading"][id*="urppagebar"],
+    div[id*="page_loading"][id*="urppagebar"] {
+      position: static !important;
+      left: auto !important;
+      top: auto !important;
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+      text-align: left !important;
+      white-space: normal !important;
+      line-height: 1.5 !important;
+      padding: 6px 2px !important;
+      margin: 4px 0 0 !important;
+      overflow: visible !important;
+      z-index: auto !important;
+    }
+    /* 页脚内文本/标签容器允许换行；控件保持内联 */
+    [id^="div_page_loading"][id*="urppagebar"] span,
+    [id*="page_loading"][id*="urppagebar"] span,
+    [id^="div_page_loading"][id*="urppagebar"] div,
+    [id*="page_loading"][id*="urppagebar"] div,
+    [id^="div_page_loading"][id*="urppagebar"] label,
+    [id*="page_loading"][id*="urppagebar"] label {
+      display: inline !important;
+      white-space: normal !important;
+      vertical-align: middle !important;
+    }
+    [id^="div_page_loading"][id*="urppagebar"] select,
+    [id*="page_loading"][id*="urppagebar"] select,
+    [id^="div_page_loading"][id*="urppagebar"] input,
+    [id*="page_loading"][id*="urppagebar"] input {
+      display: inline-block !important;
+      vertical-align: middle !important;
     }
     .urppp-inline-loader .urppp-cube-scene {
       width: 40px !important;

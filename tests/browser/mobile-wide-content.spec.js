@@ -249,3 +249,39 @@ test('scroll pagebar wraps on narrow viewports so info text is not clipped', asy
   expect(info.clipped).toBeFalsy();
   expect(pageErrors).toEqual([]);
 });
+
+test('scroll-loading page footer flows below the list with wrapping text', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'grades',
+    viewport: { width: 390, height: 844 },
+    values: { urppp_skin_v1: 'neu', urppp_theme_v3: 'default' },
+  });
+
+  await page.evaluate(() => {
+    const footer = document.createElement('div');
+    footer.id = 'div_page_loading_urppagebar';
+    footer.style.cssText = 'position:absolute;left:0;top:-2px;display:inline-block;';
+    footer.innerHTML = '<span>第 2 页 | 共10页 | 每页显示</span><select><option>滚动加载(30)</option></select><span>条 | 当前显示第1~90条, 共276条</span>';
+    document.body.appendChild(footer);
+  });
+
+  const info = await page.evaluate(() => {
+    const footer = document.getElementById('div_page_loading_urppagebar');
+    const style = getComputedStyle(footer);
+    const rect = footer.getBoundingClientRect();
+    const spans = [...footer.querySelectorAll('span')];
+    return {
+      position: style.position,
+      display: style.display,
+      whiteSpace: style.whiteSpace,
+      textAlign: style.textAlign,
+      inFlow: rect.top >= 0,
+      noClip: spans.every((s) => s.scrollWidth <= s.clientWidth + 1 || s.textContent.length > 8),
+    };
+  });
+  expect(info.position).toBe('static');
+  expect(info.display).toBe('block');
+  expect(info.whiteSpace).toBe('normal');
+  expect(info.inFlow).toBeTruthy();
+  expect(pageErrors).toEqual([]);
+});
