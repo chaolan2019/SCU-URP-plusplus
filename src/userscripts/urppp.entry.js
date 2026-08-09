@@ -4348,20 +4348,27 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   }
 
   // 防穿透：下拉选项的 mousedown/click 冒泡到容器即停，
-  // 不影响 Chosen 内部选项处理器，但不会继续冒泡触发下层控件
+  // 不影响 Chosen 内部选项处理器，但不会继续冒泡触发下层控件。
+  // click 额外 preventDefault：Chosen 在 mousedown 选择并关闭下拉后，
+  // 浏览器会重新命中测试派发 click；若位置落到下层控件上会误触发它，
+  // 因此把容器内派生的 click 一并拦截。
   function bindChosenNoPierce(cont) {
     if (!cont || cont.__urpppChosenNoPierce) return;
     cont.__urpppChosenNoPierce = true;
     const stop = (event) => {
       try { event.stopPropagation(); } catch (_) { /* ignore */ }
     };
+    const stopClick = (event) => {
+      try { event.preventDefault(); } catch (_) { /* ignore */ }
+      try { event.stopPropagation(); } catch (_) { /* ignore */ }
+    };
     cont.addEventListener('mousedown', stop, false);
-    cont.addEventListener('click', stop, false);
     cont.addEventListener('mouseup', stop, false);
+    cont.addEventListener('click', stopClick, false);
     const drop = cont.querySelector('.chosen-drop');
     if (drop) {
       drop.addEventListener('mousedown', stop, false);
-      drop.addEventListener('click', stop, false);
+      drop.addEventListener('click', stopClick, false);
     }
   }
 

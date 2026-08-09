@@ -12425,6 +12425,14 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         #urppagebar div:empty {
           display: none !important;
         }
+        /* 收紧表格与分页条之间的空白，空容器隐藏后底栏跟随上移 */
+        #urppagebar {
+          margin-top: 2px !important;
+        }
+        .dataTables_wrapper > table,
+        .page-content table.table {
+          margin-bottom: 2px !important;
+        }
         #urppp-dashboard .urppp-welcome h2 {
           font-size: 19px !important;
         }
@@ -20168,13 +20176,23 @@ ${arcs}
         } catch (_) {
         }
       }, "stop");
+      const stopClick = /* @__PURE__ */ __name((event) => {
+        try {
+          event.preventDefault();
+        } catch (_) {
+        }
+        try {
+          event.stopPropagation();
+        } catch (_) {
+        }
+      }, "stopClick");
       cont.addEventListener("mousedown", stop, false);
-      cont.addEventListener("click", stop, false);
       cont.addEventListener("mouseup", stop, false);
+      cont.addEventListener("click", stopClick, false);
       const drop = cont.querySelector(".chosen-drop");
       if (drop) {
         drop.addEventListener("mousedown", stop, false);
-        drop.addEventListener("click", stop, false);
+        drop.addEventListener("click", stopClick, false);
       }
     }
     __name(bindChosenNoPierce, "bindChosenNoPierce");
