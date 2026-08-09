@@ -3626,10 +3626,8 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
         max-width: 100% !important;
         box-sizing: border-box !important;
         display: flex !important;
-        flex-wrap: wrap !important;
         align-items: center !important;
-        gap: 8px 12px !important;
-        row-gap: 8px !important;
+        gap: 12px !important;
         position: relative !important;
         clear: both !important;
         float: none !important;
@@ -3684,10 +3682,6 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
         right: auto !important;
         height: auto !important;
         line-height: 1 !important;
-        /* 标题独占首行，操作按钮组换到第二行靠右 */
-        flex-basis: 100% !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
       }
       h4.header > .btn,
       h4.header > a.btn,
@@ -3725,25 +3719,6 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
       }
       h4.header.grey, .header.lighter.grey, .header.smaller.lighter {
         color: var(--text) !important;
-      }
-      /* 标题区内的提示标签（如 .label arrowed-in 注释）：强制换行，防止长文本溢出标题卡框 */
-      h4.header > .label,
-      h3.header > .label,
-      .header.smaller > .label,
-      .header > .label,
-      h4.header .label,
-      .header .label {
-        white-space: normal !important;
-        word-break: break-word !important;
-        overflow-wrap: break-word !important;
-        max-width: 100% !important;
-        min-width: 0 !important;
-        flex: 0 1 auto !important;
-        height: auto !important;
-        line-height: 1.5 !important;
-        opacity: 1 !important;
-        top: auto !important;
-        vertical-align: middle !important;
       }
 
       /*
@@ -12304,6 +12279,39 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         .page-content h4,
         .page-content h5 {
           font-size: 14px !important;
+        }
+        /* 移动端：区块标题独占一行，操作按钮/提示标签换行，防止长内容溢出 */
+        .page-content h4.header,
+        .page-content h3.header,
+        .page-content .header.smaller,
+        .page-content .header.lighter {
+          flex-wrap: wrap !important;
+          gap: 8px 12px !important;
+          row-gap: 8px !important;
+        }
+        .page-content h4.header .right_top_oper,
+        .page-content .header .right_top_oper {
+          flex-basis: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+        }
+        .page-content h4.header > .label,
+        .page-content h3.header > .label,
+        .page-content .header.smaller > .label,
+        .page-content .header > .label,
+        .page-content h4.header .label,
+        .page-content .header .label {
+          white-space: normal !important;
+          word-break: break-word !important;
+          overflow-wrap: break-word !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          flex: 0 1 auto !important;
+          height: auto !important;
+          line-height: 1.5 !important;
+          opacity: 1 !important;
+          top: auto !important;
+          vertical-align: middle !important;
         }
         .page-content .panel,
         .page-content .widget,

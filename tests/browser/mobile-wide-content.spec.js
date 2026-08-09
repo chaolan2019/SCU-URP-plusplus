@@ -148,3 +148,30 @@ test('section headers keep title on one line with actions on a second line', asy
   expect(labelInfo.labelWithinH4).toBeTruthy();
   expect(labelInfo.labelLines).toBeGreaterThan(1);
 });
+
+test('desktop section headers keep title and actions on one row', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'schedule',
+    viewport: { width: 1280, height: 900 },
+    values: { urppp_skin_v1: 'neu', urppp_theme_v3: 'default' },
+  });
+
+  const layout = await page.evaluate(() => {
+    const h4 = document.getElementById('h4_id1');
+    const title = h4.querySelector(':scope > span:first-child');
+    const oper = h4.querySelector('.right_top_oper');
+    const titleRect = title.getBoundingClientRect();
+    const operRect = oper.getBoundingClientRect();
+    return {
+      flexWrap: getComputedStyle(h4).flexWrap,
+      titleSingleLine: titleRect.height <= 24,
+      actionsSameRow: Math.abs(titleRect.top - operRect.top) < 20,
+      operInViewport: operRect.right <= window.innerWidth + 1,
+    };
+  });
+  expect(layout.flexWrap).toBe('nowrap');
+  expect(layout.titleSingleLine).toBeTruthy();
+  expect(layout.actionsSameRow).toBeTruthy();
+  expect(layout.operInViewport).toBeTruthy();
+  expect(pageErrors).toEqual([]);
+});
