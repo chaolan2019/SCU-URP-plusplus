@@ -20167,33 +20167,37 @@ ${arcs}
       sel.style.setProperty("display", "inline-block", "important");
     }
     __name(destroyPagebarChosen, "destroyPagebarChosen");
+    let chosenPickGuardUntil = 0;
+    let chosenPickGuardBound = false;
+    function bindChosenPickGuard() {
+      if (chosenPickGuardBound) return;
+      chosenPickGuardBound = true;
+      document.addEventListener("click", (event) => {
+        if (Date.now() < chosenPickGuardUntil) {
+          try {
+            event.preventDefault();
+          } catch (_) {
+          }
+          try {
+            event.stopPropagation();
+          } catch (_) {
+          }
+        }
+      }, true);
+    }
+    __name(bindChosenPickGuard, "bindChosenPickGuard");
     function bindChosenNoPierce(cont) {
       if (!cont || cont.__urpppChosenNoPierce) return;
       cont.__urpppChosenNoPierce = true;
-      const stop = /* @__PURE__ */ __name((event) => {
-        try {
-          event.stopPropagation();
-        } catch (_) {
-        }
-      }, "stop");
-      const stopClick = /* @__PURE__ */ __name((event) => {
-        try {
-          event.preventDefault();
-        } catch (_) {
-        }
-        try {
-          event.stopPropagation();
-        } catch (_) {
-        }
-      }, "stopClick");
-      cont.addEventListener("mousedown", stop, false);
-      cont.addEventListener("mouseup", stop, false);
-      cont.addEventListener("click", stopClick, false);
+      bindChosenPickGuard();
       const drop = cont.querySelector(".chosen-drop");
-      if (drop) {
-        drop.addEventListener("mousedown", stop, false);
-        drop.addEventListener("click", stopClick, false);
-      }
+      const onPick = /* @__PURE__ */ __name((event) => {
+        const t = event.target;
+        if (!t || !t.closest || !t.closest(".chosen-results li")) return;
+        chosenPickGuardUntil = Date.now() + 300;
+      }, "onPick");
+      cont.addEventListener("mousedown", onPick, false);
+      if (drop) drop.addEventListener("mousedown", onPick, false);
     }
     __name(bindChosenNoPierce, "bindChosenNoPierce");
     function bindAllChosenNoPierce(root = document) {

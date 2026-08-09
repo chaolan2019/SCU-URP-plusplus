@@ -4352,24 +4352,37 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   // click 额外 preventDefault：Chosen 在 mousedown 选择并关闭下拉后，
   // 浏览器会重新命中测试派发 click；若位置落到下层控件上会误触发它，
   // 因此把容器内派生的 click 一并拦截。
+  let chosenPickGuardUntil = 0;
+  let chosenPickGuardBound = false;
+
+  // document 捕获阶段拦截：Chosen 在 mousedown 选择并隐藏下拉后，
+  // 浏览器会对同一物理位置重新命中测试派发 click。此时下拉已关，
+  // click 会落到下方被覆盖的控件上（穿透）。捕获阶段先于目标执行，
+  // 拦截选择后短窗口内的 click，阻止其触发下层选择框。
+  function bindChosenPickGuard() {
+    if (chosenPickGuardBound) return;
+    chosenPickGuardBound = true;
+    document.addEventListener('click', (event) => {
+      if (Date.now() < chosenPickGuardUntil) {
+        try { event.preventDefault(); } catch (_) { /* ignore */ }
+        try { event.stopPropagation(); } catch (_) { /* ignore */ }
+      }
+    }, true);
+  }
+
   function bindChosenNoPierce(cont) {
     if (!cont || cont.__urpppChosenNoPierce) return;
     cont.__urpppChosenNoPierce = true;
-    const stop = (event) => {
-      try { event.stopPropagation(); } catch (_) { /* ignore */ }
-    };
-    const stopClick = (event) => {
-      try { event.preventDefault(); } catch (_) { /* ignore */ }
-      try { event.stopPropagation(); } catch (_) { /* ignore */ }
-    };
-    cont.addEventListener('mousedown', stop, false);
-    cont.addEventListener('mouseup', stop, false);
-    cont.addEventListener('click', stopClick, false);
+    bindChosenPickGuard();
     const drop = cont.querySelector('.chosen-drop');
-    if (drop) {
-      drop.addEventListener('mousedown', stop, false);
-      drop.addEventListener('click', stopClick, false);
-    }
+    // 选项 mousedown：选择并关闭下拉的瞬间，为随后的重定向 click 设保护窗口
+    const onPick = (event) => {
+      const t = event.target;
+      if (!t || !t.closest || !t.closest('.chosen-results li')) return;
+      chosenPickGuardUntil = Date.now() + 300;
+    };
+    cont.addEventListener('mousedown', onPick, false);
+    if (drop) drop.addEventListener('mousedown', onPick, false);
   }
 
   // 扫描页面所有 Chosen 容器绑定防穿透（覆盖站点自带/插件初始化的所有情况）
