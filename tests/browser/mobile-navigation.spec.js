@@ -272,6 +272,8 @@ test('mobile navbar and sidebar survive business-page route replacement', async 
   await expect(page.locator('#urppp-mobile-menu-button')).toHaveCount(1);
   await expect(page.locator('#navbar .menu-toggler')).toBeHidden();
   await expect(page.locator('#navbar #urppp-nav-theme')).toBeVisible();
+  // 移动端业务页顶栏保留清爽模式按钮
+  await expect(page.locator('#navbar #urppp-nav-clean')).toHaveCount(1);
   await expect(page.locator('#sidebar')).not.toHaveClass(/\bdisplay\b/);
 
   const navbarStyle = await page.locator('#navbar').evaluate((navbar) => {
@@ -297,11 +299,29 @@ test('mobile navbar and sidebar survive business-page route replacement', async 
     await expect(page.locator('#urppp-mobile-menu-button')).toHaveCount(1);
     await expect(page.locator('#navbar .menu-toggler')).toBeHidden();
     await expect(page.locator('#navbar #urppp-nav-theme')).toBeVisible();
+    await expect(page.locator('#navbar #urppp-nav-clean')).toHaveCount(1);
     await expect(page.locator('#sidebar')).not.toHaveClass(/\bdisplay\b/);
     await page.locator('#urppp-mobile-menu-button').click();
     await expect(page.locator('#sidebar')).toHaveClass(/\bdisplay\b/);
     await page.locator('#urppp-mobile-menu-button').click();
     await expect(page.locator('#sidebar')).not.toHaveClass(/\bdisplay\b/);
   }
+  expect(pageErrors).toEqual([]);
+});
+
+test('mobile navbar hides brand title on extra narrow viewports and keeps clean button', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'mobile-home',
+    viewport: { width: 390, height: 844 },
+    values: { urppp_skin_v1: 'apple', urppp_theme_v3: 'default' },
+  });
+
+  await expect(page.locator('#navbar .navbar-brand small')).toBeVisible();
+  await expect(page.locator('#navbar #urppp-nav-clean')).toHaveCount(1);
+
+  await page.setViewportSize({ width: 330, height: 844 });
+  await expect(page.locator('#navbar .navbar-brand')).toBeHidden();
+  await expect(page.locator('#navbar #urppp-nav-clean')).toHaveCount(1);
+  await expect(page.locator('#urppp-mobile-menu-button')).toHaveCount(1);
   expect(pageErrors).toEqual([]);
 });

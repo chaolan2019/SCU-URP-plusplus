@@ -12235,6 +12235,18 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         }
       }
 
+      /* --- 0b. 超窄视口：顶栏标题让位，清爽按钮保持可见 --- */
+      @media (max-width: 340px) {
+        #navbar .navbar-brand {
+          display: none !important;
+        }
+        #navbar .navbar-header.pull-left,
+        #navbar .navbar-header:not(.navbar-buttons) {
+          right: auto !important;
+          left: 34px !important;
+        }
+      }
+
       /* --- 1. 内容容器加宽 + 元素整体缩小（窄视口） --- */
       @media (max-width: 991px) {
         .main-content .page-content,
@@ -14039,8 +14051,11 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         deps.ensureStyle();
         let btn = document.getElementById("urppp-nav-clean");
         if (!deps.isHomePage()) {
-          if (btn) btn.remove();
-          return;
+          const narrow = !!(deps.isNarrowViewport && deps.isNarrowViewport());
+          if (!narrow) {
+            if (btn) btn.remove();
+            return;
+          }
         }
         const host = document.getElementById("urppp-nav-theme") || document.querySelector("#navbar .navbar-header") || document.querySelector("#navbar");
         if (!host) return;
@@ -25901,6 +25916,7 @@ ${arcs}
         handleThemeDotClick,
         ico,
         isHomePage,
+        isNarrowViewport: /* @__PURE__ */ __name(() => !!(window.matchMedia && window.matchMedia("(max-width: 991px)").matches), "isNarrowViewport"),
         loadAll,
         openSettingsPanel,
         readRememberedTermWeek,

@@ -107,10 +107,13 @@ export function createCleanModeController({ state, deps }) {
     try {
       deps.ensureStyle();
       let btn = document.getElementById('urppp-nav-clean');
-      // 仅首页展示清爽入口；业务页移除残留按钮
+      // 首页总是展示；非首页仅在窄视口（移动端）保留，桌面业务页移除
       if (!deps.isHomePage()) {
-        if (btn) btn.remove();
-        return;
+        const narrow = !!(deps.isNarrowViewport && deps.isNarrowViewport());
+        if (!narrow) {
+          if (btn) btn.remove();
+          return;
+        }
       }
       const host = document.getElementById('urppp-nav-theme')
         || document.querySelector('#navbar .navbar-header')

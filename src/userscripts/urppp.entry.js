@@ -10326,6 +10326,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       handleThemeDotClick,
       ico,
       isHomePage,
+      isNarrowViewport: () => !!(window.matchMedia && window.matchMedia('(max-width: 991px)').matches),
       loadAll,
       openSettingsPanel,
       readRememberedTermWeek,

@@ -50,6 +50,18 @@
         }
       }
 
+      /* --- 0b. 超窄视口：顶栏标题让位，清爽按钮保持可见 --- */
+      @media (max-width: 340px) {
+        #navbar .navbar-brand {
+          display: none !important;
+        }
+        #navbar .navbar-header.pull-left,
+        #navbar .navbar-header:not(.navbar-buttons) {
+          right: auto !important;
+          left: 34px !important;
+        }
+      }
+
       /* --- 1. 内容容器加宽 + 元素整体缩小（窄视口） --- */
       @media (max-width: 991px) {
         .main-content .page-content,
