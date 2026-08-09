@@ -3626,8 +3626,10 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
         max-width: 100% !important;
         box-sizing: border-box !important;
         display: flex !important;
+        flex-wrap: wrap !important;
         align-items: center !important;
-        gap: 12px !important;
+        gap: 8px 12px !important;
+        row-gap: 8px !important;
         position: relative !important;
         clear: both !important;
         float: none !important;
@@ -3682,6 +3684,10 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
         right: auto !important;
         height: auto !important;
         line-height: 1 !important;
+        /* 标题独占首行，操作按钮组换到第二行靠右 */
+        flex-basis: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
       }
       h4.header > .btn,
       h4.header > a.btn,

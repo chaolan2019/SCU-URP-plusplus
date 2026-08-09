@@ -86,3 +86,31 @@ test('mobile query fields use two columns and collapse to one on extra-narrow sc
   ))).toBe(1);
   expect(pageErrors).toEqual([]);
 });
+
+test('section headers keep title on one line with actions on a second line', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'schedule',
+    viewport: { width: 390, height: 844 },
+    values: { urppp_skin_v1: 'neu', urppp_theme_v3: 'default' },
+  });
+
+  const layout = await page.evaluate(() => {
+    const h4 = document.getElementById('h4_id1');
+    const title = h4.querySelector(':scope > span:first-child');
+    const oper = h4.querySelector('.right_top_oper');
+    const h4Style = getComputedStyle(h4);
+    const titleRect = title.getBoundingClientRect();
+    const operRect = oper.getBoundingClientRect();
+    return {
+      flexWrap: h4Style.flexWrap,
+      titleSingleLine: titleRect.height <= 24,
+      operBelowTitle: operRect.top >= titleRect.bottom - 2,
+      operInViewport: operRect.right <= window.innerWidth + 1 && operRect.left >= 0,
+    };
+  });
+  expect(layout.flexWrap).toBe('wrap');
+  expect(layout.titleSingleLine).toBeTruthy();
+  expect(layout.operBelowTitle).toBeTruthy();
+  expect(layout.operInViewport).toBeTruthy();
+  expect(pageErrors).toEqual([]);
+});
