@@ -60,7 +60,7 @@ test('mobile week schedule keeps readable columns inside a horizontal viewport',
   expect(fallback.pageOverflow).toBeLessThanOrEqual(1);
 });
 
-test('mobile query fields use two columns and collapse to one on extra-narrow screens', async ({ page }) => {
+test('mobile query fields use one column on phones and two on tablets', async ({ page }) => {
   const { pageErrors } = await loadUrpFixture(page, {
     fixture: 'grades',
     viewport: { width: 390, height: 844 },
@@ -95,12 +95,12 @@ test('mobile query fields use two columns and collapse to one on extra-narrow sc
       clipped: form.scrollWidth > form.clientWidth + 1,
     };
   });
-  expect(mobileLayout.columns).toBe(2);
+  expect(mobileLayout.columns).toBe(1);
   expect(mobileLayout.labelWithValue).toBeTruthy();
   expect(mobileLayout.clipped).toBeFalsy();
-  expect(mobileLayout.pairWidth).toBeGreaterThan(140);
-  // 控件要够大，不能是细条（>80px）
-  expect(mobileLayout.controlWidth).toBeGreaterThan(80);
+  expect(mobileLayout.pairWidth).toBeGreaterThan(280);
+  // 控件要够大，不能是细条（>180px）
+  expect(mobileLayout.controlWidth).toBeGreaterThan(180);
 
   await page.setViewportSize({ width: 350, height: 844 });
   await expect.poll(async () => page.evaluate(() => (

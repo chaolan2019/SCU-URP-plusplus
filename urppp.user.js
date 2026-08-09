@@ -5481,10 +5481,19 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
         .profile-user-info-striped.self.urppp-query-form {
           padding: 10px 12px 6px !important;
         }
-        /* 窄视口标签收窄，控件拿更多宽度 */
+        /* 640px 以下一行一个筛选项：标签与控件完整显示，不截断 */
+        .page-content .profile-info-row.urppp-query-row,
+        .page-content .profile-info-row.urppp-query-row[data-urppp-query-cols],
+        .page-content .profile-info-row.urppp-query-row[data-urppp-query-cols="2"],
+        .page-content .profile-info-row.urppp-query-row[data-urppp-query-cols="3"],
+        .page-content .profile-info-row.urppp-query-row[data-urppp-query-cols="4"],
+        .profile-user-info.urppp-query-form .profile-info-row.urppp-query-row {
+          grid-template-columns: minmax(0, 1fr) !important;
+        }
+        /* 标签恢复完整宽度，选项/输入框拿剩余全宽 */
         .urppp-query-row {
-          --urppp-qlabel: 52px !important;
-          --urppp-qlabel-max: 60px !important;
+          --urppp-qlabel: 84px !important;
+          --urppp-qlabel-max: 96px !important;
         }
         .profile-info-row.urppp-query-row {
           column-gap: 10px !important;
