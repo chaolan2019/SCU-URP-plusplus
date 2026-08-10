@@ -4978,10 +4978,11 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       const esc = (s) => String(s == null ? '' : s)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-      // 已处理过则跳过（避免重复插横幅）
+      // 已处理过则跳过（避免重复插横幅/重复移出 wrap 造成视觉叠加）
       if (body.dataset.urpppWrsDone === '1') {
-        // 仍允许刷新 class
+        return;
       }
+      body.dataset.urpppWrsDone = '1';
 
       tables.forEach((table) => {
         const wrap = table.closest('.urppp-table-wrap');
@@ -6741,7 +6742,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         try { applyPersonalDisplay(area); } catch (_) { /* ignore */ }
       };
 
-      const ensureMobileQuick = (btns, sidebar, menus) => {
+      const ensureMobileQuick = (btns, sidebar, menus, opts = {}) => {
         if (!menus || document.getElementById('urppp-mobile-quick')) return;
         const quick = document.createElement('section');
         quick.id = 'urppp-mobile-quick';
@@ -6787,16 +6788,31 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         searchPanel.id = 'urppp-mobile-search-panel';
         searchPanel.className = 'urppp-mobile-search-panel';
         searchPanel.hidden = true;
-        const formSearch = document.getElementById('form-search');
-        if (formSearch) {
-          if (!formSearch.__urpppMobileParent) {
-            formSearch.__urpppMobileParent = formSearch.parentElement;
-            formSearch.__urpppMobileNext = formSearch.nextSibling;
+        // 清爽模式：不移动站点 form-search（保持首页搜索可用），搜索面板用独立输入框
+        if (opts.cleanMode) {
+          const cleanForm = document.createElement('form');
+          cleanForm.className = 'urppp-clean-search-form';
+          cleanForm.innerHTML = '<span class="input-icon"><input type="text" placeholder="查找功能..." class="nav-search-input" id="urppp-clean-search-input" autocomplete="off"><i class="ace-icon fa fa-search" aria-hidden="true"></i></span>';
+          cleanForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            const value = cleanForm.querySelector('input').value.trim();
+            if (!value) return;
+            window.location.href = '/main/search?key=' + encodeURIComponent(value);
+          });
+          searchPanel.appendChild(cleanForm);
+        } else {
+          const formSearch = document.getElementById('form-search');
+          if (formSearch) {
+            if (!formSearch.__urpppMobileParent) {
+              formSearch.__urpppMobileParent = formSearch.parentElement;
+              formSearch.__urpppMobileNext = formSearch.nextSibling;
+            }
+            formSearch.classList.add('urppp-mobile-form-search');
+            formSearch.dataset.open = '0';
+            searchPanel.appendChild(formSearch);
+            syncMobileSearchLayout();
           }
-          formSearch.classList.add('urppp-mobile-form-search');
-          formSearch.dataset.open = '0';
-          searchPanel.appendChild(formSearch);
-          syncMobileSearchLayout();
         }
         quick.appendChild(searchPanel);
         if (links.children.length) quick.appendChild(links);
@@ -6804,11 +6820,17 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           event.preventDefault();
           event.stopPropagation();
           const open = searchPanel.hidden;
-          if (open) syncMobileSearchLayout();
+          if (open) {
+            if (!opts.cleanMode) {
+              syncMobileSearchLayout();
+              setTimeout(() => searchPanel.querySelector('#search-input')?.focus(), 30);
+            } else {
+              setTimeout(() => searchPanel.querySelector('input')?.focus(), 30);
+            }
+          }
           searchPanel.hidden = !open;
           searchPanel.classList.toggle('open', open);
           searchButton.setAttribute('aria-expanded', open ? 'true' : 'false');
-          if (open) setTimeout(() => searchPanel.querySelector('#search-input')?.focus(), 30);
         });
         sidebar.insertBefore(quick, menus);
       };
@@ -6855,7 +6877,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         const menus = document.getElementById('urppp-menus');
         if (!btns || !sidebar) return;
         try { ensureMobileUser(btns, sidebar); } catch (_) { /* ignore */ }
-        try { ensureMobileQuick(btns, sidebar, menus); } catch (_) { /* ignore */ }
+        try { ensureMobileQuick(btns, sidebar, menus, { cleanMode: true }); } catch (_) { /* ignore */ }
         try { syncMobileSearchLayout(); } catch (_) { /* ignore */ }
       };
       try { apply(); } catch (_) { /* ignore */ }

@@ -11588,12 +11588,14 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
 }
 /* 清爽模式下侧边栏套用移动端抽屉菜单样式（桌面端同样生效，点菜单项直接跳转无需先退出） */
 #sidebar.urppp-clean-sidebar .urppp-sidebar-header{display:none !important}
+#sidebar.urppp-clean-sidebar .sidebar-collapse{display:none !important}
+#sidebar.urppp-clean-sidebar #menus{display:none !important}
 #sidebar.urppp-clean-sidebar #urppp-menus{margin-top:0 !important;padding:10px 12px 24px !important}
 #sidebar.urppp-clean-sidebar .urppp-nav-link{padding:11px 13px !important;justify-content:flex-start !important}
 #sidebar.urppp-clean-sidebar .urppp-nav-text,
 #sidebar.urppp-clean-sidebar .urppp-nav-arrow{display:block !important;width:auto !important;max-width:200px !important;margin-left:0 !important;opacity:1 !important;overflow:hidden !important;pointer-events:auto !important}
 #sidebar.urppp-clean-sidebar .urppp-nav-link > .fa{margin-right:11px !important}
-#sidebar.urppp-clean-sidebar .urppp-nav-submenu{display:block !important}
+#sidebar.urppp-clean-sidebar .urppp-nav-submenu{display:block !important;max-height:none !important;opacity:1 !important;overflow:visible !important;padding:3px 0 3px 20px !important}
 /* 清爽模式侧边栏：移动端用户卡与快捷区（桌面清爽模式同样渲染，样式随作用域生效） */
 #sidebar.urppp-clean-sidebar #urppp-mobile-user{margin-top:0 !important;padding:12px !important;border-bottom:1px solid var(--border,#e8eaed) !important;background:var(--surface,#fff) !important}
 #sidebar.urppp-clean-sidebar #urppp-mobile-user .urppp-mobile-user-identity{display:flex !important;align-items:center !important;gap:10px !important;min-height:38px !important}
@@ -11618,6 +11620,12 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel.open{display:block !important;margin:8px 0 !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #form-search.nav-search{position:relative !important;inset:auto !important;width:100% !important;height:34px !important;margin:0 !important;opacity:1 !important;overflow:visible !important;transform:none !important;z-index:1 !important;pointer-events:auto !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #search-input{width:100% !important;height:34px !important;box-sizing:border-box !important}
+/* 清爽模式独立搜索框样式 */
+#sidebar.urppp-clean-sidebar .urppp-clean-search-form{display:block !important;width:100% !important}
+#sidebar.urppp-clean-sidebar .urppp-clean-search-form input{width:100% !important;height:34px !important;box-sizing:border-box !important}
+/* 清爽模式下站点弹窗（作息时间表等）置于清爽模式之上 */
+html.urppp-clean-open .modal{z-index:12050 !important}
+html.urppp-clean-open .modal-backdrop{z-index:12045 !important}
 #urppp-clean-root .uc-top{flex:0 0 60px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--border);background:var(--surface,#fff);animation:ucTopIn .36s cubic-bezier(.22,1,.36,1) both;position:relative;z-index:12040}
 #urppp-clean-root .uc-score-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 #urppp-clean-root .uc-score-pane{border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;background:var(--input-bg);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease}
@@ -14366,6 +14374,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
             if (!link) return;
             const href = String(link.getAttribute("href") || "").trim();
             if (!href || href === "#" || href.startsWith("javascript")) return;
+            if (link.target === "_blank" || /^https?:\/\//i.test(href)) return;
             closeCleanMode();
           });
         }
@@ -15633,10 +15642,11 @@ ${arcs}
           let children = submenu ? parseMenu(submenu) : [];
           children = children.filter((child) => child.text && (child.text.trim() || child.href && child.href !== "#"));
           const href = anchor?.getAttribute("href") || "#";
+          const target = anchor?.getAttribute("target") || "";
           const onclick = li.getAttribute("onclick") || anchor?.getAttribute("onclick") || "";
           const id = li.id;
           if (href !== "#" && !href.startsWith("javascript")) {
-            return { id, text, iconClass, children: [], href, onclick };
+            return { id, text, iconClass, children: [], href, target, onclick };
           }
           if (children.length === 1 && children[0].children.length === 0) {
             return {
@@ -15645,10 +15655,11 @@ ${arcs}
               iconClass: iconClass || children[0].iconClass,
               children: [],
               href: children[0].href || href,
+              target: children[0].target || target,
               onclick: children[0].onclick || onclick
             };
           }
-          return { id, text, iconClass, children, href, onclick };
+          return { id, text, iconClass, children, href, target, onclick };
         });
       }
       __name(parseMenu, "parseMenu");
@@ -15721,6 +15732,7 @@ ${arcs}
         const link = documentRef.createElement("a");
         link.className = "urppp-nav-link";
         link.href = hasRealHref ? href : "javascript:void(0)";
+        if (item.target) link.setAttribute("target", item.target);
         if (item.iconClass) {
           const icon = documentRef.createElement("i");
           item.iconClass.split(" ").forEach((c) => {
@@ -20987,7 +20999,9 @@ ${arcs}
         const norm = /* @__PURE__ */ __name((s) => (s || "").replace(/\s+/g, " ").trim(), "norm");
         const esc = /* @__PURE__ */ __name((s) => String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"), "esc");
         if (body.dataset.urpppWrsDone === "1") {
+          return;
         }
+        body.dataset.urpppWrsDone = "1";
         tables.forEach((table) => {
           const wrap = table.closest(".urppp-table-wrap");
           if (wrap && modal.contains(wrap) && wrap.parentElement) {
@@ -22669,7 +22683,7 @@ ${arcs}
           } catch (_) {
           }
         }, "ensureMobileUser");
-        const ensureMobileQuick = /* @__PURE__ */ __name((btns, sidebar, menus) => {
+        const ensureMobileQuick = /* @__PURE__ */ __name((btns, sidebar, menus, opts = {}) => {
           if (!menus || document.getElementById("urppp-mobile-quick")) return;
           const quick = document.createElement("section");
           quick.id = "urppp-mobile-quick";
@@ -22712,16 +22726,30 @@ ${arcs}
           searchPanel.id = "urppp-mobile-search-panel";
           searchPanel.className = "urppp-mobile-search-panel";
           searchPanel.hidden = true;
-          const formSearch = document.getElementById("form-search");
-          if (formSearch) {
-            if (!formSearch.__urpppMobileParent) {
-              formSearch.__urpppMobileParent = formSearch.parentElement;
-              formSearch.__urpppMobileNext = formSearch.nextSibling;
+          if (opts.cleanMode) {
+            const cleanForm = document.createElement("form");
+            cleanForm.className = "urppp-clean-search-form";
+            cleanForm.innerHTML = '<span class="input-icon"><input type="text" placeholder="查找功能..." class="nav-search-input" id="urppp-clean-search-input" autocomplete="off"><i class="ace-icon fa fa-search" aria-hidden="true"></i></span>';
+            cleanForm.addEventListener("submit", (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              const value = cleanForm.querySelector("input").value.trim();
+              if (!value) return;
+              window.location.href = "/main/search?key=" + encodeURIComponent(value);
+            });
+            searchPanel.appendChild(cleanForm);
+          } else {
+            const formSearch = document.getElementById("form-search");
+            if (formSearch) {
+              if (!formSearch.__urpppMobileParent) {
+                formSearch.__urpppMobileParent = formSearch.parentElement;
+                formSearch.__urpppMobileNext = formSearch.nextSibling;
+              }
+              formSearch.classList.add("urppp-mobile-form-search");
+              formSearch.dataset.open = "0";
+              searchPanel.appendChild(formSearch);
+              syncMobileSearchLayout();
             }
-            formSearch.classList.add("urppp-mobile-form-search");
-            formSearch.dataset.open = "0";
-            searchPanel.appendChild(formSearch);
-            syncMobileSearchLayout();
           }
           quick.appendChild(searchPanel);
           if (links.children.length) quick.appendChild(links);
@@ -22729,11 +22757,17 @@ ${arcs}
             event.preventDefault();
             event.stopPropagation();
             const open = searchPanel.hidden;
-            if (open) syncMobileSearchLayout();
+            if (open) {
+              if (!opts.cleanMode) {
+                syncMobileSearchLayout();
+                setTimeout(() => searchPanel.querySelector("#search-input")?.focus(), 30);
+              } else {
+                setTimeout(() => searchPanel.querySelector("input")?.focus(), 30);
+              }
+            }
             searchPanel.hidden = !open;
             searchPanel.classList.toggle("open", open);
             searchButton.setAttribute("aria-expanded", open ? "true" : "false");
-            if (open) setTimeout(() => searchPanel.querySelector("#search-input")?.focus(), 30);
           });
           sidebar.insertBefore(quick, menus);
         }, "ensureMobileQuick");
@@ -22781,7 +22815,7 @@ ${arcs}
           } catch (_) {
           }
           try {
-            ensureMobileQuick(btns, sidebar, menus);
+            ensureMobileQuick(btns, sidebar, menus, { cleanMode: true });
           } catch (_) {
           }
           try {

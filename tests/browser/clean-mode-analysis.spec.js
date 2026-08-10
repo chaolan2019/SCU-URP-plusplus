@@ -248,6 +248,12 @@ test('clean mode sidebar sits below top bar and gets mobile sections on desktop'
         const el = document.getElementById('urppp-mobile-user');
         return el ? el.getBoundingClientRect().height > 0 : false;
       })(),
+      // 搜索：站点 form-search 保持原位，侧边栏面板用独立搜索框
+      formSearchInNavbar: !!document.getElementById('form-search') && !!document.getElementById('form-search').closest('#navbar'),
+      cleanSearchInput: !!document.getElementById('urppp-clean-search-input'),
+      // 隐藏 ACE 原生菜单与折叠按钮，避免出现空的功能分区
+      nativeMenusHidden: getComputedStyle(document.getElementById('menus')).display === 'none',
+      collapseHidden: getComputedStyle(document.querySelector('#sidebar .sidebar-collapse')).display === 'none',
     };
   });
   // 侧边栏在清爽模式 root 内、顶栏之下（顶栏 z-index 更高）
@@ -257,5 +263,80 @@ test('clean mode sidebar sits below top bar and gets mobile sections on desktop'
   expect(info.hasMobileUser).toBe(true);
   expect(info.hasQuick).toBe(true);
   expect(info.userVisible).toBe(true);
+  // 搜索可用且不破坏首页搜索
+  expect(info.formSearchInNavbar).toBe(true);
+  expect(info.cleanSearchInput).toBe(true);
+  // ACE 原生菜单/折叠按钮隐藏，清爽模式只显示重建菜单
+  expect(info.nativeMenusHidden).toBe(true);
+  expect(info.collapseHidden).toBe(true);
+  expect(pageErrors).toEqual([]);
+});
+
+test('clean mode sidebar external links stay in clean mode while inner links exit', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'home',
+    beforeUserscript: async (p) => {
+      await p.evaluate(() => {
+        const menus = document.getElementById('menus');
+        menus.innerHTML = `
+          <li id="menu-home" class="active"><a href="/index"><span class="menu-text">首页</span></a></li>
+          <li id="menu-cal"><a href="https://jwc.scu.edu.cn/cdxl.htm" target="_blank"><span class="menu-text">校历</span></a></li>
+          <li id="menu-inner"><a href="/schedule"><span class="menu-text">课表</span></a></li>`;
+      });
+    },
+  });
+  await installScoreApiMock(page);
+
+  await page.evaluate(() => document.getElementById('urppp-nav-clean').click());
+  await page.waitForTimeout(600);
+  await page.locator('#uc-menu-toggle').click();
+  await page.waitForTimeout(350);
+
+  // 重建菜单保留 target=_blank（外部链接标志）
+  const calLink = page.locator('#urppp-menus a[href*="jwc.scu.edu.cn"]');
+  await expect(calLink).toHaveAttribute('target', '_blank');
+
+  // 点外部链接：清爽模式保持
+  await calLink.click();
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => document.documentElement.classList.contains('urppp-clean-open'))).toBe(true);
+
+  // 点站内链接：清爽模式退出（抽屉仍开着，直接点）
+  await page.locator('#urppp-menus a[href="/schedule"]').click();
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => document.documentElement.classList.contains('urppp-clean-open'))).toBe(false);
+  expect(pageErrors).toEqual([]);
+});
+
+test('clean mode sidebar expands submenus with visible items', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'home',
+    beforeUserscript: async (p) => {
+      await p.evaluate(() => {
+        const menus = document.getElementById('menus');
+        menus.innerHTML = `
+          <li id="menu-home" class="active"><a href="/index"><span class="menu-text">首页</span></a></li>
+          <li id="menu-service"><a href="#"><span class="menu-text">教学服务</span></a>
+            <ul class="submenu">
+              <li><a href="/schedule"><span class="menu-text">课表</span></a></li>
+              <li><a href="/grades"><span class="menu-text">成绩</span></a></li>
+            </ul>
+          </li>`;
+      });
+    },
+  });
+  await installScoreApiMock(page);
+
+  await page.evaluate(() => document.getElementById('urppp-nav-clean').click());
+  await page.waitForTimeout(600);
+  await page.locator('#uc-menu-toggle').click();
+  await page.waitForTimeout(350);
+
+  const sub = page.locator('#urppp-menus .urppp-nav-item .urppp-nav-submenu');
+  await expect(sub).toBeVisible();
+  const h = await sub.evaluate((el) => Math.round(el.getBoundingClientRect().height));
+  expect(h).toBeGreaterThan(40);
+  const texts = await sub.locator('.urppp-nav-text').allTextContents();
+  expect(texts).toEqual(['课表', '成绩']);
   expect(pageErrors).toEqual([]);
 });

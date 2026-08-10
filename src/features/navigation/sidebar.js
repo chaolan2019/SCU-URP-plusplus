@@ -76,11 +76,12 @@ export function createSidebarController({
         // 过滤空壳子节点（无文字且无有效 href）
         children = children.filter((child) => child.text && (child.text.trim() || (child.href && child.href !== '#')));
         const href = anchor?.getAttribute('href') || '#';
+        const target = anchor?.getAttribute('target') || '';
         const onclick = li.getAttribute('onclick') || anchor?.getAttribute('onclick') || '';
         const id = li.id;
         // 有真实 href 的节点：忽略子菜单，直接当叶子
         if (href !== '#' && !href.startsWith('javascript')) {
-          return { id, text, iconClass, children: [], href, onclick };
+          return { id, text, iconClass, children: [], href, target, onclick };
         }
 
         // 单叶子子菜单提升：父节点直接变成跳转节点，不再展开
@@ -91,10 +92,11 @@ export function createSidebarController({
             iconClass: iconClass || children[0].iconClass,
             children: [],
             href: children[0].href || href,
+            target: children[0].target || target,
             onclick: children[0].onclick || onclick,
           };
         }
-        return { id, text, iconClass, children, href, onclick };
+        return { id, text, iconClass, children, href, target, onclick };
       });
     }
 
@@ -176,6 +178,7 @@ export function createSidebarController({
       const link = documentRef.createElement('a');
       link.className = 'urppp-nav-link';
       link.href = hasRealHref ? href : 'javascript:void(0)';
+      if (item.target) link.setAttribute('target', item.target);
 
       if (item.iconClass) {
         const icon = documentRef.createElement('i');

@@ -160,7 +160,7 @@ export function createCleanModeController({ state, deps }) {
       event.stopImmediatePropagation();
       const sidebar = document.getElementById('sidebar');
       if (!sidebar) return;
-      // 绑定在 sidebar 上的菜单点击：关闭清爽模式（sidebar 随 PJAX 重建，监听不泄漏）
+      // 绑定在 sidebar 上的菜单点击：站内导航退出清爽模式并跳转；站外/新窗口链接保持清爽模式
       if (!sidebar.__urpppCleanMenuBound) {
         sidebar.__urpppCleanMenuBound = true;
         sidebar.addEventListener('click', (ev) => {
@@ -169,6 +169,8 @@ export function createCleanModeController({ state, deps }) {
           if (!link) return;
           const href = String(link.getAttribute('href') || '').trim();
           if (!href || href === '#' || href.startsWith('javascript')) return;
+          // 外部网站或新窗口链接：不在清爽模式内拦截，保持清爽模式
+          if (link.target === '_blank' || /^https?:\/\//i.test(href)) return;
           closeCleanMode();
         });
       }
