@@ -6785,6 +6785,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           const clone = anchor.cloneNode(true);
           clone.className = 'urppp-mobile-quick-link';
           clone.removeAttribute('style');
+          // 只保留图标、文本和 href，去掉站点的 onclick，避免点击触发站点逻辑（如收回侧边栏）
+          clone.removeAttribute('onclick');
           links.appendChild(clone);
         });
         const searchPanel = document.createElement('div');
@@ -6795,7 +6797,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         if (opts.cleanMode) {
           const cleanForm = document.createElement('form');
           cleanForm.className = 'urppp-clean-search-form';
-          cleanForm.innerHTML = '<span class="input-icon"><input type="text" placeholder="查找功能..." class="nav-search-input" id="urppp-clean-search-input" autocomplete="off"><i class="ace-icon fa fa-search" aria-hidden="true"></i></span>';
+          cleanForm.innerHTML = '<input type="text" placeholder="查找功能..." class="nav-search-input" id="urppp-clean-search-input" autocomplete="off">';
           cleanForm.addEventListener('submit', (event) => {
             event.preventDefault();
             event.stopPropagation();

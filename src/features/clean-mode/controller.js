@@ -128,6 +128,10 @@ export function createCleanModeController({ state, deps }) {
     const setSidebarOpen = (open) => {
       const sidebar = document.getElementById('sidebar');
       if (!sidebar) return;
+      // 清除站点 animateDrawer 可能残留的内联（transition:none/transform/visibility/pointer-events），
+      // 确保收回动画走 CSS transition（否则点汉堡收回会无动画，且 z-index 残留被清爽底栏盖住）
+      const s = sidebar.style;
+      ['transform', 'visibility', 'pointer-events', 'transition'].forEach((p) => s.removeProperty(p));
       sidebar.classList.toggle('display', open);
       if (menuToggle) {
         menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');

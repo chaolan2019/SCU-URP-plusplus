@@ -11620,12 +11620,10 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel.open{display:block !important;margin:8px 0 !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #form-search.nav-search{position:relative !important;inset:auto !important;width:100% !important;height:34px !important;margin:0 !important;opacity:1 !important;overflow:visible !important;transform:none !important;z-index:1 !important;pointer-events:auto !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #search-input{width:100% !important;height:34px !important;box-sizing:border-box !important}
-/* 清爽模式独立搜索框样式：与站点 nav-search 输入框完全一致（桌面首页搜索框外观） */
+/* 清爽模式独立搜索框样式：与站点 nav-search 输入框完全一致（桌面首页搜索框外观），无左侧图标 */
 #sidebar.urppp-clean-sidebar .urppp-clean-search-form{display:block !important;width:100% !important;margin:0 !important;padding:0 !important;background:transparent !important;border:none !important;box-shadow:none !important}
-#sidebar.urppp-clean-sidebar .urppp-clean-search-form .input-icon{display:block !important;width:100% !important;background:transparent !important;border:none !important;box-shadow:none !important}
 #sidebar.urppp-clean-sidebar .urppp-clean-search-form input{width:100% !important;height:32px !important;box-sizing:border-box !important;padding:0 12px !important;line-height:32px !important;background:var(--input-bg,#f5f5f7) !important;border:1px solid var(--border,#e8eaed) !important;border-radius:var(--radius-sm,8px) !important;color:var(--text,#1d1d1f) !important;font-size:13px !important;outline:none !important}
 #sidebar.urppp-clean-sidebar .urppp-clean-search-form input:focus{border-color:var(--border-focus,#b53434) !important;box-shadow:0 0 0 3px var(--ring,rgba(181,52,52,.15)) !important}
-#sidebar.urppp-clean-sidebar .urppp-clean-search-form .ace-icon.fa-search{color:var(--text-secondary,#6b7280) !important}
 /* 清爽模式下站点弹窗（作息时间表等）置于清爽模式之上 */
 html.urppp-clean-open .modal{z-index:12050 !important}
 html.urppp-clean-open .modal-backdrop{z-index:12045 !important}
@@ -14337,6 +14335,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       const setSidebarOpen = /* @__PURE__ */ __name((open) => {
         const sidebar = document.getElementById("sidebar");
         if (!sidebar) return;
+        const s = sidebar.style;
+        ["transform", "visibility", "pointer-events", "transition"].forEach((p) => s.removeProperty(p));
         sidebar.classList.toggle("display", open);
         if (menuToggle) {
           menuToggle.setAttribute("aria-expanded", open ? "true" : "false");
@@ -22736,6 +22736,7 @@ ${arcs}
             const clone = anchor.cloneNode(true);
             clone.className = "urppp-mobile-quick-link";
             clone.removeAttribute("style");
+            clone.removeAttribute("onclick");
             links.appendChild(clone);
           });
           const searchPanel = document.createElement("div");
@@ -22745,7 +22746,7 @@ ${arcs}
           if (opts.cleanMode) {
             const cleanForm = document.createElement("form");
             cleanForm.className = "urppp-clean-search-form";
-            cleanForm.innerHTML = '<span class="input-icon"><input type="text" placeholder="查找功能..." class="nav-search-input" id="urppp-clean-search-input" autocomplete="off"><i class="ace-icon fa fa-search" aria-hidden="true"></i></span>';
+            cleanForm.innerHTML = '<input type="text" placeholder="查找功能..." class="nav-search-input" id="urppp-clean-search-input" autocomplete="off">';
             cleanForm.addEventListener("submit", (event) => {
               event.preventDefault();
               event.stopPropagation();
