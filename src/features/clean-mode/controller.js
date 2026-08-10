@@ -136,29 +136,18 @@ export function createCleanModeController({ state, deps }) {
       // 用 JS 显式控制 transform 过渡，确保收回/展开动画在任何 CSS 覆盖下都播放
       const width = sidebar.getBoundingClientRect().width || 260;
       const target = open ? 'translate3d(0,0,0)' : 'translate3d(-' + width + 'px,0,0)';
-      const setTarget = () => {
-        s.setProperty('transform', target, 'important');
-      };
-      const startAnim = () => {
-        // 先设 transition（记录旧值），下一帧再改 transform 触发过渡
-        s.setProperty('transition', 'transform .26s cubic-bezier(.4, 0, .2, 1), visibility 0s linear .26s', 'important');
-        s.setProperty('visibility', 'visible', 'important');
-        s.setProperty('pointer-events', open ? 'auto' : 'none', 'important');
-        requestAnimationFrame(setTarget);
-        setTimeout(setTarget, 40);
-      };
-      if (open) {
-        sidebar.classList.add('display');
-        // 起点 -width（隐藏态），然后过渡到 0
-        s.setProperty('transform', 'translate3d(-' + width + 'px,0,0)', 'important');
-        void sidebar.offsetWidth;
-        startAnim();
-      } else {
-        // 当前在 0（展开态），起点保持 0，再过渡到 -width
-        s.setProperty('transform', 'translate3d(0,0,0)', 'important');
-        void sidebar.offsetWidth;
-        startAnim();
-      }
+      // 标准过渡时序：起点 → reflow（读 computed 强制提交）→ transition → 目标
+      const startX = open ? 'translate3d(-' + width + 'px,0,0)' : 'translate3d(0,0,0)';
+      s.setProperty('transform', startX, 'important');
+      s.setProperty('visibility', 'visible', 'important');
+      s.setProperty('pointer-events', open ? 'auto' : 'none', 'important');
+      void sidebar.offsetWidth;
+      // 强制读取 computed 确保起点已提交渲染
+      getComputedStyle(sidebar).transform;
+      s.setProperty('transition', 'transform .26s cubic-bezier(.4, 0, .2, 1), visibility 0s linear .26s', 'important');
+      const setTarget = () => { s.setProperty('transform', target, 'important'); };
+      requestAnimationFrame(setTarget);
+      setTimeout(setTarget, 30);
       sidebar.classList.toggle('display', open);
       if (menuToggle) {
         menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');

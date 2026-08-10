@@ -6512,6 +6512,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
             drawerAnimations.delete(sidebar);
             return;
           }
+          // 清爽模式打开时立即停止站点抽屉动画，避免 rAF 持续覆盖 transform 导致清爽模式收回无动画
+          const cleanRoot = document.getElementById('urppp-clean-root');
+          if (cleanRoot && cleanRoot.classList.contains('open')) {
+            drawerAnimations.delete(sidebar);
+            return;
+          }
           const progress = Math.min(1, (now - startAt) / duration);
           const eased = progress < 0.5
             ? 4 * progress * progress * progress

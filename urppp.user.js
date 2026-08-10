@@ -14395,26 +14395,18 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         ["visibility", "pointer-events"].forEach((p) => s.removeProperty(p));
         const width = sidebar.getBoundingClientRect().width || 260;
         const target = open ? "translate3d(0,0,0)" : "translate3d(-" + width + "px,0,0)";
+        const startX = open ? "translate3d(-" + width + "px,0,0)" : "translate3d(0,0,0)";
+        s.setProperty("transform", startX, "important");
+        s.setProperty("visibility", "visible", "important");
+        s.setProperty("pointer-events", open ? "auto" : "none", "important");
+        void sidebar.offsetWidth;
+        getComputedStyle(sidebar).transform;
+        s.setProperty("transition", "transform .26s cubic-bezier(.4, 0, .2, 1), visibility 0s linear .26s", "important");
         const setTarget = /* @__PURE__ */ __name(() => {
           s.setProperty("transform", target, "important");
         }, "setTarget");
-        const startAnim = /* @__PURE__ */ __name(() => {
-          s.setProperty("transition", "transform .26s cubic-bezier(.4, 0, .2, 1), visibility 0s linear .26s", "important");
-          s.setProperty("visibility", "visible", "important");
-          s.setProperty("pointer-events", open ? "auto" : "none", "important");
-          requestAnimationFrame(setTarget);
-          setTimeout(setTarget, 40);
-        }, "startAnim");
-        if (open) {
-          sidebar.classList.add("display");
-          s.setProperty("transform", "translate3d(-" + width + "px,0,0)", "important");
-          void sidebar.offsetWidth;
-          startAnim();
-        } else {
-          s.setProperty("transform", "translate3d(0,0,0)", "important");
-          void sidebar.offsetWidth;
-          startAnim();
-        }
+        requestAnimationFrame(setTarget);
+        setTimeout(setTarget, 30);
         sidebar.classList.toggle("display", open);
         if (menuToggle) {
           menuToggle.setAttribute("aria-expanded", open ? "true" : "false");
@@ -22553,6 +22545,11 @@ ${arcs}
           }
           const step = /* @__PURE__ */ __name((now) => {
             if (!sidebar.isConnected) {
+              drawerAnimations.delete(sidebar);
+              return;
+            }
+            const cleanRoot = document.getElementById("urppp-clean-root");
+            if (cleanRoot && cleanRoot.classList.contains("open")) {
               drawerAnimations.delete(sidebar);
               return;
             }
