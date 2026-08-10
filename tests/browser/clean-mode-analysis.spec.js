@@ -108,22 +108,89 @@ test('clean mode top-left toggle opens the site sidebar drawer', async ({ page }
   const sidebar = page.locator('#sidebar');
   await expect(sidebar).toHaveClass(/urppp-clean-sidebar/);
 
-  // 点击汉堡：站点侧边栏滑出（display + 宽度 260px）
+  // 点击汉堡：站点侧边栏滑出（display + 宽度 260px），且顶边与顶栏底部平齐
   await page.locator('#uc-menu-toggle').click();
   await expect(sidebar).toHaveClass(/display/);
-  const sidebarW = await sidebar.evaluate((el) => Math.round(el.getBoundingClientRect().width));
-  expect(sidebarW).toBeGreaterThanOrEqual(259);
-  expect(sidebarW).toBeLessThanOrEqual(262);
+  const sidebarBox = await sidebar.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const topEl = document.querySelector('#urppp-clean-root .uc-top');
+    const tr = topEl ? topEl.getBoundingClientRect() : null;
+    return {
+      w: Math.round(r.width),
+      top: Math.round(r.top),
+      topBarBottom: tr ? Math.round(tr.bottom) : null,
+    };
+  });
+  expect(sidebarBox.w).toBeGreaterThanOrEqual(259);
+  expect(sidebarBox.w).toBeLessThanOrEqual(262);
+  // 侧边栏顶边贴着清爽模式顶栏底部
+  expect(Math.abs(sidebarBox.top - sidebarBox.topBarBottom)).toBeLessThanOrEqual(1);
+  // 汉堡切换为关闭图标（aria-expanded=true）
+  await expect(page.locator('#uc-menu-toggle')).toHaveAttribute('aria-expanded', 'true');
 
   // 侧边栏菜单含站点菜单项（首页）
   const menuTexts = await sidebar.locator('#urppp-menus a[href], #menus a[href]').allTextContents();
   expect(menuTexts.some((t) => t.includes('首页'))).toBeTruthy();
   expect(await sidebar.locator('a[href]').count()).toBeGreaterThan(0);
 
-  // 关闭清爽模式后 sidebar 恢复原状（移除 urppp-clean-sidebar 和 display）
+  // 再点汉堡：侧边栏收回，图标还原
+  await page.locator('#uc-menu-toggle').click();
+  await expect(sidebar).not.toHaveClass(/display/);
+  await expect(page.locator('#uc-menu-toggle')).toHaveAttribute('aria-expanded', 'false');
+
+  // 关闭清爽模式后 sidebar 恢复原状（移除 urppp-clean-sidebar、display，内联 z-index/position 还原）
   await page.evaluate(() => document.getElementById('uc-exit').click());
   await page.waitForTimeout(400);
   await expect(sidebar).not.toHaveClass(/urppp-clean-sidebar/);
   await expect(sidebar).not.toHaveClass(/display/);
+  const inlineAfterClose = await sidebar.evaluate((el) => ({
+    z: el.style.getPropertyValue('z-index'),
+    pos: el.style.getPropertyValue('position'),
+    top: el.style.getPropertyValue('top'),
+  }));
+  expect(inlineAfterClose.z).not.toBe('12030');
+  expect(inlineAfterClose.pos).not.toBe('fixed');
+  expect(pageErrors).toEqual([]);
+});
+
+test('clean mode sidebar drawer works on mobile viewport with aligned top', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, { fixture: 'mobile-home', viewport: { width: 390, height: 844 } });
+  await installScoreApiMock(page);
+
+  // 打开清爽模式
+  await page.evaluate(() => document.getElementById('urppp-nav-clean').click());
+  await page.waitForTimeout(600);
+
+  const sidebar = page.locator('#sidebar');
+  await expect(sidebar).toHaveClass(/urppp-clean-sidebar/);
+
+  // 移动端：顶边与清爽顶栏底部（52px）平齐，宽度 260px
+  await page.locator('#uc-menu-toggle').click();
+  await expect(sidebar).toHaveClass(/display/);
+  const box = await sidebar.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const topEl = document.querySelector('#urppp-clean-root .uc-top');
+    const tr = topEl ? topEl.getBoundingClientRect() : null;
+    return { top: Math.round(r.top), topBarBottom: tr ? Math.round(tr.bottom) : null, w: Math.round(r.width) };
+  });
+  expect(Math.abs(box.top - box.topBarBottom)).toBeLessThanOrEqual(1);
+  expect(box.w).toBeGreaterThanOrEqual(259);
+  expect(box.w).toBeLessThanOrEqual(262);
+  await expect(page.locator('#uc-menu-toggle')).toHaveAttribute('aria-expanded', 'true');
+
+  // 再点汉堡收回
+  await page.locator('#uc-menu-toggle').click();
+  await expect(sidebar).not.toHaveClass(/display/);
+  await expect(page.locator('#uc-menu-toggle')).toHaveAttribute('aria-expanded', 'false');
+
+  // 退出清爽模式后内联样式还原
+  await page.evaluate(() => document.getElementById('uc-exit').click());
+  await page.waitForTimeout(400);
+  const inline = await sidebar.evaluate((el) => ({
+    z: el.style.getPropertyValue('z-index'),
+    pos: el.style.getPropertyValue('position'),
+  }));
+  expect(inline.z).not.toBe('12030');
+  expect(inline.pos).not.toBe('fixed');
   expect(pageErrors).toEqual([]);
 });

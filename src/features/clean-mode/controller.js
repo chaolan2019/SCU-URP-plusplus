@@ -68,47 +68,77 @@ export function createCleanModeController({ state, deps }) {
 
     // 侧边栏入口：复用站点移动端汉堡菜单（#sidebar），不新建抽屉
     const menuToggle = el.querySelector('#uc-menu-toggle');
+    const restoreCleanSidebarInline = (sidebar) => {
+      sidebar.classList.remove('urppp-clean-sidebar');
+      const saved = sidebar.__urpppCleanInline;
+      if (saved) {
+        const s = sidebar.style;
+        if (saved.top) s.setProperty('top', saved.top, saved.topP || '');
+        else s.removeProperty('top');
+        if (saved.height) s.setProperty('height', saved.height, saved.heightP || '');
+        else s.removeProperty('height');
+        if (saved.z) s.setProperty('z-index', saved.z, saved.zP || '');
+        else s.removeProperty('z-index');
+        if (saved.pos) s.setProperty('position', saved.pos, saved.posP || '');
+        else s.removeProperty('position');
+        delete sidebar.__urpppCleanInline;
+      }
+    };
     const syncCleanSidebarZ = () => {
       const sidebar = document.getElementById('sidebar');
       if (!sidebar) return;
       if (state.open) {
         sidebar.classList.add('urppp-clean-sidebar');
-        if (!sidebar.__urpppCleanZ) {
+        if (!sidebar.__urpppCleanInline) {
           const s = sidebar.style;
-          sidebar.__urpppCleanZ = s.getPropertyValue('z-index');
-          sidebar.__urpppCleanZP = s.getPropertyPriority('z-index');
-          sidebar.__urpppCleanPos = s.getPropertyValue('position');
-          sidebar.__urpppCleanPosP = s.getPropertyPriority('position');
+          sidebar.__urpppCleanInline = {
+            top: s.getPropertyValue('top'), topP: s.getPropertyPriority('top'),
+            height: s.getPropertyValue('height'), heightP: s.getPropertyPriority('height'),
+            z: s.getPropertyValue('z-index'), zP: s.getPropertyPriority('z-index'),
+            pos: s.getPropertyValue('position'), posP: s.getPropertyPriority('position'),
+          };
         }
-        // 站点内联 z-index:1030 !important 需被覆盖：JS 内联 important 后设者胜
+        // 侧边栏顶边贴住清爽模式顶栏底边（桌面 60 / 移动 ≤900px 52）
+        const topEl = el.querySelector('.uc-top');
+        const topH = Math.max(44, Math.round(topEl ? topEl.getBoundingClientRect().height : 60));
+        // 站点内联 z-index/top/height 均为 !important，需 JS 内联 important 后设覆盖
+        sidebar.style.setProperty('top', topH + 'px', 'important');
+        sidebar.style.setProperty('height', 'calc(100vh - ' + topH + 'px)', 'important');
         sidebar.style.setProperty('z-index', '12030', 'important');
         sidebar.style.setProperty('position', 'fixed', 'important');
       } else {
-        sidebar.classList.remove('urppp-clean-sidebar');
-        if (sidebar.__urpppCleanZ !== undefined) {
-          if (sidebar.__urpppCleanZ) sidebar.style.setProperty('z-index', sidebar.__urpppCleanZ, sidebar.__urpppCleanZP || '');
-          else sidebar.style.removeProperty('z-index');
-          if (sidebar.__urpppCleanPos) sidebar.style.setProperty('position', sidebar.__urpppCleanPos, sidebar.__urpppCleanPosP || '');
-          else sidebar.style.removeProperty('position');
-          delete sidebar.__urpppCleanZ;
-          delete sidebar.__urpppCleanZP;
-          delete sidebar.__urpppCleanPos;
-          delete sidebar.__urpppCleanPosP;
-        }
+        restoreCleanSidebarInline(sidebar);
       }
+    };
+    const setSidebarOpen = (open) => {
+      const sidebar = document.getElementById('sidebar');
+      if (!sidebar) return;
+      sidebar.classList.toggle('display', open);
+      if (menuToggle) {
+        menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        menuToggle.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
+      }
+      const siteToggler = document.getElementById('urppp-mobile-menu-button');
+      if (siteToggler) {
+        siteToggler.setAttribute('aria-expanded', open ? 'true' : 'false');
+        siteToggler.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
+      }
+      syncCleanSidebarZ();
     };
     const closeCleanSidebar = () => {
       const sidebar = document.getElementById('sidebar');
       if (!sidebar) return;
-      if (sidebar.classList.contains('display')) {
-        const toggler = document.getElementById('urppp-mobile-menu-button');
-        if (toggler) {
-          toggler.setAttribute('aria-expanded', 'false');
-          toggler.setAttribute('aria-label', '打开菜单');
-        }
-        sidebar.classList.remove('display');
+      sidebar.classList.remove('display');
+      restoreCleanSidebarInline(sidebar);
+      if (menuToggle) {
+        menuToggle.setAttribute('aria-expanded', 'false');
+        menuToggle.setAttribute('aria-label', '打开菜单');
       }
-      sidebar.classList.remove('urppp-clean-sidebar');
+      const siteToggler = document.getElementById('urppp-mobile-menu-button');
+      if (siteToggler) {
+        siteToggler.setAttribute('aria-expanded', 'false');
+        siteToggler.setAttribute('aria-label', '打开菜单');
+      }
     };
     if (menuToggle) menuToggle.addEventListener('click', (event) => {
       event.preventDefault();
@@ -127,16 +157,9 @@ export function createCleanModeController({ state, deps }) {
           closeCleanMode();
         });
       }
-      const toggler = document.getElementById('urppp-mobile-menu-button');
-      // 移动端模式：复用现成汉堡按钮逻辑（含动画）；桌面：直接切 .display
-      if (toggler && toggler.__urpppToggleHandler) {
-        toggler.__urpppToggleHandler(event);
-      } else {
-        const open = !sidebar.classList.contains('display');
-        sidebar.classList.toggle('display', open);
-        menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-      }
-      syncCleanSidebarZ();
+      // 统一自管开合：不进站点 __urpppToggleHandler（它只同步站点按钮 aria，且会被 document 捕获阶段 outside-click 干扰）
+      const open = !sidebar.classList.contains('display');
+      setSidebarOpen(open);
     });
     el.__closeCleanDrawer = closeCleanSidebar;
     el.__syncCleanSidebarZ = syncCleanSidebarZ;

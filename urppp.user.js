@@ -11566,13 +11566,13 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
 /* 清爽模式下复用站点侧边栏抽屉：固定左侧 260px 滑出，z-index 在清爽模式之上 */
 #sidebar.urppp-clean-sidebar{
   position: fixed !important;
-  top: 0 !important;
+  top: 60px !important;
   left: 0 !important;
   bottom: 0 !important;
   width: 260px !important;
   min-width: 260px !important;
   max-width: 260px !important;
-  height: 100vh !important;
+  height: calc(100vh - 60px) !important;
   z-index: 12030 !important;
   transform: translate3d(-100%, 0, 0) !important;
   visibility: hidden !important;
@@ -11587,6 +11587,14 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
   pointer-events: auto !important;
   transition: transform .26s cubic-bezier(.4, 0, .2, 1), visibility 0s linear 0s !important;
 }
+/* 清爽模式下侧边栏套用移动端抽屉菜单样式（桌面端同样生效，点菜单项直接跳转无需先退出） */
+#sidebar.urppp-clean-sidebar .urppp-sidebar-header{display:none !important}
+#sidebar.urppp-clean-sidebar #urppp-menus{margin-top:0 !important;padding:10px 12px 24px !important}
+#sidebar.urppp-clean-sidebar .urppp-nav-link{padding:11px 13px !important;justify-content:flex-start !important}
+#sidebar.urppp-clean-sidebar .urppp-nav-text,
+#sidebar.urppp-clean-sidebar .urppp-nav-arrow{display:block !important;width:auto !important;max-width:200px !important;margin-left:0 !important;opacity:1 !important;overflow:hidden !important;pointer-events:auto !important}
+#sidebar.urppp-clean-sidebar .urppp-nav-link > .fa{margin-right:11px !important}
+#sidebar.urppp-clean-sidebar .urppp-nav-submenu{display:block !important}
 #urppp-clean-root .uc-top{flex:0 0 60px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--border);background:var(--surface,#fff);animation:ucTopIn .36s cubic-bezier(.22,1,.36,1) both}
 #urppp-clean-root .uc-score-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 #urppp-clean-root .uc-score-pane{border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;background:var(--input-bg);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease}
@@ -11728,6 +11736,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
 #urppp-nav-clean svg{width:14px!important;height:14px!important;display:block!important}
 @media (max-width:900px){
   #urppp-clean-root .uc-top{flex:0 0 52px;padding:0 12px}
+  #sidebar.urppp-clean-sidebar{top:52px !important;height:calc(100vh - 52px) !important}
   #urppp-clean-root .uc-top-actions .uc-btn span{display:none}
   #urppp-clean-root .uc-top-actions .uc-btn{width:34px;padding:0;justify-content:center}
   #urppp-clean-root .uc-shell{padding:10px 10px 90px;align-items:stretch;justify-content:flex-start}
@@ -14228,46 +14237,79 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         }
       });
       const menuToggle = el.querySelector("#uc-menu-toggle");
+      const restoreCleanSidebarInline = /* @__PURE__ */ __name((sidebar) => {
+        sidebar.classList.remove("urppp-clean-sidebar");
+        const saved = sidebar.__urpppCleanInline;
+        if (saved) {
+          const s = sidebar.style;
+          if (saved.top) s.setProperty("top", saved.top, saved.topP || "");
+          else s.removeProperty("top");
+          if (saved.height) s.setProperty("height", saved.height, saved.heightP || "");
+          else s.removeProperty("height");
+          if (saved.z) s.setProperty("z-index", saved.z, saved.zP || "");
+          else s.removeProperty("z-index");
+          if (saved.pos) s.setProperty("position", saved.pos, saved.posP || "");
+          else s.removeProperty("position");
+          delete sidebar.__urpppCleanInline;
+        }
+      }, "restoreCleanSidebarInline");
       const syncCleanSidebarZ = /* @__PURE__ */ __name(() => {
         const sidebar = document.getElementById("sidebar");
         if (!sidebar) return;
         if (state.open) {
           sidebar.classList.add("urppp-clean-sidebar");
-          if (!sidebar.__urpppCleanZ) {
+          if (!sidebar.__urpppCleanInline) {
             const s = sidebar.style;
-            sidebar.__urpppCleanZ = s.getPropertyValue("z-index");
-            sidebar.__urpppCleanZP = s.getPropertyPriority("z-index");
-            sidebar.__urpppCleanPos = s.getPropertyValue("position");
-            sidebar.__urpppCleanPosP = s.getPropertyPriority("position");
+            sidebar.__urpppCleanInline = {
+              top: s.getPropertyValue("top"),
+              topP: s.getPropertyPriority("top"),
+              height: s.getPropertyValue("height"),
+              heightP: s.getPropertyPriority("height"),
+              z: s.getPropertyValue("z-index"),
+              zP: s.getPropertyPriority("z-index"),
+              pos: s.getPropertyValue("position"),
+              posP: s.getPropertyPriority("position")
+            };
           }
+          const topEl = el.querySelector(".uc-top");
+          const topH = Math.max(44, Math.round(topEl ? topEl.getBoundingClientRect().height : 60));
+          sidebar.style.setProperty("top", topH + "px", "important");
+          sidebar.style.setProperty("height", "calc(100vh - " + topH + "px)", "important");
           sidebar.style.setProperty("z-index", "12030", "important");
           sidebar.style.setProperty("position", "fixed", "important");
         } else {
-          sidebar.classList.remove("urppp-clean-sidebar");
-          if (sidebar.__urpppCleanZ !== void 0) {
-            if (sidebar.__urpppCleanZ) sidebar.style.setProperty("z-index", sidebar.__urpppCleanZ, sidebar.__urpppCleanZP || "");
-            else sidebar.style.removeProperty("z-index");
-            if (sidebar.__urpppCleanPos) sidebar.style.setProperty("position", sidebar.__urpppCleanPos, sidebar.__urpppCleanPosP || "");
-            else sidebar.style.removeProperty("position");
-            delete sidebar.__urpppCleanZ;
-            delete sidebar.__urpppCleanZP;
-            delete sidebar.__urpppCleanPos;
-            delete sidebar.__urpppCleanPosP;
-          }
+          restoreCleanSidebarInline(sidebar);
         }
       }, "syncCleanSidebarZ");
+      const setSidebarOpen = /* @__PURE__ */ __name((open) => {
+        const sidebar = document.getElementById("sidebar");
+        if (!sidebar) return;
+        sidebar.classList.toggle("display", open);
+        if (menuToggle) {
+          menuToggle.setAttribute("aria-expanded", open ? "true" : "false");
+          menuToggle.setAttribute("aria-label", open ? "关闭菜单" : "打开菜单");
+        }
+        const siteToggler = document.getElementById("urppp-mobile-menu-button");
+        if (siteToggler) {
+          siteToggler.setAttribute("aria-expanded", open ? "true" : "false");
+          siteToggler.setAttribute("aria-label", open ? "关闭菜单" : "打开菜单");
+        }
+        syncCleanSidebarZ();
+      }, "setSidebarOpen");
       const closeCleanSidebar = /* @__PURE__ */ __name(() => {
         const sidebar = document.getElementById("sidebar");
         if (!sidebar) return;
-        if (sidebar.classList.contains("display")) {
-          const toggler = document.getElementById("urppp-mobile-menu-button");
-          if (toggler) {
-            toggler.setAttribute("aria-expanded", "false");
-            toggler.setAttribute("aria-label", "打开菜单");
-          }
-          sidebar.classList.remove("display");
+        sidebar.classList.remove("display");
+        restoreCleanSidebarInline(sidebar);
+        if (menuToggle) {
+          menuToggle.setAttribute("aria-expanded", "false");
+          menuToggle.setAttribute("aria-label", "打开菜单");
         }
-        sidebar.classList.remove("urppp-clean-sidebar");
+        const siteToggler = document.getElementById("urppp-mobile-menu-button");
+        if (siteToggler) {
+          siteToggler.setAttribute("aria-expanded", "false");
+          siteToggler.setAttribute("aria-label", "打开菜单");
+        }
       }, "closeCleanSidebar");
       if (menuToggle) menuToggle.addEventListener("click", (event) => {
         event.preventDefault();
@@ -14285,15 +14327,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
             closeCleanMode();
           });
         }
-        const toggler = document.getElementById("urppp-mobile-menu-button");
-        if (toggler && toggler.__urpppToggleHandler) {
-          toggler.__urpppToggleHandler(event);
-        } else {
-          const open = !sidebar.classList.contains("display");
-          sidebar.classList.toggle("display", open);
-          menuToggle.setAttribute("aria-expanded", open ? "true" : "false");
-        }
-        syncCleanSidebarZ();
+        const open = !sidebar.classList.contains("display");
+        setSidebarOpen(open);
       });
       el.__closeCleanDrawer = closeCleanSidebar;
       el.__syncCleanSidebarZ = syncCleanSidebarZ;
@@ -22509,6 +22544,8 @@ ${arcs}
             document.addEventListener("click", (event) => {
               const activeSidebar = document.getElementById("sidebar");
               if (!activeSidebar || !activeSidebar.classList.contains("display")) return;
+              const cleanRoot = document.getElementById("urppp-clean-root");
+              if (cleanRoot && cleanRoot.classList.contains("open")) return;
               if (event.target.closest && event.target.closest("#sidebar, #urppp-mobile-menu-button")) return;
               closeDrawer();
             }, true);

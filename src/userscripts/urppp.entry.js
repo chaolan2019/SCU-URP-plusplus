@@ -6654,6 +6654,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           document.addEventListener('click', (event) => {
             const activeSidebar = document.getElementById('sidebar');
             if (!activeSidebar || !activeSidebar.classList.contains('display')) return;
+            // 清爽模式自管侧边栏开合（含汉堡），避免捕获阶段先收回再展开
+            const cleanRoot = document.getElementById('urppp-clean-root');
+            if (cleanRoot && cleanRoot.classList.contains('open')) return;
             if (event.target.closest && event.target.closest('#sidebar, #urppp-mobile-menu-button')) return;
             closeDrawer();
           }, true);
