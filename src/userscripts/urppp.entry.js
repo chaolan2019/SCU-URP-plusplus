@@ -6880,8 +6880,16 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         const menus = document.getElementById('urppp-menus');
         if (!btns || !sidebar) return;
         try { ensureMobileUser(btns, sidebar); } catch (_) { /* ignore */ }
+        // 清爽模式强制使用独立搜索框版本：移除站点版 quick（含被移动的 form-search），重建 cleanMode 版
+        const existing = document.getElementById('urppp-mobile-quick');
+        if (existing) {
+          const panel = existing.querySelector('#urppp-mobile-search-panel');
+          if (panel && panel.querySelector('#form-search')) {
+            try { restoreMobileSearch(); } catch (_) { /* ignore */ }
+          }
+          existing.remove();
+        }
         try { ensureMobileQuick(btns, sidebar, menus, { cleanMode: true }); } catch (_) { /* ignore */ }
-        try { syncMobileSearchLayout(); } catch (_) { /* ignore */ }
       };
       try { apply(); } catch (_) { /* ignore */ }
       setTimeout(apply, 300);

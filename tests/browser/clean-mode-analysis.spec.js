@@ -427,9 +427,44 @@ test('clean mode desktop search input matches mobile style', async ({ page }) =>
   });
   expect(input).not.toBeNull();
   expect(input.w).toBeGreaterThan(200);
-  expect(input.h).toBe(32);
+  expect(input.h).toBe(34);
   // 与移动端一致的浅灰底圆角输入框
   expect(input.wrapBg).not.toBe('rgba(0, 0, 0, 0)');
   expect(parseInt(input.wrapRadius, 10)).toBeGreaterThan(6);
+  expect(pageErrors).toEqual([]);
+});
+
+test('clean mode mobile also uses standalone search form without moving site search', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'mobile-home',
+    viewport: { width: 390, height: 844 },
+  });
+  await installScoreApiMock(page);
+
+  // 站点侧边栏交互两次（预污染 animateDrawer 残留）
+  await page.locator('#urppp-mobile-menu-button').click();
+  await page.waitForTimeout(350);
+  await page.locator('#urppp-mobile-menu-button').click();
+  await page.waitForTimeout(350);
+
+  await page.evaluate(() => document.getElementById('urppp-nav-clean').click());
+  await page.waitForTimeout(600);
+  await page.locator('#uc-menu-toggle').click();
+  await page.waitForTimeout(400);
+  await page.locator('#urppp-mobile-search-button').click();
+  await page.waitForTimeout(300);
+
+  const state = await page.evaluate(() => ({
+    // 移动端清爽模式也使用独立搜索框，form-search 保持原位
+    hasCleanInput: !!document.getElementById('urppp-clean-search-input'),
+    formSearchInNavbar: !!document.getElementById('form-search') && !!document.getElementById('form-search').closest('#navbar'),
+    quickLinks: Array.from(document.querySelectorAll('#urppp-mobile-quick .urppp-mobile-quick-link')).map((a) => a.getAttribute('href')),
+    // 搜索框尺寸与桌面清爽模式一致（34px）
+    inputH: Math.round(document.getElementById('urppp-clean-search-input').getBoundingClientRect().height),
+  }));
+  expect(state.hasCleanInput).toBe(true);
+  expect(state.formSearchInNavbar).toBe(true);
+  expect(state.inputH).toBe(34);
+  expect(state.quickLinks).toContain('/holiday');
   expect(pageErrors).toEqual([]);
 });
