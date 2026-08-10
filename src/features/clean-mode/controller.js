@@ -215,9 +215,13 @@ export function createCleanModeController({ state, deps }) {
           closeCleanMode();
         }, true);
       }
-      // 统一自管开合：不进站点 __urpppToggleHandler（它只同步站点按钮 aria，且会被 document 捕获阶段 outside-click 干扰）
+      // 清爽模式自管开合（JS 标准过渡动画，z-index 12030 不被底栏盖）；animateDrawer 残留已由 entry 停止
       const open = !sidebar.classList.contains('display');
       setSidebarOpen(open);
+      if (menuToggle) {
+        menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        menuToggle.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
+      }
     });
     el.__closeCleanDrawer = closeCleanSidebar;
     el.__syncCleanSidebarZ = syncCleanSidebarZ;
@@ -249,6 +253,8 @@ export function createCleanModeController({ state, deps }) {
     el.classList.remove('uc-settled', 'open');
     void el.offsetWidth; // 重触发根层进入动画
     el.classList.add('open');
+    // 记录清爽模式打开时间（performance.now，与 animateDrawer 同时钟），供 animateDrawer 区分「打开前残留动画」与「清爽模式自己的动画」
+    try { (window || globalThis).__urpppCleanOpenedAt = performance.now(); } catch (_) { /* ignore */ }
     try { if (el.__syncCleanThemeDots) el.__syncCleanThemeDots(); } catch (_) { /* ignore */ }
     try { if (el.__syncCleanSidebarZ) el.__syncCleanSidebarZ(); } catch (_) { /* ignore */ }
     // 桌面清爽模式也注入移动端侧边栏区块（用户卡/快捷区）

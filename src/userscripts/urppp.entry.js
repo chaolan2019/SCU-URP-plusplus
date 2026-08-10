@@ -6512,9 +6512,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
             drawerAnimations.delete(sidebar);
             return;
           }
-          // 清爽模式打开时立即停止站点抽屉动画，避免 rAF 持续覆盖 transform 导致清爽模式收回无动画
+          // 清爽模式打开后启动的动画（startAt 晚于清爽模式打开）继续跑；
+          // 只有清爽模式打开前残留的动画才停止，避免 rAF 持续覆盖 transform 吞掉清爽模式动画
           const cleanRoot = document.getElementById('urppp-clean-root');
-          if (cleanRoot && cleanRoot.classList.contains('open')) {
+          if (cleanRoot && cleanRoot.classList.contains('open') && window.__urpppCleanOpenedAt && startAt < window.__urpppCleanOpenedAt) {
             drawerAnimations.delete(sidebar);
             return;
           }
@@ -6844,6 +6845,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
               fs.dataset.open = '1';
               fs.style.setProperty('pointer-events', 'auto', 'important');
               fs.style.setProperty('opacity', '1', 'important');
+              // 站点桌面搜索可能残留 width:0（关闭态），面板内强制全宽
+              fs.style.setProperty('width', '100%', 'important');
+              fs.style.setProperty('min-width', '0', 'important');
             }
             searchPanel.hidden = false;
             searchPanel.classList.add('open');
@@ -6896,6 +6900,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
       window.__urpppRefreshMobileNavbar = apply;
       window.__urpppCloseMobileDrawer = closeDrawer;
+      // 暴露抽屉开合（animateDrawer），清爽模式复用移动端首页同一套动画
+      window.__urpppSetDrawerOpen = (sidebar, toggler, open) => { setDrawerOpen(sidebar, toggler, open); };
       // 清爽模式打开时按需注入移动端侧边栏区块（用户卡/快捷区），桌面清爽模式也用移动端样式
       window.__urpppInjectCleanSidebarSections = (sidebar) => {
         const btns = document.querySelector('#navbar .navbar-buttons .ace-nav') || document.querySelector('#navbar .ace-nav');
@@ -10465,6 +10471,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       ico,
       injectCleanSidebarSections: (sidebar) => { try { window.__urpppInjectCleanSidebarSections?.(sidebar); } catch (_) { /* ignore */ } },
       refreshMobileNavbar: () => { try { window.__urpppRefreshMobileNavbar?.(); } catch (_) { /* ignore */ } },
+      setDrawerOpen: (sidebar, toggler, open) => { try { window.__urpppSetDrawerOpen?.(sidebar, toggler, open); } catch (_) { /* ignore */ } },
       isHomePage,
       loadAll,
       openSettingsPanel,

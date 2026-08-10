@@ -14470,6 +14470,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         }
         const open = !sidebar.classList.contains("display");
         setSidebarOpen(open);
+        if (menuToggle) {
+          menuToggle.setAttribute("aria-expanded", open ? "true" : "false");
+          menuToggle.setAttribute("aria-label", open ? "关闭菜单" : "打开菜单");
+        }
       });
       el.__closeCleanDrawer = closeCleanSidebar;
       el.__syncCleanSidebarZ = syncCleanSidebarZ;
@@ -14502,6 +14506,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       el.classList.remove("uc-settled", "open");
       void el.offsetWidth;
       el.classList.add("open");
+      try {
+        (window || globalThis).__urpppCleanOpenedAt = performance.now();
+      } catch (_) {
+      }
       try {
         if (el.__syncCleanThemeDots) el.__syncCleanThemeDots();
       } catch (_) {
@@ -22549,7 +22557,7 @@ ${arcs}
               return;
             }
             const cleanRoot = document.getElementById("urppp-clean-root");
-            if (cleanRoot && cleanRoot.classList.contains("open")) {
+            if (cleanRoot && cleanRoot.classList.contains("open") && window.__urpppCleanOpenedAt && startAt < window.__urpppCleanOpenedAt) {
               drawerAnimations.delete(sidebar);
               return;
             }
@@ -22862,6 +22870,8 @@ ${arcs}
                 fs.dataset.open = "1";
                 fs.style.setProperty("pointer-events", "auto", "important");
                 fs.style.setProperty("opacity", "1", "important");
+                fs.style.setProperty("width", "100%", "important");
+                fs.style.setProperty("min-width", "0", "important");
               }
               searchPanel.hidden = false;
               searchPanel.classList.add("open");
@@ -22912,6 +22922,9 @@ ${arcs}
         }, "apply");
         window.__urpppRefreshMobileNavbar = apply;
         window.__urpppCloseMobileDrawer = closeDrawer;
+        window.__urpppSetDrawerOpen = (sidebar, toggler, open) => {
+          setDrawerOpen(sidebar, toggler, open);
+        };
         window.__urpppInjectCleanSidebarSections = (sidebar) => {
           const btns = document.querySelector("#navbar .navbar-buttons .ace-nav") || document.querySelector("#navbar .ace-nav");
           const menus = document.getElementById("urppp-menus");
@@ -26534,6 +26547,12 @@ ${arcs}
           } catch (_) {
           }
         }, "refreshMobileNavbar"),
+        setDrawerOpen: /* @__PURE__ */ __name((sidebar, toggler, open) => {
+          try {
+            window.__urpppSetDrawerOpen?.(sidebar, toggler, open);
+          } catch (_) {
+          }
+        }, "setDrawerOpen"),
         isHomePage,
         loadAll,
         openSettingsPanel,
