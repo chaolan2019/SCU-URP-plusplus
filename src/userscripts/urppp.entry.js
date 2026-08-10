@@ -6654,12 +6654,14 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         if (!document.__urpppMobileDrawerOutsideBound) {
           document.__urpppMobileDrawerOutsideBound = true;
           document.addEventListener('click', (event) => {
+            // 仅移动端视口生效：桌面端 ACE 自身管理 sidebar 折叠，插件不介入
+            if (!isNarrow() || !event.target.closest) return;
             const activeSidebar = document.getElementById('sidebar');
             if (!activeSidebar || !activeSidebar.classList.contains('display')) return;
             // 清爽模式自管侧边栏开合（含汉堡），避免捕获阶段先收回再展开
             const cleanRoot = document.getElementById('urppp-clean-root');
             if (cleanRoot && cleanRoot.classList.contains('open')) return;
-            if (event.target.closest && event.target.closest('#sidebar, #urppp-mobile-menu-button')) return;
+            if (event.target.closest('#sidebar, #urppp-mobile-menu-button')) return;
             closeDrawer();
           }, true);
         }
@@ -6786,8 +6788,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           const clone = anchor.cloneNode(true);
           clone.className = 'urppp-mobile-quick-link';
           clone.removeAttribute('style');
-          // 只保留图标、文本和 href，去掉站点的 onclick，避免点击触发站点逻辑（如收回侧边栏）
-          clone.removeAttribute('onclick');
+          // 保留可交互项的 onclick（作息时间表等），只移除会触发侧边栏收回的无关 onclick
+          const rawOnclick = String(anchor.getAttribute('onclick') || '');
+          const keepOnclick = /openWorkRestSchedule|open\w*Schedule/i.test(rawOnclick);
+          if (!keepOnclick) clone.removeAttribute('onclick');
           // 假期状态等静态项：清爽模式下完全不可点（删 href 变纯文本）
           if (opts.cleanMode) {
             const href = String(anchor.getAttribute('href') || '');
@@ -10565,7 +10569,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     window.__urpppRouteWatchBound = true;
     let routeRefreshTimer = 0;
     const run = () => {
-      try { if (window.__urpppCloseMobileDrawer) window.__urpppCloseMobileDrawer(); } catch (_) { /* ignore */ }
+      // 仅移动端视口且非清爽模式时关闭抽屉；桌面端 hashchange（如点击 href=# 链接）不应触发 animateDrawer
+      try {
+        const narrow = !!(window.matchMedia && window.matchMedia('(max-width: 640px)').matches);
+        const cleanOpen = !!(document.getElementById('urppp-clean-root') && document.getElementById('urppp-clean-root').classList.contains('open'));
+        if (narrow && !cleanOpen && window.__urpppCloseMobileDrawer) window.__urpppCloseMobileDrawer();
+      } catch (_) { /* ignore */ }
       clearTimeout(routeRefreshTimer);
       routeRefreshTimer = setTimeout(() => {
         state._termWeekResolved = false;

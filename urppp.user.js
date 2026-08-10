@@ -22611,11 +22611,12 @@ ${arcs}
           if (!document.__urpppMobileDrawerOutsideBound) {
             document.__urpppMobileDrawerOutsideBound = true;
             document.addEventListener("click", (event) => {
+              if (!isNarrow() || !event.target.closest) return;
               const activeSidebar = document.getElementById("sidebar");
               if (!activeSidebar || !activeSidebar.classList.contains("display")) return;
               const cleanRoot = document.getElementById("urppp-clean-root");
               if (cleanRoot && cleanRoot.classList.contains("open")) return;
-              if (event.target.closest && event.target.closest("#sidebar, #urppp-mobile-menu-button")) return;
+              if (event.target.closest("#sidebar, #urppp-mobile-menu-button")) return;
               closeDrawer();
             }, true);
           }
@@ -22731,7 +22732,9 @@ ${arcs}
             const clone = anchor.cloneNode(true);
             clone.className = "urppp-mobile-quick-link";
             clone.removeAttribute("style");
-            clone.removeAttribute("onclick");
+            const rawOnclick = String(anchor.getAttribute("onclick") || "");
+            const keepOnclick = /openWorkRestSchedule|open\w*Schedule/i.test(rawOnclick);
+            if (!keepOnclick) clone.removeAttribute("onclick");
             if (opts.cleanMode) {
               const href = String(anchor.getAttribute("href") || "");
               const isStatic = href === "/holiday" || /holiday/i.test(href) || /假期/.test(anchor.textContent || "");
@@ -26578,7 +26581,9 @@ ${arcs}
       let routeRefreshTimer = 0;
       const run = /* @__PURE__ */ __name(() => {
         try {
-          if (window.__urpppCloseMobileDrawer) window.__urpppCloseMobileDrawer();
+          const narrow = !!(window.matchMedia && window.matchMedia("(max-width: 640px)").matches);
+          const cleanOpen = !!(document.getElementById("urppp-clean-root") && document.getElementById("urppp-clean-root").classList.contains("open"));
+          if (narrow && !cleanOpen && window.__urpppCloseMobileDrawer) window.__urpppCloseMobileDrawer();
         } catch (_) {
         }
         clearTimeout(routeRefreshTimer);
