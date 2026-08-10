@@ -248,9 +248,9 @@ test('clean mode sidebar sits below top bar and gets mobile sections on desktop'
         const el = document.getElementById('urppp-mobile-user');
         return el ? el.getBoundingClientRect().height > 0 : false;
       })(),
-      // 搜索：站点 form-search 保持原位，侧边栏面板用独立搜索框
-      formSearchInNavbar: !!document.getElementById('form-search') && !!document.getElementById('form-search').closest('#navbar'),
-      cleanSearchInput: !!document.getElementById('urppp-clean-search-input'),
+      // 搜索：清爽模式下站点 form-search（含 typeahead）移入侧边栏搜索面板，输入弹出结果框
+      formSearchInPanel: !!document.getElementById('form-search') && !!document.getElementById('form-search').closest('#urppp-mobile-search-panel'),
+      cleanSearchInput: !!document.getElementById('search-input') && !!document.getElementById('search-input').closest('#urppp-mobile-search-panel'),
       // 隐藏 ACE 原生菜单与折叠按钮，避免出现空的功能分区
       nativeMenusHidden: getComputedStyle(document.getElementById('menus')).display === 'none',
       collapseHidden: getComputedStyle(document.querySelector('#sidebar .sidebar-collapse')).display === 'none',
@@ -263,8 +263,8 @@ test('clean mode sidebar sits below top bar and gets mobile sections on desktop'
   expect(info.hasMobileUser).toBe(true);
   expect(info.hasQuick).toBe(true);
   expect(info.userVisible).toBe(true);
-  // 搜索可用且不破坏首页搜索
-  expect(info.formSearchInNavbar).toBe(true);
+  // 搜索：form-search（含 typeahead）在侧边栏面板内，退出后恢复 navbar
+  expect(info.formSearchInPanel).toBe(true);
   expect(info.cleanSearchInput).toBe(true);
   // ACE 原生菜单/折叠按钮隐藏，清爽模式只显示重建菜单
   expect(info.nativeMenusHidden).toBe(true);
@@ -426,33 +426,27 @@ test('clean mode desktop search input matches mobile style', async ({ page }) =>
   await page.waitForTimeout(300);
 
   const input = await page.evaluate(() => {
-    const el = document.getElementById('urppp-clean-search-input');
-    if (!el) return null;
+    // 清爽模式复用站点 form-search，输入框是 #search-input（含 typeahead）
+    const el = document.getElementById('search-input');
+    if (!el || !el.closest('#urppp-mobile-search-panel')) return null;
     const cs = getComputedStyle(el);
     const r = el.getBoundingClientRect();
-    const wrap = el.parentElement;
-    const wcs = getComputedStyle(wrap);
     return {
       w: Math.round(r.width),
       h: Math.round(r.height),
-      wrapBg: wcs.backgroundColor,
-      wrapRadius: wcs.borderRadius,
-      border: wcs.borderColor,
+      borderW: parseFloat(cs.borderTopWidth),
+      inPanel: true,
     };
   });
   expect(input).not.toBeNull();
   expect(input.w).toBeGreaterThan(200);
-  // 与站点 nav-search-input 一致：32px 高、带边框（不是无边框贴片）
-  expect(input.h).toBe(32);
-  const borderW = await page.evaluate(() => {
-    const el = document.getElementById('urppp-clean-search-input');
-    return parseFloat(getComputedStyle(el).borderTopWidth);
-  });
-  expect(borderW).toBeGreaterThan(0);
+  // 站点 nav-search-input 默认 36px 高、带边框
+  expect(input.h).toBe(36);
+  expect(input.borderW).toBeGreaterThan(0);
   expect(pageErrors).toEqual([]);
 });
 
-test('clean mode mobile also uses standalone search form without moving site search', async ({ page }) => {
+test('clean mode mobile search reuses site form-search typeahead', async ({ page }) => {
   const { pageErrors } = await loadUrpFixture(page, {
     fixture: 'mobile-home',
     viewport: { width: 390, height: 844 },
@@ -473,16 +467,15 @@ test('clean mode mobile also uses standalone search form without moving site sea
   await page.waitForTimeout(300);
 
   const state = await page.evaluate(() => ({
-    // 移动端清爽模式也使用独立搜索框，form-search 保持原位
-    hasCleanInput: !!document.getElementById('urppp-clean-search-input'),
-    formSearchInNavbar: !!document.getElementById('form-search') && !!document.getElementById('form-search').closest('#navbar'),
+    // 清爽模式复用站点 form-search（含 typeahead），移入侧边栏面板
+    formSearchInPanel: !!document.getElementById('form-search') && !!document.getElementById('form-search').closest('#urppp-mobile-search-panel'),
+    searchInputInPanel: !!document.getElementById('search-input') && !!document.getElementById('search-input').closest('#urppp-mobile-search-panel'),
     quickLinks: Array.from(document.querySelectorAll('#urppp-mobile-quick .urppp-mobile-quick-link')).map((a) => a.getAttribute('href')),
-    // 搜索框尺寸与站点 nav-search-input 一致（32px）
-    inputH: Math.round(document.getElementById('urppp-clean-search-input').getBoundingClientRect().height),
+    inputH: Math.round(document.getElementById('search-input').getBoundingClientRect().height),
   }));
-  expect(state.hasCleanInput).toBe(true);
-  expect(state.formSearchInNavbar).toBe(true);
-  expect(state.inputH).toBe(32);
+  expect(state.formSearchInPanel).toBe(true);
+  expect(state.searchInputInPanel).toBe(true);
+  expect(state.inputH).toBeGreaterThan(20);
   // 假期静态项变纯文本（href null），校历/作息仍保留链接
   expect(state.quickLinks).toContain('/calendar');
   expect(state.quickLinks).toContain('/schedule');

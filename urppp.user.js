@@ -11620,10 +11620,19 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel.open{display:block !important;margin:8px 0 !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #form-search.nav-search{position:relative !important;inset:auto !important;width:100% !important;height:34px !important;margin:0 !important;opacity:1 !important;overflow:visible !important;transform:none !important;z-index:1 !important;pointer-events:auto !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #search-input{width:100% !important;height:34px !important;box-sizing:border-box !important}
-/* 清爽模式独立搜索框样式：与站点 nav-search 输入框完全一致（桌面首页搜索框外观），无左侧图标 */
-#sidebar.urppp-clean-sidebar .urppp-clean-search-form{display:block !important;width:100% !important;margin:0 !important;padding:0 !important;background:transparent !important;border:none !important;box-shadow:none !important}
-#sidebar.urppp-clean-sidebar .urppp-clean-search-form input{width:100% !important;height:32px !important;box-sizing:border-box !important;padding:0 12px !important;line-height:32px !important;background:var(--input-bg,#f5f5f7) !important;border:1px solid var(--border,#e8eaed) !important;border-radius:var(--radius-sm,8px) !important;color:var(--text,#1d1d1f) !important;font-size:13px !important;outline:none !important}
-#sidebar.urppp-clean-sidebar .urppp-clean-search-form input:focus{border-color:var(--border-focus,#b53434) !important;box-shadow:0 0 0 3px var(--ring,rgba(181,52,52,.15)) !important}
+/* 清爽模式侧边栏搜索：复用站点 form-search（Bootstrap typeahead），结果框美化 */
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #form-search.nav-search{position:relative !important;inset:auto !important;width:100% !important;margin:0 !important;opacity:1 !important;overflow:visible !important;transform:none !important;z-index:1 !important;pointer-events:auto !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel .form-search,
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel .input-icon{width:100% !important;box-sizing:border-box !important;background:transparent !important;border:none !important;box-shadow:none !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel .nav-search-input{width:100% !important;height:36px !important;box-sizing:border-box !important;padding:0 12px !important;line-height:36px !important;background:var(--input-bg,#f5f5f7) !important;border:1px solid var(--border,#e8eaed) !important;border-radius:var(--radius-sm,8px) !important;color:var(--text,#1d1d1f) !important;font-size:13px !important;outline:none !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel .nav-search-input:focus{border-color:var(--border-focus,#b53434) !important;box-shadow:0 0 0 3px var(--ring,rgba(181,52,52,.15)) !important}
+/* typeahead 结果框：圆角卡片、分隔线、选中态 */
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel ul.typeahead.dropdown-menu{position:absolute !important;left:0 !important;right:0 !important;top:100% !important;margin:4px 0 0 !important;padding:6px !important;list-style:none !important;background:var(--surface,#fff) !important;border:1px solid var(--border,#e8eaed) !important;border-radius:var(--radius-sm,8px) !important;box-shadow:var(--shadow,0 8px 24px rgba(15,23,42,.12)) !important;z-index:12045 !important;max-height:280px !important;overflow-y:auto !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel ul.typeahead.dropdown-menu > li{padding:0 !important;margin:0 !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel ul.typeahead.dropdown-menu > li > a{display:block !important;padding:8px 10px !important;border-radius:6px !important;color:var(--text,#1d1d1f) !important;font-size:13px !important;text-decoration:none !important;white-space:nowrap !important;overflow:hidden !important;text-overflow:ellipsis !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel ul.typeahead.dropdown-menu > li.active > a,
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel ul.typeahead.dropdown-menu > li > a:hover{background:var(--input-bg,#f5f5f7) !important;color:var(--text,#1d1d1f) !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel ul.typeahead.dropdown-menu > li > a strong{color:var(--primary,#b53434) !important;font-weight:600 !important}
 /* 清爽模式下站点弹窗（作息时间表等）置于清爽模式之上 */
 html.urppp-clean-open .modal{z-index:12050 !important}
 html.urppp-clean-open .modal-backdrop{z-index:12045 !important}
@@ -11749,6 +11758,8 @@ html.urppp-clean-lock,html.urppp-clean-lock body{overflow:hidden!important}
 @keyframes ucDots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
 @media (prefers-reduced-motion:reduce){
   #urppp-clean-root,#urppp-clean-root *{animation:none!important;transition:none!important}
+  /* 侧边栏抽屉滑入滑出是核心交互，reduced-motion 下保留（否则收回无动画看起来像 bug） */
+  #sidebar.urppp-clean-sidebar,#sidebar.urppp-clean-sidebar.display{transition:transform .26s cubic-bezier(.4,0,.2,1) !important}
   #urppp-clean-root,#urppp-clean-root .uc-card,#urppp-clean-root .uc-svc,#urppp-clean-root .uc-top,#urppp-clean-root .uc-mask,#urppp-clean-root .uc-modal{opacity:1!important;transform:none!important;pointer-events:auto}
   #urppp-clean-root .uc-mask{display:none}
   #urppp-clean-root .uc-mask.open{display:block}
@@ -22751,19 +22762,7 @@ ${arcs}
           searchPanel.id = "urppp-mobile-search-panel";
           searchPanel.className = "urppp-mobile-search-panel";
           searchPanel.hidden = true;
-          if (opts.cleanMode) {
-            const cleanForm = document.createElement("form");
-            cleanForm.className = "urppp-clean-search-form";
-            cleanForm.innerHTML = '<input type="text" placeholder="查找功能..." class="nav-search-input" id="urppp-clean-search-input" autocomplete="off">';
-            cleanForm.addEventListener("submit", (event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              const value = cleanForm.querySelector("input").value.trim();
-              if (!value) return;
-              window.location.href = "/main/search?key=" + encodeURIComponent(value);
-            });
-            searchPanel.appendChild(cleanForm);
-          } else {
+          {
             const formSearch = document.getElementById("form-search");
             if (formSearch) {
               if (!formSearch.__urpppMobileParent) {
@@ -22783,12 +22782,8 @@ ${arcs}
             event.stopPropagation();
             const open = searchPanel.hidden;
             if (open) {
-              if (!opts.cleanMode) {
-                syncMobileSearchLayout();
-                setTimeout(() => searchPanel.querySelector("#search-input")?.focus(), 30);
-              } else {
-                setTimeout(() => searchPanel.querySelector("input")?.focus(), 30);
-              }
+              syncMobileSearchLayout();
+              setTimeout(() => searchPanel.querySelector("#search-input")?.focus(), 30);
             }
             searchPanel.hidden = !open;
             searchPanel.classList.toggle("open", open);
@@ -22804,8 +22799,8 @@ ${arcs}
           if (sidebar) syncMobileSidebarMode(sidebar, narrow);
           bindDrawerControls();
           if (!narrow) {
-            restoreMobileSearch();
             const cleanOpen = document.documentElement.classList.contains("urppp-clean-open");
+            if (!cleanOpen) restoreMobileSearch();
             if (!cleanOpen) {
               document.getElementById("urppp-mobile-quick")?.remove();
               document.getElementById("urppp-mobile-user")?.remove();

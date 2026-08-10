@@ -6809,20 +6809,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         searchPanel.id = 'urppp-mobile-search-panel';
         searchPanel.className = 'urppp-mobile-search-panel';
         searchPanel.hidden = true;
-        // 清爽模式：不移动站点 form-search（保持首页搜索可用），搜索面板用独立输入框
-        if (opts.cleanMode) {
-          const cleanForm = document.createElement('form');
-          cleanForm.className = 'urppp-clean-search-form';
-          cleanForm.innerHTML = '<input type="text" placeholder="查找功能..." class="nav-search-input" id="urppp-clean-search-input" autocomplete="off">';
-          cleanForm.addEventListener('submit', (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            const value = cleanForm.querySelector('input').value.trim();
-            if (!value) return;
-            window.location.href = '/main/search?key=' + encodeURIComponent(value);
-          });
-          searchPanel.appendChild(cleanForm);
-        } else {
+        // 复用站点 form-search（含 Bootstrap typeahead 关键词检索）：清爽模式同样走移动端面板逻辑，
+        // 输入关键词弹出原生搜索结果框；退出时 restoreMobileSearch 移回 navbar 并重建桌面搜索
+        {
           const formSearch = document.getElementById('form-search');
           if (formSearch) {
             if (!formSearch.__urpppMobileParent) {
@@ -6842,12 +6831,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           event.stopPropagation();
           const open = searchPanel.hidden;
           if (open) {
-            if (!opts.cleanMode) {
-              syncMobileSearchLayout();
-              setTimeout(() => searchPanel.querySelector('#search-input')?.focus(), 30);
-            } else {
-              setTimeout(() => searchPanel.querySelector('input')?.focus(), 30);
-            }
+            syncMobileSearchLayout();
+            setTimeout(() => searchPanel.querySelector('#search-input')?.focus(), 30);
           }
           searchPanel.hidden = !open;
           searchPanel.classList.toggle('open', open);
@@ -6864,9 +6849,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         if (sidebar) syncMobileSidebarMode(sidebar, narrow);
         bindDrawerControls();
         if (!narrow) {
-          restoreMobileSearch();
-          // 清爽模式打开期间保留移动端区块（桌面清爽模式也要移动端侧边栏样式）
+          // 清爽模式打开期间不恢复移动端搜索（form-search 留在侧边栏面板供 typeahead 使用）
           const cleanOpen = document.documentElement.classList.contains('urppp-clean-open');
+          if (!cleanOpen) restoreMobileSearch();
           if (!cleanOpen) {
             document.getElementById('urppp-mobile-quick')?.remove();
             document.getElementById('urppp-mobile-user')?.remove();
