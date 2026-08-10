@@ -22528,18 +22528,13 @@ ${arcs}
           }
           formSearch.classList.remove("urppp-mobile-form-search");
           formSearch.dataset.open = "0";
-          Object.entries({
-            position: "absolute",
-            right: "34px",
-            top: "50%",
-            left: "auto",
-            transform: "translateY(-50%)",
-            width: "0px",
-            opacity: "0",
-            margin: "0",
-            overflow: "hidden",
-            "z-index": "10"
-          }).forEach(([key, value]) => formSearch.style.setProperty(key, value, "important"));
+          formSearch.removeAttribute("style");
+          delete formSearch.__urpppMobileParent;
+          delete formSearch.__urpppMobileNext;
+          try {
+            bindDesktopNavbarSearch();
+          } catch (_) {
+          }
         }, "restoreMobileSearch");
         const restoreNativeMenuToggler = /* @__PURE__ */ __name(() => {
           const nativeToggler = document.querySelector("#navbar .menu-toggler");
@@ -22737,6 +22732,16 @@ ${arcs}
             clone.className = "urppp-mobile-quick-link";
             clone.removeAttribute("style");
             clone.removeAttribute("onclick");
+            if (opts.cleanMode) {
+              const href = String(anchor.getAttribute("href") || "");
+              const isStatic = href === "/holiday" || /holiday/i.test(href) || /假期/.test(anchor.textContent || "");
+              if (isStatic) {
+                clone.removeAttribute("href");
+                clone.removeAttribute("target");
+                clone.style.cursor = "default";
+                clone.style.pointerEvents = "none";
+              }
+            }
             links.appendChild(clone);
           });
           const searchPanel = document.createElement("div");

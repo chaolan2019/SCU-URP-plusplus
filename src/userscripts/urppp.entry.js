@@ -6566,11 +6566,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         }
         formSearch.classList.remove('urppp-mobile-form-search');
         formSearch.dataset.open = '0';
-        Object.entries({
-          position: 'absolute', right: '34px', top: '50%', left: 'auto',
-          transform: 'translateY(-50%)', width: '0px', opacity: '0',
-          margin: '0', overflow: 'hidden', 'z-index': '10',
-        }).forEach(([key, value]) => formSearch.style.setProperty(key, value, 'important'));
+        // 清除移动端残留内联，避免桌面搜索框/结果被 width:0/opacity:0/z-index:10/overflow:hidden 污染
+        formSearch.removeAttribute('style');
+        delete formSearch.__urpppMobileParent;
+        delete formSearch.__urpppMobileNext;
+        // 重新初始化桌面搜索（恢复 urppp-desktop-search 样式与点击行为）
+        try { bindDesktopNavbarSearch(); } catch (_) { /* ignore */ }
       };
 
       const restoreNativeMenuToggler = () => {
@@ -6787,6 +6788,17 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           clone.removeAttribute('style');
           // 只保留图标、文本和 href，去掉站点的 onclick，避免点击触发站点逻辑（如收回侧边栏）
           clone.removeAttribute('onclick');
+          // 假期状态等静态项：清爽模式下完全不可点（删 href 变纯文本）
+          if (opts.cleanMode) {
+            const href = String(anchor.getAttribute('href') || '');
+            const isStatic = href === '/holiday' || /holiday/i.test(href) || /假期/.test(anchor.textContent || '');
+            if (isStatic) {
+              clone.removeAttribute('href');
+              clone.removeAttribute('target');
+              clone.style.cursor = 'default';
+              clone.style.pointerEvents = 'none';
+            }
+          }
           links.appendChild(clone);
         });
         const searchPanel = document.createElement('div');

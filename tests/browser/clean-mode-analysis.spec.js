@@ -384,14 +384,23 @@ test('clean mode quick section links do not close clean mode', async ({ page }) 
   await page.locator('#uc-menu-toggle').click();
   await page.waitForTimeout(400);
 
-  // 快捷区内站内链接（假期状态）点击：不退出清爽模式、侧边栏不收回，且站点 onclick 被拦截
+  // 快捷区内静态项（假期状态）：清爽模式下变纯文本，不可点击、不退出清爽模式、不收回
   await page.evaluate(() => {
-    const link = document.querySelector('#urppp-mobile-quick .urppp-mobile-quick-link[href="/holiday"]');
-    if (link) link.setAttribute('onclick', 'window.__urpppHolidayClicked = true; return false;');
+    const link = document.querySelector('#urppp-mobile-quick .urppp-mobile-quick-link');
+    if (link && link.textContent.includes('假期')) link.setAttribute('onclick', 'window.__urpppHolidayClicked = true; return false;');
   });
-  const holidayLink = page.locator('#urppp-mobile-quick .urppp-mobile-quick-link[href="/holiday"]');
-  await holidayLink.click();
-  await page.waitForTimeout(300);
+  const holidayLink = page.locator('#urppp-mobile-quick .urppp-mobile-quick-link').filter({ hasText: '假期' });
+  // 静态项已是纯文本：无 href、pointer-events none
+  const hCount = await holidayLink.count();
+  if (hCount > 0) {
+    const href = await holidayLink.getAttribute('href');
+    const pe = await holidayLink.evaluate((el) => getComputedStyle(el).pointerEvents);
+    expect(href).toBeNull();
+    expect(pe).toBe('none');
+    // 用 force 点击模拟用户点击（元素 pointer-events:none 时 Playwright 正常点击会被拦截）
+    await holidayLink.click({ force: true });
+    await page.waitForTimeout(300);
+  }
   const state = await page.evaluate(() => ({
     cleanOpen: document.documentElement.classList.contains('urppp-clean-open'),
     sidebarDisplay: document.getElementById('sidebar').classList.contains('display'),
@@ -474,6 +483,9 @@ test('clean mode mobile also uses standalone search form without moving site sea
   expect(state.hasCleanInput).toBe(true);
   expect(state.formSearchInNavbar).toBe(true);
   expect(state.inputH).toBe(32);
-  expect(state.quickLinks).toContain('/holiday');
+  // 假期静态项变纯文本（href null），校历/作息仍保留链接
+  expect(state.quickLinks).toContain('/calendar');
+  expect(state.quickLinks).toContain('/schedule');
+  expect(state.quickLinks).toContain(null);
   expect(pageErrors).toEqual([]);
 });
