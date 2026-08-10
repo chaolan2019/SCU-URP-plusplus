@@ -6666,6 +6666,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           document.__urpppMobileRouteCloseBound = true;
           document.addEventListener('click', (event) => {
             if (!isNarrow() || !event.target.closest) return;
+            // 清爽模式自管侧边栏开合（含点击快捷区），避免 animateDrawer 残留内联样式
+            const cleanRoot = document.getElementById('urppp-clean-root');
+            if (cleanRoot && cleanRoot.classList.contains('open')) return;
             const link = event.target.closest('#sidebar a[href]');
             if (!link) return;
             const href = String(link.getAttribute('href') || '').trim();

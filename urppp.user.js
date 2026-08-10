@@ -11620,9 +11620,12 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel.open{display:block !important;margin:8px 0 !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #form-search.nav-search{position:relative !important;inset:auto !important;width:100% !important;height:34px !important;margin:0 !important;opacity:1 !important;overflow:visible !important;transform:none !important;z-index:1 !important;pointer-events:auto !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #search-input{width:100% !important;height:34px !important;box-sizing:border-box !important}
-/* 清爽模式独立搜索框样式 */
-#sidebar.urppp-clean-sidebar .urppp-clean-search-form{display:block !important;width:100% !important}
-#sidebar.urppp-clean-sidebar .urppp-clean-search-form input{width:100% !important;height:34px !important;box-sizing:border-box !important}
+/* 清爽模式独立搜索框样式（与站点 nav-search 输入框一致） */
+#sidebar.urppp-clean-sidebar .urppp-clean-search-form{display:block !important;width:100% !important;margin:0 !important;padding:0 !important;background:transparent !important;border:none !important;box-shadow:none !important}
+#sidebar.urppp-clean-sidebar .urppp-clean-search-form .input-icon{display:block !important;width:100% !important;background:var(--input-bg,#f5f5f7) !important;border:1px solid var(--border,#e8eaed) !important;border-radius:var(--radius-sm,8px) !important}
+#sidebar.urppp-clean-sidebar .urppp-clean-search-form input{width:100% !important;height:32px !important;box-sizing:border-box !important;padding:0 12px !important;line-height:32px !important;background:transparent !important;border:none !important;color:var(--text,#1d1d1f) !important;font-size:13px !important;outline:none !important;box-shadow:none !important}
+#sidebar.urppp-clean-sidebar .urppp-clean-search-form input:focus{border:none !important;box-shadow:none !important}
+#sidebar.urppp-clean-sidebar .urppp-clean-search-form .ace-icon.fa-search{color:var(--text-secondary,#6b7280) !important}
 /* 清爽模式下站点弹窗（作息时间表等）置于清爽模式之上 */
 html.urppp-clean-open .modal{z-index:12050 !important}
 html.urppp-clean-open .modal-backdrop{z-index:12045 !important}
@@ -14373,6 +14376,12 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
             const link = ev.target && ev.target.closest ? ev.target.closest("a[href]") : null;
             if (!link) return;
             const href = String(link.getAttribute("href") || "").trim();
+            if (link.closest("#urppp-mobile-quick, #urppp-mobile-user")) {
+              if (!href || href === "#" || href.startsWith("javascript") || link.target === "_blank") return;
+              ev.preventDefault();
+              ev.stopPropagation();
+              return;
+            }
             if (!href || href === "#" || href.startsWith("javascript")) return;
             if (link.target === "_blank" || /^https?:\/\//i.test(href)) return;
             closeCleanMode();
@@ -22618,6 +22627,8 @@ ${arcs}
             document.__urpppMobileRouteCloseBound = true;
             document.addEventListener("click", (event) => {
               if (!isNarrow() || !event.target.closest) return;
+              const cleanRoot = document.getElementById("urppp-clean-root");
+              if (cleanRoot && cleanRoot.classList.contains("open")) return;
               const link = event.target.closest("#sidebar a[href]");
               if (!link) return;
               const href = String(link.getAttribute("href") || "").trim();

@@ -168,6 +168,13 @@ export function createCleanModeController({ state, deps }) {
           const link = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
           if (!link) return;
           const href = String(link.getAttribute('href') || '').trim();
+          // 快捷区（用户卡/快捷功能）内的链接：静态项点它应无反应，不退出清爽模式也不跳转
+          if (link.closest('#urppp-mobile-quick, #urppp-mobile-user')) {
+            if (!href || href === '#' || href.startsWith('javascript') || link.target === '_blank') return;
+            ev.preventDefault();
+            ev.stopPropagation();
+            return;
+          }
           if (!href || href === '#' || href.startsWith('javascript')) return;
           // 外部网站或新窗口链接：不在清爽模式内拦截，保持清爽模式
           if (link.target === '_blank' || /^https?:\/\//i.test(href)) return;

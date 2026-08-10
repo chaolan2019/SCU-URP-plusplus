@@ -371,3 +371,65 @@ test('clean mode exit removes injected mobile sections on desktop', async ({ pag
   expect(after.cleanFlag).toBe(false);
   expect(pageErrors).toEqual([]);
 });
+
+test('clean mode quick section links do not close clean mode', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'mobile-home',
+    viewport: { width: 390, height: 844 },
+  });
+  await installScoreApiMock(page);
+
+  await page.evaluate(() => document.getElementById('urppp-nav-clean').click());
+  await page.waitForTimeout(600);
+  await page.locator('#uc-menu-toggle').click();
+  await page.waitForTimeout(400);
+
+  // 快捷区内站内链接（假期状态）点击：不退出清爽模式、侧边栏不收回
+  const holidayLink = page.locator('#urppp-mobile-quick .urppp-mobile-quick-link[href="/holiday"]');
+  await holidayLink.click();
+  await page.waitForTimeout(300);
+  const state = await page.evaluate(() => ({
+    cleanOpen: document.documentElement.classList.contains('urppp-clean-open'),
+    sidebarDisplay: document.getElementById('sidebar').classList.contains('display'),
+    aria: document.getElementById('uc-menu-toggle').getAttribute('aria-expanded'),
+  }));
+  expect(state.cleanOpen).toBe(true);
+  expect(state.sidebarDisplay).toBe(true);
+  expect(state.aria).toBe('true');
+  expect(pageErrors).toEqual([]);
+});
+
+test('clean mode desktop search input matches mobile style', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, { fixture: 'home' });
+  await installScoreApiMock(page);
+
+  await page.evaluate(() => document.getElementById('urppp-nav-clean').click());
+  await page.waitForTimeout(600);
+  await page.locator('#uc-menu-toggle').click();
+  await page.waitForTimeout(400);
+  await page.locator('#urppp-mobile-search-button').click();
+  await page.waitForTimeout(300);
+
+  const input = await page.evaluate(() => {
+    const el = document.getElementById('urppp-clean-search-input');
+    if (!el) return null;
+    const cs = getComputedStyle(el);
+    const r = el.getBoundingClientRect();
+    const wrap = el.parentElement;
+    const wcs = getComputedStyle(wrap);
+    return {
+      w: Math.round(r.width),
+      h: Math.round(r.height),
+      wrapBg: wcs.backgroundColor,
+      wrapRadius: wcs.borderRadius,
+      border: wcs.borderColor,
+    };
+  });
+  expect(input).not.toBeNull();
+  expect(input.w).toBeGreaterThan(200);
+  expect(input.h).toBe(32);
+  // 与移动端一致的浅灰底圆角输入框
+  expect(input.wrapBg).not.toBe('rgba(0, 0, 0, 0)');
+  expect(parseInt(input.wrapRadius, 10)).toBeGreaterThan(6);
+  expect(pageErrors).toEqual([]);
+});
