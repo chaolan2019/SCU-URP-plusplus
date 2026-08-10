@@ -10967,6 +10967,49 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
         outline: none !important;
         box-shadow: none !important;
       }
+      /* 搜索 typeahead 结果框（桌面首页 navbar）：圆角卡片、分隔、选中态 */
+      #form-search ul.typeahead.dropdown-menu {
+        position: absolute !important;
+        left: 0 !important;
+        right: 0 !important;
+        top: 100% !important;
+        margin: 4px 0 0 !important;
+        padding: 6px !important;
+        list-style: none !important;
+        background: var(--surface, #fff) !important;
+        border: 1px solid var(--border, #e8eaed) !important;
+        border-radius: var(--radius-sm, 8px) !important;
+        box-shadow: var(--shadow, 0 8px 24px rgba(15, 23, 42, 0.12)) !important;
+        z-index: 12045 !important;
+        max-height: 280px !important;
+        overflow-y: auto !important;
+        width: auto !important;
+        min-width: 100% !important;
+      }
+      #form-search ul.typeahead.dropdown-menu > li {
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      #form-search ul.typeahead.dropdown-menu > li > a {
+        display: block !important;
+        padding: 8px 10px !important;
+        border-radius: 6px !important;
+        color: var(--text, #1d1d1f) !important;
+        font-size: 13px !important;
+        text-decoration: none !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      #form-search ul.typeahead.dropdown-menu > li.active > a,
+      #form-search ul.typeahead.dropdown-menu > li > a:hover {
+        background: var(--input-bg, #f5f5f7) !important;
+        color: var(--text, #1d1d1f) !important;
+      }
+      #form-search ul.typeahead.dropdown-menu > li > a strong {
+        color: var(--primary, #b53434) !important;
+        font-weight: 600 !important;
+      }
 
       /* 用户下拉菜单 */
       .ace-nav > li.light-blue .dropdown-menu {
@@ -14313,8 +14356,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         if (state.open) {
           sidebar.classList.add("urppp-clean-sidebar");
           if (!sidebar.__urpppCleanInline) {
-            const s2 = sidebar.style;
-            const grab = /* @__PURE__ */ __name((p) => ({ v: s2.getPropertyValue(p), p: s2.getPropertyPriority(p) }), "grab");
+            const s = sidebar.style;
+            const grab = /* @__PURE__ */ __name((p) => ({ v: s.getPropertyValue(p), p: s.getPropertyPriority(p) }), "grab");
             sidebar.__urpppCleanInline = {
               top: grab("top"),
               height: grab("height"),
@@ -14331,14 +14374,16 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
             const shell = el.querySelector(".uc-shell");
             el.insertBefore(sidebar, shell || null);
           }
-          const s = sidebar.style;
-          ["transform", "visibility", "pointer-events", "transition"].forEach((p) => s.removeProperty(p));
           const topEl = el.querySelector(".uc-top");
           const topH = Math.max(44, Math.round(topEl ? topEl.getBoundingClientRect().height : 60));
           sidebar.style.setProperty("top", topH + "px", "important");
           sidebar.style.setProperty("height", "calc(100vh - " + topH + "px)", "important");
           sidebar.style.setProperty("z-index", "12030", "important");
           sidebar.style.setProperty("position", "fixed", "important");
+          if (!sidebar.__urpppAnimInit) {
+            sidebar.__urpppAnimInit = true;
+            ["transform", "visibility", "pointer-events", "transition"].forEach((p) => sidebar.style.removeProperty(p));
+          }
         } else {
           restoreCleanSidebarInline(sidebar);
         }
@@ -14347,7 +14392,29 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         const sidebar = document.getElementById("sidebar");
         if (!sidebar) return;
         const s = sidebar.style;
-        ["transform", "visibility", "pointer-events", "transition"].forEach((p) => s.removeProperty(p));
+        ["visibility", "pointer-events"].forEach((p) => s.removeProperty(p));
+        const width = sidebar.getBoundingClientRect().width || 260;
+        const target = open ? "translate3d(0,0,0)" : "translate3d(-" + width + "px,0,0)";
+        const setTarget = /* @__PURE__ */ __name(() => {
+          s.setProperty("transform", target, "important");
+        }, "setTarget");
+        const startAnim = /* @__PURE__ */ __name(() => {
+          s.setProperty("transition", "transform .26s cubic-bezier(.4, 0, .2, 1), visibility 0s linear .26s", "important");
+          s.setProperty("visibility", "visible", "important");
+          s.setProperty("pointer-events", open ? "auto" : "none", "important");
+          requestAnimationFrame(setTarget);
+          setTimeout(setTarget, 40);
+        }, "startAnim");
+        if (open) {
+          sidebar.classList.add("display");
+          s.setProperty("transform", "translate3d(-" + width + "px,0,0)", "important");
+          void sidebar.offsetWidth;
+          startAnim();
+        } else {
+          s.setProperty("transform", "translate3d(0,0,0)", "important");
+          void sidebar.offsetWidth;
+          startAnim();
+        }
         sidebar.classList.toggle("display", open);
         if (menuToggle) {
           menuToggle.setAttribute("aria-expanded", open ? "true" : "false");
@@ -14358,6 +14425,15 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           siteToggler.setAttribute("aria-expanded", open ? "true" : "false");
           siteToggler.setAttribute("aria-label", open ? "关闭菜单" : "打开菜单");
         }
+        clearTimeout(sidebar.__urpppAnimTimer);
+        sidebar.__urpppAnimTimer = setTimeout(() => {
+          if (!sidebar.classList.contains("display")) {
+            s.removeProperty("transform");
+            s.removeProperty("transition");
+            s.removeProperty("pointer-events");
+            s.removeProperty("visibility");
+          }
+        }, 340);
         syncCleanSidebarZ();
       }, "setSidebarOpen");
       const closeCleanSidebar = /* @__PURE__ */ __name(() => {
@@ -14386,6 +14462,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
             if (!state.open) return;
             const link = ev.target && ev.target.closest ? ev.target.closest("a[href]") : null;
             if (!link) return;
+            if (link.closest("#urppp-mobile-search-panel")) return;
             const href = String(link.getAttribute("href") || "").trim();
             if (link.closest("#urppp-mobile-quick, #urppp-mobile-user")) {
               if (!href || href === "#" || href.startsWith("javascript") || link.target === "_blank") return;
@@ -22783,11 +22860,23 @@ ${arcs}
             const open = searchPanel.hidden;
             if (open) {
               syncMobileSearchLayout();
+              const fs = searchPanel.querySelector("#form-search");
+              if (fs) {
+                fs.dataset.open = "1";
+                fs.style.setProperty("pointer-events", "auto", "important");
+                fs.style.setProperty("opacity", "1", "important");
+              }
+              searchPanel.hidden = false;
+              searchPanel.classList.add("open");
               setTimeout(() => searchPanel.querySelector("#search-input")?.focus(), 30);
+              searchButton.setAttribute("aria-expanded", "true");
+            } else {
+              searchPanel.hidden = true;
+              searchPanel.classList.remove("open");
+              const fs = searchPanel.querySelector("#form-search");
+              if (fs) fs.dataset.open = "0";
+              searchButton.setAttribute("aria-expanded", "false");
             }
-            searchPanel.hidden = !open;
-            searchPanel.classList.toggle("open", open);
-            searchButton.setAttribute("aria-expanded", open ? "true" : "false");
           });
           sidebar.insertBefore(quick, menus);
         }, "ensureMobileQuick");

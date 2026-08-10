@@ -110,9 +110,6 @@ export function createCleanModeController({ state, deps }) {
           const shell = el.querySelector('.uc-shell');
           el.insertBefore(sidebar, shell || null);
         }
-        // 清除站点动画残留内联，让 CSS 完全接管滑入/滑出与动画
-        const s = sidebar.style;
-        ['transform', 'visibility', 'pointer-events', 'transition'].forEach((p) => s.removeProperty(p));
         // 侧边栏顶边贴住清爽模式顶栏底边（桌面 60 / 移动 ≤900px 52）
         const topEl = el.querySelector('.uc-top');
         const topH = Math.max(44, Math.round(topEl ? topEl.getBoundingClientRect().height : 60));
@@ -121,6 +118,11 @@ export function createCleanModeController({ state, deps }) {
         sidebar.style.setProperty('height', 'calc(100vh - ' + topH + 'px)', 'important');
         sidebar.style.setProperty('z-index', '12030', 'important');
         sidebar.style.setProperty('position', 'fixed', 'important');
+        // 首次进入时清除站点 animateDrawer 残留（transform/visibility/pointer-events/transition），让 setSidebarOpen 接管
+        if (!sidebar.__urpppAnimInit) {
+          sidebar.__urpppAnimInit = true;
+          ['transform', 'visibility', 'pointer-events', 'transition'].forEach((p) => sidebar.style.removeProperty(p));
+        }
       } else {
         restoreCleanSidebarInline(sidebar);
       }
@@ -128,10 +130,35 @@ export function createCleanModeController({ state, deps }) {
     const setSidebarOpen = (open) => {
       const sidebar = document.getElementById('sidebar');
       if (!sidebar) return;
-      // 清除站点 animateDrawer 可能残留的内联（transition:none/transform/visibility/pointer-events），
-      // 确保收回动画走 CSS transition（否则点汉堡收回会无动画，且 z-index 残留被清爽底栏盖住）
+      // 清除站点 animateDrawer 残留内联，避免干扰
       const s = sidebar.style;
-      ['transform', 'visibility', 'pointer-events', 'transition'].forEach((p) => s.removeProperty(p));
+      ['visibility', 'pointer-events'].forEach((p) => s.removeProperty(p));
+      // 用 JS 显式控制 transform 过渡，确保收回/展开动画在任何 CSS 覆盖下都播放
+      const width = sidebar.getBoundingClientRect().width || 260;
+      const target = open ? 'translate3d(0,0,0)' : 'translate3d(-' + width + 'px,0,0)';
+      const setTarget = () => {
+        s.setProperty('transform', target, 'important');
+      };
+      const startAnim = () => {
+        // 先设 transition（记录旧值），下一帧再改 transform 触发过渡
+        s.setProperty('transition', 'transform .26s cubic-bezier(.4, 0, .2, 1), visibility 0s linear .26s', 'important');
+        s.setProperty('visibility', 'visible', 'important');
+        s.setProperty('pointer-events', open ? 'auto' : 'none', 'important');
+        requestAnimationFrame(setTarget);
+        setTimeout(setTarget, 40);
+      };
+      if (open) {
+        sidebar.classList.add('display');
+        // 起点 -width（隐藏态），然后过渡到 0
+        s.setProperty('transform', 'translate3d(-' + width + 'px,0,0)', 'important');
+        void sidebar.offsetWidth;
+        startAnim();
+      } else {
+        // 当前在 0（展开态），起点保持 0，再过渡到 -width
+        s.setProperty('transform', 'translate3d(0,0,0)', 'important');
+        void sidebar.offsetWidth;
+        startAnim();
+      }
       sidebar.classList.toggle('display', open);
       if (menuToggle) {
         menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -142,6 +169,16 @@ export function createCleanModeController({ state, deps }) {
         siteToggler.setAttribute('aria-expanded', open ? 'true' : 'false');
         siteToggler.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
       }
+      // 动画结束后清理内联，让 CSS 基础态接管（visibility hidden 由 CSS 控制）
+      clearTimeout(sidebar.__urpppAnimTimer);
+      sidebar.__urpppAnimTimer = setTimeout(() => {
+        if (!sidebar.classList.contains('display')) {
+          s.removeProperty('transform');
+          s.removeProperty('transition');
+          s.removeProperty('pointer-events');
+          s.removeProperty('visibility');
+        }
+      }, 340);
       syncCleanSidebarZ();
     };
     const closeCleanSidebar = () => {
@@ -172,6 +209,8 @@ export function createCleanModeController({ state, deps }) {
           if (!state.open) return;
           const link = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
           if (!link) return;
+          // 搜索面板内的链接（typeahead 结果项）不受拦截，点击正常跳转
+          if (link.closest('#urppp-mobile-search-panel')) return;
           const href = String(link.getAttribute('href') || '').trim();
           // 快捷区（用户卡/快捷功能）内的链接：静态项点它应无反应，阻止站点 onclick 与默认导航
           if (link.closest('#urppp-mobile-quick, #urppp-mobile-user')) {

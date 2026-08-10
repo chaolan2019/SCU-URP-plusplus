@@ -6831,12 +6831,25 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           event.stopPropagation();
           const open = searchPanel.hidden;
           if (open) {
+            // 每次打开都重置 form-search 布局并聚焦，确保 typeahead 输入态稳定
             syncMobileSearchLayout();
+            const fs = searchPanel.querySelector('#form-search');
+            if (fs) {
+              fs.dataset.open = '1';
+              fs.style.setProperty('pointer-events', 'auto', 'important');
+              fs.style.setProperty('opacity', '1', 'important');
+            }
+            searchPanel.hidden = false;
+            searchPanel.classList.add('open');
             setTimeout(() => searchPanel.querySelector('#search-input')?.focus(), 30);
+            searchButton.setAttribute('aria-expanded', 'true');
+          } else {
+            searchPanel.hidden = true;
+            searchPanel.classList.remove('open');
+            const fs = searchPanel.querySelector('#form-search');
+            if (fs) fs.dataset.open = '0';
+            searchButton.setAttribute('aria-expanded', 'false');
           }
-          searchPanel.hidden = !open;
-          searchPanel.classList.toggle('open', open);
-          searchButton.setAttribute('aria-expanded', open ? 'true' : 'false');
         });
         sidebar.insertBefore(quick, menus);
       };

@@ -364,6 +364,49 @@
         outline: none !important;
         box-shadow: none !important;
       }
+      /* 搜索 typeahead 结果框（桌面首页 navbar）：圆角卡片、分隔、选中态 */
+      #form-search ul.typeahead.dropdown-menu {
+        position: absolute !important;
+        left: 0 !important;
+        right: 0 !important;
+        top: 100% !important;
+        margin: 4px 0 0 !important;
+        padding: 6px !important;
+        list-style: none !important;
+        background: var(--surface, #fff) !important;
+        border: 1px solid var(--border, #e8eaed) !important;
+        border-radius: var(--radius-sm, 8px) !important;
+        box-shadow: var(--shadow, 0 8px 24px rgba(15, 23, 42, 0.12)) !important;
+        z-index: 12045 !important;
+        max-height: 280px !important;
+        overflow-y: auto !important;
+        width: auto !important;
+        min-width: 100% !important;
+      }
+      #form-search ul.typeahead.dropdown-menu > li {
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      #form-search ul.typeahead.dropdown-menu > li > a {
+        display: block !important;
+        padding: 8px 10px !important;
+        border-radius: 6px !important;
+        color: var(--text, #1d1d1f) !important;
+        font-size: 13px !important;
+        text-decoration: none !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      #form-search ul.typeahead.dropdown-menu > li.active > a,
+      #form-search ul.typeahead.dropdown-menu > li > a:hover {
+        background: var(--input-bg, #f5f5f7) !important;
+        color: var(--text, #1d1d1f) !important;
+      }
+      #form-search ul.typeahead.dropdown-menu > li > a strong {
+        color: var(--primary, #b53434) !important;
+        font-weight: 600 !important;
+      }
 
       /* 用户下拉菜单 */
       .ace-nav > li.light-blue .dropdown-menu {
