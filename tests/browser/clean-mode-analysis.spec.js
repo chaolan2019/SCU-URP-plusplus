@@ -384,7 +384,11 @@ test('clean mode quick section links do not close clean mode', async ({ page }) 
   await page.locator('#uc-menu-toggle').click();
   await page.waitForTimeout(400);
 
-  // 快捷区内站内链接（假期状态）点击：不退出清爽模式、侧边栏不收回
+  // 快捷区内站内链接（假期状态）点击：不退出清爽模式、侧边栏不收回，且站点 onclick 被拦截
+  await page.evaluate(() => {
+    const link = document.querySelector('#urppp-mobile-quick .urppp-mobile-quick-link[href="/holiday"]');
+    if (link) link.setAttribute('onclick', 'window.__urpppHolidayClicked = true; return false;');
+  });
   const holidayLink = page.locator('#urppp-mobile-quick .urppp-mobile-quick-link[href="/holiday"]');
   await holidayLink.click();
   await page.waitForTimeout(300);
@@ -392,10 +396,12 @@ test('clean mode quick section links do not close clean mode', async ({ page }) 
     cleanOpen: document.documentElement.classList.contains('urppp-clean-open'),
     sidebarDisplay: document.getElementById('sidebar').classList.contains('display'),
     aria: document.getElementById('uc-menu-toggle').getAttribute('aria-expanded'),
+    holidayClicked: !!window.__urpppHolidayClicked,
   }));
   expect(state.cleanOpen).toBe(true);
   expect(state.sidebarDisplay).toBe(true);
   expect(state.aria).toBe('true');
+  expect(state.holidayClicked).toBe(false);
   expect(pageErrors).toEqual([]);
 });
 
@@ -427,10 +433,13 @@ test('clean mode desktop search input matches mobile style', async ({ page }) =>
   });
   expect(input).not.toBeNull();
   expect(input.w).toBeGreaterThan(200);
-  expect(input.h).toBe(34);
-  // 与移动端一致的浅灰底圆角输入框
-  expect(input.wrapBg).not.toBe('rgba(0, 0, 0, 0)');
-  expect(parseInt(input.wrapRadius, 10)).toBeGreaterThan(6);
+  // 与站点 nav-search-input 一致：32px 高、带边框（不是无边框贴片）
+  expect(input.h).toBe(32);
+  const borderW = await page.evaluate(() => {
+    const el = document.getElementById('urppp-clean-search-input');
+    return parseFloat(getComputedStyle(el).borderTopWidth);
+  });
+  expect(borderW).toBeGreaterThan(0);
   expect(pageErrors).toEqual([]);
 });
 
@@ -459,12 +468,12 @@ test('clean mode mobile also uses standalone search form without moving site sea
     hasCleanInput: !!document.getElementById('urppp-clean-search-input'),
     formSearchInNavbar: !!document.getElementById('form-search') && !!document.getElementById('form-search').closest('#navbar'),
     quickLinks: Array.from(document.querySelectorAll('#urppp-mobile-quick .urppp-mobile-quick-link')).map((a) => a.getAttribute('href')),
-    // 搜索框尺寸与桌面清爽模式一致（34px）
+    // 搜索框尺寸与站点 nav-search-input 一致（32px）
     inputH: Math.round(document.getElementById('urppp-clean-search-input').getBoundingClientRect().height),
   }));
   expect(state.hasCleanInput).toBe(true);
   expect(state.formSearchInNavbar).toBe(true);
-  expect(state.inputH).toBe(34);
+  expect(state.inputH).toBe(32);
   expect(state.quickLinks).toContain('/holiday');
   expect(pageErrors).toEqual([]);
 });

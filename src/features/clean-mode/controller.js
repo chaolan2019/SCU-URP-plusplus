@@ -161,6 +161,7 @@ export function createCleanModeController({ state, deps }) {
       const sidebar = document.getElementById('sidebar');
       if (!sidebar) return;
       // 绑定在 sidebar 上的菜单点击：站内导航退出清爽模式并跳转；站外/新窗口链接保持清爽模式
+      // 捕获阶段拦截：quick 区链接 preventDefault+stopImmediatePropagation，阻止站点 onclick 与冒泡
       if (!sidebar.__urpppCleanMenuBound) {
         sidebar.__urpppCleanMenuBound = true;
         sidebar.addEventListener('click', (ev) => {
@@ -168,10 +169,11 @@ export function createCleanModeController({ state, deps }) {
           const link = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
           if (!link) return;
           const href = String(link.getAttribute('href') || '').trim();
-          // 快捷区（用户卡/快捷功能）内的链接：静态项点它应无反应，不退出清爽模式也不跳转
+          // 快捷区（用户卡/快捷功能）内的链接：静态项点它应无反应，阻止站点 onclick 与默认导航
           if (link.closest('#urppp-mobile-quick, #urppp-mobile-user')) {
             if (!href || href === '#' || href.startsWith('javascript') || link.target === '_blank') return;
             ev.preventDefault();
+            ev.stopImmediatePropagation();
             ev.stopPropagation();
             return;
           }
@@ -179,7 +181,7 @@ export function createCleanModeController({ state, deps }) {
           // 外部网站或新窗口链接：不在清爽模式内拦截，保持清爽模式
           if (link.target === '_blank' || /^https?:\/\//i.test(href)) return;
           closeCleanMode();
-        });
+        }, true);
       }
       // 统一自管开合：不进站点 __urpppToggleHandler（它只同步站点按钮 aria，且会被 document 捕获阶段 outside-click 干扰）
       const open = !sidebar.classList.contains('display');
