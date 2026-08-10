@@ -157,40 +157,105 @@ test('clean mode sidebar drawer works on mobile viewport with aligned top', asyn
   const { pageErrors } = await loadUrpFixture(page, { fixture: 'mobile-home', viewport: { width: 390, height: 844 } });
   await installScoreApiMock(page);
 
+  // 先交互站点侧边栏（开→关），残留站点动画内联，验证清爽模式仍能接管
+  await page.locator('#urppp-mobile-menu-button').click();
+  await page.waitForTimeout(350);
+  await page.locator('#urppp-mobile-menu-button').click();
+  await page.waitForTimeout(350);
+
   // 打开清爽模式
   await page.evaluate(() => document.getElementById('urppp-nav-clean').click());
   await page.waitForTimeout(600);
 
   const sidebar = page.locator('#sidebar');
   await expect(sidebar).toHaveClass(/urppp-clean-sidebar/);
+  // 站点动画残留的内联已清除，CSS 完全接管
+  const inlineAfterClean = await sidebar.evaluate((el) => ({
+    transform: el.style.getPropertyValue('transform'),
+    vis: el.style.getPropertyValue('visibility'),
+    pe: el.style.getPropertyValue('pointer-events'),
+    transition: el.style.getPropertyValue('transition'),
+  }));
+  expect(inlineAfterClean.transform).toBe('');
+  expect(inlineAfterClean.vis).toBe('');
+  expect(inlineAfterClean.pe).toBe('');
+  expect(inlineAfterClean.transition).toBe('');
 
   // 移动端：顶边与清爽顶栏底部（52px）平齐，宽度 260px
   await page.locator('#uc-menu-toggle').click();
   await expect(sidebar).toHaveClass(/display/);
+  await page.waitForTimeout(400); // 等待滑入动画完成
   const box = await sidebar.evaluate((el) => {
     const r = el.getBoundingClientRect();
     const topEl = document.querySelector('#urppp-clean-root .uc-top');
     const tr = topEl ? topEl.getBoundingClientRect() : null;
-    return { top: Math.round(r.top), topBarBottom: tr ? Math.round(tr.bottom) : null, w: Math.round(r.width) };
+    return { top: Math.round(r.top), topBarBottom: tr ? Math.round(tr.bottom) : null, w: Math.round(r.width), left: Math.round(r.left) };
   });
   expect(Math.abs(box.top - box.topBarBottom)).toBeLessThanOrEqual(1);
   expect(box.w).toBeGreaterThanOrEqual(259);
   expect(box.w).toBeLessThanOrEqual(262);
+  expect(box.left).toBe(0);
   await expect(page.locator('#uc-menu-toggle')).toHaveAttribute('aria-expanded', 'true');
 
-  // 再点汉堡收回
+  // 再点汉堡收回：动画中途 transform 应在 -260 与 0 之间（非瞬跳）
   await page.locator('#uc-menu-toggle').click();
+  await page.waitForTimeout(80);
+  const midX = await sidebar.evaluate((el) => {
+    const m = getComputedStyle(el).transform.match(/matrix\(1, 0, 0, 1, ([\d.-]+),/);
+    return m ? Math.round(parseFloat(m[1])) : null;
+  });
+  expect(midX).not.toBe(0);
+  expect(midX).toBeLessThan(0);
+  expect(midX).toBeGreaterThan(-261);
+  await page.waitForTimeout(400);
   await expect(sidebar).not.toHaveClass(/display/);
   await expect(page.locator('#uc-menu-toggle')).toHaveAttribute('aria-expanded', 'false');
 
-  // 退出清爽模式后内联样式还原
+  // 退出清爽模式后 sidebar 回到原位，内联样式还原
   await page.evaluate(() => document.getElementById('uc-exit').click());
   await page.waitForTimeout(400);
-  const inline = await sidebar.evaluate((el) => ({
+  const afterClose = await sidebar.evaluate((el) => ({
     z: el.style.getPropertyValue('z-index'),
     pos: el.style.getPropertyValue('position'),
+    parentTag: el.parentElement ? el.parentElement.id || el.parentElement.tagName : null,
   }));
-  expect(inline.z).not.toBe('12030');
-  expect(inline.pos).not.toBe('fixed');
+  expect(afterClose.z).not.toBe('12030');
+  expect(afterClose.pos).not.toBe('fixed');
+  expect(afterClose.parentTag).not.toBe('urppp-clean-root');
+  expect(pageErrors).toEqual([]);
+});
+
+test('clean mode sidebar sits below top bar and gets mobile sections on desktop', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, { fixture: 'home' });
+  await installScoreApiMock(page);
+
+  await page.evaluate(() => document.getElementById('urppp-nav-clean').click());
+  await page.waitForTimeout(600);
+  await page.locator('#uc-menu-toggle').click();
+  await page.waitForTimeout(350);
+
+  const info = await page.evaluate(() => {
+    const sidebar = document.getElementById('sidebar');
+    const root = document.getElementById('urppp-clean-root');
+    const topEl = root.querySelector('.uc-top');
+    return {
+      sidebarParentIsRoot: sidebar.parentElement === root,
+      sidebarZ: getComputedStyle(sidebar).zIndex,
+      topZ: getComputedStyle(topEl).zIndex,
+      hasMobileUser: !!document.getElementById('urppp-mobile-user'),
+      hasQuick: !!document.getElementById('urppp-mobile-quick'),
+      userVisible: (() => {
+        const el = document.getElementById('urppp-mobile-user');
+        return el ? el.getBoundingClientRect().height > 0 : false;
+      })(),
+    };
+  });
+  // 侧边栏在清爽模式 root 内、顶栏之下（顶栏 z-index 更高）
+  expect(info.sidebarParentIsRoot).toBe(true);
+  expect(parseInt(info.topZ, 10)).toBeGreaterThan(parseInt(info.sidebarZ, 10));
+  // 桌面清爽模式也注入移动端侧边栏区块
+  expect(info.hasMobileUser).toBe(true);
+  expect(info.hasQuick).toBe(true);
+  expect(info.userVisible).toBe(true);
   expect(pageErrors).toEqual([]);
 });

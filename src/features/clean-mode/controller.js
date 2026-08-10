@@ -73,16 +73,23 @@ export function createCleanModeController({ state, deps }) {
       const saved = sidebar.__urpppCleanInline;
       if (saved) {
         const s = sidebar.style;
-        if (saved.top) s.setProperty('top', saved.top, saved.topP || '');
-        else s.removeProperty('top');
-        if (saved.height) s.setProperty('height', saved.height, saved.heightP || '');
-        else s.removeProperty('height');
-        if (saved.z) s.setProperty('z-index', saved.z, saved.zP || '');
-        else s.removeProperty('z-index');
-        if (saved.pos) s.setProperty('position', saved.pos, saved.posP || '');
-        else s.removeProperty('position');
+        const restore = (prop, key) => {
+          const it = saved[key];
+          if (it && it.v) s.setProperty(prop, it.v, it.p || '');
+          else s.removeProperty(prop);
+        };
+        restore('top', 'top'); restore('height', 'height'); restore('z-index', 'z');
+        restore('position', 'pos'); restore('transform', 'transform'); restore('visibility', 'vis');
+        restore('pointer-events', 'pe'); restore('transition', 'transition');
         delete sidebar.__urpppCleanInline;
       }
+      // 移回原 DOM 位置（清爽模式期间 sidebar 被临时挂到 root 内）
+      const origin = sidebar.__urpppCleanOrigin;
+      if (origin && origin.parent && sidebar.parentElement !== origin.parent) {
+        if (origin.next && origin.next.parentElement === origin.parent) origin.parent.insertBefore(sidebar, origin.next);
+        else origin.parent.appendChild(sidebar);
+      }
+      delete sidebar.__urpppCleanOrigin;
     };
     const syncCleanSidebarZ = () => {
       const sidebar = document.getElementById('sidebar');
@@ -91,13 +98,21 @@ export function createCleanModeController({ state, deps }) {
         sidebar.classList.add('urppp-clean-sidebar');
         if (!sidebar.__urpppCleanInline) {
           const s = sidebar.style;
+          const grab = (p) => ({ v: s.getPropertyValue(p), p: s.getPropertyPriority(p) });
           sidebar.__urpppCleanInline = {
-            top: s.getPropertyValue('top'), topP: s.getPropertyPriority('top'),
-            height: s.getPropertyValue('height'), heightP: s.getPropertyPriority('height'),
-            z: s.getPropertyValue('z-index'), zP: s.getPropertyPriority('z-index'),
-            pos: s.getPropertyValue('position'), posP: s.getPropertyPriority('position'),
+            top: grab('top'), height: grab('height'), z: grab('z-index'), pos: grab('position'),
+            transform: grab('transform'), vis: grab('visibility'), pe: grab('pointer-events'), transition: grab('transition'),
           };
+          sidebar.__urpppCleanOrigin = { parent: sidebar.parentElement, next: sidebar.nextSibling };
         }
+        // 移入清爽模式 root（.uc-top 之后），使 sidebar 落在 root 的层叠上下文内、顶栏之下
+        if (sidebar.parentElement !== el) {
+          const shell = el.querySelector('.uc-shell');
+          el.insertBefore(sidebar, shell || null);
+        }
+        // 清除站点动画残留内联，让 CSS 完全接管滑入/滑出与动画
+        const s = sidebar.style;
+        ['transform', 'visibility', 'pointer-events', 'transition'].forEach((p) => s.removeProperty(p));
         // 侧边栏顶边贴住清爽模式顶栏底边（桌面 60 / 移动 ≤900px 52）
         const topEl = el.querySelector('.uc-top');
         const topH = Math.max(44, Math.round(topEl ? topEl.getBoundingClientRect().height : 60));
@@ -193,6 +208,8 @@ export function createCleanModeController({ state, deps }) {
     el.classList.add('open');
     try { if (el.__syncCleanThemeDots) el.__syncCleanThemeDots(); } catch (_) { /* ignore */ }
     try { if (el.__syncCleanSidebarZ) el.__syncCleanSidebarZ(); } catch (_) { /* ignore */ }
+    // 桌面清爽模式也注入移动端侧边栏区块（用户卡/快捷区）
+    try { deps.injectCleanSidebarSections(document.getElementById('sidebar')); } catch (_) { /* ignore */ }
     deps.loadAll(!!force);
   }
 

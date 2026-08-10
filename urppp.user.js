@@ -11464,7 +11464,6 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
   var clean_mode_default = `#urppp-clean-root{position:fixed;inset:0;z-index:12000;display:none;background:var(--bg,#F4F6F9);color:var(--text,#111);font-family:inherit;opacity:0;transform:translateY(8px);transition:opacity .28s ease,transform .32s cubic-bezier(.22,1,.36,1)}
 #urppp-clean-root.open{display:flex;flex-direction:column;opacity:1;transform:none}
 #urppp-clean-root *{box-sizing:border-box}
-#urppp-clean-root .uc-top{flex:0 0 60px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--border);background:var(--surface,#fff);animation:ucTopIn .36s cubic-bezier(.22,1,.36,1) both}
 #urppp-clean-root .uc-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px}
 #urppp-clean-root .uc-top-actions{display:flex;gap:8px}
 #urppp-clean-root .uc-btn{height:32px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg,#f7f7f8);color:var(--text);font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:transform .18s ease,box-shadow .18s ease,background .18s ease,border-color .18s ease,color .18s ease}
@@ -11595,7 +11594,31 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
 #sidebar.urppp-clean-sidebar .urppp-nav-arrow{display:block !important;width:auto !important;max-width:200px !important;margin-left:0 !important;opacity:1 !important;overflow:hidden !important;pointer-events:auto !important}
 #sidebar.urppp-clean-sidebar .urppp-nav-link > .fa{margin-right:11px !important}
 #sidebar.urppp-clean-sidebar .urppp-nav-submenu{display:block !important}
-#urppp-clean-root .uc-top{flex:0 0 60px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--border);background:var(--surface,#fff);animation:ucTopIn .36s cubic-bezier(.22,1,.36,1) both}
+/* 清爽模式侧边栏：移动端用户卡与快捷区（桌面清爽模式同样渲染，样式随作用域生效） */
+#sidebar.urppp-clean-sidebar #urppp-mobile-user{margin-top:0 !important;padding:12px !important;border-bottom:1px solid var(--border,#e8eaed) !important;background:var(--surface,#fff) !important}
+#sidebar.urppp-clean-sidebar #urppp-mobile-user .urppp-mobile-user-identity{display:flex !important;align-items:center !important;gap:10px !important;min-height:38px !important}
+#sidebar.urppp-clean-sidebar #urppp-mobile-user .nav-user-photo{width:38px !important;height:38px !important;min-width:38px !important;max-width:38px !important;min-height:38px !important;max-height:38px !important;display:block !important;margin:0 !important;padding:0 !important;border-radius:50% !important;border:1px solid var(--border,#e8eaed) !important;object-fit:cover !important;object-position:center !important}
+#sidebar.urppp-clean-sidebar #urppp-mobile-user .urppp-mobile-user-copy{display:flex !important;min-width:0 !important;flex-direction:column !important;justify-content:center !important;gap:1px !important}
+#sidebar.urppp-clean-sidebar #urppp-mobile-user .urppp-mobile-user-welcome{display:block !important;color:var(--text-secondary,#6b7280) !important;font-size:11px !important;font-weight:400 !important;line-height:1.2 !important}
+#sidebar.urppp-clean-sidebar #urppp-mobile-user .user-info{display:block !important;position:relative !important;top:-1px !important;min-width:0 !important;color:var(--text,#1d1d1f) !important;font-size:16px !important;font-weight:600 !important;line-height:1.35 !important;white-space:normal !important}
+#sidebar.urppp-clean-sidebar #urppp-mobile-user .urppp-mobile-user-actions{display:grid !important;grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:6px !important;margin-top:10px !important}
+#sidebar.urppp-clean-sidebar #urppp-mobile-user .urppp-mobile-user-action{display:flex !important;align-items:center !important;justify-content:flex-start !important;gap:7px !important;min-width:0 !important;min-height:34px !important;padding:7px 9px !important;border-radius:var(--radius-sm,8px) !important;border:1px solid var(--border,#e8eaed) !important;background:var(--input-bg,#f5f5f7) !important;color:var(--text,#1d1d1f) !important;font-size:12px !important;line-height:1.2 !important;text-decoration:none !important}
+#sidebar.urppp-clean-sidebar #urppp-mobile-user .urppp-mobile-user-action i{width:14px !important;color:var(--primary,#b53434) !important;text-align:center !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-quick{padding:10px 12px !important;border-bottom:1px solid var(--border,#e8eaed) !important;background:var(--surface,#fff) !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-quick-title{margin-bottom:7px !important;color:var(--text-secondary,#6b7280) !important;font-size:12px !important;letter-spacing:0 !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-tool-row{display:grid !important;grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:8px !important;margin-bottom:6px !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-tool-button{display:inline-flex !important;align-items:center !important;justify-content:center !important;gap:7px !important;min-height:36px !important;padding:0 10px !important;border-radius:var(--radius-sm,8px) !important;border:1px solid var(--border,#e8eaed) !important;background:var(--input-bg,#f5f5f7) !important;color:var(--text,#1d1d1f) !important;font-size:12px !important;text-decoration:none !important;cursor:pointer !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-tool-button i{position:static !important;top:auto !important;width:16px !important;height:16px !important;margin:0 !important;display:inline-flex !important;align-items:center !important;justify-content:center !important;color:var(--primary,#b53434) !important;font-size:14px !important;line-height:1 !important;vertical-align:middle !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-quick-links{display:grid !important;gap:2px !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-quick-link{display:flex !important;align-items:center !important;gap:8px !important;min-height:32px !important;padding:6px 4px !important;color:var(--text,#1d1d1f) !important;font-size:13px !important;line-height:1.3 !important;text-decoration:none !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-quick-link i{width:18px !important;color:var(--primary,#b53434) !important;font-size:14px !important;text-align:center !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-quick .span_bbzx{display:inline !important;font-size:13px !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel[hidden]{display:none !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel{width:100% !important;box-sizing:border-box !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel.open{display:block !important;margin:8px 0 !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #form-search.nav-search{position:relative !important;inset:auto !important;width:100% !important;height:34px !important;margin:0 !important;opacity:1 !important;overflow:visible !important;transform:none !important;z-index:1 !important;pointer-events:auto !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #search-input{width:100% !important;height:34px !important;box-sizing:border-box !important}
+#urppp-clean-root .uc-top{flex:0 0 60px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--border);background:var(--surface,#fff);animation:ucTopIn .36s cubic-bezier(.22,1,.36,1) both;position:relative;z-index:12040}
 #urppp-clean-root .uc-score-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 #urppp-clean-root .uc-score-pane{border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;background:var(--input-bg);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease}
 #urppp-clean-root .uc-score-pane:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.06);background:color-mix(in srgb,var(--primary) 5%,var(--input-bg))}
@@ -14242,16 +14265,27 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         const saved = sidebar.__urpppCleanInline;
         if (saved) {
           const s = sidebar.style;
-          if (saved.top) s.setProperty("top", saved.top, saved.topP || "");
-          else s.removeProperty("top");
-          if (saved.height) s.setProperty("height", saved.height, saved.heightP || "");
-          else s.removeProperty("height");
-          if (saved.z) s.setProperty("z-index", saved.z, saved.zP || "");
-          else s.removeProperty("z-index");
-          if (saved.pos) s.setProperty("position", saved.pos, saved.posP || "");
-          else s.removeProperty("position");
+          const restore = /* @__PURE__ */ __name((prop, key) => {
+            const it = saved[key];
+            if (it && it.v) s.setProperty(prop, it.v, it.p || "");
+            else s.removeProperty(prop);
+          }, "restore");
+          restore("top", "top");
+          restore("height", "height");
+          restore("z-index", "z");
+          restore("position", "pos");
+          restore("transform", "transform");
+          restore("visibility", "vis");
+          restore("pointer-events", "pe");
+          restore("transition", "transition");
           delete sidebar.__urpppCleanInline;
         }
+        const origin = sidebar.__urpppCleanOrigin;
+        if (origin && origin.parent && sidebar.parentElement !== origin.parent) {
+          if (origin.next && origin.next.parentElement === origin.parent) origin.parent.insertBefore(sidebar, origin.next);
+          else origin.parent.appendChild(sidebar);
+        }
+        delete sidebar.__urpppCleanOrigin;
       }, "restoreCleanSidebarInline");
       const syncCleanSidebarZ = /* @__PURE__ */ __name(() => {
         const sidebar = document.getElementById("sidebar");
@@ -14259,18 +14293,26 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         if (state.open) {
           sidebar.classList.add("urppp-clean-sidebar");
           if (!sidebar.__urpppCleanInline) {
-            const s = sidebar.style;
+            const s2 = sidebar.style;
+            const grab = /* @__PURE__ */ __name((p) => ({ v: s2.getPropertyValue(p), p: s2.getPropertyPriority(p) }), "grab");
             sidebar.__urpppCleanInline = {
-              top: s.getPropertyValue("top"),
-              topP: s.getPropertyPriority("top"),
-              height: s.getPropertyValue("height"),
-              heightP: s.getPropertyPriority("height"),
-              z: s.getPropertyValue("z-index"),
-              zP: s.getPropertyPriority("z-index"),
-              pos: s.getPropertyValue("position"),
-              posP: s.getPropertyPriority("position")
+              top: grab("top"),
+              height: grab("height"),
+              z: grab("z-index"),
+              pos: grab("position"),
+              transform: grab("transform"),
+              vis: grab("visibility"),
+              pe: grab("pointer-events"),
+              transition: grab("transition")
             };
+            sidebar.__urpppCleanOrigin = { parent: sidebar.parentElement, next: sidebar.nextSibling };
           }
+          if (sidebar.parentElement !== el) {
+            const shell = el.querySelector(".uc-shell");
+            el.insertBefore(sidebar, shell || null);
+          }
+          const s = sidebar.style;
+          ["transform", "visibility", "pointer-events", "transition"].forEach((p) => s.removeProperty(p));
           const topEl = el.querySelector(".uc-top");
           const topH = Math.max(44, Math.round(topEl ? topEl.getBoundingClientRect().height : 60));
           sidebar.style.setProperty("top", topH + "px", "important");
@@ -14367,6 +14409,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       }
       try {
         if (el.__syncCleanSidebarZ) el.__syncCleanSidebarZ();
+      } catch (_) {
+      }
+      try {
+        deps.injectCleanSidebarSections(document.getElementById("sidebar"));
       } catch (_) {
       }
       deps.loadAll(!!force);
@@ -22700,8 +22746,11 @@ ${arcs}
           bindDrawerControls();
           if (!narrow) {
             restoreMobileSearch();
-            document.getElementById("urppp-mobile-quick")?.remove();
-            document.getElementById("urppp-mobile-user")?.remove();
+            const cleanOpen = document.documentElement.classList.contains("urppp-clean-open");
+            if (!cleanOpen) {
+              document.getElementById("urppp-mobile-quick")?.remove();
+              document.getElementById("urppp-mobile-user")?.remove();
+            }
             const cleanBtn = document.getElementById("urppp-nav-clean");
             const desktopHost = document.getElementById("urppp-nav-theme");
             if (cleanBtn && desktopHost && cleanBtn.parentElement !== desktopHost) desktopHost.appendChild(cleanBtn);
@@ -22723,6 +22772,23 @@ ${arcs}
         }, "apply");
         window.__urpppRefreshMobileNavbar = apply;
         window.__urpppCloseMobileDrawer = closeDrawer;
+        window.__urpppInjectCleanSidebarSections = (sidebar) => {
+          const btns = document.querySelector("#navbar .navbar-buttons .ace-nav") || document.querySelector("#navbar .ace-nav");
+          const menus = document.getElementById("urppp-menus");
+          if (!btns || !sidebar) return;
+          try {
+            ensureMobileUser(btns, sidebar);
+          } catch (_) {
+          }
+          try {
+            ensureMobileQuick(btns, sidebar, menus);
+          } catch (_) {
+          }
+          try {
+            syncMobileSearchLayout();
+          } catch (_) {
+          }
+        };
         try {
           apply();
         } catch (_) {
@@ -26309,6 +26375,12 @@ ${arcs}
         getSkin,
         handleThemeDotClick,
         ico,
+        injectCleanSidebarSections: /* @__PURE__ */ __name((sidebar) => {
+          try {
+            window.__urpppInjectCleanSidebarSections?.(sidebar);
+          } catch (_) {
+          }
+        }, "injectCleanSidebarSections"),
         isHomePage,
         loadAll,
         openSettingsPanel,

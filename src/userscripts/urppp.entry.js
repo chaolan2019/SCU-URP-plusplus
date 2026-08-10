@@ -6822,8 +6822,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         bindDrawerControls();
         if (!narrow) {
           restoreMobileSearch();
-          document.getElementById('urppp-mobile-quick')?.remove();
-          document.getElementById('urppp-mobile-user')?.remove();
+          // 清爽模式打开期间保留移动端区块（桌面清爽模式也要移动端侧边栏样式）
+          const cleanOpen = document.documentElement.classList.contains('urppp-clean-open');
+          if (!cleanOpen) {
+            document.getElementById('urppp-mobile-quick')?.remove();
+            document.getElementById('urppp-mobile-user')?.remove();
+          }
           const cleanBtn = document.getElementById('urppp-nav-clean');
           const desktopHost = document.getElementById('urppp-nav-theme');
           if (cleanBtn && desktopHost && cleanBtn.parentElement !== desktopHost) desktopHost.appendChild(cleanBtn);
@@ -6845,6 +6849,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
       window.__urpppRefreshMobileNavbar = apply;
       window.__urpppCloseMobileDrawer = closeDrawer;
+      // 清爽模式打开时按需注入移动端侧边栏区块（用户卡/快捷区），桌面清爽模式也用移动端样式
+      window.__urpppInjectCleanSidebarSections = (sidebar) => {
+        const btns = document.querySelector('#navbar .navbar-buttons .ace-nav') || document.querySelector('#navbar .ace-nav');
+        const menus = document.getElementById('urppp-menus');
+        if (!btns || !sidebar) return;
+        try { ensureMobileUser(btns, sidebar); } catch (_) { /* ignore */ }
+        try { ensureMobileQuick(btns, sidebar, menus); } catch (_) { /* ignore */ }
+        try { syncMobileSearchLayout(); } catch (_) { /* ignore */ }
+      };
       try { apply(); } catch (_) { /* ignore */ }
       setTimeout(apply, 300);
       setTimeout(apply, 900);
@@ -10395,6 +10408,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       getSkin,
       handleThemeDotClick,
       ico,
+      injectCleanSidebarSections: (sidebar) => { try { window.__urpppInjectCleanSidebarSections?.(sidebar); } catch (_) { /* ignore */ } },
       isHomePage,
       loadAll,
       openSettingsPanel,
