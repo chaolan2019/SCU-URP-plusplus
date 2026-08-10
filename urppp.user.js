@@ -11595,7 +11595,7 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
 #sidebar.urppp-clean-sidebar .urppp-nav-text,
 #sidebar.urppp-clean-sidebar .urppp-nav-arrow{display:block !important;width:auto !important;max-width:200px !important;margin-left:0 !important;opacity:1 !important;overflow:hidden !important;pointer-events:auto !important}
 #sidebar.urppp-clean-sidebar .urppp-nav-link > .fa{margin-right:11px !important}
-#sidebar.urppp-clean-sidebar .urppp-nav-submenu{display:block !important;max-height:none !important;opacity:1 !important;overflow:visible !important;padding:3px 0 3px 20px !important}
+#sidebar.urppp-clean-sidebar .urppp-nav-submenu{display:block !important}
 /* 清爽模式侧边栏：移动端用户卡与快捷区（桌面清爽模式同样渲染，样式随作用域生效） */
 #sidebar.urppp-clean-sidebar #urppp-mobile-user{margin-top:0 !important;padding:12px !important;border-bottom:1px solid var(--border,#e8eaed) !important;background:var(--surface,#fff) !important}
 #sidebar.urppp-clean-sidebar #urppp-mobile-user .urppp-mobile-user-identity{display:flex !important;align-items:center !important;gap:10px !important;min-height:38px !important}
@@ -14440,6 +14440,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           if (el.__closeCleanDrawer) el.__closeCleanDrawer();
         } catch (_) {
         }
+      }
+      try {
+        deps.refreshMobileNavbar();
+      } catch (_) {
       }
     }
     __name(closeCleanMode, "closeCleanMode");
@@ -26415,6 +26419,12 @@ ${arcs}
           } catch (_) {
           }
         }, "injectCleanSidebarSections"),
+        refreshMobileNavbar: /* @__PURE__ */ __name(() => {
+          try {
+            window.__urpppRefreshMobileNavbar?.();
+          } catch (_) {
+          }
+        }, "refreshMobileNavbar"),
         isHomePage,
         loadAll,
         openSettingsPanel,

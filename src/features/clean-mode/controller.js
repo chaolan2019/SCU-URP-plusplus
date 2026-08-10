@@ -226,6 +226,8 @@ export function createCleanModeController({ state, deps }) {
       clearTimeout(el.__ucSettleTimer);
       try { if (el.__closeCleanDrawer) el.__closeCleanDrawer(); } catch (_) { /* ignore */ }
     }
+    // 退出清爽模式后清理桌面注入的移动端区块（用户卡/快捷区/搜索面板），恢复桌面侧边栏
+    try { deps.refreshMobileNavbar(); } catch (_) { /* ignore */ }
   }
 
   function injectCleanEntry() {

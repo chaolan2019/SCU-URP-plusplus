@@ -308,7 +308,7 @@ test('clean mode sidebar external links stay in clean mode while inner links exi
   expect(pageErrors).toEqual([]);
 });
 
-test('clean mode sidebar expands submenus with visible items', async ({ page }) => {
+test('clean mode sidebar submenus stay collapsed until parent is clicked', async ({ page }) => {
   const { pageErrors } = await loadUrpFixture(page, {
     fixture: 'home',
     beforeUserscript: async (p) => {
@@ -333,10 +333,41 @@ test('clean mode sidebar expands submenus with visible items', async ({ page }) 
   await page.waitForTimeout(350);
 
   const sub = page.locator('#urppp-menus .urppp-nav-item .urppp-nav-submenu');
-  await expect(sub).toBeVisible();
-  const h = await sub.evaluate((el) => Math.round(el.getBoundingClientRect().height));
-  expect(h).toBeGreaterThan(40);
+  // 默认折叠（高度为 0）
+  const collapsedH = await sub.evaluate((el) => Math.round(el.getBoundingClientRect().height));
+  expect(collapsedH).toBe(0);
+  // 点击父项展开，子菜单可见
+  await page.locator('#urppp-menus .urppp-nav-item a').nth(1).click();
+  await page.waitForTimeout(400);
+  const expandedH = await sub.evaluate((el) => Math.round(el.getBoundingClientRect().height));
+  expect(expandedH).toBeGreaterThan(40);
   const texts = await sub.locator('.urppp-nav-text').allTextContents();
   expect(texts).toEqual(['课表', '成绩']);
+  expect(pageErrors).toEqual([]);
+});
+
+test('clean mode exit removes injected mobile sections on desktop', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, { fixture: 'home' });
+  await installScoreApiMock(page);
+
+  await page.evaluate(() => document.getElementById('urppp-nav-clean').click());
+  await page.waitForTimeout(600);
+  // 清爽模式下有移动端区块
+  expect(await page.evaluate(() => !!document.getElementById('urppp-mobile-user'))).toBe(true);
+  expect(await page.evaluate(() => !!document.getElementById('urppp-mobile-quick'))).toBe(true);
+
+  // 退出清爽模式：桌面侧边栏恢复原样，不再有移动端区块
+  await page.evaluate(() => document.getElementById('uc-exit').click());
+  await page.waitForTimeout(600);
+  const after = await page.evaluate(() => ({
+    hasUser: !!document.getElementById('urppp-mobile-user'),
+    hasQuick: !!document.getElementById('urppp-mobile-quick'),
+    sidebarInRoot: document.getElementById('sidebar').parentElement === document.getElementById('urppp-clean-root'),
+    cleanFlag: document.documentElement.classList.contains('urppp-clean-open'),
+  }));
+  expect(after.hasUser).toBe(false);
+  expect(after.hasQuick).toBe(false);
+  expect(after.sidebarInRoot).toBe(false);
+  expect(after.cleanFlag).toBe(false);
   expect(pageErrors).toEqual([]);
 });

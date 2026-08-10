@@ -10431,6 +10431,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       handleThemeDotClick,
       ico,
       injectCleanSidebarSections: (sidebar) => { try { window.__urpppInjectCleanSidebarSections?.(sidebar); } catch (_) { /* ignore */ } },
+      refreshMobileNavbar: () => { try { window.__urpppRefreshMobileNavbar?.(); } catch (_) { /* ignore */ } },
       isHomePage,
       loadAll,
       openSettingsPanel,
