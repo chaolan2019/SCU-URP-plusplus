@@ -154,12 +154,11 @@ export function createCleanModeController({ state, deps }) {
           // 搜索面板内的链接（typeahead 结果项）不受拦截，点击正常跳转
           if (link.closest('#urppp-mobile-search-panel')) return;
           const href = String(link.getAttribute('href') || '').trim();
-          // 快捷区（用户卡/快捷功能）内的链接：静态项点它应无反应，阻止站点 onclick 与默认导航
+          // 快捷区按链接语义分流：站内链接退出清爽模式并正常导航；弹窗/新窗口链接保持现状。
           if (link.closest('#urppp-mobile-quick, #urppp-mobile-user')) {
-            if (!href || href === '#' || href.startsWith('javascript') || link.target === '_blank') return;
-            ev.preventDefault();
-            ev.stopImmediatePropagation();
-            ev.stopPropagation();
+            if (!href || href === '#' || href.startsWith('javascript')) return;
+            if (link.target === '_blank' || /^https?:\/\//i.test(href)) return;
+            closeCleanMode();
             return;
           }
           if (!href || href === '#' || href.startsWith('javascript')) return;

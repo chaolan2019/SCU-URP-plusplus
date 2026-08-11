@@ -493,6 +493,58 @@ test('clean mode desktop search input matches mobile style', async ({ page }) =>
   expect(pageErrors).toEqual([]);
 });
 
+test('clean mode mobile search clears desktop width constraints and help navigates', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'home',
+    viewport: { width: 1280, height: 900 },
+    beforeUserscript: async (fixturePage) => {
+      await fixturePage.evaluate(() => {
+        const form = document.querySelector('#form-search .form-search');
+        const icon = document.querySelector('#form-search .input-icon');
+        const input = document.getElementById('search-input');
+        [form, icon, input].forEach((element) => {
+          element?.style.setProperty('max-width', '160px', 'important');
+        });
+      });
+    },
+  });
+  await installScoreApiMock(page);
+
+  // 模拟真实浏览器先完成桌面绑定，再切到移动视口。
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(500);
+  await page.evaluate(() => document.getElementById('urppp-nav-clean').click());
+  await page.waitForTimeout(600);
+  await page.locator('#uc-menu-toggle').click();
+  await page.waitForTimeout(400);
+  await page.locator('#urppp-mobile-search-button').click();
+  await page.waitForTimeout(300);
+
+  const layout = await page.evaluate(() => {
+    const toolRect = document.querySelector('#urppp-mobile-quick .urppp-mobile-tool-row')?.getBoundingClientRect();
+    const input = document.getElementById('search-input');
+    const inputRect = input?.getBoundingClientRect();
+    const help = document.querySelector('#urppp-mobile-quick .urppp-mobile-help-button');
+    return {
+      leftDelta: toolRect && inputRect ? Math.round(inputRect.left - toolRect.left) : null,
+      rightDelta: toolRect && inputRect ? Math.round(toolRect.right - inputRect.right) : null,
+      inputWidth: Math.round(inputRect?.width || 0),
+      inputMaxWidth: input ? getComputedStyle(input).maxWidth : '',
+      helpHref: help?.getAttribute('href') || '',
+    };
+  });
+  expect(Math.abs(layout.leftDelta)).toBeLessThanOrEqual(1);
+  expect(Math.abs(layout.rightDelta)).toBeLessThanOrEqual(1);
+  expect(layout.inputWidth).toBeGreaterThan(200);
+  expect(layout.inputMaxWidth).toBe('none');
+  expect(layout.helpHref).toContain('/main/customerServiceCenter');
+
+  await page.locator('#urppp-mobile-quick .urppp-mobile-help-button').click();
+  await page.waitForTimeout(500);
+  expect(page.url()).toContain('/main/customerServiceCenter');
+  expect(pageErrors).toEqual([]);
+});
+
 test('clean mode mobile search reuses site form-search typeahead', async ({ page }) => {
   const { pageErrors } = await loadUrpFixture(page, {
     fixture: 'mobile-home',

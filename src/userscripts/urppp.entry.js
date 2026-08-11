@@ -6555,20 +6555,22 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         if (!formSearch) return;
         Object.entries({
           position: 'relative', right: 'auto', top: 'auto', left: 'auto',
-          transform: 'none', width: '100%', height: '36px', opacity: '1', margin: '0',
-          overflow: 'visible', 'z-index': '1',
+          transform: 'none', width: '100%', 'min-width': '0', 'max-width': 'none',
+          height: '36px', opacity: '1', margin: '0', overflow: 'visible', 'z-index': '1',
         }).forEach(([key, value]) => formSearch.style.setProperty(key, value, 'important'));
         [formSearch.querySelector('form'), formSearch.querySelector('.input-icon')].forEach((element) => {
           if (!element) return;
           Object.entries({
-            display: 'block', position: 'relative', width: '100%', height: '36px',
-            margin: '0', padding: '0', 'box-sizing': 'border-box',
+            display: 'block', position: 'relative', width: '100%', 'min-width': '0', 'max-width': 'none',
+            height: '36px', margin: '0', padding: '0', 'box-sizing': 'border-box',
           }).forEach(([key, value]) => element.style.setProperty(key, value, 'important'));
         });
         const input = formSearch.querySelector('#search-input');
         if (input) {
           input.style.setProperty('display', 'block', 'important');
           input.style.setProperty('width', '100%', 'important');
+          input.style.setProperty('min-width', '0', 'important');
+          input.style.setProperty('max-width', 'none', 'important');
           input.style.setProperty('height', '36px', 'important');
           input.style.setProperty('box-sizing', 'border-box', 'important');
         }
@@ -6780,8 +6782,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         const help = helpSource ? helpSource.cloneNode(true) : document.createElement('a');
         help.className = 'urppp-mobile-tool-button urppp-mobile-help-button';
         help.removeAttribute('style');
+        help.removeAttribute('onclick');
+        help.removeAttribute('data-toggle');
+        help.removeAttribute('target');
         help.querySelectorAll('[style]').forEach((element) => element.removeAttribute('style'));
-        if (!helpSource) help.href = '/main/customerServiceCenter';
+        const helpHref = String(help.getAttribute('href') || '').trim();
+        if (!helpHref || helpHref === '#' || helpHref.startsWith('javascript')) help.href = '/main/customerServiceCenter';
         if (!help.querySelector('i')) help.innerHTML = '<i class="ace-icon glyphicon glyphicon-headphones" aria-hidden="true"></i>';
         help.querySelectorAll('span').forEach((span) => span.remove());
         help.insertAdjacentHTML('beforeend', '<span>帮助</span>');

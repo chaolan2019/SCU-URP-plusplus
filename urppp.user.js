@@ -11659,14 +11659,14 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
 #sidebar.urppp-clean-sidebar .urppp-mobile-quick-link i{width:18px !important;color:var(--primary,#b53434) !important;font-size:14px !important;text-align:center !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-quick .span_bbzx{display:inline !important;font-size:13px !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel[hidden]{display:none !important}
-#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel{width:100% !important;box-sizing:border-box !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel{width:100% !important;min-width:0 !important;max-width:none !important;box-sizing:border-box !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel.open{display:block !important;margin:8px 0 !important}
-#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #form-search.nav-search{position:relative !important;inset:auto !important;width:100% !important;height:36px !important;margin:0 !important;opacity:1 !important;overflow:visible !important;transform:none !important;z-index:1 !important;pointer-events:auto !important}
-#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #search-input{width:100% !important;height:36px !important;box-sizing:border-box !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #form-search.nav-search{position:relative !important;inset:auto !important;width:100% !important;min-width:0 !important;max-width:none !important;height:36px !important;margin:0 !important;opacity:1 !important;overflow:visible !important;transform:none !important;z-index:1 !important;pointer-events:auto !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #search-input{width:100% !important;min-width:0 !important;max-width:none !important;height:36px !important;box-sizing:border-box !important}
 /* 清爽模式侧边栏搜索：复用站点 form-search（Bootstrap typeahead），结果框美化 */
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #form-search.nav-search{position:relative !important;inset:auto !important;width:100% !important;margin:0 !important;opacity:1 !important;overflow:visible !important;transform:none !important;z-index:1 !important;pointer-events:auto !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel .form-search,
-#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel .input-icon{display:block !important;position:relative !important;width:100% !important;height:36px !important;margin:0 !important;padding:0 !important;box-sizing:border-box !important;background:transparent !important;border:none !important;box-shadow:none !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel .input-icon{display:block !important;position:relative !important;width:100% !important;min-width:0 !important;max-width:none !important;height:36px !important;margin:0 !important;padding:0 !important;box-sizing:border-box !important;background:transparent !important;border:none !important;box-shadow:none !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel .nav-search-input{width:100% !important;height:36px !important;box-sizing:border-box !important;padding:0 12px !important;line-height:36px !important;background:var(--input-bg,#f5f5f7) !important;border:1px solid var(--border,#e8eaed) !important;border-radius:var(--radius-sm,8px) !important;color:var(--text,#1d1d1f) !important;font-size:13px !important;outline:none !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel .nav-search-input:focus{border-color:var(--border-focus,#b53434) !important;box-shadow:0 0 0 3px var(--ring,rgba(181,52,52,.15)) !important}
 /* typeahead 结果框：圆角卡片、分隔线、选中态 */
@@ -14417,10 +14417,9 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
             if (link.closest("#urppp-mobile-search-panel")) return;
             const href = String(link.getAttribute("href") || "").trim();
             if (link.closest("#urppp-mobile-quick, #urppp-mobile-user")) {
-              if (!href || href === "#" || href.startsWith("javascript") || link.target === "_blank") return;
-              ev.preventDefault();
-              ev.stopImmediatePropagation();
-              ev.stopPropagation();
+              if (!href || href === "#" || href.startsWith("javascript")) return;
+              if (link.target === "_blank" || /^https?:\/\//i.test(href)) return;
+              closeCleanMode();
               return;
             }
             if (!href || href === "#" || href.startsWith("javascript")) return;
@@ -22563,6 +22562,8 @@ ${arcs}
             left: "auto",
             transform: "none",
             width: "100%",
+            "min-width": "0",
+            "max-width": "none",
             height: "36px",
             opacity: "1",
             margin: "0",
@@ -22575,6 +22576,8 @@ ${arcs}
               display: "block",
               position: "relative",
               width: "100%",
+              "min-width": "0",
+              "max-width": "none",
               height: "36px",
               margin: "0",
               padding: "0",
@@ -22585,6 +22588,8 @@ ${arcs}
           if (input) {
             input.style.setProperty("display", "block", "important");
             input.style.setProperty("width", "100%", "important");
+            input.style.setProperty("min-width", "0", "important");
+            input.style.setProperty("max-width", "none", "important");
             input.style.setProperty("height", "36px", "important");
             input.style.setProperty("box-sizing", "border-box", "important");
           }
@@ -22779,8 +22784,12 @@ ${arcs}
           const help = helpSource ? helpSource.cloneNode(true) : document.createElement("a");
           help.className = "urppp-mobile-tool-button urppp-mobile-help-button";
           help.removeAttribute("style");
+          help.removeAttribute("onclick");
+          help.removeAttribute("data-toggle");
+          help.removeAttribute("target");
           help.querySelectorAll("[style]").forEach((element) => element.removeAttribute("style"));
-          if (!helpSource) help.href = "/main/customerServiceCenter";
+          const helpHref = String(help.getAttribute("href") || "").trim();
+          if (!helpHref || helpHref === "#" || helpHref.startsWith("javascript")) help.href = "/main/customerServiceCenter";
           if (!help.querySelector("i")) help.innerHTML = '<i class="ace-icon glyphicon glyphicon-headphones" aria-hidden="true"></i>';
           help.querySelectorAll("span").forEach((span) => span.remove());
           help.insertAdjacentHTML("beforeend", "<span>帮助</span>");
