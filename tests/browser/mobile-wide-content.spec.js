@@ -60,6 +60,71 @@ test('mobile week schedule keeps readable columns inside a horizontal viewport',
   expect(fallback.pageOverflow).toBeLessThanOrEqual(1);
 });
 
+test('desktop schedule cards follow sidebar width changes', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'schedule',
+    viewport: { width: 1280, height: 900 },
+    values: { urppp_skin_v1: 'apple', urppp_theme_v3: 'default' },
+    beforeUserscript: async (fixturePage) => {
+      await fixturePage.evaluate(() => {
+        const pageContent = document.getElementById('page-content-template');
+        const container = document.createElement('div');
+        container.id = 'main-container';
+        const sidebar = document.createElement('aside');
+        sidebar.id = 'sidebar';
+        sidebar.className = 'sidebar';
+        sidebar.innerHTML = '<ul id="menus"><li><a href="/index"><span class="menu-text">首页</span></a></li></ul><div class="sidebar-collapse" id="sidebar-collapse"></div>';
+        const main = document.createElement('main');
+        main.className = 'main-content';
+        pageContent.replaceWith(container);
+        main.appendChild(pageContent);
+        container.append(sidebar, main);
+        document.getElementById('sidebar-collapse').addEventListener('click', () => {
+          sidebar.classList.toggle('menu-min');
+        });
+      });
+    },
+  });
+
+  const measure = () => page.evaluate(() => {
+    const cellRect = document.querySelector('#courseTableBody td').getBoundingClientRect();
+    const cardRect = document.querySelector('#courseTableBody td .class_div').getBoundingClientRect();
+    return {
+      cellWidth: cellRect.width,
+      cardWidth: cardRect.width,
+      leftDelta: Math.abs(cardRect.left - cellRect.left),
+      rightDelta: Math.abs(cardRect.right - cellRect.right),
+    };
+  });
+  const aligned = async () => {
+    const geometry = await measure();
+    return geometry.leftDelta <= 1 && geometry.rightDelta <= 1;
+  };
+
+  const sidebar = page.locator('#sidebar');
+  const toggle = page.locator('#sidebar .urppp-sidebar-toggle');
+  await expect(sidebar).toHaveCSS('width', '260px');
+  await expect.poll(aligned).toBeTruthy();
+  const expanded = await measure();
+
+  await toggle.click();
+  await expect(sidebar).toHaveClass(/\bmenu-min\b/);
+  await expect(sidebar).toHaveCSS('width', '50px');
+  await expect.poll(aligned).toBeTruthy();
+  const collapsed = await measure();
+  expect(collapsed.cellWidth).toBeGreaterThan(expanded.cellWidth + 10);
+  expect(collapsed.cardWidth).toBeGreaterThan(expanded.cardWidth + 10);
+
+  await toggle.click();
+  await expect(sidebar).not.toHaveClass(/\bmenu-min\b/);
+  await expect(sidebar).toHaveCSS('width', '260px');
+  await expect.poll(aligned).toBeTruthy();
+  const restored = await measure();
+  expect(Math.abs(restored.cellWidth - expanded.cellWidth)).toBeLessThanOrEqual(1);
+  expect(Math.abs(restored.cardWidth - expanded.cardWidth)).toBeLessThanOrEqual(1);
+  expect(pageErrors).toEqual([]);
+});
+
 test('mobile query fields use one column on phones and two on tablets', async ({ page }) => {
   const { pageErrors } = await loadUrpFixture(page, {
     fixture: 'grades',

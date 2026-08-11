@@ -8685,8 +8685,8 @@ html.urppp-theme-dark[data-urppp-skin="neu"] body #courseTable .class_div.box_fo
 `;
 
   // src/styles/schedule-export.css
-  var schedule_export_default = `.urppp-export-wrap{position:relative!important;display:inline-flex!important;align-items:center!important;margin-left:7px!important;font-weight:400!important;vertical-align:middle!important}
-.urppp-export-trigger{height:28px!important;min-width:28px!important;padding:0 9px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;border:1px solid var(--border,#dfe3e8)!important;border-radius:8px!important;background:var(--input-bg,#f7f8fa)!important;color:var(--text,#1d1d1f)!important;font-size:12px!important;line-height:1!important;cursor:pointer!important;box-shadow:none!important;transform:none!important}
+  var schedule_export_default = `.urppp-export-wrap{position:relative!important;display:inline-flex!important;align-items:center!important;flex:0 0 auto!important;margin-left:7px!important;font-weight:400!important;vertical-align:middle!important;white-space:nowrap!important}
+.urppp-export-trigger{height:28px!important;min-width:28px!important;padding:0 9px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 auto!important;gap:5px!important;border:1px solid var(--border,#dfe3e8)!important;border-radius:8px!important;background:var(--input-bg,#f7f8fa)!important;color:var(--text,#1d1d1f)!important;font-size:12px!important;line-height:1!important;white-space:nowrap!important;cursor:pointer!important;box-shadow:none!important;transform:none!important}
 .urppp-export-trigger:hover{border-color:var(--primary,#b53434)!important;color:var(--primary,#b53434)!important;background:var(--surface,#fff)!important}
 .urppp-export-trigger i{font-size:12px!important;margin:0!important;color:inherit!important}
 .urppp-export-menu{position:absolute!important;top:calc(100% + 7px)!important;left:0!important;z-index:14040!important;width:220px!important;padding:6px!important;box-sizing:border-box!important;border:1px solid var(--border,#dfe3e8)!important;border-radius:10px!important;background:var(--surface,#fff)!important;box-shadow:0 14px 34px rgba(15,23,42,.16)!important;display:none!important}
@@ -8726,7 +8726,9 @@ html[data-urppp-skin="neu"] .urppp-export-trigger:active{box-shadow:var(--neu-in
 html[data-urppp-skin="neu"] .urppp-export-menu{border:0!important;border-radius:12px!important;background:var(--neu-base,var(--surface))!important;box-shadow:var(--neu-raised-sm,var(--shadow))!important}
 html[data-urppp-skin="neu"] .urppp-export-option{border-radius:8px!important}
 @media (max-width:991px){
-[data-urppp-native-print-source="1"]{display:none!important}
+[data-urppp-native-print-source="1"],
+#h4_id1 .right_top_oper>button[onclick*="dy("],
+#h4_id1 .right_top_oper>a[onclick*="dy("]{display:none!important}
 #urppp-native-schedule-export{margin-left:0!important}
 }
 .urppp-dialog-mask{position:fixed!important;inset:0!important;z-index:14100!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:18px!important;background:rgba(15,23,42,.44)!important}
@@ -21696,7 +21698,7 @@ ${arcs}
         fixWeekScheduleLayout();
         return;
       }
-      if (weekScheduleObserverEntry) weekScheduleObserverEntry.observer.disconnect();
+      if (weekScheduleObserverEntry) weekScheduleObserverEntry.disconnect();
       weekScheduleObserverEntry = null;
       const bindGlobals = !weekScheduleGlobalBound;
       weekScheduleGlobalBound = true;
@@ -21781,7 +21783,36 @@ ${arcs}
           attributes: true,
           attributeFilter: ["style", "class"]
         });
-        weekScheduleObserverEntry = { root: host, observer: obs };
+        let resizeObserver = null;
+        let resizeFrame = 0;
+        let resizeSettleTimer = 0;
+        if (host.id === "mycoursetable" && typeof window.ResizeObserver === "function") {
+          let observedWidth = host.getBoundingClientRect().width || 0;
+          resizeObserver = new window.ResizeObserver((entries) => {
+            const width = entries[0]?.contentRect?.width || host.getBoundingClientRect().width || 0;
+            if (!width || Math.abs(width - observedWidth) < 0.5) return;
+            observedWidth = width;
+            if (!resizeFrame) {
+              resizeFrame = requestAnimationFrame(() => {
+                resizeFrame = 0;
+                run();
+              });
+            }
+            clearTimeout(resizeSettleTimer);
+            resizeSettleTimer = setTimeout(run, 80);
+          });
+          resizeObserver.observe(host);
+        }
+        weekScheduleObserverEntry = {
+          root: host,
+          observer: obs,
+          disconnect() {
+            obs.disconnect();
+            if (resizeObserver) resizeObserver.disconnect();
+            if (resizeFrame) cancelAnimationFrame(resizeFrame);
+            clearTimeout(resizeSettleTimer);
+          }
+        };
       }
       if (bindGlobals) document.addEventListener("mouseup", () => {
         if (!document.getElementById("soliderbox")) return;

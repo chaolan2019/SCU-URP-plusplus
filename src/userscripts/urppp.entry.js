@@ -5687,7 +5687,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       fixWeekScheduleLayout();
       return;
     }
-    if (weekScheduleObserverEntry) weekScheduleObserverEntry.observer.disconnect();
+    if (weekScheduleObserverEntry) weekScheduleObserverEntry.disconnect();
     weekScheduleObserverEntry = null;
     const bindGlobals = !weekScheduleGlobalBound;
     weekScheduleGlobalBound = true;
@@ -5778,7 +5778,38 @@ import { createNavbarController } from '../features/navigation/navbar.js';
         attributes: true,
         attributeFilter: ['style', 'class']
       });
-      weekScheduleObserverEntry = { root: host, observer: obs };
+
+      let resizeObserver = null;
+      let resizeFrame = 0;
+      let resizeSettleTimer = 0;
+      if (host.id === 'mycoursetable' && typeof window.ResizeObserver === 'function') {
+        let observedWidth = host.getBoundingClientRect().width || 0;
+        resizeObserver = new window.ResizeObserver((entries) => {
+          const width = entries[0]?.contentRect?.width || host.getBoundingClientRect().width || 0;
+          if (!width || Math.abs(width - observedWidth) < 0.5) return;
+          observedWidth = width;
+          if (!resizeFrame) {
+            resizeFrame = requestAnimationFrame(() => {
+              resizeFrame = 0;
+              run();
+            });
+          }
+          clearTimeout(resizeSettleTimer);
+          resizeSettleTimer = setTimeout(run, 80);
+        });
+        resizeObserver.observe(host);
+      }
+
+      weekScheduleObserverEntry = {
+        root: host,
+        observer: obs,
+        disconnect() {
+          obs.disconnect();
+          if (resizeObserver) resizeObserver.disconnect();
+          if (resizeFrame) cancelAnimationFrame(resizeFrame);
+          clearTimeout(resizeSettleTimer);
+        },
+      };
     }
     if (bindGlobals) document.addEventListener('mouseup', () => {
       if (!document.getElementById('soliderbox')) return;

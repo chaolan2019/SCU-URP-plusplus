@@ -67,6 +67,7 @@ test('mobile schedule hides native print and keeps export action in view', async
   const nativePrint = page.locator('#native-print');
   const exportTrigger = page.locator('#urppp-native-schedule-export > .urppp-export-trigger');
   await expect(nativePrint).toHaveAttribute('data-urppp-native-print-source', '1');
+  await nativePrint.evaluate((button) => button.removeAttribute('data-urppp-native-print-source'));
   await expect(nativePrint).toBeHidden();
   await expect(page.locator('#native-self-check')).toBeVisible();
   await expect(exportTrigger).toBeVisible();
@@ -91,6 +92,20 @@ test('mobile schedule hides native print and keeps export action in view', async
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(nativePrint).toBeVisible();
   await expect(exportTrigger).toBeVisible();
+  const desktopTrigger = await exportTrigger.evaluate((button) => {
+    const rect = button.getBoundingClientRect();
+    const labelRect = button.querySelector('span').getBoundingClientRect();
+    return {
+      width: rect.width,
+      height: rect.height,
+      labelHeight: labelRect.height,
+      whiteSpace: getComputedStyle(button).whiteSpace,
+    };
+  });
+  expect(desktopTrigger.width / desktopTrigger.height).toBeGreaterThan(2.5);
+  expect(desktopTrigger.height).toBeLessThanOrEqual(30);
+  expect(desktopTrigger.labelHeight).toBeLessThanOrEqual(16);
+  expect(desktopTrigger.whiteSpace).toBe('nowrap');
   expect(pageErrors).toEqual([]);
 });
 
