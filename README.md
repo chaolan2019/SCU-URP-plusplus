@@ -41,29 +41,23 @@
 
 ## 效果展示
 
-### 主站美化
+### 主站美化 · 桌面端
 
-![主站美化](./docs/Main-Page.jpg)
+![主站美化 · 桌面端](./docs/Main-Page.jpg)
 
-### 清爽模式 · 类Apple（桌面）
+### 清爽模式 · 类Apple（桌面端）
 
-![清爽模式类Apple](./docs/Clean-Mode.jpg)
+![清爽模式 · 类Apple](./docs/Clean-Mode.jpg)
 
-### 清爽模式 · 极简扁平（桌面）
+### 主站美化 · 移动端
 
-![清爽模式极简扁平](./docs/Clean-Mode-Flat.jpg)
+![主站美化 · 移动端](./docs/Main-Page-Mobile.jpg)
 
-### 清爽模式 · 自然有机（桌面）
+### 清爽模式（移动端）
 
-![清爽模式自然有机](./docs/Clean-Mode-Organic.jpg)
+![清爽模式 · 移动端](./docs/Clean-Mode-Mobile.jpg)
 
-### 清爽模式 · 新拟物（桌面）
-
-![清爽模式新拟物](./docs/Clean-Mode-neumorphism.jpg)
-
-### 清爽模式（手机）
-
-![清爽模式手机](./docs/Clean-Mode-Mobile.jpg)
+> 更多效果截图（清爽模式全主题、移动端侧边栏等）见 [效果展示全集](./docs/SCREENSHOTS.md)
 
 ---
 
@@ -235,12 +229,15 @@ URP++/
 └── docs/
     ├── scu-urppp-logo.png       # 标题 Logo
     ├── icon.png                 # 油猴脚本图标
-    ├── Main-Page.jpg            # 效果：主站美化
+    ├── Main-Page.jpg            # 效果：主站美化 · 桌面端
+    ├── Main-Page-Mobile.jpg     # 效果：主站美化 · 移动端
     ├── Clean-Mode.jpg           # 效果：清爽 · 类Apple
+    ├── Clean-Mode-Mobile.jpg    # 效果：清爽 · 移动端
     ├── Clean-Mode-Flat.jpg      # 效果：清爽 · 极简扁平
     ├── Clean-Mode-Organic.jpg   # 效果：清爽 · 自然有机
-    ├── Clean-Mode-neumorphism.jpg # 效果：清爽 · 新拟物
-    └── Clean-Mode-Mobile.jpg    # 效果：清爽 · 手机
+    ├── Clean-Mode-Magazine.jpg  # 效果：清爽 · 编辑杂志
+    ├── Side-Bar-Mobile.jpg      # 效果：移动端侧边栏
+    └── SCREENSHOTS.md           # 效果展示全集
 ```
 
 ---
