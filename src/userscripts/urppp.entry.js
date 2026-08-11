@@ -2,7 +2,6 @@ import {
   alpha,
   darken,
   hexToRgb,
-  lighten,
   mixHex,
   normalizeHexColor,
   rgbToHex,
@@ -1015,11 +1014,6 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     return SCHEME_DEFS.map((d) => Object.assign({}, d, buildSchemePreview(seed, d.id)));
   }
 
-  // 兼容旧调用名
-  function buildAccentSurfaceTheme(hex) {
-    return buildMaterialSchemeVars(hex, getScheme());
-  }
-
   // ============================================================
   // 主题管理
   // ============================================================
@@ -1088,13 +1082,6 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     let list = getAccentPresets();
     list = [h].concat(list.filter((x) => x.toLowerCase() !== h.toLowerCase()));
     list = list.slice(0, 12);
-    GM_setValue(ACCENT_PRESETS_KEY, JSON.stringify(list));
-    return list;
-  }
-
-  function removeAccentPreset(hex) {
-    const h = (hex || '').toLowerCase();
-    const list = getAccentPresets().filter((x) => x.toLowerCase() !== h);
     GM_setValue(ACCENT_PRESETS_KEY, JSON.stringify(list));
     return list;
   }
@@ -9631,12 +9618,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return groups;
   }
 
-  // 若接口带官方绩点，汇总时优先使用
-  function summarizeCoursesPreferOfficial(list) {
-    // 未评估/-999 一律不计入学分/均分/绩点
-    return summarizeCourses(list);
-  }
-
   async function loadScoreByIndex(indexPath, callbackHint) {
     const indexHtml = await fetchText(indexPath);
     // 先试壳内表（少数情况）
@@ -9649,7 +9630,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     try {
       const data = JSON.parse(raw);
       groups = parseScoreJson(data).map((g) => {
-        g.summary = summarizeCoursesPreferOfficial(g.courses);
+        g.summary = summarizeCourses(g.courses);
         return g;
       });
     } catch (_) {
@@ -9834,10 +9815,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   function refreshScoreSummaries(scorePack) {
     if (!scorePack) return scorePack;
     if (scorePack.passing && scorePack.passing[0]) {
-      scorePack.passing[0].summary = summarizeCoursesPreferOfficial(scorePack.passing[0].courses);
+      scorePack.passing[0].summary = summarizeCourses(scorePack.passing[0].courses);
     }
     scorePack.schemes = (scorePack.schemes || []).map((group) => {
-      group.summary = summarizeCoursesPreferOfficial(group.courses);
+      group.summary = summarizeCourses(group.courses);
       return group;
     });
     return scorePack;
@@ -9913,12 +9894,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       out.passing = [{
         title: '全部及格成绩',
         courses: allPass,
-        summary: summarizeCoursesPreferOfficial(allPass),
+        summary: summarizeCourses(allPass),
         groups: passGroups
       }];
       out.schemes = schemeGroups;
       if (!out.schemes.length && allPass.length) {
-        out.schemes = [{ title: '方案成绩', courses: allPass, summary: summarizeCoursesPreferOfficial(allPass) }];
+        out.schemes = [{ title: '方案成绩', courses: allPass, summary: summarizeCourses(allPass) }];
       }
       refreshScoreSummaries(out);
       out.majorIdx = pickMajorSchemeIndex(out.schemes, state.profile && state.profile.majorPlan);
@@ -10057,38 +10038,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const out = groups.filter((g) => g.buildings.length);
     if (!out.length) throw new Error('未解析到教学楼，请刷新后重试');
     return out;
-  }
-
-  function parseOccupancyDoc(doc) {
-    const table = doc.getElementById('classroomInfoTable') || doc.querySelector('table.table');
-    if (!table) return { rooms: [], dateLabel: '' };
-    const dateLabel = ((doc.body.innerText || '').match(/\d{4}-\d{2}-\d{2}[（(][^)）]+[)）]/) || [])[0] || '';
-    const rooms = [];
-    Array.from(table.rows).forEach((tr) => {
-      const ths = tr.querySelectorAll('th');
-      if (ths.length < 1) return;
-      const roomName = (ths[0].textContent || '').trim();
-      if (!/^B?\d|[A-Z]?\d{2,}/.test(roomName) && !/^[A-Za-z]?\d{2,4}/.test(roomName)) {
-        // still allow Chinese? skip header rows
-        if (/教室|座位数|类型/.test(roomName)) return;
-      }
-      if (/教室|座位数|类型/.test(roomName)) return;
-      const seats = ths[1] ? (ths[1].textContent || '').trim() : '';
-      const type = ths[2] ? (ths[2].textContent || '').trim() : '';
-      const slots = [];
-      tr.querySelectorAll('td.td-b, td[id]').forEach((td) => {
-        const idm = String(td.id || '').match(/_(\d+)$/);
-        const sec = idm ? parseInt(idm[1], 10) : slots.length + 1;
-        const bg = (td.getAttribute('style') || '') + ' ' + (td.style && td.style.backgroundColor || '');
-        const busy = /background|rgb\(|#/i.test(bg) && !/transparent|rgba\(0,\s*0,\s*0,\s*0\)/i.test(bg) && td.style.backgroundColor !== '';
-        // also check computed from inline style attribute
-        const styleAttr = td.getAttribute('style') || '';
-        const isBusy = /background-color\s*:\s*(?!transparent)(?!rgba\(0)/i.test(styleAttr);
-        slots.push({ section: sec, busy: isBusy || (styleAttr.includes('background') && /rgb|#/i.test(styleAttr)), color: (td.style && td.style.backgroundColor) || '' });
-      });
-      if (roomName) rooms.push({ name: roomName, seats, type, slots });
-    });
-    return { rooms, dateLabel };
   }
 
   function occupancyTypeLabel(ct) {
@@ -10469,7 +10418,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       scoreToGpa,
       scoreToNumber,
       summarizeCourses,
-      summarizeCoursesPreferOfficial,
+      summarizeCoursesPreferOfficial: summarizeCourses,
     },
   });
 

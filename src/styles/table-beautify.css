@@ -339,7 +339,6 @@
       #urppagebar.urppp-pagebar {
         position: relative !important;
         clear: both !important;
-        margin-top: 12px !important;
         z-index: 2 !important;
       }
       /* 滚动加载遮罩（div_page_loading_urppagebar）：完全隐藏不占位，
@@ -969,30 +968,6 @@
         background-color: #fbcaca !important;
         color: #7f1d1d !important;
       }
-      /* 暗色模式：保留语义色但降低刺眼程度 */
-      html.urppp-theme-dark td.green_background,
-      html.urppp-theme-dark .green_background,
-      html.urppp-theme-dark .table > tbody > tr > td.green_background {
-        background: rgba(34, 197, 94, 0.22) !important;
-        background-color: rgba(34, 197, 94, 0.22) !important;
-        color: #86efac !important;
-      }
-      html.urppp-theme-dark .table-hover > tbody > tr:hover > td.green_background {
-        background: rgba(34, 197, 94, 0.30) !important;
-        background-color: rgba(34, 197, 94, 0.30) !important;
-      }
-      html.urppp-theme-dark td.red_background,
-      html.urppp-theme-dark .red_background,
-      html.urppp-theme-dark .table > tbody > tr > td.red_background {
-        background: rgba(239, 68, 68, 0.22) !important;
-        background-color: rgba(239, 68, 68, 0.22) !important;
-        color: #fca5a5 !important;
-      }
-      html.urppp-theme-dark .table-hover > tbody > tr:hover > td.red_background {
-        background: rgba(239, 68, 68, 0.30) !important;
-        background-color: rgba(239, 68, 68, 0.30) !important;
-      }
-
       .tab-content .urppp-table-wrap,
       .tab-content .table,
       .tab-content .table-bordered {

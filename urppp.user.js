@@ -3398,14 +3398,6 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
        * 数字、标题、侧栏、面包屑不再吃 primary
        * 链接仍保留 primary
        */
-      html.urppp-theme-default .widget-header .widget-title,
-      html.urppp-theme-default h4.widget-title,
-      html.urppp-theme-dark .widget-header .widget-title,
-      html.urppp-theme-dark h4.widget-title, {
-        color: var(--text) !important;
-      }
-        color: var(--text) !important;
-      }
       /* 标题图标点缀可保留 primary；标题文字本体必须是 text */
       html.urppp-theme-default .widget-header .widget-title,
       html.urppp-theme-dark .widget-header .widget-title {
@@ -4450,15 +4442,6 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
         border-bottom: 1.5px solid var(--text-muted) !important;
         transform: translate(-65%, -50%) rotate(-45deg) !important;
       }
-      .ztree.urppp-ztree li span.button.ico_open,
-      .ztree.urppp-ztree li span.button.ico_close,
-      .ztree.urppp-ztree li span.button.ico_docu,
-      #treeDemo.ztree li span.button.ico_open,
-      #treeDemo.ztree li span.button.ico_close,
-      #treeDemo.ztree li span.button.ico_docu {
-        display: none !important;
-      }
-
       /* 状态只体现在图标色，节点不再铺大色块 */
       .ztree.urppp-ztree li a i.ace-icon,
       .ztree.urppp-ztree li a i.fa,
@@ -5454,9 +5437,6 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
       @media (max-width: 1200px) {
         .profile-info-row.urppp-query-row[data-urppp-query-cols="4"],
         .profile-info-row.urppp-query-row[data-urppp-query-cols="3"] {
-          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        }
-        .profile-info-row.urppp-query-row[data-urppp-query-cols="2"] {
           grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         }
       }
@@ -8254,22 +8234,6 @@ html[data-urppp-skin="flat"] .urppp-direct-edit-input,html[data-urppp-skin="brut
         background: rgba(147, 168, 199, 0.08) !important;
       }
 
-fo-striped.setLabelWidth,
-      html body .page-content .self.profile-user-info.setLabelWidth,
-      html body .page-content .self.profile-user-info-striped.setLabelWidth,
-      html body .page-content .profile-user-info.setLabelWidth.urppp-query-form {
-        padding: 0 !important;
-        margin: 0 0 16px !important;
-        background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: var(--radius) !important;
-        box-shadow: none !important;
-        overflow: hidden !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
-      }
-
       /* ========== 学籍页最终形态（对齐左侧基本信息：标题无壳 + 表零内边距） ========== */
       html body .page-content .col-xs-4 > h4.header,
       html body .page-content .col-xs-8 > h4.header,
@@ -8309,52 +8273,6 @@ fo-striped.setLabelWidth,
         max-width: 100% !important;
         box-sizing: border-box !important;
       }
-      /* FullCalendar 事件悬停弹窗：保留虚线框风格，仅主题色化 */
-      #schedule-hover {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        pointer-events: none !important;
-        z-index: 3000 !important;
-      }
-      #schedule-hover .promptedmessage-a,
-      #promptedmessage-div.promptedmessage-a {
-        background: var(--surface) !important;
-        border: 2px solid color-mix(in srgb, var(--primary) 45%, var(--border)) !important;
-        border-radius: 10px !important;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.14) !important;
-        padding: 6px !important;
-        pointer-events: none !important;
-        position: static !important; /* 由外层 #schedule-hover 统一定位，避免双重 absolute 闪跳 */
-        top: auto !important;
-        left: auto !important;
-      }
-      #schedule-hover .promptedmessage,
-      #promptedmessage-div .promptedmessage {
-        background: color-mix(in srgb, var(--primary) 12%, var(--surface)) !important;
-        border: 1px solid var(--surface) !important;
-        outline: 2px dashed color-mix(in srgb, var(--primary) 40%, var(--border)) !important;
-        outline-offset: 0 !important;
-        border-radius: var(--radius-sm) !important;
-        box-shadow: none !important;
-        padding: 10px 12px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 6px !important;
-        font-size: 13px !important;
-        line-height: 1.6 !important;
-        color: var(--text-secondary) !important;
-        pointer-events: none !important;
-      }
-      #schedule-hover .promptedmessage span:first-child {
-        font-weight: 600 !important;
-        color: var(--primary) !important;
-        font-size: 14px !important;
-      }
-      #schedule-hover .promptedmessage .ace-icon {
-        color: var(--text-muted) !important;
-      }
-
       /* FullCalendar 事件悬停弹窗：保留虚线框风格，仅主题色化 */
       #schedule-hover {
         background: transparent !important;
@@ -8839,7 +8757,6 @@ html[data-urppp-skin="neu"] .urppp-export-option{border-radius:8px!important}
   left: 18px !important;
   right: auto !important;
   bottom: auto !important;
-  width: min(420px, calc(100vw - 24px)) !important;
   max-height: calc(100vh - 80px) !important;
   max-height: calc(100dvh - 80px) !important;
   overflow: hidden !important;
@@ -9785,7 +9702,6 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       #urppagebar.urppp-pagebar {
         position: relative !important;
         clear: both !important;
-        margin-top: 12px !important;
         z-index: 2 !important;
       }
       /* 滚动加载遮罩（div_page_loading_urppagebar）：完全隐藏不占位，
@@ -10415,30 +10331,6 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
         background-color: #fbcaca !important;
         color: #7f1d1d !important;
       }
-      /* 暗色模式：保留语义色但降低刺眼程度 */
-      html.urppp-theme-dark td.green_background,
-      html.urppp-theme-dark .green_background,
-      html.urppp-theme-dark .table > tbody > tr > td.green_background {
-        background: rgba(34, 197, 94, 0.22) !important;
-        background-color: rgba(34, 197, 94, 0.22) !important;
-        color: #86efac !important;
-      }
-      html.urppp-theme-dark .table-hover > tbody > tr:hover > td.green_background {
-        background: rgba(34, 197, 94, 0.30) !important;
-        background-color: rgba(34, 197, 94, 0.30) !important;
-      }
-      html.urppp-theme-dark td.red_background,
-      html.urppp-theme-dark .red_background,
-      html.urppp-theme-dark .table > tbody > tr > td.red_background {
-        background: rgba(239, 68, 68, 0.22) !important;
-        background-color: rgba(239, 68, 68, 0.22) !important;
-        color: #fca5a5 !important;
-      }
-      html.urppp-theme-dark .table-hover > tbody > tr:hover > td.red_background {
-        background: rgba(239, 68, 68, 0.30) !important;
-        background-color: rgba(239, 68, 68, 0.30) !important;
-      }
-
       .tab-content .urppp-table-wrap,
       .tab-content .table,
       .tab-content .table-bordered {
@@ -11464,32 +11356,6 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 
 
       /* 简约白 / 深邃暗：导航与面包屑主文案 */
-            html.urppp-theme-default .breadcrumb > li.active,
-            html.urppp-theme-default .breadcrumb > li:last-child,
-            html.urppp-theme-default .breadcrumb > li.active > span,
-            html.urppp-theme-default .breadcrumb > li.active .urppp-bc-label,
-            html.urppp-theme-default .breadcrumb > li:last-child > span,
-            html.urppp-theme-default .breadcrumb > li:last-child .urppp-bc-label,
-            html.urppp-theme-default .breadcrumb .home-icon,
-            html.urppp-theme-default .breadcrumb .fa-home,
-            html.urppp-theme-default .urppp-nav-item.active > .urppp-nav-link,
-            html.urppp-theme-default .urppp-nav-item.open.active > .urppp-nav-link,
-            html.urppp-theme-dark .breadcrumb > li.active,
-            html.urppp-theme-dark .breadcrumb > li:last-child,
-            html.urppp-theme-dark .breadcrumb > li.active > span,
-            html.urppp-theme-dark .breadcrumb > li.active .urppp-bc-label,
-            html.urppp-theme-dark .breadcrumb > li:last-child > span,
-            html.urppp-theme-dark .breadcrumb > li:last-child .urppp-bc-label,
-            html.urppp-theme-dark .breadcrumb .home-icon,
-            html.urppp-theme-dark .breadcrumb .fa-home,
-            html.urppp-theme-dark .urppp-nav-item.active > .urppp-nav-link,
-            html.urppp-theme-dark .urppp-nav-item.open.active > .urppp-nav-link { {
-        color: var(--text) !important;
-      }
-            html.urppp-theme-default .breadcrumb > li,
-            html.urppp-theme-dark .breadcrumb > li { {
-        color: var(--text-secondary) !important;
-      }
       /* 侧栏默认项：简约白更深、深邃暗更亮 */
       html.urppp-theme-default .urppp-nav-link {
         color: #111111 !important;
@@ -11542,7 +11408,6 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-clean-root .uc-sec-col .s{height:56px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text-muted,#98a2b3)}
 #urppp-clean-root .uc-day-col{position:relative;height:calc(56px * 12);background:transparent}
 #urppp-clean-root .uc-grid-cell{position:absolute;left:0;right:0;height:52px;border-radius:10px;background:var(--input-bg);border:1px solid color-mix(in srgb,var(--border) 65%,transparent)}
-#urppp-clean-root .uc-grid-cell:nth-child(n){/* placed via top below in inline? use sequential */}
 #urppp-clean-root .uc-day-col .uc-grid-cell{width:100%}
 #urppp-clean-root .uc-lesson{position:absolute;left:0;right:0;z-index:2;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:10px;padding:6px 7px 16px;cursor:pointer;overflow:hidden;box-sizing:border-box;transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;will-change:transform}
 #urppp-clean-root .uc-lesson:hover{transform:translateY(-1px) scale(1.01);box-shadow:0 6px 16px rgba(0,0,0,.08);z-index:12!important}
@@ -11574,10 +11439,8 @@ html.urppp-theme-dark #urppp-clean-root .uc-score-cell.pass,body.urppp-dark #urp
 html.urppp-theme-dark #urppp-clean-root .uc-score-cell.fail,body.urppp-dark #urppp-clean-root .uc-score-cell.fail{background:rgba(239,68,68,.28);color:#fca5a5}
 html.urppp-theme-dark #urppp-clean-root .uc-score-cell.uneval,body.urppp-dark #urppp-clean-root .uc-score-cell.uneval{background:rgba(59,130,246,.28);color:#93c5fd}
 html.urppp-theme-dark #urppp-clean-root .uc-score-cell.uneval-fail,body.urppp-dark #urppp-clean-root .uc-score-cell.uneval-fail{background:rgba(249,115,22,.28);color:#fdba74}
-#urppp-clean-root .uc-namecell{position:relative;padding-left:22px!important}
 #urppp-clean-root .uc-selmark{position:absolute;left:6px;top:50%;transform:translateY(-50%);width:14px;height:14px;line-height:14px;text-align:center;font-size:12px;font-weight:700;color:var(--primary);opacity:0}
 #urppp-clean-root table.uc-table tbody tr.is-on .uc-selmark{opacity:1}
-#urppp-clean-root .uc-cname{display:inline}
 #urppp-clean-root .uc-calc{font-size:16px;font-weight:600;color:var(--text);line-height:1.55}
 #urppp-clean-root .uc-calc b{font-size:18px;font-weight:800;color:var(--primary);margin:0 2px}
 #urppp-clean-root .uc-slot.kind-course{background:#7be0f6;border-color:#4ec8e0;color:#0b3b4a}
@@ -11590,7 +11453,6 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-lab,body.urppp-dark #urppp
 html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #urppp-clean-root .uc-slot.kind-borrow{background:#4ade80;border-color:#22c55e;color:#052e16}
 #urppp-clean-root .uc-modal-stack-hint{font-size:12px;color:var(--text-muted)}
 
-#urppp-clean-root .uc-card.grow.services{flex:0 0 auto}
 #urppp-clean-root .uc-top-theme{display:inline-flex;align-items:center;gap:8px;margin-left:12px}
 #urppp-clean-root .uc-top-theme .urppp-nav-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--border);padding:0;cursor:pointer}
 #urppp-clean-root .uc-top-theme .urppp-nav-dot.ac{border-color:var(--primary);box-shadow:0 0 0 3px var(--ring)}
@@ -11664,7 +11526,6 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #form-search.nav-search{position:relative !important;inset:auto !important;width:100% !important;min-width:0 !important;max-width:none !important;height:36px !important;margin:0 !important;opacity:1 !important;overflow:visible !important;transform:none !important;z-index:1 !important;pointer-events:auto !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #search-input{width:100% !important;min-width:0 !important;max-width:none !important;height:36px !important;box-sizing:border-box !important}
 /* 清爽模式侧边栏搜索：复用站点 form-search（Bootstrap typeahead），结果框美化 */
-#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #form-search.nav-search{position:relative !important;inset:auto !important;width:100% !important;margin:0 !important;opacity:1 !important;overflow:visible !important;transform:none !important;z-index:1 !important;pointer-events:auto !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel .form-search,
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel .input-icon{display:block !important;position:relative !important;width:100% !important;min-width:0 !important;max-width:none !important;height:36px !important;margin:0 !important;padding:0 !important;box-sizing:border-box !important;background:transparent !important;border:none !important;box-shadow:none !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel .nav-search-input{width:100% !important;height:36px !important;box-sizing:border-box !important;padding:0 12px !important;line-height:36px !important;background:var(--input-bg,#f5f5f7) !important;border:1px solid var(--border,#e8eaed) !important;border-radius:var(--radius-sm,8px) !important;color:var(--text,#1d1d1f) !important;font-size:13px !important;outline:none !important}
@@ -11911,8 +11772,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac::after{
         content:'';position:absolute;left:12%;right:12%;bottom:0;height:2.5px;border-radius:2.5px 2.5px 0 0;background:var(--primary);
       }
-      #urppp-clean-root .uc-sa-pane[hidden]{display:none}
-      #urppp-clean-root .uc-sa-pane-analysis{margin-top:10px}
 
       /* 成绩分析图表 hover 遮罩跟随主题 */
       #urppp-clean-root .urppp-sa-hover{cursor:pointer}
@@ -12172,26 +12031,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       #urppp-dashboard #main-calendar {
         width: 100% !important;
       }
-
-      /* 简约白 / 深邃暗：仪表板主文案 */
-            html.urppp-theme-default .infobox .infobox-data-number,
-            html.urppp-theme-default .infobox .urppp-pct-text,
-            html.urppp-theme-default .urppp-stat-card .value,
-            html.urppp-theme-default .urppp-welcome h2,
-            html.urppp-theme-dark .infobox .infobox-data-number,
-            html.urppp-theme-dark .infobox .urppp-pct-text,
-            html.urppp-theme-dark .urppp-stat-card .value,
-            html.urppp-theme-dark .urppp-welcome h2, {
-        color: var(--text) !important;
-      }
-            html.urppp-theme-default .infobox .infobox-content,
-            html.urppp-theme-default .urppp-stat-card .label,
-            html.urppp-theme-default .urppp-welcome p,
-            html.urppp-theme-dark .infobox .infobox-content,
-            html.urppp-theme-dark .urppp-stat-card .label,
-            html.urppp-theme-dark .urppp-welcome p, {
-        color: var(--text-secondary) !important;
-      }
 `;
 
   // src/styles/score-analysis.css
@@ -12429,7 +12268,6 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         }
         .widget-body,
         .widget-main,
-        .tabContent,
         #main-calendar,
         #urppp-dashboard .urppp-card-body {
           overflow-x: auto !important;
@@ -17232,10 +17070,6 @@ ${arcs}
       return SCHEME_DEFS.map((d) => Object.assign({}, d, buildSchemePreview(seed, d.id)));
     }
     __name(listSchemePreviews, "listSchemePreviews");
-    function buildAccentSurfaceTheme(hex) {
-      return buildMaterialSchemeVars(hex, getScheme());
-    }
-    __name(buildAccentSurfaceTheme, "buildAccentSurfaceTheme");
     function clearInlinePrimaryOverrides() {
       const root = document.documentElement;
       ;
@@ -17327,13 +17161,6 @@ ${arcs}
       return list;
     }
     __name(saveAccentPreset, "saveAccentPreset");
-    function removeAccentPreset(hex) {
-      const h = (hex || "").toLowerCase();
-      const list = getAccentPresets().filter((x) => x.toLowerCase() !== h);
-      GM_setValue(ACCENT_PRESETS_KEY, JSON.stringify(list));
-      return list;
-    }
-    __name(removeAccentPreset, "removeAccentPreset");
     function isThemeFollowSystem() {
       try {
         return !!GM_getValue(THEME_FOLLOW_KEY, false);
@@ -25804,10 +25631,6 @@ ${arcs}
       return groups;
     }
     __name(parseScoreJson, "parseScoreJson");
-    function summarizeCoursesPreferOfficial(list) {
-      return summarizeCourses(list);
-    }
-    __name(summarizeCoursesPreferOfficial, "summarizeCoursesPreferOfficial");
     async function loadScoreByIndex(indexPath, callbackHint) {
       const indexHtml = await fetchText(indexPath);
       let groups = parseScoreTables(parseHtml(indexHtml));
@@ -25818,7 +25641,7 @@ ${arcs}
       try {
         const data = JSON.parse(raw);
         groups = parseScoreJson(data).map((g) => {
-          g.summary = summarizeCoursesPreferOfficial(g.courses);
+          g.summary = summarizeCourses(g.courses);
           return g;
         });
       } catch (_) {
@@ -25991,10 +25814,10 @@ ${arcs}
     function refreshScoreSummaries(scorePack) {
       if (!scorePack) return scorePack;
       if (scorePack.passing && scorePack.passing[0]) {
-        scorePack.passing[0].summary = summarizeCoursesPreferOfficial(scorePack.passing[0].courses);
+        scorePack.passing[0].summary = summarizeCourses(scorePack.passing[0].courses);
       }
       scorePack.schemes = (scorePack.schemes || []).map((group) => {
-        group.summary = summarizeCoursesPreferOfficial(group.courses);
+        group.summary = summarizeCourses(group.courses);
         return group;
       });
       return scorePack;
@@ -26069,12 +25892,12 @@ ${arcs}
         out.passing = [{
           title: "全部及格成绩",
           courses: allPass,
-          summary: summarizeCoursesPreferOfficial(allPass),
+          summary: summarizeCourses(allPass),
           groups: passGroups
         }];
         out.schemes = schemeGroups;
         if (!out.schemes.length && allPass.length) {
-          out.schemes = [{ title: "方案成绩", courses: allPass, summary: summarizeCoursesPreferOfficial(allPass) }];
+          out.schemes = [{ title: "方案成绩", courses: allPass, summary: summarizeCourses(allPass) }];
         }
         refreshScoreSummaries(out);
         out.majorIdx = pickMajorSchemeIndex(out.schemes, state.profile && state.profile.majorPlan);
@@ -26206,36 +26029,6 @@ ${arcs}
       return out;
     }
     __name(loadClassroomCatalog, "loadClassroomCatalog");
-    function parseOccupancyDoc(doc) {
-      const table = doc.getElementById("classroomInfoTable") || doc.querySelector("table.table");
-      if (!table) return { rooms: [], dateLabel: "" };
-      const dateLabel = ((doc.body.innerText || "").match(/\d{4}-\d{2}-\d{2}[（(][^)）]+[)）]/) || [])[0] || "";
-      const rooms = [];
-      Array.from(table.rows).forEach((tr) => {
-        const ths = tr.querySelectorAll("th");
-        if (ths.length < 1) return;
-        const roomName = (ths[0].textContent || "").trim();
-        if (!/^B?\d|[A-Z]?\d{2,}/.test(roomName) && !/^[A-Za-z]?\d{2,4}/.test(roomName)) {
-          if (/教室|座位数|类型/.test(roomName)) return;
-        }
-        if (/教室|座位数|类型/.test(roomName)) return;
-        const seats = ths[1] ? (ths[1].textContent || "").trim() : "";
-        const type = ths[2] ? (ths[2].textContent || "").trim() : "";
-        const slots = [];
-        tr.querySelectorAll("td.td-b, td[id]").forEach((td) => {
-          const idm = String(td.id || "").match(/_(\d+)$/);
-          const sec = idm ? parseInt(idm[1], 10) : slots.length + 1;
-          const bg = (td.getAttribute("style") || "") + " " + (td.style && td.style.backgroundColor || "");
-          const busy = /background|rgb\(|#/i.test(bg) && !/transparent|rgba\(0,\s*0,\s*0,\s*0\)/i.test(bg) && td.style.backgroundColor !== "";
-          const styleAttr = td.getAttribute("style") || "";
-          const isBusy = /background-color\s*:\s*(?!transparent)(?!rgba\(0)/i.test(styleAttr);
-          slots.push({ section: sec, busy: isBusy || styleAttr.includes("background") && /rgb|#/i.test(styleAttr), color: td.style && td.style.backgroundColor || "" });
-        });
-        if (roomName) rooms.push({ name: roomName, seats, type, slots });
-      });
-      return { rooms, dateLabel };
-    }
-    __name(parseOccupancyDoc, "parseOccupancyDoc");
     function occupancyTypeLabel(ct) {
       const mod = String(ct && ct.occupancymoduleId || "");
       const map = { "06": "有课", "07": "考试", "14": "实验", "room": "借用" };
@@ -26623,7 +26416,7 @@ ${arcs}
         scoreToGpa,
         scoreToNumber,
         summarizeCourses,
-        summarizeCoursesPreferOfficial
+        summarizeCoursesPreferOfficial: summarizeCourses
       }
     });
     const {

@@ -21,7 +21,6 @@
   left: 18px !important;
   right: auto !important;
   bottom: auto !important;
-  width: min(420px, calc(100vw - 24px)) !important;
   max-height: calc(100vh - 80px) !important;
   max-height: calc(100dvh - 80px) !important;
   overflow: hidden !important;

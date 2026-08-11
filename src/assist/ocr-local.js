@@ -153,7 +153,3 @@ export function recognizeLocalCaptcha(image) {
     return null;
   }
 }
-
-export function localOcrAvailable() {
-  return true;
-}

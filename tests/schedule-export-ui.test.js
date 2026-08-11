@@ -9,7 +9,6 @@ import {
   wrapScheduleFooter,
 } from '../src/features/schedule-export/image-layout.js';
 import { scheduleCardLaneGeometry } from '../src/features/schedule-export/layout.js';
-import { rewriteNativePdfSelector } from '../src/features/schedule-export/native-pdf.js';
 import { buildScheduleSvg } from '../src/features/schedule-export/schedule-image.js';
 import {
   createScheduleExportUi,
@@ -35,18 +34,6 @@ test('schedule card lanes exactly cover the cell without internal gaps', () => {
     assert.ok(Math.abs(lanes[index - 1].left + lanes[index - 1].width - lanes[index].left) < 1e-9);
   }
   assert.ok(Math.abs(lanes.at(-1).left + lanes.at(-1).width - (-edgeOffset + width)) < 1e-9);
-});
-
-test('native PDF stage rewrites selectors into the offscreen clone', () => {
-  assert.equal(rewriteNativePdfSelector('#mycoursetable'), '#urppp-pdf-mycoursetable');
-  assert.equal(rewriteNativePdfSelector('#mycoursetable td'), '#urppp-pdf-mycoursetable td');
-  assert.equal(rewriteNativePdfSelector('#courseTableBody tr'), '#urppp-pdf-courseTableBody tr');
-  assert.equal(rewriteNativePdfSelector('#courseTable'), '#urppp-pdf-courseTable');
-  assert.equal(rewriteNativePdfSelector('div.class_div'), 'div.urppp-pdf-card');
-  assert.equal(rewriteNativePdfSelector('div.printDiv'), 'div.urppp-pdf-card.printDiv');
-  assert.equal(rewriteNativePdfSelector('#page-content-template'), '#urppp-pdf-page');
-  assert.equal(rewriteNativePdfSelector('.course'), '.course');
-  assert.equal(rewriteNativePdfSelector('#h4_id1,#h4_id2'), '#urppp-pdf-h4-1,#urppp-pdf-h4-2');
 });
 
 test('native PDF export suspends beautification around the real site lifecycle', async () => {

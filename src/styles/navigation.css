@@ -861,32 +861,6 @@
 
 
       /* 简约白 / 深邃暗：导航与面包屑主文案 */
-            html.urppp-theme-default .breadcrumb > li.active,
-            html.urppp-theme-default .breadcrumb > li:last-child,
-            html.urppp-theme-default .breadcrumb > li.active > span,
-            html.urppp-theme-default .breadcrumb > li.active .urppp-bc-label,
-            html.urppp-theme-default .breadcrumb > li:last-child > span,
-            html.urppp-theme-default .breadcrumb > li:last-child .urppp-bc-label,
-            html.urppp-theme-default .breadcrumb .home-icon,
-            html.urppp-theme-default .breadcrumb .fa-home,
-            html.urppp-theme-default .urppp-nav-item.active > .urppp-nav-link,
-            html.urppp-theme-default .urppp-nav-item.open.active > .urppp-nav-link,
-            html.urppp-theme-dark .breadcrumb > li.active,
-            html.urppp-theme-dark .breadcrumb > li:last-child,
-            html.urppp-theme-dark .breadcrumb > li.active > span,
-            html.urppp-theme-dark .breadcrumb > li.active .urppp-bc-label,
-            html.urppp-theme-dark .breadcrumb > li:last-child > span,
-            html.urppp-theme-dark .breadcrumb > li:last-child .urppp-bc-label,
-            html.urppp-theme-dark .breadcrumb .home-icon,
-            html.urppp-theme-dark .breadcrumb .fa-home,
-            html.urppp-theme-dark .urppp-nav-item.active > .urppp-nav-link,
-            html.urppp-theme-dark .urppp-nav-item.open.active > .urppp-nav-link { {
-        color: var(--text) !important;
-      }
-            html.urppp-theme-default .breadcrumb > li,
-            html.urppp-theme-dark .breadcrumb > li { {
-        color: var(--text-secondary) !important;
-      }
       /* 侧栏默认项：简约白更深、深邃暗更亮 */
       html.urppp-theme-default .urppp-nav-link {
         color: #111111 !important;

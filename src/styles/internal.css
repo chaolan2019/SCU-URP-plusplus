@@ -11,14 +11,6 @@
        * 数字、标题、侧栏、面包屑不再吃 primary
        * 链接仍保留 primary
        */
-      html.urppp-theme-default .widget-header .widget-title,
-      html.urppp-theme-default h4.widget-title,
-      html.urppp-theme-dark .widget-header .widget-title,
-      html.urppp-theme-dark h4.widget-title, {
-        color: var(--text) !important;
-      }
-        color: var(--text) !important;
-      }
       /* 标题图标点缀可保留 primary；标题文字本体必须是 text */
       html.urppp-theme-default .widget-header .widget-title,
       html.urppp-theme-dark .widget-header .widget-title {
@@ -1063,15 +1055,6 @@
         border-bottom: 1.5px solid var(--text-muted) !important;
         transform: translate(-65%, -50%) rotate(-45deg) !important;
       }
-      .ztree.urppp-ztree li span.button.ico_open,
-      .ztree.urppp-ztree li span.button.ico_close,
-      .ztree.urppp-ztree li span.button.ico_docu,
-      #treeDemo.ztree li span.button.ico_open,
-      #treeDemo.ztree li span.button.ico_close,
-      #treeDemo.ztree li span.button.ico_docu {
-        display: none !important;
-      }
-
       /* 状态只体现在图标色，节点不再铺大色块 */
       .ztree.urppp-ztree li a i.ace-icon,
       .ztree.urppp-ztree li a i.fa,
@@ -2067,9 +2050,6 @@
       @media (max-width: 1200px) {
         .profile-info-row.urppp-query-row[data-urppp-query-cols="4"],
         .profile-info-row.urppp-query-row[data-urppp-query-cols="3"] {
-          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-        }
-        .profile-info-row.urppp-query-row[data-urppp-query-cols="2"] {
           grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
         }
       }
@@ -4867,22 +4847,6 @@
         background: rgba(147, 168, 199, 0.08) !important;
       }
 
-fo-striped.setLabelWidth,
-      html body .page-content .self.profile-user-info.setLabelWidth,
-      html body .page-content .self.profile-user-info-striped.setLabelWidth,
-      html body .page-content .profile-user-info.setLabelWidth.urppp-query-form {
-        padding: 0 !important;
-        margin: 0 0 16px !important;
-        background: var(--surface) !important;
-        border: 1px solid var(--border) !important;
-        border-radius: var(--radius) !important;
-        box-shadow: none !important;
-        overflow: hidden !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        box-sizing: border-box !important;
-      }
-
       /* ========== 学籍页最终形态（对齐左侧基本信息：标题无壳 + 表零内边距） ========== */
       html body .page-content .col-xs-4 > h4.header,
       html body .page-content .col-xs-8 > h4.header,
@@ -4922,52 +4886,6 @@ fo-striped.setLabelWidth,
         max-width: 100% !important;
         box-sizing: border-box !important;
       }
-      /* FullCalendar 事件悬停弹窗：保留虚线框风格，仅主题色化 */
-      #schedule-hover {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        pointer-events: none !important;
-        z-index: 3000 !important;
-      }
-      #schedule-hover .promptedmessage-a,
-      #promptedmessage-div.promptedmessage-a {
-        background: var(--surface) !important;
-        border: 2px solid color-mix(in srgb, var(--primary) 45%, var(--border)) !important;
-        border-radius: 10px !important;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.14) !important;
-        padding: 6px !important;
-        pointer-events: none !important;
-        position: static !important; /* 由外层 #schedule-hover 统一定位，避免双重 absolute 闪跳 */
-        top: auto !important;
-        left: auto !important;
-      }
-      #schedule-hover .promptedmessage,
-      #promptedmessage-div .promptedmessage {
-        background: color-mix(in srgb, var(--primary) 12%, var(--surface)) !important;
-        border: 1px solid var(--surface) !important;
-        outline: 2px dashed color-mix(in srgb, var(--primary) 40%, var(--border)) !important;
-        outline-offset: 0 !important;
-        border-radius: var(--radius-sm) !important;
-        box-shadow: none !important;
-        padding: 10px 12px !important;
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 6px !important;
-        font-size: 13px !important;
-        line-height: 1.6 !important;
-        color: var(--text-secondary) !important;
-        pointer-events: none !important;
-      }
-      #schedule-hover .promptedmessage span:first-child {
-        font-weight: 600 !important;
-        color: var(--primary) !important;
-        font-size: 14px !important;
-      }
-      #schedule-hover .promptedmessage .ace-icon {
-        color: var(--text-muted) !important;
-      }
-
       /* FullCalendar 事件悬停弹窗：保留虚线框风格，仅主题色化 */
       #schedule-hover {
         background: transparent !important;
