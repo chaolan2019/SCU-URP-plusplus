@@ -14380,58 +14380,18 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           sidebar.style.setProperty("height", "calc(100vh - " + topH + "px)", "important");
           sidebar.style.setProperty("z-index", "12030", "important");
           sidebar.style.setProperty("position", "fixed", "important");
-          if (!sidebar.__urpppAnimInit) {
-            sidebar.__urpppAnimInit = true;
-            ["transform", "visibility", "pointer-events", "transition"].forEach((p) => sidebar.style.removeProperty(p));
-          }
         } else {
           restoreCleanSidebarInline(sidebar);
         }
       }, "syncCleanSidebarZ");
-      const setSidebarOpen = /* @__PURE__ */ __name((open) => {
-        const sidebar = document.getElementById("sidebar");
-        if (!sidebar) return;
-        const s = sidebar.style;
-        ["visibility", "pointer-events"].forEach((p) => s.removeProperty(p));
-        const width = sidebar.getBoundingClientRect().width || 260;
-        const target = open ? "translate3d(0,0,0)" : "translate3d(-" + width + "px,0,0)";
-        const startX = open ? "translate3d(-" + width + "px,0,0)" : "translate3d(0,0,0)";
-        s.setProperty("transform", startX, "important");
-        s.setProperty("visibility", "visible", "important");
-        s.setProperty("pointer-events", open ? "auto" : "none", "important");
-        void sidebar.offsetWidth;
-        getComputedStyle(sidebar).transform;
-        s.setProperty("transition", "transform .26s cubic-bezier(.4, 0, .2, 1), visibility 0s linear .26s", "important");
-        const setTarget = /* @__PURE__ */ __name(() => {
-          s.setProperty("transform", target, "important");
-        }, "setTarget");
-        requestAnimationFrame(setTarget);
-        setTimeout(setTarget, 30);
-        sidebar.classList.toggle("display", open);
-        if (menuToggle) {
-          menuToggle.setAttribute("aria-expanded", open ? "true" : "false");
-          menuToggle.setAttribute("aria-label", open ? "关闭菜单" : "打开菜单");
-        }
-        const siteToggler = document.getElementById("urppp-mobile-menu-button");
-        if (siteToggler) {
-          siteToggler.setAttribute("aria-expanded", open ? "true" : "false");
-          siteToggler.setAttribute("aria-label", open ? "关闭菜单" : "打开菜单");
-        }
-        clearTimeout(sidebar.__urpppAnimTimer);
-        sidebar.__urpppAnimTimer = setTimeout(() => {
-          if (!sidebar.classList.contains("display")) {
-            s.removeProperty("transform");
-            s.removeProperty("transition");
-            s.removeProperty("pointer-events");
-            s.removeProperty("visibility");
-          }
-        }, 340);
-        syncCleanSidebarZ();
-      }, "setSidebarOpen");
       const closeCleanSidebar = /* @__PURE__ */ __name(() => {
         const sidebar = document.getElementById("sidebar");
         if (!sidebar) return;
-        sidebar.classList.remove("display");
+        try {
+          deps.stopDrawerAnimation(sidebar);
+        } catch (_) {
+        }
+        sidebar.classList.remove("display", "urppp-drawer-closing");
         restoreCleanSidebarInline(sidebar);
         if (menuToggle) {
           menuToggle.setAttribute("aria-expanded", "false");
@@ -14469,10 +14429,11 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           }, true);
         }
         const open = !sidebar.classList.contains("display");
-        setSidebarOpen(open);
-        if (menuToggle) {
-          menuToggle.setAttribute("aria-expanded", open ? "true" : "false");
-          menuToggle.setAttribute("aria-label", open ? "关闭菜单" : "打开菜单");
+        deps.setDrawerOpen(sidebar, menuToggle, open);
+        const siteToggler = document.getElementById("urppp-mobile-menu-button");
+        if (siteToggler) {
+          siteToggler.setAttribute("aria-expanded", open ? "true" : "false");
+          siteToggler.setAttribute("aria-label", open ? "关闭菜单" : "打开菜单");
         }
       });
       el.__closeCleanDrawer = closeCleanSidebar;
@@ -14507,7 +14468,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       void el.offsetWidth;
       el.classList.add("open");
       try {
-        (window || globalThis).__urpppCleanOpenedAt = performance.now();
+        deps.stopDrawerAnimation(document.getElementById("sidebar"));
       } catch (_) {
       }
       try {
@@ -16801,6 +16762,7 @@ ${arcs}
             const panel = document.getElementById("form-search");
             const searchButton = document.getElementById("clickdiv");
             if (!panel || panel.dataset.open !== "1") return;
+            if (panel.classList.contains("urppp-mobile-form-search") || panel.closest("#urppp-mobile-search-panel")) return;
             if (panel.contains(event.target) || searchButton?.contains(event.target)) return;
             setOpen(false);
           }, true);
@@ -22527,11 +22489,14 @@ ${arcs}
           const distance = Math.abs(endX - startX);
           const duration = Math.max(140, Math.round(260 * distance / width));
           const startAt = performance.now();
+          const cleanMode = sidebar.classList.contains("urppp-clean-sidebar");
+          const activeZ = cleanMode ? "12030" : "1200";
+          const hiddenZ = cleanMode ? "12030" : "1030";
           sidebar.style.setProperty("display", "block", "important");
           sidebar.style.setProperty("transition", "none", "important");
           sidebar.style.setProperty("visibility", "visible", "important");
           sidebar.style.setProperty("pointer-events", open ? "auto" : "none", "important");
-          sidebar.style.setProperty("z-index", "1200", "important");
+          sidebar.style.setProperty("z-index", activeZ, "important");
           sidebar.style.setProperty("transform", `translate3d(${startX}px, 0, 0)`, "important");
           sidebar.classList.toggle("urppp-drawer-closing", !open);
           sidebar.classList.add("display");
@@ -22543,7 +22508,7 @@ ${arcs}
             } else {
               sidebar.classList.remove("display", "urppp-drawer-closing");
               sidebar.style.setProperty("visibility", "hidden", "important");
-              sidebar.style.setProperty("z-index", "1030", "important");
+              sidebar.style.setProperty("z-index", hiddenZ, "important");
             }
             drawerAnimations.delete(sidebar);
           }, "finish");
@@ -22553,11 +22518,6 @@ ${arcs}
           }
           const step = /* @__PURE__ */ __name((now) => {
             if (!sidebar.isConnected) {
-              drawerAnimations.delete(sidebar);
-              return;
-            }
-            const cleanRoot = document.getElementById("urppp-clean-root");
-            if (cleanRoot && cleanRoot.classList.contains("open") && window.__urpppCleanOpenedAt && startAt < window.__urpppCleanOpenedAt) {
               drawerAnimations.delete(sidebar);
               return;
             }
@@ -22867,7 +22827,7 @@ ${arcs}
               syncMobileSearchLayout();
               const fs = searchPanel.querySelector("#form-search");
               if (fs) {
-                fs.dataset.open = "1";
+                fs.dataset.open = "0";
                 fs.style.setProperty("pointer-events", "auto", "important");
                 fs.style.setProperty("opacity", "1", "important");
                 fs.style.setProperty("width", "100%", "important");
@@ -22880,8 +22840,6 @@ ${arcs}
             } else {
               searchPanel.hidden = true;
               searchPanel.classList.remove("open");
-              const fs = searchPanel.querySelector("#form-search");
-              if (fs) fs.dataset.open = "0";
               searchButton.setAttribute("aria-expanded", "false");
             }
           });
@@ -22924,6 +22882,9 @@ ${arcs}
         window.__urpppCloseMobileDrawer = closeDrawer;
         window.__urpppSetDrawerOpen = (sidebar, toggler, open) => {
           setDrawerOpen(sidebar, toggler, open);
+        };
+        window.__urpppStopDrawerAnimation = (sidebar) => {
+          if (sidebar) stopDrawerAnimation(sidebar);
         };
         window.__urpppInjectCleanSidebarSections = (sidebar) => {
           const btns = document.querySelector("#navbar .navbar-buttons .ace-nav") || document.querySelector("#navbar .ace-nav");
@@ -26553,6 +26514,12 @@ ${arcs}
           } catch (_) {
           }
         }, "setDrawerOpen"),
+        stopDrawerAnimation: /* @__PURE__ */ __name((sidebar) => {
+          try {
+            window.__urpppStopDrawerAnimation?.(sidebar);
+          } catch (_) {
+          }
+        }, "stopDrawerAnimation"),
         isHomePage,
         loadAll,
         openSettingsPanel,

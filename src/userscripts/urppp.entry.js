@@ -701,6 +701,8 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           const panel = document.getElementById('form-search');
           const searchButton = document.getElementById('clickdiv');
           if (!panel || panel.dataset.open !== '1') return;
+          // 同一 form-search 会临时移入移动/清爽侧边栏；此时状态归搜索面板所有。
+          if (panel.classList.contains('urppp-mobile-form-search') || panel.closest('#urppp-mobile-search-panel')) return;
           if (panel.contains(event.target) || searchButton?.contains(event.target)) return;
           setOpen(false);
         }, true);
@@ -6480,12 +6482,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         const distance = Math.abs(endX - startX);
         const duration = Math.max(140, Math.round(260 * distance / width));
         const startAt = performance.now();
+        const cleanMode = sidebar.classList.contains('urppp-clean-sidebar');
+        const activeZ = cleanMode ? '12030' : '1200';
+        const hiddenZ = cleanMode ? '12030' : '1030';
 
         sidebar.style.setProperty('display', 'block', 'important');
         sidebar.style.setProperty('transition', 'none', 'important');
         sidebar.style.setProperty('visibility', 'visible', 'important');
         sidebar.style.setProperty('pointer-events', open ? 'auto' : 'none', 'important');
-        sidebar.style.setProperty('z-index', '1200', 'important');
+        sidebar.style.setProperty('z-index', activeZ, 'important');
         sidebar.style.setProperty('transform', `translate3d(${startX}px, 0, 0)`, 'important');
         sidebar.classList.toggle('urppp-drawer-closing', !open);
         sidebar.classList.add('display');
@@ -6498,7 +6503,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           } else {
             sidebar.classList.remove('display', 'urppp-drawer-closing');
             sidebar.style.setProperty('visibility', 'hidden', 'important');
-            sidebar.style.setProperty('z-index', '1030', 'important');
+            sidebar.style.setProperty('z-index', hiddenZ, 'important');
           }
           drawerAnimations.delete(sidebar);
         };
@@ -6509,13 +6514,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
         const step = (now) => {
           if (!sidebar.isConnected) {
-            drawerAnimations.delete(sidebar);
-            return;
-          }
-          // 清爽模式打开后启动的动画（startAt 晚于清爽模式打开）继续跑；
-          // 只有清爽模式打开前残留的动画才停止，避免 rAF 持续覆盖 transform 吞掉清爽模式动画
-          const cleanRoot = document.getElementById('urppp-clean-root');
-          if (cleanRoot && cleanRoot.classList.contains('open') && window.__urpppCleanOpenedAt && startAt < window.__urpppCleanOpenedAt) {
             drawerAnimations.delete(sidebar);
             return;
           }
@@ -6842,7 +6840,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
             syncMobileSearchLayout();
             const fs = searchPanel.querySelector('#form-search');
             if (fs) {
-              fs.dataset.open = '1';
+              // data-open 只属于桌面顶栏搜索；移动面板以 hidden/aria-expanded 管理开合。
+              fs.dataset.open = '0';
               fs.style.setProperty('pointer-events', 'auto', 'important');
               fs.style.setProperty('opacity', '1', 'important');
               // 站点桌面搜索可能残留 width:0（关闭态），面板内强制全宽
@@ -6856,8 +6855,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           } else {
             searchPanel.hidden = true;
             searchPanel.classList.remove('open');
-            const fs = searchPanel.querySelector('#form-search');
-            if (fs) fs.dataset.open = '0';
             searchButton.setAttribute('aria-expanded', 'false');
           }
         });
@@ -6900,8 +6897,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
       window.__urpppRefreshMobileNavbar = apply;
       window.__urpppCloseMobileDrawer = closeDrawer;
-      // 暴露抽屉开合（animateDrawer），清爽模式复用移动端首页同一套动画
+      // 清爽模式复用移动端首页同一套动画，并在接管/退出时显式停止旧帧循环。
       window.__urpppSetDrawerOpen = (sidebar, toggler, open) => { setDrawerOpen(sidebar, toggler, open); };
+      window.__urpppStopDrawerAnimation = (sidebar) => { if (sidebar) stopDrawerAnimation(sidebar); };
       // 清爽模式打开时按需注入移动端侧边栏区块（用户卡/快捷区），桌面清爽模式也用移动端样式
       window.__urpppInjectCleanSidebarSections = (sidebar) => {
         const btns = document.querySelector('#navbar .navbar-buttons .ace-nav') || document.querySelector('#navbar .ace-nav');
@@ -10472,6 +10470,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       injectCleanSidebarSections: (sidebar) => { try { window.__urpppInjectCleanSidebarSections?.(sidebar); } catch (_) { /* ignore */ } },
       refreshMobileNavbar: () => { try { window.__urpppRefreshMobileNavbar?.(); } catch (_) { /* ignore */ } },
       setDrawerOpen: (sidebar, toggler, open) => { try { window.__urpppSetDrawerOpen?.(sidebar, toggler, open); } catch (_) { /* ignore */ } },
+      stopDrawerAnimation: (sidebar) => { try { window.__urpppStopDrawerAnimation?.(sidebar); } catch (_) { /* ignore */ } },
       isHomePage,
       loadAll,
       openSettingsPanel,

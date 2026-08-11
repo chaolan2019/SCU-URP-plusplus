@@ -169,17 +169,24 @@ test('clean mode sidebar drawer works on mobile viewport with aligned top', asyn
 
   const sidebar = page.locator('#sidebar');
   await expect(sidebar).toHaveClass(/urppp-clean-sidebar/);
-  // 站点动画残留的内联已清除，CSS 完全接管
-  const inlineAfterClean = await sidebar.evaluate((el) => ({
-    transform: el.style.getPropertyValue('transform'),
-    vis: el.style.getPropertyValue('visibility'),
-    pe: el.style.getPropertyValue('pointer-events'),
-    transition: el.style.getPropertyValue('transition'),
-  }));
-  expect(inlineAfterClean.transform).toBe('');
-  expect(inlineAfterClean.vis).toBe('');
-  expect(inlineAfterClean.pe).toBe('');
-  expect(inlineAfterClean.transition).toBe('');
+  // 接管时停止旧帧循环，并保留移动端 animateDrawer 已完成的关闭位置。
+  const inlineAfterClean = await sidebar.evaluate((el) => {
+    const matrix = getComputedStyle(el).transform.match(/matrix\(1, 0, 0, 1, ([\d.-]+),/);
+    return {
+      x: matrix ? Math.round(parseFloat(matrix[1])) : null,
+      vis: getComputedStyle(el).visibility,
+      pe: getComputedStyle(el).pointerEvents,
+      transition: el.style.getPropertyValue('transition'),
+      display: el.classList.contains('display'),
+      closing: el.classList.contains('urppp-drawer-closing'),
+    };
+  });
+  expect(inlineAfterClean.x).toBeLessThan(-250);
+  expect(inlineAfterClean.vis).toBe('hidden');
+  expect(inlineAfterClean.pe).toBe('none');
+  expect(inlineAfterClean.transition).toBe('none');
+  expect(inlineAfterClean.display).toBe(false);
+  expect(inlineAfterClean.closing).toBe(false);
 
   // 移动端：顶边与清爽顶栏底部（52px）平齐，宽度 260px
   await page.locator('#uc-menu-toggle').click();
@@ -197,18 +204,26 @@ test('clean mode sidebar drawer works on mobile viewport with aligned top', asyn
   expect(box.left).toBe(0);
   await expect(page.locator('#uc-menu-toggle')).toHaveAttribute('aria-expanded', 'true');
 
-  // 再点汉堡收回：动画中途 transform 应在 -260 与 0 之间（非瞬跳）
+  // 再点汉堡收回：直接复用移动端 animateDrawer，动画结束前保留 display + closing 状态
   await page.locator('#uc-menu-toggle').click();
+  await expect(sidebar).toHaveClass(/display/);
+  await expect(sidebar).toHaveClass(/urppp-drawer-closing/);
   await page.waitForTimeout(80);
-  const midX = await sidebar.evaluate((el) => {
+  const closingFrame = await sidebar.evaluate((el) => {
     const m = getComputedStyle(el).transform.match(/matrix\(1, 0, 0, 1, ([\d.-]+),/);
-    return m ? Math.round(parseFloat(m[1])) : null;
+    return {
+      x: m ? Math.round(parseFloat(m[1])) : null,
+      z: getComputedStyle(el).zIndex,
+      transition: el.style.getPropertyValue('transition'),
+    };
   });
-  expect(midX).not.toBe(0);
-  expect(midX).toBeLessThan(0);
-  expect(midX).toBeGreaterThan(-261);
+  expect(closingFrame.x).not.toBe(0);
+  expect(closingFrame.x).toBeLessThan(0);
+  expect(closingFrame.x).toBeGreaterThan(-261);
+  expect(closingFrame.z).toBe('12030');
+  expect(closingFrame.transition).toBe('none');
   await page.waitForTimeout(400);
-  await expect(sidebar).not.toHaveClass(/display/);
+  await expect(sidebar).not.toHaveClass(/display|urppp-drawer-closing/);
   await expect(page.locator('#uc-menu-toggle')).toHaveAttribute('aria-expanded', 'false');
 
   // 退出清爽模式后 sidebar 回到原位，内联样式还原
@@ -443,6 +458,30 @@ test('clean mode desktop search input matches mobile style', async ({ page }) =>
   // 站点 nav-search-input 默认 36px 高、带边框
   expect(input.h).toBe(36);
   expect(input.borderW).toBeGreaterThan(0);
+
+  // 搜索展开时收起并重新打开侧边栏，桌面搜索的 outside-click 不能把移动搜索写回 width:0
+  await page.locator('#uc-menu-toggle').click();
+  await page.waitForTimeout(400);
+  await page.locator('#uc-menu-toggle').click();
+  await page.waitForTimeout(400);
+  const afterDrawerCycle = await page.evaluate(() => {
+    const panel = document.getElementById('urppp-mobile-search-panel');
+    const form = document.getElementById('form-search');
+    const inputEl = document.getElementById('search-input');
+    const formStyle = form ? getComputedStyle(form) : null;
+    return {
+      panelOpen: !!panel && !panel.hidden && panel.classList.contains('open'),
+      formWidth: form ? Math.round(form.getBoundingClientRect().width) : 0,
+      inputWidth: inputEl ? Math.round(inputEl.getBoundingClientRect().width) : 0,
+      opacity: formStyle ? formStyle.opacity : '',
+      pointerEvents: formStyle ? formStyle.pointerEvents : '',
+    };
+  });
+  expect(afterDrawerCycle.panelOpen).toBe(true);
+  expect(afterDrawerCycle.formWidth).toBeGreaterThan(200);
+  expect(afterDrawerCycle.inputWidth).toBeGreaterThan(200);
+  expect(afterDrawerCycle.opacity).toBe('1');
+  expect(afterDrawerCycle.pointerEvents).toBe('auto');
   expect(pageErrors).toEqual([]);
 });
 
@@ -480,5 +519,25 @@ test('clean mode mobile search reuses site form-search typeahead', async ({ page
   expect(state.quickLinks).toContain('/calendar');
   expect(state.quickLinks).toContain('/schedule');
   expect(state.quickLinks).toContain(null);
+
+  // 移动视口同样覆盖搜索展开后的抽屉收起/再展开，输入框不能被桌面监听器压成 0 宽。
+  await page.locator('#uc-menu-toggle').click();
+  await page.waitForTimeout(400);
+  await page.locator('#uc-menu-toggle').click();
+  await page.waitForTimeout(400);
+  const afterDrawerCycle = await page.evaluate(() => {
+    const panel = document.getElementById('urppp-mobile-search-panel');
+    const form = document.getElementById('form-search');
+    return {
+      panelOpen: !!panel && !panel.hidden && panel.classList.contains('open'),
+      formWidth: form ? Math.round(form.getBoundingClientRect().width) : 0,
+      inputWidth: Math.round(document.getElementById('search-input')?.getBoundingClientRect().width || 0),
+      opacity: form ? getComputedStyle(form).opacity : '',
+    };
+  });
+  expect(afterDrawerCycle.panelOpen).toBe(true);
+  expect(afterDrawerCycle.formWidth).toBeGreaterThan(200);
+  expect(afterDrawerCycle.inputWidth).toBeGreaterThan(200);
+  expect(afterDrawerCycle.opacity).toBe('1');
   expect(pageErrors).toEqual([]);
 });

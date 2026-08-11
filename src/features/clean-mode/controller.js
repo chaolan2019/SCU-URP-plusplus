@@ -118,62 +118,15 @@ export function createCleanModeController({ state, deps }) {
         sidebar.style.setProperty('height', 'calc(100vh - ' + topH + 'px)', 'important');
         sidebar.style.setProperty('z-index', '12030', 'important');
         sidebar.style.setProperty('position', 'fixed', 'important');
-        // 首次进入时清除站点 animateDrawer 残留（transform/visibility/pointer-events/transition），让 setSidebarOpen 接管
-        if (!sidebar.__urpppAnimInit) {
-          sidebar.__urpppAnimInit = true;
-          ['transform', 'visibility', 'pointer-events', 'transition'].forEach((p) => sidebar.style.removeProperty(p));
-        }
       } else {
         restoreCleanSidebarInline(sidebar);
       }
     };
-    const setSidebarOpen = (open) => {
-      const sidebar = document.getElementById('sidebar');
-      if (!sidebar) return;
-      // 清除站点 animateDrawer 残留内联，避免干扰
-      const s = sidebar.style;
-      ['visibility', 'pointer-events'].forEach((p) => s.removeProperty(p));
-      // 用 JS 显式控制 transform 过渡，确保收回/展开动画在任何 CSS 覆盖下都播放
-      const width = sidebar.getBoundingClientRect().width || 260;
-      const target = open ? 'translate3d(0,0,0)' : 'translate3d(-' + width + 'px,0,0)';
-      // 标准过渡时序：起点 → reflow（读 computed 强制提交）→ transition → 目标
-      const startX = open ? 'translate3d(-' + width + 'px,0,0)' : 'translate3d(0,0,0)';
-      s.setProperty('transform', startX, 'important');
-      s.setProperty('visibility', 'visible', 'important');
-      s.setProperty('pointer-events', open ? 'auto' : 'none', 'important');
-      void sidebar.offsetWidth;
-      // 强制读取 computed 确保起点已提交渲染
-      getComputedStyle(sidebar).transform;
-      s.setProperty('transition', 'transform .26s cubic-bezier(.4, 0, .2, 1), visibility 0s linear .26s', 'important');
-      const setTarget = () => { s.setProperty('transform', target, 'important'); };
-      requestAnimationFrame(setTarget);
-      setTimeout(setTarget, 30);
-      sidebar.classList.toggle('display', open);
-      if (menuToggle) {
-        menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        menuToggle.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
-      }
-      const siteToggler = document.getElementById('urppp-mobile-menu-button');
-      if (siteToggler) {
-        siteToggler.setAttribute('aria-expanded', open ? 'true' : 'false');
-        siteToggler.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
-      }
-      // 动画结束后清理内联，让 CSS 基础态接管（visibility hidden 由 CSS 控制）
-      clearTimeout(sidebar.__urpppAnimTimer);
-      sidebar.__urpppAnimTimer = setTimeout(() => {
-        if (!sidebar.classList.contains('display')) {
-          s.removeProperty('transform');
-          s.removeProperty('transition');
-          s.removeProperty('pointer-events');
-          s.removeProperty('visibility');
-        }
-      }, 340);
-      syncCleanSidebarZ();
-    };
     const closeCleanSidebar = () => {
       const sidebar = document.getElementById('sidebar');
       if (!sidebar) return;
-      sidebar.classList.remove('display');
+      try { deps.stopDrawerAnimation(sidebar); } catch (_) { /* ignore */ }
+      sidebar.classList.remove('display', 'urppp-drawer-closing');
       restoreCleanSidebarInline(sidebar);
       if (menuToggle) {
         menuToggle.setAttribute('aria-expanded', 'false');
@@ -215,12 +168,13 @@ export function createCleanModeController({ state, deps }) {
           closeCleanMode();
         }, true);
       }
-      // 清爽模式自管开合（JS 标准过渡动画，z-index 12030 不被底栏盖）；animateDrawer 残留已由 entry 停止
+      // 与移动端顶栏共用同一套 setDrawerOpen / animateDrawer 状态机
       const open = !sidebar.classList.contains('display');
-      setSidebarOpen(open);
-      if (menuToggle) {
-        menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-        menuToggle.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
+      deps.setDrawerOpen(sidebar, menuToggle, open);
+      const siteToggler = document.getElementById('urppp-mobile-menu-button');
+      if (siteToggler) {
+        siteToggler.setAttribute('aria-expanded', open ? 'true' : 'false');
+        siteToggler.setAttribute('aria-label', open ? '关闭菜单' : '打开菜单');
       }
     });
     el.__closeCleanDrawer = closeCleanSidebar;
@@ -253,8 +207,8 @@ export function createCleanModeController({ state, deps }) {
     el.classList.remove('uc-settled', 'open');
     void el.offsetWidth; // 重触发根层进入动画
     el.classList.add('open');
-    // 记录清爽模式打开时间（performance.now，与 animateDrawer 同时钟），供 animateDrawer 区分「打开前残留动画」与「清爽模式自己的动画」
-    try { (window || globalThis).__urpppCleanOpenedAt = performance.now(); } catch (_) { /* ignore */ }
+    // 清爽模式接管前停止站点抽屉可能仍在运行的帧循环，下一次开合仍走同一个 animateDrawer。
+    try { deps.stopDrawerAnimation(document.getElementById('sidebar')); } catch (_) { /* ignore */ }
     try { if (el.__syncCleanThemeDots) el.__syncCleanThemeDots(); } catch (_) { /* ignore */ }
     try { if (el.__syncCleanSidebarZ) el.__syncCleanSidebarZ(); } catch (_) { /* ignore */ }
     // 桌面清爽模式也注入移动端侧边栏区块（用户卡/快捷区）
