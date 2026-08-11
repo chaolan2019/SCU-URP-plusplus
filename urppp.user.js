@@ -11661,12 +11661,12 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel[hidden]{display:none !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel{width:100% !important;box-sizing:border-box !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel.open{display:block !important;margin:8px 0 !important}
-#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #form-search.nav-search{position:relative !important;inset:auto !important;width:100% !important;height:34px !important;margin:0 !important;opacity:1 !important;overflow:visible !important;transform:none !important;z-index:1 !important;pointer-events:auto !important}
-#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #search-input{width:100% !important;height:34px !important;box-sizing:border-box !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #form-search.nav-search{position:relative !important;inset:auto !important;width:100% !important;height:36px !important;margin:0 !important;opacity:1 !important;overflow:visible !important;transform:none !important;z-index:1 !important;pointer-events:auto !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #search-input{width:100% !important;height:36px !important;box-sizing:border-box !important}
 /* 清爽模式侧边栏搜索：复用站点 form-search（Bootstrap typeahead），结果框美化 */
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel #form-search.nav-search{position:relative !important;inset:auto !important;width:100% !important;margin:0 !important;opacity:1 !important;overflow:visible !important;transform:none !important;z-index:1 !important;pointer-events:auto !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel .form-search,
-#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel .input-icon{width:100% !important;box-sizing:border-box !important;background:transparent !important;border:none !important;box-shadow:none !important}
+#sidebar.urppp-clean-sidebar .urppp-mobile-search-panel .input-icon{display:block !important;position:relative !important;width:100% !important;height:36px !important;margin:0 !important;padding:0 !important;box-sizing:border-box !important;background:transparent !important;border:none !important;box-shadow:none !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel .nav-search-input{width:100% !important;height:36px !important;box-sizing:border-box !important;padding:0 12px !important;line-height:36px !important;background:var(--input-bg,#f5f5f7) !important;border:1px solid var(--border,#e8eaed) !important;border-radius:var(--radius-sm,8px) !important;color:var(--text,#1d1d1f) !important;font-size:13px !important;outline:none !important}
 #sidebar.urppp-clean-sidebar .urppp-mobile-search-panel .nav-search-input:focus{border-color:var(--border-focus,#b53434) !important;box-shadow:0 0 0 3px var(--ring,rgba(181,52,52,.15)) !important}
 /* typeahead 结果框：圆角卡片、分隔线、选中态 */
@@ -22563,12 +22563,31 @@ ${arcs}
             left: "auto",
             transform: "none",
             width: "100%",
-            height: "34px",
+            height: "36px",
             opacity: "1",
             margin: "0",
             overflow: "visible",
             "z-index": "1"
           }).forEach(([key, value]) => formSearch.style.setProperty(key, value, "important"));
+          [formSearch.querySelector("form"), formSearch.querySelector(".input-icon")].forEach((element) => {
+            if (!element) return;
+            Object.entries({
+              display: "block",
+              position: "relative",
+              width: "100%",
+              height: "36px",
+              margin: "0",
+              padding: "0",
+              "box-sizing": "border-box"
+            }).forEach(([key, value]) => element.style.setProperty(key, value, "important"));
+          });
+          const input = formSearch.querySelector("#search-input");
+          if (input) {
+            input.style.setProperty("display", "block", "important");
+            input.style.setProperty("width", "100%", "important");
+            input.style.setProperty("height", "36px", "important");
+            input.style.setProperty("box-sizing", "border-box", "important");
+          }
         }, "syncMobileSearchLayout");
         const restoreMobileSearch = /* @__PURE__ */ __name(() => {
           const formSearch = document.getElementById("form-search");

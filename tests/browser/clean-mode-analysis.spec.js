@@ -446,11 +446,15 @@ test('clean mode desktop search input matches mobile style', async ({ page }) =>
     if (!el || !el.closest('#urppp-mobile-search-panel')) return null;
     const cs = getComputedStyle(el);
     const r = el.getBoundingClientRect();
+    const toolRect = document.querySelector('#urppp-mobile-quick .urppp-mobile-tool-row')?.getBoundingClientRect();
     return {
       w: Math.round(r.width),
       h: Math.round(r.height),
       borderW: parseFloat(cs.borderTopWidth),
       inPanel: true,
+      leftDelta: toolRect ? Math.round(r.left - toolRect.left) : null,
+      rightDelta: toolRect ? Math.round(toolRect.right - r.right) : null,
+      verticalGap: toolRect ? Math.round(r.top - toolRect.bottom) : null,
     };
   });
   expect(input).not.toBeNull();
@@ -458,6 +462,10 @@ test('clean mode desktop search input matches mobile style', async ({ page }) =>
   // 站点 nav-search-input 默认 36px 高、带边框
   expect(input.h).toBe(36);
   expect(input.borderW).toBeGreaterThan(0);
+  expect(Math.abs(input.leftDelta)).toBeLessThanOrEqual(1);
+  expect(Math.abs(input.rightDelta)).toBeLessThanOrEqual(1);
+  expect(input.verticalGap).toBeGreaterThanOrEqual(6);
+  expect(input.verticalGap).toBeLessThanOrEqual(16);
 
   // 搜索展开时收起并重新打开侧边栏，桌面搜索的 outside-click 不能把移动搜索写回 width:0
   await page.locator('#uc-menu-toggle').click();
@@ -511,10 +519,25 @@ test('clean mode mobile search reuses site form-search typeahead', async ({ page
     searchInputInPanel: !!document.getElementById('search-input') && !!document.getElementById('search-input').closest('#urppp-mobile-search-panel'),
     quickLinks: Array.from(document.querySelectorAll('#urppp-mobile-quick .urppp-mobile-quick-link')).map((a) => a.getAttribute('href')),
     inputH: Math.round(document.getElementById('search-input').getBoundingClientRect().height),
+    alignment: (() => {
+      const toolRect = document.querySelector('#urppp-mobile-quick .urppp-mobile-tool-row')?.getBoundingClientRect();
+      const inputRect = document.getElementById('search-input')?.getBoundingClientRect();
+      if (!toolRect || !inputRect) return null;
+      return {
+        leftDelta: Math.round(inputRect.left - toolRect.left),
+        rightDelta: Math.round(toolRect.right - inputRect.right),
+        verticalGap: Math.round(inputRect.top - toolRect.bottom),
+      };
+    })(),
   }));
   expect(state.formSearchInPanel).toBe(true);
   expect(state.searchInputInPanel).toBe(true);
   expect(state.inputH).toBeGreaterThan(20);
+  expect(state.alignment).not.toBeNull();
+  expect(Math.abs(state.alignment.leftDelta)).toBeLessThanOrEqual(1);
+  expect(Math.abs(state.alignment.rightDelta)).toBeLessThanOrEqual(1);
+  expect(state.alignment.verticalGap).toBeGreaterThanOrEqual(6);
+  expect(state.alignment.verticalGap).toBeLessThanOrEqual(16);
   // 假期静态项变纯文本（href null），校历/作息仍保留链接
   expect(state.quickLinks).toContain('/calendar');
   expect(state.quickLinks).toContain('/schedule');

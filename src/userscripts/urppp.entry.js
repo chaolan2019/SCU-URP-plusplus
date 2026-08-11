@@ -6555,9 +6555,23 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         if (!formSearch) return;
         Object.entries({
           position: 'relative', right: 'auto', top: 'auto', left: 'auto',
-          transform: 'none', width: '100%', height: '34px', opacity: '1', margin: '0',
+          transform: 'none', width: '100%', height: '36px', opacity: '1', margin: '0',
           overflow: 'visible', 'z-index': '1',
         }).forEach(([key, value]) => formSearch.style.setProperty(key, value, 'important'));
+        [formSearch.querySelector('form'), formSearch.querySelector('.input-icon')].forEach((element) => {
+          if (!element) return;
+          Object.entries({
+            display: 'block', position: 'relative', width: '100%', height: '36px',
+            margin: '0', padding: '0', 'box-sizing': 'border-box',
+          }).forEach(([key, value]) => element.style.setProperty(key, value, 'important'));
+        });
+        const input = formSearch.querySelector('#search-input');
+        if (input) {
+          input.style.setProperty('display', 'block', 'important');
+          input.style.setProperty('width', '100%', 'important');
+          input.style.setProperty('height', '36px', 'important');
+          input.style.setProperty('box-sizing', 'border-box', 'important');
+        }
       };
 
       const restoreMobileSearch = () => {
