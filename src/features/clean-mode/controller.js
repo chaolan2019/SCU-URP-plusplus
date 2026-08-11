@@ -110,12 +110,15 @@ export function createCleanModeController({ state, deps }) {
           const shell = el.querySelector('.uc-shell');
           el.insertBefore(sidebar, shell || null);
         }
-        // 侧边栏顶边贴住清爽模式顶栏底边（桌面 60 / 移动 ≤900px 52）
+        // 侧边栏顶边贴住清爽顶栏底边；使用 root 内相对坐标，兼容 root 进入动画。
+        const rootRect = el.getBoundingClientRect();
         const topEl = el.querySelector('.uc-top');
-        const topH = Math.max(44, Math.round(topEl ? topEl.getBoundingClientRect().height : 60));
+        const topRect = topEl ? topEl.getBoundingClientRect() : null;
+        const topOffset = Math.max(44, Math.round(topRect ? topRect.bottom - rootRect.top : 60));
+        const availableHeight = Math.max(0, Math.round(rootRect.height - topOffset));
         // 站点内联 z-index/top/height 均为 !important，需 JS 内联 important 后设覆盖
-        sidebar.style.setProperty('top', topH + 'px', 'important');
-        sidebar.style.setProperty('height', 'calc(100vh - ' + topH + 'px)', 'important');
+        sidebar.style.setProperty('top', topOffset + 'px', 'important');
+        sidebar.style.setProperty('height', availableHeight + 'px', 'important');
         sidebar.style.setProperty('z-index', '12030', 'important');
         sidebar.style.setProperty('position', 'fixed', 'important');
       } else {
@@ -169,6 +172,7 @@ export function createCleanModeController({ state, deps }) {
       }
       // 与移动端顶栏共用同一套 setDrawerOpen / animateDrawer 状态机
       const open = !sidebar.classList.contains('display');
+      syncCleanSidebarZ();
       deps.setDrawerOpen(sidebar, menuToggle, open);
       const siteToggler = document.getElementById('urppp-mobile-menu-button');
       if (siteToggler) {
@@ -179,10 +183,24 @@ export function createCleanModeController({ state, deps }) {
     el.__closeCleanDrawer = closeCleanSidebar;
     el.__syncCleanSidebarZ = syncCleanSidebarZ;
     el.__syncCleanThemeDots = syncCleanThemeDots;
+    const ResizeObserverRef = globalThis.ResizeObserver;
+    if (typeof ResizeObserverRef === 'function') {
+      const cleanSidebarResizeObserver = new ResizeObserverRef(() => {
+        if (state.open) syncCleanSidebarZ();
+      });
+      cleanSidebarResizeObserver.observe(el);
+      const topEl = el.querySelector('.uc-top');
+      if (topEl) cleanSidebarResizeObserver.observe(topEl);
+      el.__cleanSidebarResizeObserver = cleanSidebarResizeObserver;
+    }
     try {
       const media = window.matchMedia && window.matchMedia('(max-width: 900px)');
       if (media) {
-        const onLayoutChange = () => { if (state.open) deps.render(); };
+        const onLayoutChange = () => {
+          if (!state.open) return;
+          syncCleanSidebarZ();
+          deps.render();
+        };
         if (typeof media.addEventListener === 'function') media.addEventListener('change', onLayoutChange);
         else if (typeof media.addListener === 'function') media.addListener(onLayoutChange);
         el.__scoreLayoutMedia = media;

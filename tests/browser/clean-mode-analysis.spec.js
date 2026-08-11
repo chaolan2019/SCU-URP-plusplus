@@ -169,6 +169,23 @@ test('clean mode top-left toggle opens the site sidebar drawer', async ({ page }
   expect(sidebarBox.w).toBeLessThanOrEqual(262);
   // 侧边栏顶边贴着清爽模式顶栏底部
   expect(Math.abs(sidebarBox.top - sidebarBox.topBarBottom)).toBeLessThanOrEqual(1);
+
+  // 桌面窗口尺寸变化会触发通用 sidebar 同步，清爽模式仍应保持自己的顶栏几何。
+  await page.setViewportSize({ width: 1180, height: 820 });
+  await page.waitForTimeout(180);
+  const resizedBox = await sidebar.evaluate((el) => {
+    const sidebarRect = el.getBoundingClientRect();
+    const topRect = document.querySelector('#urppp-clean-root .uc-top').getBoundingClientRect();
+    return {
+      top: Math.round(sidebarRect.top),
+      topBarBottom: Math.round(topRect.bottom),
+      bottom: Math.round(sidebarRect.bottom),
+      viewportBottom: window.innerHeight,
+    };
+  });
+  expect(Math.abs(resizedBox.top - resizedBox.topBarBottom)).toBeLessThanOrEqual(1);
+  expect(Math.abs(resizedBox.bottom - resizedBox.viewportBottom)).toBeLessThanOrEqual(1);
+
   // 汉堡切换为关闭图标（aria-expanded=true）
   await expect(page.locator('#uc-menu-toggle')).toHaveAttribute('aria-expanded', 'true');
 

@@ -70,6 +70,33 @@ test('syncs content offset for desktop and narrow layouts', () => {
   assert.equal(main.style.props['margin-left'].value, '50px');
 });
 
+test('leaves clean mode sidebar geometry under clean controller ownership', () => {
+  const sidebar = createElement('ASIDE');
+  sidebar.classList.values.add('urppp-clean-sidebar');
+  sidebar.style.setProperty('top', '60px', 'important');
+  sidebar.style.setProperty('height', '740px', 'important');
+  const navbar = createElement('NAV');
+  navbar.getBoundingClientRect = () => ({ height: 45 });
+  const controller = createSidebarController({
+    documentRef: {
+      getElementById: () => sidebar,
+      querySelector: () => navbar,
+      querySelectorAll: () => [],
+      documentElement: createElement('HTML'),
+      body: createElement('BODY'),
+      createElement: (tag) => createElement(tag),
+    },
+    windowRef: { matchMedia: () => ({ matches: false }) },
+    MutationObserverRef: class {},
+    nodeTypeRef: { TEXT_NODE: 3 },
+  });
+
+  controller.syncSidebarUnderNavbar();
+
+  assert.equal(sidebar.style.props.top.value, '60px');
+  assert.equal(sidebar.style.props.height.value, '740px');
+});
+
 test('rebuilds the sidebar and clears the previous observer', () => {
   const sidebar = createElement('ASIDE');
   sidebar.id = 'sidebar';

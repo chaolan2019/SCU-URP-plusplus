@@ -14256,10 +14256,13 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
             const shell = el.querySelector(".uc-shell");
             el.insertBefore(sidebar, shell || null);
           }
+          const rootRect = el.getBoundingClientRect();
           const topEl = el.querySelector(".uc-top");
-          const topH = Math.max(44, Math.round(topEl ? topEl.getBoundingClientRect().height : 60));
-          sidebar.style.setProperty("top", topH + "px", "important");
-          sidebar.style.setProperty("height", "calc(100vh - " + topH + "px)", "important");
+          const topRect = topEl ? topEl.getBoundingClientRect() : null;
+          const topOffset = Math.max(44, Math.round(topRect ? topRect.bottom - rootRect.top : 60));
+          const availableHeight = Math.max(0, Math.round(rootRect.height - topOffset));
+          sidebar.style.setProperty("top", topOffset + "px", "important");
+          sidebar.style.setProperty("height", availableHeight + "px", "important");
           sidebar.style.setProperty("z-index", "12030", "important");
           sidebar.style.setProperty("position", "fixed", "important");
         } else {
@@ -14310,6 +14313,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           }, true);
         }
         const open = !sidebar.classList.contains("display");
+        syncCleanSidebarZ();
         deps.setDrawerOpen(sidebar, menuToggle, open);
         const siteToggler = document.getElementById("urppp-mobile-menu-button");
         if (siteToggler) {
@@ -14320,11 +14324,23 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       el.__closeCleanDrawer = closeCleanSidebar;
       el.__syncCleanSidebarZ = syncCleanSidebarZ;
       el.__syncCleanThemeDots = syncCleanThemeDots;
+      const ResizeObserverRef = globalThis.ResizeObserver;
+      if (typeof ResizeObserverRef === "function") {
+        const cleanSidebarResizeObserver = new ResizeObserverRef(() => {
+          if (state.open) syncCleanSidebarZ();
+        });
+        cleanSidebarResizeObserver.observe(el);
+        const topEl = el.querySelector(".uc-top");
+        if (topEl) cleanSidebarResizeObserver.observe(topEl);
+        el.__cleanSidebarResizeObserver = cleanSidebarResizeObserver;
+      }
       try {
         const media = window.matchMedia && window.matchMedia("(max-width: 900px)");
         if (media) {
           const onLayoutChange = /* @__PURE__ */ __name(() => {
-            if (state.open) deps.render();
+            if (!state.open) return;
+            syncCleanSidebarZ();
+            deps.render();
           }, "onLayoutChange");
           if (typeof media.addEventListener === "function") media.addEventListener("change", onLayoutChange);
           else if (typeof media.addListener === "function") media.addListener(onLayoutChange);
@@ -15618,6 +15634,7 @@ ${arcs}
         const sidebar = documentRef.getElementById("sidebar");
         const navbar = documentRef.querySelector("#navbar, .navbar.navbar-default, .navbar-fixed-top");
         if (!sidebar || !navbar) return;
+        if (sidebar.classList.contains("urppp-clean-sidebar")) return;
         const rect = navbar.getBoundingClientRect();
         const navbarHeight = Math.max(45, Math.round(rect.height || navbar.offsetHeight || 45));
         documentRef.documentElement.style.setProperty("--urppp-navbar-height", navbarHeight + "px");

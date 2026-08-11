@@ -25,6 +25,8 @@ export function createSidebarController({
       const sidebar = documentRef.getElementById('sidebar');
       const navbar = documentRef.querySelector('#navbar, .navbar.navbar-default, .navbar-fixed-top');
       if (!sidebar || !navbar) return;
+      // 清爽模式把 sidebar 移入自己的 fixed root，几何由 clean-mode controller 独占。
+      if (sidebar.classList.contains('urppp-clean-sidebar')) return;
       const rect = navbar.getBoundingClientRect();
       const navbarHeight = Math.max(45, Math.round(rect.height || navbar.offsetHeight || 45));
       documentRef.documentElement.style.setProperty('--urppp-navbar-height', navbarHeight + 'px');
