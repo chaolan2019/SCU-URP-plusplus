@@ -37,9 +37,10 @@ export function createCleanModeRenderer({ state, deps }) {
     if (!analysis || analysis.empty) {
       return '<div class="uc-sa-empty">暂无可用成绩数据，请先查询成绩后再试。</div>';
     }
+    const chartLayout = typeof deps.scoreChartLayout === 'function' ? deps.scoreChartLayout() : null;
     return `<div class="uc-sa-charts">
-      <div class="uc-sa-chart-card"><h5>学期趋势</h5>${deps.trendChartSvg({ trend: analysis.trend, palette: deps.scoreChartPalette || SA_PALETTE }) }</div>
-      <div class="uc-sa-chart-card"><h5>成绩分段分布</h5>${deps.bandsChartSvg({ bands: analysis.bands, palette: deps.scoreChartPalette || SA_PALETTE })}</div>
+      <div class="uc-sa-chart-card"><h5>学期趋势</h5><div class="uc-sa-chart-scroll">${deps.trendChartSvg({ trend: analysis.trend, palette: deps.scoreChartPalette || SA_PALETTE, layout: chartLayout })}</div></div>
+      <div class="uc-sa-chart-card"><h5>成绩分段分布</h5><div class="uc-sa-chart-scroll">${deps.bandsChartSvg({ bands: analysis.bands, palette: deps.scoreChartPalette || SA_PALETTE, layout: chartLayout })}</div></div>
     </div>
     <div class="uc-sa-more-row"><a class="uc-sa-more" data-href="/student/integratedQuery/scoreQuery/allPassingScores/index?urppp=sa">点击此处跳转到详细分析界面 →</a></div>`;
   }

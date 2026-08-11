@@ -92,6 +92,50 @@ test('clean mode opens with score data and renders analysis charts', async ({ pa
   expect(pageErrors).toEqual([]);
 });
 
+test('clean mode mobile score analysis uses readable responsive charts', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'mobile-home',
+    viewport: { width: 390, height: 844 },
+  });
+  await installScoreApiMock(page);
+
+  await page.evaluate(() => document.getElementById('urppp-nav-clean').click());
+  await page.waitForTimeout(2500);
+  await page.locator('#uc-tabbar button[data-tab="scores"]').click();
+  await page.locator('[data-sa-tab="analysis"]').click();
+  await page.waitForTimeout(300);
+
+  const chartLayout = await page.evaluate(() => {
+    const pane = document.querySelector('#urppp-clean-root .uc-sa-pane-analysis');
+    const trendSvg = pane.querySelector('[data-urppp-chart-kind="trend"]');
+    const bandsSvg = pane.querySelector('[data-urppp-chart-kind="bands"]');
+    const trendScroll = trendSvg.closest('.uc-sa-chart-scroll');
+    const bandsScroll = bandsSvg.closest('.uc-sa-chart-scroll');
+    return {
+      trendMode: trendSvg.getAttribute('data-urppp-chart-layout'),
+      bandsMode: bandsSvg.getAttribute('data-urppp-chart-layout'),
+      trendFont: parseFloat(getComputedStyle(trendSvg.querySelector('text')).fontSize),
+      trendOverflow: trendScroll.scrollWidth - trendScroll.clientWidth,
+      bandsOverflow: bandsScroll.scrollWidth - bandsScroll.clientWidth,
+      rootOverflow: document.getElementById('urppp-clean-root').scrollWidth - document.getElementById('urppp-clean-root').clientWidth,
+    };
+  });
+  expect(chartLayout.trendMode).toBe('mobile');
+  expect(chartLayout.bandsMode).toBe('mobile');
+  expect(chartLayout.trendFont).toBeGreaterThanOrEqual(11);
+  expect(chartLayout.trendOverflow).toBeLessThanOrEqual(2);
+  expect(chartLayout.bandsOverflow).toBeGreaterThan(150);
+  expect(chartLayout.rootOverflow).toBeLessThanOrEqual(1);
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.waitForTimeout(300);
+  await expect(page.locator('#urppp-clean-root [data-urppp-chart-kind="trend"]')).not.toHaveAttribute('data-urppp-chart-layout', 'mobile');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(300);
+  await expect(page.locator('#urppp-clean-root [data-urppp-chart-kind="trend"]')).toHaveAttribute('data-urppp-chart-layout', 'mobile');
+  expect(pageErrors).toEqual([]);
+});
+
 test('clean mode top-left toggle opens the site sidebar drawer', async ({ page }) => {
   const { pageErrors } = await loadUrpFixture(page, { fixture: 'home' });
   await installScoreApiMock(page);

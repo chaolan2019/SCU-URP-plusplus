@@ -11875,6 +11875,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         background:var(--surface);color:var(--text);
       }
       #urppp-clean-root .uc-sa-chart-card h5{margin:0 0 8px;font-size:13px;font-weight:700;color:var(--text)}
+      #urppp-clean-root .uc-sa-chart-scroll{width:100%;min-width:0;overflow:visible}
       #urppp-clean-root .uc-sa-chart-card svg{width:100%;height:auto;display:block}
       #urppp-clean-root .uc-sa-empty{padding:18px 8px;color:var(--text-muted);font-size:13px;text-align:center}
       #urppp-clean-root .uc-sa-more-row{margin-top:10px;text-align:right}
@@ -11884,6 +11885,16 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         background:color-mix(in srgb,var(--primary) 8%,transparent);transition:background .15s;
       }
       #urppp-clean-root .uc-sa-more:hover{background:color-mix(in srgb,var(--primary) 16%,transparent);text-decoration:none}
+      @media (max-width:900px){
+        #urppp-clean-root .uc-sa-chart-card{padding:10px}
+        #urppp-clean-root .uc-sa-chart-scroll{
+          overflow-x:auto;overflow-y:hidden;overscroll-behavior-inline:contain;
+          scrollbar-width:thin;-webkit-overflow-scrolling:touch
+        }
+        #urppp-clean-root .uc-sa-chart-scroll svg[data-urppp-chart-layout="mobile"]{flex:0 0 auto}
+        #urppp-clean-root .uc-sa-more-row{text-align:stretch}
+        #urppp-clean-root .uc-sa-more{width:100%;justify-content:center;box-sizing:border-box}
+      }
 
       /* 成绩总览/成绩分析：标题位 tab（参考设置界面） */
       #urppp-clean-root .uc-hd.uc-hd-tabs{padding:6px 8px 0;gap:6px;display:flex;justify-content:flex-start;align-items:flex-end;border-bottom:1px solid var(--border)}
@@ -12311,6 +12322,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         font-weight: 700;
         color: var(--text);
       }
+      #urppp-score-analysis .urppp-sa-chart-scroll { width: 100%; min-width: 0; overflow: visible; }
       #urppp-score-analysis .urppp-sa-chart { width: 100%; height: auto; display: block; }
       #urppp-score-analysis .urppp-sa-hover { cursor: pointer; }
       #urppp-score-analysis .urppp-sa-hover:hover { fill: color-mix(in srgb, var(--primary) 7%, transparent); }
@@ -12359,6 +12371,31 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         #urppp-score-analysis .urppp-sa-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         #urppp-score-analysis .urppp-sa-grid { grid-template-columns: 1fr; }
         #urppp-score-analysis .urppp-sa-summary { display: none; }
+      }
+      @media (max-width: 720px) {
+        #urppp-score-analysis .urppp-sa-toggle { padding: 12px 14px; }
+        #urppp-score-analysis .urppp-sa-content { padding: 12px; }
+        #urppp-score-analysis .urppp-sa-metrics { gap: 8px; margin-bottom: 10px; }
+        #urppp-score-analysis .urppp-sa-metric { padding: 10px 11px; }
+        #urppp-score-analysis .urppp-sa-metric-value { font-size: 20px; }
+        #urppp-score-analysis .urppp-sa-card { padding: 12px; }
+        #urppp-score-analysis .urppp-sa-chart-scroll {
+          overflow-x: auto;
+          overflow-y: hidden;
+          overscroll-behavior-inline: contain;
+          scrollbar-width: thin;
+          -webkit-overflow-scrolling: touch;
+        }
+        #urppp-score-analysis .urppp-sa-chart[data-urppp-chart-layout="mobile"] { flex: 0 0 auto; }
+        #urppp-score-analysis .urppp-sa-share-body { align-items: flex-start; }
+        #urppp-score-analysis .urppp-sa-legend { width: 100%; }
+        #urppp-score-analysis .urppp-sa-detail { max-height: 280px; }
+        #urppp-score-analysis .urppp-sa-table { font-size: 11.5px; }
+        #urppp-score-analysis .urppp-sa-table th,
+        #urppp-score-analysis .urppp-sa-table td { padding: 7px 8px; }
+      }
+      @media (max-width: 420px) {
+        #urppp-score-analysis .urppp-sa-metric:last-child { grid-column: 1 / -1; }
       }
 `;
 
@@ -13443,9 +13480,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       if (!analysis || analysis.empty) {
         return '<div class="uc-sa-empty">暂无可用成绩数据，请先查询成绩后再试。</div>';
       }
+      const chartLayout = typeof deps.scoreChartLayout === "function" ? deps.scoreChartLayout() : null;
       return `<div class="uc-sa-charts">
-      <div class="uc-sa-chart-card"><h5>学期趋势</h5>${deps.trendChartSvg({ trend: analysis.trend, palette: deps.scoreChartPalette || SA_PALETTE })}</div>
-      <div class="uc-sa-chart-card"><h5>成绩分段分布</h5>${deps.bandsChartSvg({ bands: analysis.bands, palette: deps.scoreChartPalette || SA_PALETTE })}</div>
+      <div class="uc-sa-chart-card"><h5>学期趋势</h5><div class="uc-sa-chart-scroll">${deps.trendChartSvg({ trend: analysis.trend, palette: deps.scoreChartPalette || SA_PALETTE, layout: chartLayout })}</div></div>
+      <div class="uc-sa-chart-card"><h5>成绩分段分布</h5><div class="uc-sa-chart-scroll">${deps.bandsChartSvg({ bands: analysis.bands, palette: deps.scoreChartPalette || SA_PALETTE, layout: chartLayout })}</div></div>
     </div>
     <div class="uc-sa-more-row"><a class="uc-sa-more" data-href="/student/integratedQuery/scoreQuery/allPassingScores/index?urppp=sa">点击此处跳转到详细分析界面 →</a></div>`;
     }
@@ -14439,6 +14477,19 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       el.__syncCleanSidebarZ = syncCleanSidebarZ;
       el.__syncCleanThemeDots = syncCleanThemeDots;
       try {
+        const media = window.matchMedia && window.matchMedia("(max-width: 900px)");
+        if (media) {
+          const onLayoutChange = /* @__PURE__ */ __name(() => {
+            if (state.open) deps.render();
+          }, "onLayoutChange");
+          if (typeof media.addEventListener === "function") media.addEventListener("change", onLayoutChange);
+          else if (typeof media.addListener === "function") media.addListener(onLayoutChange);
+          el.__scoreLayoutMedia = media;
+          el.__scoreLayoutChange = onLayoutChange;
+        }
+      } catch (_) {
+      }
+      try {
         deps.applySkinAttr();
       } catch (_) {
       }
@@ -15042,15 +15093,43 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     return escapeHtml(String(value == null ? "" : value));
   }
   __name(escapeLabel, "escapeLabel");
-  function trendChartSvg({ trend, palette }) {
-    const width = 920;
-    const height = 330;
-    const pad = { top: 36, right: 30, bottom: 46, left: 30 };
+  function resolveChartLayout(layout, kind, itemCount) {
+    const mobile = !!(layout && layout.variant === "mobile");
+    if (kind === "trend") {
+      if (!mobile) return { mobile, width: 920, height: 330, pad: { top: 36, right: 30, bottom: 46, left: 30 } };
+      const pad2 = { top: 58, right: 20, bottom: 44, left: 20 };
+      const slotWidth2 = Math.max(56, Number(layout && layout.slotWidth) || 72);
+      return {
+        mobile,
+        width: Math.max(300, pad2.left + pad2.right + Math.max(1, itemCount) * slotWidth2),
+        height: 286,
+        pad: pad2
+      };
+    }
+    if (!mobile) return { mobile, width: 660, height: 236, pad: { top: 28, right: 14, bottom: 44, left: 14 } };
+    const pad = { top: 28, right: 14, bottom: 44, left: 14 };
+    const slotWidth = Math.max(44, Number(layout && layout.slotWidth) || 48);
+    return {
+      mobile,
+      width: Math.max(320, pad.left + pad.right + Math.max(1, itemCount) * slotWidth),
+      height: 236,
+      pad
+    };
+  }
+  __name(resolveChartLayout, "resolveChartLayout");
+  function openSvg({ width, height, mobile, kind, label }) {
+    const layoutAttrs = mobile ? ` data-urppp-chart-layout="mobile" style="width:max(100%,${width}px);max-width:none;height:auto"` : "";
+    return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="${label}" data-urppp-chart-kind="${kind}"${layoutAttrs}>`;
+  }
+  __name(openSvg, "openSvg");
+  function trendChartSvg({ trend, palette, layout }) {
+    const items = (trend || []).filter((item) => item && item.avgScore != null);
+    const chart = resolveChartLayout(layout, "trend", items.length);
+    const { width, height, pad, mobile } = chart;
     const plotW = width - pad.left - pad.right;
     const plotH = height - pad.top - pad.bottom;
-    const items = (trend || []).filter((item) => item && item.avgScore != null);
     if (!items.length) {
-      return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="学期成绩趋势"></svg>`;
+      return `${openSvg({ ...chart, kind: "trend", label: "学期成绩趋势" })}</svg>`;
     }
     const n = items.length;
     const xAt = /* @__PURE__ */ __name((index) => pad.left + (index + 0.5) * (plotW / n), "xAt");
@@ -15075,7 +15154,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     }).join("");
     const creditBars = items.map((item, i) => {
       const x = xAt(i);
-      const barW = Math.min(26, plotW / n * 0.32);
+      const barW = mobile ? Math.min(30, plotW / n * 0.42) : Math.min(26, plotW / n * 0.32);
       const y = yCredit(item.credit);
       return `<rect x="${(x - barW / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${(pad.top + plotH - y).toFixed(1)}" rx="3" fill="${palette.credit}" opacity="0.55"/>
 <text x="${x.toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="middle" font-size="12" fill="${TEXT_FILL}">${escapeLabel(item.credit)}</text>`;
@@ -15095,7 +15174,14 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     }).join("");
     const gpaDots = items.map((item, i) => `<circle cx="${xAt(i).toFixed(1)}" cy="${yGpa(item.avgGpa).toFixed(1)}" r="3.5" fill="${palette.gpaLine}"/><text x="${xAt(i).toFixed(1)}" y="${(yGpa(item.avgGpa) - 9).toFixed(1)}" text-anchor="middle" font-size="11.5" font-weight="600" fill="${palette.gpaLine}">${escapeLabel(item.avgGpa)}</text>`).join("");
     const scoreDots = items.map((item, i) => `<circle cx="${xAt(i).toFixed(1)}" cy="${yScore(item.avgScore).toFixed(1)}" r="3" fill="${palette.scoreLine}"/><text x="${xAt(i).toFixed(1)}" y="${(yScore(item.avgScore) + 17).toFixed(1)}" text-anchor="middle" font-size="11.5" fill="${palette.scoreLine}">${escapeLabel(item.avgScore)}</text>`).join("");
-    return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="学期成绩趋势">
+    const legend = mobile ? `<g font-size="12">
+  <rect x="${pad.left}" y="30" width="12" height="12" rx="3" fill="${palette.gpaLine}"/><text x="${pad.left + 18}" y="40" fill="${TEXT_FILL}">学期平均绩点</text>
+  <rect x="${pad.left + 132}" y="30" width="12" height="12" rx="3" fill="${palette.scoreLine}"/><text x="${pad.left + 150}" y="40" fill="${TEXT_FILL}">加权均分</text>
+</g>` : `<g font-size="12">
+  <rect x="${width - pad.right - 176}" y="8" width="12" height="12" rx="3" fill="${palette.gpaLine}"/><text x="${width - pad.right - 158}" y="18" fill="${TEXT_FILL}">学期平均绩点</text>
+  <rect x="${width - pad.right - 82}" y="8" width="12" height="12" rx="3" fill="${palette.scoreLine}"/><text x="${width - pad.right - 64}" y="18" fill="${TEXT_FILL}">加权均分</text>
+</g>`;
+    return `${openSvg({ ...chart, kind: "trend", label: "学期成绩趋势" })}
 ${gridLines}
 ${creditBars}
 <g>${hoverZones}</g>
@@ -15105,23 +15191,19 @@ ${creditBars}
 <g>${gpaDots}</g>
 <g>${scoreDots}</g>
 <g>${xLabels}</g>
-<g font-size="12">
-  <rect x="${width - pad.right - 176}" y="8" width="12" height="12" rx="3" fill="${palette.gpaLine}"/><text x="${width - pad.right - 158}" y="18" fill="${TEXT_FILL}">学期平均绩点</text>
-  <rect x="${width - pad.right - 82}" y="8" width="12" height="12" rx="3" fill="${palette.scoreLine}"/><text x="${width - pad.right - 64}" y="18" fill="${TEXT_FILL}">加权均分</text>
-</g>
+${legend}
 </svg>`;
   }
   __name(trendChartSvg, "trendChartSvg");
-  function bandsChartSvg({ bands, palette }) {
-    const width = 660;
-    const height = 236;
-    const pad = { top: 28, right: 14, bottom: 44, left: 14 };
+  function bandsChartSvg({ bands, palette, layout }) {
+    const items = bands || [];
+    const chart = resolveChartLayout(layout, "bands", items.length);
+    const { width, height, pad, mobile } = chart;
     const plotW = width - pad.left - pad.right;
     const plotH = height - pad.top - pad.bottom;
-    const items = bands || [];
     const n = items.length || 1;
     const maxCount = Math.max(1, ...items.map((item) => item.count));
-    const barW = Math.min(40, plotW / n * 0.52);
+    const barW = mobile ? Math.min(32, plotW / n * 0.62) : Math.min(40, plotW / n * 0.52);
     const bars = items.map((item, i) => {
       const x = pad.left + (i + 0.5) * (plotW / n);
       const h = item.count ? Math.max(8, item.count / maxCount * plotH) : 0;
@@ -15138,7 +15220,7 @@ ${creditBars}
 <text x="${x.toFixed(1)}" y="${height - 26}" text-anchor="middle" font-size="11" font-weight="600" fill="${TEXT_FILL}">${escapeLabel(rangeText)}</text>
 <text x="${x.toFixed(1)}" y="${height - 12}" text-anchor="middle" font-size="12" fill="${TEXT_FILL}">${escapeLabel(item.gpa)}</text>`;
     }).join("");
-    return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="成绩分段分布">
+    return `${openSvg({ ...chart, kind: "bands", label: "成绩分段分布" })}
 <line x1="${pad.left}" y1="${(pad.top + plotH).toFixed(1)}" x2="${width - pad.right}" y2="${(pad.top + plotH).toFixed(1)}" stroke="${GRID_STROKE}" stroke-width="1"/>
 ${bars}
 </svg>`;
@@ -15244,16 +15326,17 @@ ${arcs}
       }).join("");
     }
     __name(shareLegend, "shareLegend");
-    function analysisHtml(analysis) {
+    function analysisHtml(analysis, options = {}) {
       if (!analysis || analysis.empty) {
         return '<div class="urppp-sa-empty">暂无可用成绩数据，请先在教务系统查询成绩后再试。</div>';
       }
       const share = analysis.share || { items: [], requiredRatio: 0 };
+      const chartLayout = options.chartLayout || null;
       return `<div class="urppp-sa-metrics">${metricCards(analysis.metrics)}</div>
 <div class="urppp-sa-grid">
   <section class="urppp-sa-card urppp-sa-trend">
     <h5 class="urppp-sa-card-title">学期趋势</h5>
-    ${trendChartSvg({ trend: analysis.trend, palette })}
+    <div class="urppp-sa-chart-scroll">${trendChartSvg({ trend: analysis.trend, palette, layout: chartLayout })}</div>
   </section>
   <section class="urppp-sa-card urppp-sa-share">
     <h5 class="urppp-sa-card-title">课程类型构成</h5>
@@ -15266,7 +15349,7 @@ ${arcs}
 <div class="urppp-sa-grid">
   <section class="urppp-sa-card urppp-sa-bands">
     <h5 class="urppp-sa-card-title">成绩分段分布</h5>
-    ${bandsChartSvg({ bands: analysis.bands, palette })}
+    <div class="urppp-sa-chart-scroll">${bandsChartSvg({ bands: analysis.bands, palette, layout: chartLayout })}</div>
   </section>
   <section class="urppp-sa-card urppp-sa-detail">
     <h5 class="urppp-sa-card-title">各学期明细</h5>
@@ -15329,6 +15412,8 @@ ${arcs}
     let cachedAnalysis = null;
     let uiHandle = null;
     let resizeBound = false;
+    let resizeTimer = 0;
+    let lastChartVariant = "desktop";
     function ensureStyle() {
       if (!deps.styles) return;
       if (document.getElementById("urppp-score-analysis-style")) return;
@@ -15390,31 +15475,59 @@ ${arcs}
       }
     }
     __name(syncShareLayout, "syncShareLayout");
+    function currentChartLayout() {
+      try {
+        if (window.matchMedia && window.matchMedia("(max-width: 720px)").matches) return { variant: "mobile" };
+      } catch (_) {
+      }
+      return null;
+    }
+    __name(currentChartLayout, "currentChartLayout");
+    function renderReadyAnalysis() {
+      const content = contentEl();
+      if (!content || !cachedAnalysis) return;
+      const chartLayout = currentChartLayout();
+      lastChartVariant = chartLayout ? chartLayout.variant : "desktop";
+      content.innerHTML = renderer.analysisHtml(cachedAnalysis, { chartLayout });
+      syncShareLayout();
+    }
+    __name(renderReadyAnalysis, "renderReadyAnalysis");
+    function handleResize() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        syncShareLayout();
+        if (!cachedAnalysis || !uiHandle || !uiHandle.isExpanded()) return;
+        const chartLayout = currentChartLayout();
+        const nextVariant = chartLayout ? chartLayout.variant : "desktop";
+        if (nextVariant !== lastChartVariant) renderReadyAnalysis();
+      }, 120);
+    }
+    __name(handleResize, "handleResize");
     function bindResize() {
       if (resizeBound) return;
       resizeBound = true;
-      window.addEventListener("resize", syncShareLayout);
+      window.addEventListener("resize", handleResize);
     }
     __name(bindResize, "bindResize");
     function unbindResize() {
       if (!resizeBound) return;
       resizeBound = false;
-      window.removeEventListener("resize", syncShareLayout);
+      clearTimeout(resizeTimer);
+      resizeTimer = 0;
+      window.removeEventListener("resize", handleResize);
     }
     __name(unbindResize, "unbindResize");
     async function handleExpand() {
       const content = contentEl();
       if (!content) return;
       if (loadState === "ready" && cachedAnalysis) {
-        content.innerHTML = renderer.analysisHtml(cachedAnalysis);
-        syncShareLayout();
+        renderReadyAnalysis();
         return;
       }
       content.innerHTML = renderer.loadingHtml();
       try {
-        const analysis = await startLoad();
-        content.innerHTML = renderer.analysisHtml(analysis);
-        syncShareLayout();
+        await startLoad();
+        renderReadyAnalysis();
       } catch (error) {
         content.innerHTML = renderer.errorHtml(error && error.message || String(error));
       }
@@ -15453,6 +15566,7 @@ ${arcs}
       loadState = "idle";
       loadPromise = null;
       cachedAnalysis = null;
+      lastChartVariant = "desktop";
     }
     __name(unmount, "unmount");
     return {
@@ -26446,6 +26560,13 @@ ${arcs}
         occupancyKindClass,
         occupancyTypeLabel,
         personalizedProfile,
+        scoreChartLayout: /* @__PURE__ */ __name(() => {
+          try {
+            return window.matchMedia && window.matchMedia("(max-width: 900px)").matches ? { variant: "mobile" } : null;
+          } catch (_) {
+            return null;
+          }
+        }, "scoreChartLayout"),
         scoreToNumber,
         summarizeCourses,
         trendChartSvg,

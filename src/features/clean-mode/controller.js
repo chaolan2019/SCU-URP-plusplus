@@ -179,6 +179,16 @@ export function createCleanModeController({ state, deps }) {
     el.__closeCleanDrawer = closeCleanSidebar;
     el.__syncCleanSidebarZ = syncCleanSidebarZ;
     el.__syncCleanThemeDots = syncCleanThemeDots;
+    try {
+      const media = window.matchMedia && window.matchMedia('(max-width: 900px)');
+      if (media) {
+        const onLayoutChange = () => { if (state.open) deps.render(); };
+        if (typeof media.addEventListener === 'function') media.addEventListener('change', onLayoutChange);
+        else if (typeof media.addListener === 'function') media.addListener(onLayoutChange);
+        el.__scoreLayoutMedia = media;
+        el.__scoreLayoutChange = onLayoutChange;
+      }
+    } catch (_) { /* ignore */ }
     try { deps.applySkinAttr(); } catch (_) { /* ignore */ }
     syncCleanThemeDots();
     el.querySelectorAll('#uc-tabbar button').forEach((btn) => {

@@ -80,6 +80,52 @@ test('expanding renders metrics, trend, bands and detail rows', async ({ page })
   expect(pageErrors).toEqual([]);
 });
 
+test('mobile score analysis keeps chart text readable and scrolls only dense bands', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'grades',
+    viewport: { width: 390, height: 844 },
+  });
+  await installScoreApiMock(page);
+  const panel = page.locator('#urppp-score-analysis');
+  await panel.locator('.urppp-sa-toggle').click();
+  await expect(panel).toHaveAttribute('data-urppp-sa-state', 'expanded');
+
+  const mobileLayout = await page.evaluate(() => {
+    const panelEl = document.getElementById('urppp-score-analysis');
+    const trendSvg = panelEl.querySelector('.urppp-sa-trend svg');
+    const bandsSvg = panelEl.querySelector('.urppp-sa-bands svg');
+    const trendScroll = panelEl.querySelector('.urppp-sa-trend .urppp-sa-chart-scroll');
+    const bandsScroll = panelEl.querySelector('.urppp-sa-bands .urppp-sa-chart-scroll');
+    const text = trendSvg.querySelector('text');
+    const metrics = Array.from(panelEl.querySelectorAll('.urppp-sa-metric')).map((el) => Math.round(el.getBoundingClientRect().width));
+    return {
+      trendMode: trendSvg.getAttribute('data-urppp-chart-layout'),
+      bandsMode: bandsSvg.getAttribute('data-urppp-chart-layout'),
+      trendFont: parseFloat(getComputedStyle(text).fontSize),
+      trendOverflow: trendScroll.scrollWidth - trendScroll.clientWidth,
+      bandsOverflow: bandsScroll.scrollWidth - bandsScroll.clientWidth,
+      pageOverflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      metrics,
+    };
+  });
+  expect(mobileLayout.trendMode).toBe('mobile');
+  expect(mobileLayout.bandsMode).toBe('mobile');
+  expect(mobileLayout.trendFont).toBeGreaterThanOrEqual(11);
+  expect(mobileLayout.trendOverflow).toBeLessThanOrEqual(2);
+  expect(mobileLayout.bandsOverflow).toBeGreaterThan(150);
+  expect(mobileLayout.pageOverflow).toBeLessThanOrEqual(1);
+  expect(mobileLayout.metrics[4]).toBeGreaterThan(mobileLayout.metrics[0] * 1.8);
+
+  // 跨过移动断点后重绘回桌面构图，返回手机宽度后再次恢复移动构图。
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.waitForTimeout(250);
+  await expect(panel.locator('.urppp-sa-trend svg')).not.toHaveAttribute('data-urppp-chart-layout', 'mobile');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(250);
+  await expect(panel.locator('.urppp-sa-trend svg')).toHaveAttribute('data-urppp-chart-layout', 'mobile');
+  expect(pageErrors).toEqual([]);
+});
+
 test('collapsing and re-expanding keeps one panel without page errors', async ({ page }) => {
   const { pageErrors } = await loadUrpFixture(page, { fixture: 'grades' });
   await installScoreApiMock(page);

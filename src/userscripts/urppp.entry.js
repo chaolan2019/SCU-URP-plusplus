@@ -10406,6 +10406,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       occupancyKindClass,
       occupancyTypeLabel,
       personalizedProfile,
+      scoreChartLayout: () => {
+        try {
+          return window.matchMedia && window.matchMedia('(max-width: 900px)').matches ? { variant: 'mobile' } : null;
+        } catch (_) { return null; }
+      },
       scoreToNumber,
       summarizeCourses,
       trendChartSvg: renderScoreTrendChart,

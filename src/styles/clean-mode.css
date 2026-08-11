@@ -369,6 +369,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         background:var(--surface);color:var(--text);
       }
       #urppp-clean-root .uc-sa-chart-card h5{margin:0 0 8px;font-size:13px;font-weight:700;color:var(--text)}
+      #urppp-clean-root .uc-sa-chart-scroll{width:100%;min-width:0;overflow:visible}
       #urppp-clean-root .uc-sa-chart-card svg{width:100%;height:auto;display:block}
       #urppp-clean-root .uc-sa-empty{padding:18px 8px;color:var(--text-muted);font-size:13px;text-align:center}
       #urppp-clean-root .uc-sa-more-row{margin-top:10px;text-align:right}
@@ -378,6 +379,16 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
         background:color-mix(in srgb,var(--primary) 8%,transparent);transition:background .15s;
       }
       #urppp-clean-root .uc-sa-more:hover{background:color-mix(in srgb,var(--primary) 16%,transparent);text-decoration:none}
+      @media (max-width:900px){
+        #urppp-clean-root .uc-sa-chart-card{padding:10px}
+        #urppp-clean-root .uc-sa-chart-scroll{
+          overflow-x:auto;overflow-y:hidden;overscroll-behavior-inline:contain;
+          scrollbar-width:thin;-webkit-overflow-scrolling:touch
+        }
+        #urppp-clean-root .uc-sa-chart-scroll svg[data-urppp-chart-layout="mobile"]{flex:0 0 auto}
+        #urppp-clean-root .uc-sa-more-row{text-align:stretch}
+        #urppp-clean-root .uc-sa-more{width:100%;justify-content:center;box-sizing:border-box}
+      }
 
       /* 成绩总览/成绩分析：标题位 tab（参考设置界面） */
       #urppp-clean-root .uc-hd.uc-hd-tabs{padding:6px 8px 0;gap:6px;display:flex;justify-content:flex-start;align-items:flex-end;border-bottom:1px solid var(--border)}

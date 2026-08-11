@@ -11,17 +11,47 @@ function escapeLabel(value) {
   return escapeHtml(String(value == null ? '' : value));
 }
 
+function resolveChartLayout(layout, kind, itemCount) {
+  const mobile = !!(layout && layout.variant === 'mobile');
+  if (kind === 'trend') {
+    if (!mobile) return { mobile, width: 920, height: 330, pad: { top: 36, right: 30, bottom: 46, left: 30 } };
+    const pad = { top: 58, right: 20, bottom: 44, left: 20 };
+    const slotWidth = Math.max(56, Number(layout && layout.slotWidth) || 72);
+    return {
+      mobile,
+      width: Math.max(300, pad.left + pad.right + Math.max(1, itemCount) * slotWidth),
+      height: 286,
+      pad,
+    };
+  }
+  if (!mobile) return { mobile, width: 660, height: 236, pad: { top: 28, right: 14, bottom: 44, left: 14 } };
+  const pad = { top: 28, right: 14, bottom: 44, left: 14 };
+  const slotWidth = Math.max(44, Number(layout && layout.slotWidth) || 48);
+  return {
+    mobile,
+    width: Math.max(320, pad.left + pad.right + Math.max(1, itemCount) * slotWidth),
+    height: 236,
+    pad,
+  };
+}
+
+function openSvg({ width, height, mobile, kind, label }) {
+  const layoutAttrs = mobile
+    ? ` data-urppp-chart-layout="mobile" style="width:max(100%,${width}px);max-width:none;height:auto"`
+    : '';
+  return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="${label}" data-urppp-chart-kind="${kind}"${layoutAttrs}>`;
+}
+
 // 学期趋势组合图：绩点 + 均分双折线（各自独立量程），底部叠加每学期学分柱。
 // 每列提供 hover 透明区域与原生 tooltip（学期/课程/学分/均分/绩点）。
-export function trendChartSvg({ trend, palette }) {
-  const width = 920;
-  const height = 330;
-  const pad = { top: 36, right: 30, bottom: 46, left: 30 };
+export function trendChartSvg({ trend, palette, layout }) {
+  const items = (trend || []).filter((item) => item && item.avgScore != null);
+  const chart = resolveChartLayout(layout, 'trend', items.length);
+  const { width, height, pad, mobile } = chart;
   const plotW = width - pad.left - pad.right;
   const plotH = height - pad.top - pad.bottom;
-  const items = (trend || []).filter((item) => item && item.avgScore != null);
   if (!items.length) {
-    return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="学期成绩趋势"></svg>`;
+    return `${openSvg({ ...chart, kind: 'trend', label: '学期成绩趋势' })}</svg>`;
   }
   const n = items.length;
 
@@ -51,7 +81,7 @@ export function trendChartSvg({ trend, palette }) {
 
   const creditBars = items.map((item, i) => {
     const x = xAt(i);
-    const barW = Math.min(26, (plotW / n) * 0.32);
+    const barW = mobile ? Math.min(30, (plotW / n) * 0.42) : Math.min(26, (plotW / n) * 0.32);
     const y = yCredit(item.credit);
     return `<rect x="${(x - barW / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${(pad.top + plotH - y).toFixed(1)}" rx="3" fill="${palette.credit}" opacity="0.55"/>
 <text x="${x.toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="middle" font-size="12" fill="${TEXT_FILL}">${escapeLabel(item.credit)}</text>`;
@@ -83,7 +113,17 @@ export function trendChartSvg({ trend, palette }) {
     `<circle cx="${xAt(i).toFixed(1)}" cy="${yScore(item.avgScore).toFixed(1)}" r="3" fill="${palette.scoreLine}"/><text x="${xAt(i).toFixed(1)}" y="${(yScore(item.avgScore) + 17).toFixed(1)}" text-anchor="middle" font-size="11.5" fill="${palette.scoreLine}">${escapeLabel(item.avgScore)}</text>`
   )).join('');
 
-  return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="学期成绩趋势">
+  const legend = mobile
+    ? `<g font-size="12">
+  <rect x="${pad.left}" y="30" width="12" height="12" rx="3" fill="${palette.gpaLine}"/><text x="${pad.left + 18}" y="40" fill="${TEXT_FILL}">学期平均绩点</text>
+  <rect x="${pad.left + 132}" y="30" width="12" height="12" rx="3" fill="${palette.scoreLine}"/><text x="${pad.left + 150}" y="40" fill="${TEXT_FILL}">加权均分</text>
+</g>`
+    : `<g font-size="12">
+  <rect x="${width - pad.right - 176}" y="8" width="12" height="12" rx="3" fill="${palette.gpaLine}"/><text x="${width - pad.right - 158}" y="18" fill="${TEXT_FILL}">学期平均绩点</text>
+  <rect x="${width - pad.right - 82}" y="8" width="12" height="12" rx="3" fill="${palette.scoreLine}"/><text x="${width - pad.right - 64}" y="18" fill="${TEXT_FILL}">加权均分</text>
+</g>`;
+
+  return `${openSvg({ ...chart, kind: 'trend', label: '学期成绩趋势' })}
 ${gridLines}
 ${creditBars}
 <g>${hoverZones}</g>
@@ -93,25 +133,21 @@ ${creditBars}
 <g>${gpaDots}</g>
 <g>${scoreDots}</g>
 <g>${xLabels}</g>
-<g font-size="12">
-  <rect x="${width - pad.right - 176}" y="8" width="12" height="12" rx="3" fill="${palette.gpaLine}"/><text x="${width - pad.right - 158}" y="18" fill="${TEXT_FILL}">学期平均绩点</text>
-  <rect x="${width - pad.right - 82}" y="8" width="12" height="12" rx="3" fill="${palette.scoreLine}"/><text x="${width - pad.right - 64}" y="18" fill="${TEXT_FILL}">加权均分</text>
-</g>
+${legend}
 </svg>`;
 }
 
 // 成绩分段分布：川大等级制 11 段（4.0 ~ 0），柱体跟随主题色，
 // 档位越高越实、越低越淡；柱下两行标注成绩分段与对应绩点。
-export function bandsChartSvg({ bands, palette }) {
-  const width = 660;
-  const height = 236;
-  const pad = { top: 28, right: 14, bottom: 44, left: 14 };
+export function bandsChartSvg({ bands, palette, layout }) {
+  const items = bands || [];
+  const chart = resolveChartLayout(layout, 'bands', items.length);
+  const { width, height, pad, mobile } = chart;
   const plotW = width - pad.left - pad.right;
   const plotH = height - pad.top - pad.bottom;
-  const items = bands || [];
   const n = items.length || 1;
   const maxCount = Math.max(1, ...items.map((item) => item.count));
-  const barW = Math.min(40, (plotW / n) * 0.52);
+  const barW = mobile ? Math.min(32, (plotW / n) * 0.62) : Math.min(40, (plotW / n) * 0.52);
 
   const bars = items.map((item, i) => {
     const x = pad.left + (i + 0.5) * (plotW / n);
@@ -131,7 +167,7 @@ export function bandsChartSvg({ bands, palette }) {
 <text x="${x.toFixed(1)}" y="${height - 12}" text-anchor="middle" font-size="12" fill="${TEXT_FILL}">${escapeLabel(item.gpa)}</text>`;
   }).join('');
 
-  return `<svg viewBox="0 0 ${width} ${height}" class="urppp-sa-chart" role="img" aria-label="成绩分段分布">
+  return `${openSvg({ ...chart, kind: 'bands', label: '成绩分段分布' })}
 <line x1="${pad.left}" y1="${(pad.top + plotH).toFixed(1)}" x2="${width - pad.right}" y2="${(pad.top + plotH).toFixed(1)}" stroke="${GRID_STROKE}" stroke-width="1"/>
 ${bars}
 </svg>`;

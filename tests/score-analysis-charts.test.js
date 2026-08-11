@@ -51,6 +51,19 @@ test('trendChartSvg draws two polylines, credit labels and hover zones', () => {
   assert.match(svg, />8<\/text>/);
 });
 
+test('trendChartSvg mobile layout preserves readable units and minimum term slots', () => {
+  const trend = Array.from({ length: 8 }, (_, i) => ({
+    term: `202${i}-202${i + 1}-1`, label: `2${i}-2${i + 1}-1`, count: 4,
+    credit: 10 + i, avgScore: 80 + i, avgGpa: 3 + i / 10,
+  }));
+  const svg = trendChartSvg({ trend, palette, layout: { variant: 'mobile' } });
+  assert.match(svg, /data-urppp-chart-layout="mobile"/);
+  assert.match(svg, /data-urppp-chart-kind="trend"/);
+  assert.match(svg, /viewBox="0 0 616 286"/);
+  assert.match(svg, /width:max\(100%,616px\)/);
+  assert.match(svg, /font-size="12"/);
+});
+
 test('trendChartSvg escapes label and tooltip text', () => {
   const svg = trendChartSvg({
     trend: [{ term: '2024-2025-1', label: '24-25-1<script>', count: 1, credit: 2, avgScore: 90, avgGpa: 4 }],
@@ -74,6 +87,15 @@ test('bandsChartSvg renders eleven bars with score range and gpa labels', () => 
   // 每柱 hover tooltip（等级仍保留在 tooltip 内）
   assert.equal((svg.match(/<title>/g) || []).length, 11);
   assert.match(svg, /A-（绩点 3\.7）/);
+});
+
+test('bandsChartSvg mobile layout gives eleven bands readable slots', () => {
+  const svg = bandsChartSvg({ bands: elevenBands, palette, layout: { variant: 'mobile' } });
+  assert.match(svg, /data-urppp-chart-layout="mobile"/);
+  assert.match(svg, /data-urppp-chart-kind="bands"/);
+  assert.match(svg, /viewBox="0 0 556 236"/);
+  assert.match(svg, /width:max\(100%,556px\)/);
+  assert.match(svg, /font-size="11"/);
 });
 
 test('bandsChartSvg escapes labels and tooltip text', () => {

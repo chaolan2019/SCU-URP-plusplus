@@ -80,6 +80,14 @@ test('analysis renders five metrics, share first row and bands second row', () =
   assert.match(html, /24-25-1/);
 });
 
+test('mobile analysis wraps responsive SVGs in isolated scroll containers', () => {
+  const html = renderer.analysisHtml(sampleAnalysis, { chartLayout: { variant: 'mobile' } });
+  assert.equal((html.match(/urppp-sa-chart-scroll/g) || []).length, 2);
+  assert.equal((html.match(/data-urppp-chart-layout="mobile"/g) || []).length, 2);
+  assert.match(html, /data-urppp-chart-kind="trend"/);
+  assert.match(html, /data-urppp-chart-kind="bands"/);
+});
+
 test('analysis escapes course names and term labels', () => {
   const hostile = {
     ...sampleAnalysis,

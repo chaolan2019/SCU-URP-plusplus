@@ -18,6 +18,8 @@ export function createScoreAnalysisController({ deps }) {
   let cachedAnalysis = null;
   let uiHandle = null;
   let resizeBound = false;
+  let resizeTimer = 0;
+  let lastChartVariant = 'desktop';
 
   function ensureStyle() {
     if (!deps.styles) return;
@@ -80,31 +82,58 @@ export function createScoreAnalysisController({ deps }) {
     }
   }
 
+  function currentChartLayout() {
+    try {
+      if (window.matchMedia && window.matchMedia('(max-width: 720px)').matches) return { variant: 'mobile' };
+    } catch (_) { /* ignore */ }
+    return null;
+  }
+
+  function renderReadyAnalysis() {
+    const content = contentEl();
+    if (!content || !cachedAnalysis) return;
+    const chartLayout = currentChartLayout();
+    lastChartVariant = chartLayout ? chartLayout.variant : 'desktop';
+    content.innerHTML = renderer.analysisHtml(cachedAnalysis, { chartLayout });
+    syncShareLayout();
+  }
+
+  function handleResize() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      syncShareLayout();
+      if (!cachedAnalysis || !uiHandle || !uiHandle.isExpanded()) return;
+      const chartLayout = currentChartLayout();
+      const nextVariant = chartLayout ? chartLayout.variant : 'desktop';
+      if (nextVariant !== lastChartVariant) renderReadyAnalysis();
+    }, 120);
+  }
+
   function bindResize() {
     if (resizeBound) return;
     resizeBound = true;
-    window.addEventListener('resize', syncShareLayout);
+    window.addEventListener('resize', handleResize);
   }
 
   function unbindResize() {
     if (!resizeBound) return;
     resizeBound = false;
-    window.removeEventListener('resize', syncShareLayout);
+    clearTimeout(resizeTimer);
+    resizeTimer = 0;
+    window.removeEventListener('resize', handleResize);
   }
 
   async function handleExpand() {
     const content = contentEl();
     if (!content) return;
     if (loadState === 'ready' && cachedAnalysis) {
-      content.innerHTML = renderer.analysisHtml(cachedAnalysis);
-      syncShareLayout();
+      renderReadyAnalysis();
       return;
     }
     content.innerHTML = renderer.loadingHtml();
     try {
-      const analysis = await startLoad();
-      content.innerHTML = renderer.analysisHtml(analysis);
-      syncShareLayout();
+      await startLoad();
+      renderReadyAnalysis();
     } catch (error) {
       content.innerHTML = renderer.errorHtml(error && error.message || String(error));
     }
@@ -141,6 +170,7 @@ export function createScoreAnalysisController({ deps }) {
     loadState = 'idle';
     loadPromise = null;
     cachedAnalysis = null;
+    lastChartVariant = 'desktop';
   }
 
   return {

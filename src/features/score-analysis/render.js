@@ -80,16 +80,17 @@ export function createScoreAnalysisRenderer({ deps }) {
     }).join('');
   }
 
-  function analysisHtml(analysis) {
+  function analysisHtml(analysis, options = {}) {
     if (!analysis || analysis.empty) {
       return '<div class="urppp-sa-empty">暂无可用成绩数据，请先在教务系统查询成绩后再试。</div>';
     }
     const share = analysis.share || { items: [], requiredRatio: 0 };
+    const chartLayout = options.chartLayout || null;
     return `<div class="urppp-sa-metrics">${metricCards(analysis.metrics)}</div>
 <div class="urppp-sa-grid">
   <section class="urppp-sa-card urppp-sa-trend">
     <h5 class="urppp-sa-card-title">学期趋势</h5>
-    ${trendChartSvg({ trend: analysis.trend, palette })}
+    <div class="urppp-sa-chart-scroll">${trendChartSvg({ trend: analysis.trend, palette, layout: chartLayout })}</div>
   </section>
   <section class="urppp-sa-card urppp-sa-share">
     <h5 class="urppp-sa-card-title">课程类型构成</h5>
@@ -102,7 +103,7 @@ export function createScoreAnalysisRenderer({ deps }) {
 <div class="urppp-sa-grid">
   <section class="urppp-sa-card urppp-sa-bands">
     <h5 class="urppp-sa-card-title">成绩分段分布</h5>
-    ${bandsChartSvg({ bands: analysis.bands, palette })}
+    <div class="urppp-sa-chart-scroll">${bandsChartSvg({ bands: analysis.bands, palette, layout: chartLayout })}</div>
   </section>
   <section class="urppp-sa-card urppp-sa-detail">
     <h5 class="urppp-sa-card-title">各学期明细</h5>

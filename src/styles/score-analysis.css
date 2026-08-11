@@ -125,6 +125,7 @@
         font-weight: 700;
         color: var(--text);
       }
+      #urppp-score-analysis .urppp-sa-chart-scroll { width: 100%; min-width: 0; overflow: visible; }
       #urppp-score-analysis .urppp-sa-chart { width: 100%; height: auto; display: block; }
       #urppp-score-analysis .urppp-sa-hover { cursor: pointer; }
       #urppp-score-analysis .urppp-sa-hover:hover { fill: color-mix(in srgb, var(--primary) 7%, transparent); }
@@ -173,4 +174,29 @@
         #urppp-score-analysis .urppp-sa-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         #urppp-score-analysis .urppp-sa-grid { grid-template-columns: 1fr; }
         #urppp-score-analysis .urppp-sa-summary { display: none; }
+      }
+      @media (max-width: 720px) {
+        #urppp-score-analysis .urppp-sa-toggle { padding: 12px 14px; }
+        #urppp-score-analysis .urppp-sa-content { padding: 12px; }
+        #urppp-score-analysis .urppp-sa-metrics { gap: 8px; margin-bottom: 10px; }
+        #urppp-score-analysis .urppp-sa-metric { padding: 10px 11px; }
+        #urppp-score-analysis .urppp-sa-metric-value { font-size: 20px; }
+        #urppp-score-analysis .urppp-sa-card { padding: 12px; }
+        #urppp-score-analysis .urppp-sa-chart-scroll {
+          overflow-x: auto;
+          overflow-y: hidden;
+          overscroll-behavior-inline: contain;
+          scrollbar-width: thin;
+          -webkit-overflow-scrolling: touch;
+        }
+        #urppp-score-analysis .urppp-sa-chart[data-urppp-chart-layout="mobile"] { flex: 0 0 auto; }
+        #urppp-score-analysis .urppp-sa-share-body { align-items: flex-start; }
+        #urppp-score-analysis .urppp-sa-legend { width: 100%; }
+        #urppp-score-analysis .urppp-sa-detail { max-height: 280px; }
+        #urppp-score-analysis .urppp-sa-table { font-size: 11.5px; }
+        #urppp-score-analysis .urppp-sa-table th,
+        #urppp-score-analysis .urppp-sa-table td { padding: 7px 8px; }
+      }
+      @media (max-width: 420px) {
+        #urppp-score-analysis .urppp-sa-metric:last-child { grid-column: 1 / -1; }
       }
