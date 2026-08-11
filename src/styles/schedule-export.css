@@ -38,6 +38,10 @@ html[data-urppp-skin="neu"] .urppp-export-trigger:hover{background:var(--neu-bas
 html[data-urppp-skin="neu"] .urppp-export-trigger:active{box-shadow:var(--neu-inset-soft,inset 2px 2px 5px rgba(0,0,0,.14),inset -2px -2px 5px rgba(255,255,255,.55))!important;transform:none!important}
 html[data-urppp-skin="neu"] .urppp-export-menu{border:0!important;border-radius:12px!important;background:var(--neu-base,var(--surface))!important;box-shadow:var(--neu-raised-sm,var(--shadow))!important}
 html[data-urppp-skin="neu"] .urppp-export-option{border-radius:8px!important}
+@media (max-width:991px){
+[data-urppp-native-print-source="1"]{display:none!important}
+#urppp-native-schedule-export{margin-left:0!important}
+}
 .urppp-dialog-mask{position:fixed!important;inset:0!important;z-index:14100!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:18px!important;background:rgba(15,23,42,.44)!important}
 .urppp-dialog{width:min(420px,100%)!important;padding:18px!important;border:1px solid var(--border,#dfe3e8)!important;border-radius:12px!important;background:var(--surface,#fff)!important;color:var(--text,#1d1d1f)!important;box-shadow:0 22px 60px rgba(15,23,42,.24)!important}
 .urppp-dialog h3{margin:0 0 8px!important;font-size:15px!important;color:var(--text)!important}

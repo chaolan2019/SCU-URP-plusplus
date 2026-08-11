@@ -8996,14 +8996,24 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   function patchNativeScheduleExport() {
     if (!isPersonalSchedulePage()) return;
-    if (document.getElementById('urppp-native-schedule-export')) return;
     const heading = document.querySelector('#h4_id1')?.closest('h4') || document.querySelector('h4.header');
     const actionHost = heading?.querySelector('.right_top_oper') || document.querySelector('#mainDIV .right_top_oper, .page-content .right_top_oper');
     const buttons = Array.from((actionHost || document).querySelectorAll('button, a'));
-    const original = buttons.find((button) => {
-      const signature = [button.textContent, button.getAttribute('title'), button.getAttribute('onclick')].filter(Boolean).join(' ').replace(/\s+/g, ' ');
-      return /导出.*(?:课表|PDF)|exportTableToPdf|\bdc\s*\(/i.test(signature);
+    const signatureOf = (button) => (
+      [button.textContent, button.getAttribute('title'), button.getAttribute('onclick')]
+        .filter(Boolean)
+        .join(' ')
+        .replace(/\s+/g, ' ')
+    );
+    buttons.forEach((button) => {
+      if (/打印.*课表|\bdy\s*\(/i.test(signatureOf(button))) {
+        button.setAttribute('data-urppp-native-print-source', '1');
+      }
     });
+    if (document.getElementById('urppp-native-schedule-export')) return;
+    const original = buttons.find((button) => (
+      /导出.*(?:课表|PDF)|exportTableToPdf|\bdc\s*\(/i.test(signatureOf(button))
+    ));
     const menu = createScheduleExportMenu({ source: 'native', pdfHandler: pagePdfExportHandler(original) });
     menu.id = 'urppp-native-schedule-export';
     if (original && original.parentElement) {
@@ -9087,6 +9097,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       }
       original.removeAttribute('data-urppp-native-export-source');
       try { delete original.__urpppNativeExportState; } catch (_) {}
+    });
+    root.querySelectorAll('[data-urppp-native-print-source]').forEach((button) => {
+      button.removeAttribute('data-urppp-native-print-source');
     });
   }
 

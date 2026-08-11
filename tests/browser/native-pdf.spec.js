@@ -48,6 +48,52 @@ test('native PDF capture removes theme residue and restores it after every expor
   expect(pageErrors).toEqual([]);
 });
 
+test('mobile schedule hides native print and keeps export action in view', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    viewport: { width: 390, height: 844 },
+    beforeUserscript: async (fixturePage) => {
+      await fixturePage.evaluate(() => {
+        const actionHost = document.querySelector('#h4_id1 .right_top_oper');
+        const selfCheck = document.createElement('button');
+        selfCheck.id = 'native-self-check';
+        selfCheck.type = 'button';
+        selfCheck.textContent = '课表自检';
+        actionHost.prepend(selfCheck);
+        document.getElementById('native-print').setAttribute('onclick', 'dy(); return false;');
+      });
+    },
+  });
+
+  const nativePrint = page.locator('#native-print');
+  const exportTrigger = page.locator('#urppp-native-schedule-export > .urppp-export-trigger');
+  await expect(nativePrint).toHaveAttribute('data-urppp-native-print-source', '1');
+  await expect(nativePrint).toBeHidden();
+  await expect(page.locator('#native-self-check')).toBeVisible();
+  await expect(exportTrigger).toBeVisible();
+
+  const mobileLayout = await page.evaluate(() => {
+    const actionHost = document.querySelector('#h4_id1 .right_top_oper');
+    const trigger = document.querySelector('#urppp-native-schedule-export > .urppp-export-trigger');
+    const hostRect = actionHost.getBoundingClientRect();
+    const triggerRect = trigger.getBoundingClientRect();
+    return {
+      hostInViewport: hostRect.left >= 0 && hostRect.right <= window.innerWidth + 1,
+      triggerInViewport: triggerRect.left >= 0 && triggerRect.right <= window.innerWidth + 1,
+      clipped: actionHost.scrollWidth > actionHost.clientWidth + 1,
+    };
+  });
+  expect(mobileLayout).toEqual({
+    hostInViewport: true,
+    triggerInViewport: true,
+    clipped: false,
+  });
+
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(nativePrint).toBeVisible();
+  await expect(exportTrigger).toBeVisible();
+  expect(pageErrors).toEqual([]);
+});
+
 test('@visual themed schedule fixture remains stable', async ({ page }) => {
   const { pageErrors } = await loadUrpFixture(page);
   await expect(page.locator('#urppp-native-schedule-export')).toHaveCount(1);

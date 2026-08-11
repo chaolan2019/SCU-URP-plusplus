@@ -8725,6 +8725,10 @@ html[data-urppp-skin="neu"] .urppp-export-trigger:hover{background:var(--neu-bas
 html[data-urppp-skin="neu"] .urppp-export-trigger:active{box-shadow:var(--neu-inset-soft,inset 2px 2px 5px rgba(0,0,0,.14),inset -2px -2px 5px rgba(255,255,255,.55))!important;transform:none!important}
 html[data-urppp-skin="neu"] .urppp-export-menu{border:0!important;border-radius:12px!important;background:var(--neu-base,var(--surface))!important;box-shadow:var(--neu-raised-sm,var(--shadow))!important}
 html[data-urppp-skin="neu"] .urppp-export-option{border-radius:8px!important}
+@media (max-width:991px){
+[data-urppp-native-print-source="1"]{display:none!important}
+#urppp-native-schedule-export{margin-left:0!important}
+}
 .urppp-dialog-mask{position:fixed!important;inset:0!important;z-index:14100!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:18px!important;background:rgba(15,23,42,.44)!important}
 .urppp-dialog{width:min(420px,100%)!important;padding:18px!important;border:1px solid var(--border,#dfe3e8)!important;border-radius:12px!important;background:var(--surface,#fff)!important;color:var(--text,#1d1d1f)!important;box-shadow:0 22px 60px rgba(15,23,42,.24)!important}
 .urppp-dialog h3{margin:0 0 8px!important;font-size:15px!important;color:var(--text)!important}
@@ -25031,14 +25035,17 @@ ${arcs}
     __name(isScoreQueryPage, "isScoreQueryPage");
     function patchNativeScheduleExport() {
       if (!isPersonalSchedulePage()) return;
-      if (document.getElementById("urppp-native-schedule-export")) return;
       const heading = document.querySelector("#h4_id1")?.closest("h4") || document.querySelector("h4.header");
       const actionHost = heading?.querySelector(".right_top_oper") || document.querySelector("#mainDIV .right_top_oper, .page-content .right_top_oper");
       const buttons = Array.from((actionHost || document).querySelectorAll("button, a"));
-      const original = buttons.find((button) => {
-        const signature = [button.textContent, button.getAttribute("title"), button.getAttribute("onclick")].filter(Boolean).join(" ").replace(/\s+/g, " ");
-        return /导出.*(?:课表|PDF)|exportTableToPdf|\bdc\s*\(/i.test(signature);
+      const signatureOf = /* @__PURE__ */ __name((button) => [button.textContent, button.getAttribute("title"), button.getAttribute("onclick")].filter(Boolean).join(" ").replace(/\s+/g, " "), "signatureOf");
+      buttons.forEach((button) => {
+        if (/打印.*课表|\bdy\s*\(/i.test(signatureOf(button))) {
+          button.setAttribute("data-urppp-native-print-source", "1");
+        }
       });
+      if (document.getElementById("urppp-native-schedule-export")) return;
+      const original = buttons.find((button) => /导出.*(?:课表|PDF)|exportTableToPdf|\bdc\s*\(/i.test(signatureOf(button)));
       const menu = createScheduleExportMenu({ source: "native", pdfHandler: pagePdfExportHandler(original) });
       menu.id = "urppp-native-schedule-export";
       if (original && original.parentElement) {
@@ -25122,6 +25129,9 @@ ${arcs}
           delete original.__urpppNativeExportState;
         } catch (_) {
         }
+      });
+      root.querySelectorAll("[data-urppp-native-print-source]").forEach((button) => {
+        button.removeAttribute("data-urppp-native-print-source");
       });
     }
     __name(removeNativeScheduleExport, "removeNativeScheduleExport");
