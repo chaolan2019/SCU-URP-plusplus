@@ -55,6 +55,46 @@ test('desktop search opens native input with stable placement and no self-built 
   expect(pageErrors).toEqual([]);
 });
 
+test('desktop search remains usable after sidebar collapse route refresh', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'home',
+    viewport: { width: 1280, height: 900 },
+    values: { urppp_skin_v1: 'neu', urppp_theme_v3: 'default' },
+  });
+
+  const button = page.locator('#clickdiv');
+  const panel = page.locator('#form-search');
+  await button.click();
+  await expect(panel).toHaveAttribute('data-open', '1');
+  await expect(page.locator('#search-input')).toBeFocused();
+
+  // 侧边栏折叠会触发 hash 路由重建，模拟真实操作的状态链。
+  await page.evaluate(() => {
+    const sidebar = document.getElementById('sidebar');
+    sidebar.classList.add('menu-min');
+    history.pushState({ sidebar: 'collapsed' }, '', `${location.pathname}#sidebar-collapsed`);
+  });
+  await page.waitForTimeout(500);
+
+  const state = await page.evaluate(() => {
+    const form = document.getElementById('form-search');
+    const input = document.getElementById('search-input');
+    return {
+      open: form?.dataset.open,
+      panelWidth: Math.round(form?.getBoundingClientRect().width || 0),
+      inputWidth: Math.round(input?.getBoundingClientRect().width || 0),
+      opacity: getComputedStyle(form).opacity,
+      formInNavbar: !!form?.closest('#navbar'),
+    };
+  });
+  expect(state.open).toBe('1');
+  expect(state.panelWidth).toBeGreaterThan(150);
+  expect(state.inputWidth).toBeGreaterThan(150);
+  expect(state.opacity).toBe('1');
+  expect(state.formInNavbar).toBe(true);
+  expect(pageErrors).toEqual([]);
+});
+
 test('desktop search is rebound after business-page navbar replacement', async ({ page }) => {
   const { pageErrors } = await loadUrpFixture(page, {
     fixture: 'home',
