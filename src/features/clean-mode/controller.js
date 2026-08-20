@@ -1,3 +1,5 @@
+import { openCalendarModal, mountCalendarButton, bindCalendarOpen, ensureCalendarStyle, removeCalendarButton } from '../interactive-calendar/index.js';
+
 export function createCleanModeController({ state, deps }) {
   function rootEl() { return document.getElementById('urppp-clean-root'); }
 
@@ -218,6 +220,8 @@ export function createCleanModeController({ state, deps }) {
         if (state.mobileTab === 'room') deps.ensureRoomCatalogLoaded();
       };
     });
+    ensureCalendarStyle();
+    bindCalendarOpen(el);
     return el;
   }
 
@@ -265,6 +269,7 @@ export function createCleanModeController({ state, deps }) {
       // 仅首页展示清爽入口；业务页移除残留按钮（移动端扩展逻辑见 list/mobile-nav-clean-entry.md）
       if (!deps.isHomePage()) {
         if (btn) btn.remove();
+        removeCalendarButton();
         return;
       }
       const host = document.getElementById('urppp-nav-theme')
@@ -290,6 +295,8 @@ export function createCleanModeController({ state, deps }) {
         padding: '0 12px', 'font-size': '12px', gap: '6px',
         width: 'auto', float: 'none',
       }).forEach(([key, value]) => btn.style.setProperty(key, value, 'important'));
+      ensureCalendarStyle();
+      try { mountCalendarButton(); } catch (_) { /* ignore */ }
     } catch (error) {
       console.warn('[URP++] clean entry', error);
     }
