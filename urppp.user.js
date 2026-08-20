@@ -11676,7 +11676,7 @@ html.urppp-clean-lock,html.urppp-clean-lock body{overflow:hidden!important}
   #urppp-clean-root .uc-modal{display:none}
   #urppp-clean-root .uc-modal.open{display:flex}
 }
-html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#urppp-nav-clean{
+html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #urppp-nav-clean,#urppp-nav-cal,#urppp-nav-clean,#urppp-nav-cal{
   margin-left:8px!important;height:28px!important;min-height:28px!important;max-height:28px!important;
   padding:0 10px!important;border-radius:var(--urppp-action-radius,999px)!important;
   border:var(--urppp-action-border,none)!important;
@@ -11686,7 +11686,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   box-shadow:var(--urppp-action-shadow,0 2px 6px var(--ring))!important;
   line-height:26px!important;cursor:pointer!important;float:none!important
 }
-#urppp-nav-clean svg{width:14px!important;height:14px!important;display:block!important}
+#urppp-nav-clean svg,#urppp-nav-cal svg{width:14px!important;height:14px!important;display:block!important}
 @media (max-width:900px){
   #urppp-clean-root .uc-top{flex:0 0 52px;padding:0 12px}
   #sidebar.urppp-clean-sidebar{top:52px !important;height:calc(100vh - 52px) !important}
@@ -12634,8 +12634,8 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
           line-height: 44px !important;
         }
         /* 清爽按钮：移动端紧凑 */
-        #navbar #urppp-nav-clean,
-        #urppp-nav-theme #urppp-nav-clean {
+        #navbar #urppp-nav-clean,#urppp-nav-cal,
+        #urppp-nav-theme #urppp-nav-clean,#urppp-nav-cal {
           height: 30px !important;
           min-height: 30px !important;
           margin: 0 8px 0 4px !important;
@@ -13419,6 +13419,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       <span class="cal-s-wk">${st.started ? `第 ${st.weekNo} 周` : "尚未开学"} · ${st.term.name}</span>
       <span class="cal-s-ev"><i style="background:${dot}"></i>${st.next ? st.next.e.name : "学期已结束"}</span>
       <span class="cal-s-date">${st.next ? st.next.e.start + (st.next.e.end && st.next.e.end !== st.next.e.start ? "~" + st.next.e.end.slice(5) : "") : ""}</span>
+      <span class="cal-s-prog"><span>本学期进度</span><span>${Math.min(st.weekNo, tl.weeks)}/${tl.weeks} 周</span></span>
       <span class="cal-s-bar"><i style="width:${st.progress}%"></i></span>
     </span>
   </button>`;
@@ -13471,7 +13472,10 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
     </div>`;
     }).join("");
     return `<div class="cal-modal-wrap">
-    <div class="cal-modal-top"><span class="cal-modal-title">校历时间线</span><span class="cal-term-pills">${termPills}</span></div>
+    <div class="cal-modal-top">
+      <span class="cal-modal-title">校历时间线</span>
+      <span class="cal-right"><span class="cal-term-pills">${termPills}</span><button type="button" class="cal-close" aria-label="关闭">✕</button></span>
+    </div>
     ${widget}
     <div class="cal-timeline">${months}</div>
   </div>`;
@@ -13480,31 +13484,27 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   function openCalendarModal(termId, today) {
     const doc = typeof document !== "undefined" ? document : null;
     if (!doc) return;
-    const g = typeof globalThis !== "undefined" ? globalThis : window;
     closeCalendarModal();
     const id = termId && CAL_TERMS[termId] ? termId : calActiveTerm(today);
     const el = doc.createElement("div");
     el.id = "urppp-cal-modal";
     el.innerHTML = `<div class="cal-overlay"></div>
-    <div class="cal-dialog">
-      <button type="button" class="cal-close" aria-label="关闭">✕</button>
-      <div class="cal-body">${calendarModalHtml(id, today)}</div>
-    </div>`;
+    <div class="cal-dialog"><div class="cal-body">${calendarModalHtml(id, today)}</div></div>`;
     doc.documentElement.appendChild(el);
     el.querySelector(".cal-overlay").addEventListener("click", () => closeCalendarModal());
-    el.querySelector(".cal-close").addEventListener("click", () => closeCalendarModal());
-    el.querySelectorAll("[data-cal-term]").forEach((b) => {
-      b.addEventListener("click", () => {
-        const nb = el.querySelector(".cal-body");
-        if (nb) nb.innerHTML = calendarModalHtml(b.dataset.calTerm, today);
-        el.querySelectorAll("[data-cal-term]").forEach((x) => x.classList.toggle("ac", x === b));
-      });
+    el.addEventListener("click", (ev) => {
+      const t = ev.target;
+      if (t && t.closest && t.closest(".cal-close")) {
+        closeCalendarModal();
+        return;
+      }
+      const tb = t && t.closest ? t.closest("[data-cal-term]") : null;
+      if (tb) {
+        const body = el.querySelector(".cal-body");
+        if (body) body.innerHTML = calendarModalHtml(tb.dataset.calTerm, today);
+        el.querySelectorAll("[data-cal-term]").forEach((x) => x.classList.toggle("ac", x === tb));
+      }
     });
-    if (id !== termId) {
-      const body = el.querySelector(".cal-body");
-      if (body) body.innerHTML = calendarModalHtml(id, today);
-      el.querySelectorAll("[data-cal-term]").forEach((x) => x.classList.toggle("ac", x.dataset.calTerm === id));
-    }
   }
   __name(openCalendarModal, "openCalendarModal");
   function closeCalendarModal() {
@@ -13545,14 +13545,15 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 16px;
       color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.04);transition:transform .18s,box-shadow .18s,background .18s}
     #urppp-clean-root .uc-cal-summary:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.08)}
-    #urppp-clean-root .uc-cal-summary .cal-s-left{display:flex;align-items:baseline;gap:3px}
+    #urppp-clean-root .uc-cal-summary .cal-s-left{display:flex;align-items:baseline;gap:3px;flex:none}
     #urppp-clean-root .uc-cal-summary .cal-s-count{font-size:30px;font-weight:800;line-height:1;color:var(--primary);font-variant-numeric:tabular-nums}
-    #urppp-clean-root .uc-cal-summary .cal-s-unit{font-size:11px;color:var(--text-secondary)}
-    #urppp-clean-root .uc-cal-summary .cal-s-right{display:flex;flex-direction:column;gap:3px;min-width:150px}
+    #urppp-clean-root .uc-cal-summary .cal-s-unit{font-size:11px;color:var(--text-secondary);margin-bottom:3px}
+    #urppp-clean-root .uc-cal-summary .cal-s-right{display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:150px;text-align:left}
     #urppp-clean-root .uc-cal-summary .cal-s-wk{font-size:11px;color:var(--text-secondary)}
     #urppp-clean-root .uc-cal-summary .cal-s-ev{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
     #urppp-clean-root .uc-cal-summary .cal-s-ev i{width:8px;height:8px;border-radius:50%;flex:none}
     #urppp-clean-root .uc-cal-summary .cal-s-date{font-size:11px;color:var(--text-secondary)}
+    #urppp-clean-root .uc-cal-summary .cal-s-prog{display:flex;justify-content:space-between;font-size:10px;color:var(--text-secondary);margin-top:1px}
     #urppp-clean-root .uc-cal-summary .cal-s-bar{height:4px;background:var(--border);border-radius:4px;overflow:hidden}
     #urppp-clean-root .uc-cal-summary .cal-s-bar i{display:block;height:100%;background:var(--primary);border-radius:4px}
     /* 详细窗口浮层 */
@@ -13562,13 +13563,14 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
       width:min(880px,calc(100vw - 40px));max-height:min(82vh,860px);overflow:auto;
       background:var(--surface,#fff);color:var(--text,#16181d);border:1px solid var(--border,#e5e5ea);border-radius:18px;
       box-shadow:0 24px 60px rgba(0,0,0,.28);padding:20px 24px 24px}
-    #urppp-cal-modal .cal-close{position:absolute;right:14px;top:14px;width:30px;height:30px;border-radius:9px;border:1px solid var(--border,#e5e5ea);background:transparent;color:var(--text,#16181d);cursor:pointer;font-size:14px;line-height:1}
+    #urppp-cal-modal .cal-close{width:28px;height:28px;border-radius:8px;border:1px solid var(--border,#e5e5ea);background:transparent;color:var(--text,#16181d);cursor:pointer;font-size:13px;line-height:1;display:grid;place-items:center;flex:none}
     #urppp-cal-modal .cal-close:hover{background:color-mix(in srgb,var(--primary,#2563eb) 10%,transparent)}
     #urppp-cal-modal .cal-modal-wrap{display:flex;flex-direction:column;gap:16px}
-    #urppp-cal-modal .cal-modal-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+    #urppp-cal-modal .cal-modal-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-right:32px;flex-wrap:wrap}
     #urppp-cal-modal .cal-modal-title{font-size:17px;font-weight:750}
+    #urppp-cal-modal .cal-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     #urppp-cal-modal .cal-term-pills{display:flex;gap:6px}
-    #urppp-cal-modal .cal-term{font-size:12px;padding:5px 13px;border-radius:999px;border:1px solid var(--border,#e5e5ea);background:transparent;color:var(--text-secondary,#5b5f69);cursor:pointer;font-weight:600}
+    #urppp-cal-modal .cal-term{font-size:12px;padding:5px 13px;border-radius:999px;border:1px solid var(--border,#e5e5ea);background:transparent;color:var(--text-secondary,#5b5f69);cursor:pointer;font-weight:600;flex:none}
     #urppp-cal-modal .cal-term.ac{background:var(--primary,#2563eb);color:#fff;border-color:transparent}
     /* 横置小组件 */
     #urppp-cal-modal .cal-widget{display:flex;align-items:center;gap:22px;background:color-mix(in srgb,var(--primary,#2563eb) 5%,#fff);
@@ -18138,7 +18140,7 @@ ${arcs}
             'html[data-urppp-skin="flat"] #urppp-clean-root .uc-lesson{border:1px solid color-mix(in srgb,var(--primary) 35%,var(--text))!important;}',
             // 按钮/输入矩形
             'html[data-urppp-skin="flat"] .btn,html[data-urppp-skin="flat"] .btn-default,html[data-urppp-skin="flat"] .btn-white,html[data-urppp-skin="flat"] .btn-primary,html[data-urppp-skin="flat"] .btn-info,html[data-urppp-skin="flat"] .btn-success,html[data-urppp-skin="flat"] .btn-warning,html[data-urppp-skin="flat"] .btn-danger,html[data-urppp-skin="flat"] .btn-purple,html[data-urppp-skin="flat"] .btn-app,html[data-urppp-skin="flat"] a.btn,html[data-urppp-skin="flat"] button.btn,html[data-urppp-skin="flat"] input.btn,html[data-urppp-skin="flat"] .btn-group>.btn,html[data-urppp-skin="flat"] .btn-xs,html[data-urppp-skin="flat"] .btn-sm,html[data-urppp-skin="flat"] .btn-minier,html[data-urppp-skin="flat"] #urppp-root .ubtn,html[data-urppp-skin="flat"] #urppp-root .ut button,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-btn,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-mode,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-follow,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-scheme,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-tab,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-set-close,html[data-urppp-skin="flat"] #urppp-nav-theme .urppp-nav-settings,html[data-urppp-skin="flat"] #uc-settings,html[data-urppp-skin="flat"] #uc-exit,html[data-urppp-skin="flat"] #uc-refresh,html[data-urppp-skin="flat"] #urppp-clean-entry,html[data-urppp-skin="flat"] button.urppp-clean-entry,html[data-urppp-skin="flat"] .urppp-clean-entry,html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn,html[data-urppp-skin="flat"] #urppp-clean-root .uc-top-actions .uc-btn,html[data-urppp-skin="flat"] #urppp-clean-root .uc-tabbar button,html[data-urppp-skin="flat"] #urppp-clean-root button.uc-btn,html[data-urppp-skin="flat"] .chosen-container-single .chosen-single,html[data-urppp-skin="flat"] .chosen-container-multi .chosen-choices,html[data-urppp-skin="flat"] .form-control,html[data-urppp-skin="flat"] input[type="text"],html[data-urppp-skin="flat"] input[type="password"],html[data-urppp-skin="flat"] input[type="number"],html[data-urppp-skin="flat"] input[type="search"],html[data-urppp-skin="flat"] select,html[data-urppp-skin="flat"] textarea,html[data-urppp-skin="flat"] #urppp-root .ui{border-radius:0!important;box-shadow:none!important;border:2px solid var(--text)!important;}',
-            'html[data-urppp-skin="flat"] #navbar button:not(.urppp-nav-dot),html[data-urppp-skin="flat"] .navbar button:not(.urppp-nav-dot),html[data-urppp-skin="flat"] #urppp-nav-theme button:not(.urppp-nav-dot),html[data-urppp-skin="flat"] #urppp-nav-theme .urppp-nav-settings,html[data-urppp-skin="flat"] #urppp-nav-clean{border-radius:0!important;box-shadow:none!important;border:2px solid var(--text)!important;background:var(--surface)!important;color:var(--text)!important;}',
+            'html[data-urppp-skin="flat"] #navbar button:not(.urppp-nav-dot),html[data-urppp-skin="flat"] .navbar button:not(.urppp-nav-dot),html[data-urppp-skin="flat"] #urppp-nav-theme button:not(.urppp-nav-dot),html[data-urppp-skin="flat"] #urppp-nav-theme .urppp-nav-settings,html[data-urppp-skin="flat"] #urppp-nav-clean,#urppp-nav-cal{border-radius:0!important;box-shadow:none!important;border:2px solid var(--text)!important;background:var(--surface)!important;color:var(--text)!important;}',
             'html[data-urppp-skin="flat"] .btn-primary,html[data-urppp-skin="flat"] .btn-info,html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn.primary,html[data-urppp-skin="flat"] #urppp-root .ubtn{background:var(--primary)!important;color:#fff!important;border:2px solid var(--text)!important;}',
             'html[data-urppp-skin="flat"] .btn-default,html[data-urppp-skin="flat"] .btn-white,html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn:not(.primary){background:var(--surface)!important;color:var(--text)!important;border:2px solid var(--text)!important;}',
             'html[data-urppp-skin="flat"] .btn:hover,html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn:hover{transform:none!important;box-shadow:none!important;}',
@@ -18208,7 +18210,7 @@ ${arcs}
           html[data-urppp-skin="flat"] a.btn,
           html[data-urppp-skin="flat"] .btn-app,
           html[data-urppp-skin="flat"] #navbar button:not(.urppp-nav-dot):not(:disabled),
-          html[data-urppp-skin="flat"] #urppp-nav-clean,
+          html[data-urppp-skin="flat"] #urppp-nav-clean,#urppp-nav-cal,
           html[data-urppp-skin="flat"] #urppp-settings-panel button:not(.urppp-nav-dot):not(.urppp-skin-apply):not(.urppp-set-swatch):not(:disabled),
           html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn:not(:disabled),
           html[data-urppp-skin="flat"] #urppp-clean-root .uc-build-grid button:not(:disabled),
@@ -18225,7 +18227,7 @@ ${arcs}
           html[data-urppp-skin="flat"] a.btn:hover,
           html[data-urppp-skin="flat"] .btn-app:hover,
           html[data-urppp-skin="flat"] #navbar button:not(.urppp-nav-dot):not(:disabled):hover,
-          html[data-urppp-skin="flat"] #urppp-nav-clean:hover,
+          html[data-urppp-skin="flat"] #urppp-nav-clean,#urppp-nav-cal:hover,#urppp-nav-cal:hover,
           html[data-urppp-skin="flat"] #urppp-settings-panel button:not(.urppp-nav-dot):not(.urppp-skin-apply):not(.urppp-set-swatch):not(:disabled):hover,
           html[data-urppp-skin="flat"] #urppp-clean-root .uc-btn:not(:disabled):hover,
           html[data-urppp-skin="flat"] #urppp-clean-root .uc-build-grid button:not(:disabled):hover,
@@ -18383,7 +18385,7 @@ ${arcs}
           html[data-urppp-skin="brutal"] button.btn,
           html[data-urppp-skin="brutal"] .btn-app,
           html[data-urppp-skin="brutal"] #urppp-root .ubtn,
-          html[data-urppp-skin="brutal"] #urppp-nav-clean,
+          html[data-urppp-skin="brutal"] #urppp-nav-clean,#urppp-nav-cal,
           html[data-urppp-skin="brutal"] #urppp-nav-theme button:not(.urppp-nav-dot),
           html[data-urppp-skin="brutal"] #urppp-settings-panel button:not(.urppp-nav-dot),
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-btn,
@@ -18412,7 +18414,7 @@ ${arcs}
           html[data-urppp-skin="brutal"] button.btn:hover,
           html[data-urppp-skin="brutal"] .btn-app:hover,
           html[data-urppp-skin="brutal"] #urppp-root .ubtn:hover,
-          html[data-urppp-skin="brutal"] #urppp-nav-clean:hover,
+          html[data-urppp-skin="brutal"] #urppp-nav-clean,#urppp-nav-cal:hover,#urppp-nav-cal:hover,
           html[data-urppp-skin="brutal"] #urppp-settings-panel button:hover:not(:disabled),
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-btn:hover,
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-tabbar button:hover,
@@ -18842,7 +18844,7 @@ ${arcs}
           html[data-urppp-skin="editorial"] .btn.btn-white,
           html[data-urppp-skin="editorial"] button.btn.btn-white,
           html[data-urppp-skin="editorial"] a.btn.btn-white,
-          html[data-urppp-skin="editorial"] #urppp-nav-clean,
+          html[data-urppp-skin="editorial"] #urppp-nav-clean,#urppp-nav-cal,
           html[data-urppp-skin="editorial"] #urppp-root .ut button,
           html[data-urppp-skin="editorial"] #urppp-clean-root .uc-btn,
           html[data-urppp-skin="editorial"] #urppp-clean-root .uc-tabbar button,
@@ -18864,7 +18866,7 @@ ${arcs}
           html[data-urppp-skin="editorial"] .btn.btn-white:hover,
           html[data-urppp-skin="editorial"] button.btn.btn-white:hover,
           html[data-urppp-skin="editorial"] a.btn.btn-white:hover,
-          html[data-urppp-skin="editorial"] #urppp-nav-clean:hover,
+          html[data-urppp-skin="editorial"] #urppp-nav-clean,#urppp-nav-cal:hover,#urppp-nav-cal:hover,
           html[data-urppp-skin="editorial"] #urppp-root .ut button:hover,
           html[data-urppp-skin="editorial"] #urppp-clean-root .uc-btn:hover{
             background:transparent!important;color:var(--text)!important;text-decoration-color:currentColor!important;
@@ -18873,7 +18875,7 @@ ${arcs}
           html[data-urppp-skin="editorial"] .btn:active,
           html[data-urppp-skin="editorial"] a.btn:active,
           html[data-urppp-skin="editorial"] button.btn:active,
-          html[data-urppp-skin="editorial"] #urppp-nav-clean:active,
+          html[data-urppp-skin="editorial"] #urppp-nav-clean,#urppp-nav-cal:active,#urppp-nav-cal:active,
           html[data-urppp-skin="editorial"] #urppp-clean-root .uc-btn:active{
             opacity:.65!important;transform:none!important;
           }
@@ -19450,7 +19452,7 @@ ${arcs}
             'html[data-urppp-skin="organic"] #urppp-clean-root .uc-sub{color:var(--text-secondary)!important;}',
             'html[data-urppp-skin="organic"] #urppp-clean-root .uc-score-pane h5{color:var(--primary)!important;}',
             'html[data-urppp-skin="organic"] .widget-box,html[data-urppp-skin="organic"] .panel,html[data-urppp-skin="organic"] .well,html[data-urppp-skin="organic"] .profile-user-info,html[data-urppp-skin="organic"] .modal-content,html[data-urppp-skin="organic"] .urppp-card,html[data-urppp-skin="organic"] .urppp-stat-card,html[data-urppp-skin="organic"] #urppp-dashboard .urppp-card,html[data-urppp-skin="organic"] #urppp-settings-panel,html[data-urppp-skin="organic"] #urppp-root .uc{border-radius:var(--radius)!important;border:1px solid var(--border)!important;box-shadow:var(--shadow)!important;background:var(--surface)!important;}',
-            'html[data-urppp-skin="organic"] .btn:not(.btn-app),html[data-urppp-skin="organic"] .btn-primary:not(.btn-app),html[data-urppp-skin="organic"] .btn-info:not(.btn-app),html[data-urppp-skin="organic"] .btn-default,html[data-urppp-skin="organic"] .btn-white,html[data-urppp-skin="organic"] #urppp-root .ubtn,html[data-urppp-skin="organic"] #urppp-nav-clean,html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-set-btn,html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-set-follow,html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-set-mode{border-radius:999px!important;}',
+            'html[data-urppp-skin="organic"] .btn:not(.btn-app),html[data-urppp-skin="organic"] .btn-primary:not(.btn-app),html[data-urppp-skin="organic"] .btn-info:not(.btn-app),html[data-urppp-skin="organic"] .btn-default,html[data-urppp-skin="organic"] .btn-white,html[data-urppp-skin="organic"] #urppp-root .ubtn,html[data-urppp-skin="organic"] #urppp-nav-clean,#urppp-nav-cal,html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-set-btn,html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-set-follow,html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-set-mode{border-radius:999px!important;}',
             'html[data-urppp-skin="organic"] .btn-app,html[data-urppp-skin="organic"] #urppp-dashboard .btn-app,html[data-urppp-skin="organic"] a.btn-app{border-radius:18px!important;border:1px solid var(--border)!important;background:var(--input-bg)!important;color:var(--text)!important;box-shadow:none!important;}',
             'html[data-urppp-skin="organic"] .btn-primary:not(.btn-app),html[data-urppp-skin="organic"] .btn-info:not(.btn-app),html[data-urppp-skin="organic"] #urppp-root .ubtn{background:var(--primary)!important;border-color:var(--primary)!important;color:#fff!important;}',
             'html[data-urppp-skin="organic"] input.form-control,html[data-urppp-skin="organic"] select.form-control,html[data-urppp-skin="organic"] textarea.form-control,html[data-urppp-skin="organic"] #urppp-root .ui,html[data-urppp-skin="organic"] #form-search .nav-search-input,html[data-urppp-skin="organic"] input#search-input{border-radius:999px!important;border:1px solid var(--border)!important;background:var(--input-bg)!important;color:var(--text)!important;}',
@@ -19582,7 +19584,7 @@ ${arcs}
           html[data-urppp-skin="neu"] .btn:not(.btn-app),
           html[data-urppp-skin="neu"] a.btn:not(.btn-app),
           html[data-urppp-skin="neu"] button.btn:not(.btn-app),
-          html[data-urppp-skin="neu"] #urppp-nav-clean,
+          html[data-urppp-skin="neu"] #urppp-nav-clean,#urppp-nav-cal,
           html[data-urppp-skin="neu"] #urppp-root .ubtn,
           html[data-urppp-skin="neu"] #urppp-root .ut button,
           html[data-urppp-skin="neu"] #urppp-clean-root .uc-btn,
@@ -19606,7 +19608,7 @@ ${arcs}
           html[data-urppp-skin="neu"] .btn:not(.btn-app):hover,
           html[data-urppp-skin="neu"] a.btn:not(.btn-app):hover,
           html[data-urppp-skin="neu"] button.btn:not(.btn-app):hover,
-          html[data-urppp-skin="neu"] #urppp-nav-clean:hover,
+          html[data-urppp-skin="neu"] #urppp-nav-clean,#urppp-nav-cal:hover,#urppp-nav-cal:hover,
           html[data-urppp-skin="neu"] #urppp-root .ubtn:hover,
           html[data-urppp-skin="neu"] #urppp-root .ut button:hover,
           html[data-urppp-skin="neu"] #urppp-clean-root .uc-btn:hover,
@@ -19626,7 +19628,7 @@ ${arcs}
           }
           html[data-urppp-skin="neu"] .btn:not(.btn-app):active,
           html[data-urppp-skin="neu"] .btn:not(.btn-app).active,
-          html[data-urppp-skin="neu"] #urppp-nav-clean:active,
+          html[data-urppp-skin="neu"] #urppp-nav-clean,#urppp-nav-cal:active,#urppp-nav-cal:active,
           html[data-urppp-skin="neu"] #urppp-root .ubtn:active,
           html[data-urppp-skin="neu"] #urppp-root .ut button.ac,
           html[data-urppp-skin="neu"] #urppp-clean-root .uc-btn:active,

@@ -387,8 +387,8 @@
           line-height: 44px !important;
         }
         /* 清爽按钮：移动端紧凑 */
-        #navbar #urppp-nav-clean,
-        #urppp-nav-theme #urppp-nav-clean {
+        #navbar #urppp-nav-clean,#urppp-nav-cal,
+        #urppp-nav-theme #urppp-nav-clean,#urppp-nav-cal {
           height: 30px !important;
           min-height: 30px !important;
           margin: 0 8px 0 4px !important;

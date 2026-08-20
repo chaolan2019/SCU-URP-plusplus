@@ -110,6 +110,7 @@ function calendarSummaryHtml(termId, today) {
       <span class="cal-s-wk">${st.started ? `第 ${st.weekNo} 周` : '尚未开学'} · ${st.term.name}</span>
       <span class="cal-s-ev"><i style="background:${dot}"></i>${st.next ? st.next.e.name : '学期已结束'}</span>
       <span class="cal-s-date">${st.next ? st.next.e.start + (st.next.e.end && st.next.e.end !== st.next.e.start ? '~' + st.next.e.end.slice(5) : '') : ''}</span>
+      <span class="cal-s-prog"><span>本学期进度</span><span>${Math.min(st.weekNo, tl.weeks)}/${tl.weeks} 周</span></span>
       <span class="cal-s-bar"><i style="width:${st.progress}%"></i></span>
     </span>
   </button>`;
@@ -164,7 +165,10 @@ function calendarModalHtml(termId, today) {
     </div>`;
   }).join('');
   return `<div class="cal-modal-wrap">
-    <div class="cal-modal-top"><span class="cal-modal-title">校历时间线</span><span class="cal-term-pills">${termPills}</span></div>
+    <div class="cal-modal-top">
+      <span class="cal-modal-title">校历时间线</span>
+      <span class="cal-right"><span class="cal-term-pills">${termPills}</span><button type="button" class="cal-close" aria-label="关闭">✕</button></span>
+    </div>
     ${widget}
     <div class="cal-timeline">${months}</div>
   </div>`;
@@ -174,32 +178,25 @@ function calendarModalHtml(termId, today) {
 function openCalendarModal(termId, today) {
   const doc = (typeof document !== 'undefined') ? document : null;
   if (!doc) return;
-  const g = (typeof globalThis !== 'undefined') ? globalThis : window;
   closeCalendarModal();
   const id = (termId && CAL_TERMS[termId]) ? termId : calActiveTerm(today);
   const el = doc.createElement('div');
   el.id = 'urppp-cal-modal';
   el.innerHTML = `<div class="cal-overlay"></div>
-    <div class="cal-dialog">
-      <button type="button" class="cal-close" aria-label="关闭">✕</button>
-      <div class="cal-body">${calendarModalHtml(id, today)}</div>
-    </div>`;
+    <div class="cal-dialog"><div class="cal-body">${calendarModalHtml(id, today)}</div></div>`;
   doc.documentElement.appendChild(el);
   el.querySelector('.cal-overlay').addEventListener('click', () => closeCalendarModal());
-  el.querySelector('.cal-close').addEventListener('click', () => closeCalendarModal());
-  el.querySelectorAll('[data-cal-term]').forEach((b) => {
-    b.addEventListener('click', () => {
-      const nb = el.querySelector('.cal-body');
-      if (nb) nb.innerHTML = calendarModalHtml(b.dataset.calTerm, today);
-      el.querySelectorAll('[data-cal-term]').forEach((x) => x.classList.toggle('ac', x === b));
-    });
+  // 关闭 + 学期切换：事件委托到浮层容器，re-render 后新按钮仍有效
+  el.addEventListener('click', (ev) => {
+    const t = ev.target;
+    if (t && t.closest && t.closest('.cal-close')) { closeCalendarModal(); return; }
+    const tb = t && t.closest ? t.closest('[data-cal-term]') : null;
+    if (tb) {
+      const body = el.querySelector('.cal-body');
+      if (body) body.innerHTML = calendarModalHtml(tb.dataset.calTerm, today);
+      el.querySelectorAll('[data-cal-term]').forEach((x) => x.classList.toggle('ac', x === tb));
+    }
   });
-  // 初始展示学期跟随当前实际
-  if (id !== termId) {
-    const body = el.querySelector('.cal-body');
-    if (body) body.innerHTML = calendarModalHtml(id, today);
-    el.querySelectorAll('[data-cal-term]').forEach((x) => x.classList.toggle('ac', x.dataset.calTerm === id));
-  }
 }
 
 function closeCalendarModal() {
@@ -241,14 +238,15 @@ function ensureCalendarStyle() {
       background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 16px;
       color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.04);transition:transform .18s,box-shadow .18s,background .18s}
     #urppp-clean-root .uc-cal-summary:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.08)}
-    #urppp-clean-root .uc-cal-summary .cal-s-left{display:flex;align-items:baseline;gap:3px}
+    #urppp-clean-root .uc-cal-summary .cal-s-left{display:flex;align-items:baseline;gap:3px;flex:none}
     #urppp-clean-root .uc-cal-summary .cal-s-count{font-size:30px;font-weight:800;line-height:1;color:var(--primary);font-variant-numeric:tabular-nums}
-    #urppp-clean-root .uc-cal-summary .cal-s-unit{font-size:11px;color:var(--text-secondary)}
-    #urppp-clean-root .uc-cal-summary .cal-s-right{display:flex;flex-direction:column;gap:3px;min-width:150px}
+    #urppp-clean-root .uc-cal-summary .cal-s-unit{font-size:11px;color:var(--text-secondary);margin-bottom:3px}
+    #urppp-clean-root .uc-cal-summary .cal-s-right{display:flex;flex-direction:column;justify-content:center;gap:4px;min-width:150px;text-align:left}
     #urppp-clean-root .uc-cal-summary .cal-s-wk{font-size:11px;color:var(--text-secondary)}
     #urppp-clean-root .uc-cal-summary .cal-s-ev{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
     #urppp-clean-root .uc-cal-summary .cal-s-ev i{width:8px;height:8px;border-radius:50%;flex:none}
     #urppp-clean-root .uc-cal-summary .cal-s-date{font-size:11px;color:var(--text-secondary)}
+    #urppp-clean-root .uc-cal-summary .cal-s-prog{display:flex;justify-content:space-between;font-size:10px;color:var(--text-secondary);margin-top:1px}
     #urppp-clean-root .uc-cal-summary .cal-s-bar{height:4px;background:var(--border);border-radius:4px;overflow:hidden}
     #urppp-clean-root .uc-cal-summary .cal-s-bar i{display:block;height:100%;background:var(--primary);border-radius:4px}
     /* 详细窗口浮层 */
@@ -258,13 +256,14 @@ function ensureCalendarStyle() {
       width:min(880px,calc(100vw - 40px));max-height:min(82vh,860px);overflow:auto;
       background:var(--surface,#fff);color:var(--text,#16181d);border:1px solid var(--border,#e5e5ea);border-radius:18px;
       box-shadow:0 24px 60px rgba(0,0,0,.28);padding:20px 24px 24px}
-    #urppp-cal-modal .cal-close{position:absolute;right:14px;top:14px;width:30px;height:30px;border-radius:9px;border:1px solid var(--border,#e5e5ea);background:transparent;color:var(--text,#16181d);cursor:pointer;font-size:14px;line-height:1}
+    #urppp-cal-modal .cal-close{width:28px;height:28px;border-radius:8px;border:1px solid var(--border,#e5e5ea);background:transparent;color:var(--text,#16181d);cursor:pointer;font-size:13px;line-height:1;display:grid;place-items:center;flex:none}
     #urppp-cal-modal .cal-close:hover{background:color-mix(in srgb,var(--primary,#2563eb) 10%,transparent)}
     #urppp-cal-modal .cal-modal-wrap{display:flex;flex-direction:column;gap:16px}
-    #urppp-cal-modal .cal-modal-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+    #urppp-cal-modal .cal-modal-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-right:32px;flex-wrap:wrap}
     #urppp-cal-modal .cal-modal-title{font-size:17px;font-weight:750}
+    #urppp-cal-modal .cal-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     #urppp-cal-modal .cal-term-pills{display:flex;gap:6px}
-    #urppp-cal-modal .cal-term{font-size:12px;padding:5px 13px;border-radius:999px;border:1px solid var(--border,#e5e5ea);background:transparent;color:var(--text-secondary,#5b5f69);cursor:pointer;font-weight:600}
+    #urppp-cal-modal .cal-term{font-size:12px;padding:5px 13px;border-radius:999px;border:1px solid var(--border,#e5e5ea);background:transparent;color:var(--text-secondary,#5b5f69);cursor:pointer;font-weight:600;flex:none}
     #urppp-cal-modal .cal-term.ac{background:var(--primary,#2563eb);color:#fff;border-color:transparent}
     /* 横置小组件 */
     #urppp-cal-modal .cal-widget{display:flex;align-items:center;gap:22px;background:color-mix(in srgb,var(--primary,#2563eb) 5%,#fff);

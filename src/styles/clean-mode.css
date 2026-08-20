@@ -298,7 +298,7 @@ html.urppp-clean-lock,html.urppp-clean-lock body{overflow:hidden!important}
   #urppp-clean-root .uc-modal{display:none}
   #urppp-clean-root .uc-modal.open{display:flex}
 }
-html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#urppp-nav-clean{
+html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #urppp-nav-clean,#urppp-nav-cal,#urppp-nav-clean,#urppp-nav-cal{
   margin-left:8px!important;height:28px!important;min-height:28px!important;max-height:28px!important;
   padding:0 10px!important;border-radius:var(--urppp-action-radius,999px)!important;
   border:var(--urppp-action-border,none)!important;
@@ -308,7 +308,7 @@ html body #navbar #urppp-nav-clean,html body #urppp-nav-theme #urppp-nav-clean,#
   box-shadow:var(--urppp-action-shadow,0 2px 6px var(--ring))!important;
   line-height:26px!important;cursor:pointer!important;float:none!important
 }
-#urppp-nav-clean svg{width:14px!important;height:14px!important;display:block!important}
+#urppp-nav-clean svg,#urppp-nav-cal svg{width:14px!important;height:14px!important;display:block!important}
 @media (max-width:900px){
   #urppp-clean-root .uc-top{flex:0 0 52px;padding:0 12px}
   #sidebar.urppp-clean-sidebar{top:52px !important;height:calc(100vh - 52px) !important}
