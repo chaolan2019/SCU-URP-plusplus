@@ -13929,12 +13929,18 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
         return `<div class="uc-mobile"><div class="uc-card"><div class="uc-bd">${servicesHtml()}</div></div></div>`;
       }
       return `<div class="uc-mobile">
-      <div class="uc-card" style="margin-bottom:12px"><div class="uc-bd"><div class="uc-profile">
+      <div class="uc-card uc-profile-card" style="margin-bottom:12px"><div class="uc-bd"><div class="uc-profile">
         <div class="uc-avatar" data-urppp-private="avatar">${avatar}</div>
         <div><div class="uc-name" data-urppp-private="name">${deps.escapeHtml(p.name || "同学")}</div>
         <div class="uc-sub">主修方案：<span data-urppp-private="organization" data-urppp-edit-key="majorPlan">${deps.escapeHtml(p.majorPlan || "—")}</span></div>
         <div class="uc-gpa">主修必修绩点 <span data-urppp-private="gpa" data-urppp-edit-key="majorGpa">${deps.escapeHtml(String(p.majorGpa || "—"))}</span></div></div>
-      </div></div></div>
+      </div>${(() => {
+        try {
+          return calendarSummaryHtml();
+        } catch (_) {
+          return "";
+        }
+      })()}</div></div>
       <div class="uc-card"><div class="uc-hd"><span class="uc-hd-title">课表<span data-schedule-export-host="clean"></span></span>
         <div class="uc-week-nav">
           <button type="button" class="uc-btn" data-week-delta="-1">‹</button>
