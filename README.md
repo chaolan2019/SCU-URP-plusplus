@@ -11,7 +11,7 @@
     <a href="https://github.com/chaolan2019/SCU-URP-plusplus/commits/main"><img src="https://img.shields.io/github/last-commit/chaolan2019/SCU-URP-plusplus?style=flat-square&amp;logo=github&amp;label=Last%20commit" alt="Last Commit"></a>
   </p>
 
-  <p><strong>主脚本 v1.7.1</strong> · 辅助插件 v1.4.1</p>
+  <p><strong>主脚本 v1.8.0</strong> · 辅助插件 v1.4.1</p>
   <p>作者：<code>Chao_Lan, Hanako</code></p>
 
   <p><strong>目录</strong></p>
@@ -81,6 +81,10 @@
   - 成绩明细：核心成绩优先展示，期末评教状态后台补齐；支持点选 / 框选，绩点按川大现行对照表计算
   - 空闲教室：楼栋网格、今天/明天/后天、占用首字与详情
   - 手机底栏：首页 / 成绩 / 教室 / 其他
+- **互动校历**：读取校历事件构建学期时间线，多形态展示
+  - 清爽模式个人资料卡右侧简略块（下个事件倒计时 + 日期-事件名 + 本学期进度），点击弹出详细窗口
+  - 首页顶栏「校历」按钮，点击弹同一详细窗口（横置倒计时小组件 + 完整时间线，可切秋春）
+  - 数据：川大校历 + 法定节假日 + 农历（离线核验）；移动端个人资料卡展示紧凑单行简略块
 - **成绩分析**：成绩查询页顶部内嵌可折叠分析面板，后台预热数据、展开即时渲染
   - 核心指标、学期成绩趋势、分数段分布、必修 / 任选 / 选修 / 其他构成
   - 按川大 2017-2018 秋季学期起等级制绩点对照表（11 段）换算，等级制成绩（A/B+/C- 等）自动折算百分制
