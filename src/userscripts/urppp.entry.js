@@ -118,7 +118,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   } catch (_) { /* viewport 注入失败不影响插件其余功能 */ }
 
   // 与脚本头 @version 保持同步
-  const URPPP_VERSION = '1.8.0';
+  const URPPP_VERSION = '1.8.1';
   const URPPP_UPDATE = {
     mainRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js',
     assistRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js',
