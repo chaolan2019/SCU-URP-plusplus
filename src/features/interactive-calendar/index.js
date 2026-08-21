@@ -282,6 +282,14 @@ function ensureCalendarStyle() {
     /* 详细窗口浮层 */
     #urppp-cal-modal{position:fixed;inset:0;z-index:2147483000;font-family:inherit;color:var(--text,#16181d)}
     #urppp-cal-modal .cal-overlay{position:absolute;inset:0;background:rgba(15,20,28,.45);backdrop-filter:blur(2px)}
+    /* 进入动画：淡入+缩放，内容逐条浮现 */
+    #urppp-cal-modal .cal-dialog{opacity:0;transform:scale(.95)}
+    #urppp-cal-modal.open .cal-dialog{opacity:1;transform:scale(1);transition:opacity .24s cubic-bezier(.16,1,.3,1),transform .26s cubic-bezier(.16,1,.3,1)}
+    #urppp-cal-modal.open .cal-modal-wrap>*{opacity:0;transform:translateY(12px);animation:cal-stagger .32s cubic-bezier(.16,1,.3,1) forwards}
+    #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(1){animation-delay:.06s}
+    #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(2){animation-delay:.13s}
+    #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(3){animation-delay:.2s}
+    @keyframes cal-stagger{to{opacity:1;transform:translateY(0)}}
     #urppp-cal-modal .cal-dialog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
       width:min(880px,calc(100vw - 40px));max-height:min(82vh,860px);overflow:auto;
       background:var(--surface,#fff);color:var(--text,#16181d);border:1px solid var(--border,#e5e5ea);border-radius:18px;
