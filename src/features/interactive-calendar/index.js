@@ -127,7 +127,7 @@ function calendarSummaryCompactHtml(termId, today) {
       <span class="cal-c-name">${st.next ? st.next.e.name : '学期已结束'}</span>
       <span class="cal-c-sub">${st.started ? `第 ${st.weekNo} 周` : '尚未开学'} · ${st.term.name}</span>
     </span>
-    <span class="cal-c-prog"><span class="cal-c-bar"><i style="width:${st.progress}%"></i></span><span class="cal-c-week">${Math.min(st.weekNo, st.term.weeks)}/${st.term.weeks} 周</span></span>
+    <span class="cal-c-prog"><span class="cal-c-bar"><i style="width:${st.progress}%"></i></span><span class="cal-c-week">本学期进度 ${Math.min(st.weekNo, st.term.weeks)}/${st.term.weeks} 周</span></span>
   </button>`;
 }
 
