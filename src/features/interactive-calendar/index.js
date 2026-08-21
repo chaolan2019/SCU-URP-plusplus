@@ -167,7 +167,7 @@ function calendarModalHtml(termId, today) {
   return `<div class="cal-modal-wrap">
     <div class="cal-modal-top">
       <span class="cal-modal-title">校历时间线</span>
-      <span class="cal-right"><span class="cal-term-pills">${termPills}</span></span>
+      <span class="cal-right"><span class="cal-term-pills">${termPills}</span><button type="button" class="cal-close" aria-label="关闭">✕</button></span>
     </div>
     ${widget}
     <div class="cal-timeline">${months}</div>
@@ -183,7 +183,7 @@ function openCalendarModal(termId, today) {
   const el = doc.createElement('div');
   el.id = 'urppp-cal-modal';
   el.innerHTML = `<div class="cal-overlay"></div>
-    <div class="cal-dialog"><button type="button" class="cal-close" aria-label="关闭">✕</button><div class="cal-body">${calendarModalHtml(id, today)}</div></div>`;
+    <div class="cal-dialog"><div class="cal-body">${calendarModalHtml(id, today)}</div></div>`;
   doc.documentElement.appendChild(el);
   el.querySelector('.cal-overlay').addEventListener('click', () => closeCalendarModal());
   // 关闭 + 学期切换：事件委托到浮层容器，re-render 后新按钮仍有效
@@ -257,10 +257,10 @@ function ensureCalendarStyle() {
       width:min(880px,calc(100vw - 40px));max-height:min(82vh,860px);overflow:auto;
       background:var(--surface,#fff);color:var(--text,#16181d);border:1px solid var(--border,#e5e5ea);border-radius:18px;
       box-shadow:0 24px 60px rgba(0,0,0,.28);padding:20px 24px 24px}
-    #urppp-cal-modal .cal-close{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:9px;border:1px solid var(--border,#e5e5ea);background:transparent;color:var(--text,#16181d);cursor:pointer;font-size:14px;line-height:1;display:grid;place-items:center}
+    #urppp-cal-modal .cal-close{width:30px;height:30px;border-radius:9px;border:1px solid var(--border,#e5e5ea);background:transparent;color:var(--text,#16181d);cursor:pointer;font-size:14px;line-height:1;display:grid;place-items:center;flex:none}
     #urppp-cal-modal .cal-close:hover{background:color-mix(in srgb,var(--primary,#2563eb) 10%,transparent)}
     #urppp-cal-modal .cal-modal-wrap{display:flex;flex-direction:column;gap:16px}
-    #urppp-cal-modal .cal-modal-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-right:44px;flex-wrap:wrap}
+    #urppp-cal-modal .cal-modal-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
     #urppp-cal-modal .cal-modal-title{font-size:17px;font-weight:750}
     #urppp-cal-modal .cal-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     #urppp-cal-modal .cal-term-pills{display:flex;gap:6px}
