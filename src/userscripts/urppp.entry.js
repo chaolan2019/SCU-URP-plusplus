@@ -6927,6 +6927,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           const themeHost = document.getElementById('urppp-nav-theme');
           if (cleanBtn && brandHost && cleanBtn.parentElement !== brandHost) brandHost.appendChild(cleanBtn);
           if (themeHost) themeHost.style.setProperty('display', 'inline-flex', 'important');
+          // 移动端只保留清爽入口，移除校历按钮（inline important 无法被 CSS @media 覆盖）
+          document.getElementById('urppp-nav-cal')?.remove();
         } catch (_) { /* ignore */ }
         ensureMobileUser(btns, sidebar);
         ensureMobileQuick(btns, sidebar, menus);
