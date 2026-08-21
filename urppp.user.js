@@ -11401,10 +11401,10 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
   #urppp-clean-root .uc-modal.open>*,#urppp-settings-panel.open>*,#urppp-update-changelog.open>*,#urppp-cal-modal.open .cal-modal-wrap>*,#urppp-clean-root.open .uc-card,#urppp-clean-root.open .uc-top{opacity:1!important;transform:none!important;animation:none!important}
 }
 #urppp-clean-root{position:fixed;inset:0;z-index:12000;display:none;flex-direction:column;background:var(--bg,#F4F6F9);color:var(--text,#111);font-family:inherit;clip-path:inset(0 0 100% 0);opacity:.6;transform:translateY(10px)}
-#urppp-clean-root.open{display:flex;clip-path:inset(0 0 0 0);opacity:1;transform:none;animation:cleanExpand .46s cubic-bezier(.4,0,.2,1) forwards}
+#urppp-clean-root.open{display:flex;clip-path:inset(0 0 0 0);opacity:1;transform:none;animation:cleanExpand .38s cubic-bezier(.22,1,.36,1) forwards;will-change:clip-path,opacity}
 @keyframes cleanExpand{from{clip-path:inset(0 0 100% 0);opacity:.6;transform:translateY(10px)}to{clip-path:inset(0 0 0 0);opacity:1;transform:none}}
 /* 清爽模式退出：矩形收回 + 淡出。closing 保持 display:flex，动画总播 */
-#urppp-clean-root.closing{display:flex;clip-path:inset(0 0 100% 0);opacity:0;transform:translateY(10px);animation:cleanCollapse .34s cubic-bezier(.4,0,.2,1) forwards}
+#urppp-clean-root.closing{display:flex;clip-path:inset(0 0 100% 0);opacity:0;transform:translateY(10px);animation:cleanCollapse .3s cubic-bezier(.4,0,.2,1) forwards;will-change:clip-path,opacity}
 @keyframes cleanCollapse{from{clip-path:inset(0 0 0 0);opacity:1}to{clip-path:inset(0 0 100% 0);opacity:0}}
 #urppp-clean-root *{box-sizing:border-box}
 #urppp-clean-root .uc-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px}
@@ -11417,7 +11417,7 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-clean-root .uc-shell-inner{max-width:1520px;margin:0 auto;width:100%;max-height:100%;overflow:auto}
 #urppp-clean-root .uc-desktop{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr;gap:16px;min-height:640px}
 #urppp-clean-root .uc-col{display:flex;flex-direction:column;gap:16px;min-height:0}
-#urppp-clean-root .uc-card{background:var(--surface,#fff);border:1px solid var(--border,#e7e7ea);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04);opacity:0;transform:translateY(14px) scale(.985);animation:ucCardIn .42s cubic-bezier(.22,1,.36,1) forwards;transition:box-shadow .22s ease,transform .22s ease,border-color .22s ease}
+#urppp-clean-root .uc-card{background:var(--surface,#fff);border:1px solid var(--border,#e7e7ea);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04);opacity:0;transform:translateY(14px) scale(.985);animation:ucCardIn .36s cubic-bezier(.22,1,.36,1) forwards;transition:box-shadow .22s ease,transform .22s ease,border-color .22s ease;will-change:transform,opacity}
 #urppp-clean-root .uc-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.06),0 0 0 1px color-mix(in srgb,var(--primary) 8%,var(--border))}
 #urppp-clean-root .uc-desktop > .uc-col:first-child > .uc-card:nth-child(1){animation-delay:.05s}
 #urppp-clean-root .uc-desktop > .uc-col:first-child > .uc-card:nth-child(2){animation-delay:.12s}
@@ -13634,10 +13634,10 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
     /* 退出动画：与进入对称（反向），用 animation 总播 */
     #urppp-cal-modal.closing .cal-dialog{opacity:0;transform:translate(-50%,-50%) scale(.94);animation:calPopOut .18s ease forwards}
     @keyframes calPopOut{from{opacity:1;transform:translate(-50%,-50%) scale(1)}to{opacity:0;transform:translate(-50%,-50%) scale(.94)}}
-    #urppp-cal-modal.open .cal-modal-wrap>*{opacity:0;transform:translateY(12px);animation:cal-stagger .32s cubic-bezier(.16,1,.3,1) forwards}
-    #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(1){animation-delay:.06s}
-    #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(2){animation-delay:.13s}
-    #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(3){animation-delay:.2s}
+    #urppp-cal-modal.open .cal-modal-wrap>*{opacity:0;transform:translateY(10px);animation:cal-stagger .26s cubic-bezier(.16,1,.3,1) forwards;will-change:transform,opacity}
+    #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(1){animation-delay:.05s}
+    #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(2){animation-delay:.11s}
+    #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(3){animation-delay:.17s}
     @keyframes cal-stagger{to{opacity:1;transform:translateY(0)}}
     #urppp-cal-modal .cal-dialog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
       width:min(880px,calc(100vw - 40px));max-height:min(82vh,860px);overflow:auto;
@@ -14897,6 +14897,10 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
       } catch (_) {
       }
       deps.loadAll(!!force);
+      try {
+        deps.ensureRoomCatalogLoaded();
+      } catch (_) {
+      }
     }
     __name(openCleanMode, "openCleanMode");
     function closeCleanMode() {

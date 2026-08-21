@@ -295,10 +295,10 @@ function ensureCalendarStyle() {
     /* 退出动画：与进入对称（反向），用 animation 总播 */
     #urppp-cal-modal.closing .cal-dialog{opacity:0;transform:translate(-50%,-50%) scale(.94);animation:calPopOut .18s ease forwards}
     @keyframes calPopOut{from{opacity:1;transform:translate(-50%,-50%) scale(1)}to{opacity:0;transform:translate(-50%,-50%) scale(.94)}}
-    #urppp-cal-modal.open .cal-modal-wrap>*{opacity:0;transform:translateY(12px);animation:cal-stagger .32s cubic-bezier(.16,1,.3,1) forwards}
-    #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(1){animation-delay:.06s}
-    #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(2){animation-delay:.13s}
-    #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(3){animation-delay:.2s}
+    #urppp-cal-modal.open .cal-modal-wrap>*{opacity:0;transform:translateY(10px);animation:cal-stagger .26s cubic-bezier(.16,1,.3,1) forwards;will-change:transform,opacity}
+    #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(1){animation-delay:.05s}
+    #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(2){animation-delay:.11s}
+    #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(3){animation-delay:.17s}
     @keyframes cal-stagger{to{opacity:1;transform:translateY(0)}}
     #urppp-cal-modal .cal-dialog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
       width:min(880px,calc(100vw - 40px));max-height:min(82vh,860px);overflow:auto;

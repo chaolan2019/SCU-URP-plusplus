@@ -245,6 +245,8 @@ export function createCleanModeController({ state, deps }) {
     // 桌面清爽模式也注入移动端侧边栏区块（用户卡/快捷区）
     try { deps.injectCleanSidebarSections(document.getElementById('sidebar')); } catch (_) { /* ignore */ }
     deps.loadAll(!!force);
+    // 预加载教室查询（进入清爽模式即后台请求，用户点教室时已缓存，避免“加载蛮久”）
+    try { deps.ensureRoomCatalogLoaded(); } catch (_) { /* ignore */ }
   }
 
   function closeCleanMode() {
