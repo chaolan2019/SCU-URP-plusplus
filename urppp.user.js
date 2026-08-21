@@ -13474,7 +13474,7 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
     return `<div class="cal-modal-wrap">
     <div class="cal-modal-top">
       <span class="cal-modal-title">校历时间线</span>
-      <span class="cal-right"><span class="cal-term-pills">${termPills}</span><button type="button" class="cal-close" aria-label="关闭">✕</button></span>
+      <span class="cal-right"><span class="cal-term-pills">${termPills}</span></span>
     </div>
     ${widget}
     <div class="cal-timeline">${months}</div>
@@ -13489,7 +13489,7 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
     const el = doc.createElement("div");
     el.id = "urppp-cal-modal";
     el.innerHTML = `<div class="cal-overlay"></div>
-    <div class="cal-dialog"><div class="cal-body">${calendarModalHtml(id, today)}</div></div>`;
+    <div class="cal-dialog"><button type="button" class="cal-close" aria-label="关闭">✕</button><div class="cal-body">${calendarModalHtml(id, today)}</div></div>`;
     doc.documentElement.appendChild(el);
     el.querySelector(".cal-overlay").addEventListener("click", () => closeCalendarModal());
     el.addEventListener("click", (ev) => {
@@ -13502,7 +13502,7 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
       if (tb) {
         const body = el.querySelector(".cal-body");
         if (body) body.innerHTML = calendarModalHtml(tb.dataset.calTerm, today);
-        el.querySelectorAll("[data-cal-term]").forEach((x) => x.classList.toggle("ac", x === tb));
+        el.querySelectorAll("[data-cal-term]").forEach((x) => x.classList.toggle("ac", x.dataset.calTerm === tb.dataset.calTerm));
       }
     });
   }
@@ -13563,10 +13563,10 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
       width:min(880px,calc(100vw - 40px));max-height:min(82vh,860px);overflow:auto;
       background:var(--surface,#fff);color:var(--text,#16181d);border:1px solid var(--border,#e5e5ea);border-radius:18px;
       box-shadow:0 24px 60px rgba(0,0,0,.28);padding:20px 24px 24px}
-    #urppp-cal-modal .cal-close{width:28px;height:28px;border-radius:8px;border:1px solid var(--border,#e5e5ea);background:transparent;color:var(--text,#16181d);cursor:pointer;font-size:13px;line-height:1;display:grid;place-items:center;flex:none}
+    #urppp-cal-modal .cal-close{position:absolute;top:16px;right:16px;width:30px;height:30px;border-radius:9px;border:1px solid var(--border,#e5e5ea);background:transparent;color:var(--text,#16181d);cursor:pointer;font-size:14px;line-height:1;display:grid;place-items:center}
     #urppp-cal-modal .cal-close:hover{background:color-mix(in srgb,var(--primary,#2563eb) 10%,transparent)}
     #urppp-cal-modal .cal-modal-wrap{display:flex;flex-direction:column;gap:16px}
-    #urppp-cal-modal .cal-modal-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-right:32px;flex-wrap:wrap}
+    #urppp-cal-modal .cal-modal-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-right:44px;flex-wrap:wrap}
     #urppp-cal-modal .cal-modal-title{font-size:17px;font-weight:750}
     #urppp-cal-modal .cal-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     #urppp-cal-modal .cal-term-pills{display:flex;gap:6px}
@@ -13607,17 +13607,29 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
     html[data-urppp-skin="flat"] #urppp-clean-root .uc-cal-summary,
     html[data-urppp-skin="flat"] #urppp-cal-modal .cal-dialog,
     html[data-urppp-skin="flat"] #urppp-cal-modal .cal-widget,
-    html[data-urppp-skin="flat"] #urppp-cal-modal .cal-ev{border-radius:0!important;box-shadow:none!important}
+    html[data-urppp-skin="flat"] #urppp-cal-modal .cal-ev,
+    html[data-urppp-skin="flat"] #urppp-cal-modal .cal-term,
+    html[data-urppp-skin="flat"] #urppp-cal-modal .cal-close{border-radius:0!important;box-shadow:none!important}
     html[data-urppp-skin="flat"] #urppp-clean-root .uc-cal-summary,
-    html[data-urppp-skin="flat"] #urppp-cal-modal .cal-dialog{border:2px solid var(--text,#16181d)!important}
+    html[data-urppp-skin="flat"] #urppp-cal-modal .cal-dialog,
+    html[data-urppp-skin="flat"] #urppp-cal-modal .cal-term,
+    html[data-urppp-skin="flat"] #urppp-cal-modal .cal-close{border:2px solid var(--text,#16181d)!important}
     html[data-urppp-skin="brutal"] #urppp-clean-root .uc-cal-summary,
     html[data-urppp-skin="brutal"] #urppp-cal-modal .cal-dialog{border-radius:0!important;border:3px solid var(--text,#16181d)!important;box-shadow:6px 6px 0 var(--text,#16181d)!important}
     html[data-urppp-skin="brutal"] #urppp-cal-modal .cal-widget,
-    html[data-urppp-skin="brutal"] #urppp-cal-modal .cal-ev{border-radius:0!important}
+    html[data-urppp-skin="brutal"] #urppp-cal-modal .cal-ev,
+    html[data-urppp-skin="brutal"] #urppp-cal-modal .cal-term,
+    html[data-urppp-skin="brutal"] #urppp-cal-modal .cal-close{border-radius:0!important}
+    html[data-urppp-skin="brutal"] #urppp-cal-modal .cal-term,
+    html[data-urppp-skin="brutal"] #urppp-cal-modal .cal-close{border:3px solid #000!important;box-shadow:4px 4px 0 #000!important}
     html[data-urppp-skin="editorial"] #urppp-clean-root .uc-cal-summary,
     html[data-urppp-skin="editorial"] #urppp-cal-modal .cal-dialog{border-radius:0!important;box-shadow:none!important;border:1px solid var(--border,#e5e5ea)!important}
+    html[data-urppp-skin="editorial"] #urppp-cal-modal .cal-term,
+    html[data-urppp-skin="editorial"] #urppp-cal-modal .cal-close{border-radius:0!important;box-shadow:none!important;border:0!important;text-decoration-line:underline!important;text-decoration-color:transparent!important}
     html[data-urppp-skin="neu"] #urppp-clean-root .uc-cal-summary,
     html[data-urppp-skin="neu"] #urppp-cal-modal .cal-dialog{box-shadow:4px 4px 10px rgba(0,0,0,.08),-4px -4px 12px #fff!important}
+    html[data-urppp-skin="neu"] #urppp-cal-modal .cal-term,
+    html[data-urppp-skin="neu"] #urppp-cal-modal .cal-close{box-shadow:2px 2px 6px rgba(0,0,0,.08),-2px -2px 6px #fff!important}
     @media (max-width:560px){
       #urppp-cal-modal .cal-widget{gap:12px}
       #urppp-cal-modal .cal-dialog{padding:16px}
