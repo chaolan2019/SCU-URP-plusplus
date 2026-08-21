@@ -321,6 +321,11 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
   #urppp-clean-root .uc-tabbar button{flex:1;border:0;background:transparent;color:var(--text-secondary);font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
   #urppp-clean-root .uc-tabbar button svg{width:28px!important;height:28px!important;display:block;flex:0 0 auto}
   #urppp-clean-root .uc-tabbar button.ac{color:var(--primary);font-weight:700}
+  /* 皮肤协调：flat/brutal 下标签栏按钮去掉独立矩形边框与硬阴影，避免与容器矩形嵌套冲突（用 [type] 属性选择器提高优先级，覆盖 entry 皮肤规则） */
+  html[data-urppp-skin="flat"] #urppp-clean-root .uc-tabbar button[type],
+  html[data-urppp-skin="brutal"] #urppp-clean-root .uc-tabbar button[type]{border:0!important;box-shadow:none!important;background:transparent!important}
+  html[data-urppp-skin="flat"] #urppp-clean-root .uc-tabbar button[type].ac{background:transparent!important;color:var(--primary)!important}
+  html[data-urppp-skin="brutal"] #urppp-clean-root .uc-tabbar button[type].ac{background:var(--brutal-accent)!important;color:#000!important}
   #urppp-clean-root .uc-score-grid{grid-template-columns:1fr}
   #urppp-clean-root .uc-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
   #urppp-clean-root .uc-services{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}

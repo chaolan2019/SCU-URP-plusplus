@@ -116,6 +116,18 @@ function calendarSummaryHtml(termId, today) {
   </button>`;
 }
 
+/** 入口①移动端紧凑版：单行横条（事件名 + 倒计时 + 迷你进度条），不换行 */
+function calendarSummaryCompactHtml(termId, today) {
+  const st = calStatus(termId, today);
+  const dot = st.next ? CAL_TYPE_META[st.next.e.t].color : '#c9cdd4';
+  return `<button type="button" class="uc-cal-summary uc-cal-summary-compact" data-urppp-cal-open aria-label="打开校历时间线">
+    <span class="cal-c-dot" style="background:${dot}"></span>
+    <span class="cal-c-name">${st.next ? st.next.e.name : '学期已结束'}</span>
+    <span class="cal-c-count">${st.daysLeft == null ? '—' : st.daysLeft} 天</span>
+    <span class="cal-c-bar"><i style="width:${st.progress}%"></i></span>
+  </button>`;
+}
+
 /** 详细窗口内容：横置倒计时小组件（上）+ 完整时间线（下） */
 function calendarModalHtml(termId, today) {
   const st = calStatus(termId, today);
@@ -250,6 +262,14 @@ function ensureCalendarStyle() {
     #urppp-clean-root .uc-cal-summary .cal-s-prog{display:flex;justify-content:space-between;font-size:10px;color:var(--text-secondary);margin-top:1px}
     #urppp-clean-root .uc-cal-summary .cal-s-bar{height:4px;background:var(--border);border-radius:4px;overflow:hidden}
     #urppp-clean-root .uc-cal-summary .cal-s-bar i{display:block;height:100%;background:var(--primary);border-radius:4px}
+    /* 移动端紧凑版：单行横条不换行 */
+    #urppp-clean-root .uc-cal-summary-compact{display:flex;align-items:center;gap:8px;width:100%;min-width:0;margin-top:2px;padding:8px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text);cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+    #urppp-clean-root .uc-cal-summary-compact:hover{background:color-mix(in srgb,var(--primary) 5%,var(--surface))}
+    #urppp-clean-root .uc-cal-summary-compact .cal-c-dot{width:8px;height:8px;border-radius:50%;flex:none}
+    #urppp-clean-root .uc-cal-summary-compact .cal-c-name{flex:1;min-width:0;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    #urppp-clean-root .uc-cal-summary-compact .cal-c-count{flex:none;font-size:12px;color:var(--primary);font-weight:700;white-space:nowrap}
+    #urppp-clean-root .uc-cal-summary-compact .cal-c-bar{flex:none;width:44px;height:4px;background:var(--border);border-radius:4px;overflow:hidden}
+    #urppp-clean-root .uc-cal-summary-compact .cal-c-bar i{display:block;height:100%;background:var(--primary);border-radius:4px}
     /* 详细窗口浮层 */
     #urppp-cal-modal{position:fixed;inset:0;z-index:2147483000;font-family:inherit;color:var(--text,#16181d)}
     #urppp-cal-modal .cal-overlay{position:absolute;inset:0;background:rgba(15,20,28,.45);backdrop-filter:blur(2px)}
@@ -386,7 +406,7 @@ function removeCalendarButton() {
 }
 
 export {
-  CAL_TERMS, CAL_LUNAR, calActiveTerm, calStatus, calendarSummaryHtml, calendarModalHtml,
+  CAL_TERMS, CAL_LUNAR, calActiveTerm, calStatus, calendarSummaryHtml, calendarSummaryCompactHtml, calendarModalHtml,
   openCalendarModal, closeCalendarModal, bindCalendarOpen, ensureCalendarStyle, initCalendar,
   mountCalendarButton, removeCalendarButton,
 };
