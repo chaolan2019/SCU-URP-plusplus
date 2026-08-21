@@ -254,9 +254,12 @@ export function createCleanModeController({ state, deps }) {
     document.documentElement.classList.remove('urppp-clean-lock', deps.CLEAN_FLAG);
     const el = rootEl();
     if (el) {
+      // 退出动画：先收回矩形（closing），播完再移除 open
       el.classList.remove('open', 'uc-settled', 'uc-drawer-open');
+      el.classList.add('closing');
       clearTimeout(el.__ucSettleTimer);
       try { if (el.__closeCleanDrawer) el.__closeCleanDrawer(); } catch (_) { /* ignore */ }
+      setTimeout(() => { el.classList.remove('closing'); }, 360);
     }
     // 退出清爽模式后清理桌面注入的移动端区块（用户卡/快捷区/搜索面板），恢复桌面侧边栏
     try { deps.refreshMobileNavbar(); } catch (_) { /* ignore */ }

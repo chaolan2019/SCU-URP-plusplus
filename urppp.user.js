@@ -11390,15 +11390,20 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-clean-root .uc-modal.open>*:nth-child(2),#urppp-settings-panel.open>*:nth-child(2),#urppp-update-changelog.open>*:nth-child(2){animation-delay:.12s}
 #urppp-clean-root .uc-modal.open>*:nth-child(3),#urppp-settings-panel.open>*:nth-child(3),#urppp-update-changelog.open>*:nth-child(3){animation-delay:.19s}
 @keyframes ucPopStag{to{opacity:1;transform:translateY(0)}}
+/* 弹窗退出动画（与进入对称） */
+#urppp-clean-root .uc-modal.closing,#urppp-settings-panel.closing,#urppp-update-changelog.closing{opacity:0;transform:scale(.94);transition:opacity .18s ease,transform .18s ease}
 /* 更新 toast：淡入上滑 */
 #urppp-update-toast{opacity:0;transform:translateY(14px)}
 #urppp-update-toast.open{opacity:1;transform:translateY(0);transition:opacity .24s cubic-bezier(.16,1,.3,1),transform .26s cubic-bezier(.16,1,.3,1)}
 /* 尊重 reduced-motion */
 @media (prefers-reduced-motion:reduce){
-  #urppp-clean-root .uc-modal,#urppp-settings-panel,#urppp-update-changelog,#urppp-update-toast,#urppp-clean-root,#urppp-cal-modal .cal-dialog{transition:none!important;animation:none!important}
+  #urppp-clean-root .uc-modal,#urppp-settings-panel,#urppp-update-changelog,#urppp-update-toast,#urppp-clean-root,#urppp-cal-modal .cal-dialog{transition:none!important;animation:none!important;opacity:1!important;transform:none!important}
+  #urppp-clean-root .uc-modal.open>*,#urppp-settings-panel.open>*,#urppp-update-changelog.open>*,#urppp-cal-modal.open .cal-modal-wrap>*,#urppp-clean-root.open .uc-card,#urppp-clean-root.open .uc-top{opacity:1!important;transform:none!important;animation:none!important}
 }
-#urppp-clean-root{position:fixed;inset:0;z-index:12000;display:none;background:var(--bg,#F4F6F9);color:var(--text,#111);font-family:inherit;opacity:0;transform:translateY(10px) scale(.99);transition:opacity .3s ease,transform .34s cubic-bezier(.22,1,.36,1)}
-#urppp-clean-root.open{display:flex;flex-direction:column;opacity:1;transform:none}
+#urppp-clean-root{position:fixed;inset:0;z-index:12000;display:none;flex-direction:column;background:var(--bg,#F4F6F9);color:var(--text,#111);font-family:inherit;clip-path:inset(0 0 100% 0);opacity:.6;transform:translateY(10px);transition:clip-path .46s cubic-bezier(.4,0,.2,1),opacity .24s ease,transform .4s cubic-bezier(.4,0,.2,1)}
+#urppp-clean-root.open{display:flex;clip-path:inset(0 0 0 0);opacity:1;transform:none}
+/* 清爽模式退出：矩形收回 + 淡出（与进入对称，transition 已放基础态） */
+#urppp-clean-root.closing{clip-path:inset(0 0 100% 0);opacity:0;transform:translateY(10px)}
 #urppp-clean-root *{box-sizing:border-box}
 #urppp-clean-root .uc-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px}
 #urppp-clean-root .uc-top-actions{display:flex;gap:8px}
@@ -13532,6 +13537,7 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
     el.innerHTML = `<div class="cal-overlay"></div>
     <div class="cal-dialog"><div class="cal-body">${calendarModalHtml(id, today)}</div></div>`;
     doc.documentElement.appendChild(el);
+    setTimeout(() => el.classList.add("open"), 20);
     el.querySelector(".cal-overlay").addEventListener("click", () => closeCalendarModal());
     el.addEventListener("click", (ev) => {
       const t = ev.target;
@@ -13552,7 +13558,12 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
     const doc = typeof document !== "undefined" ? document : null;
     if (!doc) return;
     const el = doc.getElementById("urppp-cal-modal");
-    if (el) el.remove();
+    if (!el) return;
+    el.classList.remove("open");
+    el.classList.add("closing");
+    setTimeout(() => {
+      el.remove();
+    }, 200);
   }
   __name(closeCalendarModal, "closeCalendarModal");
   function bindCalendarOpen(scopeEl, termId) {
@@ -13614,9 +13625,11 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
     /* 详细窗口浮层 */
     #urppp-cal-modal{position:fixed;inset:0;z-index:2147483000;font-family:inherit;color:var(--text,#16181d)}
     #urppp-cal-modal .cal-overlay{position:absolute;inset:0;background:rgba(15,20,28,.45);backdrop-filter:blur(2px)}
-    /* 进入动画：淡入+缩放，内容逐条浮现 */
-    #urppp-cal-modal .cal-dialog{opacity:0;transform:scale(.95)}
-    #urppp-cal-modal.open .cal-dialog{opacity:1;transform:scale(1);transition:opacity .24s cubic-bezier(.16,1,.3,1),transform .26s cubic-bezier(.16,1,.3,1)}
+    /* 进入动画：淡入+缩放（保留 -50% 居中定位），内容逐条浮现。transition 放基础态确保可靠过渡 */
+    #urppp-cal-modal .cal-dialog{opacity:0;transform:translate(-50%,-50%) scale(.95);transition:opacity .24s cubic-bezier(.16,1,.3,1),transform .26s cubic-bezier(.16,1,.3,1)}
+    #urppp-cal-modal.open .cal-dialog{opacity:1;transform:translate(-50%,-50%) scale(1)}
+    /* 退出动画：与进入对称（反向淡出缩放），内容不额外播 stagger */
+    #urppp-cal-modal.closing .cal-dialog{opacity:0;transform:translate(-50%,-50%) scale(.94);transition:opacity .18s ease,transform .18s ease}
     #urppp-cal-modal.open .cal-modal-wrap>*{opacity:0;transform:translateY(12px);animation:cal-stagger .32s cubic-bezier(.16,1,.3,1) forwards}
     #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(1){animation-delay:.06s}
     #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(2){animation-delay:.13s}
@@ -14890,11 +14903,15 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
       const el = rootEl();
       if (el) {
         el.classList.remove("open", "uc-settled", "uc-drawer-open");
+        el.classList.add("closing");
         clearTimeout(el.__ucSettleTimer);
         try {
           if (el.__closeCleanDrawer) el.__closeCleanDrawer();
         } catch (_) {
         }
+        setTimeout(() => {
+          el.classList.remove("closing");
+        }, 360);
       }
       try {
         deps.refreshMobileNavbar();

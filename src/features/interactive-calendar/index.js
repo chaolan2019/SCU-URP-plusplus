@@ -200,6 +200,8 @@ function openCalendarModal(termId, today) {
   el.innerHTML = `<div class="cal-overlay"></div>
     <div class="cal-dialog"><div class="cal-body">${calendarModalHtml(id, today)}</div></div>`;
   doc.documentElement.appendChild(el);
+  // 触发进入动画（淡入+缩放+内容逐条），用 setTimeout 确保在后台/headless 也能加 open 类
+  setTimeout(() => el.classList.add('open'), 20);
   el.querySelector('.cal-overlay').addEventListener('click', () => closeCalendarModal());
   // 关闭 + 学期切换：事件委托到浮层容器，re-render 后新按钮仍有效
   el.addEventListener('click', (ev) => {
@@ -219,7 +221,11 @@ function closeCalendarModal() {
   const doc = (typeof document !== 'undefined') ? document : null;
   if (!doc) return;
   const el = doc.getElementById('urppp-cal-modal');
-  if (el) el.remove();
+  if (!el) return;
+  // 退出动画：反向淡出缩放（与进入对称），播完再移除
+  el.classList.remove('open');
+  el.classList.add('closing');
+  setTimeout(() => { el.remove(); }, 200);
 }
 
 /** 全局点击委托：入口打开时调用（挂载在校历 root / 文档） */
@@ -282,9 +288,11 @@ function ensureCalendarStyle() {
     /* 详细窗口浮层 */
     #urppp-cal-modal{position:fixed;inset:0;z-index:2147483000;font-family:inherit;color:var(--text,#16181d)}
     #urppp-cal-modal .cal-overlay{position:absolute;inset:0;background:rgba(15,20,28,.45);backdrop-filter:blur(2px)}
-    /* 进入动画：淡入+缩放，内容逐条浮现 */
-    #urppp-cal-modal .cal-dialog{opacity:0;transform:scale(.95)}
-    #urppp-cal-modal.open .cal-dialog{opacity:1;transform:scale(1);transition:opacity .24s cubic-bezier(.16,1,.3,1),transform .26s cubic-bezier(.16,1,.3,1)}
+    /* 进入动画：淡入+缩放（保留 -50% 居中定位），内容逐条浮现。transition 放基础态确保可靠过渡 */
+    #urppp-cal-modal .cal-dialog{opacity:0;transform:translate(-50%,-50%) scale(.95);transition:opacity .24s cubic-bezier(.16,1,.3,1),transform .26s cubic-bezier(.16,1,.3,1)}
+    #urppp-cal-modal.open .cal-dialog{opacity:1;transform:translate(-50%,-50%) scale(1)}
+    /* 退出动画：与进入对称（反向淡出缩放），内容不额外播 stagger */
+    #urppp-cal-modal.closing .cal-dialog{opacity:0;transform:translate(-50%,-50%) scale(.94);transition:opacity .18s ease,transform .18s ease}
     #urppp-cal-modal.open .cal-modal-wrap>*{opacity:0;transform:translateY(12px);animation:cal-stagger .32s cubic-bezier(.16,1,.3,1) forwards}
     #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(1){animation-delay:.06s}
     #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(2){animation-delay:.13s}
