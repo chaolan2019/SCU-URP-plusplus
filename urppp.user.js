@@ -11400,10 +11400,12 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
   #urppp-clean-root .uc-modal,#urppp-settings-panel,#urppp-update-changelog,#urppp-update-toast,#urppp-clean-root,#urppp-cal-modal .cal-dialog{transition:none!important;animation:none!important;opacity:1!important;transform:none!important}
   #urppp-clean-root .uc-modal.open>*,#urppp-settings-panel.open>*,#urppp-update-changelog.open>*,#urppp-cal-modal.open .cal-modal-wrap>*,#urppp-clean-root.open .uc-card,#urppp-clean-root.open .uc-top{opacity:1!important;transform:none!important;animation:none!important}
 }
-#urppp-clean-root{position:fixed;inset:0;z-index:12000;display:none;flex-direction:column;background:var(--bg,#F4F6F9);color:var(--text,#111);font-family:inherit;clip-path:inset(0 0 100% 0);opacity:.6;transform:translateY(10px);transition:clip-path .46s cubic-bezier(.4,0,.2,1),opacity .24s ease,transform .4s cubic-bezier(.4,0,.2,1)}
-#urppp-clean-root.open{display:flex;clip-path:inset(0 0 0 0);opacity:1;transform:none}
-/* 清爽模式退出：矩形收回 + 淡出（与进入对称，transition 已放基础态） */
-#urppp-clean-root.closing{clip-path:inset(0 0 100% 0);opacity:0;transform:translateY(10px)}
+#urppp-clean-root{position:fixed;inset:0;z-index:12000;display:none;flex-direction:column;background:var(--bg,#F4F6F9);color:var(--text,#111);font-family:inherit;clip-path:inset(0 0 100% 0);opacity:.6;transform:translateY(10px)}
+#urppp-clean-root.open{display:flex;clip-path:inset(0 0 0 0);opacity:1;transform:none;animation:cleanExpand .46s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes cleanExpand{from{clip-path:inset(0 0 100% 0);opacity:.6;transform:translateY(10px)}to{clip-path:inset(0 0 0 0);opacity:1;transform:none}}
+/* 清爽模式退出：矩形收回 + 淡出。closing 保持 display:flex，动画总播 */
+#urppp-clean-root.closing{display:flex;clip-path:inset(0 0 100% 0);opacity:0;transform:translateY(10px);animation:cleanCollapse .34s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes cleanCollapse{from{clip-path:inset(0 0 0 0);opacity:1}to{clip-path:inset(0 0 100% 0);opacity:0}}
 #urppp-clean-root *{box-sizing:border-box}
 #urppp-clean-root .uc-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px}
 #urppp-clean-root .uc-top-actions{display:flex;gap:8px}
@@ -13625,11 +13627,13 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
     /* 详细窗口浮层 */
     #urppp-cal-modal{position:fixed;inset:0;z-index:2147483000;font-family:inherit;color:var(--text,#16181d)}
     #urppp-cal-modal .cal-overlay{position:absolute;inset:0;background:rgba(15,20,28,.45);backdrop-filter:blur(2px)}
-    /* 进入动画：淡入+缩放（保留 -50% 居中定位），内容逐条浮现。transition 放基础态确保可靠过渡 */
-    #urppp-cal-modal .cal-dialog{opacity:0;transform:translate(-50%,-50%) scale(.95);transition:opacity .24s cubic-bezier(.16,1,.3,1),transform .26s cubic-bezier(.16,1,.3,1)}
-    #urppp-cal-modal.open .cal-dialog{opacity:1;transform:translate(-50%,-50%) scale(1)}
-    /* 退出动画：与进入对称（反向淡出缩放），内容不额外播 stagger */
-    #urppp-cal-modal.closing .cal-dialog{opacity:0;transform:translate(-50%,-50%) scale(.94);transition:opacity .18s ease,transform .18s ease}
+    /* 进入动画：容器淡入+缩放用 animation（总播，不依赖 initial 态渲染），内容逐条浮现 */
+    #urppp-cal-modal .cal-dialog{opacity:0;transform:translate(-50%,-50%) scale(.95)}
+    #urppp-cal-modal.open .cal-dialog{opacity:1;transform:translate(-50%,-50%) scale(1);animation:calPopIn .24s cubic-bezier(.16,1,.3,1) forwards}
+    @keyframes calPopIn{from{opacity:0;transform:translate(-50%,-50%) scale(.95)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+    /* 退出动画：与进入对称（反向），用 animation 总播 */
+    #urppp-cal-modal.closing .cal-dialog{opacity:0;transform:translate(-50%,-50%) scale(.94);animation:calPopOut .18s ease forwards}
+    @keyframes calPopOut{from{opacity:1;transform:translate(-50%,-50%) scale(1)}to{opacity:0;transform:translate(-50%,-50%) scale(.94)}}
     #urppp-cal-modal.open .cal-modal-wrap>*{opacity:0;transform:translateY(12px);animation:cal-stagger .32s cubic-bezier(.16,1,.3,1) forwards}
     #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(1){animation-delay:.06s}
     #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(2){animation-delay:.13s}

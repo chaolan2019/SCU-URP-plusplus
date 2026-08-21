@@ -288,11 +288,13 @@ function ensureCalendarStyle() {
     /* 详细窗口浮层 */
     #urppp-cal-modal{position:fixed;inset:0;z-index:2147483000;font-family:inherit;color:var(--text,#16181d)}
     #urppp-cal-modal .cal-overlay{position:absolute;inset:0;background:rgba(15,20,28,.45);backdrop-filter:blur(2px)}
-    /* 进入动画：淡入+缩放（保留 -50% 居中定位），内容逐条浮现。transition 放基础态确保可靠过渡 */
-    #urppp-cal-modal .cal-dialog{opacity:0;transform:translate(-50%,-50%) scale(.95);transition:opacity .24s cubic-bezier(.16,1,.3,1),transform .26s cubic-bezier(.16,1,.3,1)}
-    #urppp-cal-modal.open .cal-dialog{opacity:1;transform:translate(-50%,-50%) scale(1)}
-    /* 退出动画：与进入对称（反向淡出缩放），内容不额外播 stagger */
-    #urppp-cal-modal.closing .cal-dialog{opacity:0;transform:translate(-50%,-50%) scale(.94);transition:opacity .18s ease,transform .18s ease}
+    /* 进入动画：容器淡入+缩放用 animation（总播，不依赖 initial 态渲染），内容逐条浮现 */
+    #urppp-cal-modal .cal-dialog{opacity:0;transform:translate(-50%,-50%) scale(.95)}
+    #urppp-cal-modal.open .cal-dialog{opacity:1;transform:translate(-50%,-50%) scale(1);animation:calPopIn .24s cubic-bezier(.16,1,.3,1) forwards}
+    @keyframes calPopIn{from{opacity:0;transform:translate(-50%,-50%) scale(.95)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+    /* 退出动画：与进入对称（反向），用 animation 总播 */
+    #urppp-cal-modal.closing .cal-dialog{opacity:0;transform:translate(-50%,-50%) scale(.94);animation:calPopOut .18s ease forwards}
+    @keyframes calPopOut{from{opacity:1;transform:translate(-50%,-50%) scale(1)}to{opacity:0;transform:translate(-50%,-50%) scale(.94)}}
     #urppp-cal-modal.open .cal-modal-wrap>*{opacity:0;transform:translateY(12px);animation:cal-stagger .32s cubic-bezier(.16,1,.3,1) forwards}
     #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(1){animation-delay:.06s}
     #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(2){animation-delay:.13s}
