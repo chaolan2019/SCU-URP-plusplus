@@ -451,6 +451,8 @@
       }
       /* 小屏：侧栏默认隐藏为覆盖层，内容贴左；展开侧栏也不挤占内容 */
       @media (max-width: 991px) {
+        /* 移动端顶栏紧凑：隐藏站点导航标题，给右上角功能按钮（清爽/校历）让出单行空间 */
+        #navbar .navbar-header .navbar-brand{display:none !important;}
         .sidebar:not(.display) ~ .main-content,
         .sidebar.menu-min:not(.display) ~ .main-content,
         .sidebar:not(.menu-min):not(.display) ~ .main-content,

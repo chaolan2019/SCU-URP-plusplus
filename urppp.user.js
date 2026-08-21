@@ -10952,6 +10952,8 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
       }
       /* 小屏：侧栏默认隐藏为覆盖层，内容贴左；展开侧栏也不挤占内容 */
       @media (max-width: 991px) {
+        /* 移动端顶栏紧凑：隐藏站点导航标题，给右上角功能按钮（清爽/校历）让出单行空间 */
+        #navbar .navbar-header .navbar-brand{display:none !important;}
         .sidebar:not(.display) ~ .main-content,
         .sidebar.menu-min:not(.display) ~ .main-content,
         .sidebar:not(.menu-min):not(.display) ~ .main-content,
@@ -13683,6 +13685,13 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
     #urppp-cal-modal .cal-ev-name{flex:1;font-size:13.5px;font-weight:600}
     #urppp-cal-modal .cal-ev-tag{font-size:10.5px;font-weight:600;padding:1px 8px;border-radius:999px;flex:none}
     #urppp-cal-modal .cal-ev-wk{font-size:11px;color:var(--text-secondary,#5b5f69);flex:none;min-width:56px;text-align:right}
+    /* 移动端：时间+事件属性+周进度一行，事件名称换行整行 */
+    @media (max-width:700px){
+      #urppp-cal-modal .cal-ev{flex-wrap:wrap;row-gap:3px}
+      #urppp-cal-modal .cal-ev-date{min-width:0;text-align:left}
+      #urppp-cal-modal .cal-ev-name{flex-basis:100%;order:5;margin-left:20px}
+      #urppp-cal-modal .cal-ev-wk{min-width:0;text-align:right;margin-left:auto}
+    }
     /* 皮肤适配：随各主题保持一致性（圆角/边框/材质由 Skin token 控制） */
     html[data-urppp-skin="flat"] #urppp-clean-root .uc-cal-summary,
     html[data-urppp-skin="flat"] #urppp-cal-modal .cal-dialog,
