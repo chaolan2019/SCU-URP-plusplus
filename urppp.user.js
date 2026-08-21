@@ -13435,9 +13435,12 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
     const dot = st.next ? CAL_TYPE_META[st.next.e.t].color : "#c9cdd4";
     return `<button type="button" class="uc-cal-summary uc-cal-summary-compact" data-urppp-cal-open aria-label="打开校历时间线">
     <span class="cal-c-dot" style="background:${dot}"></span>
-    <span class="cal-c-name">${st.next ? st.next.e.name : "学期已结束"}</span>
-    <span class="cal-c-count">${st.daysLeft == null ? "—" : st.daysLeft} 天</span>
-    <span class="cal-c-bar"><i style="width:${st.progress}%"></i></span>
+    <span class="cal-c-count"><b>${st.daysLeft == null ? "—" : st.daysLeft}</b><em>天后</em></span>
+    <span class="cal-c-info">
+      <span class="cal-c-name">${st.next ? st.next.e.name : "学期已结束"}</span>
+      <span class="cal-c-sub">${st.started ? `第 ${st.weekNo} 周` : "尚未开学"} · ${st.term.name}</span>
+    </span>
+    <span class="cal-c-prog"><span class="cal-c-bar"><i style="width:${st.progress}%"></i></span><span class="cal-c-week">${Math.min(st.weekNo, st.term.weeks)}/${st.term.weeks} 周</span></span>
   </button>`;
   }
   __name(calendarSummaryCompactHtml, "calendarSummaryCompactHtml");
@@ -13572,14 +13575,20 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
     #urppp-clean-root .uc-cal-summary .cal-s-prog{display:flex;justify-content:space-between;font-size:10px;color:var(--text-secondary);margin-top:1px}
     #urppp-clean-root .uc-cal-summary .cal-s-bar{height:4px;background:var(--border);border-radius:4px;overflow:hidden}
     #urppp-clean-root .uc-cal-summary .cal-s-bar i{display:block;height:100%;background:var(--primary);border-radius:4px}
-    /* 移动端紧凑版：单行横条不换行 */
-    #urppp-clean-root .uc-cal-summary-compact{display:flex;align-items:center;gap:8px;width:100%;min-width:0;margin-top:2px;padding:8px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text);cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+    /* 移动端紧凑版：单行有层次，不换行 */
+    #urppp-clean-root .uc-cal-summary-compact{display:flex;align-items:center;gap:10px;width:100%;min-width:0;margin-top:2px;padding:9px 12px;border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text);cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.05)}
     #urppp-clean-root .uc-cal-summary-compact:hover{background:color-mix(in srgb,var(--primary) 5%,var(--surface))}
-    #urppp-clean-root .uc-cal-summary-compact .cal-c-dot{width:8px;height:8px;border-radius:50%;flex:none}
-    #urppp-clean-root .uc-cal-summary-compact .cal-c-name{flex:1;min-width:0;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    #urppp-clean-root .uc-cal-summary-compact .cal-c-count{flex:none;font-size:12px;color:var(--primary);font-weight:700;white-space:nowrap}
-    #urppp-clean-root .uc-cal-summary-compact .cal-c-bar{flex:none;width:44px;height:4px;background:var(--border);border-radius:4px;overflow:hidden}
+    #urppp-clean-root .uc-cal-summary-compact .cal-c-dot{width:9px;height:9px;border-radius:50%;flex:none}
+    #urppp-clean-root .uc-cal-summary-compact .cal-c-count{display:flex;align-items:baseline;gap:3px;flex:none}
+    #urppp-clean-root .uc-cal-summary-compact .cal-c-count b{font-size:22px;font-weight:800;line-height:1;color:var(--primary);font-variant-numeric:tabular-nums}
+    #urppp-clean-root .uc-cal-summary-compact .cal-c-count em{font-style:normal;font-size:10px;color:var(--text-secondary)}
+    #urppp-clean-root .uc-cal-summary-compact .cal-c-info{flex:1;min-width:0;text-align:left}
+    #urppp-clean-root .uc-cal-summary-compact .cal-c-name{display:block;font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    #urppp-clean-root .uc-cal-summary-compact .cal-c-sub{display:block;font-size:10.5px;color:var(--text-secondary);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #urppp-clean-root .uc-cal-summary-compact .cal-c-prog{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+    #urppp-clean-root .uc-cal-summary-compact .cal-c-bar{width:52px;height:4px;background:var(--border);border-radius:4px;overflow:hidden}
     #urppp-clean-root .uc-cal-summary-compact .cal-c-bar i{display:block;height:100%;background:var(--primary);border-radius:4px}
+    #urppp-clean-root .uc-cal-summary-compact .cal-c-week{font-size:9.5px;color:var(--text-secondary);white-space:nowrap}
     /* 详细窗口浮层 */
     #urppp-cal-modal{position:fixed;inset:0;z-index:2147483000;font-family:inherit;color:var(--text,#16181d)}
     #urppp-cal-modal .cal-overlay{position:absolute;inset:0;background:rgba(15,20,28,.45);backdrop-filter:blur(2px)}
