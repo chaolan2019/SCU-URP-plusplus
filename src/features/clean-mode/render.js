@@ -157,12 +157,15 @@ export function createCleanModeRenderer({ state, deps }) {
           svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M12 2v20"/><path d="M20 16l-4-4 4-4"/><path d="M4 8l4 4-4 4"/><path d="M16 4l-4 4-4-4"/><path d="M8 20l4-4 4 4"/></svg>',
         },
         springfestival: {
-          title: '春节快乐！', sub: '新的一学期 · 今天也要加油',
-          svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c-4.4 0-8-3.6-8-8 0-4.4 3.6-8 8-8s8 3.6 8 8c0 4.4-3.6 8-8 8z"/><path d="M12 3v2M3.5 7.5l1.5 1.5M20.5 7.5L19 9M4 21l2-2M20 21l-2-2"/><path d="M9 12h6M12 9v6"/></svg>',
+          title: '春节快乐！', sub: '',
+          svg: '<svg viewBox="0 0 56 56"><rect x="7" y="5" width="42" height="46" rx="10" fill="#c8102e" stroke="#ffd75e" stroke-width="2"/><text x="28" y="37" text-anchor="middle" font-size="29" fill="#ffd75e" font-weight="800" font-family="Kaishu,STKaiti,Noto Serif SC,serif" transform="rotate(180 28 28)">福</text></svg>',
+          decor: '<span class="uc-mask-decor uc-md-l"><svg viewBox="0 0 28 46"><path d="M14 1v5" stroke="#c8102e" stroke-width="2"/><rect x="9" y="6" width="10" height="4" rx="2" fill="#c8102e"/><ellipse cx="14" cy="23" rx="11" ry="14" fill="#e63946"/><path d="M14 9v28M8 12q6 6 0 12M20 12q-6 6 0 12" stroke="#ffd75e" stroke-width="1.2" fill="none"/><path d="M8 37h12M10 40h8" stroke="#ffd75e" stroke-width="2" stroke-linecap="round"/></svg></span><span class="uc-mask-decor uc-md-r"><svg viewBox="0 0 28 46"><path d="M14 1v5" stroke="#c8102e" stroke-width="2"/><rect x="9" y="6" width="10" height="4" rx="2" fill="#c8102e"/><ellipse cx="14" cy="23" rx="11" ry="14" fill="#e63946"/><path d="M14 9v28M8 12q6 6 0 12M20 12q-6 6 0 12" stroke="#ffd75e" stroke-width="1.2" fill="none"/><path d="M8 37h12M10 40h8" stroke="#ffd75e" stroke-width="2" stroke-linecap="round"/></svg></span><span class="uc-mask-decor uc-md-bl"><svg viewBox="0 0 34 24"><path d="M17 9c-6-6-11-5-11 0 0 5 5 6 11 6s11-1 11-6c0-5-5-6-11 0z" fill="#ffd75e"/><path d="M6 15l-2 6c4 2 10 3 13 3s9-1 13-3l-2-6" fill="#f0b429"/></svg></span><span class="uc-mask-decor uc-md-br"><svg viewBox="0 0 34 22"><path d="M3 19q3-7 9-7 3-4 9-2 6-1 10 4" stroke="#e63946" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M9 19q3-5 9-5" stroke="#ffd75e" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg></span>',
         },
       }[vac];
       if (!META) return '';
-      return `<div class="uc-schedule-mask uc-mask-${vac}"><span class="uc-mask-ico">${META.svg}</span><span class="uc-mask-txt"><b>${META.title}</b><i>${META.sub}</i></span></div>`;
+      const decorHtml = META.decor || '';
+      const subHtml = META.sub ? `<i>${META.sub}</i>` : '';
+      return `<div class="uc-schedule-mask uc-mask-${vac}">${decorHtml}<span class="uc-mask-ico">${META.svg}</span><span class="uc-mask-txt"><b>${META.title}</b>${subHtml}</span></div>`;
     } catch (_) { return ''; }
   }
 

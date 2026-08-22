@@ -9479,6 +9479,24 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return 'term';
   }
   /* 控制台调试：调整当前课表时间相位（只影响清爽课表遮罩/第0周视图），传入 null 恢复按日期 */
+  /* 全局春节挂饰：顶部两侧垂挂小灯笼（pointer-events 穿透，不影响阅读与操作） */
+  function festiveDecorHtml() {
+    const lantern = '<svg viewBox="0 0 52 190"><path d="M26 0v16" stroke="#c8102e" stroke-width="3"/><rect x="16" y="16" width="20" height="8" rx="4" fill="#c8102e"/><ellipse cx="26" cy="62" rx="22" ry="30" fill="#e63946"/><path d="M26 26v72M14 34q12 12 0 24M38 34q-12 12 0 24" stroke="#ffd75e" stroke-width="1.4" fill="none"/><path d="M14 92h24M17 98h18M20 104h12" stroke="#ffd75e" stroke-width="2.4" stroke-linecap="round"/></svg>';
+    return `<div id="urppp-festive-decor" aria-hidden="true"><div class="ufd ufd-left">${lantern}</div><div class="ufd ufd-right">${lantern}</div></div>`;
+  }
+  function syncFestiveDecor() {
+    const doc = (typeof document !== 'undefined') ? document : null;
+    if (!doc) return;
+    const show = calVacation() === 'springfestival';
+    const el = doc.getElementById('urppp-festive-decor');
+    if (show && !el) {
+      const host = doc.documentElement;
+      host.insertAdjacentHTML('beforeend', festiveDecorHtml());
+    } else if (!show && el) {
+      el.remove();
+    }
+  }
+
   function setCalendarPhase(phase) {
     _calPhaseOverride = (phase === 'summer' || phase === 'winter' || phase === 'springfestival' || phase === 'term')
       ? phase
@@ -9488,6 +9506,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       state.weekLocked = false;
       state.viewWeek = 0;
     }
+    // 同步全局春节挂饰
+    try { syncFestiveDecor(); } catch (_) { /* ignore */ }
     // 重新渲染清爽课表，让遮罩/第0周立即生效
     try { if (typeof render === 'function') render(); } catch (_) { /* ignore */ }
     return _calPhaseOverride;
@@ -10593,6 +10613,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       try { ensureFeatureStyles(); } catch (_) {}
       try { refreshRouteFeatures(); } catch (e) { console.warn('[URP++] route feature refresh', e); }
       try { applyPersonalDisplay(document); } catch (_) {}
+      try { syncFestiveDecor(); } catch (_) {}
       ;[350, 900, 1800].forEach((ms) => setTimeout(() => {
         try { refreshRouteFeatures(); } catch (_) {}
         try { applyPersonalDisplay(document); } catch (_) {}
