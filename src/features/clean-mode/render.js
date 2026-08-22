@@ -154,7 +154,7 @@ export function createCleanModeRenderer({ state, deps }) {
         },
         winter: {
           title: '放寒假啦~', sub: '课表先歇一歇，好好享受生活',
-          svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M4.21 7L19.81 17M4.21 17L19.81 7"/><path d="M12 6l-1.6-1.6M12 6l1.6-1.6M12 18l-1.6 1.6M12 18l1.6 1.6"/><path d="M7.6 8.6L6 7M7.6 8.6l1.6-.4M7.6 8.6l.4 1.6M16.4 8.6l1.6-1.6M16.4 8.6l-1.6-.4M16.4 8.6l-.4 1.6"/><path d="M7.6 15.4L6 17M7.6 15.4l1.6.4M7.6 15.4l.4-1.6M16.4 15.4l1.6 1.6M16.4 15.4l-1.6.4M16.4 15.4l-.4-1.6"/></svg>',
+          svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M12 2v20"/><path d="M20 16l-4-4 4-4"/><path d="M4 8l4 4-4 4"/><path d="M16 4l-4 4-4-4"/><path d="M8 20l4-4 4 4"/></svg>',
         },
         springfestival: {
           title: '春节快乐！', sub: '新的一学期 · 今天也要加油',

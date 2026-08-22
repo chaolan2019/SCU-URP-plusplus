@@ -11688,6 +11688,7 @@ html.urppp-theme-dark #urppp-clean-root .uc-occ-table th,
 body.urppp-dark #urppp-clean-root .uc-occ-table th{background:var(--input-bg);color:var(--text)}
 html.urppp-clean-lock,html.urppp-clean-lock body{overflow:hidden!important}
 #urppp-clean-root .uc-loading{position:relative}
+#urppp-clean-root .uc-loading::after{content:'';display:inline-block;width:1.1em;margin-left:2px;animation:ucDots 1s steps(4,end) infinite}
 #urppp-clean-root .uc-week-label.uc-pop{animation:ucPop .28s cubic-bezier(.22,1,.36,1)}
 #urppp-clean-root .uc-build-grid button{transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,background .16s ease}
 #urppp-clean-root .uc-build-grid button:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.05)}
@@ -13950,7 +13951,7 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
           winter: {
             title: "放寒假啦~",
             sub: "课表先歇一歇，好好享受生活",
-            svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M4.21 7L19.81 17M4.21 17L19.81 7"/><path d="M12 6l-1.6-1.6M12 6l1.6-1.6M12 18l-1.6 1.6M12 18l1.6 1.6"/><path d="M7.6 8.6L6 7M7.6 8.6l1.6-.4M7.6 8.6l.4 1.6M16.4 8.6l1.6-1.6M16.4 8.6l-1.6-.4M16.4 8.6l-.4 1.6"/><path d="M7.6 15.4L6 17M7.6 15.4l1.6.4M7.6 15.4l.4-1.6M16.4 15.4l1.6 1.6M16.4 15.4l-1.6.4M16.4 15.4l-.4-1.6"/></svg>'
+            svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M12 2v20"/><path d="M20 16l-4-4 4-4"/><path d="M4 8l4 4-4 4"/><path d="M16 4l-4 4-4-4"/><path d="M8 20l4-4 4 4"/></svg>'
           },
           springfestival: {
             title: "春节快乐！",
