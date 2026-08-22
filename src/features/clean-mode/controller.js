@@ -227,6 +227,8 @@ export function createCleanModeController({ state, deps }) {
 
   function openCleanMode(force) {
     ensureRoot();
+    // 已在清爽模式内（例如点「刷新」）重进时不重播进入动画，只有首次打开才播放
+    const alreadyOpen = state.open;
     state.open = true;
     state.uiReady = false;
     state.weekLocked = false;
@@ -235,9 +237,12 @@ export function createCleanModeController({ state, deps }) {
     state.viewWeek = curWeek >= 1 ? curWeek : (state.viewWeek >= 1 ? state.viewWeek : 0);
     document.documentElement.classList.add('urppp-clean-lock', deps.CLEAN_FLAG);
     const el = rootEl();
-    el.classList.remove('uc-settled', 'open');
-    void el.offsetWidth; // 重触发根层进入动画
-    el.classList.add('open');
+    el.classList.remove('closing');
+    if (!alreadyOpen) {
+      el.classList.remove('uc-settled', 'open');
+      void el.offsetWidth; // 重触发根层进入动画
+      el.classList.add('open');
+    }
     // 清爽模式接管前停止站点抽屉可能仍在运行的帧循环，下一次开合仍走同一个 animateDrawer。
     try { deps.stopDrawerAnimation(document.getElementById('sidebar')); } catch (_) { /* ignore */ }
     try { if (el.__syncCleanThemeDots) el.__syncCleanThemeDots(); } catch (_) { /* ignore */ }

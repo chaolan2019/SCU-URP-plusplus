@@ -14884,6 +14884,7 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
     __name(ensureRoot, "ensureRoot");
     function openCleanMode(force) {
       ensureRoot();
+      const alreadyOpen = state.open;
       state.open = true;
       state.uiReady = false;
       state.weekLocked = false;
@@ -14891,9 +14892,12 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
       state.viewWeek = curWeek >= 1 ? curWeek : state.viewWeek >= 1 ? state.viewWeek : 0;
       document.documentElement.classList.add("urppp-clean-lock", deps.CLEAN_FLAG);
       const el = rootEl();
-      el.classList.remove("uc-settled", "open");
-      void el.offsetWidth;
-      el.classList.add("open");
+      el.classList.remove("closing");
+      if (!alreadyOpen) {
+        el.classList.remove("uc-settled", "open");
+        void el.offsetWidth;
+        el.classList.add("open");
+      }
       try {
         deps.stopDrawerAnimation(document.getElementById("sidebar"));
       } catch (_) {
