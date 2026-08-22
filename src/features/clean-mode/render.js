@@ -158,14 +158,28 @@ export function createCleanModeRenderer({ state, deps }) {
         },
         springfestival: {
           title: '春节快乐！', sub: '',
-          svg: '<svg viewBox="0 0 72 72"><rect x="6" y="6" width="60" height="60" rx="16" fill="#B71C1C"/><rect x="6" y="6" width="60" height="60" rx="16" fill="none" stroke="#F5B301" stroke-width="2.4"/><path d="M20 24q3-4 7-3 4-2 7 1" stroke="#F5B301" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M52 24q-3-4-7-3-4-2-7 1" stroke="#F5B301" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M20 50q3 4 7 3 4 2 7-1" stroke="#F5B301" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M52 50q-3 4-7 3-4 2-7-1" stroke="#F5B301" stroke-width="1.5" fill="none" stroke-linecap="round"/><text x="36" y="47" text-anchor="middle" font-size="34" font-weight="900" fill="#FFD54F" font-family="Noto Serif SC,STKaiti,KaiTi,serif" transform="rotate(180 36 36)">福</text></svg>',
-          decor: '<span class="uc-mask-decor uc-md-l"><svg viewBox="0 0 40 64"><path d="M20 1v5" stroke="#B71C1C" stroke-width="2.4"/><rect x="13" y="6" width="14" height="5" rx="2.5" fill="#B71C1C"/><ellipse cx="20" cy="31" rx="16" ry="21" fill="#E53935"/><path d="M20 11v40M6 21q14 8 0 19M34 21q-14 8 0 19M20 11q-8 6 0 14M20 11q8 6 0 14" stroke="#F5B301" stroke-width="1.2" fill="none" opacity=".85"/><path d="M12 52h16M14 57h12M16 62h8" stroke="#F5B301" stroke-width="2.2" stroke-linecap="round"/></svg></span><span class="uc-mask-decor uc-md-r"><svg viewBox="0 0 40 64"><path d="M20 1v5" stroke="#B71C1C" stroke-width="2.4"/><rect x="13" y="6" width="14" height="5" rx="2.5" fill="#B71C1C"/><ellipse cx="20" cy="31" rx="16" ry="21" fill="#E53935"/><path d="M20 11v40M6 21q14 8 0 19M34 21q-14 8 0 19M20 11q-8 6 0 14M20 11q8 6 0 14" stroke="#F5B301" stroke-width="1.2" fill="none" opacity=".85"/><path d="M12 52h16M14 57h12M16 62h8" stroke="#F5B301" stroke-width="2.2" stroke-linecap="round"/></svg></span><span class="uc-mask-decor uc-md-bl"><svg viewBox="0 0 56 24"><path d="M5 20q4-8 11-8 2-6 10-4 8-2 12 4 8-1 12 6" stroke="#E53935" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M14 20q3-5 9-4 5-1 8 4" stroke="#F5B301" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></span><span class="uc-mask-decor uc-md-br"><svg viewBox="0 0 56 24"><path d="M5 20q4-8 11-8 2-6 10-4 8-2 12 4 8-1 12 6" stroke="#E53935" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M14 20q3-5 9-4 5-1 8 4" stroke="#F5B301" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></span>',
+          svg: '<svg viewBox="0 0 72 72"><rect x="16" y="16" width="40" height="40" rx="7" fill="#b71c1c" stroke="#f5b301" stroke-width="2.4" transform="rotate(45 36 36)"/><path d="M36 16v40M16 36h40" stroke="#f5b301" stroke-width="1" opacity=".5"/><path d="M24 24l24 24M48 24L24 48" stroke="#f5b301" stroke-width="1" opacity=".35"/><text x="36" y="47" text-anchor="middle" font-size="30" font-weight="900" fill="#ffd54f" font-family="Noto Serif SC,STKaiti,KaiTi,serif" transform="rotate(180 36 36)">福</text></svg>',
+          couplet: {
+            scroll: '万象纳祥',
+            right: '望江听雨华西看杏海纳百川享人间烟火',
+            left: '江安漫步眉山泛舟有容乃大过锦绣新年',
+          },
         },
       }[vac];
       if (!META) return '';
-      const decorHtml = META.decor || '';
+      // 春节：保留高斯模糊 + 一点红，配套横批/左右竖联 + 倒福 + 标题
+      if (vac === 'springfestival' && META.couplet) {
+        const c = META.couplet;
+        return `<div class="uc-schedule-mask uc-mask-springfestival">
+          <span class="uc-mask-scroll">${c.scroll}</span>
+          <span class="uc-mask-cl uc-mask-cl-r">${c.right}</span>
+          <span class="uc-mask-cl uc-mask-cl-l">${c.left}</span>
+          <span class="uc-mask-ico">${META.svg}</span>
+          <span class="uc-mask-txt"><b>${META.title}</b></span>
+        </div>`;
+      }
       const subHtml = META.sub ? `<i>${META.sub}</i>` : '';
-      return `<div class="uc-schedule-mask uc-mask-${vac}">${decorHtml}<span class="uc-mask-ico">${META.svg}</span><span class="uc-mask-txt"><b>${META.title}</b>${subHtml}</span></div>`;
+      return `<div class="uc-schedule-mask uc-mask-${vac}"><span class="uc-mask-ico">${META.svg}</span><span class="uc-mask-txt"><b>${META.title}</b>${subHtml}</span></div>`;
     } catch (_) { return ''; }
   }
 

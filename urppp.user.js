@@ -11447,16 +11447,15 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-clean-root .uc-schedule-wrap .uc-mask-txt b{display:block;font-size:18px;font-weight:750;color:var(--text)}
 #urppp-clean-root .uc-schedule-wrap .uc-mask-txt i{display:block;font-style:normal;font-size:12px;color:var(--text-secondary);margin-top:4px}
 /* 春节彩蛋：遮罩红色调 + 四角装饰 + 倒福 */
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask.uc-mask-springfestival{background:color-mix(in srgb,#c8102e 16%,var(--surface));backdrop-filter:blur(3px)}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask.uc-mask-springfestival .uc-mask-txt b{color:#c8102e;font-size:22px}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask.uc-mask-springfestival .uc-mask-ico{width:74px;height:74px}
+#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask.uc-mask-springfestival{background:rgba(183,28,28,.08)!important;backdrop-filter:blur(3px)}
+#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask.uc-mask-springfestival .uc-mask-txt b{color:#b71c1c;font-size:22px}
+#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask.uc-mask-springfestival .uc-mask-ico{width:72px;height:72px}
 #urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-mask-ico svg{width:100%;height:100%}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-mask-decor{position:absolute;width:52px;height:auto;line-height:0;pointer-events:none;opacity:.95}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-mask-decor svg{width:100%;height:auto}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-l{left:26px;top:26px;width:46px}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-r{right:26px;top:26px;width:46px}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-bl{left:30px;bottom:24px;width:74px}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-br{right:30px;bottom:24px;width:74px}
+/* 春节对联：横批顶部居中 + 左右竖联（红底金字） */
+#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask.uc-mask-springfestival .uc-mask-scroll{position:absolute;top:20px;left:50%;transform:translateX(-50%);background:#b71c1c;color:#ffd54f;font-family:Noto Serif SC,STKaiti,serif;font-weight:700;font-size:15px;letter-spacing:8px;padding:7px 26px;border-radius:4px;border:2px solid #f5b301;box-shadow:0 3px 10px rgba(183,28,28,.15);white-space:nowrap}
+#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask.uc-mask-springfestival .uc-mask-cl{position:absolute;top:50%;transform:translateY(-50%);writing-mode:vertical-rl;background:#b71c1c;color:#ffd54f;font-family:Noto Serif SC,STKaiti,serif;font-size:12px;line-height:1.6;letter-spacing:2px;padding:16px 11px;border-radius:6px;border:2px solid #f5b301;box-shadow:0 3px 12px rgba(183,28,28,.12);max-height:none}
+#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask.uc-mask-springfestival .uc-mask-cl-r{right:2.5%}
+#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask.uc-mask-springfestival .uc-mask-cl-l{left:2.5%}
 /* 全局春节挂饰：顶部两侧垂挂小灯笼，pointer-events 穿透，不影响阅读与操作 */
 #urppp-festive-decor{position:fixed;inset:0;pointer-events:none;z-index:60}
 #urppp-festive-decor .ufd{position:absolute;top:0}
@@ -11744,11 +11743,6 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
   line-height:26px!important;cursor:pointer!important;float:none!important
 }
 #urppp-nav-clean svg,#urppp-nav-cal svg{width:14px!important;height:14px!important;display:block!important}
-/* 杂志主题：清爽模式按钮去外框（无矩形），悬停显示下划线 */
-html[data-urppp-skin="editorial"] #urppp-nav-clean,
-html[data-urppp-skin="editorial"] #urppp-nav-cal{background:transparent!important;box-shadow:none!important;border:0!important;text-decoration:none}
-html[data-urppp-skin="editorial"] #urppp-nav-clean:hover,
-html[data-urppp-skin="editorial"] #urppp-nav-cal:hover{text-decoration:underline!important;text-underline-offset:4px;text-decoration-thickness:2px;text-decoration-color:var(--text)}
 @media (max-width:900px){
   #urppp-clean-root .uc-top{flex:0 0 52px;padding:0 12px}
   #sidebar.urppp-clean-sidebar{top:52px !important;height:calc(100vh - 52px) !important}
@@ -13979,14 +13973,27 @@ html[data-urppp-skin="editorial"] #urppp-nav-cal:hover{text-decoration:underline
           springfestival: {
             title: "春节快乐！",
             sub: "",
-            svg: '<svg viewBox="0 0 72 72"><rect x="6" y="6" width="60" height="60" rx="16" fill="#B71C1C"/><rect x="6" y="6" width="60" height="60" rx="16" fill="none" stroke="#F5B301" stroke-width="2.4"/><path d="M20 24q3-4 7-3 4-2 7 1" stroke="#F5B301" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M52 24q-3-4-7-3-4-2-7 1" stroke="#F5B301" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M20 50q3 4 7 3 4 2 7-1" stroke="#F5B301" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M52 50q-3 4-7 3-4 2-7-1" stroke="#F5B301" stroke-width="1.5" fill="none" stroke-linecap="round"/><text x="36" y="47" text-anchor="middle" font-size="34" font-weight="900" fill="#FFD54F" font-family="Noto Serif SC,STKaiti,KaiTi,serif" transform="rotate(180 36 36)">福</text></svg>',
-            decor: '<span class="uc-mask-decor uc-md-l"><svg viewBox="0 0 40 64"><path d="M20 1v5" stroke="#B71C1C" stroke-width="2.4"/><rect x="13" y="6" width="14" height="5" rx="2.5" fill="#B71C1C"/><ellipse cx="20" cy="31" rx="16" ry="21" fill="#E53935"/><path d="M20 11v40M6 21q14 8 0 19M34 21q-14 8 0 19M20 11q-8 6 0 14M20 11q8 6 0 14" stroke="#F5B301" stroke-width="1.2" fill="none" opacity=".85"/><path d="M12 52h16M14 57h12M16 62h8" stroke="#F5B301" stroke-width="2.2" stroke-linecap="round"/></svg></span><span class="uc-mask-decor uc-md-r"><svg viewBox="0 0 40 64"><path d="M20 1v5" stroke="#B71C1C" stroke-width="2.4"/><rect x="13" y="6" width="14" height="5" rx="2.5" fill="#B71C1C"/><ellipse cx="20" cy="31" rx="16" ry="21" fill="#E53935"/><path d="M20 11v40M6 21q14 8 0 19M34 21q-14 8 0 19M20 11q-8 6 0 14M20 11q8 6 0 14" stroke="#F5B301" stroke-width="1.2" fill="none" opacity=".85"/><path d="M12 52h16M14 57h12M16 62h8" stroke="#F5B301" stroke-width="2.2" stroke-linecap="round"/></svg></span><span class="uc-mask-decor uc-md-bl"><svg viewBox="0 0 56 24"><path d="M5 20q4-8 11-8 2-6 10-4 8-2 12 4 8-1 12 6" stroke="#E53935" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M14 20q3-5 9-4 5-1 8 4" stroke="#F5B301" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></span><span class="uc-mask-decor uc-md-br"><svg viewBox="0 0 56 24"><path d="M5 20q4-8 11-8 2-6 10-4 8-2 12 4 8-1 12 6" stroke="#E53935" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M14 20q3-5 9-4 5-1 8 4" stroke="#F5B301" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></span>'
+            svg: '<svg viewBox="0 0 72 72"><rect x="16" y="16" width="40" height="40" rx="7" fill="#b71c1c" stroke="#f5b301" stroke-width="2.4" transform="rotate(45 36 36)"/><path d="M36 16v40M16 36h40" stroke="#f5b301" stroke-width="1" opacity=".5"/><path d="M24 24l24 24M48 24L24 48" stroke="#f5b301" stroke-width="1" opacity=".35"/><text x="36" y="47" text-anchor="middle" font-size="30" font-weight="900" fill="#ffd54f" font-family="Noto Serif SC,STKaiti,KaiTi,serif" transform="rotate(180 36 36)">福</text></svg>',
+            couplet: {
+              scroll: "万象纳祥",
+              right: "望江听雨华西看杏海纳百川享人间烟火",
+              left: "江安漫步眉山泛舟有容乃大过锦绣新年"
+            }
           }
         }[vac];
         if (!META) return "";
-        const decorHtml = META.decor || "";
+        if (vac === "springfestival" && META.couplet) {
+          const c = META.couplet;
+          return `<div class="uc-schedule-mask uc-mask-springfestival">
+          <span class="uc-mask-scroll">${c.scroll}</span>
+          <span class="uc-mask-cl uc-mask-cl-r">${c.right}</span>
+          <span class="uc-mask-cl uc-mask-cl-l">${c.left}</span>
+          <span class="uc-mask-ico">${META.svg}</span>
+          <span class="uc-mask-txt"><b>${META.title}</b></span>
+        </div>`;
+        }
         const subHtml = META.sub ? `<i>${META.sub}</i>` : "";
-        return `<div class="uc-schedule-mask uc-mask-${vac}">${decorHtml}<span class="uc-mask-ico">${META.svg}</span><span class="uc-mask-txt"><b>${META.title}</b>${subHtml}</span></div>`;
+        return `<div class="uc-schedule-mask uc-mask-${vac}"><span class="uc-mask-ico">${META.svg}</span><span class="uc-mask-txt"><b>${META.title}</b>${subHtml}</span></div>`;
       } catch (_) {
         return "";
       }
@@ -19051,7 +19058,7 @@ ${arcs}
           html[data-urppp-skin="editorial"] .btn.btn-white:hover,
           html[data-urppp-skin="editorial"] button.btn.btn-white:hover,
           html[data-urppp-skin="editorial"] a.btn.btn-white:hover,
-          html[data-urppp-skin="editorial"] #urppp-nav-clean,#urppp-nav-cal:hover,#urppp-nav-cal:hover,
+          html[data-urppp-skin="editorial"] #urppp-nav-clean:hover,#urppp-nav-cal:hover,
           html[data-urppp-skin="editorial"] #urppp-root .ut button:hover,
           html[data-urppp-skin="editorial"] #urppp-clean-root .uc-btn:hover{
             background:transparent!important;color:var(--text)!important;text-decoration-color:currentColor!important;
@@ -19060,7 +19067,7 @@ ${arcs}
           html[data-urppp-skin="editorial"] .btn:active,
           html[data-urppp-skin="editorial"] a.btn:active,
           html[data-urppp-skin="editorial"] button.btn:active,
-          html[data-urppp-skin="editorial"] #urppp-nav-clean,#urppp-nav-cal:active,#urppp-nav-cal:active,
+          html[data-urppp-skin="editorial"] #urppp-nav-clean:active,#urppp-nav-cal:active,
           html[data-urppp-skin="editorial"] #urppp-clean-root .uc-btn:active{
             opacity:.65!important;transform:none!important;
           }

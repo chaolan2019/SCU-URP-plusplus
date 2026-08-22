@@ -2306,7 +2306,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           html[data-urppp-skin="editorial"] .btn.btn-white:hover,
           html[data-urppp-skin="editorial"] button.btn.btn-white:hover,
           html[data-urppp-skin="editorial"] a.btn.btn-white:hover,
-          html[data-urppp-skin="editorial"] #urppp-nav-clean,#urppp-nav-cal:hover,#urppp-nav-cal:hover,
+          html[data-urppp-skin="editorial"] #urppp-nav-clean:hover,#urppp-nav-cal:hover,
           html[data-urppp-skin="editorial"] #urppp-root .ut button:hover,
           html[data-urppp-skin="editorial"] #urppp-clean-root .uc-btn:hover{
             background:transparent!important;color:var(--text)!important;text-decoration-color:currentColor!important;
@@ -2315,7 +2315,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           html[data-urppp-skin="editorial"] .btn:active,
           html[data-urppp-skin="editorial"] a.btn:active,
           html[data-urppp-skin="editorial"] button.btn:active,
-          html[data-urppp-skin="editorial"] #urppp-nav-clean,#urppp-nav-cal:active,#urppp-nav-cal:active,
+          html[data-urppp-skin="editorial"] #urppp-nav-clean:active,#urppp-nav-cal:active,
           html[data-urppp-skin="editorial"] #urppp-clean-root .uc-btn:active{
             opacity:.65!important;transform:none!important;
           }
