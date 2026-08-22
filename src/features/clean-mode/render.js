@@ -139,6 +139,31 @@ export function createCleanModeRenderer({ state, deps }) {
     return html;
   }
 
+  /** 假期状态覆盖遮罩（仅第 0 周显示，切到其他周自动消失）：寒暑假→SVG+文案，春节→彩蛋 */
+  function vacationMark() {
+    try {
+      const vac = deps.calVacation ? deps.calVacation() : 'term';
+      if (vac === 'term') return '';
+      if (deps.getViewWeekNumber() !== 0) return '';
+      const META = {
+        summer: {
+          title: '放暑假啦~', sub: '课表先歇一歇，好好享受生活',
+          svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+        },
+        winter: {
+          title: '放寒假啦~', sub: '课表先歇一歇，好好享受生活',
+          svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5.6l-5 6.4-5-6.4M17 18.4l-5-6.4-5 6.4M2 12h20M5.6 7l6.4 5-6.4 5M18.4 7l-6.4 5 6.4 5"/></svg>',
+        },
+        springfestival: {
+          title: '春节快乐！', sub: '新的一学期 · 今天也要加油',
+          svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c-4.4 0-8-3.6-8-8 0-4.4 3.6-8 8-8s8 3.6 8 8c0 4.4-3.6 8-8 8z"/><path d="M12 3v2M3.5 7.5l1.5 1.5M20.5 7.5L19 9M4 21l2-2M20 21l-2-2"/><path d="M9 12h6M12 9v6"/></svg>',
+        },
+      }[vac];
+      if (!META) return '';
+      return `<div class="uc-schedule-mask uc-mask-${vac}"><span class="uc-mask-ico">${META.svg}</span><span class="uc-mask-txt"><b>${META.title}</b><i>${META.sub}</i></span></div>`;
+    } catch (_) { return ''; }
+  }
+
   function servicesHtml() {
     const items = [
       { t: '空闲教室', i: 'room', a: 'room' },
@@ -197,7 +222,7 @@ export function createCleanModeRenderer({ state, deps }) {
               <span class="uc-week-cur">${courses.length ? (courses.length + ' 课次') : ((state.schedule && state.schedule.error) || '')}</span>
             </div>
           </div>
-          <div class="uc-bd">${state.loading.schedule ? '<div class="uc-loading">课表加载中…</div>' : (courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${deps.escapeHtml((state.schedule && state.schedule.error) || '暂无课表数据')}</div>`)}</div>
+          <div class="uc-bd"><div class="uc-schedule-wrap">${state.loading.schedule ? '<div class="uc-loading">课表加载中…</div>' : (courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${deps.escapeHtml((state.schedule && state.schedule.error) || '暂无课表数据')}</div>`)}${vacationMark()}</div></div>
         </div>
       </div>
       <div class="uc-col">
@@ -245,9 +270,7 @@ export function createCleanModeRenderer({ state, deps }) {
           <button type="button" class="uc-btn" data-week-delta="1">›</button>
           <button type="button" class="uc-btn" data-week-reset="1">本周</button>
         </div>
-      </div><div class="uc-bd">
-        <div style="overflow:auto">${state.loading.schedule ? '<div class="uc-loading">课表加载中…</div>' : (courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${deps.escapeHtml((state.schedule && state.schedule.error) || '暂无课表数据')}</div>`)}</div>
-      </div></div>
+      </div><div class="uc-bd"><div class="uc-schedule-wrap">${state.loading.schedule ? '<div class="uc-loading">课表加载中…</div>' : (courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${deps.escapeHtml((state.schedule && state.schedule.error) || '暂无课表数据')}</div>`)}${vacationMark()}</div></div></div>
     </div>`;
   }
 

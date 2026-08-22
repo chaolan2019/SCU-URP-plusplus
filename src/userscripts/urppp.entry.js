@@ -9452,7 +9452,55 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return 0;
   }
 
+  /* 课表时间状态（季节相位）：term 学期中 / summer 暑假 / winter 寒假 / springfestival 春节（正月初一 +7天） */
+  let _calPhaseOverride = null;
+  function calTodayStr() {
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  }
+  function calAddDays(dateStr, days) {
+    const d = new Date(`${dateStr}T00:00:00`);
+    d.setDate(d.getDate() + days);
+    const p = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  }
+  /* 当前课表相位：默认按日期判断；debug 覆盖优先级最高 */
+  function calVacation(today) {
+    if (_calPhaseOverride) return _calPhaseOverride;
+    const t = today || calTodayStr();
+    // 春节：农历正月初一（2027-02-06）起 7 天，覆盖在寒假第 0 周遮罩上
+    if (t >= '2027-02-06' && t <= calAddDays('2027-02-06', 6)) return 'springfestival';
+    // 寒假：放寒假（1/18）到春季开学前（3/1）
+    if (t >= '2027-01-18' && t < '2027-03-01') return 'winter';
+    // 暑假：春季结束（7/4）到秋季开学前（8/31）；含 2026 暑假末
+    if (t >= '2027-07-04' && t < '2027-08-31') return 'summer';
+    if (t >= '2026-07-04' && t < '2026-08-31') return 'summer';
+    return 'term';
+  }
+  /* 控制台调试：调整当前课表时间相位（只影响清爽课表遮罩/第0周视图），传入 null 恢复按日期 */
+  function setCalendarPhase(phase) {
+    _calPhaseOverride = (phase === 'summer' || phase === 'winter' || phase === 'springfestival' || phase === 'term')
+      ? phase
+      : null;
+    // 切到假期相位时回到第 0 周（显示遮罩）；学期中/复位则跟随系统周
+    if (_calPhaseOverride && _calPhaseOverride !== 'term') {
+      state.weekLocked = false;
+      state.viewWeek = 0;
+    }
+    // 重新渲染清爽课表，让遮罩/第0周立即生效
+    try { if (typeof render === 'function') render(); } catch (_) { /* ignore */ }
+    return _calPhaseOverride;
+  }
+  function getCalendarPhase() { return calVacation(); }
+
   function getViewWeekNumber() {
+    // 寒暑假：默认第 0 周；用户手动切周后锁定跟随
+    if (calVacation() !== 'term') {
+      if (!state.weekLocked) state.viewWeek = 0;
+      else if (!state.viewWeek || state.viewWeek < 0) state.viewWeek = 0;
+      return state.viewWeek;
+    }
     const sys = getCurrentWeekNumber() || readRememberedTermWeek() || 0;
     // 用户手动切周后锁定；未锁定时始终跟随系统教学周
     if (!state.weekLocked) {
@@ -10410,6 +10458,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       summarizeCourses,
       trendChartSvg: renderScoreTrendChart,
       weekBitActive,
+      calVacation,
+      setCalendarPhase,
     },
   });
 
@@ -10671,6 +10721,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+  // 控制台调试接口：切换课表时间相位（寒暑假/春节/学期中）
+  global.__urpppDebug = global.__urpppDebug || {};
+  global.__urpppDebug.setCalendarPhase = (p) => setCalendarPhase(p);
+  global.__urpppDebug.getCalendarPhase = () => getCalendarPhase();
+  global.__urpppDebug.calVacation = (d) => calVacation(d);
   global.urppp = {
     version: URPPP_VERSION,
     showLogo(show) {

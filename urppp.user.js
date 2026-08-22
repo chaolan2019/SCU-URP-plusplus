@@ -11439,6 +11439,13 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-clean-root .uc-name{font-size:18px;font-weight:700;margin:0 0 4px}
 #urppp-clean-root .uc-sub{font-size:12px;color:var(--text-secondary,#667085);line-height:1.5}
 #urppp-clean-root .uc-gpa{margin-top:6px;display:inline-flex;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--primary) 12%,var(--input-bg));font-weight:700;font-size:13px}
+#urppp-clean-root .uc-schedule-wrap{position:relative}
+#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:30;background:color-mix(in srgb,var(--surface) 72%,var(--bg-card));backdrop-filter:blur(3px)}
+#urppp-clean-root .uc-schedule-wrap .uc-mask-ico{width:52px;height:52px;color:var(--primary);line-height:0}
+#urppp-clean-root .uc-schedule-wrap .uc-mask-ico svg{width:100%;height:100%}
+#urppp-clean-root .uc-schedule-wrap .uc-mask-txt{text-align:center}
+#urppp-clean-root .uc-schedule-wrap .uc-mask-txt b{display:block;font-size:18px;font-weight:750;color:var(--text)}
+#urppp-clean-root .uc-schedule-wrap .uc-mask-txt i{display:block;font-style:normal;font-size:12px;color:var(--text-secondary);margin-top:4px}
 #urppp-clean-root .uc-week{min-width:720px}
 #urppp-clean-root .uc-week-head{display:grid;grid-template-columns:36px repeat(7,minmax(0,1fr));gap:6px;margin-bottom:6px}
 #urppp-clean-root .uc-week-head .h{font-size:11px;text-align:center;color:var(--text-secondary)}
@@ -13326,7 +13333,7 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
   var CAL_TERMS = {
     autumn: {
       name: "秋季学期",
-      weeks: 26,
+      weeks: 20,
       start: "2026-08-31",
       end: "2027-02-20",
       events: [
@@ -13929,6 +13936,35 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
       return html;
     }
     __name(renderScheduleBoard, "renderScheduleBoard");
+    function vacationMark() {
+      try {
+        const vac = deps.calVacation ? deps.calVacation() : "term";
+        if (vac === "term") return "";
+        if (deps.getViewWeekNumber() !== 0) return "";
+        const META = {
+          summer: {
+            title: "放暑假啦~",
+            sub: "课表先歇一歇，好好享受生活",
+            svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>'
+          },
+          winter: {
+            title: "放寒假啦~",
+            sub: "课表先歇一歇，好好享受生活",
+            svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5.6l-5 6.4-5-6.4M17 18.4l-5-6.4-5 6.4M2 12h20M5.6 7l6.4 5-6.4 5M18.4 7l-6.4 5 6.4 5"/></svg>'
+          },
+          springfestival: {
+            title: "春节快乐！",
+            sub: "新的一学期 · 今天也要加油",
+            svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c-4.4 0-8-3.6-8-8 0-4.4 3.6-8 8-8s8 3.6 8 8c0 4.4-3.6 8-8 8z"/><path d="M12 3v2M3.5 7.5l1.5 1.5M20.5 7.5L19 9M4 21l2-2M20 21l-2-2"/><path d="M9 12h6M12 9v6"/></svg>'
+          }
+        }[vac];
+        if (!META) return "";
+        return `<div class="uc-schedule-mask uc-mask-${vac}"><span class="uc-mask-ico">${META.svg}</span><span class="uc-mask-txt"><b>${META.title}</b><i>${META.sub}</i></span></div>`;
+      } catch (_) {
+        return "";
+      }
+    }
+    __name(vacationMark, "vacationMark");
     function servicesHtml() {
       const items = [
         { t: "空闲教室", i: "room", a: "room" },
@@ -13988,7 +14024,7 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
               <span class="uc-week-cur">${courses.length ? courses.length + " 课次" : state.schedule && state.schedule.error || ""}</span>
             </div>
           </div>
-          <div class="uc-bd">${state.loading.schedule ? '<div class="uc-loading">课表加载中…</div>' : courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${deps.escapeHtml(state.schedule && state.schedule.error || "暂无课表数据")}</div>`}</div>
+          <div class="uc-bd"><div class="uc-schedule-wrap">${state.loading.schedule ? '<div class="uc-loading">课表加载中…</div>' : courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${deps.escapeHtml(state.schedule && state.schedule.error || "暂无课表数据")}</div>`}${vacationMark()}</div></div>
         </div>
       </div>
       <div class="uc-col">
@@ -14042,9 +14078,7 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
           <button type="button" class="uc-btn" data-week-delta="1">›</button>
           <button type="button" class="uc-btn" data-week-reset="1">本周</button>
         </div>
-      </div><div class="uc-bd">
-        <div style="overflow:auto">${state.loading.schedule ? '<div class="uc-loading">课表加载中…</div>' : courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${deps.escapeHtml(state.schedule && state.schedule.error || "暂无课表数据")}</div>`}</div>
-      </div></div>
+      </div><div class="uc-bd"><div class="uc-schedule-wrap">${state.loading.schedule ? '<div class="uc-loading">课表加载中…</div>' : courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${deps.escapeHtml(state.schedule && state.schedule.error || "暂无课表数据")}</div>`}${vacationMark()}</div></div></div>
     </div>`;
     }
     __name(renderMobile, "renderMobile");
@@ -26019,7 +26053,53 @@ ${arcs}
       return 0;
     }
     __name(getCurrentWeekNumber, "getCurrentWeekNumber");
+    let _calPhaseOverride = null;
+    function calTodayStr() {
+      const d = /* @__PURE__ */ new Date();
+      const p = /* @__PURE__ */ __name((n) => String(n).padStart(2, "0"), "p");
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    }
+    __name(calTodayStr, "calTodayStr");
+    function calAddDays(dateStr, days) {
+      const d = /* @__PURE__ */ new Date(`${dateStr}T00:00:00`);
+      d.setDate(d.getDate() + days);
+      const p = /* @__PURE__ */ __name((n) => String(n).padStart(2, "0"), "p");
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+    }
+    __name(calAddDays, "calAddDays");
+    function calVacation(today) {
+      if (_calPhaseOverride) return _calPhaseOverride;
+      const t = today || calTodayStr();
+      if (t >= "2027-02-06" && t <= calAddDays("2027-02-06", 6)) return "springfestival";
+      if (t >= "2027-01-18" && t < "2027-03-01") return "winter";
+      if (t >= "2027-07-04" && t < "2027-08-31") return "summer";
+      if (t >= "2026-07-04" && t < "2026-08-31") return "summer";
+      return "term";
+    }
+    __name(calVacation, "calVacation");
+    function setCalendarPhase(phase) {
+      _calPhaseOverride = phase === "summer" || phase === "winter" || phase === "springfestival" || phase === "term" ? phase : null;
+      if (_calPhaseOverride && _calPhaseOverride !== "term") {
+        state.weekLocked = false;
+        state.viewWeek = 0;
+      }
+      try {
+        if (typeof render === "function") render();
+      } catch (_) {
+      }
+      return _calPhaseOverride;
+    }
+    __name(setCalendarPhase, "setCalendarPhase");
+    function getCalendarPhase() {
+      return calVacation();
+    }
+    __name(getCalendarPhase, "getCalendarPhase");
     function getViewWeekNumber() {
+      if (calVacation() !== "term") {
+        if (!state.weekLocked) state.viewWeek = 0;
+        else if (!state.viewWeek || state.viewWeek < 0) state.viewWeek = 0;
+        return state.viewWeek;
+      }
       const sys = getCurrentWeekNumber() || readRememberedTermWeek() || 0;
       if (!state.weekLocked) {
         if (sys >= 1) state.viewWeek = sys;
@@ -26957,7 +27037,9 @@ ${arcs}
         scoreToNumber,
         summarizeCourses,
         trendChartSvg,
-        weekBitActive
+        weekBitActive,
+        calVacation,
+        setCalendarPhase
       }
     });
     const { ensureRoomCatalogLoaded, loadAll } = createCleanModeDataLoader({
@@ -27272,6 +27354,10 @@ ${arcs}
     }
     __name(watchRouteChanges, "watchRouteChanges");
     const global = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+    global.__urpppDebug = global.__urpppDebug || {};
+    global.__urpppDebug.setCalendarPhase = (p) => setCalendarPhase(p);
+    global.__urpppDebug.getCalendarPhase = () => getCalendarPhase();
+    global.__urpppDebug.calVacation = (d) => calVacation(d);
     global.urppp = {
       version: URPPP_VERSION,
       showLogo(show) {

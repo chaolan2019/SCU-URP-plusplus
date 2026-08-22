@@ -4,7 +4,7 @@
  */
 const CAL_TERMS = {
   autumn: {
-    name: '秋季学期', weeks: 26, start: '2026-08-31', end: '2027-02-20',
+    name: '秋季学期', weeks: 20, start: '2026-08-31', end: '2027-02-20',
     events: [
       { t: 'reg', name: '本科生新生报到', start: '2026-08-24', end: '2026-08-25' },
       { t: 'reg', name: '在校生报到', start: '2026-08-27', end: '2026-08-28' },
