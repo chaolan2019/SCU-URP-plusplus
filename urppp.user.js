@@ -11688,7 +11688,6 @@ html.urppp-theme-dark #urppp-clean-root .uc-occ-table th,
 body.urppp-dark #urppp-clean-root .uc-occ-table th{background:var(--input-bg);color:var(--text)}
 html.urppp-clean-lock,html.urppp-clean-lock body{overflow:hidden!important}
 #urppp-clean-root .uc-loading{position:relative}
-#urppp-clean-root .uc-loading::after{content:'';display:inline-block;width:1.1em;margin-left:2px;animation:ucDots 1s steps(4,end) infinite}
 #urppp-clean-root .uc-week-label.uc-pop{animation:ucPop .28s cubic-bezier(.22,1,.36,1)}
 #urppp-clean-root .uc-build-grid button{transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease,background .16s ease}
 #urppp-clean-root .uc-build-grid button:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.05)}
@@ -13938,6 +13937,7 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
     __name(renderScheduleBoard, "renderScheduleBoard");
     function vacationMark() {
       try {
+        if (state.loading && state.loading.schedule) return "";
         const vac = deps.calVacation ? deps.calVacation() : "term";
         if (vac === "term") return "";
         if (deps.getViewWeekNumber() !== 0) return "";
@@ -13950,7 +13950,7 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
           winter: {
             title: "放寒假啦~",
             sub: "课表先歇一歇，好好享受生活",
-            svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5.6l-5 6.4-5-6.4M17 18.4l-5-6.4-5 6.4M2 12h20M5.6 7l6.4 5-6.4 5M18.4 7l-6.4 5 6.4 5"/></svg>'
+            svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M4.21 7L19.81 17M4.21 17L19.81 7"/><path d="M12 6l-1.6-1.6M12 6l1.6-1.6M12 18l-1.6 1.6M12 18l1.6 1.6"/><path d="M7.6 8.6L6 7M7.6 8.6l1.6-.4M7.6 8.6l.4 1.6M16.4 8.6l1.6-1.6M16.4 8.6l-1.6-.4M16.4 8.6l-.4 1.6"/><path d="M7.6 15.4L6 17M7.6 15.4l1.6.4M7.6 15.4l.4-1.6M16.4 15.4l1.6 1.6M16.4 15.4l-1.6.4M16.4 15.4l-.4-1.6"/></svg>'
           },
           springfestival: {
             title: "春节快乐！",
@@ -14024,7 +14024,7 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
               <span class="uc-week-cur">${courses.length ? courses.length + " 课次" : state.schedule && state.schedule.error || ""}</span>
             </div>
           </div>
-          <div class="uc-bd"><div class="uc-schedule-wrap">${state.loading.schedule ? '<div class="uc-loading">课表加载中…</div>' : courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${deps.escapeHtml(state.schedule && state.schedule.error || "暂无课表数据")}</div>`}${vacationMark()}</div></div>
+          <div class="uc-bd"><div class="uc-schedule-wrap">${state.loading.schedule ? '<div class="uc-loading">课表加载中</div>' : courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${deps.escapeHtml(state.schedule && state.schedule.error || "暂无课表数据")}</div>`}${vacationMark()}</div></div>
         </div>
       </div>
       <div class="uc-col">
@@ -14078,12 +14078,12 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
           <button type="button" class="uc-btn" data-week-delta="1">›</button>
           <button type="button" class="uc-btn" data-week-reset="1">本周</button>
         </div>
-      </div><div class="uc-bd"><div class="uc-schedule-wrap">${state.loading.schedule ? '<div class="uc-loading">课表加载中…</div>' : courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${deps.escapeHtml(state.schedule && state.schedule.error || "暂无课表数据")}</div>`}${vacationMark()}</div></div></div>
+      </div><div class="uc-bd"><div class="uc-schedule-wrap">${state.loading.schedule ? '<div class="uc-loading">课表加载中</div>' : courses.length ? renderScheduleBoard(courses) : `<div class="uc-empty">${deps.escapeHtml(state.schedule && state.schedule.error || "暂无课表数据")}</div>`}${vacationMark()}</div></div></div>
     </div>`;
     }
     __name(renderMobile, "renderMobile");
     function roomPickerHtml() {
-      if (state.loading.room) return '<div class="uc-loading">教学楼加载中…</div>';
+      if (state.loading.room) return '<div class="uc-loading">教学楼加载中</div>';
       const groups = state.catalog || [];
       if (!groups.length) {
         return `<div class="uc-empty">${deps.escapeHtml(state.roomError || "未读到教学楼列表")}<div style="margin-top:10px"><button type="button" class="uc-btn" data-room-reload="1">重新加载</button></div></div>`;
@@ -14594,7 +14594,7 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
     }
     __name(openScoreModal, "openScoreModal");
     async function openRoomModal() {
-      openModal("空闲教室", '<div class="uc-loading">加载教学楼…</div>', "");
+      openModal("空闲教室", '<div class="uc-loading">加载教学楼</div>', "");
       try {
         await deps.ensureRoomCatalogLoaded(false);
         openModal("空闲教室", deps.roomPickerHtml(), `<span class="uc-sub">选择楼栋查看教室×节次占用（对齐教室使用状况）</span>`);
@@ -14620,10 +14620,10 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
         console.warn("[URP++] no room host");
         return;
       }
-      body.innerHTML = '<div class="uc-loading">加载占用网格…</div>';
+      body.innerHTML = '<div class="uc-loading">加载占用网格</div>';
       try {
         let pack = await deps.loadBuildingOccupancy(building);
-        body.innerHTML = '<div class="uc-loading">匹配课程名称…</div>';
+        body.innerHTML = '<div class="uc-loading">匹配课程名称</div>';
         let plan = pack.planNumber || "";
         if (!plan) {
           try {

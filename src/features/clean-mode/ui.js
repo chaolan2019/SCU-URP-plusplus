@@ -400,7 +400,7 @@ export function createCleanModeUI({ state, deps }) {
   }
 
   async function openRoomModal() {
-    openModal('空闲教室', '<div class="uc-loading">加载教学楼…</div>', '');
+    openModal('空闲教室', '<div class="uc-loading">加载教学楼</div>', '');
     try {
       await deps.ensureRoomCatalogLoaded(false);
       openModal('空闲教室', deps.roomPickerHtml(), `<span class="uc-sub">选择楼栋查看教室×节次占用（对齐教室使用状况）</span>`);
@@ -426,10 +426,10 @@ export function createCleanModeUI({ state, deps }) {
       console.warn('[URP++] no room host');
       return;
     }
-    body.innerHTML = '<div class="uc-loading">加载占用网格…</div>';
+    body.innerHTML = '<div class="uc-loading">加载占用网格</div>';
     try {
       let pack = await deps.loadBuildingOccupancy(building);
-      body.innerHTML = '<div class="uc-loading">匹配课程名称…</div>';
+      body.innerHTML = '<div class="uc-loading">匹配课程名称</div>';
       let plan = pack.planNumber || '';
       if (!plan) {
         try {
