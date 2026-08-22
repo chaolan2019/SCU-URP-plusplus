@@ -1412,7 +1412,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
         '--urppp-card-border': 'none',
         '--urppp-input-border': 'none',
         '--urppp-action-radius': '0px',
-        '--urppp-action-border': '1px solid var(--text)',
+        '--urppp-action-border': 'none',
         '--urppp-action-shadow': 'none',
         '--urppp-action-bg': 'transparent',
         '--urppp-action-color': 'var(--text)',

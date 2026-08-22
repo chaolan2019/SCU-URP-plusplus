@@ -11451,13 +11451,12 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-clean-root .uc-schedule-wrap .uc-schedule-mask.uc-mask-springfestival .uc-mask-txt b{color:#c8102e;font-size:22px}
 #urppp-clean-root .uc-schedule-wrap .uc-schedule-mask.uc-mask-springfestival .uc-mask-ico{width:74px;height:74px}
 #urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-mask-ico svg{width:100%;height:100%}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-mask-decor{position:absolute;width:52px;height:auto;line-height:0;pointer-events:none;opacity:.92}
+#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-mask-decor{position:absolute;width:52px;height:auto;line-height:0;pointer-events:none;opacity:.95}
 #urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-mask-decor svg{width:100%;height:auto}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-l{left:24px;top:26px}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-r{right:24px;top:26px}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-bl{left:28px;bottom:24px;width:60px}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-br{right:28px;bottom:24px;width:64px}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-r svg{transform:scaleX(-1)}
+#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-l{left:26px;top:26px;width:46px}
+#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-r{right:26px;top:26px;width:46px}
+#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-bl{left:30px;bottom:24px;width:74px}
+#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-br{right:30px;bottom:24px;width:74px}
 /* 全局春节挂饰：顶部两侧垂挂小灯笼，pointer-events 穿透，不影响阅读与操作 */
 #urppp-festive-decor{position:fixed;inset:0;pointer-events:none;z-index:60}
 #urppp-festive-decor .ufd{position:absolute;top:0}
@@ -11745,6 +11744,11 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
   line-height:26px!important;cursor:pointer!important;float:none!important
 }
 #urppp-nav-clean svg,#urppp-nav-cal svg{width:14px!important;height:14px!important;display:block!important}
+/* 杂志主题：清爽模式按钮去外框（无矩形），悬停显示下划线 */
+html[data-urppp-skin="editorial"] #urppp-nav-clean,
+html[data-urppp-skin="editorial"] #urppp-nav-cal{background:transparent!important;box-shadow:none!important;border:0!important;text-decoration:none}
+html[data-urppp-skin="editorial"] #urppp-nav-clean:hover,
+html[data-urppp-skin="editorial"] #urppp-nav-cal:hover{text-decoration:underline!important;text-underline-offset:4px;text-decoration-thickness:2px;text-decoration-color:var(--text)}
 @media (max-width:900px){
   #urppp-clean-root .uc-top{flex:0 0 52px;padding:0 12px}
   #sidebar.urppp-clean-sidebar{top:52px !important;height:calc(100vh - 52px) !important}
@@ -13975,8 +13979,8 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
           springfestival: {
             title: "春节快乐！",
             sub: "",
-            svg: '<svg viewBox="0 0 56 56"><rect x="7" y="5" width="42" height="46" rx="10" fill="#c8102e" stroke="#ffd75e" stroke-width="2"/><text x="28" y="37" text-anchor="middle" font-size="29" fill="#ffd75e" font-weight="800" font-family="Kaishu,STKaiti,Noto Serif SC,serif" transform="rotate(180 28 28)">福</text></svg>',
-            decor: '<span class="uc-mask-decor uc-md-l"><svg viewBox="0 0 28 46"><path d="M14 1v5" stroke="#c8102e" stroke-width="2"/><rect x="9" y="6" width="10" height="4" rx="2" fill="#c8102e"/><ellipse cx="14" cy="23" rx="11" ry="14" fill="#e63946"/><path d="M14 9v28M8 12q6 6 0 12M20 12q-6 6 0 12" stroke="#ffd75e" stroke-width="1.2" fill="none"/><path d="M8 37h12M10 40h8" stroke="#ffd75e" stroke-width="2" stroke-linecap="round"/></svg></span><span class="uc-mask-decor uc-md-r"><svg viewBox="0 0 28 46"><path d="M14 1v5" stroke="#c8102e" stroke-width="2"/><rect x="9" y="6" width="10" height="4" rx="2" fill="#c8102e"/><ellipse cx="14" cy="23" rx="11" ry="14" fill="#e63946"/><path d="M14 9v28M8 12q6 6 0 12M20 12q-6 6 0 12" stroke="#ffd75e" stroke-width="1.2" fill="none"/><path d="M8 37h12M10 40h8" stroke="#ffd75e" stroke-width="2" stroke-linecap="round"/></svg></span><span class="uc-mask-decor uc-md-bl"><svg viewBox="0 0 34 24"><path d="M17 9c-6-6-11-5-11 0 0 5 5 6 11 6s11-1 11-6c0-5-5-6-11 0z" fill="#ffd75e"/><path d="M6 15l-2 6c4 2 10 3 13 3s9-1 13-3l-2-6" fill="#f0b429"/></svg></span><span class="uc-mask-decor uc-md-br"><svg viewBox="0 0 34 22"><path d="M3 19q3-7 9-7 3-4 9-2 6-1 10 4" stroke="#e63946" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M9 19q3-5 9-5" stroke="#ffd75e" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg></span>'
+            svg: '<svg viewBox="0 0 72 72"><rect x="6" y="6" width="60" height="60" rx="16" fill="#B71C1C"/><rect x="6" y="6" width="60" height="60" rx="16" fill="none" stroke="#F5B301" stroke-width="2.4"/><path d="M20 24q3-4 7-3 4-2 7 1" stroke="#F5B301" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M52 24q-3-4-7-3-4-2-7 1" stroke="#F5B301" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M20 50q3 4 7 3 4 2 7-1" stroke="#F5B301" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M52 50q-3 4-7 3-4 2-7-1" stroke="#F5B301" stroke-width="1.5" fill="none" stroke-linecap="round"/><text x="36" y="47" text-anchor="middle" font-size="34" font-weight="900" fill="#FFD54F" font-family="Noto Serif SC,STKaiti,KaiTi,serif" transform="rotate(180 36 36)">福</text></svg>',
+            decor: '<span class="uc-mask-decor uc-md-l"><svg viewBox="0 0 40 64"><path d="M20 1v5" stroke="#B71C1C" stroke-width="2.4"/><rect x="13" y="6" width="14" height="5" rx="2.5" fill="#B71C1C"/><ellipse cx="20" cy="31" rx="16" ry="21" fill="#E53935"/><path d="M20 11v40M6 21q14 8 0 19M34 21q-14 8 0 19M20 11q-8 6 0 14M20 11q8 6 0 14" stroke="#F5B301" stroke-width="1.2" fill="none" opacity=".85"/><path d="M12 52h16M14 57h12M16 62h8" stroke="#F5B301" stroke-width="2.2" stroke-linecap="round"/></svg></span><span class="uc-mask-decor uc-md-r"><svg viewBox="0 0 40 64"><path d="M20 1v5" stroke="#B71C1C" stroke-width="2.4"/><rect x="13" y="6" width="14" height="5" rx="2.5" fill="#B71C1C"/><ellipse cx="20" cy="31" rx="16" ry="21" fill="#E53935"/><path d="M20 11v40M6 21q14 8 0 19M34 21q-14 8 0 19M20 11q-8 6 0 14M20 11q8 6 0 14" stroke="#F5B301" stroke-width="1.2" fill="none" opacity=".85"/><path d="M12 52h16M14 57h12M16 62h8" stroke="#F5B301" stroke-width="2.2" stroke-linecap="round"/></svg></span><span class="uc-mask-decor uc-md-bl"><svg viewBox="0 0 56 24"><path d="M5 20q4-8 11-8 2-6 10-4 8-2 12 4 8-1 12 6" stroke="#E53935" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M14 20q3-5 9-4 5-1 8 4" stroke="#F5B301" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></span><span class="uc-mask-decor uc-md-br"><svg viewBox="0 0 56 24"><path d="M5 20q4-8 11-8 2-6 10-4 8-2 12 4 8-1 12 6" stroke="#E53935" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M14 20q3-5 9-4 5-1 8 4" stroke="#F5B301" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></span>'
           }
         }[vac];
         if (!META) return "";
@@ -18163,7 +18167,7 @@ ${arcs}
           "--urppp-card-border": "none",
           "--urppp-input-border": "none",
           "--urppp-action-radius": "0px",
-          "--urppp-action-border": "1px solid var(--text)",
+          "--urppp-action-border": "none",
           "--urppp-action-shadow": "none",
           "--urppp-action-bg": "transparent",
           "--urppp-action-color": "var(--text)",

@@ -70,13 +70,12 @@
 #urppp-clean-root .uc-schedule-wrap .uc-schedule-mask.uc-mask-springfestival .uc-mask-txt b{color:#c8102e;font-size:22px}
 #urppp-clean-root .uc-schedule-wrap .uc-schedule-mask.uc-mask-springfestival .uc-mask-ico{width:74px;height:74px}
 #urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-mask-ico svg{width:100%;height:100%}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-mask-decor{position:absolute;width:52px;height:auto;line-height:0;pointer-events:none;opacity:.92}
+#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-mask-decor{position:absolute;width:52px;height:auto;line-height:0;pointer-events:none;opacity:.95}
 #urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-mask-decor svg{width:100%;height:auto}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-l{left:24px;top:26px}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-r{right:24px;top:26px}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-bl{left:28px;bottom:24px;width:60px}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-br{right:28px;bottom:24px;width:64px}
-#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-r svg{transform:scaleX(-1)}
+#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-l{left:26px;top:26px;width:46px}
+#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-r{right:26px;top:26px;width:46px}
+#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-bl{left:30px;bottom:24px;width:74px}
+#urppp-clean-root .uc-schedule-wrap .uc-schedule-mask .uc-md-br{right:30px;bottom:24px;width:74px}
 /* 全局春节挂饰：顶部两侧垂挂小灯笼，pointer-events 穿透，不影响阅读与操作 */
 #urppp-festive-decor{position:fixed;inset:0;pointer-events:none;z-index:60}
 #urppp-festive-decor .ufd{position:absolute;top:0}
@@ -364,6 +363,11 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
   line-height:26px!important;cursor:pointer!important;float:none!important
 }
 #urppp-nav-clean svg,#urppp-nav-cal svg{width:14px!important;height:14px!important;display:block!important}
+/* 杂志主题：清爽模式按钮去外框（无矩形），悬停显示下划线 */
+html[data-urppp-skin="editorial"] #urppp-nav-clean,
+html[data-urppp-skin="editorial"] #urppp-nav-cal{background:transparent!important;box-shadow:none!important;border:0!important;text-decoration:none}
+html[data-urppp-skin="editorial"] #urppp-nav-clean:hover,
+html[data-urppp-skin="editorial"] #urppp-nav-cal:hover{text-decoration:underline!important;text-underline-offset:4px;text-decoration-thickness:2px;text-decoration-color:var(--text)}
 @media (max-width:900px){
   #urppp-clean-root .uc-top{flex:0 0 52px;padding:0 12px}
   #sidebar.urppp-clean-sidebar{top:52px !important;height:calc(100vh - 52px) !important}
