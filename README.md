@@ -11,7 +11,7 @@
     <a href="https://github.com/chaolan2019/SCU-URP-plusplus/commits/main"><img src="https://img.shields.io/github/last-commit/chaolan2019/SCU-URP-plusplus?style=flat-square&amp;logo=github&amp;label=Last%20commit" alt="Last Commit"></a>
   </p>
 
-  <p><strong>主脚本 v1.8.2</strong> · 辅助插件 v1.4.1</p>
+  <p><strong>主脚本 v1.8.3</strong> · 辅助插件 v1.4.1</p>
   <p>作者：<code>Chao_Lan, Hanako</code></p>
 
   <p><strong>目录</strong></p>
@@ -210,7 +210,7 @@
 
 - **AI 支持**：GPT-5.6 Sol、Grok 4.5、Kimi K2.7 Code、DeepSeek V4 Pro/Flash
 - **Agent 支持**：[HanaAgent](https://github.com/liliMozi/openhanako)（原 OpenHanako，由 liliMozi 开发）
-- **功能灵感来源**：[scu-plus](https://github.com/The-Brotherhood-of-SCU/scu-plus)
+- **功能灵感来源**：陈一一的朵蜜、[scu-plus](https://github.com/The-Brotherhood-of-SCU/scu-plus)
 - **本地 OCR 参考**：[scu_ocr_lite_dart](https://github.com/The-Brotherhood-of-SCU/scu_ocr_lite_dart)（模型训练与预处理）
 - **美化风格支持**：[STYLEKIT](https://www.stylekit.top/zh)
 
