@@ -3,6 +3,7 @@ name: Release on version bump
 # 主脚本 @version 升高并推到 main 时，自动创建 GitHub Release
 # - 正文：从 CHANGELOG.md 截取该版本段落（不是 Assets）
 # - Assets：仅 urppp.user.js、urpppp.user.js
+# CI 已配置 Chromium 无沙箱 + flaky 重试，避免 headless 偶发失败
 #
 # 手动触发：Actions → Release on version bump → Run workflow
 
