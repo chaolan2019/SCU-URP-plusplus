@@ -48,6 +48,7 @@ jobs:
         run: |
           npm ci
           npx playwright install --with-deps chromium
+          # Node 24 + headless CI：Chromium 需无沙箱启动
           npm test
           npm run test:browser
           npm run build:check
