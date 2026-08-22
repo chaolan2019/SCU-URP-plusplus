@@ -1,6 +1,6 @@
 {
   "name": "scu-urp-plusplus",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "private": true,
   "type": "module",
   "description": "Modular source and reproducible userscript builds for SCU URP++.",
