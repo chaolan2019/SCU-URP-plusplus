@@ -2609,7 +2609,7 @@
 #urpppp-subpanel .urpppp-switches .urppp-set-follow{
   width:auto;min-width:0;height:34px;border-radius:10px;
   border:1px solid var(--border,#e5e7eb)!important;
-  background:var(--input-bg,#f8fafc)!important;
+  background:var(--surface,#fff)!important;
   color:var(--text,#111)!important;
   font-size:12px!important;font-weight:600!important;
   cursor:pointer;padding:0 10px!important;white-space:nowrap
@@ -2624,7 +2624,7 @@
 }
 #urpppp-subpanel .urppp-set-btn{
   height:34px;border-radius:10px;border:1px solid var(--border,#e5e7eb);
-  background:var(--input-bg,#f8fafc);color:var(--text,#111);
+  background:var(--surface,#fff);color:var(--text,#111);
   font-size:12px;font-weight:600;cursor:pointer;padding:0 12px
 }
 #urpppp-subpanel .urppp-set-btn:hover{border-color:var(--primary,#3b82f6)}
