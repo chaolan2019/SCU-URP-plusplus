@@ -2344,6 +2344,30 @@
   // src/assist/panel.js
   function createAssistPanel({ login, evaluation, session, deps }) {
     const uiState = { injected: false };
+    const THEME_VARS = [
+      "--surface",
+      "--bg",
+      "--primary",
+      "--text",
+      "--text-secondary",
+      "--text-muted",
+      "--border",
+      "--input-bg",
+      "--ring",
+      "--radius-sm",
+      "--radius"
+    ];
+    function applyThemeToSubpanel() {
+      const sub = document.getElementById("urpppp-subpanel");
+      const main = document.getElementById("urppp-settings-panel");
+      if (!sub || !main) return;
+      const cs = getComputedStyle(main);
+      THEME_VARS.forEach((v) => {
+        const value = cs.getPropertyValue(v).trim();
+        if (value) sub.style.setProperty(v, value);
+      });
+    }
+    __name(applyThemeToSubpanel, "applyThemeToSubpanel");
     function ensureSubPanel() {
       let panel = document.getElementById("urpppp-subpanel");
       if (panel) return panel;
@@ -2402,8 +2426,10 @@
         evaluation.bindEvalSection(sec);
       }
       placeSubPanelLikeMain();
+      applyThemeToSubpanel();
       sub.classList.add("open");
       setTimeout(placeSubPanelLikeMain, 30);
+      setTimeout(applyThemeToSubpanel, 30);
     }
     __name(openSubPanel, "openSubPanel");
     function closeSubPanel() {
