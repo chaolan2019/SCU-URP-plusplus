@@ -1442,7 +1442,7 @@
     function request(url, opts = {}) {
       return new Promise((resolve, reject) => {
         if (typeof xmlHttp !== "function") {
-          reject(new Error("GM_xmlhttpRequest 不可用"));
+          reject(new Error("GM_xmlhttpRequest 不可用（未授权跨域？）"));
           return;
         }
         xmlHttp({
@@ -1450,27 +1450,40 @@
           url,
           headers: opts.headers || {},
           data: opts.data,
-          timeout: opts.timeout || 12e3,
+          timeout: opts.timeout || 8e3,
           onload: /* @__PURE__ */ __name((res) => res.status >= 200 && res.status < 300 ? resolve(res.responseText) : reject(new Error(`HTTP ${res.status}`)), "onload"),
           onerror: /* @__PURE__ */ __name(() => reject(new Error("网络错误")), "onerror"),
-          ontimeout: /* @__PURE__ */ __name(() => reject(new Error("超时")), "ontimeout")
+          ontimeout: /* @__PURE__ */ __name(() => reject(new Error("超时(8s)")), "ontimeout")
         });
       });
     }
     __name(request, "request");
-    async function fetchWithFallback(urls) {
+    async function fetchWithFallback(urls, onProgress) {
       const list2 = Array.isArray(urls) ? urls : [urls];
-      let lastErr = null;
-      for (const u of list2) {
+      const errors = [];
+      for (let i = 0; i < list2.length; i += 1) {
+        const u = list2[i];
+        if (onProgress) onProgress({ stage: "downloading", index: i + 1, total: list2.length, url: u });
         try {
-          return await request(u);
+          const text = await request(u);
+          if (onProgress) onProgress({ stage: "downloaded", url: u, size: text.length });
+          return text;
         } catch (e) {
-          lastErr = e;
+          errors.push(`源${i + 1}(${shortHost(u)})失败: ${e && e.message ? e.message : e}`);
+          if (onProgress) onProgress({ stage: "source_failed", index: i + 1, total: list2.length, error: e && e.message ? e.message : e });
         }
       }
-      throw lastErr || new Error("所有下载源均失败");
+      throw new Error("所有下载源失败 → " + errors.join(" ｜ "));
     }
     __name(fetchWithFallback, "fetchWithFallback");
+    function shortHost(url) {
+      try {
+        return new URL(url).host;
+      } catch (_) {
+        return url;
+      }
+    }
+    __name(shortHost, "shortHost");
     function stripMetadata(code) {
       const m = String(code || "").match(/\/\/\s*==UserScript==[\s\S]*?\/\/\s*==\/UserScript==/);
       return m ? code.replace(m[0], "") : code;
@@ -1529,10 +1542,12 @@
       return !!s && s.loaded;
     }
     __name(loaded, "loaded");
-    async function install(id, remoteUrls) {
+    async function install(id, remoteUrls, onProgress) {
+      if (onProgress) onProgress({ stage: "start", id });
       const urls = Array.isArray(remoteUrls) ? remoteUrls : remoteUrls ? [remoteUrls] : pluginSource(id);
-      const code = await fetchWithFallback(urls);
+      const code = await fetchWithFallback(urls, onProgress);
       setValue(`${STORAGE_PREFIX}${id}_code`, code);
+      if (onProgress) onProgress({ stage: "injecting", id });
       const ok = inject(code, id);
       const s = state.get(id) || { loaded: false, enabled: false, version: "" };
       s.loaded = ok;
@@ -1623,7 +1638,7 @@
     }
     function renderAssistUi(slot) {
       if (!slot || !doc) return;
-      if (slot.querySelector(".urppp-plugin-sec")) return;
+      if (slot.querySelector(".urppp-plugin-sec, .urpppp-entry-sec")) return;
       const sec = doc.createElement("section");
       sec.className = "urppp-set-sec urppp-plugin-sec";
       sec.id = "urppp-plugin-sec";
@@ -1686,14 +1701,30 @@
       installBtn.addEventListener("click", async () => {
         installBtn.disabled = true;
         installBtn.textContent = "装载中…";
-        status.textContent = "正在下载并装载辅助插件…";
+        status.className = "urppp-plugin-status";
+        status.textContent = "正在开始装载…";
         try {
-          const ok = await install("assist");
-          if (ok) status.textContent = "辅助插件已装载";
-          else throw new Error("注入失败");
+          const ok = await install("assist", null, (p) => {
+            try {
+              if (p.stage === "downloading") status.textContent = `下载中… 源${p.index}/${p.total}（${shortHost(p.url)}）`;
+              else if (p.stage === "downloaded") status.textContent = `已下载（${p.size} 字节），注入中…`;
+              else if (p.stage === "source_failed") status.textContent = `源${p.index}失败（${p.error || ""}），切换下一源…`;
+              else if (p.stage === "injecting") status.textContent = "注入中…";
+              else if (p.stage === "start") status.textContent = "正在开始装载…";
+              console.log("[URP++ plugin] assist 装载进度", p);
+            } catch (_) {
+            }
+          });
+          if (ok) {
+            status.textContent = "辅助插件已装载 v" + (get("assist") && get("assist").version || "");
+            console.log("[URP++ plugin] assist 装载成功");
+          } else {
+            throw new Error("注入失败");
+          }
         } catch (e) {
           status.textContent = "装载失败：" + (e && e.message ? e.message : e);
           status.className = "urppp-plugin-status err";
+          console.warn("[URP++ plugin] assist 装载失败", e);
         } finally {
           installBtn.disabled = false;
           refresh();
