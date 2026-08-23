@@ -29,6 +29,7 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
   const state = new Map();    // id -> { loaded, enabled, version, code? }
   const events = new Map();   // event -> Set<cb>
   const listeners = [];       // onPage 回调（页面级引导）收集
+  let lastFail = null;        // 最近一次装载失败信息（refresh 不清空，避免被覆盖）
 
   function emit(name, payload) {
     const set = events.get(name);
@@ -97,13 +98,22 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
     return m ? code.replace(m[0], '') : code;
   }
 
-  // ---- 注入执行 ----
+  // ---- 注入执行（把 GM_* 作为参数传给注入代码，解决沙箱 new Function 找不到闭包 GM 变量） ----
   function inject(code, id) {
     try {
       const js = stripMetadata(code);
-      // 用 Function 在沙箱执行；辅助/插件代码里的 GM_* 由 Tampermonkey 提供
+      const gmNames = ['GM_getValue', 'GM_setValue', 'GM_xmlhttpRequest', 'GM_registerMenuCommand', 'GM_addStyle', 'unsafeWindow'];
+      const gmValues = [
+        typeof GM_getValue === 'function' ? GM_getValue : undefined,
+        typeof GM_setValue === 'function' ? GM_setValue : undefined,
+        typeof GM_xmlhttpRequest === 'function' ? GM_xmlhttpRequest : undefined,
+        typeof GM_registerMenuCommand === 'function' ? GM_registerMenuCommand : undefined,
+        typeof GM_addStyle === 'function' ? GM_addStyle : undefined,
+        typeof unsafeWindow !== 'undefined' ? unsafeWindow : null,
+      ];
       // eslint-disable-next-line no-new-func
-      new Function(js)();
+      const fn = new Function(...gmNames, js);
+      fn(...gmValues);
       return true;
     } catch (e) {
       // eslint-disable-next-line no-console
@@ -267,11 +277,13 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
         installBtn.dataset.state = 'loaded';
         tip.textContent = '已装载。下方为扩展入口。';
       } else {
-        status.textContent = '未装载';
-        status.className = 'urppp-plugin-status';
+        status.textContent = lastFail || '未装载';
+        status.className = lastFail ? 'urppp-plugin-status err' : 'urppp-plugin-status';
         installBtn.textContent = '装载辅助插件';
         installBtn.dataset.state = 'notloaded';
-        tip.textContent = '点击装载后，主插件会下载并注入辅助插件（登录助手/评教/会话保持/2FA），无需再单独安装。';
+        tip.textContent = lastFail
+          ? '装载失败，可就近重试或放回本地安装。下方为装载/商店入口。'
+          : '点击装载后，主插件会下载并注入辅助插件（登录助手/评教/会话保持/2FA），无需再单独安装。';
       }
       // 子面板入口
       panels.innerHTML = '';
@@ -316,13 +328,15 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
           } catch (_) { /* ignore */ }
         });
         if (ok) {
+          lastFail = null;
           status.textContent = '辅助插件已装载 v' + ((get('assist') && get('assist').version) || '');
           console.log('[URP++ plugin] assist 装载成功');
         } else {
           throw new Error('注入失败');
         }
       } catch (e) {
-        status.textContent = '装载失败：' + (e && e.message ? e.message : e);
+        lastFail = '装载失败：' + (e && e.message ? e.message : e);
+        status.textContent = lastFail;
         status.className = 'urppp-plugin-status err';
         console.warn('[URP++ plugin] assist 装载失败', e);
       } finally {

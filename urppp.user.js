@@ -1407,6 +1407,7 @@
     const state = /* @__PURE__ */ new Map();
     const events = /* @__PURE__ */ new Map();
     const listeners = [];
+    let lastFail = null;
     function emit(name, payload) {
       const set = events.get(name);
       if (set) set.forEach((cb) => {
@@ -1492,7 +1493,17 @@
     function inject(code, id) {
       try {
         const js = stripMetadata(code);
-        new Function(js)();
+        const gmNames = ["GM_getValue", "GM_setValue", "GM_xmlhttpRequest", "GM_registerMenuCommand", "GM_addStyle", "unsafeWindow"];
+        const gmValues = [
+          typeof GM_getValue === "function" ? GM_getValue : void 0,
+          typeof GM_setValue === "function" ? GM_setValue : void 0,
+          typeof GM_xmlhttpRequest === "function" ? GM_xmlhttpRequest : void 0,
+          typeof GM_registerMenuCommand === "function" ? GM_registerMenuCommand : void 0,
+          typeof GM_addStyle === "function" ? GM_addStyle : void 0,
+          typeof unsafeWindow !== "undefined" ? unsafeWindow : null
+        ];
+        const fn = new Function(...gmNames, js);
+        fn(...gmValues);
         return true;
       } catch (e) {
         console.warn("[URP++ plugin] 注入失败", id, e);
@@ -1668,11 +1679,11 @@
           installBtn.dataset.state = "loaded";
           tip.textContent = "已装载。下方为扩展入口。";
         } else {
-          status.textContent = "未装载";
-          status.className = "urppp-plugin-status";
+          status.textContent = lastFail || "未装载";
+          status.className = lastFail ? "urppp-plugin-status err" : "urppp-plugin-status";
           installBtn.textContent = "装载辅助插件";
           installBtn.dataset.state = "notloaded";
-          tip.textContent = "点击装载后，主插件会下载并注入辅助插件（登录助手/评教/会话保持/2FA），无需再单独安装。";
+          tip.textContent = lastFail ? "装载失败，可就近重试或放回本地安装。下方为装载/商店入口。" : "点击装载后，主插件会下载并注入辅助插件（登录助手/评教/会话保持/2FA），无需再单独安装。";
         }
         panels.innerHTML = "";
         const subpanels = collectSubpanels();
@@ -1716,13 +1727,15 @@
             }
           });
           if (ok) {
+            lastFail = null;
             status.textContent = "辅助插件已装载 v" + (get("assist") && get("assist").version || "");
             console.log("[URP++ plugin] assist 装载成功");
           } else {
             throw new Error("注入失败");
           }
         } catch (e) {
-          status.textContent = "装载失败：" + (e && e.message ? e.message : e);
+          lastFail = "装载失败：" + (e && e.message ? e.message : e);
+          status.textContent = lastFail;
           status.className = "urppp-plugin-status err";
           console.warn("[URP++ plugin] assist 装载失败", e);
         } finally {
