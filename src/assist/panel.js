@@ -1,23 +1,6 @@
 export function createAssistPanel({ login, evaluation, session, deps }) {
   const uiState = { injected: false };
 
-  // 主面板把主题 CSS 变量定义在其容器/根上，辅助子面板挂在 body 下继承不到，
-  // 这里从主面板读取当前主题变量并复制到子面板，保证“应用好主题样式”。
-  const THEME_VARS = [
-    '--surface', '--bg', '--primary', '--text', '--text-secondary', '--text-muted',
-    '--border', '--input-bg', '--ring', '--radius-sm', '--radius',
-  ];
-  function applyThemeToSubpanel() {
-    const sub = document.getElementById('urpppp-subpanel');
-    const main = document.getElementById('urppp-settings-panel');
-    if (!sub || !main) return;
-    const cs = getComputedStyle(main);
-    THEME_VARS.forEach((v) => {
-      const value = cs.getPropertyValue(v).trim();
-      if (value) sub.style.setProperty(v, value);
-    });
-  }
-
   function ensureSubPanel() {
     let panel = document.getElementById('urpppp-subpanel');
     if (panel) return panel;
@@ -77,12 +60,9 @@ export function createAssistPanel({ login, evaluation, session, deps }) {
       evaluation.bindEvalSection(sec);
     }
     placeSubPanelLikeMain();
-    // 应用主面板主题变量
-    applyThemeToSubpanel();
     sub.classList.add('open');
     // 主设置若在滚动/动画，再贴一次位置
     setTimeout(placeSubPanelLikeMain, 30);
-    setTimeout(applyThemeToSubpanel, 30);
   }
 
   function closeSubPanel() {

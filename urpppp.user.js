@@ -2344,30 +2344,6 @@
   // src/assist/panel.js
   function createAssistPanel({ login, evaluation, session, deps }) {
     const uiState = { injected: false };
-    const THEME_VARS = [
-      "--surface",
-      "--bg",
-      "--primary",
-      "--text",
-      "--text-secondary",
-      "--text-muted",
-      "--border",
-      "--input-bg",
-      "--ring",
-      "--radius-sm",
-      "--radius"
-    ];
-    function applyThemeToSubpanel() {
-      const sub = document.getElementById("urpppp-subpanel");
-      const main = document.getElementById("urppp-settings-panel");
-      if (!sub || !main) return;
-      const cs = getComputedStyle(main);
-      THEME_VARS.forEach((v) => {
-        const value = cs.getPropertyValue(v).trim();
-        if (value) sub.style.setProperty(v, value);
-      });
-    }
-    __name(applyThemeToSubpanel, "applyThemeToSubpanel");
     function ensureSubPanel() {
       let panel = document.getElementById("urpppp-subpanel");
       if (panel) return panel;
@@ -2426,10 +2402,8 @@
         evaluation.bindEvalSection(sec);
       }
       placeSubPanelLikeMain();
-      applyThemeToSubpanel();
       sub.classList.add("open");
       setTimeout(placeSubPanelLikeMain, 30);
-      setTimeout(applyThemeToSubpanel, 30);
     }
     __name(openSubPanel, "openSubPanel");
     function closeSubPanel() {
@@ -2562,7 +2536,7 @@
 #urppp-settings-panel .urpppp-row select,
 #urppp-settings-panel .urpppp-row textarea{
   width:100%;border:1px solid var(--border,#e5e7eb);border-radius:8px;
-  background:var(--input-bg,#f8fafc);color:var(--text,#111);padding:6px 10px;font-size:12px;box-sizing:border-box
+  background:#fff;color:#1d1d1f;padding:6px 10px;font-size:12px;box-sizing:border-box
 }
 #urppp-settings-panel .urpppp-row input, #urppp-settings-panel .urpppp-row select{height:32px;padding-top:0;padding-bottom:0}
 #urppp-settings-panel .urpppp-row textarea{min-height:84px;resize:vertical;line-height:1.45}
@@ -2627,7 +2601,7 @@
 #urpppp-subpanel .urpppp-row select,
 #urpppp-subpanel .urpppp-row textarea{
   width:100%;border:1px solid var(--border,#e5e7eb);border-radius:8px;
-  background:#fff;color:#1d1d1f;padding:6px 10px;font-size:12px;box-sizing:border-box
+  background:var(--input-bg,#f8fafc);color:var(--text,#111);padding:6px 10px;font-size:12px;box-sizing:border-box
 }
 #urpppp-subpanel .urpppp-row input,#urpppp-subpanel .urpppp-row select{height:32px;padding-top:0;padding-bottom:0}
 #urpppp-subpanel .urpppp-row textarea{min-height:84px;resize:vertical;line-height:1.45}
@@ -2635,8 +2609,8 @@
 #urpppp-subpanel .urpppp-switches .urppp-set-follow{
   width:auto;min-width:0;height:34px;border-radius:10px;
   border:1px solid var(--border,#e5e7eb)!important;
-  background:#fff!important;
-  color:#1d1d1f!important;
+  background:var(--input-bg,#f8fafc)!important;
+  color:var(--text,#111)!important;
   font-size:12px!important;font-weight:600!important;
   cursor:pointer;padding:0 10px!important;white-space:nowrap
 }
@@ -2646,11 +2620,11 @@
 #urpppp-subpanel .urpppp-switches .urppp-set-follow.ac{
   background:var(--primary,#3b82f6)!important;
   border-color:var(--primary,#3b82f6)!important;
-  color:#fff!important
+  color:#1d1d1f!important
 }
 #urpppp-subpanel .urppp-set-btn{
   height:34px;border-radius:10px;border:1px solid var(--border,#e5e7eb);
-  background:#fff;color:#1d1d1f;
+  background:var(--input-bg,#f8fafc);color:var(--text,#111);
   font-size:12px;font-weight:600;cursor:pointer;padding:0 12px
 }
 #urpppp-subpanel .urppp-set-btn:hover{border-color:var(--primary,#3b82f6)}
