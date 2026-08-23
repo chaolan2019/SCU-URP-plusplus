@@ -3,37 +3,41 @@ export function createAssistPanel({ login, evaluation, session, deps }) {
 
   function ensureSubPanel() {
     let panel = document.getElementById('urpppp-subpanel');
-    if (panel) return panel;
+    if (panel) { ensureSubParent(panel); return panel; }
     panel = document.createElement('div');
     panel.id = 'urpppp-subpanel';
     panel.innerHTML = `
       <div class="urpppp-sub-head">
+        <button type="button" class="urpppp-sub-back" id="urpppp-sub-back" aria-label="返回">←</button>
         <div class="urpppp-sub-title" id="urpppp-sub-title">助手设置</div>
         <button type="button" class="urpppp-sub-close" id="urpppp-sub-close" aria-label="关闭">×</button>
       </div>
       <div class="urpppp-sub-body" id="urpppp-sub-body"></div>
     `;
-    document.documentElement.appendChild(panel);
+    ensureSubParent(panel);
     panel.querySelector('#urpppp-sub-close').onclick = closeSubPanel;
+    panel.querySelector('#urpppp-sub-back').onclick = closeSubPanel;
     return panel;
   }
 
-  function placeSubPanelLikeMain() {
+  // 挂到主设置面板内（作为铺满面板的二级页），主面板不存在时回退到 body
+  function ensureSubParent(panel) {
+    if (panel.parentElement) return;
     const main = document.getElementById('urppp-settings-panel');
+    if (main) main.appendChild(panel);
+    else document.documentElement.appendChild(panel);
+  }
+
+  function placeSubPanelLikeMain() {
     const sub = document.getElementById('urpppp-subpanel');
-    if (!main || !sub) return;
-    const r = main.getBoundingClientRect();
-    // 与主设置窗同位同尺寸，避免飘到别处
-    const top = Math.max(8, r.top);
-    const left = Math.max(8, r.left);
-    const width = Math.max(320, r.width || 420);
-    const maxHeight = Math.max(240, r.height || (window.innerHeight - top - 16));
-    sub.style.top = top + 'px';
-    sub.style.left = left + 'px';
-    sub.style.width = width + 'px';
-    sub.style.maxHeight = maxHeight + 'px';
-    sub.style.right = 'auto';
-    sub.style.bottom = 'auto';
+    if (!sub) return;
+    // 覆盖主面板容器，作为其内部二级页（主面板 overflow:hidden 负责裁剪，无需自建圆角/阴影）
+    sub.style.position = 'absolute';
+    sub.style.top = '0';
+    sub.style.left = '0';
+    sub.style.width = '100%';
+    sub.style.height = '100%';
+    sub.style.maxHeight = 'none';
   }
 
   function openSubPanel(kind) {

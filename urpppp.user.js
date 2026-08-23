@@ -2345,36 +2345,42 @@
     const uiState = { injected: false };
     function ensureSubPanel() {
       let panel = document.getElementById("urpppp-subpanel");
-      if (panel) return panel;
+      if (panel) {
+        ensureSubParent(panel);
+        return panel;
+      }
       panel = document.createElement("div");
       panel.id = "urpppp-subpanel";
       panel.innerHTML = `
       <div class="urpppp-sub-head">
+        <button type="button" class="urpppp-sub-back" id="urpppp-sub-back" aria-label="返回">←</button>
         <div class="urpppp-sub-title" id="urpppp-sub-title">助手设置</div>
         <button type="button" class="urpppp-sub-close" id="urpppp-sub-close" aria-label="关闭">×</button>
       </div>
       <div class="urpppp-sub-body" id="urpppp-sub-body"></div>
     `;
-      document.documentElement.appendChild(panel);
+      ensureSubParent(panel);
       panel.querySelector("#urpppp-sub-close").onclick = closeSubPanel;
+      panel.querySelector("#urpppp-sub-back").onclick = closeSubPanel;
       return panel;
     }
     __name(ensureSubPanel, "ensureSubPanel");
-    function placeSubPanelLikeMain() {
+    function ensureSubParent(panel) {
+      if (panel.parentElement) return;
       const main = document.getElementById("urppp-settings-panel");
+      if (main) main.appendChild(panel);
+      else document.documentElement.appendChild(panel);
+    }
+    __name(ensureSubParent, "ensureSubParent");
+    function placeSubPanelLikeMain() {
       const sub = document.getElementById("urpppp-subpanel");
-      if (!main || !sub) return;
-      const r = main.getBoundingClientRect();
-      const top = Math.max(8, r.top);
-      const left = Math.max(8, r.left);
-      const width = Math.max(320, r.width || 420);
-      const maxHeight = Math.max(240, r.height || window.innerHeight - top - 16);
-      sub.style.top = top + "px";
-      sub.style.left = left + "px";
-      sub.style.width = width + "px";
-      sub.style.maxHeight = maxHeight + "px";
-      sub.style.right = "auto";
-      sub.style.bottom = "auto";
+      if (!sub) return;
+      sub.style.position = "absolute";
+      sub.style.top = "0";
+      sub.style.left = "0";
+      sub.style.width = "100%";
+      sub.style.height = "100%";
+      sub.style.maxHeight = "none";
     }
     __name(placeSubPanelLikeMain, "placeSubPanelLikeMain");
     function openSubPanel(kind) {
@@ -2571,24 +2577,26 @@
   width:100%;height:36px;justify-content:center;font-weight:700
 }
 #urpppp-subpanel{
-  position:fixed;z-index:13070;display:none;box-sizing:border-box;
+  position:absolute;inset:0;z-index:3;display:none;box-sizing:border-box;
   background:var(--surface,#fff);color:var(--text,#111);
-  border:1px solid var(--border,#e5e7eb);border-radius:16px;
-  box-shadow:0 18px 48px rgba(15,23,42,.18);overflow:auto
+  flex-direction:column;overflow:hidden;border-radius:0
 }
-#urpppp-subpanel.open{display:block}
+#urpppp-subpanel.open{display:flex}
 #urpppp-subpanel .urpppp-sub-head{
-  display:flex;align-items:center;justify-content:space-between;
+  display:flex;align-items:center;gap:8px;
   padding:14px 16px 10px;border-bottom:1px solid var(--border,#e5e7eb);
-  position:sticky;top:0;background:var(--surface,#fff);z-index:2
+  flex:0 0 auto;background:var(--surface,#fff)
 }
-#urpppp-subpanel .urpppp-sub-title{font-size:16px;font-weight:700}
+#urpppp-subpanel .urpppp-sub-title{font-size:16px;font-weight:700;flex:1}
+#urpppp-subpanel .urpppp-sub-back,
 #urpppp-subpanel .urpppp-sub-close{
   width:30px;height:30px;border:0;border-radius:8px;cursor:pointer;
-  background:transparent;color:var(--text-secondary,#667085);font-size:18px;line-height:1
+  background:transparent;color:var(--text-secondary,#667085);font-size:18px;line-height:1;
+  display:inline-flex;align-items:center;justify-content:center
 }
+#urpppp-subpanel .urpppp-sub-back:hover,
 #urpppp-subpanel .urpppp-sub-close:hover{background:var(--input-bg,#f8fafc);color:var(--text,#111)}
-#urpppp-subpanel .urpppp-sub-body{padding:12px 16px 16px}
+#urpppp-subpanel .urpppp-sub-body{padding:12px 16px 16px;flex:1;overflow:auto}
 #urpppp-subpanel .urpppp-sec h3{display:none}
 #urpppp-subpanel .urpppp-grid{display:grid;grid-template-columns:1fr;gap:8px}
 #urpppp-subpanel .urpppp-row{display:grid;grid-template-columns:108px 1fr;gap:8px;align-items:center}
