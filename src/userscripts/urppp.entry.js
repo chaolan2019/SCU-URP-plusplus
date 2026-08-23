@@ -7309,6 +7309,14 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     uiDeps: { openSubpanel: (kind) => { /* P0 占位：子面板由辅助插件注入后接管 */ } },
   });
 
+  // 启动时自动装载已缓存插件（含登录页：让辅助登录/2FA 在 id.scu 也生效）
+  // 必须在 DOM 就绪后注入，避免辅助脚本在 body 未生成时读 DOM 报错
+  (function bootstrapPlugins() {
+    const run = () => { try { pluginManager.bootFromCache('assist'); } catch (_) { /* ignore */ } };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+    else run();
+  })();
+
   function openSettingsPanel() {
     return settingsPanelController.open();
   }

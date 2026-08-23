@@ -179,10 +179,12 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
     return m ? m[1] : '';
   }
 
-  // 已缓存则自动装载（无网络请求）
+  // 已缓存则自动装载（无网络请求）；同页只注入一次，避免重复初始化
   function bootFromCache(id) {
     const code = getValue(`${STORAGE_PREFIX}${id}_code`);
     if (!code) return false;
+    const existed = state.get(id);
+    if (existed && existed.loaded) return true;
     const ok = inject(code, id);
     const s = state.get(id) || { loaded: false, enabled: false, version: detectVersion(code) };
     s.loaded = ok;
@@ -355,9 +357,8 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
     on('loaded', (id) => { if (id === 'assist') refresh(); });
     on('registered', (id) => { if (id === 'assist') refresh(); });
 
-    // 已缓存则自动装载并刷新
-    if (bootFromCache('assist')) refresh();
-    else refresh();
+    // 启动时已由 bootstrap 注入（有缓存则自动），此处只刷新状态，不再重复注入
+    refresh();
   }
 
   // 收集已注册插件提供的子面板（P0：辅助注册待迁移；先支持插件通过 register 声明 subpanels）

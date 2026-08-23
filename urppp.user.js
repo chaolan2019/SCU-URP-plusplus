@@ -1579,6 +1579,8 @@
     function bootFromCache(id) {
       const code = getValue(`${STORAGE_PREFIX}${id}_code`);
       if (!code) return false;
+      const existed = state.get(id);
+      if (existed && existed.loaded) return true;
       const ok = inject(code, id);
       const s = state.get(id) || { loaded: false, enabled: false, version: detectVersion(code) };
       s.loaded = ok;
@@ -1752,8 +1754,7 @@
       on("registered", (id) => {
         if (id === "assist") refresh();
       });
-      if (bootFromCache("assist")) refresh();
-      else refresh();
+      refresh();
     }
     __name(renderAssistUi, "renderAssistUi");
     function collectSubpanels() {
@@ -24294,6 +24295,16 @@ ${arcs}
       uiDeps: { openSubpanel: /* @__PURE__ */ __name((kind) => {
       }, "openSubpanel") }
     });
+    (/* @__PURE__ */ __name((function bootstrapPlugins() {
+      const run = /* @__PURE__ */ __name(() => {
+        try {
+          pluginManager.bootFromCache("assist");
+        } catch (_) {
+        }
+      }, "run");
+      if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run);
+      else run();
+    }), "bootstrapPlugins"))();
     function openSettingsPanel() {
       return settingsPanelController.open();
     }
