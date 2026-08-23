@@ -1,9 +1,12 @@
 import {
   DEFAULT_COMMENTS,
+  DEFAULT_KEEPALIVE_INTERVAL,
+  DEFAULT_KEEPALIVE_URL,
   EVALUATION_KEYS,
   LOGIN_FAILURE_LIMIT,
   LOGIN_KEYS,
   LOGIN_PENDING_TTL,
+  SESSION_KEYS,
 } from './constants.js';
 
 export function createAssistConfig(storage, now = () => Date.now()) {
@@ -151,6 +154,15 @@ export function createAssistConfig(storage, now = () => Date.now()) {
     setBatchState({ active: false, queue: [], index: 0 });
   }
 
+  function sessionConf() {
+    return {
+      keepAliveEnabled: getBool(SESSION_KEYS.keepAliveEnabled, true),
+      keepAliveInterval: Math.max(60, Math.min(3600, getNum(SESSION_KEYS.keepAliveInterval, DEFAULT_KEEPALIVE_INTERVAL))),
+      keepAliveUrl: (getStr(SESSION_KEYS.keepAliveUrl, '') || '').trim() || DEFAULT_KEEPALIVE_URL,
+      autoSend2fa: getBool(SESSION_KEYS.autoSend2fa, true),
+    };
+  }
+
   return {
     loginConf,
     emptyLoginGuardState,
@@ -165,5 +177,6 @@ export function createAssistConfig(storage, now = () => Date.now()) {
     getBatchState,
     setBatchState,
     clearBatchState,
+    sessionConf,
   };
 }

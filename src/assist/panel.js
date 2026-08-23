@@ -1,4 +1,4 @@
-export function createAssistPanel({ login, evaluation, deps }) {
+export function createAssistPanel({ login, evaluation, session, deps }) {
   const uiState = { injected: false };
 
   function ensureSubPanel() {
@@ -48,6 +48,11 @@ export function createAssistPanel({ login, evaluation, deps }) {
       const sec = login.buildLoginSection();
       body.appendChild(sec);
       login.bindLoginSection(sec);
+    } else if (kind === 'session') {
+      title.textContent = '会话保持';
+      const sec = session.buildSessionSection();
+      body.appendChild(sec);
+      session.bindSessionSection(sec);
     } else {
       title.textContent = '评教助手';
       const sec = evaluation.buildEvalSection();
@@ -99,12 +104,14 @@ export function createAssistPanel({ login, evaluation, deps }) {
         <div class="urpppp-entry-grid">
           <button type="button" class="urppp-set-btn" id="urpppp-open-login">登录助手</button>
           <button type="button" class="urppp-set-btn" id="urpppp-open-eval">评教助手</button>
+          <button type="button" class="urppp-set-btn" id="urpppp-open-session">会话保持</button>
         </div>
         <p class="urpppp-tip">辅助插件 v${deps.URPPPP_VERSION}</p>
       `;
       body.appendChild(entry);
       entry.querySelector('#urpppp-open-login').onclick = () => openSubPanel('login');
       entry.querySelector('#urpppp-open-eval').onclick = () => openSubPanel('eval');
+      entry.querySelector('#urpppp-open-session').onclick = () => openSubPanel('session');
     }
 
     // 主设置关闭时，子面板一并关

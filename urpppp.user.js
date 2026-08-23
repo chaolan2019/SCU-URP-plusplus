@@ -66,6 +66,14 @@
     batchIndex: `${ASSIST_NAMESPACE}_eval_batch_index`,
     batchGapSec: `${ASSIST_NAMESPACE}_eval_batch_gap_sec`
   };
+  var SESSION_KEYS = {
+    keepAliveEnabled: `${ASSIST_NAMESPACE}_session_keepalive_enabled`,
+    keepAliveInterval: `${ASSIST_NAMESPACE}_session_keepalive_interval`,
+    keepAliveUrl: `${ASSIST_NAMESPACE}_session_keepalive_url`,
+    autoSend2fa: `${ASSIST_NAMESPACE}_session_autosend_2fa`
+  };
+  var DEFAULT_KEEPALIVE_URL = "/student/teachingResources/classroomUseStatus/index";
+  var DEFAULT_KEEPALIVE_INTERVAL = 8 * 60;
   var LOGIN_FAILURE_LIMIT = 4;
   var LOGIN_PENDING_TTL = 10 * 60 * 1e3;
   var DEFAULT_OCR_EXAMPLE = "https://ocr.yanjiangrd.site/api/ocr";
@@ -216,6 +224,15 @@
       setBatchState({ active: false, queue: [], index: 0 });
     }
     __name(clearBatchState, "clearBatchState");
+    function sessionConf() {
+      return {
+        keepAliveEnabled: getBool(SESSION_KEYS.keepAliveEnabled, true),
+        keepAliveInterval: Math.max(60, Math.min(3600, getNum(SESSION_KEYS.keepAliveInterval, DEFAULT_KEEPALIVE_INTERVAL))),
+        keepAliveUrl: (getStr(SESSION_KEYS.keepAliveUrl, "") || "").trim() || DEFAULT_KEEPALIVE_URL,
+        autoSend2fa: getBool(SESSION_KEYS.autoSend2fa, true)
+      };
+    }
+    __name(sessionConf, "sessionConf");
     return {
       loginConf,
       emptyLoginGuardState,
@@ -229,7 +246,8 @@
       evalConf,
       getBatchState,
       setBatchState,
-      clearBatchState
+      clearBatchState,
+      sessionConf
     };
   }
   __name(createAssistConfig, "createAssistConfig");
@@ -1317,6 +1335,208 @@
   }
   __name(createLoginAssist, "createLoginAssist");
 
+  // src/assist/session.js
+  var SESSION_KEY_ENABLED = SESSION_KEYS.keepAliveEnabled;
+  var SESSION_KEY_INTERVAL = SESSION_KEYS.keepAliveInterval;
+  var SESSION_KEY_URL = SESSION_KEYS.keepAliveUrl;
+  var SESSION_KEY_AUTOSEND = SESSION_KEYS.autoSend2fa;
+  function createSessionAssist({ config, storage, deps }) {
+    const { getBool, getNum, getStr, setVal } = storage;
+    const { setStatus, syncToggle, escapeAttr: escapeAttr2, log: log2 } = deps;
+    function isKeepaliveHost() {
+      const host = String(location.hostname || "");
+      if (/^zhjw\./i.test(host)) return true;
+      if (/^202\.115\.47\.141$/i.test(host)) return true;
+      if (/webvpn/i.test(host)) return true;
+      return false;
+    }
+    __name(isKeepaliveHost, "isKeepaliveHost");
+    function isLoginPath() {
+      const path = String(location.pathname || "");
+      const href = String(location.href || "");
+      if (/login/i.test(path)) return true;
+      if (/frontend\/login/i.test(href)) return true;
+      return false;
+    }
+    __name(isLoginPath, "isLoginPath");
+    function is2faPage() {
+      const href = String(location.href || "");
+      if (/#\/(second|mfa|verify)/i.test(href)) return true;
+      const bodyText = String(document.body ? document.body.innerText : "");
+      if (/短信认证|手机验证码|安全码|二次验证|2FA/i.test(bodyText) && /获取验证码/.test(bodyText)) return true;
+      return false;
+    }
+    __name(is2faPage, "is2faPage");
+    let keepAliveTimer = 0;
+    async function beat() {
+      const conf = config.sessionConf();
+      if (!conf.keepAliveEnabled) return;
+      if (!isKeepaliveHost() || isLoginPath()) return;
+      if (document.hidden) return;
+      let url;
+      try {
+        url = new URL(conf.keepAliveUrl, location.origin).href;
+      } catch (_) {
+        return;
+      }
+      try {
+        const res = await fetch(url, {
+          method: "GET",
+          credentials: "include",
+          cache: "no-store",
+          redirect: "follow"
+        });
+        if (/login/i.test(String(res.url || "")) && !/classroomUseStatus|second|auth/i.test(String(res.url || ""))) {
+          stopKeepAlive();
+          log2("会话保持：登录态已失效，停止心跳");
+        }
+      } catch (_) {
+      }
+    }
+    __name(beat, "beat");
+    function startKeepAlive() {
+      const conf = config.sessionConf();
+      if (!conf.keepAliveEnabled) return;
+      if (!isKeepaliveHost() || isLoginPath()) return;
+      if (keepAliveTimer) return;
+      const interval = Math.max(60, conf.keepAliveInterval) * 1e3;
+      keepAliveTimer = setInterval(beat, interval);
+      beat();
+      log2(`会话保持：已启动（每 ${conf.keepAliveInterval}s 心跳）`);
+    }
+    __name(startKeepAlive, "startKeepAlive");
+    function stopKeepAlive() {
+      if (keepAliveTimer) {
+        clearInterval(keepAliveTimer);
+        keepAliveTimer = 0;
+      }
+    }
+    __name(stopKeepAlive, "stopKeepAlive");
+    let installed2fa = false;
+    function findSendButton() {
+      const btns = Array.from(document.querySelectorAll('button, .btn, .ivu-btn, .el-button, [role="button"]'));
+      return btns.find((b) => {
+        const t = String(b.innerText || b.textContent || "").replace(/\s+/g, "");
+        if (!/获取验证码|获取短信|发送验证码|发送短信/.test(t)) return false;
+        if (/重新|已发送|重发|请稍候|\(\d+|\d+s|秒/.test(t)) return false;
+        return true;
+      });
+    }
+    __name(findSendButton, "findSendButton");
+    function hasVisibleOverlay() {
+      const overlays = document.querySelectorAll(".ivu-modal-wrap, .ivu-modal, .el-dialog__wrapper, .el-overlay");
+      return Array.from(overlays).some((el) => {
+        const st = getComputedStyle(el);
+        return st.display !== "none" && st.visibility !== "hidden" && st.opacity !== "0";
+      });
+    }
+    __name(hasVisibleOverlay, "hasVisibleOverlay");
+    function send2faOnce() {
+      const conf = config.sessionConf();
+      if (!conf.autoSend2fa) return;
+      if (!is2faPage()) return;
+      if (hasVisibleOverlay()) return;
+      const btn = findSendButton();
+      if (!btn) return;
+      if (btn.getAttribute("data-urpppp2fa-sent") === "1") return;
+      btn.setAttribute("data-urpppp2fa-sent", "1");
+      try {
+        btn.click();
+      } catch (_) {
+      }
+      log2("2FA：已自动点击「获取验证码」发送短信");
+    }
+    __name(send2faOnce, "send2faOnce");
+    function install2faAutoSend() {
+      if (installed2fa) return;
+      installed2fa = true;
+      setTimeout(send2faOnce, 300);
+      let tries = 0;
+      const timer = setInterval(() => {
+        send2faOnce();
+        tries += 1;
+        if (tries >= 25) clearInterval(timer);
+      }, 800);
+      const observer = new MutationObserver(() => send2faOnce());
+      observer.observe(document.documentElement, { childList: true, subtree: true });
+      window.addEventListener("beforeunload", () => {
+        try {
+          observer.disconnect();
+        } catch (_) {
+        }
+      }, { once: true });
+    }
+    __name(install2faAutoSend, "install2faAutoSend");
+    function buildSessionSection() {
+      const c = config.sessionConf();
+      const sec = document.createElement("section");
+      sec.className = "urppp-set-sec urpppp-sec";
+      sec.id = "urpppp-session-sec";
+      sec.innerHTML = `
+      <h3>会话保持</h3>
+      <p class="urppp-set-tip">在教务系统页面定时静默请求，避免仅放置不操作就被登出。只在教务系统页面生效；2FA 指统一认证的短信验证码步骤。</p>
+      <div class="urpppp-switches">
+        <button type="button" class="urppp-set-follow" id="urpppp-session-keepalive">会话保活：${c.keepAliveEnabled ? "开" : "关"}</button>
+        <button type="button" class="urppp-set-follow" id="urpppp-session-autosend">2FA 自动获取验证码：${c.autoSend2fa ? "开" : "关"}</button>
+      </div>
+      <div class="urpppp-grid">
+        <div class="urpppp-row"><label>心跳间隔(秒)</label><input type="number" id="urpppp-session-interval" min="60" step="60" value="${escapeAttr2(String(c.keepAliveInterval))}" /></div>
+        <div class="urpppp-row"><label>心跳接口(可选)</label><input type="text" id="urpppp-session-url" placeholder="留空用默认" value="${escapeAttr2(confKeepAliveUrlPreview(c))}" spellcheck="false" /></div>
+      </div>
+      <div class="urpppp-actions">
+        <button type="button" class="urppp-set-btn" id="urpppp-session-save">保存会话设置</button>
+      </div>
+      <div class="urpppp-status" id="urpppp-session-status"></div>
+    `;
+      return sec;
+    }
+    __name(buildSessionSection, "buildSessionSection");
+    function confKeepAliveUrlPreview(c) {
+      if (c.keepAliveUrl && c.keepAliveUrl !== DEFAULT_KEEPALIVE_URL) return c.keepAliveUrl;
+      return "";
+    }
+    __name(confKeepAliveUrlPreview, "confKeepAliveUrlPreview");
+    function bindSessionSection(sec) {
+      let keepAlive = config.sessionConf().keepAliveEnabled;
+      let autoSend = config.sessionConf().autoSend2fa;
+      const keepBtn = sec.querySelector("#urpppp-session-keepalive");
+      const autoBtn = sec.querySelector("#urpppp-session-autosend");
+      syncToggle(keepBtn, keepAlive, "会话保活：开", "会话保活：关");
+      syncToggle(autoBtn, autoSend, "2FA 自动获取验证码：开", "2FA 自动获取验证码：关");
+      keepBtn.onclick = () => {
+        keepAlive = !keepAlive;
+        setVal(SESSION_KEY_ENABLED, keepAlive);
+        syncToggle(keepBtn, keepAlive, "会话保活：开", "会话保活：关");
+        if (keepAlive) startKeepAlive();
+        else stopKeepAlive();
+      };
+      autoBtn.onclick = () => {
+        autoSend = !autoSend;
+        setVal(SESSION_KEY_AUTOSEND, autoSend);
+        syncToggle(autoBtn, autoSend, "2FA 自动获取验证码：开", "2FA 自动获取验证码：关");
+      };
+      sec.querySelector("#urpppp-session-save").onclick = () => {
+        const interval = Math.max(60, Math.min(3600, parseInt(sec.querySelector("#urpppp-session-interval").value, 10) || 480));
+        const url = String(sec.querySelector("#urpppp-session-url").value || "").trim();
+        setVal(SESSION_KEY_INTERVAL, String(interval));
+        setVal(SESSION_KEY_URL, url);
+        stopKeepAlive();
+        if (keepAlive) startKeepAlive();
+        setStatus("urpppp-session-status", "会话设置已保存", "ok");
+      };
+    }
+    __name(bindSessionSection, "bindSessionSection");
+    return {
+      buildSessionSection,
+      bindSessionSection,
+      install2faAutoSend,
+      startKeepAlive,
+      stopKeepAlive,
+      is2faPage
+    };
+  }
+  __name(createSessionAssist, "createSessionAssist");
+
   // src/assist/evaluation.js
   function createEvaluationAssist({ config, storage, deps }) {
     const { getBool, setVal, setJSON } = storage;
@@ -2117,7 +2337,7 @@
   __name(createUpdateAssist, "createUpdateAssist");
 
   // src/assist/panel.js
-  function createAssistPanel({ login, evaluation, deps }) {
+  function createAssistPanel({ login, evaluation, session, deps }) {
     const uiState = { injected: false };
     function ensureSubPanel() {
       let panel = document.getElementById("urpppp-subpanel");
@@ -2165,6 +2385,11 @@
         const sec = login.buildLoginSection();
         body.appendChild(sec);
         login.bindLoginSection(sec);
+      } else if (kind === "session") {
+        title.textContent = "会话保持";
+        const sec = session.buildSessionSection();
+        body.appendChild(sec);
+        session.bindSessionSection(sec);
       } else {
         title.textContent = "评教助手";
         const sec = evaluation.buildEvalSection();
@@ -2208,12 +2433,14 @@
         <div class="urpppp-entry-grid">
           <button type="button" class="urppp-set-btn" id="urpppp-open-login">登录助手</button>
           <button type="button" class="urppp-set-btn" id="urpppp-open-eval">评教助手</button>
+          <button type="button" class="urppp-set-btn" id="urpppp-open-session">会话保持</button>
         </div>
         <p class="urpppp-tip">辅助插件 v${deps.URPPPP_VERSION}</p>
       `;
         body.appendChild(entry);
         entry.querySelector("#urpppp-open-login").onclick = () => openSubPanel("login");
         entry.querySelector("#urpppp-open-eval").onclick = () => openSubPanel("eval");
+        entry.querySelector("#urpppp-open-session").onclick = () => openSubPanel("session");
       }
       if (!panel.__urppppCloseHooked) {
         panel.__urppppCloseHooked = true;
@@ -2435,6 +2662,7 @@
       loginConf,
       markPendingAutoLogin,
       resetLoginGuardState,
+      sessionConf,
       setBatchState
     } = config;
     function settingsStyles() {
@@ -2511,9 +2739,15 @@
         parseVersionFromSource: parseUserscriptVersion
       }
     });
+    const session = createSessionAssist({
+      config: { sessionConf },
+      storage: { getBool, getNum, getStr, setVal },
+      deps: { setStatus, syncToggle, escapeAttr, log }
+    });
     const panel = createAssistPanel({
       login,
       evaluation,
+      session,
       deps: {
         URPPPP_VERSION,
         settingsStyles
@@ -2533,6 +2767,7 @@
     } = evaluation;
     const { injectSettingsPanel, watchSettingsPanel } = panel;
     const { registerAssistUpdateChecker } = update;
+    const { install2faAutoSend, startKeepAlive, is2faPage } = session;
     try {
       GM_registerMenuCommand("URP++辅助：打开设置说明", () => {
         alert("请启用 URP++ 主脚本，点击顶栏齿轮，在设置底部配置「登录助手」「评教助手」。");
@@ -2606,6 +2841,8 @@
     } else {
       clearLoginGuardAfterSuccess();
     }
+    if (is2faPage()) install2faAutoSend();
+    startKeepAlive();
     if (isEvaluationPage()) {
       markEvalPageEnter();
       installSaveSuccessWatcher();

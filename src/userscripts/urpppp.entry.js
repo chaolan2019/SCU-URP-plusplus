@@ -27,6 +27,7 @@ import {
 } from '../assist/utils.js';
 import { compareVersions as compareStandaloneVersions, parseUserscriptVersion as parseVersionFromSource } from '../core/version.js';
 import { createLoginAssist } from '../assist/login.js';
+import { createSessionAssist } from '../assist/session.js';
 import { createEvaluationAssist } from '../assist/evaluation.js';
 import { createUpdateAssist } from '../assist/update.js';
 import { createAssistPanel } from '../assist/panel.js';
@@ -79,6 +80,7 @@ import assistStyles from '../styles/assist.css';
     loginConf,
     markPendingAutoLogin,
     resetLoginGuardState,
+    sessionConf,
     setBatchState,
   } = config;
 
@@ -161,9 +163,16 @@ import assistStyles from '../styles/assist.css';
     },
   });
 
+  const session = createSessionAssist({
+    config: { sessionConf },
+    storage: { getBool, getNum, getStr, setVal },
+    deps: { setStatus, syncToggle, escapeAttr, log },
+  });
+
   const panel = createAssistPanel({
     login,
     evaluation,
+    session,
     deps: {
       URPPPP_VERSION,
       settingsStyles,
@@ -184,6 +193,7 @@ import assistStyles from '../styles/assist.css';
   } = evaluation;
   const { injectSettingsPanel, watchSettingsPanel } = panel;
   const { registerAssistUpdateChecker } = update;
+  const { install2faAutoSend, startKeepAlive, is2faPage } = session;
 
   // ===================== 启动 =====================
   try {
@@ -249,6 +259,12 @@ import assistStyles from '../styles/assist.css';
   } else {
     clearLoginGuardAfterSuccess();
   }
+
+  // 2FA 界面：自动点击「获取验证码」发送短信（不重复走登录助手主流程）
+  if (is2faPage()) install2faAutoSend();
+
+  // 会话保活：仅在教务系统页面启动（内部判定域名 + 开关）
+  startKeepAlive();
 
   // 评教填写页：自动填 +（批量/开启时）到时保存
   if (isEvaluationPage()) {

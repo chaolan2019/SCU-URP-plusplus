@@ -34,6 +34,19 @@ export const EVALUATION_KEYS = {
   batchGapSec: `${ASSIST_NAMESPACE}_eval_batch_gap_sec`,
 };
 
+export const SESSION_KEYS = {
+  keepAliveEnabled: `${ASSIST_NAMESPACE}_session_keepalive_enabled`,
+  keepAliveInterval: `${ASSIST_NAMESPACE}_session_keepalive_interval`,
+  keepAliveUrl: `${ASSIST_NAMESPACE}_session_keepalive_url`,
+  autoSend2fa: `${ASSIST_NAMESPACE}_session_autosend_2fa`,
+};
+
+// 会话保持默认值：
+// - 心跳间隔 8 分钟（教务 session 多在 25~30 分钟空闲后失效，留足余量）
+// - 心跳目标：教务系统教室课表选择页（服务端渲染、GET、会话失效时自动回登录页，可作登录态自检）
+export const DEFAULT_KEEPALIVE_URL = '/student/teachingResources/classroomUseStatus/index';
+export const DEFAULT_KEEPALIVE_INTERVAL = 8 * 60; // 秒
+
 export const LOGIN_FAILURE_LIMIT = 4;
 export const LOGIN_PENDING_TTL = 10 * 60 * 1000;
 export const DEFAULT_OCR_EXAMPLE = 'https://ocr.yanjiangrd.site/api/ocr';
