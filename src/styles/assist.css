@@ -74,7 +74,7 @@
 #urpppp-subpanel .urpppp-row select,
 #urpppp-subpanel .urpppp-row textarea{
   width:100%;border:1px solid var(--border,#e5e7eb);border-radius:8px;
-  background:var(--input-bg,#f8fafc);color:var(--text,#111);padding:6px 10px;font-size:12px;box-sizing:border-box
+  background:#fff;color:#1d1d1f;padding:6px 10px;font-size:12px;box-sizing:border-box
 }
 #urpppp-subpanel .urpppp-row input,#urpppp-subpanel .urpppp-row select{height:32px;padding-top:0;padding-bottom:0}
 #urpppp-subpanel .urpppp-row textarea{min-height:84px;resize:vertical;line-height:1.45}
@@ -82,8 +82,8 @@
 #urpppp-subpanel .urpppp-switches .urppp-set-follow{
   width:auto;min-width:0;height:34px;border-radius:10px;
   border:1px solid var(--border,#e5e7eb)!important;
-  background:var(--surface,#fff)!important;
-  color:var(--text,#111)!important;
+  background:#fff!important;
+  color:#1d1d1f!important;
   font-size:12px!important;font-weight:600!important;
   cursor:pointer;padding:0 10px!important;white-space:nowrap
 }
@@ -97,7 +97,7 @@
 }
 #urpppp-subpanel .urppp-set-btn{
   height:34px;border-radius:10px;border:1px solid var(--border,#e5e7eb);
-  background:var(--surface,#fff);color:var(--text,#111);
+  background:#fff;color:#1d1d1f;
   font-size:12px;font-weight:600;cursor:pointer;padding:0 12px
 }
 #urpppp-subpanel .urppp-set-btn:hover{border-color:var(--primary,#3b82f6)}
