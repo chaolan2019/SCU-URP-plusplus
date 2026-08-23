@@ -1,33 +1,3 @@
-// ==UserScript==
-// @name         SCU URP++教务系统辅助插件
-// @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.4.1
-// @description  URP++ 扩展：登录验证码识别 + 评教自动填写/到时自动保存 + 列表页全自动评教。设置挂到 URP++ 设置面板。
-// @author       Chao_Lan,Hanako
-// @license      GPL-3.0-only
-// @icon         https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/docs/icon.png
-// @updateURL    https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js
-// @downloadURL  https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js
-// @match        http://zhjw.scu.edu.cn/*
-// @match        http://202.115.47.141/*
-// @match        https://*.scu.edu.cn/*
-// @match        https://*.webvpn.scu.edu.cn/*
-// @grant        GM_xmlhttpRequest
-// @grant        GM_setValue
-// @grant        GM_getValue
-// @grant        GM_registerMenuCommand
-// @grant        unsafeWindow
-// @connect      *
-// @connect      raw.githubusercontent.com
-// @connect      github.com
-// @connect      cdn.jsdelivr.net
-// @connect      gh-proxy.com
-// @run-at       document-idle
-// ==/UserScript==
-
-// SPDX-License-Identifier: GPL-3.0-only
-// Copyright (C) 2026 Chao_Lan
-
 (() => {
   var __defProp = Object.defineProperty;
   var __name = (target, value) => __defProp(target, "name", { value, configurable: true });

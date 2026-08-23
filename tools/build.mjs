@@ -39,6 +39,15 @@ const TARGETS = [
     outfile: 'urpppp.user.js',
     versionConstant: 'URPPPP_VERSION',
   },
+  {
+    // 插件产物：无 UserScript 头，供主插件「下载→注入」装载，不经油猴安装
+    name: 'urpppp-plugin',
+    entry: 'src/userscripts/urpppp.entry.js',
+    outfile: 'urpppp.plugin.js',
+    versionConstant: 'URPPPP_VERSION',
+    noBanner: true,
+    plugin: true,
+  },
 ];
 
 async function readJson(relativePath) {
@@ -99,17 +108,24 @@ const readableCssPlugin = {
 async function compileTarget(target, commonMetadata) {
   const entryPath = path.join(ROOT, target.entry);
   const outfilePath = path.join(ROOT, target.outfile);
-  const [targetMetadata, source] = await Promise.all([
-    readJson(target.metadata),
-    readFile(entryPath, 'utf8'),
-  ]);
-  const metadata = { ...commonMetadata, ...targetMetadata };
+  const source = await readFile(entryPath, 'utf8');
   const runtimeVersion = sourceVersion(source, target.versionConstant);
-  if (!runtimeVersion || runtimeVersion !== metadata.version) {
-    throw new Error(
-      `${target.name}: metadata version ${metadata.version} does not match ${target.versionConstant} ${runtimeVersion || '(missing)'}`,
-    );
+  if (!runtimeVersion) {
+    throw new Error(`${target.name}: cannot resolve ${target.versionConstant} from entry`);
   }
+
+  let metadata = null;
+  if (!target.noBanner) {
+    const targetMetadata = await readJson(target.metadata);
+    metadata = { ...commonMetadata, ...targetMetadata };
+    if (runtimeVersion !== metadata.version) {
+      throw new Error(
+        `${target.name}: metadata version ${metadata.version} does not match ${target.versionConstant} ${runtimeVersion}`,
+      );
+    }
+  }
+
+  const banner = target.noBanner ? '' : `${userscriptBanner(metadata)}\n`;
 
   const result = await build({
     absWorkingDir: ROOT,
@@ -128,7 +144,7 @@ async function compileTarget(target, commonMetadata) {
     write: false,
     metafile: true,
     plugins: [readableCssPlugin],
-    banner: { js: `${userscriptBanner(metadata)}\n` },
+    banner: { js: banner },
     logLevel: 'silent',
   });
   const contents = result.outputFiles[0].contents;

@@ -177,13 +177,13 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
     return !!it;
   }
 
-  // 插件默认下载源（可按 id 扩展；P0 固定辅助插件 → urpppp 多源）
+  // 插件默认下载源（可按 id 扩展；P0 固定辅助插件 → urpppp.plugin.js 多源）
   function pluginSource(id) {
     if (id === 'assist') {
       return [
-        'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js',
-        'https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/urpppp.user.js',
-        'https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js',
+        'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.plugin.js',
+        'https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/urpppp.plugin.js',
+        'https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.plugin.js',
       ];
     }
     return [];

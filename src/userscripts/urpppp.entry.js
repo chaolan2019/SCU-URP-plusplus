@@ -51,6 +51,18 @@ import assistStyles from '../styles/assist.css';
 
   // 与脚本头 @version 保持同步
   const URPPPP_VERSION = '1.4.1';
+
+  // 被主插件「下载→注入」装载时，通过插件协议声明自己（独立安装时 __urpppPlugin 不存在则跳过）
+  try {
+    if (typeof window !== 'undefined' && typeof window.__urpppPlugin === 'object' && window.__urpppPlugin) {
+      window.__urpppPlugin.register({
+        id: 'assist',
+        type: 'plugin',
+        name: '辅助插件',
+        version: URPPPP_VERSION,
+      });
+    }
+  } catch (_) { /* ignore */ }
   const URPPPP_RAW_URL = 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js';
   // 多源探测：GitHub（权威）优先，超过 1s 未响应自动切换 jsDelivr / gh-proxy 加速源
   const URPPPP_SOURCES = [
