@@ -11,7 +11,7 @@
     <a href="https://github.com/chaolan2019/SCU-URP-plusplus/commits/main"><img src="https://img.shields.io/github/last-commit/chaolan2019/SCU-URP-plusplus?style=flat-square&amp;logo=github&amp;label=Last%20commit" alt="Last Commit"></a>
   </p>
 
-  <p><strong>主脚本 v1.8.3</strong> · 辅助插件 v1.4.1</p>
+  <p><strong>主脚本 v1.9.0</strong> · 辅助插件 v1.5.0</p>
   <p>作者：<code>Chao_Lan, Hanako</code></p>
 
   <p><strong>目录</strong></p>
@@ -107,11 +107,13 @@
    - **Greasy Fork**：打开 [Greasy Fork](https://greasyfork.org)，搜索 **`SCU URP++`** 安装
    - 本地：打开仓库中的 `urppp.user.js` 导入 / 安装
 3. 访问 [四川大学教务](http://zhjw.scu.edu.cn/login) 硬刷新
+4. （可选）**辅助插件**：主插件 v1.9.0 起可直接在主插件 设置 → 系统设置 → 辅助插件 里点「装载辅助插件」，无需单独安装；也可按旧方式单独安装 `urpppp.user.js`（见 [README_.md](./README_.md)）
 
 匹配域名：
 
 - `http://zhjw.scu.edu.cn/*`
 - `http://202.115.47.141/*`
+- `https://id.scu.edu.cn/*`（配合辅助插件登录/二次验证）
 
 ---
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SCU URP++教务系统美化
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.8.3
+// @version      1.9.0
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Chao_Lan,Hanako
 // @license      GPL-3.0-only
@@ -17116,7 +17116,7 @@ ${arcs}
       }
     } catch (_) {
     }
-    const URPPP_VERSION = "1.8.3";
+    const URPPP_VERSION = "1.9.0";
     const URPPP_UPDATE = {
       mainRaw: "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js",
       assistRaw: "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js",
