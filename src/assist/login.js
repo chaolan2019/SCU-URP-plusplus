@@ -1,9 +1,12 @@
+import { SESSION_KEYS } from './constants.js';
+
 export function createLoginAssist({ config, storage, deps }) {
   const { getBool, setVal } = storage;
   const { LOGIN, LOGIN_FAILURE_LIMIT, DEFAULT_OCR_EXAMPLE } = deps.constants;
 
   function buildLoginSection() {
     const c = config.loginConf();
+    const autoSend2fa = getBool(SESSION_KEYS.autoSend2fa, true);
     const sec = document.createElement('section');
     sec.className = 'urppp-set-sec urpppp-sec';
     sec.id = 'urpppp-login-sec';
@@ -15,6 +18,7 @@ export function createLoginAssist({ config, storage, deps }) {
         <button type="button" class="urppp-set-follow" id="urpppp-login-auto">识别后自动登录：${c.autoSubmit ? '开' : '关'}</button>
         <button type="button" class="urppp-set-follow" id="urpppp-login-share">教务/统一认证共用账密：${c.shareCred ? '开' : '关'}</button>
         <button type="button" class="urppp-set-follow" id="urpppp-login-persist-password">持久保存密码：${c.passwordStorage === 'persistent' ? '开' : '关'}</button>
+        <button type="button" class="urppp-set-follow" id="urpppp-login-autosend2fa">2FA 自动获取验证码：${autoSend2fa ? '开' : '关'}</button>
       </div>
       <div class="urpppp-grid">
         <div class="urpppp-row"><label>线上 OCR 服务（可选）</label><input type="url" id="urpppp-login-ocr" placeholder="https://..." value="${deps.escapeAttr(c.ocrUrl)}" spellcheck="false" /></div>
@@ -42,10 +46,12 @@ export function createLoginAssist({ config, storage, deps }) {
     let autoSubmit = getBool(LOGIN.autoSubmit, true);
     let shareCred = getBool(LOGIN.shareCred, true);
     let persistPassword = config.loginConf().passwordStorage === 'persistent';
+    let autoSend2fa = getBool(SESSION_KEYS.autoSend2fa, true);
     const enabledBtn = sec.querySelector('#urpppp-login-enabled');
     const autoBtn = sec.querySelector('#urpppp-login-auto');
     const shareBtn = sec.querySelector('#urpppp-login-share');
     const persistBtn = sec.querySelector('#urpppp-login-persist-password');
+    const autoSend2faBtn = sec.querySelector('#urpppp-login-autosend2fa');
     const toggleCas = () => {
       sec.querySelectorAll('.urpppp-cas-user,.urpppp-cas-pass').forEach((r) => {
         r.style.display = shareCred ? 'none' : 'grid';
@@ -55,7 +61,14 @@ export function createLoginAssist({ config, storage, deps }) {
     deps.syncToggle(autoBtn, autoSubmit, '识别后自动登录：开', '识别后自动登录：关');
     deps.syncToggle(shareBtn, shareCred, '教务/统一认证共用账密：开', '教务/统一认证共用账密：关');
     deps.syncToggle(persistBtn, persistPassword, '持久保存密码：开', '持久保存密码：关');
+    deps.syncToggle(autoSend2faBtn, autoSend2fa, '2FA 自动获取验证码：开', '2FA 自动获取验证码：关');
     toggleCas();
+
+    autoSend2faBtn.onclick = () => {
+      autoSend2fa = !autoSend2fa;
+      setVal(SESSION_KEYS.autoSend2fa, autoSend2fa);
+      deps.syncToggle(autoSend2faBtn, autoSend2fa, '2FA 自动获取验证码：开', '2FA 自动获取验证码：关');
+    };
 
     enabledBtn.onclick = () => {
       enabled = !enabled; setVal(LOGIN.enabled, enabled);

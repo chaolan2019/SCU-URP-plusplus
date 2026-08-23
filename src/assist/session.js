@@ -3,7 +3,6 @@ import { DEFAULT_KEEPALIVE_URL, SESSION_KEYS } from './constants.js';
 const SESSION_KEY_ENABLED = SESSION_KEYS.keepAliveEnabled;
 const SESSION_KEY_INTERVAL = SESSION_KEYS.keepAliveInterval;
 const SESSION_KEY_URL = SESSION_KEYS.keepAliveUrl;
-const SESSION_KEY_AUTOSEND = SESSION_KEYS.autoSend2fa;
 
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (C) 2026 Chao_Lan
@@ -40,6 +39,11 @@ export function createSessionAssist({ config, storage, deps }) {
     if (/login/i.test(path)) return true;
     if (/frontend\/login/i.test(href)) return true;
     return false;
+  }
+
+  function is2faDomain() {
+    // 统一认证在 id.scu.edu.cn（及可能 webvpn 代理），以 id. 前缀识别，避免教务域误装监听
+    return /^id\./i.test(String(location.hostname || ''));
   }
 
   function is2faPage() {
@@ -165,10 +169,9 @@ export function createSessionAssist({ config, storage, deps }) {
     sec.id = 'urpppp-session-sec';
     sec.innerHTML = `
       <h3>会话保持</h3>
-      <p class="urppp-set-tip">在教务系统页面定时静默请求，避免仅放置不操作就被登出。只在教务系统页面生效；2FA 指统一认证的短信验证码步骤。</p>
+      <p class="urppp-set-tip">在教务系统页面定时静默请求，避免仅放置不操作就被登出。只在教务系统页面生效。</p>
       <div class="urpppp-switches">
         <button type="button" class="urppp-set-follow" id="urpppp-session-keepalive">会话保活：${c.keepAliveEnabled ? '开' : '关'}</button>
-        <button type="button" class="urppp-set-follow" id="urpppp-session-autosend">2FA 自动获取验证码：${c.autoSend2fa ? '开' : '关'}</button>
       </div>
       <div class="urpppp-grid">
         <div class="urpppp-row"><label>心跳间隔(秒)</label><input type="number" id="urpppp-session-interval" min="60" step="60" value="${escapeAttr(String(c.keepAliveInterval))}" /></div>
@@ -189,24 +192,15 @@ export function createSessionAssist({ config, storage, deps }) {
   }
 
   function bindSessionSection(sec) {
-    let keepAlive = config.sessionConf().keepAliveEnabled;
-    let autoSend = config.sessionConf().autoSend2fa;
-
+    const keepAlive = config.sessionConf().keepAliveEnabled;
     const keepBtn = sec.querySelector('#urpppp-session-keepalive');
-    const autoBtn = sec.querySelector('#urpppp-session-autosend');
     syncToggle(keepBtn, keepAlive, '会话保活：开', '会话保活：关');
-    syncToggle(autoBtn, autoSend, '2FA 自动获取验证码：开', '2FA 自动获取验证码：关');
 
     keepBtn.onclick = () => {
-      keepAlive = !keepAlive;
-      setVal(SESSION_KEY_ENABLED, keepAlive);
-      syncToggle(keepBtn, keepAlive, '会话保活：开', '会话保活：关');
-      if (keepAlive) startKeepAlive(); else stopKeepAlive();
-    };
-    autoBtn.onclick = () => {
-      autoSend = !autoSend;
-      setVal(SESSION_KEY_AUTOSEND, autoSend);
-      syncToggle(autoBtn, autoSend, '2FA 自动获取验证码：开', '2FA 自动获取验证码：关');
+      const next = !getBool(SESSION_KEY_ENABLED, true);
+      setVal(SESSION_KEY_ENABLED, next);
+      syncToggle(keepBtn, next, '会话保活：开', '会话保活：关');
+      if (next) startKeepAlive(); else stopKeepAlive();
     };
 
     sec.querySelector('#urpppp-session-save').onclick = () => {
@@ -216,7 +210,7 @@ export function createSessionAssist({ config, storage, deps }) {
       setVal(SESSION_KEY_URL, url);
       // 间隔改了最好重启心跳以生效
       stopKeepAlive();
-      if (keepAlive) startKeepAlive();
+      if (getBool(SESSION_KEY_ENABLED, true)) startKeepAlive();
       setStatus('urpppp-session-status', '会话设置已保存', 'ok');
     };
   }
@@ -227,6 +221,7 @@ export function createSessionAssist({ config, storage, deps }) {
     install2faAutoSend,
     startKeepAlive,
     stopKeepAlive,
+    is2faDomain,
     is2faPage,
   };
 }

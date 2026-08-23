@@ -1004,6 +1004,7 @@
     const { LOGIN, LOGIN_FAILURE_LIMIT: LOGIN_FAILURE_LIMIT2, DEFAULT_OCR_EXAMPLE: DEFAULT_OCR_EXAMPLE2 } = deps.constants;
     function buildLoginSection() {
       const c = config.loginConf();
+      const autoSend2fa = getBool(SESSION_KEYS.autoSend2fa, true);
       const sec = document.createElement("section");
       sec.className = "urppp-set-sec urpppp-sec";
       sec.id = "urpppp-login-sec";
@@ -1015,6 +1016,7 @@
         <button type="button" class="urppp-set-follow" id="urpppp-login-auto">识别后自动登录：${c.autoSubmit ? "开" : "关"}</button>
         <button type="button" class="urppp-set-follow" id="urpppp-login-share">教务/统一认证共用账密：${c.shareCred ? "开" : "关"}</button>
         <button type="button" class="urppp-set-follow" id="urpppp-login-persist-password">持久保存密码：${c.passwordStorage === "persistent" ? "开" : "关"}</button>
+        <button type="button" class="urppp-set-follow" id="urpppp-login-autosend2fa">2FA 自动获取验证码：${autoSend2fa ? "开" : "关"}</button>
       </div>
       <div class="urpppp-grid">
         <div class="urpppp-row"><label>线上 OCR 服务（可选）</label><input type="url" id="urpppp-login-ocr" placeholder="https://..." value="${deps.escapeAttr(c.ocrUrl)}" spellcheck="false" /></div>
@@ -1042,10 +1044,12 @@
       let autoSubmit = getBool(LOGIN.autoSubmit, true);
       let shareCred = getBool(LOGIN.shareCred, true);
       let persistPassword = config.loginConf().passwordStorage === "persistent";
+      let autoSend2fa = getBool(SESSION_KEYS.autoSend2fa, true);
       const enabledBtn = sec.querySelector("#urpppp-login-enabled");
       const autoBtn = sec.querySelector("#urpppp-login-auto");
       const shareBtn = sec.querySelector("#urpppp-login-share");
       const persistBtn = sec.querySelector("#urpppp-login-persist-password");
+      const autoSend2faBtn = sec.querySelector("#urpppp-login-autosend2fa");
       const toggleCas = /* @__PURE__ */ __name(() => {
         sec.querySelectorAll(".urpppp-cas-user,.urpppp-cas-pass").forEach((r) => {
           r.style.display = shareCred ? "none" : "grid";
@@ -1055,7 +1059,13 @@
       deps.syncToggle(autoBtn, autoSubmit, "识别后自动登录：开", "识别后自动登录：关");
       deps.syncToggle(shareBtn, shareCred, "教务/统一认证共用账密：开", "教务/统一认证共用账密：关");
       deps.syncToggle(persistBtn, persistPassword, "持久保存密码：开", "持久保存密码：关");
+      deps.syncToggle(autoSend2faBtn, autoSend2fa, "2FA 自动获取验证码：开", "2FA 自动获取验证码：关");
       toggleCas();
+      autoSend2faBtn.onclick = () => {
+        autoSend2fa = !autoSend2fa;
+        setVal(SESSION_KEYS.autoSend2fa, autoSend2fa);
+        deps.syncToggle(autoSend2faBtn, autoSend2fa, "2FA 自动获取验证码：开", "2FA 自动获取验证码：关");
+      };
       enabledBtn.onclick = () => {
         enabled = !enabled;
         setVal(LOGIN.enabled, enabled);
@@ -1339,7 +1349,6 @@
   var SESSION_KEY_ENABLED = SESSION_KEYS.keepAliveEnabled;
   var SESSION_KEY_INTERVAL = SESSION_KEYS.keepAliveInterval;
   var SESSION_KEY_URL = SESSION_KEYS.keepAliveUrl;
-  var SESSION_KEY_AUTOSEND = SESSION_KEYS.autoSend2fa;
   function createSessionAssist({ config, storage, deps }) {
     const { getBool, getNum, getStr, setVal } = storage;
     const { setStatus, syncToggle, escapeAttr: escapeAttr2, log: log2 } = deps;
@@ -1359,6 +1368,10 @@
       return false;
     }
     __name(isLoginPath, "isLoginPath");
+    function is2faDomain() {
+      return /^id\./i.test(String(location.hostname || ""));
+    }
+    __name(is2faDomain, "is2faDomain");
     function is2faPage() {
       const href = String(location.href || "");
       if (/#\/(second|mfa|verify)/i.test(href)) return true;
@@ -1474,10 +1487,9 @@
       sec.id = "urpppp-session-sec";
       sec.innerHTML = `
       <h3>会话保持</h3>
-      <p class="urppp-set-tip">在教务系统页面定时静默请求，避免仅放置不操作就被登出。只在教务系统页面生效；2FA 指统一认证的短信验证码步骤。</p>
+      <p class="urppp-set-tip">在教务系统页面定时静默请求，避免仅放置不操作就被登出。只在教务系统页面生效。</p>
       <div class="urpppp-switches">
         <button type="button" class="urppp-set-follow" id="urpppp-session-keepalive">会话保活：${c.keepAliveEnabled ? "开" : "关"}</button>
-        <button type="button" class="urppp-set-follow" id="urpppp-session-autosend">2FA 自动获取验证码：${c.autoSend2fa ? "开" : "关"}</button>
       </div>
       <div class="urpppp-grid">
         <div class="urpppp-row"><label>心跳间隔(秒)</label><input type="number" id="urpppp-session-interval" min="60" step="60" value="${escapeAttr2(String(c.keepAliveInterval))}" /></div>
@@ -1497,23 +1509,15 @@
     }
     __name(confKeepAliveUrlPreview, "confKeepAliveUrlPreview");
     function bindSessionSection(sec) {
-      let keepAlive = config.sessionConf().keepAliveEnabled;
-      let autoSend = config.sessionConf().autoSend2fa;
+      const keepAlive = config.sessionConf().keepAliveEnabled;
       const keepBtn = sec.querySelector("#urpppp-session-keepalive");
-      const autoBtn = sec.querySelector("#urpppp-session-autosend");
       syncToggle(keepBtn, keepAlive, "会话保活：开", "会话保活：关");
-      syncToggle(autoBtn, autoSend, "2FA 自动获取验证码：开", "2FA 自动获取验证码：关");
       keepBtn.onclick = () => {
-        keepAlive = !keepAlive;
-        setVal(SESSION_KEY_ENABLED, keepAlive);
-        syncToggle(keepBtn, keepAlive, "会话保活：开", "会话保活：关");
-        if (keepAlive) startKeepAlive();
+        const next = !getBool(SESSION_KEY_ENABLED, true);
+        setVal(SESSION_KEY_ENABLED, next);
+        syncToggle(keepBtn, next, "会话保活：开", "会话保活：关");
+        if (next) startKeepAlive();
         else stopKeepAlive();
-      };
-      autoBtn.onclick = () => {
-        autoSend = !autoSend;
-        setVal(SESSION_KEY_AUTOSEND, autoSend);
-        syncToggle(autoBtn, autoSend, "2FA 自动获取验证码：开", "2FA 自动获取验证码：关");
       };
       sec.querySelector("#urpppp-session-save").onclick = () => {
         const interval = Math.max(60, Math.min(3600, parseInt(sec.querySelector("#urpppp-session-interval").value, 10) || 480));
@@ -1521,7 +1525,7 @@
         setVal(SESSION_KEY_INTERVAL, String(interval));
         setVal(SESSION_KEY_URL, url);
         stopKeepAlive();
-        if (keepAlive) startKeepAlive();
+        if (getBool(SESSION_KEY_ENABLED, true)) startKeepAlive();
         setStatus("urpppp-session-status", "会话设置已保存", "ok");
       };
     }
@@ -1532,6 +1536,7 @@
       install2faAutoSend,
       startKeepAlive,
       stopKeepAlive,
+      is2faDomain,
       is2faPage
     };
   }
@@ -2767,7 +2772,7 @@
     } = evaluation;
     const { injectSettingsPanel, watchSettingsPanel } = panel;
     const { registerAssistUpdateChecker } = update;
-    const { install2faAutoSend, startKeepAlive, is2faPage } = session;
+    const { install2faAutoSend, is2faDomain, startKeepAlive } = session;
     try {
       GM_registerMenuCommand("URP++辅助：打开设置说明", () => {
         alert("请启用 URP++ 主脚本，点击顶栏齿轮，在设置底部配置「登录助手」「评教助手」。");
@@ -2841,7 +2846,7 @@
     } else {
       clearLoginGuardAfterSuccess();
     }
-    if (is2faPage()) install2faAutoSend();
+    if (is2faDomain()) install2faAutoSend();
     startKeepAlive();
     if (isEvaluationPage()) {
       markEvalPageEnter();

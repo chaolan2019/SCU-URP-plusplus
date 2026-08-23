@@ -193,7 +193,7 @@ import assistStyles from '../styles/assist.css';
   } = evaluation;
   const { injectSettingsPanel, watchSettingsPanel } = panel;
   const { registerAssistUpdateChecker } = update;
-  const { install2faAutoSend, startKeepAlive, is2faPage } = session;
+  const { install2faAutoSend, is2faDomain, startKeepAlive } = session;
 
   // ===================== 启动 =====================
   try {
@@ -260,8 +260,9 @@ import assistStyles from '../styles/assist.css';
     clearLoginGuardAfterSuccess();
   }
 
-  // 2FA 界面：自动点击「获取验证码」发送短信（不重复走登录助手主流程）
-  if (is2faPage()) install2faAutoSend();
+  // 2FA 界面为 SPA 路由切换(#/login → #/second/auth，页面不重载)：
+  // 在 id.scu 统一认证域常驻监听，切到 2FA 步时自动点「获取验证码」
+  if (is2faDomain()) install2faAutoSend();
 
   // 会话保活：仅在教务系统页面启动（内部判定域名 + 开关）
   startKeepAlive();
