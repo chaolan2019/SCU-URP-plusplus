@@ -10,6 +10,7 @@
 // @downloadURL  https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js
 // @match        http://zhjw.scu.edu.cn/*
 // @match        http://202.115.47.141/*
+// @match        https://id.scu.edu.cn/*
 // @grant        GM_addStyle
 // @grant        GM_getValue
 // @grant        GM_setValue
@@ -1389,6 +1390,352 @@
     ].join("");
   }
   __name(buildSettingsPanelHtml, "buildSettingsPanelHtml");
+
+  // src/features/plugin-manager/index.js
+  var STORAGE_PREFIX = "urppp_plugin_";
+  var PROTOCOL_VERSION = "1.0.0";
+  function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
+    const {
+      getValue = /* @__PURE__ */ __name(() => null, "getValue"),
+      setValue = /* @__PURE__ */ __name(() => {
+      }, "setValue"),
+      xmlHttp,
+      addStyle
+    } = GM || {};
+    const onSubpanel = (typeof uiDeps === "function" ? uiDeps : uiDeps && uiDeps.openSubpanel) || null;
+    const registry = /* @__PURE__ */ new Map();
+    const state = /* @__PURE__ */ new Map();
+    const events = /* @__PURE__ */ new Map();
+    const listeners = [];
+    function emit(name, payload) {
+      const set = events.get(name);
+      if (set) set.forEach((cb) => {
+        try {
+          cb(payload);
+        } catch (_) {
+        }
+      });
+    }
+    __name(emit, "emit");
+    function on(name, cb) {
+      if (!events.has(name)) events.set(name, /* @__PURE__ */ new Set());
+      events.get(name).add(cb);
+      return () => events.get(name).delete(cb);
+    }
+    __name(on, "on");
+    function storageGet(id, key) {
+      return getValue(`${STORAGE_PREFIX}${id}_${key}`);
+    }
+    __name(storageGet, "storageGet");
+    function storageSet(id, key, value) {
+      setValue(`${STORAGE_PREFIX}${id}_${key}`, value);
+    }
+    __name(storageSet, "storageSet");
+    function storage() {
+      return (id) => ({
+        get: /* @__PURE__ */ __name((k) => storageGet(id, k), "get"),
+        set: /* @__PURE__ */ __name((k, v) => storageSet(id, k, v), "set"),
+        remove: /* @__PURE__ */ __name((k) => setValue(`${STORAGE_PREFIX}${id}_${k}`, void 0), "remove")
+      });
+    }
+    __name(storage, "storage");
+    function request(url, opts = {}) {
+      return new Promise((resolve, reject) => {
+        if (typeof xmlHttp !== "function") {
+          reject(new Error("GM_xmlhttpRequest 不可用"));
+          return;
+        }
+        xmlHttp({
+          method: opts.method || "GET",
+          url,
+          headers: opts.headers || {},
+          data: opts.data,
+          timeout: opts.timeout || 12e3,
+          onload: /* @__PURE__ */ __name((res) => res.status >= 200 && res.status < 300 ? resolve(res.responseText) : reject(new Error(`HTTP ${res.status}`)), "onload"),
+          onerror: /* @__PURE__ */ __name(() => reject(new Error("网络错误")), "onerror"),
+          ontimeout: /* @__PURE__ */ __name(() => reject(new Error("超时")), "ontimeout")
+        });
+      });
+    }
+    __name(request, "request");
+    async function fetchWithFallback(urls) {
+      const list2 = Array.isArray(urls) ? urls : [urls];
+      let lastErr = null;
+      for (const u of list2) {
+        try {
+          return await request(u);
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error("所有下载源均失败");
+    }
+    __name(fetchWithFallback, "fetchWithFallback");
+    function stripMetadata(code) {
+      const m = String(code || "").match(/\/\/\s*==UserScript==[\s\S]*?\/\/\s*==\/UserScript==/);
+      return m ? code.replace(m[0], "") : code;
+    }
+    __name(stripMetadata, "stripMetadata");
+    function inject(code, id) {
+      try {
+        const js = stripMetadata(code);
+        new Function(js)();
+        return true;
+      } catch (e) {
+        console.warn("[URP++ plugin] 注入失败", id, e);
+        return false;
+      }
+    }
+    __name(inject, "inject");
+    function setEnabled(id, enabled) {
+      const s = state.get(id);
+      if (!s) return false;
+      s.enabled = !!enabled;
+      setValue(`${STORAGE_PREFIX}${id}_enabled`, s.enabled);
+      emit(enabled ? "enabled" : "disabled", id);
+      return true;
+    }
+    __name(setEnabled, "setEnabled");
+    function isEnabled(id) {
+      const s = state.get(id);
+      return !!s && s.enabled;
+    }
+    __name(isEnabled, "isEnabled");
+    function register(plugin) {
+      if (!plugin || !plugin.id) return false;
+      if (registry.has(plugin.id) && registry.get(plugin.id).__urpppRegistered) return true;
+      const item = Object.assign({ type: "plugin" }, plugin);
+      item.__urpppRegistered = true;
+      registry.set(plugin.id, item);
+      const s = state.get(plugin.id) || { loaded: false, enabled: false, version: plugin.version || "" };
+      s.version = item.version || s.version;
+      state.set(plugin.id, s);
+      emit("registered", item.id);
+      return true;
+    }
+    __name(register, "register");
+    function get(id) {
+      return registry.get(id) || null;
+    }
+    __name(get, "get");
+    function list(type) {
+      const out = [];
+      for (const it of registry.values()) if (!type || it.type === type) out.push(it);
+      return out;
+    }
+    __name(list, "list");
+    function loaded(id) {
+      const s = state.get(id);
+      return !!s && s.loaded;
+    }
+    __name(loaded, "loaded");
+    async function install(id, remoteUrls) {
+      const urls = Array.isArray(remoteUrls) ? remoteUrls : remoteUrls ? [remoteUrls] : pluginSource(id);
+      const code = await fetchWithFallback(urls);
+      setValue(`${STORAGE_PREFIX}${id}_code`, code);
+      const ok = inject(code, id);
+      const s = state.get(id) || { loaded: false, enabled: false, version: "" };
+      s.loaded = ok;
+      s.enabled = ok;
+      s.code = code;
+      s.version = s.version || detectVersion(code);
+      state.set(id, s);
+      setValue(`${STORAGE_PREFIX}${id}_enabled`, ok);
+      emit("loaded", id);
+      return ok;
+    }
+    __name(install, "install");
+    function detectVersion(code) {
+      const m = String(code || "").match(/@version\s+(\S+)/);
+      return m ? m[1] : "";
+    }
+    __name(detectVersion, "detectVersion");
+    function bootFromCache(id) {
+      const code = getValue(`${STORAGE_PREFIX}${id}_code`);
+      if (!code) return false;
+      const ok = inject(code, id);
+      const s = state.get(id) || { loaded: false, enabled: false, version: detectVersion(code) };
+      s.loaded = ok;
+      s.enabled = ok && getValue(`${STORAGE_PREFIX}${id}_enabled`) !== false;
+      s.code = code;
+      state.set(id, s);
+      emit("loaded", id);
+      return ok;
+    }
+    __name(bootFromCache, "bootFromCache");
+    function unregister(id) {
+      const it = registry.get(id);
+      registry.delete(id);
+      state.delete(id);
+      setValue(`${STORAGE_PREFIX}${id}_enabled`, false);
+      emit("unregistered", id);
+      return !!it;
+    }
+    __name(unregister, "unregister");
+    function pluginSource(id) {
+      if (id === "assist") {
+        return [
+          "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js",
+          "https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/urpppp.user.js",
+          "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js"
+        ];
+      }
+      return [];
+    }
+    __name(pluginSource, "pluginSource");
+    const api = {
+      protocolVersion: PROTOCOL_VERSION,
+      register,
+      unregister,
+      get,
+      list,
+      loaded,
+      isEnabled,
+      enable: /* @__PURE__ */ __name((id, on2 = true) => setEnabled(id, on2), "enable"),
+      disable: /* @__PURE__ */ __name((id) => setEnabled(id, false), "disable"),
+      install,
+      bootFromCache,
+      // 宿主能力
+      storage: /* @__PURE__ */ __name(() => getValue && { get: /* @__PURE__ */ __name((k) => getValue(k), "get"), set: /* @__PURE__ */ __name((k, v) => setValue(k, v), "set") }, "storage"),
+      pluginStorage: /* @__PURE__ */ __name((id) => storage()(id), "pluginStorage"),
+      request,
+      addStyle: /* @__PURE__ */ __name((css) => {
+        try {
+          addStyle && addStyle(css);
+        } catch (_) {
+        }
+      }, "addStyle"),
+      log: /* @__PURE__ */ __name((...a) => {
+        console.log("[URP++ plugin]", ...a);
+      }, "log"),
+      on,
+      emit,
+      hostInfo: Object.assign({ name: "SCU URP++" }, hostInfo || {}),
+      getSubpanel: /* @__PURE__ */ __name(() => onSubpanel, "getSubpanel")
+    };
+    try {
+      window.__urpppPlugin = api;
+    } catch (_) {
+    }
+    try {
+      if (typeof unsafeWindow !== "undefined" && unsafeWindow) unsafeWindow.__urpppPlugin = api;
+    } catch (_) {
+    }
+    function renderAssistUi(slot) {
+      if (!slot || !doc) return;
+      if (slot.querySelector(".urppp-plugin-sec")) return;
+      const sec = doc.createElement("section");
+      sec.className = "urppp-set-sec urppp-plugin-sec";
+      sec.id = "urppp-plugin-sec";
+      sec.innerHTML = `
+      <h3>辅助插件</h3>
+      <div class="urppp-plugin-status" id="urppp-plugin-status">检查中…</div>
+      <div class="urpppp-entry-grid" style="margin-top:8px;grid-template-columns:1fr 1fr">
+        <button type="button" class="urppp-set-btn" id="urppp-plugin-install">装载辅助插件</button>
+        <button type="button" class="urppp-set-btn ghost" id="urppp-plugin-store">插件商店</button>
+      </div>
+      <div id="urppp-plugin-panels" style="margin-top:10px"></div>
+      <p class="urppp-set-tip" id="urppp-plugin-tip" style="margin-top:8px"></p>
+    `;
+      slot.appendChild(sec);
+      const status = sec.querySelector("#urppp-plugin-status");
+      const installBtn = sec.querySelector("#urppp-plugin-install");
+      const storeBtn = sec.querySelector("#urppp-plugin-store");
+      const panels = sec.querySelector("#urppp-plugin-panels");
+      const tip = sec.querySelector("#urppp-plugin-tip");
+      function refresh() {
+        const s = state.get("assist");
+        if (s && s.loaded) {
+          status.textContent = `辅助插件 v${s.version || ""} 已装载`;
+          status.className = "urppp-plugin-status ok";
+          installBtn.textContent = "重新装载";
+          installBtn.dataset.state = "loaded";
+          tip.textContent = "已装载。下方为扩展入口。";
+        } else {
+          status.textContent = "未装载";
+          status.className = "urppp-plugin-status";
+          installBtn.textContent = "装载辅助插件";
+          installBtn.dataset.state = "notloaded";
+          tip.textContent = "点击装载后，主插件会下载并注入辅助插件（登录助手/评教/会话保持/2FA），无需再单独安装。";
+        }
+        panels.innerHTML = "";
+        const subpanels = collectSubpanels();
+        if (subpanels && Object.keys(subpanels).length) {
+          const grid = doc.createElement("div");
+          grid.className = "urpppp-entry-grid";
+          grid.style.gridTemplateColumns = "1fr 1fr";
+          Object.keys(subpanels).forEach((kind) => {
+            const b = doc.createElement("button");
+            b.type = "button";
+            b.className = "urppp-set-btn ghost";
+            b.textContent = subpanels[kind].label || kind;
+            b.addEventListener("click", () => {
+              try {
+                onSubpanel && onSubpanel(kind);
+              } catch (_) {
+              }
+            });
+            grid.appendChild(b);
+          });
+          panels.appendChild(grid);
+        }
+      }
+      __name(refresh, "refresh");
+      installBtn.addEventListener("click", async () => {
+        installBtn.disabled = true;
+        installBtn.textContent = "装载中…";
+        status.textContent = "正在下载并装载辅助插件…";
+        try {
+          const ok = await install("assist");
+          if (ok) status.textContent = "辅助插件已装载";
+          else throw new Error("注入失败");
+        } catch (e) {
+          status.textContent = "装载失败：" + (e && e.message ? e.message : e);
+          status.className = "urppp-plugin-status err";
+        } finally {
+          installBtn.disabled = false;
+          refresh();
+        }
+      });
+      storeBtn.addEventListener("click", () => {
+        tip.textContent = "插件商店即将上线，敬请期待。";
+      });
+      on("loaded", (id) => {
+        if (id === "assist") refresh();
+      });
+      on("registered", (id) => {
+        if (id === "assist") refresh();
+      });
+      if (bootFromCache("assist")) refresh();
+      else refresh();
+    }
+    __name(renderAssistUi, "renderAssistUi");
+    function collectSubpanels() {
+      const map = {};
+      registry.forEach((p) => {
+        if (p.subpanels && typeof p.subpanels === "function") {
+          const sp = p.subpanels();
+          Object.keys(sp || {}).forEach((k) => {
+            map[k] = sp[k];
+          });
+        } else if (p.subpanels && typeof p.subpanels === "object") {
+          Object.keys(p.subpanels).forEach((k) => {
+            map[k] = p.subpanels[k];
+          });
+        }
+      });
+      return map;
+    }
+    __name(collectSubpanels, "collectSubpanels");
+    return {
+      api,
+      install,
+      renderAssistUi,
+      bootFromCache,
+      register
+    };
+  }
+  __name(createPluginManager, "createPluginManager");
 
   // src/features/settings/json-settings.js
   function createJsonSettingsController(options) {
@@ -23889,6 +24236,18 @@ ${arcs}
       },
       syncPanel: syncSettingsPanelUI
     });
+    const pluginManager = createPluginManager({
+      GM: {
+        getValue: typeof GM_getValue === "function" ? GM_getValue : null,
+        setValue: typeof GM_setValue === "function" ? GM_setValue : null,
+        xmlHttp: typeof GM_xmlhttpRequest === "function" ? GM_xmlhttpRequest : null,
+        addStyle: typeof GM_addStyle === "function" ? GM_addStyle : null
+      },
+      doc: document,
+      hostInfo: { version: URPPP_VERSION },
+      uiDeps: { openSubpanel: /* @__PURE__ */ __name((kind) => {
+      }, "openSubpanel") }
+    });
     function openSettingsPanel() {
       return settingsPanelController.open();
     }
@@ -23959,6 +24318,11 @@ ${arcs}
         });
       }
       themeSettingsController.bind(panel);
+      try {
+        pluginManager.renderAssistUi(panel.querySelector("#urppp-set-assist-slot"));
+      } catch (e) {
+        console.warn("[URP++] plugin manager", e);
+      }
     }
     __name(ensureSettingsPanel, "ensureSettingsPanel");
     function renderSkinCards(panel) {

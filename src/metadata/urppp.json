@@ -6,7 +6,8 @@
   "downloadURL": "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js",
   "match": [
     "http://zhjw.scu.edu.cn/*",
-    "http://202.115.47.141/*"
+    "http://202.115.47.141/*",
+    "https://id.scu.edu.cn/*"
   ],
   "grant": [
     "GM_addStyle",

@@ -36,6 +36,7 @@ import {
   createSettingsPanelController,
 } from '../features/settings/panel-controller.js';
 import { buildSettingsPanelHtml } from '../features/settings/panel-template.js';
+import { createPluginManager } from '../features/plugin-manager/index.js';
 import { createJsonSettingsController } from '../features/settings/json-settings.js';
 import {
   DIRECT_EDIT_KEYS,
@@ -7296,6 +7297,18 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     syncPanel: syncSettingsPanelUI,
   });
 
+  const pluginManager = createPluginManager({
+    GM: {
+      getValue: typeof GM_getValue === 'function' ? GM_getValue : null,
+      setValue: typeof GM_setValue === 'function' ? GM_setValue : null,
+      xmlHttp: typeof GM_xmlhttpRequest === 'function' ? GM_xmlhttpRequest : null,
+      addStyle: typeof GM_addStyle === 'function' ? GM_addStyle : null,
+    },
+    doc: document,
+    hostInfo: { version: URPPP_VERSION },
+    uiDeps: { openSubpanel: (kind) => { /* P0 占位：子面板由辅助插件注入后接管 */ } },
+  });
+
   function openSettingsPanel() {
     return settingsPanelController.open();
   }
@@ -7356,6 +7369,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       });
     }
     themeSettingsController.bind(panel);
+
+    // P0：辅助插件装载区（在系统设置→辅助插件位置渲染装载/商店入口）
+    try { pluginManager.renderAssistUi(panel.querySelector('#urppp-set-assist-slot')); } catch (e) { console.warn('[URP++] plugin manager', e); }
   }
 
   function renderSkinCards(panel) {
