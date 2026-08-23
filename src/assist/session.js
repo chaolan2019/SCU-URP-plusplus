@@ -63,7 +63,8 @@ export function createSessionAssist({ config, storage, deps }) {
     const conf = config.sessionConf();
     if (!conf.keepAliveEnabled) return;
     if (!isKeepaliveHost() || isLoginPath()) return;
-    if (document.hidden) return;
+    // 保活目的就是“用户不操作/切后台时不掉线”，后台标签仍要发心跳
+    // （Chrome 对后台标签 setInterval 会节流，但不会完全停，8 分钟间隔足够跑）
 
     let url;
     try {

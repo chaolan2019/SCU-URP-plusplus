@@ -18,7 +18,7 @@ export function createLoginAssist({ config, storage, deps }) {
         <button type="button" class="urppp-set-follow" id="urpppp-login-auto">识别后自动登录：${c.autoSubmit ? '开' : '关'}</button>
         <button type="button" class="urppp-set-follow" id="urpppp-login-share">教务/统一认证共用账密：${c.shareCred ? '开' : '关'}</button>
         <button type="button" class="urppp-set-follow" id="urpppp-login-persist-password">持久保存密码：${c.passwordStorage === 'persistent' ? '开' : '关'}</button>
-        <button type="button" class="urppp-set-follow" id="urpppp-login-autosend2fa">2FA 自动获取验证码：${autoSend2fa ? '开' : '关'}</button>
+        <button type="button" class="urppp-set-follow" id="urpppp-login-autosend2fa">统一认证 2FA 自动获取验证码：${autoSend2fa ? '开' : '关'}</button>
       </div>
       <div class="urpppp-grid">
         <div class="urpppp-row"><label>线上 OCR 服务（可选）</label><input type="url" id="urpppp-login-ocr" placeholder="https://..." value="${deps.escapeAttr(c.ocrUrl)}" spellcheck="false" /></div>
@@ -61,13 +61,13 @@ export function createLoginAssist({ config, storage, deps }) {
     deps.syncToggle(autoBtn, autoSubmit, '识别后自动登录：开', '识别后自动登录：关');
     deps.syncToggle(shareBtn, shareCred, '教务/统一认证共用账密：开', '教务/统一认证共用账密：关');
     deps.syncToggle(persistBtn, persistPassword, '持久保存密码：开', '持久保存密码：关');
-    deps.syncToggle(autoSend2faBtn, autoSend2fa, '2FA 自动获取验证码：开', '2FA 自动获取验证码：关');
+    deps.syncToggle(autoSend2faBtn, autoSend2fa, '统一认证 2FA 自动获取验证码：开', '统一认证 2FA 自动获取验证码：关');
     toggleCas();
 
     autoSend2faBtn.onclick = () => {
       autoSend2fa = !autoSend2fa;
       setVal(SESSION_KEYS.autoSend2fa, autoSend2fa);
-      deps.syncToggle(autoSend2faBtn, autoSend2fa, '2FA 自动获取验证码：开', '2FA 自动获取验证码：关');
+      deps.syncToggle(autoSend2faBtn, autoSend2fa, '统一认证 2FA 自动获取验证码：开', '统一认证 2FA 自动获取验证码：关');
     };
 
     enabledBtn.onclick = () => {
