@@ -2618,17 +2618,6 @@
   (function() {
     "use strict";
     const URPPPP_VERSION = "1.4.1";
-    try {
-      if (typeof window !== "undefined" && typeof window.__urpppPlugin === "object" && window.__urpppPlugin) {
-        window.__urpppPlugin.register({
-          id: "assist",
-          type: "plugin",
-          name: "辅助插件",
-          version: URPPPP_VERSION
-        });
-      }
-    } catch (_) {
-    }
     const URPPPP_RAW_URL = "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js";
     const URPPPP_SOURCES = [
       "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json",
@@ -2761,6 +2750,23 @@
     const { injectSettingsPanel, watchSettingsPanel } = panel;
     const { registerAssistUpdateChecker } = update;
     const { install2faAutoSend, is2faDomain, startKeepAlive } = session;
+    const isPluginMode = typeof window.__urpppPlugin === "object" && !!window.__urpppPlugin;
+    if (isPluginMode) {
+      try {
+        window.__urpppPlugin.register({
+          id: "assist",
+          type: "plugin",
+          name: "辅助插件",
+          version: URPPPP_VERSION,
+          subpanels: {
+            login: { label: "登录助手", open: /* @__PURE__ */ __name(() => panel.openSubPanel("login"), "open") },
+            eval: { label: "评教助手", open: /* @__PURE__ */ __name(() => panel.openSubPanel("eval"), "open") },
+            session: { label: "会话保持", open: /* @__PURE__ */ __name(() => panel.openSubPanel("session"), "open") }
+          }
+        });
+      } catch (_) {
+      }
+    }
     try {
       GM_registerMenuCommand("URP++辅助：打开设置说明", () => {
         alert("请启用 URP++ 主脚本，点击顶栏齿轮，在设置底部配置「登录助手」「评教助手」。");
@@ -2825,7 +2831,7 @@
         }
       }, true);
     }), "waitRegisterUpdate"))();
-    watchSettingsPanel();
+    if (!isPluginMode) watchSettingsPanel();
     const hasZhjwLoginForm = !!(document.getElementById("input_username") && document.getElementById("input_password") && document.getElementById("input_checkcode"));
     const maybeLogin = hasZhjwLoginForm || /\/login/i.test(location.pathname || "") || /login/i.test(location.href) || /统一身份认证|frontend\/login/i.test(document.title + location.href);
     if (maybeLogin) {

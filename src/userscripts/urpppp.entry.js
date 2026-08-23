@@ -51,18 +51,6 @@ import assistStyles from '../styles/assist.css';
 
   // 与脚本头 @version 保持同步
   const URPPPP_VERSION = '1.4.1';
-
-  // 被主插件「下载→注入」装载时，通过插件协议声明自己（独立安装时 __urpppPlugin 不存在则跳过）
-  try {
-    if (typeof window !== 'undefined' && typeof window.__urpppPlugin === 'object' && window.__urpppPlugin) {
-      window.__urpppPlugin.register({
-        id: 'assist',
-        type: 'plugin',
-        name: '辅助插件',
-        version: URPPPP_VERSION,
-      });
-    }
-  } catch (_) { /* ignore */ }
   const URPPPP_RAW_URL = 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js';
   // 多源探测：GitHub（权威）优先，超过 1s 未响应自动切换 jsDelivr / gh-proxy 加速源
   const URPPPP_SOURCES = [
@@ -207,6 +195,26 @@ import assistStyles from '../styles/assist.css';
   const { registerAssistUpdateChecker } = update;
   const { install2faAutoSend, is2faDomain, startKeepAlive } = session;
 
+  // 插件模式：被主插件「下载→注入」装载，或独立脚本与新版主插件共存时，
+  // 走主插件统一入口（主插件渲染入口，辅助只提供子面板构建与打开行为），
+  // 不再自行注入设置面板入口，避免两套入口并存。
+  const isPluginMode = typeof window.__urpppPlugin === 'object' && !!window.__urpppPlugin;
+  if (isPluginMode) {
+    try {
+      window.__urpppPlugin.register({
+        id: 'assist',
+        type: 'plugin',
+        name: '辅助插件',
+        version: URPPPP_VERSION,
+        subpanels: {
+          login: { label: '登录助手', open: () => panel.openSubPanel('login') },
+          eval: { label: '评教助手', open: () => panel.openSubPanel('eval') },
+          session: { label: '会话保持', open: () => panel.openSubPanel('session') },
+        },
+      });
+    } catch (_) { /* ignore */ }
+  }
+
   // ===================== 启动 =====================
   try {
     GM_registerMenuCommand('URP++辅助：打开设置说明', () => {
@@ -252,7 +260,8 @@ import assistStyles from '../styles/assist.css';
     }, true);
   })();
 
-  watchSettingsPanel();
+  // 插件模式下入口由主插件统一渲染，不再自行注入（避免两套入口并存）
+  if (!isPluginMode) watchSettingsPanel();
 
   // 登录
   const hasZhjwLoginForm = !!(

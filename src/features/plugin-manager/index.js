@@ -244,8 +244,9 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
 
     function refresh() {
       const s = state.get('assist');
-      if (s && s.loaded) {
-        status.textContent = `辅助插件 v${s.version || ''} 已装载`;
+      const registered = registry.has('assist');
+      if ((s && s.loaded) || registered) {
+        status.textContent = `辅助插件 v${s && s.version ? s.version : (get('assist') && get('assist').version) || ''} 已装载`;
         status.className = 'urppp-plugin-status ok';
         installBtn.textContent = '重新装载';
         installBtn.dataset.state = 'loaded';
@@ -269,7 +270,13 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
           b.type = 'button';
           b.className = 'urppp-set-btn ghost';
           b.textContent = subpanels[kind].label || kind;
-          b.addEventListener('click', () => { try { onSubpanel && onSubpanel(kind); } catch (_) { /* ignore */ } });
+          b.addEventListener('click', () => {
+            // 优先用插件提供的 open（打开其子面板），否则回退宿主 openSubpanel
+            try {
+              if (subpanels[kind] && typeof subpanels[kind].open === 'function') subpanels[kind].open();
+              else if (onSubpanel) onSubpanel(kind);
+            } catch (_) { /* ignore */ }
+          });
           grid.appendChild(b);
         });
         panels.appendChild(grid);

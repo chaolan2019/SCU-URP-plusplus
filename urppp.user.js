@@ -1645,8 +1645,9 @@
       const tip = sec.querySelector("#urppp-plugin-tip");
       function refresh() {
         const s = state.get("assist");
-        if (s && s.loaded) {
-          status.textContent = `辅助插件 v${s.version || ""} 已装载`;
+        const registered = registry.has("assist");
+        if (s && s.loaded || registered) {
+          status.textContent = `辅助插件 v${s && s.version ? s.version : get("assist") && get("assist").version || ""} 已装载`;
           status.className = "urppp-plugin-status ok";
           installBtn.textContent = "重新装载";
           installBtn.dataset.state = "loaded";
@@ -1671,7 +1672,8 @@
             b.textContent = subpanels[kind].label || kind;
             b.addEventListener("click", () => {
               try {
-                onSubpanel && onSubpanel(kind);
+                if (subpanels[kind] && typeof subpanels[kind].open === "function") subpanels[kind].open();
+                else if (onSubpanel) onSubpanel(kind);
               } catch (_) {
               }
             });
