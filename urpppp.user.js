@@ -72,7 +72,7 @@
     keepAliveUrl: `${ASSIST_NAMESPACE}_session_keepalive_url`,
     autoSend2fa: `${ASSIST_NAMESPACE}_session_autosend_2fa`
   };
-  var DEFAULT_KEEPALIVE_URL = "/student/teachingResources/classroomUseStatus/index";
+  var DEFAULT_KEEPALIVE_URL = "/student/courseSelect/thisSemesterCurriculum/index";
   var DEFAULT_KEEPALIVE_INTERVAL = 8 * 60;
   var LOGIN_FAILURE_LIMIT = 4;
   var LOGIN_PENDING_TTL = 10 * 60 * 1e3;
@@ -1386,7 +1386,7 @@
           cache: "no-store",
           redirect: "follow"
         });
-        if (/login/i.test(String(res.url || "")) && !/classroomUseStatus|second|auth/i.test(String(res.url || ""))) {
+        if (/login/i.test(String(res.url || "")) && !/thisSemesterCurriculum|second|auth/i.test(String(res.url || ""))) {
           stopKeepAlive();
           log2("会话保持：登录态已失效，停止心跳");
         }

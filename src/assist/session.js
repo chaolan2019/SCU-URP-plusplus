@@ -13,7 +13,7 @@ const SESSION_KEY_AUTOSEND = SESSION_KEYS.autoSend2fa;
  *
  * 1) 保活（Keep-alive）：在教务系统页面定时请求一个轻量的同域接口，
  *    让服务端空闲会话计时器持续重置，避免"一段时间不操作就掉登录态"。
- *    - 心跳目标默认用教室课表选择页（GET、服务端渲染、会话失效时自动回登录页，可作登录态自检）
+ *    - 心跳目标默认用本学期课表页（GET、服务端渲染、会话失效时自动回登录页，可作登录态自检）
  * 2) 2FA 自动发送：在统一认证登录页走到"短信认证"（手机验证码）步骤时，
  *    自动点击"获取验证码"按钮发送短信码，省去一次手动点击。
  *    不会自动填 6 位短信码（需用户手机收码）。
@@ -74,7 +74,7 @@ export function createSessionAssist({ config, storage, deps }) {
         redirect: 'follow',
       });
       // 会话失效：教务系统会把请求重定向回登录页
-      if (/login/i.test(String(res.url || '')) && !/classroomUseStatus|second|auth/i.test(String(res.url || ''))) {
+      if (/login/i.test(String(res.url || '')) && !/thisSemesterCurriculum|second|auth/i.test(String(res.url || ''))) {
         stopKeepAlive();
         log('会话保持：登录态已失效，停止心跳');
       }
