@@ -387,7 +387,7 @@ html.urppp-theme-scu-red:not(.urppp-theme-follow) #urppp-settings-panel .urppp-s
 #urppp-settings-panel .urppp-skin-list {
   display: flex !important;
   flex-direction: column !important;
-  gap: 20px !important;
+  gap: 32px !important;
   padding: 4px 10px 12px 4px !important;
 }
 #urppp-settings-panel .urppp-skin-card {
@@ -758,7 +758,7 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-settings-panel .urppp-store-state.ok{color:#15803d;background:color-mix(in srgb,#15803d 12%,transparent)}
 #urppp-settings-panel .urppp-store-ops{display:flex;gap:8px;flex:0 0 auto}
 #urppp-settings-panel .urppp-store-ops .urppp-set-btn,#urppp-settings-panel .urppp-store-ops button{height:30px;padding:0 12px;font-size:12px;font-weight:650;border-radius:var(--radius-sm)}
-#urppp-settings-panel .urppp-store-theme-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+#urppp-settings-panel .urppp-store-theme-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:26px}
 #urppp-settings-panel .urppp-store-theme-grid .urppp-skin-card{margin:0}
 #urppp-settings-panel .urppp-store-settings{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border,#e5e5ea);border-radius:var(--radius-sm);margin-bottom:10px}
 #urppp-settings-panel .urppp-store-settings span{font-size:12px;color:var(--text-secondary,#5b5f69);flex:1;min-width:96px}
