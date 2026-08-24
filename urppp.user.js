@@ -1820,7 +1820,31 @@
       ".uc-hd-tabs .uc-sa-tab",
       ".uc-course-detail .uc-cd-name",
       ".uc-course-detail .uc-cd-meta",
-      ".uc-course-detail .uc-cd-chip"
+      ".uc-course-detail .uc-cd-chip",
+      // 校历时间线弹窗（独立于清爽 root）
+      ".cal-dialog",
+      ".cal-modal-title",
+      ".cal-term-pills",
+      ".cal-close",
+      ".cal-w-label",
+      ".cal-w-ev",
+      ".cal-w-ev b",
+      ".cal-w-sub",
+      ".cal-w-num",
+      ".cal-w-unit",
+      ".cal-w-wk",
+      ".cal-w-prog-lbl",
+      ".cal-w-prog-lbl span",
+      ".cal-timeline",
+      ".cal-month",
+      ".cal-month-title",
+      ".cal-day-num",
+      ".cal-day-event",
+      ".uc-cal-summary",
+      ".uc-cal-summary .cal-s-wk",
+      ".uc-cal-summary .cal-s-ev",
+      ".uc-cal-summary .cal-s-date",
+      ".uc-cal-summary .cal-s-prog"
     ].join(", ");
     function parseColor(str) {
       const m = String(str || "").match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)/);
