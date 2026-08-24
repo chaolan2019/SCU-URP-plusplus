@@ -19024,6 +19024,89 @@ ${arcs}
             --brutal-accent:${palette.accent};--brutal-secondary:${palette.secondary};
             --brutal-info:${palette.info};--brutal-warning:${palette.warning};
           }
+          html[data-urppp-skin="brutal"].urppp-theme-dark{
+            --bg:#000!important;--surface:#0a0a0a!important;--input-bg:#0a0a0a!important;
+            --text:#fff!important;--text-secondary:#fff!important;--text-muted:#fff!important;
+            --border:#fff!important;--border-focus:#fff!important;--shadow:6px 6px 0 #fff!important;
+          }
+          html[data-urppp-skin="brutal"].urppp-theme-dark body,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .main-container,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .main-content,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .main-content-inner,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .page-content,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root{
+            background:#000!important;background-image:none!important;color:#fff!important;
+          }
+          html[data-urppp-skin="brutal"].urppp-theme-dark a,
+          html[data-urppp-skin="brutal"].urppp-theme-dark a:link,
+          html[data-urppp-skin="brutal"].urppp-theme-dark a:visited,
+          html[data-urppp-skin="brutal"].urppp-theme-dark a:hover,
+          html[data-urppp-skin="brutal"].urppp-theme-dark a:focus{color:#fff!important;}
+          html[data-urppp-skin="brutal"].urppp-theme-dark h1,html[data-urppp-skin="brutal"].urppp-theme-dark h2,
+          html[data-urppp-skin="brutal"].urppp-theme-dark h3,html[data-urppp-skin="brutal"].urppp-theme-dark h4,
+          html[data-urppp-skin="brutal"].urppp-theme-dark h5,html[data-urppp-skin="brutal"].urppp-theme-dark .page-header,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .widget-title,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-brand,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-name,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-settings-panel .urppp-set-title{
+            color:#fff!important;
+          }
+          html[data-urppp-skin="brutal"].urppp-theme-dark #navbar,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .navbar{
+            background:#0a0a0a!important;border-bottom:3px solid #fff!important;box-shadow:none!important;
+          }
+          html[data-urppp-skin="brutal"].urppp-theme-dark #sidebar,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .sidebar{
+            background:#0a0a0a!important;border-right:3px solid #fff!important;box-shadow:none!important;
+          }
+          html[data-urppp-skin="brutal"].urppp-theme-dark .widget-box,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .panel,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .well,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .thumbnail,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .infobox,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .profile-user-info,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .profile-user-info-striped,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .modal-content,
+          html[data-urppp-skin="brutal"].urppp-theme-dark fieldset,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .urppp-stat-card,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .urppp-db-card,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .urppp-db-panel,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .urppp-card,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-dashboard .widget-box,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-root .uc,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-settings-panel,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-card,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-modal,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-top,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-tabbar,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-score-pane,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-svc{
+            border:3px solid #fff!important;border-radius:0!important;background:#0a0a0a!important;
+            box-shadow:6px 6px 0 #fff!important;box-sizing:border-box!important;
+          }
+          html[data-urppp-skin="brutal"].urppp-theme-dark .widget-header,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .page-content .widget-box .widget-header,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .panel-heading,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-settings-panel .urppp-set-head,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-hd,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-modal-hd{
+            background:var(--brutal-accent)!important;color:#fff!important;border:0!important;border-bottom:3px solid #fff!important;border-radius:0!important;
+          }
+          html[data-urppp-skin="brutal"].urppp-theme-dark .btn,
+          html[data-urppp-skin="brutal"].urppp-theme-dark a.btn,
+          html[data-urppp-skin="brutal"].urppp-theme-dark button.btn,
+          html[data-urppp-skin="brutal"].urppp-theme-dark .btn-app,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-root .ubtn,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-nav-clean,#urppp-nav-cal,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-nav-theme button:not(.urppp-nav-dot),
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-settings-panel button:not(.urppp-nav-dot),
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-btn,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-tabbar button,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-hd-tabs .uc-sa-tab,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-build-grid button{
+            border:3px solid #fff!important;border-radius:0!important;background:#0a0a0a!important;color:#fff!important;
+            box-shadow:4px 4px 0 #fff!important;transform:none!important;
+          }
           html[data-urppp-skin="brutal"] body,
           html[data-urppp-skin="brutal"] .main-container,
           html[data-urppp-skin="brutal"] .main-content,
