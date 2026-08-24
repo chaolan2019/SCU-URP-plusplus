@@ -1848,7 +1848,7 @@
         const col = parseColor(win.getComputedStyle(el).color) || { r: 0, g: 0, b: 0 };
         const textLum = lum(col);
         if (Math.abs(bgLum - textLum) < 0.3) {
-          el.style.color = bgLum < 0.5 ? "#ffffff" : "#000000";
+          el.style.setProperty("color", bgLum < 0.5 ? "#ffffff" : "#000000", "important");
         }
       } catch (_) {
       }

@@ -46,9 +46,9 @@ export function installContrastFixer(win = window) {
       const bgLum = lum(bg);
       const col = parseColor(win.getComputedStyle(el).color) || { r: 0, g: 0, b: 0 };
       const textLum = lum(col);
-      // 前景与背景亮度差过小 => 可读性差，强制换成对比色
+      // 前景与背景亮度差过小 => 可读性差，强制换成对比色（inline + !important 才能压过 CSS 的 !important）
       if (Math.abs(bgLum - textLum) < 0.3) {
-        el.style.color = bgLum < 0.5 ? '#ffffff' : '#000000';
+        el.style.setProperty('color', bgLum < 0.5 ? '#ffffff' : '#000000', 'important');
       }
     } catch (_) { /* ignore */ }
   }
