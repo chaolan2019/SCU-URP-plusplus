@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SCU URP++教务系统辅助插件
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.5.3
+// @version      1.5.4
 // @description  URP++ 扩展：登录验证码识别 + 评教自动填写/到时自动保存 + 列表页全自动评教。设置挂到 URP++ 设置面板。
 // @author       Chao_Lan,Hanako
 // @license      GPL-3.0-only
@@ -1341,6 +1341,7 @@
       const bodyText = document.body && document.body.innerText || "";
       const isUnifiedAuth = /统一身份认证/.test(bodyText) || !!document.querySelector("img.captcha-img") || /frontend\/login|id\.scu\.edu\.cn|enduser\/sp\/sso/i.test(location.href);
       if (!isUnifiedAuth) return false;
+      if (/短信认证|短信验证|手机号|获取验证码|动态口令|安全验证/.test(bodyText.slice(0, 500))) return false;
       try {
         console.log("[URP++辅助][guard] 进入统一认证登录");
       } catch (_) {
@@ -1384,8 +1385,10 @@
           const guard = config.getLoginGuardState(kind);
           if (kind === "cas") {
             const bodyText = document.body && document.body.innerText || "";
-            const inCas = /id\.scu\.edu\.cn|enduser\/sp\/sso|frontend\/login/i.test(location.href) || /统一身份认证|账号登录|验证码/.test(bodyText.slice(0, 500));
-            if (!inCas) {
+            const slice = bodyText.slice(0, 500);
+            const in2fa = /短信认证|短信验证|手机号|获取验证码|动态口令|安全验证/.test(slice);
+            const leftCas = !/id\.scu\.edu\.cn|enduser\/sp\/sso|frontend\/login/i.test(location.href) && !/统一身份认证/.test(slice);
+            if (in2fa || leftCas) {
               config.clearLoginGuardAfterSuccess("cas");
               return;
             }
@@ -2739,7 +2742,7 @@
   // src/userscripts/urpppp.entry.js
   (function() {
     "use strict";
-    const URPPPP_VERSION = "1.5.3";
+    const URPPPP_VERSION = "1.5.4";
     const URPPPP_RAW_URL = "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js";
     const URPPPP_SOURCES = [
       "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json",
