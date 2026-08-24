@@ -9310,8 +9310,8 @@ html[data-urppp-skin="neu"] .urppp-export-option{border-radius:8px!important}
   bottom: auto !important;
   max-height: calc(100vh - 80px) !important;
   max-height: calc(100dvh - 80px) !important;
-  height: min(calc(100vh - 120px), 760px) !important;
-  height: min(calc(100dvh - 120px), 760px) !important;
+  height: calc(100vh - 80px) !important;
+  height: calc(100dvh - 80px) !important;
   overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
