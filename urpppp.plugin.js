@@ -44,7 +44,7 @@
   };
   var DEFAULT_KEEPALIVE_URL = "/student/courseSelect/thisSemesterCurriculum/index";
   var DEFAULT_KEEPALIVE_INTERVAL = 8 * 60;
-  var LOGIN_FAILURE_LIMIT = 4;
+  var LOGIN_FAILURE_LIMIT = 3;
   var LOGIN_PENDING_TTL = 10 * 60 * 1e3;
   var DEFAULT_OCR_EXAMPLE = "https://ocr.yanjiangrd.site/api/ocr";
   var EVALUATION_LIST_PATH = "/student/teachingEvaluation/newEvaluation/index";
@@ -1244,6 +1244,7 @@
         await deps.sleep(c.submitDelay);
         config.markPendingAutoLogin("zhjw", cred.username);
         loginButton.click();
+        scheduleAutoRetry();
       }
       return true;
     }
@@ -1287,11 +1288,29 @@
         await deps.sleep(c.submitDelay);
         config.markPendingAutoLogin("cas", cred.username);
         els.loginButton.click();
+        scheduleAutoRetry();
       }
       return true;
     }
     __name(handleUnifiedAuthLogin, "handleUnifiedAuthLogin");
     let loginRunning = false;
+    function scheduleAutoRetry() {
+      setTimeout(() => {
+        try {
+          const c = config.loginConf();
+          if (!c.enabled) return;
+          const guard = config.getLoginGuardState();
+          if (!guard.identity || guard.paused) return;
+          const stillLogin = !!document.querySelector('input[type="password"]');
+          if (stillLogin) {
+            deps.log("登录失败，自动重试");
+            mainLogin();
+          }
+        } catch (_) {
+        }
+      }, 2500);
+    }
+    __name(scheduleAutoRetry, "scheduleAutoRetry");
     async function mainLogin() {
       if (loginRunning) return;
       loginRunning = true;

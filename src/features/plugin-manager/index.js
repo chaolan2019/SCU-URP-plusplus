@@ -254,7 +254,7 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
     sec.innerHTML = `
       <h3>辅助插件</h3>
       <div class="urppp-plugin-status" id="urppp-plugin-status">检查中…</div>
-      <div class="urpppp-entry-grid" style="margin-top:8px;grid-template-columns:1fr 1fr">
+      <div class="urppp-plugin-actions">
         <button type="button" class="urppp-set-btn" id="urppp-plugin-install">装载辅助插件</button>
         <button type="button" class="urppp-set-btn ghost" id="urppp-plugin-store">插件商店</button>
       </div>
@@ -292,8 +292,7 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
       const subpanels = collectSubpanels();
       if (subpanels && Object.keys(subpanels).length) {
         const grid = doc.createElement('div');
-        grid.className = 'urpppp-entry-grid';
-        grid.style.gridTemplateColumns = '1fr 1fr';
+        grid.className = 'urppp-plugin-sub';
         Object.keys(subpanels).forEach((kind) => {
           const b = doc.createElement('button');
           b.type = 'button';

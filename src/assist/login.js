@@ -270,6 +270,7 @@ export function createLoginAssist({ config, storage, deps }) {
       await deps.sleep(c.submitDelay);
       config.markPendingAutoLogin('zhjw', cred.username);
       loginButton.click();
+      scheduleAutoRetry();
     }
     return true;
   }
@@ -321,11 +322,30 @@ export function createLoginAssist({ config, storage, deps }) {
       await deps.sleep(c.submitDelay);
       config.markPendingAutoLogin('cas', cred.username);
       els.loginButton.click();
+      scheduleAutoRetry();
     }
     return true;
   }
 
   let loginRunning = false;
+
+  // 登录失败（提交后仍停留在登录表单）自动重试，直到达到手动接管上限
+  function scheduleAutoRetry() {
+    setTimeout(() => {
+      try {
+        const c = config.loginConf();
+        if (!c.enabled) return;
+        const guard = config.getLoginGuardState();
+        if (!guard.identity || guard.paused) return; // 从未尝试或已达手动接管上限
+        const stillLogin = !!document.querySelector('input[type="password"]');
+        if (stillLogin) {
+          deps.log('登录失败，自动重试');
+          mainLogin();
+        }
+      } catch (_) { /* ignore */ }
+    }, 2500);
+  }
+
   async function mainLogin() {
     if (loginRunning) return;
     loginRunning = true;

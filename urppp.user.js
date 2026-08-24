@@ -1658,7 +1658,7 @@
       sec.innerHTML = `
       <h3>辅助插件</h3>
       <div class="urppp-plugin-status" id="urppp-plugin-status">检查中…</div>
-      <div class="urpppp-entry-grid" style="margin-top:8px;grid-template-columns:1fr 1fr">
+      <div class="urppp-plugin-actions">
         <button type="button" class="urppp-set-btn" id="urppp-plugin-install">装载辅助插件</button>
         <button type="button" class="urppp-set-btn ghost" id="urppp-plugin-store">插件商店</button>
       </div>
@@ -1691,8 +1691,7 @@
         const subpanels = collectSubpanels();
         if (subpanels && Object.keys(subpanels).length) {
           const grid = doc.createElement("div");
-          grid.className = "urpppp-entry-grid";
-          grid.style.gridTemplateColumns = "1fr 1fr";
+          grid.className = "urppp-plugin-sub";
           Object.keys(subpanels).forEach((kind) => {
             const b = doc.createElement("button");
             b.type = "button";
@@ -9758,6 +9757,15 @@ html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-feature-input,html[data
 html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border:0!important;background:var(--neu-base)!important;box-shadow:var(--neu-inset-soft)!important}
 @media(max-width:520px){#urppp-settings-panel .urppp-privacy-groups{grid-template-columns:1fr}#urppp-settings-panel .urppp-privacy-group{padding:10px}#urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left:0;border-top:1px solid var(--border)}#urppp-settings-panel .urppp-privacy-field{grid-template-columns:18px minmax(92px,.72fr) minmax(0,1.28fr);min-height:44px;gap:7px;padding:0}#urppp-settings-panel .urppp-privacy-field>.urppp-feature-input{grid-column:auto;height:36px;font-size:12px}#urppp-settings-panel .urppp-privacy-note{grid-column:auto;padding-left:0;font-size:11px}html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-top:2px solid var(--text)}html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-top:3px solid #000}#urppp-settings-panel .urppp-direct-edit-control{align-items:flex-start}#urppp-settings-panel .urppp-direct-edit-control span{max-width:170px}#urppp-settings-panel .urppp-identity-editor{grid-template-columns:1fr;padding:11px}#urppp-settings-panel .urppp-identity-preview{grid-template-columns:auto 64px;justify-content:start;align-items:center}#urppp-settings-panel .urppp-feature-row{grid-template-columns:minmax(96px,.72fr) minmax(0,1.28fr);gap:8px}#urppp-settings-panel .urppp-feature-actions>.urppp-set-btn{flex:1 1 100%}}
 @media(max-width:700px){#urppp-settings-panel .urppp-feature-row{grid-template-columns:1fr}}
+
+/* 辅助插件装载区（主插件侧，不依赖辅助 assist.css，首次加载即生效） */
+#urppp-settings-panel .urppp-plugin-sec{margin-top:12px}
+#urppp-settings-panel .urppp-plugin-status{font-size:12px;color:var(--text-secondary,#667085);margin:4px 0 6px}
+#urppp-settings-panel .urppp-plugin-status.ok{color:#15803d}
+#urppp-settings-panel .urppp-plugin-status.err{color:#b91c1c}
+#urppp-settings-panel .urppp-plugin-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+#urppp-settings-panel .urppp-plugin-sub{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+#urppp-settings-panel .urppp-plugin-sec .urppp-set-btn{width:100%;justify-content:center}
 `;
 
   // src/styles/table-beautify.css
@@ -17162,6 +17170,32 @@ ${arcs}
     } catch (_) {
     }
     const URPPP_VERSION = "1.9.0";
+    if (/^id\./i.test(String(location.hostname || ""))) {
+      try {
+        const authPlugin = createPluginManager({
+          GM: {
+            getValue: typeof GM_getValue === "function" ? GM_getValue : null,
+            setValue: typeof GM_setValue === "function" ? GM_setValue : null,
+            xmlHttp: typeof GM_xmlhttpRequest === "function" ? GM_xmlhttpRequest : null,
+            addStyle: typeof GM_addStyle === "function" ? GM_addStyle : null
+          },
+          doc: document,
+          hostInfo: { version: URPPP_VERSION },
+          uiDeps: { openSubpanel: /* @__PURE__ */ __name(() => {
+          }, "openSubpanel") }
+        });
+        const boot = /* @__PURE__ */ __name(() => {
+          try {
+            authPlugin.bootFromCache("assist");
+          } catch (_) {
+          }
+        }, "boot");
+        if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+        else boot();
+      } catch (_) {
+      }
+      return;
+    }
     const URPPP_UPDATE = {
       mainRaw: "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js",
       assistRaw: "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js",

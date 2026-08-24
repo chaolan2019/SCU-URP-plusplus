@@ -120,6 +120,28 @@ import { createNavbarController } from '../features/navigation/navbar.js';
 
   // 与脚本头 @version 保持同步
   const URPPP_VERSION = '1.9.0';
+
+  // 统一认证页(id.scu)：主插件不做任何美化，仅作为宿主注入辅助插件(登录助手/2FA/会话保持)
+  // 避免主插件的样式/布局污染统一认证网站界面，同时保留辅助插件的登录相关功能
+  if (/^id\./i.test(String(location.hostname || ''))) {
+    try {
+      const authPlugin = createPluginManager({
+        GM: {
+          getValue: typeof GM_getValue === 'function' ? GM_getValue : null,
+          setValue: typeof GM_setValue === 'function' ? GM_setValue : null,
+          xmlHttp: typeof GM_xmlhttpRequest === 'function' ? GM_xmlhttpRequest : null,
+          addStyle: typeof GM_addStyle === 'function' ? GM_addStyle : null,
+        },
+        doc: document,
+        hostInfo: { version: URPPP_VERSION },
+        uiDeps: { openSubpanel: () => {} },
+      });
+      const boot = () => { try { authPlugin.bootFromCache('assist'); } catch (_) { /* ignore */ } };
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+      else boot();
+    } catch (_) { /* ignore */ }
+    return;
+  }
   const URPPP_UPDATE = {
     mainRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js',
     assistRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js',

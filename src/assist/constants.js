@@ -47,7 +47,7 @@ export const SESSION_KEYS = {
 export const DEFAULT_KEEPALIVE_URL = '/student/courseSelect/thisSemesterCurriculum/index';
 export const DEFAULT_KEEPALIVE_INTERVAL = 8 * 60; // 秒
 
-export const LOGIN_FAILURE_LIMIT = 4;
+export const LOGIN_FAILURE_LIMIT = 3;
 export const LOGIN_PENDING_TTL = 10 * 60 * 1000;
 export const DEFAULT_OCR_EXAMPLE = 'https://ocr.yanjiangrd.site/api/ocr';
 export const EVALUATION_LIST_PATH = '/student/teachingEvaluation/newEvaluation/index';
