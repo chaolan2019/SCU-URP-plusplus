@@ -1261,11 +1261,27 @@
       return { usernameInput, passwordInput, captchaInput, captchaImg, loginButton };
     }
     __name(findCasElements, "findCasElements");
+    function ensureAccountLoginTab() {
+      const cand = Array.from(document.querySelectorAll("a, li, button, span, div"));
+      const tab = cand.find((t) => (t.textContent || "").replace(/\s+/g, "") === "账号登录");
+      if (tab) {
+        try {
+          tab.click();
+        } catch (_) {
+        }
+      }
+    }
+    __name(ensureAccountLoginTab, "ensureAccountLoginTab");
     async function handleUnifiedAuthLogin() {
       const bodyText = document.body && document.body.innerText || "";
       const isUnifiedAuth = /统一身份认证/.test(bodyText) || !!document.querySelector("img.captcha-img") || /frontend\/login|id\.scu\.edu\.cn|enduser\/sp\/sso/i.test(location.href);
       if (!isUnifiedAuth) return false;
-      const els = findCasElements();
+      let els = findCasElements();
+      if (!els.usernameInput || !els.passwordInput) {
+        ensureAccountLoginTab();
+        await deps.sleep(350);
+        els = findCasElements();
+      }
       if (!els.usernameInput || !els.passwordInput || !els.captchaInput || !els.captchaImg) return false;
       deps.log("统一认证页");
       const ready = ensureReadyForLogin("cas");

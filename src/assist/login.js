@@ -295,6 +295,13 @@ export function createLoginAssist({ config, storage, deps }) {
     return { usernameInput, passwordInput, captchaInput, captchaImg, loginButton };
   }
 
+  function ensureAccountLoginTab() {
+    // 统一认证默认停在「扫码登录」，先切到「账号登录」再找表单
+    const cand = Array.from(document.querySelectorAll('a, li, button, span, div'));
+    const tab = cand.find((t) => (t.textContent || '').replace(/\s+/g, '') === '账号登录');
+    if (tab) { try { tab.click(); } catch (_) { /* ignore */ } }
+  }
+
   async function handleUnifiedAuthLogin() {
     const bodyText = (document.body && document.body.innerText) || '';
     const isUnifiedAuth =
@@ -302,7 +309,13 @@ export function createLoginAssist({ config, storage, deps }) {
       !!document.querySelector('img.captcha-img') ||
       /frontend\/login|id\.scu\.edu\.cn|enduser\/sp\/sso/i.test(location.href);
     if (!isUnifiedAuth) return false;
-    const els = findCasElements();
+    let els = findCasElements();
+    if (!els.usernameInput || !els.passwordInput) {
+      // 默认在扫码/短信登录，切到账号登录后重新取表单
+      ensureAccountLoginTab();
+      await deps.sleep(350);
+      els = findCasElements();
+    }
     if (!els.usernameInput || !els.passwordInput || !els.captchaInput || !els.captchaImg) return false;
     deps.log('统一认证页');
     const ready = ensureReadyForLogin('cas');
