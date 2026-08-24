@@ -1351,15 +1351,35 @@
         try {
           const c = config.loginConf();
           if (!c.enabled) return;
-          const stillLogin = !!document.querySelector('input[type="password"]');
-          if (stillLogin) {
-            const guard = config.getLoginGuardState(kind);
+          const guard = config.getLoginGuardState(kind);
+          if (kind === "cas") {
+            const bodyText = document.body && document.body.innerText || "";
+            const inCas = /id\.scu\.edu\.cn|enduser\/sp\/sso|frontend\/login/i.test(location.href) || /统一身份认证|账号登录|验证码/.test(bodyText.slice(0, 500));
+            if (!inCas) {
+              config.clearLoginGuardAfterSuccess("cas");
+              return;
+            }
             if (guard.identity && !guard.paused) {
-              deps.log("登录失败，自动重试");
+              try {
+                console.log("[URP++辅助][guard] 统一认证失败，自动重试");
+              } catch (_) {
+              }
+              ensureAccountLoginTab();
               mainLogin();
             }
           } else {
-            config.clearLoginGuardAfterSuccess(kind);
+            const stillLogin = !!document.querySelector('input[type="password"]');
+            if (!stillLogin) {
+              config.clearLoginGuardAfterSuccess("zhjw");
+              return;
+            }
+            if (guard.identity && !guard.paused) {
+              try {
+                console.log("[URP++辅助][guard] 教务登录失败，自动重试");
+              } catch (_) {
+              }
+              mainLogin();
+            }
           }
         } catch (_) {
         }
@@ -2689,7 +2709,7 @@
   // src/userscripts/urpppp.entry.js
   (function() {
     "use strict";
-    const URPPPP_VERSION = "1.5.2";
+    const URPPPP_VERSION = "1.5.3";
     const URPPPP_RAW_URL = "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js";
     const URPPPP_SOURCES = [
       "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json",

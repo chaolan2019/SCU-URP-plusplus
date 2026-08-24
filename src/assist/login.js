@@ -341,22 +341,40 @@ export function createLoginAssist({ config, storage, deps }) {
 
   let loginRunning = false;
 
-  // 提交后检测：表单消失=登录成功跳转→清失败计数；仍在表单=失败→自动重试(未达上限时)
+  // 提交后检测：CAS 以“离开统一认证页”判成功(URL/特征不再匹配)，仍在则切回账号tab并自动重试；
+  // zhjw 以“密码框消失”判成功，仍在则自动重试。均未达上限时重试。
   function scheduleAutoRetry(kind) {
     setTimeout(() => {
       try {
         const c = config.loginConf();
         if (!c.enabled) return;
-        const stillLogin = !!document.querySelector('input[type="password"]');
-        if (stillLogin) {
-          const guard = config.getLoginGuardState(kind);
+        const guard = config.getLoginGuardState(kind);
+        if (kind === 'cas') {
+          const bodyText = (document.body && document.body.innerText) || '';
+          const inCas = /id\.scu\.edu\.cn|enduser\/sp\/sso|frontend\/login/i.test(location.href)
+            || /统一身份认证|账号登录|验证码/.test(bodyText.slice(0, 500));
+          if (!inCas) {
+            // 已离开统一认证页 = 登录成功跳转 → 清该站点失败计数
+            config.clearLoginGuardAfterSuccess('cas');
+            return;
+          }
           if (guard.identity && !guard.paused) {
-            deps.log('登录失败，自动重试');
+            // 还在统一认证页 = 失败(或待重试)，切回账号登录 tab 再自动重试
+            try { console.log('[URP++辅助][guard] 统一认证失败，自动重试'); } catch (_) {}
+            ensureAccountLoginTab();
             mainLogin();
           }
         } else {
-          // 登录表单消失 = 已成功跳转 → 清除对应站点失败计数，避免下次误报“已达上限”
-          config.clearLoginGuardAfterSuccess(kind);
+          const stillLogin = !!document.querySelector('input[type="password"]');
+          if (!stillLogin) {
+            // 密码框消失 = 已成功跳转 → 清对应站点失败计数，避免下次误报“已达上限”
+            config.clearLoginGuardAfterSuccess('zhjw');
+            return;
+          }
+          if (guard.identity && !guard.paused) {
+            try { console.log('[URP++辅助][guard] 教务登录失败，自动重试'); } catch (_) {}
+            mainLogin();
+          }
         }
       } catch (_) { /* ignore */ }
     }, 3000);
