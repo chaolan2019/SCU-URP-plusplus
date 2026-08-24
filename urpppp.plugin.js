@@ -86,8 +86,12 @@
       };
     }
     __name(emptyLoginGuardState, "emptyLoginGuardState");
-    function getLoginGuardState() {
-      const raw = getJSON(LOGIN_KEYS.guardState, {}) || {};
+    function guardKey(kind) {
+      return LOGIN_KEYS.guardState + (kind ? ":" + kind : "");
+    }
+    __name(guardKey, "guardKey");
+    function getLoginGuardState(kind) {
+      const raw = getJSON(guardKey(kind), {}) || {};
       const failures = Math.max(0, Math.min(LOGIN_FAILURE_LIMIT, Number(raw.failures) || 0));
       const pending = raw.pending && typeof raw.pending === "object" ? {
         kind: String(raw.pending.kind || ""),
@@ -103,14 +107,14 @@
       };
     }
     __name(getLoginGuardState, "getLoginGuardState");
-    function saveLoginGuardState(state) {
+    function saveLoginGuardState(kind, state) {
       const next = Object.assign(emptyLoginGuardState(""), state || {}, { updatedAt: now() });
-      setJSON(LOGIN_KEYS.guardState, next);
+      setJSON(guardKey(kind), next);
       return next;
     }
     __name(saveLoginGuardState, "saveLoginGuardState");
-    function resetLoginGuardState(identity) {
-      return saveLoginGuardState(emptyLoginGuardState(identity));
+    function resetLoginGuardState(kind, identity) {
+      return saveLoginGuardState(kind, emptyLoginGuardState(identity));
     }
     __name(resetLoginGuardState, "resetLoginGuardState");
     function loginIdentity(_kind, username) {
@@ -119,24 +123,24 @@
     __name(loginIdentity, "loginIdentity");
     function ensureLoginGuardIdentity(kind, username) {
       const identity = loginIdentity(kind, username);
-      const state = getLoginGuardState();
-      if (state.identity && state.identity !== identity) return resetLoginGuardState(identity);
-      if (!state.identity) return saveLoginGuardState(Object.assign(state, { identity }));
+      const state = getLoginGuardState(kind);
+      if (state.identity && state.identity !== identity) return resetLoginGuardState(kind, identity);
+      if (!state.identity) return saveLoginGuardState(kind, Object.assign(state, { identity }));
       return state;
     }
     __name(ensureLoginGuardIdentity, "ensureLoginGuardIdentity");
     function beginLoginProcess(kind, username) {
       const identity = loginIdentity(kind, username);
-      const state = getLoginGuardState();
+      const state = getLoginGuardState(kind);
       const pending = state.pending;
       const fresh = pending && pending.createdAt > 0 && now() - pending.createdAt <= LOGIN_PENDING_TTL;
       const continuesPreviousAttempt = fresh && pending.identity === identity;
-      if (!continuesPreviousAttempt) return resetLoginGuardState(identity);
+      if (!continuesPreviousAttempt) return resetLoginGuardState(kind, identity);
       state.identity = identity;
       state.pending = null;
       state.failures = Math.min(LOGIN_FAILURE_LIMIT, state.failures + 1);
       state.paused = state.failures >= LOGIN_FAILURE_LIMIT;
-      return saveLoginGuardState(state);
+      return saveLoginGuardState(kind, state);
     }
     __name(beginLoginProcess, "beginLoginProcess");
     function markPendingAutoLogin(kind, username) {
@@ -146,14 +150,18 @@
         identity: state.identity,
         createdAt: now()
       };
-      return saveLoginGuardState(state);
+      return saveLoginGuardState(kind, state);
     }
     __name(markPendingAutoLogin, "markPendingAutoLogin");
-    function clearLoginGuardAfterSuccess() {
-      const state = getLoginGuardState();
-      if (state.failures || state.paused || state.pending) resetLoginGuardState("");
+    function clearLoginGuardAfterSuccess(kind) {
+      const state = getLoginGuardState(kind);
+      if (state.failures || state.paused || state.pending) resetLoginGuardState(kind, "");
     }
     __name(clearLoginGuardAfterSuccess, "clearLoginGuardAfterSuccess");
+    function resetAllLoginGuard() {
+      ["zhjw", "cas", ""].forEach((k) => resetLoginGuardState(k, ""));
+    }
+    __name(resetAllLoginGuard, "resetAllLoginGuard");
     function evalConf() {
       return {
         enabled: getBool(EVALUATION_KEYS.enabled, true),
@@ -213,6 +221,7 @@
       beginLoginProcess,
       markPendingAutoLogin,
       clearLoginGuardAfterSuccess,
+      resetAllLoginGuard,
       evalConf,
       getBatchState,
       setBatchState,
@@ -1039,7 +1048,7 @@
       enabledBtn.onclick = () => {
         enabled = !enabled;
         setVal(LOGIN.enabled, enabled);
-        if (enabled) config.resetLoginGuardState("");
+        if (enabled) config.resetAllLoginGuard();
         deps.syncToggle(enabledBtn, enabled, "功能：开", "功能：关");
       };
       autoBtn.onclick = () => {
@@ -1072,7 +1081,7 @@
           sec.querySelector("#urpppp-login-zhjw-pass").value = "";
           sec.querySelector("#urpppp-login-cas-pass").value = "";
         }
-        config.resetLoginGuardState("");
+        config.resetAllLoginGuard();
         deps.setStatus("urpppp-login-status", persistPassword ? "登录设置已保存；密码将持久保存在脚本存储中，请确认你接受风险。" : "登录设置已保存；密码未持久化，连续失败计数已清零", "ok");
       };
       sec.querySelector("#urpppp-login-clear").onclick = () => {
@@ -1087,7 +1096,7 @@
         sec.querySelector("#urpppp-login-cas-pass").value = "";
         persistPassword = false;
         deps.syncToggle(persistBtn, false, "持久保存密码：开", "持久保存密码：关");
-        config.resetLoginGuardState("");
+        config.resetAllLoginGuard();
         deps.setStatus("urpppp-login-status", "已清除账密和连续失败计数", "ok");
       };
     }
@@ -1178,7 +1187,7 @@
     }
     __name(removeLoginGuardNotice, "removeLoginGuardNotice");
     function resumeAutoLogin() {
-      config.resetLoginGuardState("");
+      config.resetAllLoginGuard();
       removeLoginGuardNotice();
       setTimeout(() => {
         mainLogin();
@@ -1244,7 +1253,7 @@
         await deps.sleep(c.submitDelay);
         config.markPendingAutoLogin("zhjw", cred.username);
         loginButton.click();
-        scheduleAutoRetry();
+        scheduleAutoRetry("zhjw");
       }
       return true;
     }
@@ -1301,27 +1310,30 @@
         await deps.sleep(c.submitDelay);
         config.markPendingAutoLogin("cas", cred.username);
         els.loginButton.click();
-        scheduleAutoRetry();
+        scheduleAutoRetry("cas");
       }
       return true;
     }
     __name(handleUnifiedAuthLogin, "handleUnifiedAuthLogin");
     let loginRunning = false;
-    function scheduleAutoRetry() {
+    function scheduleAutoRetry(kind) {
       setTimeout(() => {
         try {
           const c = config.loginConf();
           if (!c.enabled) return;
-          const guard = config.getLoginGuardState();
-          if (!guard.identity || guard.paused) return;
           const stillLogin = !!document.querySelector('input[type="password"]');
           if (stillLogin) {
-            deps.log("登录失败，自动重试");
-            mainLogin();
+            const guard = config.getLoginGuardState(kind);
+            if (guard.identity && !guard.paused) {
+              deps.log("登录失败，自动重试");
+              mainLogin();
+            }
+          } else {
+            config.clearLoginGuardAfterSuccess(kind);
           }
         } catch (_) {
         }
-      }, 2500);
+      }, 3e3);
     }
     __name(scheduleAutoRetry, "scheduleAutoRetry");
     async function mainLogin() {
@@ -2670,6 +2682,7 @@
       beginLoginProcess,
       clearBatchState,
       clearLoginGuardAfterSuccess,
+      resetAllLoginGuard,
       evalConf,
       getBatchState,
       getLoginGuardState,
@@ -2702,7 +2715,7 @@
     }
     __name(syncToggle, "syncToggle");
     const login = createLoginAssist({
-      config: { loginConf, beginLoginProcess, markPendingAutoLogin, resetLoginGuardState },
+      config: { loginConf, beginLoginProcess, markPendingAutoLogin, resetLoginGuardState, resetAllLoginGuard },
       storage: { getBool, setVal },
       deps: {
         constants: { LOGIN, LOGIN_FAILURE_LIMIT, DEFAULT_OCR_EXAMPLE },
@@ -2870,7 +2883,7 @@
       if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mainLogin);
       else mainLogin();
     } else {
-      clearLoginGuardAfterSuccess();
+      resetAllLoginGuard();
     }
     if (is2faDomain()) install2faAutoSend();
     startKeepAlive();

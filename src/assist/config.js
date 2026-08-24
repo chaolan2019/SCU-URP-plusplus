@@ -44,8 +44,13 @@ export function createAssistConfig(storage, now = () => Date.now()) {
     };
   }
 
-  function getLoginGuardState() {
-    const raw = getJSON(LOGIN_KEYS.guardState, {}) || {};
+  function guardKey(kind) {
+    // 教务(zhjw)与统一认证(cas)分开记录失败次数
+    return LOGIN_KEYS.guardState + (kind ? ':' + kind : '');
+  }
+
+  function getLoginGuardState(kind) {
+    const raw = getJSON(guardKey(kind), {}) || {};
     const failures = Math.max(0, Math.min(LOGIN_FAILURE_LIMIT, Number(raw.failures) || 0));
     const pending = raw.pending && typeof raw.pending === 'object'
       ? {
@@ -63,14 +68,14 @@ export function createAssistConfig(storage, now = () => Date.now()) {
     };
   }
 
-  function saveLoginGuardState(state) {
+  function saveLoginGuardState(kind, state) {
     const next = Object.assign(emptyLoginGuardState(''), state || {}, { updatedAt: now() });
-    setJSON(LOGIN_KEYS.guardState, next);
+    setJSON(guardKey(kind), next);
     return next;
   }
 
-  function resetLoginGuardState(identity) {
-    return saveLoginGuardState(emptyLoginGuardState(identity));
+  function resetLoginGuardState(kind, identity) {
+    return saveLoginGuardState(kind, emptyLoginGuardState(identity));
   }
 
   function loginIdentity(_kind, username) {
@@ -79,24 +84,24 @@ export function createAssistConfig(storage, now = () => Date.now()) {
 
   function ensureLoginGuardIdentity(kind, username) {
     const identity = loginIdentity(kind, username);
-    const state = getLoginGuardState();
-    if (state.identity && state.identity !== identity) return resetLoginGuardState(identity);
-    if (!state.identity) return saveLoginGuardState(Object.assign(state, { identity }));
+    const state = getLoginGuardState(kind);
+    if (state.identity && state.identity !== identity) return resetLoginGuardState(kind, identity);
+    if (!state.identity) return saveLoginGuardState(kind, Object.assign(state, { identity }));
     return state;
   }
 
   function beginLoginProcess(kind, username) {
     const identity = loginIdentity(kind, username);
-    const state = getLoginGuardState();
+    const state = getLoginGuardState(kind);
     const pending = state.pending;
     const fresh = pending && pending.createdAt > 0 && now() - pending.createdAt <= LOGIN_PENDING_TTL;
     const continuesPreviousAttempt = fresh && pending.identity === identity;
-    if (!continuesPreviousAttempt) return resetLoginGuardState(identity);
+    if (!continuesPreviousAttempt) return resetLoginGuardState(kind, identity);
     state.identity = identity;
     state.pending = null;
     state.failures = Math.min(LOGIN_FAILURE_LIMIT, state.failures + 1);
     state.paused = state.failures >= LOGIN_FAILURE_LIMIT;
-    return saveLoginGuardState(state);
+    return saveLoginGuardState(kind, state);
   }
 
   function markPendingAutoLogin(kind, username) {
@@ -106,12 +111,17 @@ export function createAssistConfig(storage, now = () => Date.now()) {
       identity: state.identity,
       createdAt: now(),
     };
-    return saveLoginGuardState(state);
+    return saveLoginGuardState(kind, state);
   }
 
-  function clearLoginGuardAfterSuccess() {
-    const state = getLoginGuardState();
-    if (state.failures || state.paused || state.pending) resetLoginGuardState('');
+  function clearLoginGuardAfterSuccess(kind) {
+    const state = getLoginGuardState(kind);
+    if (state.failures || state.paused || state.pending) resetLoginGuardState(kind, '');
+  }
+
+  // 清除全部站点（教务/统一认证/基础）的失败计数
+  function resetAllLoginGuard() {
+    ['zhjw', 'cas', ''].forEach((k) => resetLoginGuardState(k, ''));
   }
 
   function evalConf() {
@@ -173,6 +183,7 @@ export function createAssistConfig(storage, now = () => Date.now()) {
     beginLoginProcess,
     markPendingAutoLogin,
     clearLoginGuardAfterSuccess,
+    resetAllLoginGuard,
     evalConf,
     getBatchState,
     setBatchState,

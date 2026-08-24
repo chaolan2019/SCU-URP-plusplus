@@ -74,6 +74,7 @@ import assistStyles from '../styles/assist.css';
     beginLoginProcess,
     clearBatchState,
     clearLoginGuardAfterSuccess,
+    resetAllLoginGuard,
     evalConf,
     getBatchState,
     getLoginGuardState,
@@ -109,7 +110,7 @@ import assistStyles from '../styles/assist.css';
 
   // ===================== 功能域装配 =====================
   const login = createLoginAssist({
-    config: { loginConf, beginLoginProcess, markPendingAutoLogin, resetLoginGuardState },
+    config: { loginConf, beginLoginProcess, markPendingAutoLogin, resetLoginGuardState, resetAllLoginGuard },
     storage: { getBool, setVal },
     deps: {
       constants: { LOGIN, LOGIN_FAILURE_LIMIT, DEFAULT_OCR_EXAMPLE },
@@ -278,8 +279,8 @@ import assistStyles from '../styles/assist.css';
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mainLogin);
     else mainLogin();
   } else {
-    // 非登录界面（含 id.scu 已登录端）→ 清除失败计数，避免误报“已达上限暂停”
-    clearLoginGuardAfterSuccess();
+    // 非登录界面（含 id.scu 已登录端）→ 清除全部失败计数，避免误报“已达上限暂停”
+    resetAllLoginGuard();
   }
 
   // 2FA 界面为 SPA 路由切换(#/login → #/second/auth，页面不重载)：
