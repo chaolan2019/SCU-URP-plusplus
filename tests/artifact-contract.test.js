@@ -19,11 +19,13 @@ const assistMetadataUrl = new URL('../src/metadata/urpppp.json', import.meta.url
 
 test('generated artifacts remain installable readable single files', async () => {
   for (const artifact of artifacts) {
-    const [source, info, metadataText] = await Promise.all([
+    const [raw, info, metadataText] = await Promise.all([
       readFile(artifact.file, 'utf8'),
       stat(artifact.file),
       readFile(artifact.metadata, 'utf8'),
     ]);
+    // 归一化换行：兼容 Git 在部分环境把产物转成 CRLF（不影响用户脚本可执行性）
+    const source = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     const version = JSON.parse(metadataText).version;
     assert.ok(source.startsWith('// ==UserScript==\n'));
     assert.match(source, new RegExp(`^// @version\\s+${version.replaceAll('.', '\\.')}$`, 'm'));
