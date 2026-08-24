@@ -10040,10 +10040,9 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-settings-panel .urppp-store-ops .urppp-set-btn,#urppp-settings-panel .urppp-store-ops button{height:30px;padding:0 12px;font-size:12px;font-weight:650;border-radius:var(--radius-sm)}
 #urppp-settings-panel .urppp-store-theme-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:26px}
 #urppp-settings-panel .urppp-store-theme-grid .urppp-skin-card{margin:0}
-#urppp-settings-panel .urppp-store-settings{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border,#e5e5ea);border-radius:var(--radius-sm);margin-bottom:10px}
-#urppp-settings-panel .urppp-store-settings span{font-size:12px;color:var(--text-secondary,#5b5f69);flex:1;min-width:96px}
-#urppp-settings-panel .urppp-store-settings .urppp-set-follow{width:auto;min-width:72px;flex:0 0 auto;margin-top:0}
-#urppp-settings-panel .urppp-store-settings .urppp-set-btn{width:100%;flex-basis:100%}
+#urppp-settings-panel .urppp-store-settings{display:flex;flex-direction:column;gap:10px;padding:0;margin:0 0 12px}
+#urppp-settings-panel .urppp-store-settings .urppp-set-follow,#urppp-settings-panel .urppp-store-settings .urppp-set-btn{width:100%;margin-top:0}
+#urppp-settings-panel .urppp-store-version{font-size:12px;color:var(--text-secondary,#5b5f69);padding:0 2px}
 #urppp-settings-panel .urppp-store-ops{display:flex;gap:8px;flex:0 0 auto}
 `;
 
@@ -24907,7 +24906,9 @@ ${arcs}
     }
     __name(themeManageListHtml, "themeManageListHtml");
     function storeManageSettingsHtml() {
-      return `<div class="urppp-store-settings"><span>自动检查更新</span><button type="button" class="urppp-set-follow" data-store-auto-update>关</button><button type="button" class="urppp-set-btn" data-store-check-update>检查更新</button></div>`;
+      const assistV = pluginManager && pluginManager.api && pluginManager.api.get && pluginManager.api.get("assist") && pluginManager.api.get("assist").version || "";
+      const assistPart = assistV ? "；辅助插件：v" + escapeHtml(assistV) : "";
+      return `<button type="button" class="urppp-set-follow" data-store-auto-update>自动检测更新：关</button><button type="button" class="urppp-set-btn" data-store-check-update>检查更新</button><div class="urppp-store-version">当前主插件：v${escapeHtml(URPPP_VERSION)}${assistPart}</div>`;
     }
     __name(storeManageSettingsHtml, "storeManageSettingsHtml");
     function bindStoreManageSettings(root) {
@@ -24916,7 +24917,7 @@ ${arcs}
       if (!auto || !check) return;
       let on = GM_getValue("urppp_store_auto_update", false);
       const sync = /* @__PURE__ */ __name(() => {
-        auto.textContent = on ? "开" : "关";
+        auto.textContent = "自动检测更新：" + (on ? "开" : "关");
       }, "sync");
       sync();
       auto.addEventListener("click", () => {

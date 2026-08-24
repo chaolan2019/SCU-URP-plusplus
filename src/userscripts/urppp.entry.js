@@ -7593,9 +7593,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       </div>`).join('');
   }
 
-  // 管理界面设置条：自动检查更新开关 + 检查更新按钮
+  // 管理界面设置：自动检测更新（全宽开关按钮）+ 检查更新 + 版本信息
   function storeManageSettingsHtml() {
-    return `<div class="urppp-store-settings"><span>自动检查更新</span><button type="button" class="urppp-set-follow" data-store-auto-update>关</button><button type="button" class="urppp-set-btn" data-store-check-update>检查更新</button></div>`;
+    const assistV = (pluginManager && pluginManager.api && pluginManager.api.get && pluginManager.api.get('assist') && pluginManager.api.get('assist').version) || '';
+    const assistPart = assistV ? '；辅助插件：v' + escapeHtml(assistV) : '';
+    return `<button type="button" class="urppp-set-follow" data-store-auto-update>自动检测更新：关</button><button type="button" class="urppp-set-btn" data-store-check-update>检查更新</button><div class="urppp-store-version">当前主插件：v${escapeHtml(URPPP_VERSION)}${assistPart}</div>`;
   }
 
   function bindStoreManageSettings(root) {
@@ -7603,7 +7605,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const check = root.querySelector('[data-store-check-update]');
     if (!auto || !check) return;
     let on = GM_getValue('urppp_store_auto_update', false);
-    const sync = () => { auto.textContent = on ? '开' : '关'; };
+    const sync = () => { auto.textContent = '自动检测更新：' + (on ? '开' : '关'); };
     sync();
     auto.addEventListener('click', () => { on = !on; GM_setValue('urppp_store_auto_update', on); sync(); });
     check.addEventListener('click', async () => {
