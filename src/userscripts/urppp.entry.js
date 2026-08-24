@@ -7536,12 +7536,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         <div class="urppp-store-sub-head">
           <button type="button" class="urppp-store-sub-back" id="urppp-store-sub-back" aria-label="返回">←</button>
           <div class="urppp-store-sub-title" id="urppp-store-sub-title"></div>
-          <button type="button" class="urppp-store-sub-close" id="urppp-store-sub-close" aria-label="关闭">×</button>
         </div>
         <div class="urppp-store-sub-body" id="urppp-store-sub-body"></div>`;
       main.appendChild(sub);
       sub.querySelector('#urppp-store-sub-back').onclick = closeStoreSubPanel;
-      sub.querySelector('#urppp-store-sub-close').onclick = closeStoreSubPanel;
     }
     const title = sub.querySelector('#urppp-store-sub-title');
     const body = sub.querySelector('#urppp-store-sub-body');
@@ -7576,11 +7574,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   function themeDownloadListHtml() {
     const pending = SKIN_CATALOG.filter((s) => !s.installed);
     if (!pending.length) return '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无待下载主题</p></div>';
-    return pending.map((s) => `
-      <div class="urppp-store-item">
-        <div class="urppp-store-info"><strong>${escapeHtml(s.name)}</strong><span class="urppp-store-ver">v${escapeHtml(s.version || '')}</span><span class="urppp-store-state">未安装</span></div>
-        <div class="urppp-store-ops"><button type="button" data-store-theme="${escapeHtml(s.id)}">下载</button></div>
-      </div>`).join('');
+    return `<div class="urppp-store-theme-grid">${pending.map((s) => `
+      <div class="urppp-skin-card" data-skin="${escapeHtml(s.id)}">
+        <div class="urppp-skin-name">${escapeHtml(s.name)}</div>
+        <p class="urppp-skin-desc">${escapeHtml(s.desc)}</p>
+        <button type="button" class="urppp-skin-apply" data-store-theme="${escapeHtml(s.id)}">下载</button>
+      </div>`).join('')}</div>`;
   }
 
   // 主题管理列表（已装主题）
@@ -7594,6 +7593,26 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       </div>`).join('');
   }
 
+  // 管理界面设置条：自动检查更新开关 + 检查更新按钮
+  function storeManageSettingsHtml() {
+    return `<div class="urppp-store-settings"><span>自动检查更新</span><button type="button" class="urppp-set-follow" data-store-auto-update>关</button><button type="button" class="urppp-set-btn" data-store-check-update>检查更新</button></div>`;
+  }
+
+  function bindStoreManageSettings(root) {
+    const auto = root.querySelector('[data-store-auto-update]');
+    const check = root.querySelector('[data-store-check-update]');
+    if (!auto || !check) return;
+    let on = GM_getValue('urppp_store_auto_update', false);
+    const sync = () => { auto.textContent = on ? '开' : '关'; };
+    sync();
+    auto.addEventListener('click', () => { on = !on; GM_setValue('urppp_store_auto_update', on); sync(); });
+    check.addEventListener('click', async () => {
+      check.disabled = true; const old = check.textContent; check.textContent = '检查中…';
+      // P1 占位：正式检查待 P2 接入仓库清单后实现
+      setTimeout(() => { check.textContent = old; check.disabled = false; }, 1200);
+    });
+  }
+
   function renderThemeStoreBody(body) {
     body.innerHTML = `
       <div class="urppp-store-inline">
@@ -7603,7 +7622,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         </div>
         <div class="urppp-store-body">
           <div class="urppp-store-pane" data-pane="download">${themeDownloadListHtml()}</div>
-          <div class="urppp-store-pane" data-pane="manage" style="display:none">${themeManageListHtml()}</div>
+          <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}${themeManageListHtml()}</div>
         </div>
       </div>`;
     bindStoreTabs(body);
@@ -7616,6 +7635,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     body.querySelectorAll('[data-theme-use]').forEach((b) => {
       b.addEventListener('click', () => { if (setSkin(b.dataset.themeUse)) syncSettingsPanelUI(); });
     });
+    bindStoreManageSettings(body);
   }
 
   // 插件商店：下载占位 + 管理（已装插件 重新装载/卸载）
@@ -7625,7 +7645,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       ? items.map((p) => `
         <div class="urppp-store-item">
           <div class="urppp-store-info"><strong>${escapeHtml(p.name || p.id)}</strong><span class="urppp-store-ver">${p.version ? 'v' + escapeHtml(p.version) : ''}</span><span class="urppp-store-state ok">已装</span></div>
-          <div class="urppp-store-ops"><button type="button" data-plugin-op="reload" data-plugin-id="${escapeHtml(p.id)}">重新装载</button><button type="button" class="danger" data-plugin-op="unload" data-plugin-id="${escapeHtml(p.id)}">卸载</button></div>
+          <div class="urppp-store-ops"><button type="button" class="urppp-set-btn" data-plugin-op="reload" data-plugin-id="${escapeHtml(p.id)}">重新装载</button><button type="button" class="urppp-set-btn ghost" data-plugin-op="unload" data-plugin-id="${escapeHtml(p.id)}">卸载</button></div>
         </div>`).join('')
       : '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无插件</p><p class="urppp-store-sub">已装载的插件会显示在这里。</p></div>';
     body.innerHTML = `
@@ -7636,7 +7656,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         </div>
         <div class="urppp-store-body">
           <div class="urppp-store-pane" data-pane="download"><div class="urppp-store-empty"><p class="urppp-store-empty-title">敬请期待</p><p class="urppp-store-sub">插件市场正在筹备中，后续可从这里在线安装更多功能插件。</p></div></div>
-          <div class="urppp-store-pane" data-pane="manage" style="display:none">${manageHtml}</div>
+          <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}${manageHtml}</div>
         </div>
       </div>`;
     bindStoreTabs(body);
@@ -7651,9 +7671,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     body.querySelectorAll('[data-plugin-op="unload"]').forEach((b) => {
       b.addEventListener('click', () => {
         try { pluginManager.api.unregister(b.dataset.pluginId); } catch (_) {}
-        if (body && body.parentElement) { const cur = body.innerHTML; renderPluginStoreBody(body); if (cur !== body.innerHTML) {} }
+        renderPluginStoreBody(body);
       });
     });
+    bindStoreManageSettings(body);
   }
 
   function renderSkinCards(panel) {
@@ -7671,7 +7692,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       list.innerHTML = '<p class="urppp-set-tip">暂无可用风格</p>';
       return;
     }
-    SKIN_CATALOG.forEach((skin) => {
+    SKIN_CATALOG.filter((s) => s.installed).forEach((skin) => {
       const card = document.createElement('div');
       card.className = 'urppp-skin-card' + (skin.id === cur ? ' is-active' : '');
       card.dataset.skin = skin.id;

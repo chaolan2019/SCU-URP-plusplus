@@ -10020,8 +10020,8 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-settings-panel .urppp-store-subpanel.open{display:flex}
 @keyframes urpppStoreSubIn{from{opacity:0}to{opacity:1}}
 #urppp-settings-panel .urppp-store-sub-head{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--border,#e5e5ea)}
-#urppp-settings-panel .urppp-store-sub-back,#urppp-settings-panel .urppp-store-sub-close{width:30px;height:30px;border:1px solid var(--border,#e5e5ea);border-radius:9px;background:transparent;color:var(--text,#16181d);cursor:pointer;font-size:14px;line-height:1;display:grid;place-items:center;flex:none}
-#urppp-settings-panel .urppp-store-sub-back:hover,#urppp-settings-panel .urppp-store-sub-close:hover{background:color-mix(in srgb,var(--primary,#2563eb) 10%,transparent)}
+#urppp-settings-panel .urppp-store-sub-back{width:30px;height:30px;border:none;background:transparent;color:var(--text,#16181d);cursor:pointer;font-size:17px;line-height:1;display:grid;place-items:center;flex:none;border-radius:var(--radius-sm)}
+#urppp-settings-panel .urppp-store-sub-back:hover{background:color-mix(in srgb,var(--primary,#2563eb) 10%,transparent)}
 #urppp-settings-panel .urppp-store-sub-title{font-size:16px;font-weight:750;flex:1}
 #urppp-settings-panel .urppp-store-sub-body{flex:1;min-height:0;overflow:auto;padding:16px 22px}
 #urppp-settings-panel .urppp-store-sub-body .urppp-store-inline{margin-top:0;border-top:0;padding-top:0}
@@ -10034,7 +10034,7 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-settings-panel .urppp-store-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:120px;text-align:center;gap:6px;color:var(--text-secondary,#5b5f69);padding:16px 0}
 #urppp-settings-panel .urppp-store-empty-title{font-size:15px;font-weight:700;color:var(--text,#16181d)}
 #urppp-settings-panel .urppp-store-sub{font-size:12px;line-height:1.6;max-width:80%}
-#urppp-settings-panel .urppp-store-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid var(--border,#e5e5ea);border-radius:12px;margin-bottom:8px}
+#urppp-settings-panel .urppp-store-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid var(--border,#e5e5ea);border-radius:var(--radius-sm);margin-bottom:8px}
 #urppp-settings-panel .urppp-store-item:last-child{margin-bottom:0}
 #urppp-settings-panel .urppp-store-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 #urppp-settings-panel .urppp-store-info strong{font-size:14px;font-weight:700}
@@ -10042,7 +10042,12 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-settings-panel .urppp-store-state{font-size:11px;color:var(--text-secondary,#5b5f69);padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--primary,#2563eb) 10%,transparent)}
 #urppp-settings-panel .urppp-store-state.ok{color:#15803d;background:color-mix(in srgb,#15803d 12%,transparent)}
 #urppp-settings-panel .urppp-store-ops{display:flex;gap:8px;flex:0 0 auto}
-#urppp-settings-panel .urppp-store-ops .urppp-set-btn,#urppp-settings-panel .urppp-store-ops button{height:30px;padding:0 12px;font-size:12px;font-weight:650}
+#urppp-settings-panel .urppp-store-ops .urppp-set-btn,#urppp-settings-panel .urppp-store-ops button{height:30px;padding:0 12px;font-size:12px;font-weight:650;border-radius:var(--radius-sm)}
+#urppp-settings-panel .urppp-store-theme-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#urppp-settings-panel .urppp-store-theme-grid .urppp-skin-card{margin:0}
+#urppp-settings-panel .urppp-store-settings{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border,#e5e5ea);border-radius:var(--radius-sm);margin-bottom:10px;flex-wrap:wrap}
+#urppp-settings-panel .urppp-store-settings span{font-size:12px;color:var(--text-secondary,#5b5f69)}
+#urppp-settings-panel .urppp-store-settings .urppp-set-follow,#urppp-settings-panel .urppp-store-settings .urppp-set-btn{width:auto;min-width:72px}
 #urppp-settings-panel .urppp-store-ops{display:flex;gap:8px;flex:0 0 auto}
 `;
 
@@ -24850,12 +24855,10 @@ ${arcs}
         <div class="urppp-store-sub-head">
           <button type="button" class="urppp-store-sub-back" id="urppp-store-sub-back" aria-label="返回">←</button>
           <div class="urppp-store-sub-title" id="urppp-store-sub-title"></div>
-          <button type="button" class="urppp-store-sub-close" id="urppp-store-sub-close" aria-label="关闭">×</button>
         </div>
         <div class="urppp-store-sub-body" id="urppp-store-sub-body"></div>`;
         main.appendChild(sub);
         sub.querySelector("#urppp-store-sub-back").onclick = closeStoreSubPanel;
-        sub.querySelector("#urppp-store-sub-close").onclick = closeStoreSubPanel;
       }
       const title = sub.querySelector("#urppp-store-sub-title");
       const body = sub.querySelector("#urppp-store-sub-body");
@@ -24889,11 +24892,12 @@ ${arcs}
     function themeDownloadListHtml() {
       const pending = SKIN_CATALOG.filter((s) => !s.installed);
       if (!pending.length) return '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无待下载主题</p></div>';
-      return pending.map((s) => `
-      <div class="urppp-store-item">
-        <div class="urppp-store-info"><strong>${escapeHtml(s.name)}</strong><span class="urppp-store-ver">v${escapeHtml(s.version || "")}</span><span class="urppp-store-state">未安装</span></div>
-        <div class="urppp-store-ops"><button type="button" data-store-theme="${escapeHtml(s.id)}">下载</button></div>
-      </div>`).join("");
+      return `<div class="urppp-store-theme-grid">${pending.map((s) => `
+      <div class="urppp-skin-card" data-skin="${escapeHtml(s.id)}">
+        <div class="urppp-skin-name">${escapeHtml(s.name)}</div>
+        <p class="urppp-skin-desc">${escapeHtml(s.desc)}</p>
+        <button type="button" class="urppp-skin-apply" data-store-theme="${escapeHtml(s.id)}">下载</button>
+      </div>`).join("")}</div>`;
     }
     __name(themeDownloadListHtml, "themeDownloadListHtml");
     function themeManageListHtml() {
@@ -24906,6 +24910,35 @@ ${arcs}
       </div>`).join("");
     }
     __name(themeManageListHtml, "themeManageListHtml");
+    function storeManageSettingsHtml() {
+      return `<div class="urppp-store-settings"><span>自动检查更新</span><button type="button" class="urppp-set-follow" data-store-auto-update>关</button><button type="button" class="urppp-set-btn" data-store-check-update>检查更新</button></div>`;
+    }
+    __name(storeManageSettingsHtml, "storeManageSettingsHtml");
+    function bindStoreManageSettings(root) {
+      const auto = root.querySelector("[data-store-auto-update]");
+      const check = root.querySelector("[data-store-check-update]");
+      if (!auto || !check) return;
+      let on = GM_getValue("urppp_store_auto_update", false);
+      const sync = /* @__PURE__ */ __name(() => {
+        auto.textContent = on ? "开" : "关";
+      }, "sync");
+      sync();
+      auto.addEventListener("click", () => {
+        on = !on;
+        GM_setValue("urppp_store_auto_update", on);
+        sync();
+      });
+      check.addEventListener("click", async () => {
+        check.disabled = true;
+        const old = check.textContent;
+        check.textContent = "检查中…";
+        setTimeout(() => {
+          check.textContent = old;
+          check.disabled = false;
+        }, 1200);
+      });
+    }
+    __name(bindStoreManageSettings, "bindStoreManageSettings");
     function renderThemeStoreBody(body) {
       body.innerHTML = `
       <div class="urppp-store-inline">
@@ -24915,7 +24948,7 @@ ${arcs}
         </div>
         <div class="urppp-store-body">
           <div class="urppp-store-pane" data-pane="download">${themeDownloadListHtml()}</div>
-          <div class="urppp-store-pane" data-pane="manage" style="display:none">${themeManageListHtml()}</div>
+          <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}${themeManageListHtml()}</div>
         </div>
       </div>`;
       bindStoreTabs(body);
@@ -24935,6 +24968,7 @@ ${arcs}
           if (setSkin(b.dataset.themeUse)) syncSettingsPanelUI();
         });
       });
+      bindStoreManageSettings(body);
     }
     __name(renderThemeStoreBody, "renderThemeStoreBody");
     function renderPluginStoreBody(body) {
@@ -24942,7 +24976,7 @@ ${arcs}
       const manageHtml = items.length ? items.map((p) => `
         <div class="urppp-store-item">
           <div class="urppp-store-info"><strong>${escapeHtml(p.name || p.id)}</strong><span class="urppp-store-ver">${p.version ? "v" + escapeHtml(p.version) : ""}</span><span class="urppp-store-state ok">已装</span></div>
-          <div class="urppp-store-ops"><button type="button" data-plugin-op="reload" data-plugin-id="${escapeHtml(p.id)}">重新装载</button><button type="button" class="danger" data-plugin-op="unload" data-plugin-id="${escapeHtml(p.id)}">卸载</button></div>
+          <div class="urppp-store-ops"><button type="button" class="urppp-set-btn" data-plugin-op="reload" data-plugin-id="${escapeHtml(p.id)}">重新装载</button><button type="button" class="urppp-set-btn ghost" data-plugin-op="unload" data-plugin-id="${escapeHtml(p.id)}">卸载</button></div>
         </div>`).join("") : '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无插件</p><p class="urppp-store-sub">已装载的插件会显示在这里。</p></div>';
       body.innerHTML = `
       <div class="urppp-store-inline">
@@ -24952,7 +24986,7 @@ ${arcs}
         </div>
         <div class="urppp-store-body">
           <div class="urppp-store-pane" data-pane="download"><div class="urppp-store-empty"><p class="urppp-store-empty-title">敬请期待</p><p class="urppp-store-sub">插件市场正在筹备中，后续可从这里在线安装更多功能插件。</p></div></div>
-          <div class="urppp-store-pane" data-pane="manage" style="display:none">${manageHtml}</div>
+          <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}${manageHtml}</div>
         </div>
       </div>`;
       bindStoreTabs(body);
@@ -24979,14 +25013,10 @@ ${arcs}
             pluginManager.api.unregister(b.dataset.pluginId);
           } catch (_) {
           }
-          if (body && body.parentElement) {
-            const cur = body.innerHTML;
-            renderPluginStoreBody(body);
-            if (cur !== body.innerHTML) {
-            }
-          }
+          renderPluginStoreBody(body);
         });
       });
+      bindStoreManageSettings(body);
     }
     __name(renderPluginStoreBody, "renderPluginStoreBody");
     function renderSkinCards(panel) {
@@ -25004,7 +25034,7 @@ ${arcs}
         list.innerHTML = '<p class="urppp-set-tip">暂无可用风格</p>';
         return;
       }
-      SKIN_CATALOG.forEach((skin) => {
+      SKIN_CATALOG.filter((s) => s.installed).forEach((skin) => {
         const card = document.createElement("div");
         card.className = "urppp-skin-card" + (skin.id === cur ? " is-active" : "");
         card.dataset.skin = skin.id;
