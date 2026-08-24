@@ -2689,7 +2689,7 @@
   // src/userscripts/urpppp.entry.js
   (function() {
     "use strict";
-    const URPPPP_VERSION = "1.5.1";
+    const URPPPP_VERSION = "1.5.2";
     const URPPPP_RAW_URL = "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js";
     const URPPPP_SOURCES = [
       "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/version.json",
