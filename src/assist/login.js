@@ -326,6 +326,8 @@ export function createLoginAssist({ config, storage, deps }) {
     const guard = config.beginLoginProcess('cas', cred.username);
     showLoginGuardNotice(guard);
     if (guard.paused) return true;
+    // 失败重试时刷新验证码(zhjw 已有, CAS 之前漏了), 避免重复提交失效验证码导致永远失败
+    if (guard.failures > 0) refreshLoginCaptchaImage(els.captchaImg);
     fillLoginCaptcha(els.captchaInput, '');
     if (!els.captchaImg.complete) await new Promise((resolve) => { els.captchaImg.onload = resolve; setTimeout(resolve, 2000); });
     const code = await recognizeSmart(els.captchaImg, c.ocrUrl, 'cas');

@@ -1358,6 +1358,7 @@
       const guard = config.beginLoginProcess("cas", cred.username);
       showLoginGuardNotice(guard);
       if (guard.paused) return true;
+      if (guard.failures > 0) refreshLoginCaptchaImage(els.captchaImg);
       fillLoginCaptcha(els.captchaInput, "");
       if (!els.captchaImg.complete) await new Promise((resolve) => {
         els.captchaImg.onload = resolve;
