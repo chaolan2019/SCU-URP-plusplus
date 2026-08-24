@@ -264,20 +264,21 @@ import assistStyles from '../styles/assist.css';
   if (!isPluginMode) watchSettingsPanel();
 
   // 登录
+  // 登录界面判定：URL 含 login/second（统—认证登录/2FA/教务登录）或存在密码登录表单
+  // 注意：不要用 title 含“统一身份认证”判断——id.scu 登录成功后的页面标题也含它，会误判成登录页导致失败计数不清
   const hasZhjwLoginForm = !!(
     document.getElementById('input_username')
     && document.getElementById('input_password')
     && document.getElementById('input_checkcode')
   );
-  const maybeLogin =
-    hasZhjwLoginForm ||
-    /\/login/i.test(location.pathname || '') ||
-    /login/i.test(location.href) ||
-    /统一身份认证|frontend\/login/i.test(document.title + location.href);
-  if (maybeLogin) {
+  const isLoginUi = hasZhjwLoginForm
+    || /\/login|\/second|frontend\/login/i.test(location.href + location.pathname)
+    || !!document.querySelector('input[type="password"]');
+  if (isLoginUi) {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mainLogin);
     else mainLogin();
   } else {
+    // 非登录界面（含 id.scu 已登录端）→ 清除失败计数，避免误报“已达上限暂停”
     clearLoginGuardAfterSuccess();
   }
 

@@ -1276,12 +1276,9 @@
       const bodyText = document.body && document.body.innerText || "";
       const isUnifiedAuth = /统一身份认证/.test(bodyText) || !!document.querySelector("img.captcha-img") || /frontend\/login|id\.scu\.edu\.cn|enduser\/sp\/sso/i.test(location.href);
       if (!isUnifiedAuth) return false;
+      ensureAccountLoginTab();
+      await deps.sleep(250);
       let els = findCasElements();
-      if (!els.usernameInput || !els.passwordInput) {
-        ensureAccountLoginTab();
-        await deps.sleep(350);
-        els = findCasElements();
-      }
       if (!els.usernameInput || !els.passwordInput || !els.captchaInput || !els.captchaImg) return false;
       deps.log("统一认证页");
       const ready = ensureReadyForLogin("cas");
@@ -2868,8 +2865,8 @@
     }), "waitRegisterUpdate"))();
     if (!isPluginMode) watchSettingsPanel();
     const hasZhjwLoginForm = !!(document.getElementById("input_username") && document.getElementById("input_password") && document.getElementById("input_checkcode"));
-    const maybeLogin = hasZhjwLoginForm || /\/login/i.test(location.pathname || "") || /login/i.test(location.href) || /统一身份认证|frontend\/login/i.test(document.title + location.href);
-    if (maybeLogin) {
+    const isLoginUi = hasZhjwLoginForm || /\/login|\/second|frontend\/login/i.test(location.href + location.pathname) || !!document.querySelector('input[type="password"]');
+    if (isLoginUi) {
       if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", mainLogin);
       else mainLogin();
     } else {

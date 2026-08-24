@@ -309,13 +309,10 @@ export function createLoginAssist({ config, storage, deps }) {
       !!document.querySelector('img.captcha-img') ||
       /frontend\/login|id\.scu\.edu\.cn|enduser\/sp\/sso/i.test(location.href);
     if (!isUnifiedAuth) return false;
+    // 统一认证默认停在「扫码登录」，无条件先切到「账号登录」再找表单
+    ensureAccountLoginTab();
+    await deps.sleep(250);
     let els = findCasElements();
-    if (!els.usernameInput || !els.passwordInput) {
-      // 默认在扫码/短信登录，切到账号登录后重新取表单
-      ensureAccountLoginTab();
-      await deps.sleep(350);
-      els = findCasElements();
-    }
     if (!els.usernameInput || !els.passwordInput || !els.captchaInput || !els.captchaImg) return false;
     deps.log('统一认证页');
     const ready = ensureReadyForLogin('cas');
