@@ -33,11 +33,9 @@ export function createUpdateAssist({ deps }) {
   function fetchAssistUrl(url, opts) {
     const headers = { 'Cache-Control': 'no-cache' };
     if (opts && opts.range) headers.Range = opts.range;
-    return fetchAssistWithTimeout(url, headers, 12000)
-      .catch((fetchError) => {
-        if (typeof GM_xmlhttpRequest === 'function') return gmAssistRequest(url, headers);
-        throw fetchError;
-      });
+    // 教务环境跨域 fetch 会被 CORS 拦，优先用 GM_xmlhttpRequest（@connect 已授权，可跨域）
+    if (typeof GM_xmlhttpRequest === 'function') return gmAssistRequest(url, headers);
+    return fetchAssistWithTimeout(url, headers, 12000);
   }
 
   // 多源探测：主源（GitHub 权威）优先，primaryTimeout 内未响应则并发切换加速源；主源稍后返回也参与竞争

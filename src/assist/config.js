@@ -96,11 +96,15 @@ export function createAssistConfig(storage, now = () => Date.now()) {
     const pending = state.pending;
     const fresh = pending && pending.createdAt > 0 && now() - pending.createdAt <= LOGIN_PENDING_TTL;
     const continuesPreviousAttempt = fresh && pending.identity === identity;
-    if (!continuesPreviousAttempt) return resetLoginGuardState(kind, identity);
+    if (!continuesPreviousAttempt) {
+      try { console.log('[URP++辅助][guard] reset 新attempt', kind, identity); } catch (_) {}
+      return resetLoginGuardState(kind, identity);
+    }
     state.identity = identity;
     state.pending = null;
     state.failures = Math.min(LOGIN_FAILURE_LIMIT, state.failures + 1);
     state.paused = state.failures >= LOGIN_FAILURE_LIMIT;
+    try { console.log('[URP++辅助][guard] 失败+1', kind, identity, state.failures, 'paused=' + state.paused); } catch (_) {}
     return saveLoginGuardState(kind, state);
   }
 
@@ -116,12 +120,18 @@ export function createAssistConfig(storage, now = () => Date.now()) {
 
   function clearLoginGuardAfterSuccess(kind) {
     const state = getLoginGuardState(kind);
-    if (state.failures || state.paused || state.pending) resetLoginGuardState(kind, '');
+    if (state.failures || state.paused || state.pending) {
+      try { console.log('[URP++辅助][guard] 清成功', kind, state.failures); } catch (_) {}
+      resetLoginGuardState(kind, '');
+    }
   }
 
   // 清除全部站点（教务/统一认证/基础）的失败计数
   function resetAllLoginGuard() {
-    ['zhjw', 'cas', ''].forEach((k) => resetLoginGuardState(k, ''));
+    ['zhjw', 'cas', ''].forEach((k) => {
+      try { console.log('[URP++辅助][guard] 重置全部', k); } catch (_) {}
+      resetLoginGuardState(k, '');
+    });
   }
 
   function evalConf() {

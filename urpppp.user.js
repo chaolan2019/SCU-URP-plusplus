@@ -165,11 +165,21 @@
       const pending = state.pending;
       const fresh = pending && pending.createdAt > 0 && now() - pending.createdAt <= LOGIN_PENDING_TTL;
       const continuesPreviousAttempt = fresh && pending.identity === identity;
-      if (!continuesPreviousAttempt) return resetLoginGuardState(kind, identity);
+      if (!continuesPreviousAttempt) {
+        try {
+          console.log("[URP++辅助][guard] reset 新attempt", kind, identity);
+        } catch (_) {
+        }
+        return resetLoginGuardState(kind, identity);
+      }
       state.identity = identity;
       state.pending = null;
       state.failures = Math.min(LOGIN_FAILURE_LIMIT, state.failures + 1);
       state.paused = state.failures >= LOGIN_FAILURE_LIMIT;
+      try {
+        console.log("[URP++辅助][guard] 失败+1", kind, identity, state.failures, "paused=" + state.paused);
+      } catch (_) {
+      }
       return saveLoginGuardState(kind, state);
     }
     __name(beginLoginProcess, "beginLoginProcess");
@@ -185,11 +195,23 @@
     __name(markPendingAutoLogin, "markPendingAutoLogin");
     function clearLoginGuardAfterSuccess(kind) {
       const state = getLoginGuardState(kind);
-      if (state.failures || state.paused || state.pending) resetLoginGuardState(kind, "");
+      if (state.failures || state.paused || state.pending) {
+        try {
+          console.log("[URP++辅助][guard] 清成功", kind, state.failures);
+        } catch (_) {
+        }
+        resetLoginGuardState(kind, "");
+      }
     }
     __name(clearLoginGuardAfterSuccess, "clearLoginGuardAfterSuccess");
     function resetAllLoginGuard() {
-      ["zhjw", "cas", ""].forEach((k) => resetLoginGuardState(k, ""));
+      ["zhjw", "cas", ""].forEach((k) => {
+        try {
+          console.log("[URP++辅助][guard] 重置全部", k);
+        } catch (_) {
+        }
+        resetLoginGuardState(k, "");
+      });
     }
     __name(resetAllLoginGuard, "resetAllLoginGuard");
     function evalConf() {
@@ -2268,10 +2290,8 @@
     function fetchAssistUrl(url, opts) {
       const headers = { "Cache-Control": "no-cache" };
       if (opts && opts.range) headers.Range = opts.range;
-      return fetchAssistWithTimeout(url, headers, 12e3).catch((fetchError) => {
-        if (typeof GM_xmlhttpRequest === "function") return gmAssistRequest(url, headers);
-        throw fetchError;
-      });
+      if (typeof GM_xmlhttpRequest === "function") return gmAssistRequest(url, headers);
+      return fetchAssistWithTimeout(url, headers, 12e3);
     }
     __name(fetchAssistUrl, "fetchAssistUrl");
     async function fetchAssistFirstAvailable(urls, opts, primaryTimeout = 1e3) {
