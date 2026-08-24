@@ -25039,9 +25039,15 @@ ${arcs}
             return `• <b>${escapeHtml(r.name || r.id)}</b>：检查失败（${escapeHtml(r.message || "unknown")}）`;
           }
           if (r.status === "update") {
-            const link = r.updateUrl ? ` <a href="${escapeHtml(r.updateUrl)}" target="_blank" rel="noopener noreferrer">打开更新源</a>` : "";
-            const page = r.pageUrl ? ` <a href="${escapeHtml(r.pageUrl)}" target="_blank" rel="noopener noreferrer">Greasy Fork</a>` : "";
-            return `• <b>${escapeHtml(r.name)}</b>：发现新版本 <b>${escapeHtml(r.remote)}</b>（当前 ${escapeHtml(r.local)}）${link}${page}`;
+            let action = "";
+            if (r.id === "assist" && pluginManager && pluginManager.loaded("assist")) {
+              action = ' <a class="urppp-update-relaunch" href="javascript:void(0)" data-urppp-relaunch="assist" rel="nofollow">重新装载</a>';
+            } else {
+              const link = r.updateUrl ? ` <a href="${escapeHtml(r.updateUrl)}" target="_blank" rel="noopener noreferrer">打开更新源</a>` : "";
+              const page = r.pageUrl ? ` <a href="${escapeHtml(r.pageUrl)}" target="_blank" rel="noopener noreferrer">Greasy Fork</a>` : "";
+              action = link + page;
+            }
+            return `• <b>${escapeHtml(r.name)}</b>：发现新版本 <b>${escapeHtml(r.remote)}</b>（当前 ${escapeHtml(r.local)}）${action}`;
           }
           if (r.status === "ahead") {
             return `• <b>${escapeHtml(r.name)}</b>：本地 ${escapeHtml(r.local)} 新于远程 ${escapeHtml(r.remote)}`;
@@ -25055,6 +25061,21 @@ ${arcs}
           `${head}<br>${lines.join("<br>")}<br><span style="opacity:.85">仓库：<a href="${URPPP_UPDATE.repo}" target="_blank" rel="noopener noreferrer">SCU-URP-plusplus</a></span>`,
           hasErr ? "err" : hasUpdate ? "ok" : "ok"
         );
+        const relaunch = document.querySelector('#urppp-set-update-status .urppp-update-relaunch[data-urppp-relaunch="assist"]');
+        if (relaunch) {
+          relaunch.addEventListener("click", () => {
+            try {
+              setUpdateStatus("正在重新装载辅助插件…", "");
+              pluginManager.install("assist").then(() => {
+                setUpdateStatus("辅助插件已重新装载，刷新页面后生效。", "ok");
+              }).catch((e) => {
+                setUpdateStatus("重新装载失败：" + (e && e.message ? e.message : e), "err");
+              });
+            } catch (e) {
+              setUpdateStatus("重新装载失败：" + (e && e.message ? e.message : e), "err");
+            }
+          });
+        }
       } catch (e) {
         setUpdateStatus("检查失败：" + escapeHtml(e && e.message || e), "err");
       } finally {
