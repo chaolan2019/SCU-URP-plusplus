@@ -45,14 +45,22 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Verify generated userscripts
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
         run: |
-          npm ci
-          npx playwright install --with-deps chromium
-          # Node 24 + headless CI：Chromium 需无沙箱启动
-          npm test
-          npm run test:browser
-          npm run build:check
+          # --with-deps 需 sudo 装系统依赖，可能因 apt/网络失败；失败则退化为纯 chromium 下载
+          npx playwright install --with-deps chromium || npx playwright install chromium
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Browser tests
+        run: npm run test:browser
+
+      - name: Build check
+        run: npm run build:check
 
       - name: Read versions and build notes
         id: meta
