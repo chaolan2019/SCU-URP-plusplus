@@ -7589,7 +7589,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return builtin.map((s) => `
       <div class="urppp-store-item">
         <div class="urppp-store-info"><strong>${escapeHtml(s.name)}</strong><span class="urppp-store-ver">v${escapeHtml(s.version || '')}</span><span class="urppp-store-state ok">内置</span></div>
-        <div class="urppp-store-ops"><button type="button" data-theme-use="${escapeHtml(s.id)}">使用</button></div>
+        <div class="urppp-store-ops"><button type="button" class="urppp-set-btn" data-theme-use="${escapeHtml(s.id)}">使用</button></div>
       </div>`).join('');
   }
 

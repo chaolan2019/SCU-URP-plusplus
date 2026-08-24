@@ -9310,6 +9310,8 @@ html[data-urppp-skin="neu"] .urppp-export-option{border-radius:8px!important}
   bottom: auto !important;
   max-height: calc(100vh - 80px) !important;
   max-height: calc(100dvh - 80px) !important;
+  height: min(calc(100vh - 120px), 760px) !important;
+  height: min(calc(100dvh - 120px), 760px) !important;
   overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
@@ -10043,11 +10045,12 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-settings-panel .urppp-store-state.ok{color:#15803d;background:color-mix(in srgb,#15803d 12%,transparent)}
 #urppp-settings-panel .urppp-store-ops{display:flex;gap:8px;flex:0 0 auto}
 #urppp-settings-panel .urppp-store-ops .urppp-set-btn,#urppp-settings-panel .urppp-store-ops button{height:30px;padding:0 12px;font-size:12px;font-weight:650;border-radius:var(--radius-sm)}
-#urppp-settings-panel .urppp-store-theme-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#urppp-settings-panel .urppp-store-theme-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
 #urppp-settings-panel .urppp-store-theme-grid .urppp-skin-card{margin:0}
-#urppp-settings-panel .urppp-store-settings{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border,#e5e5ea);border-radius:var(--radius-sm);margin-bottom:10px;flex-wrap:wrap}
-#urppp-settings-panel .urppp-store-settings span{font-size:12px;color:var(--text-secondary,#5b5f69)}
-#urppp-settings-panel .urppp-store-settings .urppp-set-follow,#urppp-settings-panel .urppp-store-settings .urppp-set-btn{width:auto;min-width:72px}
+#urppp-settings-panel .urppp-store-settings{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border,#e5e5ea);border-radius:var(--radius-sm);margin-bottom:10px}
+#urppp-settings-panel .urppp-store-settings span{font-size:12px;color:var(--text-secondary,#5b5f69);flex:1;min-width:96px}
+#urppp-settings-panel .urppp-store-settings .urppp-set-follow{width:auto;min-width:72px;flex:0 0 auto}
+#urppp-settings-panel .urppp-store-settings .urppp-set-btn{width:100%;flex-basis:100%}
 #urppp-settings-panel .urppp-store-ops{display:flex;gap:8px;flex:0 0 auto}
 `;
 
@@ -24906,7 +24909,7 @@ ${arcs}
       return builtin.map((s) => `
       <div class="urppp-store-item">
         <div class="urppp-store-info"><strong>${escapeHtml(s.name)}</strong><span class="urppp-store-ver">v${escapeHtml(s.version || "")}</span><span class="urppp-store-state ok">内置</span></div>
-        <div class="urppp-store-ops"><button type="button" data-theme-use="${escapeHtml(s.id)}">使用</button></div>
+        <div class="urppp-store-ops"><button type="button" class="urppp-set-btn" data-theme-use="${escapeHtml(s.id)}">使用</button></div>
       </div>`).join("");
     }
     __name(themeManageListHtml, "themeManageListHtml");
