@@ -1861,6 +1861,23 @@ import { createNavbarController } from '../features/navigation/navbar.js';
             border:3px solid #fff!important;border-radius:0!important;background:#0a0a0a!important;color:#fff!important;
             box-shadow:4px 4px 0 #fff!important;transform:none!important;
           }
+          /* 清爽课表内部：容器/表头黑底白字, 课程块文字白, 避免白字亮块看不清 */
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-week,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-week-body,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-day-col,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-week-head,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-week-head .h{
+            background:#0a0a0a!important;color:#fff!important;border-color:#fff!important;
+          }
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-lesson b,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-lesson i{color:#fff!important;}
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-course-detail .uc-cd-name,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-course-sub .uc-cd-name{color:#fff!important;}
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-course-detail .uc-cd-meta,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-course-detail .uc-cd-chip{color:#eee!important;}
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-empty,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-loading{color:#fff!important;}
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-lesson.is-fade{opacity:.62!important;}
           html[data-urppp-skin="brutal"] body,
           html[data-urppp-skin="brutal"] .main-container,
           html[data-urppp-skin="brutal"] .main-content,
