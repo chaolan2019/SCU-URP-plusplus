@@ -1878,6 +1878,18 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-empty,
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-loading{color:#fff!important;}
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-lesson.is-fade{opacity:.62!important;}
+          /* 背景层：课表格子/课程块/服务卡强制暗底白字(补办学生证等黑底黑字可见) */
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-grid-cell{background:#0a0a0a!important;border-color:rgba(255,255,255,.14)!important;}
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-lesson{
+            background:#1c1c1c!important;border:2px solid var(--brutal-accent)!important;color:#fff!important;
+          }
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-lesson b,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-lesson i{background:transparent!important;color:#fff!important;}
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-svc,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-svc span,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-svc i,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-svc b{color:#fff!important;}
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-svc{background:#111!important;border:2px solid var(--brutal-accent)!important;}
           html[data-urppp-skin="brutal"] body,
           html[data-urppp-skin="brutal"] .main-container,
           html[data-urppp-skin="brutal"] .main-content,
