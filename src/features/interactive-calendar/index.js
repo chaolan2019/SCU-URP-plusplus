@@ -351,7 +351,7 @@ function ensureCalendarStyle() {
     #urppp-cal-modal .cal-ev-dot{width:8px;height:8px;border-radius:50%;flex:none}
     #urppp-cal-modal .cal-ev-date{min-width:82px;font-size:13px;font-weight:650;font-variant-numeric:tabular-nums}
     #urppp-cal-modal .cal-ev-date em{display:block;font-style:normal;font-size:10px;color:var(--text-secondary,#5b5f69);font-weight:400}
-    #urppp-cal-modal .cal-ev-name{flex:1;font-size:13.5px;font-weight:600}
+    #urppp-cal-modal .cal-ev-name{flex:1;min-width:0;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     #urppp-cal-modal .cal-ev-tag{font-size:10.5px;font-weight:600;padding:1px 8px;border-radius:999px;flex:none}
     #urppp-cal-modal .cal-ev-wk{font-size:11px;color:var(--text-secondary,#5b5f69);flex:none;min-width:56px;text-align:right}
     /* 移动端：时间+事件属性+周进度一行，事件名称换行整行 */
@@ -363,6 +363,12 @@ function ensureCalendarStyle() {
     }
 
     /* 皮肤适配：随各主题保持一致性（圆角/边框/材质由 Skin token 控制） */
+    /* 当前事件选中框(cal-today)跟各主题直角/圆角：editorial/flat/brutal 直角 */
+    html[data-urppp-skin="editorial"] #urppp-cal-modal .cal-ev,
+    html[data-urppp-skin="flat"] #urppp-cal-modal .cal-ev,
+    html[data-urppp-skin="brutal"] #urppp-cal-modal .cal-ev{border-radius:0!important}
+    /* 编辑杂志：当前事件选中框矩形+黑描边，贴近 editorial 极简 */
+    html[data-urppp-skin="editorial"] #urppp-cal-modal .cal-ev.cal-today{outline:2px solid var(--text)!important;outline-offset:-2px!important;border-radius:0!important}
     html[data-urppp-skin="flat"] #urppp-clean-root .uc-cal-summary,
     html[data-urppp-skin="flat"] #urppp-cal-modal .cal-dialog,
     html[data-urppp-skin="flat"] #urppp-cal-modal .cal-widget,
