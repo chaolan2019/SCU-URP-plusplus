@@ -57,6 +57,8 @@ export function buildSettingsPanelHtml(options) {
     '    <section class="urppp-set-sec">',
     '      <h3>界面风格</h3>',
     '      <p class="urppp-set-tip">在同一布局上切换视觉气质。因适配规模较大，仅保证清爽模式的完整适配，如有影响请使用默认类Apple风格并选择性开启边缘线条。</p>',
+    '      <div class="urppp-theme-store-bar"><button type="button" class="urppp-set-btn ghost" id="urppp-theme-store">主题商店</button></div>',
+    '      <div id="urppp-theme-store-inline" class="urppp-store-inline" style="display:none"></div>',
     '      <div class="urppp-skin-list" id="urppp-skin-list"></div>',
     '    </section>',
     '  </div>',

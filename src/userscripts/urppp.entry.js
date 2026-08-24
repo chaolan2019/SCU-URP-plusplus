@@ -159,12 +159,12 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   const AUTO_UPDATE_KEY = 'urppp_auto_update_check_v1';
   const SKIN_KEY = 'urppp_skin_v1';
   const SKIN_CATALOG = [
-    { id: 'apple', name: '类Apple风格', desc: '系统灰底、链接蓝、大圆角与轻阴影，默认精修方向。', ready: true, dark: true, dynamic: true },
-    { id: 'flat', name: '极简扁平', desc: '无阴影、硬边与纯色层次，冷硬清晰。', ready: true, dark: true, dynamic: true },
-    { id: 'organic', name: '自然有机', desc: '奶油底与大地色，温暖圆角。不支持动态配色。', ready: true, dark: true, dynamic: false },
-    { id: 'brutal', name: '新野兽派', desc: '高对比画布、粗边框与硬阴影。支持暗色，不支持动态配色。', ready: true, dark: true, dynamic: false, palettes: true },
-    { id: 'editorial', name: '编辑杂志', desc: '衬线标题、无框版面与淡分割线。支持暗色，不支持动态配色。', ready: true, dark: true, dynamic: false },
-    { id: 'neu', name: '新拟物', desc: '同色双阴影凸起/内凹，立体柔和。支持暗色，不支持动态配色。', ready: true, dark: true, dynamic: false },
+    { id: 'apple', name: '类Apple风格', desc: '系统灰底、链接蓝、大圆角与轻阴影，默认精修方向。', ready: true, dark: true, dynamic: true, installed: true, builtin: true, version: '1.0.0', author: 'Chao_Lan', caps: { scope: 'app', allowJS: false } },
+    { id: 'editorial', name: '编辑杂志', desc: '衬线标题、无框版面与淡分割线。支持暗色，不支持动态配色。', ready: true, dark: true, dynamic: false, installed: true, builtin: true, version: '1.0.0', author: 'Chao_Lan', caps: { scope: 'app', allowJS: false } },
+    { id: 'flat', name: '极简扁平', desc: '无阴影、硬边与纯色层次，冷硬清晰。', ready: true, dark: true, dynamic: true, installed: false, version: '1.0.0', author: 'Chao_Lan', caps: { scope: 'app', allowJS: false } },
+    { id: 'organic', name: '自然有机', desc: '奶油底与大地色，温暖圆角。不支持动态配色。', ready: true, dark: true, dynamic: false, installed: false, version: '1.0.0', author: 'Chao_Lan', caps: { scope: 'app', allowJS: false } },
+    { id: 'brutal', name: '新野兽派', desc: '高对比画布、粗边框与硬阴影。支持暗色，不支持动态配色。', ready: true, dark: true, dynamic: false, palettes: true, installed: false, version: '1.0.0', author: 'Chao_Lan', caps: { scope: 'app', allowJS: false } },
+    { id: 'neu', name: '新拟物', desc: '同色双阴影凸起/内凹，立体柔和。支持暗色，不支持动态配色。', ready: true, dark: true, dynamic: false, installed: false, version: '1.0.0', author: 'Chao_Lan', caps: { scope: 'app', allowJS: false } },
   ];
 
   // 最早阶段：最高优先级遮罩盖住未美化界面，完成后淡入
@@ -1341,7 +1341,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   function getSkin() {
     const id = GM_getValue(SKIN_KEY, 'apple');
     const hit = SKIN_CATALOG.find((s) => s.id === id);
-    return hit && hit.ready ? id : 'apple';
+    return hit && hit.ready && hit.installed !== false ? id : 'apple';
   }
   function getSkinCapability(skinId, key) {
     const id = skinId || getSkin();
@@ -3720,7 +3720,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   }
 
   function setSkin(id) {
-    const hit = SKIN_CATALOG.find((s) => s.id === id && s.ready);
+    const hit = SKIN_CATALOG.find((s) => s.id === id && s.ready && s.installed !== false);
     if (!hit) return false;
     GM_setValue(SKIN_KEY, hit.id);
     try {
@@ -7523,8 +7523,57 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     try { pluginManager.renderAssistUi(panel.querySelector('#urppp-set-assist-slot')); } catch (e) { console.warn('[URP++] plugin manager', e); }
   }
 
+  // 主题商店（内嵌式）：主题下载 / 主题管理 两选项卡
+  function openThemeStore(host) {
+    if (!host) return;
+    if (host.dataset.rendered === '1') {
+      host.style.display = host.style.display === 'none' ? '' : 'none';
+      return;
+    }
+    host.dataset.rendered = '1';
+    const installed = SKIN_CATALOG.filter((s) => s.installed);
+    const manageItems = installed.length
+      ? installed.map((s) => `
+        <div class="urppp-store-item">
+          <div class="urppp-store-info"><strong>${escapeHtml(s.name)}</strong><span class="urppp-store-ver">v${escapeHtml(s.version || '')}</span><span class="urppp-store-state ok">内置</span></div>
+          <div class="urppp-store-ops"><button type="button" data-theme-id="${escapeHtml(s.id)}">使用</button></div>
+        </div>`).join('')
+      : '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无主题</p><p class="urppp-store-sub">已安装的主题会显示在这里。</p></div>';
+    host.innerHTML = `
+      <div class="urppp-store-inline">
+        <div class="urppp-store-tabs">
+          <button type="button" class="urppp-store-tab ac" data-tab="download">主题下载</button>
+          <button type="button" class="urppp-store-tab" data-tab="manage">主题管理</button>
+        </div>
+        <div class="urppp-store-body">
+          <div class="urppp-store-pane" data-pane="download"><div class="urppp-store-empty"><p class="urppp-store-empty-title">敬请期待</p><p class="urppp-store-sub">主题市场正在筹备中，后续可从这里下载更多主题皮肤。</p></div></div>
+          <div class="urppp-store-pane" data-pane="manage" style="display:none">${manageItems}</div>
+        </div>
+      </div>`;
+    host.querySelectorAll('.urppp-store-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        host.querySelectorAll('.urppp-store-tab').forEach((t) => t.className = 'urppp-store-tab');
+        tab.className = 'urppp-store-tab ac';
+        host.querySelectorAll('.urppp-store-pane').forEach((p) => p.style.display = 'none');
+        const pane = host.querySelector('.urppp-store-pane[data-pane="' + tab.dataset.tab + '"]');
+        if (pane) pane.style.display = '';
+      });
+    });
+    host.querySelectorAll('[data-theme-id]').forEach((b) => {
+      b.addEventListener('click', () => {
+        if (setSkin(b.dataset.themeId)) { syncSettingsPanelUI(); }
+      });
+    });
+    host.style.display = '';
+  }
+
   function renderSkinCards(panel) {
     if (!panel) return;
+    const storeBarBtn = panel.querySelector('#urppp-theme-store');
+    if (storeBarBtn && !storeBarBtn.dataset.bound) {
+      storeBarBtn.dataset.bound = '1';
+      storeBarBtn.addEventListener('click', () => openThemeStore(panel.querySelector('#urppp-theme-store-inline')));
+    }
     const list = panel.querySelector('#urppp-skin-list');
     if (!list) return;
     const cur = getSkin();
@@ -7540,30 +7589,25 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'urppp-skin-apply';
-      if (skin.id === cur && skin.ready) {
+      if (!skin.installed) {
+        btn.classList.add('is-disabled');
+        btn.textContent = '去下载';
+      } else if (skin.id === cur && skin.ready) {
         btn.classList.add('is-current');
         btn.textContent = '使用中';
         btn.disabled = true;
-      } else if (!skin.ready) {
-        btn.classList.add('is-disabled');
-        btn.textContent = '应用主题';
       } else {
         btn.textContent = '应用主题';
       }
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        if (!skin.ready) {
-          try {
-            if (window.__urpppUpdate && typeof window.__urpppUpdate.showUpdateToast === 'function') {
-              /* noop */
-            }
-          } catch (_) {}
-          const old = btn.textContent;
-          btn.textContent = '开发中';
-          setTimeout(() => { btn.textContent = old; }, 1200);
+        if (!skin.installed) {
+          // 未安装：打开主题商店
+          openThemeStore(panel.querySelector('#urppp-theme-store-inline'));
           return;
         }
+        if (skin.id === cur && skin.ready) return;
         if (setSkin(skin.id)) {
           syncSettingsPanelUI();
           try { if (window.__urpppCleanMode && window.__urpppCleanMode.inject) window.__urpppCleanMode.inject(); } catch (_) {}

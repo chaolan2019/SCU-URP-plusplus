@@ -274,6 +274,7 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
         <button type="button" class="urppp-set-btn ghost" id="urppp-plugin-store">插件商店</button>
       </div>
       <div id="urppp-plugin-panels" style="margin-top:10px"></div>
+      <div id="urppp-store-inline" class="urppp-store-inline" style="display:none"></div>
       <p class="urppp-set-tip" id="urppp-plugin-tip" style="margin-top:8px"></p>
     `;
     slot.appendChild(sec);
@@ -361,8 +362,8 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
       }
     });
 
-    // 插件商店：弹窗（下载/管理 两选项卡）
-    storeBtn.addEventListener('click', () => { openPluginStore(); });
+    // 插件商店：内嵌式（点击展开/收起，两选项卡：下载 / 管理）
+    storeBtn.addEventListener('click', () => { togglePluginStore(sec.querySelector('#urppp-store-inline')); });
 
     // 装载后子面板注册（辅助插件调用 register 时，主插件拉取它的 subpanels）
     // 通过事件联动刷新
@@ -381,16 +382,16 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
-  function openPluginStore() {
-    if (!doc) return;
-    closePluginStore();
+  function togglePluginStore(host) {
+    if (!host) return;
     ensureStoreStyle();
-    const mask = doc.createElement('div');
-    mask.className = 'urppp-store-mask';
-    mask.id = 'urppp-store-mask';
-    mask.innerHTML = `
-      <div class="urppp-store">
-        <div class="urppp-store-hd"><span class="urppp-store-title">插件商店</span><button type="button" class="urppp-store-close" aria-label="关闭">✕</button></div>
+    if (host.dataset.rendered === '1') {
+      host.style.display = host.style.display === 'none' ? '' : 'none';
+      return;
+    }
+    host.dataset.rendered = '1';
+    host.innerHTML = `
+      <div class="urppp-store-inline">
         <div class="urppp-store-tabs">
           <button type="button" class="urppp-store-tab ac" data-tab="download">插件下载</button>
           <button type="button" class="urppp-store-tab" data-tab="manage">插件管理</button>
@@ -404,25 +405,17 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
           </div>
         </div>
       </div>`;
-    (doc.body || doc.documentElement).appendChild(mask);
-
-    mask.querySelector('.urppp-store-close').addEventListener('click', closePluginStore);
-    mask.addEventListener('click', (e) => { if (e.target === mask) closePluginStore(); });
-    mask.querySelectorAll('.urppp-store-tab').forEach((tab) => {
+    host.querySelectorAll('.urppp-store-tab').forEach((tab) => {
       tab.addEventListener('click', () => {
-        mask.querySelectorAll('.urppp-store-tab').forEach((t) => t.className = 'urppp-store-tab');
+        host.querySelectorAll('.urppp-store-tab').forEach((t) => t.className = 'urppp-store-tab');
         tab.className = 'urppp-store-tab ac';
-        mask.querySelectorAll('.urppp-store-pane').forEach((p) => p.style.display = 'none');
-        const pane = mask.querySelector('.urppp-store-pane[data-pane="' + tab.dataset.tab + '"]');
+        host.querySelectorAll('.urppp-store-pane').forEach((p) => p.style.display = 'none');
+        const pane = host.querySelector('.urppp-store-pane[data-pane="' + tab.dataset.tab + '"]');
         if (pane) pane.style.display = '';
       });
     });
-    renderStoreManage(mask.querySelector('#urppp-store-manage-list'));
-  }
-
-  function closePluginStore() {
-    const m = doc && doc.getElementById('urppp-store-mask');
-    if (m) m.remove();
+    renderStoreManage(host.querySelector('#urppp-store-manage-list'));
+    host.style.display = '';
   }
 
   function ensureStoreStyle() {
@@ -430,19 +423,12 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
     const style = doc.createElement('style');
     style.id = 'urppp-store-style';
     style.textContent = `
-      .urppp-store-mask{position:fixed;inset:0;z-index:2147483600;background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;padding:24px;animation:urpppStoreIn .16s ease}
-      @keyframes urpppStoreIn{from{opacity:0}to{opacity:1}}
-      .urppp-store{width:min(480px,92vw);max-height:min(76vh,720px);background:var(--surface,#fff);color:var(--text,#16181d);border:1px solid var(--border,#e5e5ea);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.3);display:flex;flex-direction:column;overflow:hidden;animation:urpppStorePop .18s cubic-bezier(.16,1,.3,1)}
-      @keyframes urpppStorePop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
-      .urppp-store-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;border-bottom:1px solid var(--border,#e5e5ea)}
-      .urppp-store-title{font-size:16px;font-weight:750}
-      .urppp-store-close{width:30px;height:30px;border-radius:9px;border:1px solid var(--border,#e5e5ea);background:transparent;color:var(--text,#16181d);cursor:pointer;font-size:14px;line-height:1;display:grid;place-items:center}
-      .urppp-store-close:hover{background:color-mix(in srgb,var(--primary,#2563eb) 10%,transparent)}
-      .urppp-store-tabs{display:flex;gap:4px;padding:10px 20px 0}
-      .urppp-store-tab{flex:1;height:34px;border:0;border-radius:9px 9px 0 0;background:transparent;color:var(--text-secondary,#5b5f69);font-size:13px;font-weight:600;cursor:pointer}
-      .urppp-store-tab.ac{background:var(--surface,#fff);color:var(--text,#16181d);box-shadow:inset 0 -2px 0 var(--primary,#2563eb)}
-      .urppp-store-body{flex:1;min-height:0;overflow:auto;padding:14px 20px 20px}
-      .urppp-store-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:180px;text-align:center;gap:6px;color:var(--text-secondary,#5b5f69)}
+      .urppp-store-inline{margin-top:12px;border-top:1px solid var(--border,#e5e5ea);padding-top:14px}
+      .urppp-store-tabs{display:flex;gap:8px;margin-bottom:12px;border-bottom:1px solid var(--border,#e5e5ea)}
+      .urppp-store-tab{flex:1;height:34px;border:0;background:transparent;color:var(--text-secondary,#5b5f69);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent}
+      .urppp-store-tab.ac{color:var(--text,#16181d);border-bottom-color:var(--primary,#2563eb)}
+      .urppp-store-body{min-height:0;overflow:auto}
+      .urppp-store-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:120px;text-align:center;gap:6px;color:var(--text-secondary,#5b5f69);padding:16px 0}
       .urppp-store-empty-title{font-size:15px;font-weight:700;color:var(--text,#16181d)}
       .urppp-store-sub{font-size:12px;line-height:1.6;max-width:80%}
       .urppp-store-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid var(--border,#e5e5ea);border-radius:12px;margin-bottom:8px}
@@ -533,7 +519,7 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
     install,
     update,
     renderAssistUi,
-    openPluginStore,
+    openPluginStore: togglePluginStore,
     bootFromCache,
     register,
   };
