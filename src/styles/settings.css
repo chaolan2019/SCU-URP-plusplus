@@ -729,7 +729,7 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-settings-panel .urppp-plugin-sec .urppp-set-btn{width:100%;justify-content:center}
 
 /* 主题商店 / 插件商店：二级页（铺满设置面板，带返回按钮，非就地展开） */
-#urppp-settings-panel .urppp-theme-store-bar{margin:10px 0 2px}
+#urppp-settings-panel .urppp-theme-store-bar{margin:14px 0 26px}
 #urppp-settings-panel .urppp-theme-store-bar .urppp-set-btn{width:100%;justify-content:center}
 #urppp-settings-panel .urppp-store-subpanel{position:absolute;top:0;left:0;width:100%;height:100%;max-height:none;display:none;flex-direction:column;background:var(--surface,#fff);z-index:6;animation:urpppStoreSubIn .16s ease}
 #urppp-settings-panel .urppp-store-subpanel.open{display:flex}
