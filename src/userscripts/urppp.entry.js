@@ -7593,11 +7593,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       </div>`).join('');
   }
 
-  // 管理界面设置：自动检测更新（全宽开关按钮）+ 检查更新 + 版本信息
+  // 管理界面设置：自动检测更新（全宽开关按钮）+ 检查更新
   function storeManageSettingsHtml() {
-    const assistV = (pluginManager && pluginManager.api && pluginManager.api.get && pluginManager.api.get('assist') && pluginManager.api.get('assist').version) || '';
-    const assistPart = assistV ? '；辅助插件：v' + escapeHtml(assistV) : '';
-    return `<button type="button" class="urppp-set-follow" data-store-auto-update>自动检测更新：关</button><button type="button" class="urppp-set-btn" data-store-check-update>检查更新</button><div class="urppp-store-version">当前主插件：v${escapeHtml(URPPP_VERSION)}${assistPart}</div>`;
+    return `<div class="urppp-store-settings">
+      <button type="button" class="urppp-set-follow" data-store-auto-update>自动检测更新：关</button>
+      <button type="button" class="urppp-set-btn" data-store-check-update>检查更新</button>
+    </div>`;
   }
 
   function bindStoreManageSettings(root) {
