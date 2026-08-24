@@ -139,6 +139,8 @@ export function createSessionAssist({ config, storage, deps }) {
     btn.setAttribute('data-urpppp2fa-sent', '1');
     try { btn.click(); } catch (_) { /* ignore */ }
     log('2FA：已自动点击「获取验证码」发送短信');
+    // 进入二次验证 = 账号密码已通过，清该站点失败计数，避免成功后再登录被误判为“失败延续”
+    try { config.clearLoginGuardAfterSuccess('cas'); } catch (_) { /* ignore */ }
   }
 
   function install2faAutoSend() {

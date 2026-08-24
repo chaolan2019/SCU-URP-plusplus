@@ -318,8 +318,12 @@ export function createLoginAssist({ config, storage, deps }) {
       !!document.querySelector('img.captcha-img') ||
       /frontend\/login|id\.scu\.edu\.cn|enduser\/sp\/sso/i.test(location.href);
     if (!isUnifiedAuth) return false;
-    // 已进入二次验证(短信认证/动态口令) = 账号密码已通过，不再当登录失败处理
-    if (/短信认证|短信验证|手机号|获取验证码|动态口令|安全验证/.test(bodyText.slice(0, 500))) return false;
+    // 已进入二次验证(短信认证/动态口令) = 账号密码已通过，直接清计数不再当登录失败处理
+    if (/短信认证|短信验证|手机号|获取验证码|动态口令|安全验证/.test(bodyText)) {
+      config.clearLoginGuardAfterSuccess('cas');
+      removeLoginGuardNotice();
+      return false;
+    }
     try { console.log('[URP++辅助][guard] 进入统一认证登录'); } catch (_) {}
     // 统一认证默认停在「扫码登录」，无条件先切到「账号登录」再找表单
     ensureAccountLoginTab();
@@ -363,7 +367,7 @@ export function createLoginAssist({ config, storage, deps }) {
         const guard = config.getLoginGuardState(kind);
         if (kind === 'cas') {
           const bodyText = (document.body && document.body.innerText) || '';
-          const slice = bodyText.slice(0, 500);
+          const slice = bodyText;
           // 已进入二次验证(短信认证/动态口令)或已离开统一认证页 = 登录已成功，清计数不重试
           const in2fa = /短信认证|短信验证|手机号|获取验证码|动态口令|安全验证/.test(slice);
           const leftCas = !/id\.scu\.edu\.cn|enduser\/sp\/sso|frontend\/login/i.test(location.href) && !/统一身份认证/.test(slice);
@@ -390,7 +394,7 @@ export function createLoginAssist({ config, storage, deps }) {
           }
         }
       } catch (_) { /* ignore */ }
-    }, 3000);
+    }, 8000);
   }
 
   async function mainLogin() {
