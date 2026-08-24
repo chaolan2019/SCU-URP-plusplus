@@ -14186,10 +14186,10 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
     #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(3){animation-delay:.17s}
     @keyframes cal-stagger{to{opacity:1;transform:translateY(0)}}
     #urppp-cal-modal .cal-dialog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-      width:min(880px,calc(100vw - 80px));max-width:calc(100vw - 80px);max-height:min(82vh,860px);
+      width:min(840px,calc(100vw - 120px));max-width:calc(100vw - 120px);max-height:min(82vh,860px);
       display:flex;flex-direction:column;overflow:hidden;
       background:var(--surface,#fff);color:var(--text,#16181d);border:1px solid var(--border,#e5e5ea);border-radius:18px;
-      box-shadow:0 24px 60px rgba(0,0,0,.28);padding:20px 24px 24px}
+      box-shadow:0 24px 60px rgba(0,0,0,.28);padding:24px 34px 30px}
     #urppp-cal-modal .cal-close{width:30px;height:30px;border-radius:9px;border:1px solid var(--border,#e5e5ea);background:transparent;color:var(--text,#16181d);cursor:pointer;font-size:14px;line-height:1;display:grid;place-items:center;flex:none}
     #urppp-cal-modal .cal-close:hover{background:color-mix(in srgb,var(--primary,#2563eb) 10%,transparent)}
     #urppp-cal-modal .cal-body{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;overflow-x:hidden;max-width:100%}
