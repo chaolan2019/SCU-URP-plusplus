@@ -1,10 +1,9 @@
-urppp.user.js text eol=lf
-urpppp.user.js text eol=lf
-package.json text eol=lf
-package-lock.json text eol=lf
-src/** text eol=lf
-tests/** text eol=lf
-*.png binary
-tools/** text eol=lf
-.github/**/*.yml text eol=lf
+# 强制源码/产物使用 LF，避免 Windows autocrlf 把 .user.js 转成 CRLF 破坏 metadata 头(导致 artifact-contract 校验失败)
+* text=auto
+*.js text eol=lf
+*.mjs text eol=lf
+*.cjs text eol=lf
+*.json text eol=lf
+*.css text eol=lf
 *.md text eol=lf
+*.user.js text eol=lf
