@@ -1283,6 +1283,10 @@
       const captchaImg = document.getElementById("captchaImg") || document.querySelector(".form-signin img");
       const loginButton = document.getElementById("loginButton");
       if (!usernameInput || !passwordInput || !captchaInput || !captchaImg) return false;
+      try {
+        console.log("[URP++辅助][guard] 进入教务登录");
+      } catch (_) {
+      }
       deps.log("教务登录页");
       const ready = ensureReadyForLogin("zhjw");
       if (!ready) return true;
@@ -1337,6 +1341,10 @@
       const bodyText = document.body && document.body.innerText || "";
       const isUnifiedAuth = /统一身份认证/.test(bodyText) || !!document.querySelector("img.captcha-img") || /frontend\/login|id\.scu\.edu\.cn|enduser\/sp\/sso/i.test(location.href);
       if (!isUnifiedAuth) return false;
+      try {
+        console.log("[URP++辅助][guard] 进入统一认证登录");
+      } catch (_) {
+      }
       ensureAccountLoginTab();
       await deps.sleep(250);
       let els = findCasElements();

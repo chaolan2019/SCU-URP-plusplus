@@ -251,6 +251,7 @@ export function createLoginAssist({ config, storage, deps }) {
     const captchaImg = document.getElementById('captchaImg') || document.querySelector('.form-signin img');
     const loginButton = document.getElementById('loginButton');
     if (!usernameInput || !passwordInput || !captchaInput || !captchaImg) return false;
+    try { console.log('[URP++辅助][guard] 进入教务登录'); } catch (_) {}
     deps.log('教务登录页');
     const ready = ensureReadyForLogin('zhjw');
     if (!ready) return true;
@@ -309,6 +310,7 @@ export function createLoginAssist({ config, storage, deps }) {
       !!document.querySelector('img.captcha-img') ||
       /frontend\/login|id\.scu\.edu\.cn|enduser\/sp\/sso/i.test(location.href);
     if (!isUnifiedAuth) return false;
+    try { console.log('[URP++辅助][guard] 进入统一认证登录'); } catch (_) {}
     // 统一认证默认停在「扫码登录」，无条件先切到「账号登录」再找表单
     ensureAccountLoginTab();
     await deps.sleep(250);
