@@ -301,7 +301,7 @@ function ensureCalendarStyle() {
     #urppp-cal-modal.open .cal-modal-wrap>*:nth-child(3){animation-delay:.17s}
     @keyframes cal-stagger{to{opacity:1;transform:translateY(0)}}
     #urppp-cal-modal .cal-dialog{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-      width:min(880px,calc(100vw - 56px));max-width:calc(100vw - 56px);max-height:min(82vh,860px);
+      width:min(880px,calc(100vw - 80px));max-width:calc(100vw - 80px);max-height:min(82vh,860px);
       display:flex;flex-direction:column;overflow:hidden;
       background:var(--surface,#fff);color:var(--text,#16181d);border:1px solid var(--border,#e5e5ea);border-radius:18px;
       box-shadow:0 24px 60px rgba(0,0,0,.28);padding:20px 24px 24px}

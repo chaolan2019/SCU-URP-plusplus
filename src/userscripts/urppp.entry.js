@@ -2751,7 +2751,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-set-mode:hover:not(:disabled),
           html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-set-follow:hover:not(:disabled),
           html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-set-btn.ghost:hover:not(:disabled){
-            background:var(--editorial-hover)!important;border-bottom-color:var(--text)!important;
+            background:var(--editorial-hover)!important;border-bottom-color:var(--text)!important;color:var(--primary-hover)!important;
           }
           html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-set-mode.ac,
           html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-set-follow.ac{
