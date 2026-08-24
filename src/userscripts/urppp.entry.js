@@ -119,7 +119,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   } catch (_) { /* viewport 注入失败不影响插件其余功能 */ }
 
   // 与脚本头 @version 保持同步
-  const URPPP_VERSION = '1.9.1';
+  const URPPP_VERSION = '1.9.2';
 
   // 统一认证页(id.scu)：主插件不做任何美化，仅作为宿主注入辅助插件(登录助手/2FA/会话保持)
   // 避免主插件的样式/布局污染统一认证网站界面，同时保留辅助插件的登录相关功能
@@ -162,7 +162,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     { id: 'apple', name: '类Apple风格', desc: '系统灰底、链接蓝、大圆角与轻阴影，默认精修方向。', ready: true, dark: true, dynamic: true },
     { id: 'flat', name: '极简扁平', desc: '无阴影、硬边与纯色层次，冷硬清晰。', ready: true, dark: true, dynamic: true },
     { id: 'organic', name: '自然有机', desc: '奶油底与大地色，温暖圆角。不支持动态配色。', ready: true, dark: true, dynamic: false },
-    { id: 'brutal', name: '新野兽派', desc: '高对比画布、粗边框与硬阴影。不支持暗色和动态配色。', ready: true, dark: false, dynamic: false, palettes: true },
+    { id: 'brutal', name: '新野兽派', desc: '高对比画布、粗边框与硬阴影。支持暗色，不支持动态配色。', ready: true, dark: true, dynamic: false, palettes: true },
     { id: 'editorial', name: '编辑杂志', desc: '衬线标题、无框版面与淡分割线。支持暗色，不支持动态配色。', ready: true, dark: true, dynamic: false },
     { id: 'neu', name: '新拟物', desc: '同色双阴影凸起/内凹，立体柔和。支持暗色，不支持动态配色。', ready: true, dark: true, dynamic: false },
   ];

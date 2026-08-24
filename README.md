@@ -11,7 +11,7 @@
     <a href="https://github.com/chaolan2019/SCU-URP-plusplus/commits/main"><img src="https://img.shields.io/github/last-commit/chaolan2019/SCU-URP-plusplus?style=flat-square&amp;logo=github&amp;label=Last%20commit" alt="Last Commit"></a>
   </p>
 
-  <p><strong>主脚本 v1.9.1</strong> · 辅助插件 v1.5.1</p>
+  <p><strong>主脚本 v1.9.2</strong> · 辅助插件 v1.5.1</p>
   <p>作者：<code>Chao_Lan, Hanako</code></p>
 
   <p><strong>目录</strong></p>
@@ -73,7 +73,7 @@
   - 类Apple：系统灰、链接蓝、大圆角和轻阴影；支持暗色与动态配色
   - 极简扁平：直角硬边、无阴影；支持暗色与动态配色，交互表面悬停时自动黑白反转
   - 自然有机：奶油大地色、温暖圆角；支持暗色，动态配色入口禁用
-  - 新野兽派：高对比画布、粗黑边和硬阴影；不支持暗色与种子动态配色，可切换高能粉、酸性绿、电子蓝、亮橙预设色板
+  - 新野兽派：高对比画布、粗黑边和硬阴影；支持暗色、不支持种子动态配色，可切换高能粉、酸性绿、电子蓝、亮橙预设色板
   - 编辑杂志：暖米纸面、衬线标题、无框组件与极淡分割线；支持暖黑暗色和跟随系统，不支持动态配色
   - 新拟物：同色表面、双向柔和阴影与内凹交互；支持独立暗色和跟随系统，不支持动态配色
 - **清爽模式**（首页）：

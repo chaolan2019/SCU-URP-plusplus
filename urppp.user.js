@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SCU URP++教务系统美化
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.9.1
+// @version      1.9.2
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Chao_Lan,Hanako
 // @license      GPL-3.0-only
@@ -9688,11 +9688,83 @@ html.urppp-theme-scu-red:not(.urppp-theme-follow) #urppp-settings-panel .urppp-s
   border: none !important; border-radius: 14px !important; background: #e0e5ec !important; color: #3d4450 !important;
   box-shadow: 3px 3px 6px #bec3ca, -3px -3px 6px #f7f9fc !important; transform: none !important;
 }
-#urppp-settings-panel .urppp-skin-card[data-skin="neu"] > .urppp-skin-apply:not(:disabled):hover,
 #urppp-settings-panel .urppp-skin-card[data-skin="neu"] > .urppp-skin-apply.is-current {
   background: #e0e5ec !important; color: #263142 !important;
   box-shadow: inset 3px 3px 6px #b8bcc2, inset -3px -3px 6px #fff !important; transform: none !important;
 }
+
+/* 暗色模式：主题卡片适配（深底浅字，保留各主题辨识主色） */
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] {
+  background: #1d1d1f !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.14) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.3) !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"]:hover { background: #2c2c2e !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply {
+  background: rgba(255,255,255,.12) !important; color: #7aa2ff !important; border-color: #4a6cf7 !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply:not(:disabled):hover,
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply.is-current {
+  background: #4a6cf7 !important; border-color: #4a6cf7 !important; color: #fff !important;
+}
+
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] {
+  background: #000 !important; color: #fff !important; border-color: #fff !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover { background: #fff !important; color: #000 !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] > .urppp-skin-apply { background: #fff !important; color: #000 !important; border-color: #fff !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover > .urppp-skin-apply { border-color: #000 !important; }
+
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] {
+  background: #332a24 !important; color: #eadbc8 !important; border-color: #5a4a3c !important;
+  box-shadow: 0 3px 12px rgba(0,0,0,.4) !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"]:hover { background: #3e332b !important; border-color: #9caf7f !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] > .urppp-skin-apply {
+  background: #2b231d !important; color: #b9c99a !important; border-color: #6f8f52 !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] > .urppp-skin-apply:not(:disabled):hover,
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] > .urppp-skin-apply.is-current {
+  background: #5c4033 !important; border-color: #5c4033 !important; color: #fff !important;
+}
+
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] {
+  background: #000 !important; color: #fff !important; border: 3px solid #fff !important;
+  box-shadow: 5px 5px 0 #fff !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"]:hover {
+  background: #1a1a1a !important; color: #ccff00 !important; transform: translate(-2px,-2px) !important; box-shadow: 8px 8px 0 #fff !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] > .urppp-skin-apply {
+  background: #ff006e !important; color: #fff !important; border-color: #fff !important; box-shadow: 3px 3px 0 #fff !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] > .urppp-skin-apply:not(:disabled):hover {
+  background: #00d9ff !important; color: #000 !important; box-shadow: 5px 5px 0 #fff !important; transform: translate(-2px,-2px) !important;
+}
+
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] {
+  background: #1e1e1c !important; color: #e8e8e4 !important; border: 0 !important; box-shadow: none !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"]:hover { background: #262624 !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"].is-active { background: #2c2c28 !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply { color: #e8e8e4 !important; }
+
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] {
+  background: #262b33 !important; color: #c9cdd6 !important;
+  box-shadow: 5px 5px 10px #171a1f, -5px -5px 10px #343b46 !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"]:hover {
+  background: #262b33 !important; box-shadow: 2px 2px 4px #171a1f, -2px -2px 4px #343b46 !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] > .urppp-skin-apply {
+  background: #262b33 !important; color: #c9cdd6 !important;
+  box-shadow: 3px 3px 6px #171a1f, -3px -3px 6px #343b46 !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] > .urppp-skin-apply:not(:disabled):hover,
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] > .urppp-skin-apply.is-current {
+  background: #262b33 !important; color: #fff !important;
+  box-shadow: inset 3px 3px 6px #171a1f, inset -3px -3px 6px #343b46 !important;
+}
+
 
 /* About pane */
 #urppp-settings-panel .urppp-about {
@@ -17184,7 +17256,7 @@ ${arcs}
       }
     } catch (_) {
     }
-    const URPPP_VERSION = "1.9.1";
+    const URPPP_VERSION = "1.9.2";
     if (/^id\./i.test(String(location.hostname || ""))) {
       try {
         const authPlugin = createPluginManager({
@@ -17231,7 +17303,7 @@ ${arcs}
       { id: "apple", name: "类Apple风格", desc: "系统灰底、链接蓝、大圆角与轻阴影，默认精修方向。", ready: true, dark: true, dynamic: true },
       { id: "flat", name: "极简扁平", desc: "无阴影、硬边与纯色层次，冷硬清晰。", ready: true, dark: true, dynamic: true },
       { id: "organic", name: "自然有机", desc: "奶油底与大地色，温暖圆角。不支持动态配色。", ready: true, dark: true, dynamic: false },
-      { id: "brutal", name: "新野兽派", desc: "高对比画布、粗边框与硬阴影。不支持暗色和动态配色。", ready: true, dark: false, dynamic: false, palettes: true },
+      { id: "brutal", name: "新野兽派", desc: "高对比画布、粗边框与硬阴影。支持暗色，不支持动态配色。", ready: true, dark: true, dynamic: false, palettes: true },
       { id: "editorial", name: "编辑杂志", desc: "衬线标题、无框版面与淡分割线。支持暗色，不支持动态配色。", ready: true, dark: true, dynamic: false },
       { id: "neu", name: "新拟物", desc: "同色双阴影凸起/内凹，立体柔和。支持暗色，不支持动态配色。", ready: true, dark: true, dynamic: false }
     ];
