@@ -37,6 +37,7 @@ import {
 } from '../features/settings/panel-controller.js';
 import { buildSettingsPanelHtml } from '../features/settings/panel-template.js';
 import { createPluginManager } from '../features/plugin-manager/index.js';
+import { installContrastFixer } from '../features/clean-mode/contrast.js';
 import { createJsonSettingsController } from '../features/settings/json-settings.js';
 import {
   DIRECT_EDIT_KEYS,
@@ -7450,6 +7451,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
     else run();
   })();
+
+  // 全局文字对比度自愈（清爽模式内容区，自动读背景明暗调字色）
+  try { installContrastFixer(); } catch (_) { /* ignore */ }
 
   function openSettingsPanel() {
     return settingsPanelController.open();

@@ -1798,6 +1798,89 @@
   }
   __name(createPluginManager, "createPluginManager");
 
+  // src/features/clean-mode/contrast.js
+  function installContrastFixer(win = window) {
+    const doc = win.document;
+    const SEL = [
+      ".uc-svc",
+      ".uc-svc span",
+      ".uc-svc b",
+      ".uc-svc i",
+      ".uc-svc em",
+      ".uc-lesson",
+      ".uc-lesson b",
+      ".uc-lesson i",
+      ".uc-btn",
+      ".uc-sa-tab",
+      ".uc-badge",
+      ".uc-gpa",
+      ".uc-week-nav .uc-btn",
+      ".uc-hd-tabs .uc-sa-tab",
+      ".uc-course-detail .uc-cd-name",
+      ".uc-course-detail .uc-cd-meta",
+      ".uc-course-detail .uc-cd-chip"
+    ].join(", ");
+    function parseColor(str) {
+      const m = String(str || "").match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*(?:,\s*([\d.]+)\s*)?\)/);
+      if (!m) return null;
+      return { r: +m[1], g: +m[2], b: +m[3], a: m[4] == null ? 1 : +m[4] };
+    }
+    __name(parseColor, "parseColor");
+    function lum(c) {
+      return (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) / 255;
+    }
+    __name(lum, "lum");
+    function effectiveBg(el) {
+      let cur = el;
+      while (cur && cur.nodeType === 1 && cur !== doc.body && cur !== doc.documentElement) {
+        const c = parseColor(win.getComputedStyle(cur).backgroundColor);
+        if (c && c.a > 0.4) return c;
+        cur = cur.parentElement;
+      }
+      return null;
+    }
+    __name(effectiveBg, "effectiveBg");
+    function fix(el) {
+      try {
+        const bg = effectiveBg(el);
+        if (!bg) return;
+        const bgLum = lum(bg);
+        const col = parseColor(win.getComputedStyle(el).color) || { r: 0, g: 0, b: 0 };
+        const textLum = lum(col);
+        if (Math.abs(bgLum - textLum) < 0.3) {
+          el.style.color = bgLum < 0.5 ? "#ffffff" : "#000000";
+        }
+      } catch (_) {
+      }
+    }
+    __name(fix, "fix");
+    function scan(root) {
+      if (!root || !root.querySelectorAll) return;
+      const nodes = root.querySelectorAll(SEL);
+      for (let i = 0; i < nodes.length; i += 1) fix(nodes[i]);
+    }
+    __name(scan, "scan");
+    function handleMutations(records) {
+      for (const rec of records) {
+        for (const n of rec.addedNodes) {
+          if (n.nodeType !== 1) continue;
+          if (n.matches && n.matches(SEL)) fix(n);
+          if (n.querySelectorAll) scan(n);
+        }
+      }
+    }
+    __name(handleMutations, "handleMutations");
+    const observer = new MutationObserver(handleMutations);
+    const boot = /* @__PURE__ */ __name(() => {
+      scan(doc);
+      observer.observe(doc.body || doc.documentElement, { childList: true, subtree: true });
+    }, "boot");
+    if (doc.readyState === "loading") doc.addEventListener("DOMContentLoaded", boot);
+    else boot();
+    return () => observer.disconnect();
+  }
+  __name(installContrastFixer, "installContrastFixer");
+
   // src/features/settings/json-settings.js
   function createJsonSettingsController(options) {
     const {
@@ -24538,6 +24621,10 @@ ${arcs}
       if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run);
       else run();
     }), "bootstrapPlugins"))();
+    try {
+      installContrastFixer();
+    } catch (_) {
+    }
     function openSettingsPanel() {
       return settingsPanelController.open();
     }
