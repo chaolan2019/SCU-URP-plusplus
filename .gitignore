@@ -19,3 +19,7 @@ ocr-training/*
 ocr-training/model/*
 !ocr-training/model/scu-id-v3-compact.json
 !ocr-training/model/zhjw-char-tiny71-int16.json
+# 用户临时文档，不进版本库
+/docs/SCU_URP_System_Structure.md
+/docs/scu-urppp-logo-cli.svg
+/docs/scu-urppp-logo.svg
