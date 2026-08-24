@@ -1762,7 +1762,7 @@
         }
       });
       storeBtn.addEventListener("click", () => {
-        togglePluginStore(sec.querySelector("#urppp-store-inline"));
+        if (onSubpanel) onSubpanel("plugin-store");
       });
       on("loaded", (id) => {
         if (id === "assist") refresh();
@@ -10013,9 +10013,19 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-settings-panel .urppp-plugin-sub{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 #urppp-settings-panel .urppp-plugin-sec .urppp-set-btn{width:100%;justify-content:center}
 
-/* 主题商店 / 插件商店 内嵌式共用样式（挂设置在设置面板内，不弹窗） */
+/* 主题商店 / 插件商店：二级页（铺满设置面板，带返回按钮，非就地展开） */
 #urppp-settings-panel .urppp-theme-store-bar{margin:10px 0 2px}
-#urppp-settings-panel .urppp-theme-store-bar .urppp-set-btn{width:auto;min-width:120px;justify-content:center}
+#urppp-settings-panel .urppp-theme-store-bar .urppp-set-btn{width:100%;justify-content:center}
+#urppp-settings-panel .urppp-store-subpanel{position:absolute;top:0;left:0;width:100%;height:100%;max-height:none;display:none;flex-direction:column;background:var(--surface,#fff);z-index:6;animation:urpppStoreSubIn .16s ease}
+#urppp-settings-panel .urppp-store-subpanel.open{display:flex}
+@keyframes urpppStoreSubIn{from{opacity:0}to{opacity:1}}
+#urppp-settings-panel .urppp-store-sub-head{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--border,#e5e5ea)}
+#urppp-settings-panel .urppp-store-sub-back,#urppp-settings-panel .urppp-store-sub-close{width:30px;height:30px;border:1px solid var(--border,#e5e5ea);border-radius:9px;background:transparent;color:var(--text,#16181d);cursor:pointer;font-size:14px;line-height:1;display:grid;place-items:center;flex:none}
+#urppp-settings-panel .urppp-store-sub-back:hover,#urppp-settings-panel .urppp-store-sub-close:hover{background:color-mix(in srgb,var(--primary,#2563eb) 10%,transparent)}
+#urppp-settings-panel .urppp-store-sub-title{font-size:16px;font-weight:750;flex:1}
+#urppp-settings-panel .urppp-store-sub-body{flex:1;min-height:0;overflow:auto;padding:16px 22px}
+#urppp-settings-panel .urppp-store-sub-body .urppp-store-inline{margin-top:0;border-top:0;padding-top:0}
+#urppp-settings-panel .urppp-store-sub-body .urppp-store-empty{min-height:180px}
 #urppp-settings-panel .urppp-store-inline{margin-top:12px;border-top:1px solid var(--border,#e5e5ea);padding-top:14px}
 #urppp-settings-panel .urppp-store-tabs{display:flex;gap:8px;margin-bottom:12px;border-bottom:1px solid var(--border,#e5e5ea)}
 #urppp-settings-panel .urppp-store-tab{flex:1;height:34px;border:0;background:transparent;color:var(--text-secondary,#5b5f69);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;padding:0}
@@ -10033,7 +10043,7 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-settings-panel .urppp-store-state.ok{color:#15803d;background:color-mix(in srgb,#15803d 12%,transparent)}
 #urppp-settings-panel .urppp-store-ops{display:flex;gap:8px;flex:0 0 auto}
 #urppp-settings-panel .urppp-store-ops .urppp-set-btn,#urppp-settings-panel .urppp-store-ops button{height:30px;padding:0 12px;font-size:12px;font-weight:650}
-#urppp-settings-panel .urppp-store-ops button[data-theme-id]{min-width:64px}
+#urppp-settings-panel .urppp-store-ops{display:flex;gap:8px;flex:0 0 auto}
 `;
 
   // src/styles/table-beautify.css
@@ -24738,6 +24748,7 @@ ${arcs}
       doc: document,
       hostInfo: { version: URPPP_VERSION },
       uiDeps: { openSubpanel: /* @__PURE__ */ __name((kind) => {
+        if (kind === "plugin-store") openStoreSubPanel("plugin");
       }, "openSubpanel") }
     });
     (/* @__PURE__ */ __name((function bootstrapPlugins() {
@@ -24827,55 +24838,163 @@ ${arcs}
       }
     }
     __name(ensureSettingsPanel, "ensureSettingsPanel");
-    function openThemeStore(host) {
-      if (!host) return;
-      if (host.dataset.rendered === "1") {
-        host.style.display = host.style.display === "none" ? "" : "none";
-        return;
+    function openStoreSubPanel(kind) {
+      const main = document.getElementById("urppp-settings-panel");
+      if (!main) return;
+      let sub = document.getElementById("urppp-store-subpanel");
+      if (!sub) {
+        sub = document.createElement("div");
+        sub.id = "urppp-store-subpanel";
+        sub.className = "urppp-store-subpanel";
+        sub.innerHTML = `
+        <div class="urppp-store-sub-head">
+          <button type="button" class="urppp-store-sub-back" id="urppp-store-sub-back" aria-label="返回">←</button>
+          <div class="urppp-store-sub-title" id="urppp-store-sub-title"></div>
+          <button type="button" class="urppp-store-sub-close" id="urppp-store-sub-close" aria-label="关闭">×</button>
+        </div>
+        <div class="urppp-store-sub-body" id="urppp-store-sub-body"></div>`;
+        main.appendChild(sub);
+        sub.querySelector("#urppp-store-sub-back").onclick = closeStoreSubPanel;
+        sub.querySelector("#urppp-store-sub-close").onclick = closeStoreSubPanel;
       }
-      host.dataset.rendered = "1";
-      const installed = SKIN_CATALOG.filter((s) => s.installed);
-      const manageItems = installed.length ? installed.map((s) => `
-        <div class="urppp-store-item">
-          <div class="urppp-store-info"><strong>${escapeHtml(s.name)}</strong><span class="urppp-store-ver">v${escapeHtml(s.version || "")}</span><span class="urppp-store-state ok">内置</span></div>
-          <div class="urppp-store-ops"><button type="button" data-theme-id="${escapeHtml(s.id)}">使用</button></div>
-        </div>`).join("") : '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无主题</p><p class="urppp-store-sub">已安装的主题会显示在这里。</p></div>';
-      host.innerHTML = `
+      const title = sub.querySelector("#urppp-store-sub-title");
+      const body = sub.querySelector("#urppp-store-sub-body");
+      title.textContent = kind === "theme" ? "主题商店" : "插件商店";
+      body.innerHTML = "";
+      if (kind === "theme") renderThemeStoreBody(body);
+      else renderPluginStoreBody(body);
+      sub.classList.add("open");
+    }
+    __name(openStoreSubPanel, "openStoreSubPanel");
+    function closeStoreSubPanel() {
+      const sub = document.getElementById("urppp-store-subpanel");
+      if (!sub) return;
+      sub.classList.remove("open");
+      const body = sub.querySelector("#urppp-store-sub-body");
+      if (body) body.innerHTML = "";
+    }
+    __name(closeStoreSubPanel, "closeStoreSubPanel");
+    function bindStoreTabs(root) {
+      root.querySelectorAll(".urppp-store-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          root.querySelectorAll(".urppp-store-tab").forEach((t) => t.className = "urppp-store-tab");
+          tab.className = "urppp-store-tab ac";
+          root.querySelectorAll(".urppp-store-pane").forEach((p) => p.style.display = "none");
+          const pane = root.querySelector('.urppp-store-pane[data-pane="' + tab.dataset.tab + '"]');
+          if (pane) pane.style.display = "";
+        });
+      });
+    }
+    __name(bindStoreTabs, "bindStoreTabs");
+    function themeDownloadListHtml() {
+      const pending = SKIN_CATALOG.filter((s) => !s.installed);
+      if (!pending.length) return '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无待下载主题</p></div>';
+      return pending.map((s) => `
+      <div class="urppp-store-item">
+        <div class="urppp-store-info"><strong>${escapeHtml(s.name)}</strong><span class="urppp-store-ver">v${escapeHtml(s.version || "")}</span><span class="urppp-store-state">未安装</span></div>
+        <div class="urppp-store-ops"><button type="button" data-store-theme="${escapeHtml(s.id)}">下载</button></div>
+      </div>`).join("");
+    }
+    __name(themeDownloadListHtml, "themeDownloadListHtml");
+    function themeManageListHtml() {
+      const builtin = SKIN_CATALOG.filter((s) => s.installed);
+      if (!builtin.length) return '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无已装主题</p></div>';
+      return builtin.map((s) => `
+      <div class="urppp-store-item">
+        <div class="urppp-store-info"><strong>${escapeHtml(s.name)}</strong><span class="urppp-store-ver">v${escapeHtml(s.version || "")}</span><span class="urppp-store-state ok">内置</span></div>
+        <div class="urppp-store-ops"><button type="button" data-theme-use="${escapeHtml(s.id)}">使用</button></div>
+      </div>`).join("");
+    }
+    __name(themeManageListHtml, "themeManageListHtml");
+    function renderThemeStoreBody(body) {
+      body.innerHTML = `
       <div class="urppp-store-inline">
         <div class="urppp-store-tabs">
           <button type="button" class="urppp-store-tab ac" data-tab="download">主题下载</button>
           <button type="button" class="urppp-store-tab" data-tab="manage">主题管理</button>
         </div>
         <div class="urppp-store-body">
-          <div class="urppp-store-pane" data-pane="download"><div class="urppp-store-empty"><p class="urppp-store-empty-title">敬请期待</p><p class="urppp-store-sub">主题市场正在筹备中，后续可从这里下载更多主题皮肤。</p></div></div>
-          <div class="urppp-store-pane" data-pane="manage" style="display:none">${manageItems}</div>
+          <div class="urppp-store-pane" data-pane="download">${themeDownloadListHtml()}</div>
+          <div class="urppp-store-pane" data-pane="manage" style="display:none">${themeManageListHtml()}</div>
         </div>
       </div>`;
-      host.querySelectorAll(".urppp-store-tab").forEach((tab) => {
-        tab.addEventListener("click", () => {
-          host.querySelectorAll(".urppp-store-tab").forEach((t) => t.className = "urppp-store-tab");
-          tab.className = "urppp-store-tab ac";
-          host.querySelectorAll(".urppp-store-pane").forEach((p) => p.style.display = "none");
-          const pane = host.querySelector('.urppp-store-pane[data-pane="' + tab.dataset.tab + '"]');
-          if (pane) pane.style.display = "";
+      bindStoreTabs(body);
+      body.querySelectorAll("[data-store-theme]").forEach((b) => {
+        b.addEventListener("click", () => {
+          const old = b.textContent;
+          b.textContent = "敬请期待";
+          b.disabled = true;
+          setTimeout(() => {
+            b.textContent = "下载";
+            b.disabled = false;
+          }, 1400);
         });
       });
-      host.querySelectorAll("[data-theme-id]").forEach((b) => {
+      body.querySelectorAll("[data-theme-use]").forEach((b) => {
         b.addEventListener("click", () => {
-          if (setSkin(b.dataset.themeId)) {
-            syncSettingsPanelUI();
+          if (setSkin(b.dataset.themeUse)) syncSettingsPanelUI();
+        });
+      });
+    }
+    __name(renderThemeStoreBody, "renderThemeStoreBody");
+    function renderPluginStoreBody(body) {
+      const items = pluginManager && pluginManager.api && pluginManager.api.list && pluginManager.api.list() || [];
+      const manageHtml = items.length ? items.map((p) => `
+        <div class="urppp-store-item">
+          <div class="urppp-store-info"><strong>${escapeHtml(p.name || p.id)}</strong><span class="urppp-store-ver">${p.version ? "v" + escapeHtml(p.version) : ""}</span><span class="urppp-store-state ok">已装</span></div>
+          <div class="urppp-store-ops"><button type="button" data-plugin-op="reload" data-plugin-id="${escapeHtml(p.id)}">重新装载</button><button type="button" class="danger" data-plugin-op="unload" data-plugin-id="${escapeHtml(p.id)}">卸载</button></div>
+        </div>`).join("") : '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无插件</p><p class="urppp-store-sub">已装载的插件会显示在这里。</p></div>';
+      body.innerHTML = `
+      <div class="urppp-store-inline">
+        <div class="urppp-store-tabs">
+          <button type="button" class="urppp-store-tab ac" data-tab="download">插件下载</button>
+          <button type="button" class="urppp-store-tab" data-tab="manage">插件管理</button>
+        </div>
+        <div class="urppp-store-body">
+          <div class="urppp-store-pane" data-pane="download"><div class="urppp-store-empty"><p class="urppp-store-empty-title">敬请期待</p><p class="urppp-store-sub">插件市场正在筹备中，后续可从这里在线安装更多功能插件。</p></div></div>
+          <div class="urppp-store-pane" data-pane="manage" style="display:none">${manageHtml}</div>
+        </div>
+      </div>`;
+      bindStoreTabs(body);
+      body.querySelectorAll('[data-plugin-op="reload"]').forEach((b) => {
+        b.addEventListener("click", async () => {
+          b.disabled = true;
+          const old = b.textContent;
+          b.textContent = "装载中…";
+          try {
+            await pluginManager.api.install(b.dataset.pluginId, null);
+            b.textContent = "已装载";
+          } catch (_) {
+            b.textContent = "失败";
+          }
+          setTimeout(() => {
+            b.textContent = old;
+            b.disabled = false;
+          }, 1200);
+        });
+      });
+      body.querySelectorAll('[data-plugin-op="unload"]').forEach((b) => {
+        b.addEventListener("click", () => {
+          try {
+            pluginManager.api.unregister(b.dataset.pluginId);
+          } catch (_) {
+          }
+          if (body && body.parentElement) {
+            const cur = body.innerHTML;
+            renderPluginStoreBody(body);
+            if (cur !== body.innerHTML) {
+            }
           }
         });
       });
-      host.style.display = "";
     }
-    __name(openThemeStore, "openThemeStore");
+    __name(renderPluginStoreBody, "renderPluginStoreBody");
     function renderSkinCards(panel) {
       if (!panel) return;
       const storeBarBtn = panel.querySelector("#urppp-theme-store");
       if (storeBarBtn && !storeBarBtn.dataset.bound) {
         storeBarBtn.dataset.bound = "1";
-        storeBarBtn.addEventListener("click", () => openThemeStore(panel.querySelector("#urppp-theme-store-inline")));
+        storeBarBtn.addEventListener("click", () => openStoreSubPanel("theme"));
       }
       const list = panel.querySelector("#urppp-skin-list");
       if (!list) return;
@@ -24906,7 +25025,7 @@ ${arcs}
           e.preventDefault();
           e.stopPropagation();
           if (!skin.installed) {
-            openThemeStore(panel.querySelector("#urppp-theme-store-inline"));
+            openStoreSubPanel("theme");
             return;
           }
           if (skin.id === cur && skin.ready) return;

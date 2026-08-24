@@ -7447,7 +7447,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     },
     doc: document,
     hostInfo: { version: URPPP_VERSION },
-    uiDeps: { openSubpanel: (kind) => { /* P0 占位：子面板由辅助插件注入后接管 */ } },
+    uiDeps: { openSubpanel: (kind) => { if (kind === 'plugin-store') openStoreSubPanel('plugin'); } },
   });
 
   // 启动时自动装载已缓存插件（含登录页：让辅助登录/2FA 在 id.scu 也生效）
@@ -7523,48 +7523,137 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     try { pluginManager.renderAssistUi(panel.querySelector('#urppp-set-assist-slot')); } catch (e) { console.warn('[URP++] plugin manager', e); }
   }
 
-  // 主题商店（内嵌式）：主题下载 / 主题管理 两选项卡
-  function openThemeStore(host) {
-    if (!host) return;
-    if (host.dataset.rendered === '1') {
-      host.style.display = host.style.display === 'none' ? '' : 'none';
-      return;
+  // 主题商店 / 插件商店：二级页（铺满设置面板，带返回按钮）
+  function openStoreSubPanel(kind) {
+    const main = document.getElementById('urppp-settings-panel');
+    if (!main) return;
+    let sub = document.getElementById('urppp-store-subpanel');
+    if (!sub) {
+      sub = document.createElement('div');
+      sub.id = 'urppp-store-subpanel';
+      sub.className = 'urppp-store-subpanel';
+      sub.innerHTML = `
+        <div class="urppp-store-sub-head">
+          <button type="button" class="urppp-store-sub-back" id="urppp-store-sub-back" aria-label="返回">←</button>
+          <div class="urppp-store-sub-title" id="urppp-store-sub-title"></div>
+          <button type="button" class="urppp-store-sub-close" id="urppp-store-sub-close" aria-label="关闭">×</button>
+        </div>
+        <div class="urppp-store-sub-body" id="urppp-store-sub-body"></div>`;
+      main.appendChild(sub);
+      sub.querySelector('#urppp-store-sub-back').onclick = closeStoreSubPanel;
+      sub.querySelector('#urppp-store-sub-close').onclick = closeStoreSubPanel;
     }
-    host.dataset.rendered = '1';
-    const installed = SKIN_CATALOG.filter((s) => s.installed);
-    const manageItems = installed.length
-      ? installed.map((s) => `
-        <div class="urppp-store-item">
-          <div class="urppp-store-info"><strong>${escapeHtml(s.name)}</strong><span class="urppp-store-ver">v${escapeHtml(s.version || '')}</span><span class="urppp-store-state ok">内置</span></div>
-          <div class="urppp-store-ops"><button type="button" data-theme-id="${escapeHtml(s.id)}">使用</button></div>
-        </div>`).join('')
-      : '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无主题</p><p class="urppp-store-sub">已安装的主题会显示在这里。</p></div>';
-    host.innerHTML = `
+    const title = sub.querySelector('#urppp-store-sub-title');
+    const body = sub.querySelector('#urppp-store-sub-body');
+    title.textContent = kind === 'theme' ? '主题商店' : '插件商店';
+    body.innerHTML = '';
+    if (kind === 'theme') renderThemeStoreBody(body);
+    else renderPluginStoreBody(body);
+    sub.classList.add('open');
+  }
+
+  function closeStoreSubPanel() {
+    const sub = document.getElementById('urppp-store-subpanel');
+    if (!sub) return;
+    sub.classList.remove('open');
+    const body = sub.querySelector('#urppp-store-sub-body');
+    if (body) body.innerHTML = '';
+  }
+
+  function bindStoreTabs(root) {
+    root.querySelectorAll('.urppp-store-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        root.querySelectorAll('.urppp-store-tab').forEach((t) => t.className = 'urppp-store-tab');
+        tab.className = 'urppp-store-tab ac';
+        root.querySelectorAll('.urppp-store-pane').forEach((p) => p.style.display = 'none');
+        const pane = root.querySelector('.urppp-store-pane[data-pane="' + tab.dataset.tab + '"]');
+        if (pane) pane.style.display = '';
+      });
+    });
+  }
+
+  // 主题下载列表（未安装主题，4 个）
+  function themeDownloadListHtml() {
+    const pending = SKIN_CATALOG.filter((s) => !s.installed);
+    if (!pending.length) return '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无待下载主题</p></div>';
+    return pending.map((s) => `
+      <div class="urppp-store-item">
+        <div class="urppp-store-info"><strong>${escapeHtml(s.name)}</strong><span class="urppp-store-ver">v${escapeHtml(s.version || '')}</span><span class="urppp-store-state">未安装</span></div>
+        <div class="urppp-store-ops"><button type="button" data-store-theme="${escapeHtml(s.id)}">下载</button></div>
+      </div>`).join('');
+  }
+
+  // 主题管理列表（已装主题）
+  function themeManageListHtml() {
+    const builtin = SKIN_CATALOG.filter((s) => s.installed);
+    if (!builtin.length) return '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无已装主题</p></div>';
+    return builtin.map((s) => `
+      <div class="urppp-store-item">
+        <div class="urppp-store-info"><strong>${escapeHtml(s.name)}</strong><span class="urppp-store-ver">v${escapeHtml(s.version || '')}</span><span class="urppp-store-state ok">内置</span></div>
+        <div class="urppp-store-ops"><button type="button" data-theme-use="${escapeHtml(s.id)}">使用</button></div>
+      </div>`).join('');
+  }
+
+  function renderThemeStoreBody(body) {
+    body.innerHTML = `
       <div class="urppp-store-inline">
         <div class="urppp-store-tabs">
           <button type="button" class="urppp-store-tab ac" data-tab="download">主题下载</button>
           <button type="button" class="urppp-store-tab" data-tab="manage">主题管理</button>
         </div>
         <div class="urppp-store-body">
-          <div class="urppp-store-pane" data-pane="download"><div class="urppp-store-empty"><p class="urppp-store-empty-title">敬请期待</p><p class="urppp-store-sub">主题市场正在筹备中，后续可从这里下载更多主题皮肤。</p></div></div>
-          <div class="urppp-store-pane" data-pane="manage" style="display:none">${manageItems}</div>
+          <div class="urppp-store-pane" data-pane="download">${themeDownloadListHtml()}</div>
+          <div class="urppp-store-pane" data-pane="manage" style="display:none">${themeManageListHtml()}</div>
         </div>
       </div>`;
-    host.querySelectorAll('.urppp-store-tab').forEach((tab) => {
-      tab.addEventListener('click', () => {
-        host.querySelectorAll('.urppp-store-tab').forEach((t) => t.className = 'urppp-store-tab');
-        tab.className = 'urppp-store-tab ac';
-        host.querySelectorAll('.urppp-store-pane').forEach((p) => p.style.display = 'none');
-        const pane = host.querySelector('.urppp-store-pane[data-pane="' + tab.dataset.tab + '"]');
-        if (pane) pane.style.display = '';
-      });
-    });
-    host.querySelectorAll('[data-theme-id]').forEach((b) => {
+    bindStoreTabs(body);
+    body.querySelectorAll('[data-store-theme]').forEach((b) => {
       b.addEventListener('click', () => {
-        if (setSkin(b.dataset.themeId)) { syncSettingsPanelUI(); }
+        const old = b.textContent; b.textContent = '敬请期待'; b.disabled = true;
+        setTimeout(() => { b.textContent = '下载'; b.disabled = false; }, 1400);
       });
     });
-    host.style.display = '';
+    body.querySelectorAll('[data-theme-use]').forEach((b) => {
+      b.addEventListener('click', () => { if (setSkin(b.dataset.themeUse)) syncSettingsPanelUI(); });
+    });
+  }
+
+  // 插件商店：下载占位 + 管理（已装插件 重新装载/卸载）
+  function renderPluginStoreBody(body) {
+    const items = (pluginManager && pluginManager.api && pluginManager.api.list && pluginManager.api.list()) || [];
+    const manageHtml = items.length
+      ? items.map((p) => `
+        <div class="urppp-store-item">
+          <div class="urppp-store-info"><strong>${escapeHtml(p.name || p.id)}</strong><span class="urppp-store-ver">${p.version ? 'v' + escapeHtml(p.version) : ''}</span><span class="urppp-store-state ok">已装</span></div>
+          <div class="urppp-store-ops"><button type="button" data-plugin-op="reload" data-plugin-id="${escapeHtml(p.id)}">重新装载</button><button type="button" class="danger" data-plugin-op="unload" data-plugin-id="${escapeHtml(p.id)}">卸载</button></div>
+        </div>`).join('')
+      : '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无插件</p><p class="urppp-store-sub">已装载的插件会显示在这里。</p></div>';
+    body.innerHTML = `
+      <div class="urppp-store-inline">
+        <div class="urppp-store-tabs">
+          <button type="button" class="urppp-store-tab ac" data-tab="download">插件下载</button>
+          <button type="button" class="urppp-store-tab" data-tab="manage">插件管理</button>
+        </div>
+        <div class="urppp-store-body">
+          <div class="urppp-store-pane" data-pane="download"><div class="urppp-store-empty"><p class="urppp-store-empty-title">敬请期待</p><p class="urppp-store-sub">插件市场正在筹备中，后续可从这里在线安装更多功能插件。</p></div></div>
+          <div class="urppp-store-pane" data-pane="manage" style="display:none">${manageHtml}</div>
+        </div>
+      </div>`;
+    bindStoreTabs(body);
+    body.querySelectorAll('[data-plugin-op="reload"]').forEach((b) => {
+      b.addEventListener('click', async () => {
+        b.disabled = true; const old = b.textContent; b.textContent = '装载中…';
+        try { await pluginManager.api.install(b.dataset.pluginId, null); b.textContent = '已装载'; }
+        catch (_) { b.textContent = '失败'; }
+        setTimeout(() => { b.textContent = old; b.disabled = false; }, 1200);
+      });
+    });
+    body.querySelectorAll('[data-plugin-op="unload"]').forEach((b) => {
+      b.addEventListener('click', () => {
+        try { pluginManager.api.unregister(b.dataset.pluginId); } catch (_) {}
+        if (body && body.parentElement) { const cur = body.innerHTML; renderPluginStoreBody(body); if (cur !== body.innerHTML) {} }
+      });
+    });
   }
 
   function renderSkinCards(panel) {
@@ -7572,7 +7661,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const storeBarBtn = panel.querySelector('#urppp-theme-store');
     if (storeBarBtn && !storeBarBtn.dataset.bound) {
       storeBarBtn.dataset.bound = '1';
-      storeBarBtn.addEventListener('click', () => openThemeStore(panel.querySelector('#urppp-theme-store-inline')));
+      storeBarBtn.addEventListener('click', () => openStoreSubPanel('theme'));
     }
     const list = panel.querySelector('#urppp-skin-list');
     if (!list) return;
@@ -7604,7 +7693,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         e.stopPropagation();
         if (!skin.installed) {
           // 未安装：打开主题商店
-          openThemeStore(panel.querySelector('#urppp-theme-store-inline'));
+          openStoreSubPanel('theme');
           return;
         }
         if (skin.id === cur && skin.ready) return;

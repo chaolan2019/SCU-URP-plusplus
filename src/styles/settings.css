@@ -726,9 +726,19 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-settings-panel .urppp-plugin-sub{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 #urppp-settings-panel .urppp-plugin-sec .urppp-set-btn{width:100%;justify-content:center}
 
-/* 主题商店 / 插件商店 内嵌式共用样式（挂设置在设置面板内，不弹窗） */
+/* 主题商店 / 插件商店：二级页（铺满设置面板，带返回按钮，非就地展开） */
 #urppp-settings-panel .urppp-theme-store-bar{margin:10px 0 2px}
-#urppp-settings-panel .urppp-theme-store-bar .urppp-set-btn{width:auto;min-width:120px;justify-content:center}
+#urppp-settings-panel .urppp-theme-store-bar .urppp-set-btn{width:100%;justify-content:center}
+#urppp-settings-panel .urppp-store-subpanel{position:absolute;top:0;left:0;width:100%;height:100%;max-height:none;display:none;flex-direction:column;background:var(--surface,#fff);z-index:6;animation:urpppStoreSubIn .16s ease}
+#urppp-settings-panel .urppp-store-subpanel.open{display:flex}
+@keyframes urpppStoreSubIn{from{opacity:0}to{opacity:1}}
+#urppp-settings-panel .urppp-store-sub-head{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--border,#e5e5ea)}
+#urppp-settings-panel .urppp-store-sub-back,#urppp-settings-panel .urppp-store-sub-close{width:30px;height:30px;border:1px solid var(--border,#e5e5ea);border-radius:9px;background:transparent;color:var(--text,#16181d);cursor:pointer;font-size:14px;line-height:1;display:grid;place-items:center;flex:none}
+#urppp-settings-panel .urppp-store-sub-back:hover,#urppp-settings-panel .urppp-store-sub-close:hover{background:color-mix(in srgb,var(--primary,#2563eb) 10%,transparent)}
+#urppp-settings-panel .urppp-store-sub-title{font-size:16px;font-weight:750;flex:1}
+#urppp-settings-panel .urppp-store-sub-body{flex:1;min-height:0;overflow:auto;padding:16px 22px}
+#urppp-settings-panel .urppp-store-sub-body .urppp-store-inline{margin-top:0;border-top:0;padding-top:0}
+#urppp-settings-panel .urppp-store-sub-body .urppp-store-empty{min-height:180px}
 #urppp-settings-panel .urppp-store-inline{margin-top:12px;border-top:1px solid var(--border,#e5e5ea);padding-top:14px}
 #urppp-settings-panel .urppp-store-tabs{display:flex;gap:8px;margin-bottom:12px;border-bottom:1px solid var(--border,#e5e5ea)}
 #urppp-settings-panel .urppp-store-tab{flex:1;height:34px;border:0;background:transparent;color:var(--text-secondary,#5b5f69);font-size:13px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;padding:0}
@@ -746,4 +756,4 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-settings-panel .urppp-store-state.ok{color:#15803d;background:color-mix(in srgb,#15803d 12%,transparent)}
 #urppp-settings-panel .urppp-store-ops{display:flex;gap:8px;flex:0 0 auto}
 #urppp-settings-panel .urppp-store-ops .urppp-set-btn,#urppp-settings-panel .urppp-store-ops button{height:30px;padding:0 12px;font-size:12px;font-weight:650}
-#urppp-settings-panel .urppp-store-ops button[data-theme-id]{min-width:64px}
+#urppp-settings-panel .urppp-store-ops{display:flex;gap:8px;flex:0 0 auto}

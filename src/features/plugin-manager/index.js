@@ -362,8 +362,8 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
       }
     });
 
-    // 插件商店：内嵌式（点击展开/收起，两选项卡：下载 / 管理）
-    storeBtn.addEventListener('click', () => { togglePluginStore(sec.querySelector('#urppp-store-inline')); });
+    // 插件商店：二级页（铺满设置面板，带返回按钮）
+    storeBtn.addEventListener('click', () => { if (onSubpanel) onSubpanel('plugin-store'); });
 
     // 装载后子面板注册（辅助插件调用 register 时，主插件拉取它的 subpanels）
     // 通过事件联动刷新
