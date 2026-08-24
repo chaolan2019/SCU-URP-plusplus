@@ -13,8 +13,8 @@ export function installContrastFixer(win = window) {
   const doc = win.document;
   const SEL = [
     '.uc-svc',
-    '.uc-svc span', '.uc-svc b', '.uc-svc i', '.uc-svc em',
-    '.uc-lesson', '.uc-lesson b', '.uc-lesson i',
+    '.uc-svc span', '.uc-svc b', '.uc-svc i', '.uc-svc em', '.uc-svc strong',
+    '.uc-lesson', '.uc-lesson b', '.uc-lesson i', '.uc-lesson strong',
     '.uc-btn', '.uc-sa-tab', '.uc-badge',
     '.uc-gpa', '.uc-week-nav .uc-btn', '.uc-hd-tabs .uc-sa-tab',
     '.uc-course-detail .uc-cd-name', '.uc-course-detail .uc-cd-meta', '.uc-course-detail .uc-cd-chip',
