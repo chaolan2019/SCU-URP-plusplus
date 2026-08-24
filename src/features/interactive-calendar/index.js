@@ -340,12 +340,14 @@ function ensureCalendarStyle() {
     #urppp-cal-modal .cal-w-prog-bar{height:7px;border-radius:7px;background:var(--border,#e5e5ea);overflow:hidden}
     #urppp-cal-modal .cal-w-prog-bar i{display:block;height:100%;background:var(--primary,#2563eb);border-radius:7px}
     /* 时间线：按月分组（独立滚动区，顶栏/下一个事件固定不滚） */
-    #urppp-cal-modal .cal-timeline{display:flex;flex-direction:column;gap:6px;margin-top:2px;overflow:auto;overflow-x:hidden;flex:1;min-height:0;overscroll-behavior:contain}
+    #urppp-cal-modal .cal-timeline{display:flex;flex-direction:column;gap:6px;margin-top:2px;overflow:auto;overflow-x:hidden;flex:1;min-height:0;overscroll-behavior:contain;scrollbar-gutter:stable;scrollbar-width:thin}
+    #urppp-cal-modal .cal-timeline::-webkit-scrollbar{width:8px}
+    #urppp-cal-modal .cal-timeline::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--text-secondary,#5b5f69) 45%,transparent);border-radius:8px}
     #urppp-cal-modal .cal-mon{border-top:1px solid var(--border,#e5e5ea)}
     #urppp-cal-modal .cal-mon:first-child{border-top:0}
     #urppp-cal-modal .cal-mon-label{font-size:11px;font-weight:700;color:var(--text-secondary,#5b5f69);padding:12px 0 6px;letter-spacing:.05em}
     #urppp-cal-modal .cal-mon-items{display:flex;flex-direction:column}
-    #urppp-cal-modal .cal-ev{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:10px;transition:background .15s}
+    #urppp-cal-modal .cal-ev{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:10px;transition:background .15s;width:100%;min-width:0;box-sizing:border-box}
     #urppp-cal-modal .cal-ev:hover{background:color-mix(in srgb,var(--primary,#2563eb) 5%,transparent)}
     #urppp-cal-modal .cal-ev.cal-today{outline:2px solid color-mix(in srgb,var(--primary,#2563eb) 40%,transparent)}
     #urppp-cal-modal .cal-ev-dot{width:8px;height:8px;border-radius:50%;flex:none}
@@ -369,6 +371,8 @@ function ensureCalendarStyle() {
     html[data-urppp-skin="brutal"] #urppp-cal-modal .cal-ev{border-radius:0!important}
     /* 编辑杂志：当前事件选中框矩形+黑描边，贴近 editorial 极简 */
     html[data-urppp-skin="editorial"] #urppp-cal-modal .cal-ev.cal-today{outline:2px solid var(--text)!important;outline-offset:-2px!important;border-radius:0!important}
+    /* 编辑杂志：学期切换选中按钮倒置(--text底+--surface字), 避免--primary浅色白底白字 */
+    html[data-urppp-skin="editorial"] #urppp-cal-modal .cal-term.ac{background:var(--text)!important;color:var(--surface)!important;border-color:var(--text)!important}
     html[data-urppp-skin="flat"] #urppp-clean-root .uc-cal-summary,
     html[data-urppp-skin="flat"] #urppp-cal-modal .cal-dialog,
     html[data-urppp-skin="flat"] #urppp-cal-modal .cal-widget,
