@@ -180,9 +180,17 @@ export function createLoginAssist({ config, storage, deps }) {
 
   function refreshLoginCaptchaImage(captchaImg) {
     if (!captchaImg || !captchaImg.src) return;
-    let refreshed = captchaImg.src;
+    const src = captchaImg.src;
+    // data:image 内联验证码：加 query 会破坏 base64，直接原样重载让浏览器重新解码
+    if (/^data:/i.test(src)) {
+      try { captchaImg.src = src; } catch (_) { /* ignore */ }
+      const visibleImg = document.getElementById('urppp-capimg');
+      if (visibleImg) visibleImg.src = src;
+      return;
+    }
+    let refreshed = src;
     try {
-      const url = new URL(captchaImg.src, location.href);
+      const url = new URL(src, location.href);
       url.searchParams.set('_urpppp', String(Date.now()));
       refreshed = url.href;
     } catch (_) { /* ignore */ }

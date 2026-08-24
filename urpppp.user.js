@@ -1213,9 +1213,19 @@
     __name(fillLoginCaptcha, "fillLoginCaptcha");
     function refreshLoginCaptchaImage(captchaImg) {
       if (!captchaImg || !captchaImg.src) return;
-      let refreshed = captchaImg.src;
+      const src = captchaImg.src;
+      if (/^data:/i.test(src)) {
+        try {
+          captchaImg.src = src;
+        } catch (_) {
+        }
+        const visibleImg2 = document.getElementById("urppp-capimg");
+        if (visibleImg2) visibleImg2.src = src;
+        return;
+      }
+      let refreshed = src;
       try {
-        const url = new URL(captchaImg.src, location.href);
+        const url = new URL(src, location.href);
         url.searchParams.set("_urpppp", String(Date.now()));
         refreshed = url.href;
       } catch (_) {
