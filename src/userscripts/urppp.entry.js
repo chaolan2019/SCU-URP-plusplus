@@ -1853,7 +1853,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-root .ubtn,
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-nav-clean,#urppp-nav-cal,
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-nav-theme button:not(.urppp-nav-dot),
-          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-settings-panel button:not(.urppp-nav-dot),
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-settings-panel button:not(.urppp-nav-dot):not(.urppp-skin-apply):not(.urppp-set-swatch),
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-btn,
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-tabbar button,
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-hd-tabs .uc-sa-tab,
@@ -1885,6 +1885,13 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           }
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-lesson b,
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-lesson i{background:transparent!important;color:#fff!important;}
+          /* 个人资料：主修方案/绩点标签暗底白字(绩点用暴力强调色底黑字) */
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-gpa{
+            background:var(--brutal-accent)!important;color:#000!important;border:2px solid #000!important;
+          }
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-gpa span{color:#000!important;}
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-sub,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-profile .uc-sub span{color:#fff!important;}
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-svc,
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-svc span,
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-svc i,
@@ -1961,7 +1968,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           html[data-urppp-skin="brutal"] #urppp-root .ubtn,
           html[data-urppp-skin="brutal"] #urppp-nav-clean,#urppp-nav-cal,
           html[data-urppp-skin="brutal"] #urppp-nav-theme button:not(.urppp-nav-dot),
-          html[data-urppp-skin="brutal"] #urppp-settings-panel button:not(.urppp-nav-dot),
+          html[data-urppp-skin="brutal"] #urppp-settings-panel button:not(.urppp-nav-dot):not(.urppp-skin-apply):not(.urppp-set-swatch),
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-btn,
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-tabbar button,
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab,
@@ -1989,7 +1996,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           html[data-urppp-skin="brutal"] .btn-app:hover,
           html[data-urppp-skin="brutal"] #urppp-root .ubtn:hover,
           html[data-urppp-skin="brutal"] #urppp-nav-clean,#urppp-nav-cal:hover,#urppp-nav-cal:hover,
-          html[data-urppp-skin="brutal"] #urppp-settings-panel button:hover:not(:disabled),
+          html[data-urppp-skin="brutal"] #urppp-settings-panel button:hover:not(:disabled):not(.urppp-skin-apply):not(.urppp-set-swatch),
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-btn:hover,
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-tabbar button:hover,
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab:hover,
@@ -2014,7 +2021,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           html[data-urppp-skin="brutal"] button.btn:active,
           html[data-urppp-skin="brutal"] .btn-app:active,
           html[data-urppp-skin="brutal"] #urppp-root .ubtn:active,
-          html[data-urppp-skin="brutal"] #urppp-settings-panel button:active:not(:disabled),
+          html[data-urppp-skin="brutal"] #urppp-settings-panel button:active:not(:disabled):not(.urppp-skin-apply):not(.urppp-set-swatch),
           html[data-urppp-skin="brutal"] #urppp-clean-root button:active{
             box-shadow:none!important;transform:translate(4px,4px)!important;
           }

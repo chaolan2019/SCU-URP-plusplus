@@ -9115,6 +9115,13 @@ html[data-urppp-skin="flat"] .urppp-export-trigger:hover{background:var(--text)!
 html[data-urppp-skin="flat"] .urppp-export-menu{border:2px solid var(--text)!important;border-radius:0!important;box-shadow:none!important}
 html[data-urppp-skin="flat"] .urppp-export-option{border-radius:0!important}
 html[data-urppp-skin="flat"] .urppp-export-option:hover:not(:disabled){background:var(--text)!important;color:var(--surface)!important}
+html[data-urppp-skin="brutal"].urppp-theme-dark .urppp-export-trigger{border:3px solid #fff!important;border-radius:0!important;background:#0a0a0a!important;color:#fff!important;box-shadow:4px 4px 0 #fff!important}
+html[data-urppp-skin="brutal"].urppp-theme-dark .urppp-export-menu{background:#0a0a0a!important;border:3px solid #fff!important;border-radius:0!important;box-shadow:6px 6px 0 #000!important}
+html[data-urppp-skin="brutal"].urppp-theme-dark .urppp-export-option{color:#fff!important}
+html[data-urppp-skin="brutal"].urppp-theme-dark .urppp-export-option strong{color:#fff!important}
+html[data-urppp-skin="brutal"].urppp-theme-dark .urppp-export-option small{color:#eee!important}
+html[data-urppp-skin="brutal"].urppp-theme-dark .urppp-export-option:hover:not(:disabled){background:#1c1c1c!important;color:var(--brutal-accent)!important}
+html[data-urppp-skin="brutal"].urppp-theme-dark .urppp-export-option:hover:not(:disabled) strong{color:var(--brutal-accent)!important}
 html[data-urppp-skin="brutal"] .urppp-export-trigger{border:3px solid #000!important;border-radius:0!important;background:#fff!important;color:#000!important;box-shadow:3px 3px 0 #000!important}
 html[data-urppp-skin="brutal"] .urppp-export-trigger:hover{background:var(--brutal-accent,#ff006e)!important;color:#000!important}
 html[data-urppp-skin="brutal"] .urppp-export-trigger:active{box-shadow:none!important;transform:none!important}
@@ -9851,6 +9858,15 @@ html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-cal-modal .cal-widget .ca
 html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-privacy-groups,html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-identity-editor{border-width:1px 0;border-radius:0;background:transparent}
 html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-feature-input,html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-avatar-preview-shell{border-width:0 0 1px;border-radius:0;background:transparent}
 html[data-urppp-skin="editorial"] #urppp-settings-panel #urppp-set-json-mapping{border-width:1px 0!important;border-radius:0!important;background:transparent!important}
+/* editorial：选中态按钮倒置(--text底+--surface字)，避免 --primary 浅色导致白底白字 */
+html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-set-mode.ac,
+html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-set-mode.ac:not(:disabled),
+html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-set-follow.ac,
+html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-set-follow.ac:not(:disabled),
+html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-set-tab.ac,
+html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-set-btn.primary{
+  background:var(--text)!important;border-color:var(--text)!important;color:var(--surface)!important;
+}
 html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-privacy-groups,html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-identity-editor{border:0;border-radius:16px;background:var(--neu-base);box-shadow:var(--neu-inset-soft)}
 html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left-color:var(--neu-edge-soft)}
 html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-feature-input,html[data-urppp-skin="neu"] #urppp-settings-panel .urppp-avatar-preview-shell{border:0;background:var(--neu-base);box-shadow:var(--neu-inset-soft)}
@@ -14178,6 +14194,12 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
     #urppp-cal-modal .cal-close:hover{background:color-mix(in srgb,var(--primary,#2563eb) 10%,transparent)}
     #urppp-cal-modal .cal-body{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
     #urppp-cal-modal .cal-modal-wrap{display:flex;flex-direction:column;gap:16px;flex:1;min-height:0}
+    /* 防弹窗内容边界裁剪：允许收缩 + 长文本断行 */
+    #urppp-cal-modal .cal-dialog,#urppp-cal-modal .cal-body,#urppp-cal-modal .cal-modal-wrap,#urppp-cal-modal .cal-modal-top,
+    #urppp-cal-modal .cal-widget,#urppp-cal-modal .cal-timeline,#urppp-cal-modal .cal-ev{box-sizing:border-box}
+    #urppp-cal-modal .cal-modal-wrap>*,#urppp-cal-modal .cal-widget>*,#urppp-cal-modal .cal-ev>*{min-width:0}
+    #urppp-cal-modal .cal-ev,#urppp-cal-modal .cal-ev span,#urppp-cal-modal .cal-ev b,#urppp-cal-modal .cal-w-sub,
+    #urppp-cal-modal .cal-mon-label{white-space:normal!important;word-break:break-word!important;overflow-wrap:anywhere!important;}
     #urppp-cal-modal .cal-modal-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
     #urppp-cal-modal .cal-modal-title{font-size:17px;font-weight:750}
     #urppp-cal-modal .cal-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -14187,6 +14209,8 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
     /* 横置小组件 */
     #urppp-cal-modal .cal-widget{display:flex;align-items:center;gap:22px;background:color-mix(in srgb,var(--primary,#2563eb) 5%,#fff);
       border:1px solid var(--border,#e5e5ea);border-radius:16px;padding:18px 22px;flex-wrap:wrap}
+    /* 非 brutal 主题暗色：校历小部件背景改深色，避免白底+白字(brutal 另有覆盖) */
+    html.urppp-theme-dark #urppp-cal-modal .cal-widget{background:color-mix(in srgb,var(--primary,#2563eb) 12%,var(--surface,#0a0a0a))!important;}
     #urppp-cal-modal .cal-w-left{flex:1;min-width:200px}
     #urppp-cal-modal .cal-w-label{font-size:11px;color:var(--text-secondary,#5b5f69);letter-spacing:.03em}
     #urppp-cal-modal .cal-w-ev{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:700;margin-top:3px}
@@ -14251,6 +14275,11 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
     html[data-urppp-skin="neu"] #urppp-cal-modal .cal-dialog{box-shadow:4px 4px 10px rgba(0,0,0,.08),-4px -4px 12px #fff!important}
     html[data-urppp-skin="neu"] #urppp-cal-modal .cal-term,
     html[data-urppp-skin="neu"] #urppp-cal-modal .cal-close{box-shadow:2px 2px 6px rgba(0,0,0,.08),-2px -2px 6px #fff!important}
+    html.urppp-theme-dark[data-urppp-skin="neu"] #urppp-clean-root .uc-cal-summary,
+    html.urppp-theme-dark[data-urppp-skin="neu"] #urppp-clean-root .uc-cal-summary-compact,
+    html.urppp-theme-dark[data-urppp-skin="neu"] #urppp-cal-modal .cal-dialog,
+    html.urppp-theme-dark[data-urppp-skin="neu"] #urppp-cal-modal .cal-term,
+    html.urppp-theme-dark[data-urppp-skin="neu"] #urppp-cal-modal .cal-close{box-shadow:4px 4px 10px var(--neu-shadow-dark),-4px -4px 12px var(--neu-shadow-light)!important}
     @media (max-width:560px){
       #urppp-cal-modal .cal-widget{gap:12px}
       #urppp-cal-modal .cal-dialog{padding:16px}
@@ -19112,7 +19141,7 @@ ${arcs}
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-root .ubtn,
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-nav-clean,#urppp-nav-cal,
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-nav-theme button:not(.urppp-nav-dot),
-          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-settings-panel button:not(.urppp-nav-dot),
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-settings-panel button:not(.urppp-nav-dot):not(.urppp-skin-apply):not(.urppp-set-swatch),
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-btn,
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-tabbar button,
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-hd-tabs .uc-sa-tab,
@@ -19144,6 +19173,13 @@ ${arcs}
           }
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-lesson b,
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-lesson i{background:transparent!important;color:#fff!important;}
+          /* 个人资料：主修方案/绩点标签暗底白字(绩点用暴力强调色底黑字) */
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-gpa{
+            background:var(--brutal-accent)!important;color:#000!important;border:2px solid #000!important;
+          }
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-gpa span{color:#000!important;}
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-sub,
+          html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-profile .uc-sub span{color:#fff!important;}
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-svc,
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-svc span,
           html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-svc i,
@@ -19220,7 +19256,7 @@ ${arcs}
           html[data-urppp-skin="brutal"] #urppp-root .ubtn,
           html[data-urppp-skin="brutal"] #urppp-nav-clean,#urppp-nav-cal,
           html[data-urppp-skin="brutal"] #urppp-nav-theme button:not(.urppp-nav-dot),
-          html[data-urppp-skin="brutal"] #urppp-settings-panel button:not(.urppp-nav-dot),
+          html[data-urppp-skin="brutal"] #urppp-settings-panel button:not(.urppp-nav-dot):not(.urppp-skin-apply):not(.urppp-set-swatch),
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-btn,
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-tabbar button,
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab,
@@ -19248,7 +19284,7 @@ ${arcs}
           html[data-urppp-skin="brutal"] .btn-app:hover,
           html[data-urppp-skin="brutal"] #urppp-root .ubtn:hover,
           html[data-urppp-skin="brutal"] #urppp-nav-clean,#urppp-nav-cal:hover,#urppp-nav-cal:hover,
-          html[data-urppp-skin="brutal"] #urppp-settings-panel button:hover:not(:disabled),
+          html[data-urppp-skin="brutal"] #urppp-settings-panel button:hover:not(:disabled):not(.urppp-skin-apply):not(.urppp-set-swatch),
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-btn:hover,
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-tabbar button:hover,
           html[data-urppp-skin="brutal"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab:hover,
@@ -19273,7 +19309,7 @@ ${arcs}
           html[data-urppp-skin="brutal"] button.btn:active,
           html[data-urppp-skin="brutal"] .btn-app:active,
           html[data-urppp-skin="brutal"] #urppp-root .ubtn:active,
-          html[data-urppp-skin="brutal"] #urppp-settings-panel button:active:not(:disabled),
+          html[data-urppp-skin="brutal"] #urppp-settings-panel button:active:not(:disabled):not(.urppp-skin-apply):not(.urppp-set-swatch),
           html[data-urppp-skin="brutal"] #urppp-clean-root button:active{
             box-shadow:none!important;transform:translate(4px,4px)!important;
           }
