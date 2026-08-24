@@ -1576,6 +1576,19 @@
       return m ? m[1] : "";
     }
     __name(detectVersion, "detectVersion");
+    async function update(id, remoteUrls, onProgress) {
+      const urls = Array.isArray(remoteUrls) ? remoteUrls : remoteUrls ? [remoteUrls] : pluginSource(id);
+      const code = await fetchWithFallback(urls, onProgress);
+      setValue(`${STORAGE_PREFIX}${id}_code`, code);
+      const ver = detectVersion(code);
+      const s = state.get(id) || { loaded: false, enabled: false, version: "" };
+      s.version = ver || s.version;
+      s.code = code;
+      state.set(id, s);
+      emit("updated", id);
+      return { ok: true, version: ver || s.version };
+    }
+    __name(update, "update");
     function bootFromCache(id) {
       const code = getValue(`${STORAGE_PREFIX}${id}_code`);
       if (!code) return false;
@@ -1622,6 +1635,7 @@
       enable: /* @__PURE__ */ __name((id, on2 = true) => setEnabled(id, on2), "enable"),
       disable: /* @__PURE__ */ __name((id) => setEnabled(id, false), "disable"),
       install,
+      update,
       bootFromCache,
       // 宿主能力
       storage: /* @__PURE__ */ __name(() => getValue && { get: /* @__PURE__ */ __name((k) => getValue(k), "get"), set: /* @__PURE__ */ __name((k, v) => setValue(k, v), "set") }, "storage"),
@@ -1776,6 +1790,7 @@
     return {
       api,
       install,
+      update,
       renderAssistUi,
       bootFromCache,
       register
@@ -24965,6 +24980,13 @@ ${arcs}
         if (r && r.status === "update") {
           showUpdateToast(r);
         }
+        const assistR = await hotUpdateAssist();
+        if (assistR) {
+          try {
+            console.log("[URP++] 辅助插件热更新到", assistR.version);
+          } catch (_) {
+          }
+        }
       } catch (e) {
         try {
           console.debug("[URP++] auto update check failed", e);
@@ -24973,6 +24995,17 @@ ${arcs}
       }
     }
     __name(maybeAutoCheckUpdate, "maybeAutoCheckUpdate");
+    function hotUpdateAssist() {
+      const checker = (window.__urpppUpdateCheckers || __urpppUpdateCheckers || []).find((c) => c && c.id === "assist");
+      if (!checker || typeof checker.check !== "function") return Promise.resolve(null);
+      return Promise.resolve().then(() => checker.check()).then((r) => {
+        if (r && r.status === "update") {
+          return pluginManager.update("assist");
+        }
+        return null;
+      }).catch(() => null);
+    }
+    __name(hotUpdateAssist, "hotUpdateAssist");
     async function checkForUpdates() {
       if (__urpppUpdateBusy) return;
       __urpppUpdateBusy = true;

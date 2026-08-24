@@ -7956,7 +7956,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   async function maybeAutoCheckUpdate() {
     if (!isAutoUpdateCheck()) return;
-    // 仅限制“同一次页面生命周期”不重复请求；刷新 / 重新进入会再检再弹
+    // 仅限制"同一次页面生命周期"不重复请求；刷新 / 重新进入会再检再弹
     if (window.__urpppAutoUpdateTried) return;
     window.__urpppAutoUpdateTried = true;
     try {
@@ -7964,10 +7964,24 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       if (r && r.status === 'update') {
         showUpdateToast(r);
       }
+      // 辅助插件热更新：检测到有新版自动覆盖缓存（下次进页生效），无需用户操作
+      const assistR = await hotUpdateAssist();
+      if (assistR) { try { console.log('[URP++] 辅助插件热更新到', assistR.version); } catch (_) {} }
     } catch (e) {
       // 静默失败，不打扰
       try { console.debug('[URP++] auto update check failed', e); } catch (_) {}
     }
+  }
+
+  function hotUpdateAssist() {
+    const checker = (window.__urpppUpdateCheckers || __urpppUpdateCheckers || []).find((c) => c && c.id === 'assist');
+    if (!checker || typeof checker.check !== 'function') return Promise.resolve(null);
+    return Promise.resolve().then(() => checker.check()).then((r) => {
+      if (r && r.status === 'update') {
+        return pluginManager.update('assist');
+      }
+      return null;
+    }).catch(() => null);
   }
 
   async function checkForUpdates() {

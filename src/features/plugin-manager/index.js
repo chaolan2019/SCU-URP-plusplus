@@ -179,6 +179,20 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
     return m ? m[1] : '';
   }
 
+  // ---- 热更新：下载新版覆盖缓存（不立即重复注入，避免已运行插件双份副作用；下次进页用新版） ----
+  async function update(id, remoteUrls, onProgress) {
+    const urls = Array.isArray(remoteUrls) ? remoteUrls : (remoteUrls ? [remoteUrls] : pluginSource(id));
+    const code = await fetchWithFallback(urls, onProgress);
+    setValue(`${STORAGE_PREFIX}${id}_code`, code);
+    const ver = detectVersion(code);
+    const s = state.get(id) || { loaded: false, enabled: false, version: '' };
+    s.version = ver || s.version;
+    s.code = code;
+    state.set(id, s);
+    emit('updated', id);
+    return { ok: true, version: ver || s.version };
+  }
+
   // 已缓存则自动装载（无网络请求）；同页只注入一次，避免重复初始化
   function bootFromCache(id) {
     const code = getValue(`${STORAGE_PREFIX}${id}_code`);
@@ -228,6 +242,7 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
     enable: (id, on = true) => setEnabled(id, on),
     disable: (id) => setEnabled(id, false),
     install,
+    update,
     bootFromCache,
     // 宿主能力
     storage: () => getValue && ({ get: (k) => getValue(k), set: (k, v) => setValue(k, v) }),
@@ -377,6 +392,7 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
   return {
     api,
     install,
+    update,
     renderAssistUi,
     bootFromCache,
     register,
