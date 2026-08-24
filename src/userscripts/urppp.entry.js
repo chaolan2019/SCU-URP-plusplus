@@ -2451,7 +2451,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           html[data-urppp-skin="editorial"] #urppp-nav-clean:hover,#urppp-nav-cal:hover,
           html[data-urppp-skin="editorial"] #urppp-root .ut button:hover,
           html[data-urppp-skin="editorial"] #urppp-clean-root .uc-btn:hover{
-            background:transparent!important;color:var(--text)!important;text-decoration-color:currentColor!important;
+            background:transparent!important;color:var(--primary-hover)!important;text-decoration-color:currentColor!important;
             box-shadow:none!important;transform:none!important;
           }
           html[data-urppp-skin="editorial"] .btn:active,
