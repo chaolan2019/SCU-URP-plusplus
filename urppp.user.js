@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SCU URP++教务系统美化
 // @namespace    https://github.com/chaolan2019/SCU-URP-plusplus
-// @version      1.9.2
+// @version      1.9.3
 // @description  四川大学 URP 教务系统美化 + 清爽模式 | 课表/成绩/教室聚合
 // @author       Chao_Lan,Hanako
 // @license      GPL-3.0-only
@@ -1759,7 +1759,7 @@
         }
       });
       storeBtn.addEventListener("click", () => {
-        tip.textContent = "插件商店即将上线，敬请期待。";
+        openPluginStore();
       });
       on("loaded", (id) => {
         if (id === "assist") refresh();
@@ -1767,9 +1767,151 @@
       on("registered", (id) => {
         if (id === "assist") refresh();
       });
+      on("unregistered", (id) => {
+        if (id === "assist") refresh();
+      });
       refresh();
     }
     __name(renderAssistUi, "renderAssistUi");
+    function escapeHtml2(s) {
+      return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+    __name(escapeHtml2, "escapeHtml");
+    function openPluginStore() {
+      if (!doc) return;
+      closePluginStore();
+      ensureStoreStyle();
+      const mask = doc.createElement("div");
+      mask.className = "urppp-store-mask";
+      mask.id = "urppp-store-mask";
+      mask.innerHTML = `
+      <div class="urppp-store">
+        <div class="urppp-store-hd"><span class="urppp-store-title">插件商店</span><button type="button" class="urppp-store-close" aria-label="关闭">✕</button></div>
+        <div class="urppp-store-tabs">
+          <button type="button" class="urppp-store-tab ac" data-tab="download">插件下载</button>
+          <button type="button" class="urppp-store-tab" data-tab="manage">插件管理</button>
+        </div>
+        <div class="urppp-store-body">
+          <div class="urppp-store-pane" data-pane="download">
+            <div class="urppp-store-empty"><p class="urppp-store-empty-title">敬请期待</p><p class="urppp-store-sub">插件市场正在筹备中，后续可从这里在线安装更多功能插件。</p></div>
+          </div>
+          <div class="urppp-store-pane" data-pane="manage" style="display:none">
+            <div id="urppp-store-manage-list"></div>
+          </div>
+        </div>
+      </div>`;
+      (doc.body || doc.documentElement).appendChild(mask);
+      mask.querySelector(".urppp-store-close").addEventListener("click", closePluginStore);
+      mask.addEventListener("click", (e) => {
+        if (e.target === mask) closePluginStore();
+      });
+      mask.querySelectorAll(".urppp-store-tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          mask.querySelectorAll(".urppp-store-tab").forEach((t) => t.className = "urppp-store-tab");
+          tab.className = "urppp-store-tab ac";
+          mask.querySelectorAll(".urppp-store-pane").forEach((p) => p.style.display = "none");
+          const pane = mask.querySelector('.urppp-store-pane[data-pane="' + tab.dataset.tab + '"]');
+          if (pane) pane.style.display = "";
+        });
+      });
+      renderStoreManage(mask.querySelector("#urppp-store-manage-list"));
+    }
+    __name(openPluginStore, "openPluginStore");
+    function closePluginStore() {
+      const m = doc && doc.getElementById("urppp-store-mask");
+      if (m) m.remove();
+    }
+    __name(closePluginStore, "closePluginStore");
+    function ensureStoreStyle() {
+      if (doc.getElementById("urppp-store-style")) return;
+      const style = doc.createElement("style");
+      style.id = "urppp-store-style";
+      style.textContent = `
+      .urppp-store-mask{position:fixed;inset:0;z-index:2147483600;background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;padding:24px;animation:urpppStoreIn .16s ease}
+      @keyframes urpppStoreIn{from{opacity:0}to{opacity:1}}
+      .urppp-store{width:min(480px,92vw);max-height:min(76vh,720px);background:var(--surface,#fff);color:var(--text,#16181d);border:1px solid var(--border,#e5e5ea);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.3);display:flex;flex-direction:column;overflow:hidden;animation:urpppStorePop .18s cubic-bezier(.16,1,.3,1)}
+      @keyframes urpppStorePop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
+      .urppp-store-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;border-bottom:1px solid var(--border,#e5e5ea)}
+      .urppp-store-title{font-size:16px;font-weight:750}
+      .urppp-store-close{width:30px;height:30px;border-radius:9px;border:1px solid var(--border,#e5e5ea);background:transparent;color:var(--text,#16181d);cursor:pointer;font-size:14px;line-height:1;display:grid;place-items:center}
+      .urppp-store-close:hover{background:color-mix(in srgb,var(--primary,#2563eb) 10%,transparent)}
+      .urppp-store-tabs{display:flex;gap:4px;padding:10px 20px 0}
+      .urppp-store-tab{flex:1;height:34px;border:0;border-radius:9px 9px 0 0;background:transparent;color:var(--text-secondary,#5b5f69);font-size:13px;font-weight:600;cursor:pointer}
+      .urppp-store-tab.ac{background:var(--surface,#fff);color:var(--text,#16181d);box-shadow:inset 0 -2px 0 var(--primary,#2563eb)}
+      .urppp-store-body{flex:1;min-height:0;overflow:auto;padding:14px 20px 20px}
+      .urppp-store-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:180px;text-align:center;gap:6px;color:var(--text-secondary,#5b5f69)}
+      .urppp-store-empty-title{font-size:15px;font-weight:700;color:var(--text,#16181d)}
+      .urppp-store-sub{font-size:12px;line-height:1.6;max-width:80%}
+      .urppp-store-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid var(--border,#e5e5ea);border-radius:12px;margin-bottom:8px}
+      .urppp-store-item:last-child{margin-bottom:0}
+      .urppp-store-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+      .urppp-store-info strong{font-size:14px;font-weight:700}
+      .urppp-store-ver{font-size:11px;color:var(--text-secondary,#5b5f69)}
+      .urppp-store-state{font-size:11px;color:var(--text-secondary,#5b5f69);padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--primary,#2563eb) 10%,transparent)}
+      .urppp-store-state.ok{color:var(--success,#1a7f37);background:color-mix(in srgb,var(--success,#1a7f37) 12%,transparent)}
+      .urppp-store-ops{display:flex;gap:8px;flex:0 0 auto}
+      .urppp-store-ops button{height:30px;padding:0 12px;font-size:12px;font-weight:650;cursor:pointer;border:1px solid var(--border,#e5e5ea);border-radius:8px;background:var(--input-bg,#f5f6f8);color:var(--text,#16181d)}
+      .urppp-store-ops button.danger{color:#c0392b;border-color:color-mix(in srgb,#c0392b 40%,transparent);background:transparent}
+      .urppp-store-ops button:hover{border-color:var(--primary,#2563eb)}
+      .urppp-store-ops button:disabled{opacity:.55;cursor:not-allowed}
+    `;
+      (doc.head || doc.documentElement).appendChild(style);
+    }
+    __name(ensureStoreStyle, "ensureStoreStyle");
+    function renderStoreManage(listEl) {
+      if (!listEl) return;
+      listEl.innerHTML = "";
+      const items = Array.from(registry.values());
+      if (!items.length) {
+        listEl.innerHTML = '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无插件</p><p class="urppp-store-sub">已装载的插件会显示在这里。</p></div>';
+        return;
+      }
+      items.forEach((p) => {
+        const s = state.get(p.id) || {};
+        const row = doc.createElement("div");
+        row.className = "urppp-store-item";
+        const info = doc.createElement("div");
+        info.className = "urppp-store-info";
+        info.innerHTML = "<strong>" + escapeHtml2(p.name || p.id) + '</strong><span class="urppp-store-ver">' + (p.version ? "v" + escapeHtml2(p.version) : "") + '</span><span class="urppp-store-state' + (s.loaded ? " ok" : "") + '">' + (s.loaded ? "已装载" : "未装载") + "</span>";
+        const ops = doc.createElement("div");
+        ops.className = "urppp-store-ops";
+        const reload = doc.createElement("button");
+        reload.type = "button";
+        reload.textContent = "重新装载";
+        reload.addEventListener("click", async () => {
+          reload.disabled = true;
+          reload.textContent = "装载中…";
+          try {
+            const ok = await install(p.id, null);
+            reload.textContent = ok ? "已装载" : "装载失败";
+            emit("loaded", p.id);
+          } catch (e) {
+            reload.textContent = "装载失败";
+          }
+          setTimeout(() => {
+            reload.disabled = false;
+            reload.textContent = "重新装载";
+          }, 1400);
+        });
+        const unload = doc.createElement("button");
+        unload.type = "button";
+        unload.className = "danger";
+        unload.textContent = "卸载";
+        unload.addEventListener("click", () => {
+          unregister(p.id);
+          setValue(`${STORAGE_PREFIX}${p.id}_code`, "");
+          setValue(`${STORAGE_PREFIX}${p.id}_enabled`, false);
+          emit("unregistered", p.id);
+          renderStoreManage(listEl);
+        });
+        ops.appendChild(reload);
+        ops.appendChild(unload);
+        row.appendChild(info);
+        row.appendChild(ops);
+        listEl.appendChild(row);
+      });
+    }
+    __name(renderStoreManage, "renderStoreManage");
     function collectSubpanels() {
       const map = {};
       registry.forEach((p) => {
@@ -1792,6 +1934,7 @@
       install,
       update,
       renderAssistUi,
+      openPluginStore,
       bootFromCache,
       register
     };
@@ -17309,7 +17452,7 @@ ${arcs}
       }
     } catch (_) {
     }
-    const URPPP_VERSION = "1.9.2";
+    const URPPP_VERSION = "1.9.3";
     if (/^id\./i.test(String(location.hostname || ""))) {
       try {
         const authPlugin = createPluginManager({
