@@ -408,7 +408,7 @@ function ensureCalendarStyle() {
     html.urppp-theme-dark[data-urppp-skin="neu"] #urppp-cal-modal .cal-close{box-shadow:4px 4px 10px var(--neu-shadow-dark),-4px -4px 12px var(--neu-shadow-light)!important}
     @media (max-width:560px){
       #urppp-cal-modal .cal-widget{gap:12px}
-      #urppp-cal-modal .cal-dialog{padding:16px}
+      #urppp-cal-modal .cal-dialog{padding:16px;width:calc(100vw - 48px)!important;max-width:calc(100vw - 48px)!important;border-radius:14px}
     }
   `;
       st.id = 'urppp-cal-style';
