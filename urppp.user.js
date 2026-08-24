@@ -1860,8 +1860,20 @@
       let cur = el;
       while (cur && cur.nodeType === 1 && cur !== doc.body && cur !== doc.documentElement) {
         const c = parseColor(win.getComputedStyle(cur).backgroundColor);
-        if (c && c.a > 0.4) return c;
+        if (c && c.a > 0.3) return c;
         cur = cur.parentElement;
+      }
+      try {
+        const r = el.getBoundingClientRect();
+        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+        if (r.width > 0 && r.height > 0 && cx >= 0 && cy >= 0) {
+          const at = doc.elementFromPoint(cx, cy) || el;
+          if (at && at !== el) {
+            const c = parseColor(win.getComputedStyle(at).backgroundColor);
+            if (c && c.a > 0.3) return c;
+          }
+        }
+      } catch (_) {
       }
       return null;
     }
@@ -1897,13 +1909,23 @@
     }
     __name(handleMutations, "handleMutations");
     const observer = new MutationObserver(handleMutations);
+    let scanTimer = 0;
     const boot = /* @__PURE__ */ __name(() => {
       scan(doc);
       observer.observe(doc.body || doc.documentElement, { childList: true, subtree: true });
+      scanTimer = win.setInterval(() => {
+        try {
+          scan(doc);
+        } catch (_) {
+        }
+      }, 1200);
     }, "boot");
     if (doc.readyState === "loading") doc.addEventListener("DOMContentLoaded", boot);
     else boot();
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (scanTimer) win.clearInterval(scanTimer);
+    };
   }
   __name(installContrastFixer, "installContrastFixer");
 

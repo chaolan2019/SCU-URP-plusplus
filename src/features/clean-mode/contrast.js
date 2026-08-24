@@ -33,14 +33,26 @@ export function installContrastFixer(win = window) {
   }
   function lum(c) { return (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) / 255; }
 
-  // 向上找最近的“有效背景”（alpha > 0.4 的实色）
+  // 向上找最近的“有效背景”（alpha > 0.3 的实色，更宽容，能识别 color-mix/近白）
   function effectiveBg(el) {
     let cur = el;
     while (cur && cur.nodeType === 1 && cur !== doc.body && cur !== doc.documentElement) {
       const c = parseColor(win.getComputedStyle(cur).backgroundColor);
-      if (c && c.a > 0.4) return c;
+      if (c && c.a > 0.3) return c;
       cur = cur.parentElement;
     }
+    // 兜底：直接采样元素中心点下实际渲染的层（能取到 color-mix/叠加背景）
+    try {
+      const r = el.getBoundingClientRect();
+      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+      if (r.width > 0 && r.height > 0 && cx >= 0 && cy >= 0) {
+        const at = doc.elementFromPoint(cx, cy) || el;
+        if (at && at !== el) {
+          const c = parseColor(win.getComputedStyle(at).backgroundColor);
+          if (c && c.a > 0.3) return c;
+        }
+      }
+    } catch (_) { /* ignore */ }
     return null;
   }
 
@@ -76,12 +88,15 @@ export function installContrastFixer(win = window) {
   }
 
   const observer = new MutationObserver(handleMutations);
+  let scanTimer = 0;
   const boot = () => {
     scan(doc);
     observer.observe(doc.body || doc.documentElement, { childList: true, subtree: true });
+    // 定时兜底：确保弹窗/延迟渲染的元素也被修复(MutationObserver 可能漏)
+    scanTimer = win.setInterval(() => { try { scan(doc); } catch (_) { /* ignore */ } }, 1200);
   };
   if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', boot);
   else boot();
 
-  return () => observer.disconnect();
+  return () => { observer.disconnect(); if (scanTimer) win.clearInterval(scanTimer); };
 }
