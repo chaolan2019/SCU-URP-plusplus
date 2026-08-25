@@ -801,6 +801,10 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"]
 }
 
 
+/* 仓库/删除按钮复用 apply 样式后的定位（覆盖 apply 默认 right:12px） */
+#urppp-settings-panel .urppp-skin-card > .urppp-skin-apply.urppp-store-repo { right:auto!important; left:12px!important; }
+#urppp-settings-panel .urppp-skin-card > .urppp-skin-apply.urppp-store-del { right:96px!important; }
+
 /* 各主题卡次要按钮（仓库/删除）：随卡片主题色，但克制（细边 + 透明底 + 圆角），不做大面积色块/硬阴影 */
 html[data-urppp-skin] #urppp-settings-panel .urppp-skin-card[data-skin="apple"] .urppp-set-btn.ghost { color:#0071e3!important; border:1px solid rgba(0,113,227,.4)!important; border-radius:999px!important; background:transparent!important; box-shadow:none!important; }
 html[data-urppp-skin] #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] .urppp-set-btn.ghost { color:#1c1c1c!important; border:none!important; background:transparent!important; border-radius:0!important; box-shadow:none!important; }
