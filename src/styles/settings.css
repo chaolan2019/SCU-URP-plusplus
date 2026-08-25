@@ -553,7 +553,8 @@ html.urppp-theme-scu-red:not(.urppp-theme-follow) #urppp-settings-panel .urppp-s
 }
 
 /* 暗色模式：卡片+主按钮+次要按钮一并适配（主题有暗色则卡片也适配暗色） */
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] {
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"],
+body.urppp-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] {
   background: #111 !important; color: #fff !important; border-color: #fff !important; box-shadow: none !important;
 }
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-skin-name, html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-skin-desc { color: #fff !important; }
@@ -653,13 +654,6 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] 
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply.is-current {
   background: #4a6cf7 !important; border-color: #4a6cf7 !important; color: #fff !important;
 }
-
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] {
-  background: #000 !important; color: #fff !important; border-color: #fff !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover { background: #fff !important; color: #000 !important; }
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] > .urppp-skin-apply { background: #fff !important; color: #000 !important; border-color: #fff !important; }
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover > .urppp-skin-apply { border-color: #000 !important; }
 
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] {
   background: #332a24 !important; color: #eadbc8 !important; border-color: #5a4a3c !important;
