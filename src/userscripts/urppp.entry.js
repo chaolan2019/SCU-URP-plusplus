@@ -6378,9 +6378,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   async function downloadStoreTheme(id, btn) {
     if (!btn || btn.disabled) return;
-    const item = (await fetchCatalogList()).find((it) => it.id === id);
-    if (!item || !Array.isArray(item.entry) || !item.entry.length) return;
+    // 先立即反馈，避免等待 catalog 期间无响应
     btn.disabled = true; btn.textContent = '下载中…';
+    const item = (await fetchCatalogList()).find((it) => it.id === id);
+    if (!item || !Array.isArray(item.entry) || !item.entry.length) { btn.disabled = false; btn.textContent = '下载'; return; }
     let css = '';
     for (const url of item.entry) {
       try { const r = await fetch(url, { cache: 'no-store' }); if (r.ok) { css = await r.text(); break; } } catch (_) { /* next */ }
@@ -6454,6 +6455,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         }
       } catch (_) {}
       try { syncSettingsPanelUI(); } catch (_) {}
+      // 立即移除该卡片（不等重拉 catalog），让删除即时生效
+      const card = b.closest('.urppp-skin-card');
+      if (card) card.remove();
       const inline = host.closest('.urppp-store-inline');
       if (inline) {
         try { fetchThemeManage(host); } catch (_) {}
@@ -6478,13 +6482,16 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     'https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/catalog.json',
   ];
 
-  async function fetchCatalogList() {
+  let __catalogCache = null;
+  async function fetchCatalogList(force) {
+    // 缓存：首次拉取成功后在本次会话内复用，避免下载/删除后重复拉 catalog 导致延迟
+    if (__catalogCache && !force) return __catalogCache;
     // 并行拉取多源 + 每源 5s 超时，避免网络挂起时商店永远停在「加载中」
     const withTimeout = (promise, ms) => Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
     const results = await Promise.allSettled(CATALOG_SOURCES.map((url) => withTimeout(fetch(url, { cache: 'no-store' }), 5000)));
     for (const res of results) {
       if (res.status === 'fulfilled' && res.value && res.value.ok) {
-        try { const j = await res.value.json(); if (j && Array.isArray(j.items)) return j.items; } catch (_) { /* invalid json, try next */ }
+        try { const j = await res.value.json(); if (j && Array.isArray(j.items)) { __catalogCache = j.items; return j.items; } } catch (_) { /* invalid json, try next */ }
       }
     }
     return [];
