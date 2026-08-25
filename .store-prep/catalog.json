@@ -1,0 +1,81 @@
+{
+  "name": "SCU URP++ 主题与插件仓库",
+  "version": 1,
+  "updated": "2026-08-24",
+  "items": [
+    {
+      "id": "flat",
+      "type": "theme",
+      "name": "极简扁平",
+      "description": "无阴影、硬边与纯色层次，冷硬清晰。",
+      "version": "1.0.0",
+      "author": "Chao_Lan",
+      "minAPP": "1.9.4",
+      "entry": [
+        "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plugins/main/themes/flat.css",
+        "https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plugins@main/themes/flat.css",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plugins/main/themes/flat.css"
+      ],
+      "preview": ["#FFFFFF", "#000000", "#4A4A4A"]
+    },
+    {
+      "id": "organic",
+      "type": "theme",
+      "name": "自然有机",
+      "description": "奶油底与大地色，温暖圆角。不支持动态配色。",
+      "version": "1.0.0",
+      "author": "Chao_Lan",
+      "minAPP": "1.9.4",
+      "entry": [
+        "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plugins/main/themes/organic.css",
+        "https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plugins@main/themes/organic.css",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plugins/main/themes/organic.css"
+      ],
+      "preview": ["#FAF6F1", "#5C4033", "#8B9D77"]
+    },
+    {
+      "id": "brutal",
+      "type": "theme",
+      "name": "新野兽派",
+      "description": "高对比画布、粗边框与硬阴影。支持暗色，不支持动态配色。",
+      "version": "1.0.0",
+      "author": "Chao_Lan",
+      "minAPP": "1.9.4",
+      "entry": [
+        "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plugins/main/themes/brutal.css",
+        "https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plugins@main/themes/brutal.css",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plugins/main/themes/brutal.css"
+      ],
+      "preview": ["#FFFFFF", "#000000", "#CCFF00"]
+    },
+    {
+      "id": "neu",
+      "type": "theme",
+      "name": "新拟物",
+      "description": "同色双阴影凸起/内凹，立体柔和。支持暗色，不支持动态配色。",
+      "version": "1.0.0",
+      "author": "Chao_Lan",
+      "minAPP": "1.9.4",
+      "entry": [
+        "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plugins/main/themes/neu.css",
+        "https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plugins@main/themes/neu.css",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plugins/main/themes/neu.css"
+      ],
+      "preview": ["#E0E5EC", "#B8BCC2", "#FFFFFF"]
+    },
+    {
+      "id": "assist",
+      "type": "plugin",
+      "name": "辅助插件",
+      "description": "登录助手 / 评教 / 会话保持 / 2FA",
+      "version": "1.5.3",
+      "author": "Chao_Lan",
+      "minAPP": "1.9.0",
+      "entry": [
+        "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.plugin.js",
+        "https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/urpppp.plugin.js",
+        "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.plugin.js"
+      ]
+    }
+  ]
+}

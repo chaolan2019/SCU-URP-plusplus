@@ -26,3 +26,6 @@ ocr-training/model/*
 
 # 商店清单准备目录(独立仓库用, 不进主仓库)
 /store-prep/
+
+# 辅助插件模块化产物已迁移到商店仓库
+/urpppp.plugin.js
