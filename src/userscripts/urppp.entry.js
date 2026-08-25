@@ -159,8 +159,8 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   const AUTO_UPDATE_KEY = 'urppp_auto_update_check_v1';
   const SKIN_KEY = 'urppp_skin_v1';
   const SKIN_CATALOG = [
-    { id: 'apple', name: '类Apple风格', desc: '系统灰底、链接蓝、大圆角与轻阴影，默认精修方向。', ready: true, dark: true, dynamic: true, installed: true, builtin: true, version: '1.0.0', author: 'Chao_Lan', caps: { scope: 'app', allowJS: false } },
-    { id: 'editorial', name: '编辑杂志', desc: '衬线标题、无框版面与淡分割线。支持暗色，不支持动态配色。', ready: true, dark: true, dynamic: false, installed: true, builtin: true, version: '1.0.0', author: 'Chao_Lan', caps: { scope: 'app', allowJS: false } },
+    { id: 'apple', name: '类Apple风格', desc: '系统灰底、链接蓝、大圆角与轻阴影，默认精修方向。', ready: true, dark: true, dynamic: true, installed: true, builtin: true, version: '1.0.0', author: 'Chao_Lan', repo: 'https://github.com/chaolan2019/SCU-URP-plusplus', caps: { scope: 'app', allowJS: false } },
+    { id: 'editorial', name: '编辑杂志', desc: '衬线标题、无框版面与淡分割线。支持暗色，不支持动态配色。', ready: true, dark: true, dynamic: false, installed: true, builtin: true, version: '1.0.0', author: 'Chao_Lan', repo: 'https://github.com/chaolan2019/SCU-URP-plusplus', caps: { scope: 'app', allowJS: false } },
     { id: 'flat', name: '极简扁平', desc: '无阴影、硬边与纯色层次，冷硬清晰。', ready: true, dark: true, dynamic: true, installed: false, version: '1.0.0', author: 'Chao_Lan', caps: { scope: 'app', allowJS: false } },
     { id: 'organic', name: '自然有机', desc: '奶油底与大地色，温暖圆角。不支持动态配色。', ready: true, dark: true, dynamic: false, installed: false, version: '1.0.0', author: 'Chao_Lan', caps: { scope: 'app', allowJS: false } },
     { id: 'brutal', name: '新野兽派', desc: '高对比画布、粗边框与硬阴影。支持暗色，不支持动态配色。', ready: true, dark: true, dynamic: false, palettes: true, installed: false, version: '1.0.0', author: 'Chao_Lan', caps: { scope: 'app', allowJS: false } },
@@ -6350,14 +6350,14 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   function themeManageCardHtml(s, item) {
     const built = s.installed !== false;
     const delBtn = built ? '' : `<button type="button" class="urppp-set-btn ghost" data-theme-del="${escapeHtml(s.id)}">删除</button>`;
-    const repoBtn = (item && item.repo) ? `<button type="button" class="urppp-set-btn ghost" data-repo="${escapeHtml(item.repo)}">仓库</button>` : '';
+    const repoBtn = ((item && item.repo) || s.repo) ? `<button type="button" class="urppp-set-btn ghost" data-repo="${escapeHtml((item && item.repo) || s.repo)}">仓库</button>` : '';
     const dl = (item && item.downloads != null) ? `<span class="urppp-store-dl">↓ ${escapeHtml(String(item.downloads))}</span>` : '';
     return `<div class="urppp-skin-card" data-skin="${escapeHtml(s.id)}">
       <div class="urppp-skin-name">${escapeHtml(s.name)}</div>
       <div class="urppp-skin-meta">${escapeHtml((item && item.author) || '')}${(item && item.author && s.version) ? ' · ' : ''}v${escapeHtml(s.version || '')}${dl ? ' · ' + dl : ''}</div>
       <p class="urppp-skin-desc">${escapeHtml(s.desc || '')}</p>
       <div class="urppp-store-ops" style="position:absolute;right:12px;bottom:12px">
-        <button type="button" class="urppp-set-btn" data-theme-use="${escapeHtml(s.id)}">使用</button>${delBtn}${repoBtn}
+        <button type="button" class="urppp-skin-apply" data-theme-use="${escapeHtml(s.id)}">使用</button>${delBtn}${repoBtn}
       </div>
     </div>`;
   }
