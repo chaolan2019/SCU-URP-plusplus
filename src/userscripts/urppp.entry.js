@@ -6619,7 +6619,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         </div>
         <div class="urppp-store-body">
           <div class="urppp-store-pane" data-pane="download"><div class="urppp-store-empty"><p class="urppp-store-empty-title">加载中…</p></div></div>
-          <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}<button type="button" class="urppp-set-btn ghost" data-add-local-theme style="margin:0 0 10px">＋ 添加本地主题</button><input type="file" accept=".css,.txt" data-local-theme-file style="display:none"><div class="urppp-store-bd"><div id="urppp-theme-manage"><div class="urppp-store-empty"><p>加载中…</p></div></div></div></div>
+          <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}<button type="button" class="urppp-set-btn ghost" data-add-local-theme style="width:100%;margin:0 0 10px">＋ 添加本地主题</button><input type="file" accept=".css,.txt" data-local-theme-file style="display:none"><div class="urppp-store-bd"><div id="urppp-theme-manage"><div class="urppp-store-empty"><p>加载中…</p></div></div></div></div>
         </div>
       </div>`;
     bindStoreTabs(body);
