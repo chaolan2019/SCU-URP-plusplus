@@ -6423,8 +6423,18 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     host.querySelectorAll('[data-theme-use]').forEach((b) => b.addEventListener('click', () => {
       if (setSkin(b.dataset.themeUse)) {
         try { syncSettingsPanelUI(); } catch (_) {}
-        // 立即重渲染管理列表，让「使用中」状态即时更新
-        try { fetchThemeManage(host); } catch (_) {}
+        // 同步就地更新状态（不重拉 catalog，避免延迟），让「使用中」即时切换
+        host.querySelectorAll('.urppp-skin-card').forEach((card) => {
+          const cid = card.dataset.skin;
+          const ap = card.querySelector('.urppp-skin-apply');
+          const isCur = (getSkin() === cid);
+          card.classList.toggle('is-active', isCur);
+          if (ap) {
+            ap.classList.toggle('is-current', isCur);
+            ap.disabled = isCur;
+            ap.textContent = isCur ? '使用中' : '使用';
+          }
+        });
       }
     }));
     host.querySelectorAll('[data-theme-del]').forEach((b) => b.addEventListener('click', () => {
