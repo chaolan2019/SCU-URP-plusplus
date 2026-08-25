@@ -540,7 +540,7 @@ html.urppp-theme-scu-red:not(.urppp-theme-follow) #urppp-settings-panel .urppp-s
 
 /* 下载主题（flat/organic/brutal/neu）卡内次要按钮：随所属卡片主题（覆盖全局当前主题变量） */
 #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-set-btn.ghost {
-  background: #000 !important; color: #fff !important; border: 2px solid #000 !important; border-radius: 0 !important; box-shadow: none !important;
+  background: #fff !important; color: #000 !important; border: 2px solid #000 !important; border-radius: 0 !important; box-shadow: none !important;
 }
 #urppp-settings-panel .urppp-skin-card[data-skin="organic"] .urppp-set-btn.ghost {
   background: #fffcf7 !important; color: #5c4033 !important; border: 1px solid #d8cdbb !important; border-radius: 999px !important; box-shadow: none !important;
@@ -550,6 +550,48 @@ html.urppp-theme-scu-red:not(.urppp-theme-follow) #urppp-settings-panel .urppp-s
 }
 #urppp-settings-panel .urppp-skin-card[data-skin="neu"] .urppp-set-btn.ghost {
   background: #e0e5ec !important; color: #3d4450 !important; border: none !important; border-radius: 12px !important; box-shadow: 3px 3px 6px #bec3ca, -3px -3px 6px #f7f9fc !important;
+}
+
+/* 暗色模式：卡片+主按钮+次要按钮一并适配（主题有暗色则卡片也适配暗色） */
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] {
+  background: #111 !important; color: #fff !important; border-color: #fff !important; box-shadow: none !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-skin-name, html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-skin-desc { color: #fff !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-skin-apply {
+  background: #fff !important; color: #000 !important; border: 2px solid #fff !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-set-btn.ghost {
+  background: #fff !important; color: #000 !important; border: 2px solid #fff !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] {
+  background: #2a2620 !important; color: #f0e6d8 !important; border-color: #5c5346 !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] .urppp-skin-name, html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] .urppp-skin-desc { color: #f0e6d8 !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] .urppp-skin-apply {
+  background: #6f7d5a !important; color: #1c170f !important; border-color: #8b9d77 !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] .urppp-set-btn.ghost {
+  background: #3a342b !important; color: #e8dcc7 !important; border-color: #5c5346 !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] {
+  background: #0d0d0d !important; color: #fff !important; border-color: #fff !important; box-shadow: 5px 5px 0 #fff !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-skin-name, html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-skin-desc { color: #fff !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-skin-apply {
+  background: #ccff00 !important; color: #000 !important; border-color: #fff !important; box-shadow: 3px 3px 0 #fff !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-set-btn.ghost {
+  background: #1a1a1a !important; color: #fff !important; border-color: #fff !important; box-shadow: 2px 2px 0 #fff !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] {
+  background: #2a2f36 !important; color: #e6e9ee !important; box-shadow: 5px 5px 10px #1e2228, -5px -5px 10px #363d47 !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] .urppp-skin-name, html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] .urppp-skin-desc { color: #e6e9ee !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] .urppp-skin-apply {
+  background: #2a2f36 !important; color: #dfe3e9 !important; box-shadow: 4px 4px 8px #1e2228, -4px -4px 8px #363d47 !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] .urppp-set-btn.ghost {
+  background: #2a2f36 !important; color: #dfe3e9 !important; box-shadow: 3px 3px 6px #1e2228, -3px -3px 6px #363d47 !important;
 }
 #urppp-settings-panel .urppp-skin-card[data-skin="neu"] {
   background: #e0e5ec !important; color: #3d4450 !important; border: none !important; border-radius: 20px !important;
