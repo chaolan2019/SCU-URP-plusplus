@@ -1610,9 +1610,9 @@
     function pluginSource(id) {
       if (id === "assist") {
         return [
-          "https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/urpppp.plugin.js",
-          "https://cdn.jsdelivr.net/gh/chaolan2019/URP-plusplus-Repository@main/urpppp.plugin.js",
-          "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/urpppp.plugin.js"
+          "https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/plugins/urpppp.plugin.js",
+          "https://cdn.jsdelivr.net/gh/chaolan2019/URP-plusplus-Repository@main/plugins/urpppp.plugin.js",
+          "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/plugins/urpppp.plugin.js"
         ];
       }
       return [];
