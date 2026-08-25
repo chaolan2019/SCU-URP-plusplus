@@ -6340,9 +6340,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (!Array.isArray(items)) return;
     items.forEach((it) => {
       if (!it || !it.cardCss || !it.id) return;
-      // 官方主题（在 SKIN_CATALOG 内，卡片样式已由主插件 settings.css 内置亮/暗）不注入 catalog cardCss，
-      // 避免覆盖内置暗色变体（cardCss 若只含亮色会致暗色白卡）；仅第三方（不在 SKIN_CATALOG）注入
-      if (SKIN_CATALOG.some((s) => s.id === it.id)) return;
+      // 官方 4 主题（flat/organic/brutal/neu）卡片样式已从主插件 settings.css 脱离，统一由 catalog cardCss 提供；
+      // 第三方同样如此。故这里不再区分官方/第三方，一律注入 catalog cardCss。
       let el = document.getElementById('urppp-store-card-css-' + it.id);
       if (!el) { el = document.createElement('style'); el.id = 'urppp-store-card-css-' + it.id; (document.head || document.documentElement).appendChild(el); }
       if (el.textContent !== it.cardCss) el.textContent = it.cardCss;
@@ -9925,6 +9924,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (!document.body) { setTimeout(init, 10); return; }
     injectAllStoreThemeStyles();
     applyTheme(getCurrent());
+
+    // 官方 4 主题卡片样式已脱离主插件内置，统一由 catalog cardCss 提供——初始化即异步注入，保证设置页/商店可用
+    setTimeout(() => { try { fetchCatalogList().then((t) => ensureStoreCardStyles(t)); } catch (_) {} }, 0);
 
     // 阻止 Chosen 搜索框聚焦时自动滚动页面/容器，避免下拉展开后内容被抬高
     document.addEventListener('focusin', (e) => {

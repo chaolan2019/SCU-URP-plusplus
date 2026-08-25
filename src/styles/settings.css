@@ -452,58 +452,6 @@ html.urppp-theme-scu-red:not(.urppp-theme-follow) #urppp-settings-panel .urppp-s
 #urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply.is-current {
   background: #0071e3 !important; border-color: #0071e3 !important; color: #fff !important; box-shadow: none !important; transform: none !important;
 }
-#urppp-settings-panel .urppp-skin-card[data-skin="flat"] {
-  background: #fff !important; color: #000 !important; border: 2px solid #000 !important; border-radius: 0 !important; box-shadow: none !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover {
-  background: #000 !important; color: #fff !important; border-color: #000 !important; transform: none !important; box-shadow: none !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="flat"].is-active { outline: 3px solid #000 !important; outline-offset: 2px !important; box-shadow: none !important; }
-#urppp-settings-panel .urppp-skin-card[data-skin="flat"] > .urppp-skin-apply {
-  border: 2px solid #000 !important; border-radius: 0 !important; background: #fff !important; color: #000 !important; box-shadow: none !important; transform: none !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="flat"] > .urppp-skin-apply:not(:disabled):hover,
-#urppp-settings-panel .urppp-skin-card[data-skin="flat"] > .urppp-skin-apply.is-current {
-  background: #000 !important; color: #fff !important; box-shadow: none !important; transform: none !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover > .urppp-skin-apply { border-color: #fff !important; }
-#urppp-settings-panel .urppp-skin-card[data-skin="organic"] {
-  background: #faf6f1 !important; color: #5c4033 !important; border: 1px solid #e7e0d6 !important;
-  border-radius: 22px !important; box-shadow: 0 3px 12px rgba(92,64,51,.06) !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="organic"]:hover {
-  background: #f2e8dc !important; border-color: #8b9d77 !important; transform: translateY(-1px) !important; box-shadow: 0 8px 20px rgba(92,64,51,.12) !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="organic"].is-active { box-shadow: 0 0 0 2px #8b9d77, 0 8px 20px rgba(92,64,51,.1) !important; }
-#urppp-settings-panel .urppp-skin-card[data-skin="organic"] > .urppp-skin-apply {
-  border: 1px solid #8b9d77 !important; border-radius: 999px !important; background: #fffcf7 !important; color: #5c4033 !important; box-shadow: none !important; transform: none !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="organic"] > .urppp-skin-apply:not(:disabled):hover,
-#urppp-settings-panel .urppp-skin-card[data-skin="organic"] > .urppp-skin-apply.is-current {
-  background: #5c4033 !important; border-color: #5c4033 !important; color: #fff !important; box-shadow: none !important; transform: none !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="brutal"] {
-  background: #fff !important; color: #000 !important; border: 3px solid #000 !important; border-radius: 0 !important;
-  box-shadow: 5px 5px 0 #000 !important; transition-duration: 150ms !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="brutal"]:hover {
-  background: #ccff00 !important; color: #000 !important; transform: translate(-2px,-2px) !important; box-shadow: 8px 8px 0 #000 !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="brutal"].is-active { outline: 4px solid #ff006e !important; outline-offset: 3px !important; box-shadow: 7px 7px 0 #000 !important; }
-#urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-skin-name { font-family: "Arial Black", "Microsoft YaHei UI", sans-serif !important; font-weight: 900 !important; }
-#urppp-settings-panel .urppp-skin-card[data-skin="brutal"] > .urppp-skin-apply {
-  border: 3px solid #000 !important; border-radius: 0 !important; background: #ff006e !important; color: #000 !important;
-  box-shadow: 3px 3px 0 #000 !important; transform: none !important; transition-duration: 150ms !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="brutal"] > .urppp-skin-apply:not(:disabled):hover {
-  background: #00d9ff !important; color: #000 !important; box-shadow: 5px 5px 0 #000 !important; transform: translate(-2px,-2px) !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="brutal"] > .urppp-skin-apply:not(:disabled):active {
-  background: #ccff00 !important; box-shadow: none !important; transform: translate(3px,3px) !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="brutal"] > .urppp-skin-apply.is-current {
-  background: #ff006e !important; border-color: #000 !important; color: #000 !important; box-shadow: 3px 3px 0 #000 !important; transform: none !important;
-}
 #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] {
   background: #f5f4f1 !important; color: #1c1c1c !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important;
 }
@@ -528,41 +476,6 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editoria
   background: transparent !important; color: #e8e8e4 !important; text-decoration-color: currentColor !important;
 }
 
-/* 暗色：flat 卡（旧块补缺）+ 各主题卡内次要按钮(仓库/删除)随卡片主题 */
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] {
-  background: #111 !important; color: #fff !important; border-color: #fff !important; box-shadow: none !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-skin-name, html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-skin-desc { color: #fff !important; }
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-skin-apply {
-  background: #fff !important; color: #000 !important; border: 2px solid #fff !important;
-}
-
-/* 暗色 hover：背景与文字同色系，避免悬停变白但文字不变色 */
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover {
-  background: #fff !important; color: #000 !important; border-color: #000 !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover .urppp-skin-name,
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover .urppp-skin-desc,
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover .urppp-skin-meta { color: #000 !important; }
-#urppp-settings-panel .urppp-skin-card[data-skin="neu"] {
-  background: #e0e5ec !important; color: #3d4450 !important; border: none !important; border-radius: 20px !important;
-  box-shadow: 5px 5px 10px #bec3ca, -5px -5px 10px #f7f9fc !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="neu"]:hover {
-  background: #e0e5ec !important; transform: none !important; box-shadow: 2px 2px 4px #bec3ca, -2px -2px 4px #f7f9fc !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="neu"].is-active {
-  box-shadow: inset 4px 4px 8px #b8bcc2, inset -4px -4px 8px #fff, 0 0 0 2px #6d5dfc !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="neu"] > .urppp-skin-apply {
-  border: none !important; border-radius: 14px !important; background: #e0e5ec !important; color: #3d4450 !important;
-  box-shadow: 3px 3px 6px #bec3ca, -3px -3px 6px #f7f9fc !important; transform: none !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="neu"] > .urppp-skin-apply.is-current {
-  background: #e0e5ec !important; color: #263142 !important;
-  box-shadow: inset 3px 3px 6px #b8bcc2, inset -3px -3px 6px #fff !important; transform: none !important;
-}
-
 /* 暗色模式：主题卡片适配（深底浅字，保留各主题辨识主色） */
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] {
   background: #1d1d1f !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.14) !important;
@@ -577,57 +490,12 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] 
   background: #4a6cf7 !important; border-color: #4a6cf7 !important; color: #fff !important;
 }
 
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] {
-  background: #332a24 !important; color: #eadbc8 !important; border-color: #5a4a3c !important;
-  box-shadow: 0 3px 12px rgba(0,0,0,.4) !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"]:hover { background: #3e332b !important; border-color: #9caf7f !important; }
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] > .urppp-skin-apply {
-  background: #2b231d !important; color: #b9c99a !important; border-color: #6f8f52 !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] > .urppp-skin-apply:not(:disabled):hover,
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] > .urppp-skin-apply.is-current {
-  background: #5c4033 !important; border-color: #5c4033 !important; color: #fff !important;
-}
-
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] {
-  background: #000 !important; color: #fff !important; border: 3px solid #fff !important;
-  box-shadow: 5px 5px 0 #fff !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"]:hover {
-  background: #1a1a1a !important; transform: translate(-2px,-2px) !important; box-shadow: 8px 8px 0 #fff !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] > .urppp-skin-apply {
-  background: #ff006e !important; color: #fff !important; border-color: #fff !important; box-shadow: 3px 3px 0 #fff !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] > .urppp-skin-apply:not(:disabled):hover {
-  background: #00d9ff !important; color: #000 !important; box-shadow: 5px 5px 0 #fff !important; transform: translate(-2px,-2px) !important;
-}
-
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] {
   background: #1e1e1c !important; color: #e8e8e4 !important; border: 0 !important; box-shadow: none !important;
 }
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"]:hover { background: #262624 !important; }
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"].is-active { background: #2c2c28 !important; }
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply { color: #e8e8e4 !important; }
-
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] {
-  background: #262b33 !important; color: #c9cdd6 !important;
-  box-shadow: 5px 5px 10px #171a1f, -5px -5px 10px #343b46 !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"]:hover {
-  background: #262b33 !important; box-shadow: 2px 2px 4px #171a1f, -2px -2px 4px #343b46 !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] > .urppp-skin-apply {
-  background: #262b33 !important; color: #c9cdd6 !important;
-  box-shadow: 3px 3px 6px #171a1f, -3px -3px 6px #343b46 !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] > .urppp-skin-apply:not(:disabled):hover,
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] > .urppp-skin-apply.is-current {
-  background: #262b33 !important; color: #fff !important;
-  box-shadow: inset 3px 3px 6px #171a1f, inset -3px -3px 6px #343b46 !important;
-}
-
 
 /* About pane */
 #urppp-settings-panel .urppp-about {
@@ -788,17 +656,6 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-settings-panel .urppp-store-settings .urppp-set-follow,#urppp-settings-panel .urppp-store-settings .urppp-set-btn{width:100%;margin-top:0}
 #urppp-settings-panel .urppp-store-version{font-size:12px;color:var(--text-secondary,#5b5f69);padding:0 2px}
 #urppp-settings-panel .urppp-store-ops{display:flex;gap:8px;flex:0 0 auto}
-
-/* 兜底：新野兽派暗色卡 + 卡内按钮（最高 specificity，最后声明，确保暗色下生效） */
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] {
-  background: #000 !important; color: #fff !important; border: 3px solid #fff !important; box-shadow: 5px 5px 0 #fff !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-skin-name,
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-skin-desc { color: #fff !important; }
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-skin-apply {
-  background: #ff006e !important; color: #fff !important; border-color: #fff !important; box-shadow: 3px 3px 0 #fff !important;
-}
-
 
 /* 仓库/删除按钮复用 apply 样式后的定位（覆盖 apply 默认 right:12px） */
 #urppp-settings-panel .urppp-skin-card > .urppp-skin-apply.urppp-store-repo { right:auto!important; left:12px!important; }
