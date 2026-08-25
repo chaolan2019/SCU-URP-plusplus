@@ -6347,7 +6347,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   function themeStoreCard(item, downloaded) {
-    const repoBtn = item.repo ? `<div class="urppp-store-ops" style="position:absolute;left:12px;bottom:12px"><button type="button" class="urppp-set-btn ghost" data-repo="${escapeHtml(item.repo)}">仓库</button></div>` : '';
+    const repoBtn = item.repo ? `<button type="button" class="urppp-set-btn ghost" style="position:absolute;left:12px;bottom:12px" data-repo="${escapeHtml(item.repo)}">仓库</button>` : '';
     return `<div class="urppp-skin-card" data-skin="${escapeHtml(item.id)}">
       <div class="urppp-skin-name">${escapeHtml(item.name || item.id)}</div>
       <div class="urppp-skin-meta">${escapeHtml(item.author || '')}${item.author && item.version ? ' · ' : ''}v${escapeHtml(item.version || '')}</div>
@@ -6396,9 +6396,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 主题管理卡片（已装主题，卡片式，含仓库/删除管理按钮）
   function themeManageCardHtml(s, item) {
     const built = s.installed !== false;
-    const delBtn = built ? '' : `<button type="button" class="urppp-set-btn ghost" data-theme-del="${escapeHtml(s.id)}">删除</button>`;
+    const delBtn = built ? '' : `<button type="button" class="urppp-set-btn ghost" style="position:absolute;right:96px;bottom:12px" data-theme-del="${escapeHtml(s.id)}">删除</button>`;
     const repo = (item && item.repo) || s.repo;
-    const repoBtn = repo ? `<button type="button" class="urppp-set-btn ghost" data-repo="${escapeHtml(repo)}">仓库</button>` : '';
+    const repoBtn = repo ? `<button type="button" class="urppp-set-btn ghost" style="position:absolute;left:12px;bottom:12px" data-repo="${escapeHtml(repo)}">仓库</button>` : '';
     const dl = (item && item.downloads != null) ? `<span class="urppp-store-dl">↓ ${escapeHtml(String(item.downloads))}</span>` : '';
     const cur = (getSkin() === s.id);
     return `<div class="urppp-skin-card${cur ? ' is-active' : ''}" data-skin="${escapeHtml(s.id)}">
@@ -6406,7 +6406,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       <div class="urppp-skin-meta">${escapeHtml((item && item.author) || '')}${(item && item.author && s.version) ? ' · ' : ''}v${escapeHtml(s.version || '')}${dl ? ' · ' + dl : ''}</div>
       <p class="urppp-skin-desc">${escapeHtml(s.desc || '')}</p>
       <button type="button" class="urppp-skin-apply${cur ? ' is-current' : ''}" data-theme-use="${escapeHtml(s.id)}"${cur ? ' disabled' : ''}>${cur ? '使用中' : '使用'}</button>
-      <div class="urppp-store-ops" style="position:absolute;left:12px;bottom:12px">${delBtn}${repoBtn}</div>
+      ${delBtn}${repoBtn}
     </div>`;
   }
 
