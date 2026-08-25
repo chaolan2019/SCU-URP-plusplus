@@ -24960,13 +24960,17 @@ ${arcs}
     }
     __name(downloadStoreTheme, "downloadStoreTheme");
     function themeManageListHtml() {
-      const builtin = SKIN_CATALOG.filter((s) => s.installed !== false || themeDownloaded(s.id));
-      if (!builtin.length) return '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无已装主题</p></div>';
-      return builtin.map((s) => `
-      <div class="urppp-store-item">
-        <div class="urppp-store-info"><strong>${escapeHtml(s.name)}</strong><span class="urppp-store-ver">v${escapeHtml(s.version || "")}</span><span class="urppp-store-state ok">内置</span></div>
-        <div class="urppp-store-ops"><button type="button" class="urppp-set-btn" data-theme-use="${escapeHtml(s.id)}">使用</button></div>
-      </div>`).join("");
+      const items = SKIN_CATALOG.filter((s) => s.installed !== false || themeDownloaded(s.id));
+      if (!items.length) return '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无已装主题</p></div>';
+      return items.map((s) => {
+        const built = s.installed !== false;
+        const state2 = built ? "内置" : "已下载";
+        const delBtn = built ? "" : `<button type="button" class="urppp-set-btn ghost" data-theme-del="${escapeHtml(s.id)}">删除</button>`;
+        return `<div class="urppp-store-item">
+        <div class="urppp-store-info"><strong>${escapeHtml(s.name)}</strong><span class="urppp-store-ver">v${escapeHtml(s.version || "")}</span><span class="urppp-store-state${built ? " ok" : ""}">${state2}</span></div>
+        <div class="urppp-store-ops"><button type="button" class="urppp-set-btn" data-theme-use="${escapeHtml(s.id)}">使用</button>${delBtn}</div>
+      </div>`;
+      }).join("");
     }
     __name(themeManageListHtml, "themeManageListHtml");
     function storeManageSettingsHtml() {
@@ -25093,6 +25097,22 @@ ${arcs}
           if (setSkin(b.dataset.themeUse)) syncSettingsPanelUI();
         });
       });
+      body.querySelectorAll("[data-theme-del]").forEach((b) => {
+        b.addEventListener("click", () => {
+          try {
+            GM_setValue("urppp_theme_css_" + b.dataset.themeDel, "");
+          } catch (_) {
+          }
+          try {
+            syncSettingsPanelUI();
+          } catch (_) {
+          }
+          try {
+            renderThemeStoreBody(body);
+          } catch (_) {
+          }
+        });
+      });
       bindStoreManageSettings(body);
       fetchCatalogThemes(body);
     }
@@ -25167,7 +25187,8 @@ ${arcs}
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "urppp-skin-apply";
-        if (!skin.installed) {
+        const skinInstalled = skin.installed !== false || themeDownloaded(skin.id);
+        if (!skinInstalled) {
           btn.classList.add("is-disabled");
           btn.textContent = "去下载";
         } else if (skin.id === cur && skin.ready) {
@@ -25180,7 +25201,7 @@ ${arcs}
         btn.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
-          if (!skin.installed) {
+          if (!skinInstalled) {
             openStoreSubPanel("theme");
             return;
           }
