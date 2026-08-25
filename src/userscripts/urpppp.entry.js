@@ -206,6 +206,8 @@ import assistStyles from '../styles/assist.css';
         id: 'assist',
         type: 'plugin',
         name: '辅助插件',
+        description: '登录助手 / 评教 / 会话保持 / 2FA',
+        author: 'Chao_Lan',
         version: URPPPP_VERSION,
         subpanels: {
           login: { label: '登录助手', open: () => panel.openSubPanel('login') },
