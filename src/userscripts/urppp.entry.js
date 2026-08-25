@@ -6503,7 +6503,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           try { document.documentElement.removeAttribute('data-urppp-skin'); } catch (_) {}
           try { if (document.body) document.body.removeAttribute('data-urppp-skin'); } catch (_) {}
           applySkinAttr();
-          applyTheme('default', { manual: true });
+          // 保留当前配色（暗色/主题色不跳回亮色），只重置皮肤
+          applyTheme(getCurrent() || 'default', { manual: true });
         }
       } catch (_) {}
       try { syncSettingsPanelUI(); } catch (_) {}
@@ -6726,13 +6727,33 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         </div>
         <div class="urppp-store-body">
           <div class="urppp-store-pane" data-pane="download"><div class="urppp-store-empty"><p class="urppp-store-empty-title">加载中…</p></div></div>
-          <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}<div class="urppp-store-bd" id="urppp-plugin-manage"><div class="urppp-store-empty"><p>加载中…</p></div></div></div>
+          <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}<button type="button" class="urppp-set-btn ghost" data-add-local-plugin style="width:100%;margin:0 0 10px">＋ 添加本地插件</button><input type="file" accept=".js,.txt" data-local-plugin-file style="display:none"><div class="urppp-store-bd" id="urppp-plugin-manage"><div class="urppp-store-empty"><p>加载中…</p></div></div></div>
         </div>
       </div>`;
     bindStoreTabs(body);
     bindStoreManageSettings(body);
+    bindLocalPluginImport(body);
     fetchCatalogPlugins(body.querySelector('[data-pane="download"]'));
     fetchPluginManage(body.querySelector('#urppp-plugin-manage'));
+  }
+
+  function bindLocalPluginImport(body) {
+    const btn = body.querySelector('[data-add-local-plugin]');
+    const file = body.querySelector('[data-local-plugin-file]');
+    if (!btn || !file) return;
+    btn.addEventListener('click', () => file.click());
+    file.addEventListener('change', async () => {
+      const f = file.files && file.files[0];
+      if (!f) return;
+      const text = await f.text();
+      file.value = '';
+      try {
+        // 执行插件（IIFE），插件内部调用 window.__urpppPlugin.register 完成装载
+        (new Function(text))();
+      } catch (e) { alert('本地插件加载失败：' + (e && e.message ? e.message : e)); }
+      try { fetchPluginManage(body.querySelector('#urppp-plugin-manage')); } catch (_) {}
+    });
+  }
   }
 
   function renderSkinCards(panel) {
