@@ -593,6 +593,34 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] .u
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] .urppp-set-btn.ghost {
   background: #2a2f36 !important; color: #dfe3e9 !important; box-shadow: 3px 3px 6px #1e2228, -3px -3px 6px #363d47 !important;
 }
+
+/* 暗色 hover：背景与文字同色系，避免悬停变白但文字不变色 */
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover {
+  background: #1c1c1c !important; color: #fff !important; border-color: #fff !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover .urppp-skin-name,
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover .urppp-skin-desc,
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover .urppp-skin-meta { color: #fff !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"]:hover {
+  background: #403a30 !important; color: #f6eddc !important; border-color: #6a5f4e !important;
+  box-shadow: 0 8px 20px rgba(0,0,0,.4) !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"]:hover .urppp-skin-name,
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"]:hover .urppp-skin-desc,
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"]:hover .urppp-skin-meta { color: #f6eddc !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"]:hover {
+  background: #ccff00 !important; color: #000 !important; border-color: #fff !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"]:hover .urppp-skin-name,
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"]:hover .urppp-skin-desc,
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"]:hover .urppp-skin-meta { color: #000 !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"]:hover {
+  background: #333a44 !important; color: #eef1f6 !important;
+  box-shadow: 2px 2px 4px #1e2228, -2px -2px 4px #3d4550 !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"]:hover .urppp-skin-name,
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"]:hover .urppp-skin-desc,
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"]:hover .urppp-skin-meta { color: #eef1f6 !important; }
 #urppp-settings-panel .urppp-skin-card[data-skin="neu"] {
   background: #e0e5ec !important; color: #3d4450 !important; border: none !important; border-radius: 20px !important;
   box-shadow: 5px 5px 10px #bec3ca, -5px -5px 10px #f7f9fc !important;
