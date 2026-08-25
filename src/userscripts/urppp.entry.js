@@ -6249,6 +6249,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (document.getElementById('urppp-settings-panel')) return;
     ensureSettingsStyles();
     try { applySkinAttr(); } catch (_) {}
+    // 打开设置前先注入已缓存的 catalog cardCss，避免下载主题皮肤卡先残缺再变正常
+    try { if (__catalogCache && __catalogCache.length) ensureStoreCardStyles(__catalogCache); } catch (_) {}
     const mask = document.createElement('div');
     mask.id = 'urppp-settings-mask';
     mask.addEventListener('click', closeSettingsPanel);
