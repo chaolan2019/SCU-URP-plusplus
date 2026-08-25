@@ -6490,14 +6490,18 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }));
     host.querySelectorAll('[data-theme-del]').forEach((b) => b.addEventListener('click', () => {
       const id = b.dataset.themeDel;
+      // 先判断是否为当前皮肤（必须在清理前，否则清理后 getSkin 已回退到默认，永远不等）
+      const wasCurrent = (getSkin() === id);
       try { GM_setValue('urppp_theme_css_' + id, ''); } catch (_) {}
       try { GM_setValue('urppp_card_css_' + id, ''); } catch (_) {}
       removeLocalTheme(id);
       removeStoreThemeStyle(id);
-      // 若删除的是当前正在应用的主题→重置为默认（内置）
+      // 若删除的是当前正在应用的主题→重置为默认（内置），完全清掉被删主题的皮肤/配色残留
       try {
-        if (getSkin() === id) {
+        if (wasCurrent) {
           GM_setValue(SKIN_KEY, 'apple');
+          try { document.documentElement.removeAttribute('data-urppp-skin'); } catch (_) {}
+          try { if (document.body) document.body.removeAttribute('data-urppp-skin'); } catch (_) {}
           applySkinAttr();
           applyTheme('default', { manual: true });
         }
