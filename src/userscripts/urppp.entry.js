@@ -161,10 +161,10 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   const SKIN_CATALOG = [
     { id: 'apple', name: '类Apple风格', desc: '系统灰底、链接蓝、大圆角与轻阴影，默认精修方向。', ready: true, dark: true, dynamic: true, installed: true, builtin: true, version: '1.0.0', author: 'Chao_Lan', repo: 'https://github.com/chaolan2019/SCU-URP-plusplus', caps: { scope: 'app', allowJS: false } },
     { id: 'editorial', name: '编辑杂志', desc: '衬线标题、无框版面与淡分割线。支持暗色，不支持动态配色。', ready: true, dark: true, dynamic: false, installed: true, builtin: true, version: '1.0.0', author: 'Chao_Lan', repo: 'https://github.com/chaolan2019/SCU-URP-plusplus', caps: { scope: 'app', allowJS: false } },
-    { id: 'flat', name: '极简扁平', desc: '无阴影、硬边与纯色层次，冷硬清晰。', ready: true, dark: true, dynamic: true, installed: false, version: '1.0.0', author: 'Chao_Lan', caps: { scope: 'app', allowJS: false } },
-    { id: 'organic', name: '自然有机', desc: '奶油底与大地色，温暖圆角。不支持动态配色。', ready: true, dark: true, dynamic: false, installed: false, version: '1.0.0', author: 'Chao_Lan', caps: { scope: 'app', allowJS: false } },
-    { id: 'brutal', name: '新野兽派', desc: '高对比画布、粗边框与硬阴影。支持暗色，不支持动态配色。', ready: true, dark: true, dynamic: false, palettes: true, installed: false, version: '1.0.0', author: 'Chao_Lan', caps: { scope: 'app', allowJS: false } },
-    { id: 'neu', name: '新拟物', desc: '同色双阴影凸起/内凹，立体柔和。支持暗色，不支持动态配色。', ready: true, dark: true, dynamic: false, installed: false, version: '1.0.0', author: 'Chao_Lan', caps: { scope: 'app', allowJS: false } },
+    { id: 'flat', name: '极简扁平', desc: '无阴影、硬边与纯色层次，冷硬清晰。', ready: true, dark: true, dynamic: true, installed: false, version: '1.0.0', author: 'Chao_Lan', repo: 'https://github.com/chaolan2019/SCU-URP-plusplus', caps: { scope: 'app', allowJS: false } },
+    { id: 'organic', name: '自然有机', desc: '奶油底与大地色，温暖圆角。不支持动态配色。', ready: true, dark: true, dynamic: false, installed: false, version: '1.0.0', author: 'Chao_Lan', repo: 'https://github.com/chaolan2019/SCU-URP-plusplus', caps: { scope: 'app', allowJS: false } },
+    { id: 'brutal', name: '新野兽派', desc: '高对比画布、粗边框与硬阴影。支持暗色，不支持动态配色。', ready: true, dark: true, dynamic: false, palettes: true, installed: false, version: '1.0.0', author: 'Chao_Lan', repo: 'https://github.com/chaolan2019/SCU-URP-plusplus', caps: { scope: 'app', allowJS: false } },
+    { id: 'neu', name: '新拟物', desc: '同色双阴影凸起/内凹，立体柔和。支持暗色，不支持动态配色。', ready: true, dark: true, dynamic: false, installed: false, version: '1.0.0', author: 'Chao_Lan', repo: 'https://github.com/chaolan2019/SCU-URP-plusplus', caps: { scope: 'app', allowJS: false } },
   ];
 
   // 最早阶段：最高优先级遮罩盖住未美化界面，完成后淡入
@@ -10110,6 +10110,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   function scheduleAutoUpdateCheck() {
     setTimeout(() => { try { maybeAutoCheckUpdate(); } catch (_) {} }, 1800);
   }
+
+  // 尽早注入已下载主题CSS并应用皮肤（刷新时 body 构建前即设 data-urppp-skin，避免先白后暖黄/主题色迟载）
+  try { injectAllStoreThemeStyles(); } catch (_) {}
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
