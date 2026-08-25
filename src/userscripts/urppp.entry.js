@@ -6471,7 +6471,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 商店清单（新仓库）多源
   const CATALOG_SOURCES = [
     'https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/catalog.json',
-    'https://cdn.jsdelivr.net/gh/chaolan2019/URP-plusplus-Repository@main/catalog.json',
     'https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/catalog.json',
   ];
 
