@@ -137,7 +137,7 @@ async function compileTarget(target, commonMetadata) {
     target: 'esnext',
     charset: 'utf8',
     minify: true,
-    keepNames: false,
+    keepNames: true,
     legalComments: 'inline',
     treeShaking: true,
     sourcemap: false,
