@@ -6476,15 +6476,21 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   ];
 
   async function fetchCatalogList() {
-    // 并行拉取多源 + 每源 5s 超时，避免网络挂起时商店永远停在「加载中」
     const withTimeout = (promise, ms) => Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
     const results = await Promise.allSettled(CATALOG_SOURCES.map((url) => withTimeout(fetch(url, { cache: 'no-store' }), 5000)));
+    let firstOk = [];
     for (const res of results) {
-      if (res.status === 'fulfilled' && res.value && res.value.ok) {
-        try { const j = await res.value.json(); if (j && Array.isArray(j.items)) return j.items; } catch (_) { /* invalid json, try next */ }
-      }
+      if (!(res.status === 'fulfilled' && res.value && res.value.ok)) continue;
+      try {
+        const j = await res.value.json();
+        if (j && Array.isArray(j.items)) {
+          if (!firstOk.length) firstOk = j.items;
+          // 优先返回「含 cardCss 的源」——jsdelivr 可能缓存旧版无 cardCss，raw/gh-proxy 有完整 cardCss
+          if (j.items.some((it) => it.type === 'theme' && it.cardCss)) return j.items;
+        }
+      } catch (_) { /* invalid json, try next */ }
     }
-    return [];
+    return firstOk;
   }
 
   function versionGt(va, vb) {
