@@ -9916,6 +9916,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     injectAllStoreThemeStyles();
     applyTheme(getCurrent());
 
+    // 官方 4 主题卡片样式已脱离主插件内置，统一由 catalog cardCss 提供——初始化即异步拉取注入（设置页/商店皮肤卡可用）
+    setTimeout(() => { try { fetchCatalogList().then((t) => ensureStoreCardStyles(t)); } catch (_) {} }, 0);
+
     // 阻止 Chosen 搜索框聚焦时自动滚动页面/容器，避免下拉展开后内容被抬高
     document.addEventListener('focusin', (e) => {
       const t = e.target;
