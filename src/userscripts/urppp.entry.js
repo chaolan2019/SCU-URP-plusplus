@@ -1343,6 +1343,34 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     try { return !!GM_getValue('urppp_theme_css_' + id, ''); } catch (_) { return false; }
   }
 
+  // 下载主题 CSS 存储（带 id 的 style，便于刷新重注入 / 删除清理）
+  function storeThemeStyleEl(id) {
+    let el = document.getElementById('urppp-store-theme-' + id);
+    if (!el) {
+      el = document.createElement('style');
+      el.id = 'urppp-store-theme-' + id;
+      el.dataset.urpppStoreTheme = id;
+      (document.head || document.documentElement).appendChild(el);
+    }
+    return el;
+  }
+
+  function removeStoreThemeStyle(id) {
+    const el = document.getElementById('urppp-store-theme-' + id);
+    if (el) el.remove();
+  }
+
+  // 初始注入所有已下载主题的 CSS（刷新后仍生效，否则独立主题会丢大半）
+  function injectAllStoreThemeStyles() {
+    SKIN_CATALOG.forEach((s) => {
+      const key = 'urppp_theme_css_' + s.id;
+      let css = '';
+      try { css = GM_getValue(key, '') || ''; } catch (_) {}
+      if (css) storeThemeStyleEl(s.id).textContent = css;
+    });
+    try { applySkinAttr(); } catch (_) {}
+  }
+
   function getSkin() {
     const id = GM_getValue(SKIN_KEY, 'apple');
     const hit = SKIN_CATALOG.find((s) => s.id === id);
@@ -6307,6 +6335,17 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   // 主题下载列表（未安装主题，4 个）
   // 主题商店：下载 tab 从 catalog 拉主题列表（卡片式）+ 下载注入 css
+  // 注入第三方主题卡片样式：每个主题可在 catalog 提供 cardCss，卡片展示时按 data-skin 生效
+  function ensureStoreCardStyles(items) {
+    if (!Array.isArray(items)) return;
+    items.forEach((it) => {
+      if (!it || !it.cardCss || !it.id) return;
+      let el = document.getElementById('urppp-store-card-css-' + it.id);
+      if (!el) { el = document.createElement('style'); el.id = 'urppp-store-card-css-' + it.id; (document.head || document.documentElement).appendChild(el); }
+      if (el.textContent !== it.cardCss) el.textContent = it.cardCss;
+    });
+  }
+
   function themeStoreCard(item, downloaded) {
     const repoBtn = item.repo ? `<div class="urppp-store-ops" style="position:absolute;left:12px;bottom:12px"><button type="button" class="urppp-set-btn ghost" data-repo="${escapeHtml(item.repo)}">仓库</button></div>` : '';
     return `<div class="urppp-skin-card" data-skin="${escapeHtml(item.id)}">
@@ -6324,6 +6363,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     let themes = [];
     try { themes = (await fetchCatalogList()).filter((it) => it.type === 'theme' && !themeDownloaded(it.id)); } catch (_) {}
     if (!themes.length) { downloadPane.innerHTML = '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无待下载主题</p><p class="urppp-store-sub">已安装的主题不会再显示在这里。</p></div>'; return; }
+    ensureStoreCardStyles(themes);
     downloadPane.innerHTML = `<div class="urppp-store-theme-grid">${themes.map((it) => themeStoreCard(it, false)).join('')}</div>`;
     downloadPane.querySelectorAll('[data-store-theme]').forEach((b) => {
       b.addEventListener('click', () => downloadStoreTheme(b.dataset.storeTheme, b));
@@ -6342,8 +6382,14 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }
     if (!css) { btn.textContent = '下载失败'; setTimeout(() => { btn.textContent = '下载'; btn.disabled = false; }, 1400); return; }
     try { GM_setValue('urppp_theme_css_' + id, css); } catch (_) {}
-    try { if (typeof GM_addStyle === 'function') GM_addStyle(css); } catch (_) {}
+    try { storeThemeStyleEl(id).textContent = css; } catch (_) {}
     btn.textContent = '已安装'; btn.disabled = true;
+    // 即时刷新：主题管理能看到刚下的主题 + 下载列表排除它
+    const inline = (btn.closest && btn.closest('.urppp-store-inline'));
+    if (inline) {
+      try { const manage = inline.querySelector('#urppp-theme-manage'); if (manage) await fetchThemeManage(manage); } catch (_) {}
+      try { fetchCatalogThemes(inline); } catch (_) {}
+    }
     try { syncSettingsPanelUI(); } catch (_) {}
   }
 
@@ -6369,13 +6415,27 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     try { catalog = await fetchCatalogList(); } catch (_) {}
     const items = SKIN_CATALOG.filter((s) => s.installed !== false || themeDownloaded(s.id));
     if (!items.length) { host.innerHTML = '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无已装主题</p></div>'; return; }
+    ensureStoreCardStyles(items.map((s) => catalog.find((c) => c.id === s.id)));
     host.innerHTML = `<div class="urppp-store-theme-grid">${items.map((s) => themeManageCardHtml(s, catalog.find((c) => c.id === s.id))).join('')}</div>`;
     host.querySelectorAll('[data-theme-use]').forEach((b) => b.addEventListener('click', () => { if (setSkin(b.dataset.themeUse)) syncSettingsPanelUI(); }));
     host.querySelectorAll('[data-theme-del]').forEach((b) => b.addEventListener('click', () => {
-      try { GM_setValue('urppp_theme_css_' + b.dataset.themeDel, ''); } catch (_) {}
+      const id = b.dataset.themeDel;
+      try { GM_setValue('urppp_theme_css_' + id, ''); } catch (_) {}
+      removeStoreThemeStyle(id);
+      // 若删除的是当前正在应用的主题→重置为默认（内置）
+      try {
+        if (getSkin() === id) {
+          GM_setValue(SKIN_KEY, 'apple');
+          applySkinAttr();
+          applyTheme('default', { manual: true });
+        }
+      } catch (_) {}
       try { syncSettingsPanelUI(); } catch (_) {}
-      const body = host.closest('.urppp-store-inline');
-      try { renderThemeStoreBody(body); } catch (_) {}
+      const inline = host.closest('.urppp-store-inline');
+      if (inline) {
+        try { fetchThemeManage(host); } catch (_) {}
+        try { fetchCatalogThemes(inline); } catch (_) {}
+      }
     }));
     host.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
   }
@@ -6423,7 +6483,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       // 主题：已装且版本落后
       const themeEl = root.querySelector('[data-theme-use="' + item.id + '"]');
       if (themeEl && versionGt(item.version, SKIN_CATALOG.find((s) => s.id === item.id) && SKIN_CATALOG.find((s) => s.id === item.id).version)) {
-        addUpdateBadge(themeEl.closest('.urppp-store-item'), '主题');
+        addUpdateBadge(themeEl.closest('.urppp-skin-card'), '主题');
         updated += 1;
       }
       // 插件：已注册且版本落后
@@ -6476,13 +6536,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         </div>
         <div class="urppp-store-body">
           <div class="urppp-store-pane" data-pane="download"><div class="urppp-store-empty"><p class="urppp-store-empty-title">加载中…</p></div></div>
-          <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}<div class="urppp-store-empty"><p>加载中…</p></div></div>
+          <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}<div class="urppp-store-bd"><div id="urppp-theme-manage"><div class="urppp-store-empty"><p>加载中…</p></div></div></div></div>
         </div>
       </div>`;
     bindStoreTabs(body);
     bindStoreManageSettings(body);
     fetchCatalogThemes(body);
-    fetchThemeManage(body.querySelector('[data-pane="manage"]'));
+    fetchThemeManage(body.querySelector('#urppp-theme-manage'));
   }
 
   function pluginStoreCard(item) {
@@ -9831,6 +9891,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   function init() {
     if (!document.body) { setTimeout(init, 10); return; }
+    injectAllStoreThemeStyles();
     applyTheme(getCurrent());
 
     // 阻止 Chosen 搜索框聚焦时自动滚动页面/容器，避免下拉展开后内容被抬高
