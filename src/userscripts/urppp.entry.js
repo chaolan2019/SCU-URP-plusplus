@@ -6371,7 +6371,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       b.addEventListener('click', () => downloadStoreTheme(b.dataset.storeTheme, b));
     });
     downloadPane.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
-    styleStoreGhostBtns(downloadPane);
   }
 
   async function downloadStoreTheme(id, btn) {
@@ -6459,39 +6458,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       }
     }));
     host.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
-    styleStoreGhostBtns(host);
   }
 
   // 管理界面设置：自动检测更新（全宽开关按钮）+ 检查更新
-  // 各主题卡次要按钮样式（用于 JS 内联注入，彻底绕开主题CSS污染；inline important 优先级最高）
-  const STORE_GHOST_MAP = {
-    apple:    { color:'#0071e3', border:'1px solid rgba(0,113,227,.4)', radius:'999px', colorDark:'#7aa2ff', borderDark:'1px solid rgba(122,162,255,.4)' },
-    editorial:{ color:'#1c1c1c', border:'none', radius:'0', colorDark:'#e8e8e4' },
-    flat:     { color:'#000', border:'1px solid rgba(0,0,0,.5)', radius:'0', colorDark:'#fff', borderDark:'1px solid rgba(255,255,255,.4)' },
-    organic:  { color:'#5c4033', border:'1px solid rgba(92,64,51,.35)', radius:'999px', colorDark:'#eadbc8', borderDark:'1px solid rgba(234,219,200,.35)' },
-    brutal:   { color:'#000', border:'1px solid rgba(0,0,0,.55)', radius:'0', colorDark:'#fff', borderDark:'1px solid rgba(255,255,255,.4)' },
-    neu:      { color:'#4f5258', border:'none', radius:'12px', bg:'#e0e5ec', colorDark:'#dfe3e9', bgDark:'#2a2f36' },
-  };
-  function isDarkMode() {
-    try { return !!(document.querySelector('html.urppp-theme-dark') || (document.body && document.body.classList.contains('urppp-dark'))); } catch (_) { return false; }
-  }
-  function styleStoreGhostBtns(root) {
-    if (!root) return;
-    const dark = isDarkMode();
-    root.querySelectorAll('.urppp-set-btn.ghost').forEach((btn) => {
-      const card = btn.closest('.urppp-skin-card');
-      const skin = card && card.dataset.skin;
-      const m = STORE_GHOST_MAP[skin] || {};
-      const st = btn.style;
-      st.setProperty('background', (dark ? m.bgDark : m.bg) || 'transparent', 'important');
-      st.setProperty('box-shadow', 'none', 'important');
-      st.setProperty('transform', 'none', 'important');
-      st.setProperty('color', (dark ? m.colorDark : m.color) || 'inherit', 'important');
-      st.setProperty('border', (dark ? m.borderDark : m.border) || '1px solid rgba(128,128,128,.4)', 'important');
-      st.setProperty('border-radius', m.radius || '6px', 'important');
-    });
-  }
-
   function storeManageSettingsHtml() {
     return `<div class="urppp-store-settings">
       <button type="button" class="urppp-set-follow" data-store-auto-update>自动检测更新：关</button>
@@ -6625,7 +6594,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       setTimeout(() => { b.textContent = old; b.disabled = false; }, 1200);
     }));
     host.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
-    styleStoreGhostBtns(host);
   }
 
   // 插件管理：已装插件，行内右侧按钮（作者/版本/下载量/仓库）
@@ -6660,7 +6628,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       try { renderPluginStoreBody(wrap); } catch (_) {}
     }));
     host.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
-    styleStoreGhostBtns(host);
   }
 
   // 插件商店：下载 + 管理

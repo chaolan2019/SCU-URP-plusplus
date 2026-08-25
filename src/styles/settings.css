@@ -277,11 +277,6 @@ html.urppp-theme-scu-red:not(.urppp-theme-follow) #urppp-settings-panel .urppp-s
   font-size: 12px !important;
   cursor: pointer !important;
 }
-#urppp-settings-panel .urppp-set-btn.ghost {
-  background: var(--input-bg) !important;
-  color: var(--text) !important;
-  border-color: var(--border) !important;
-}
 #urppp-settings-panel .urppp-set-schemes {
   display: flex !important;
   flex-direction: column !important;
@@ -457,7 +452,6 @@ html.urppp-theme-scu-red:not(.urppp-theme-follow) #urppp-settings-panel .urppp-s
 #urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply.is-current {
   background: #0071e3 !important; border-color: #0071e3 !important; color: #fff !important; box-shadow: none !important; transform: none !important;
 }
-html[data-urppp-skin] #urppp-settings-panel .urppp-skin-card[data-skin="apple"] .urppp-set-btn.ghost:hover { background: #0071e3 !important; color: #fff !important; }
 #urppp-settings-panel .urppp-skin-card[data-skin="flat"] {
   background: #fff !important; color: #000 !important; border: 2px solid #000 !important; border-radius: 0 !important; box-shadow: none !important;
 }
@@ -527,6 +521,11 @@ html[data-urppp-skin] #urppp-settings-panel .urppp-skin-card[data-skin="apple"] 
 #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply:not(:disabled):hover,
 #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply.is-current {
   background: transparent !important; color: #1c1c1c !important; text-decoration-color: currentColor !important; box-shadow: none !important; transform: none !important;
+}
+/* 暗色下编辑杂志按钮 hover：保持浅字，不做反色处理（避免黑字深底不可读） */
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply:not(:disabled):hover,
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply.is-current {
+  background: transparent !important; color: #e8e8e4 !important; text-decoration-color: currentColor !important;
 }
 
 /* 暗色：flat 卡（旧块补缺）+ 各主题卡内次要按钮(仓库/删除)随卡片主题 */
@@ -803,24 +802,7 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"]
 
 /* 仓库/删除按钮复用 apply 样式后的定位（覆盖 apply 默认 right:12px） */
 #urppp-settings-panel .urppp-skin-card > .urppp-skin-apply.urppp-store-repo { right:auto!important; left:12px!important; }
-#urppp-settings-panel .urppp-skin-card > .urppp-skin-apply.urppp-store-del { right:96px!important; }
-
-/* 各主题卡次要按钮（仓库/删除）：随卡片主题色，但克制（细边 + 透明底 + 圆角），不做大面积色块/硬阴影 */
-html[data-urppp-skin] #urppp-settings-panel .urppp-skin-card[data-skin="apple"] .urppp-set-btn.ghost { color:#0071e3!important; border:1px solid rgba(0,113,227,.4)!important; border-radius:999px!important; background:transparent!important; box-shadow:none!important; }
-html[data-urppp-skin] #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] .urppp-set-btn.ghost { color:#1c1c1c!important; border:none!important; background:transparent!important; border-radius:0!important; box-shadow:none!important; }
-html[data-urppp-skin] #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] .urppp-set-btn.ghost:hover { text-decoration-line:underline!important; text-underline-offset:3px!important; }
-html[data-urppp-skin].urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] .urppp-set-btn.ghost:hover { text-decoration-line:underline!important; }
-html[data-urppp-skin] #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-set-btn.ghost { color:#000!important; border:1px solid rgba(0,0,0,.5)!important; background:transparent!important; border-radius:0!important; box-shadow:none!important; }
-html[data-urppp-skin] #urppp-settings-panel .urppp-skin-card[data-skin="organic"] .urppp-set-btn.ghost { color:#5c4033!important; border:1px solid rgba(92,64,51,.35)!important; background:transparent!important; border-radius:999px!important; box-shadow:none!important; }
-html[data-urppp-skin] #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-set-btn.ghost { color:#000!important; border:1px solid rgba(0,0,0,.55)!important; background:transparent!important; border-radius:0!important; box-shadow:none!important; }
-html[data-urppp-skin] #urppp-settings-panel .urppp-skin-card[data-skin="neu"] .urppp-set-btn.ghost { color:#4f5258!important; background:#e0e5ec!important; border:none!important; border-radius:12px!important; box-shadow:3px 3px 6px #bec3ca,-3px -3px 6px #f7f9fc!important; }
-/* 暗色下同样随卡片主题色（克制，background 必须透明，否则继承全局 --input-bg 变黑块） */
-html[data-urppp-skin].urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] .urppp-set-btn.ghost { color:#7aa2ff!important; border-color:rgba(122,162,255,.4)!important; background:transparent!important; box-shadow:none!important; }
-html[data-urppp-skin].urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] .urppp-set-btn.ghost { color:#e8e8e4!important; border:none!important; background:transparent!important; box-shadow:none!important; }
-html[data-urppp-skin].urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-set-btn.ghost { color:#fff!important; border-color:rgba(255,255,255,.4)!important; background:transparent!important; box-shadow:none!important; }
-html[data-urppp-skin].urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] .urppp-set-btn.ghost { color:#eadbc8!important; border-color:rgba(234,219,200,.35)!important; background:transparent!important; box-shadow:none!important; }
-html[data-urppp-skin].urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-set-btn.ghost { color:#fff!important; border-color:rgba(255,255,255,.4)!important; background:transparent!important; box-shadow:none!important; }
-html[data-urppp-skin].urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] .urppp-set-btn.ghost { color:#dfe3e9!important; background:#2a2f36!important; border:none!important; box-shadow:3px 3px 6px #1e2228,-3px -3px 6px #363d47!important; }
+#urppp-settings-panel .urppp-skin-card > .urppp-skin-apply.urppp-store-del { right:78px!important; }
 
 /* 类Apple风格暗色卡兜底（最后声明，确保暗色下深卡，不再白卡） */
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] {
