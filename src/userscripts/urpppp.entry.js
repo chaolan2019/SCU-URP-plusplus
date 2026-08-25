@@ -208,6 +208,7 @@ import assistStyles from '../styles/assist.css';
         name: '辅助插件',
         description: '登录助手 / 评教 / 会话保持 / 2FA',
         author: 'Chao_Lan',
+        repo: 'https://github.com/chaolan2019/SCU-URP-plusplus',
         version: URPPPP_VERSION,
         subpanels: {
           login: { label: '登录助手', open: () => panel.openSubPanel('login') },

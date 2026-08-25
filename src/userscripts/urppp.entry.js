@@ -6308,9 +6308,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 主题下载列表（未安装主题，4 个）
   // 主题商店：下载 tab 从 catalog 拉主题列表（卡片式）+ 下载注入 css
   function themeStoreCard(item, downloaded) {
+    const repoLink = item.repo ? `<a class="urppp-store-repo" href="${escapeHtml(item.repo)}" target="_blank" rel="noopener noreferrer nofollow">仓库</a>` : '';
     return `<div class="urppp-skin-card" data-skin="${escapeHtml(item.id)}">
       <div class="urppp-skin-name">${escapeHtml(item.name || item.id)}</div>
-      <div class="urppp-skin-meta">${escapeHtml(item.author || '')}${item.author && item.version ? ' · ' : ''}v${escapeHtml(item.version || '')}</div>
+      <div class="urppp-skin-meta">${escapeHtml(item.author || '')}${item.author && item.version ? ' · ' : ''}v${escapeHtml(item.version || '')}${repoLink ? ' · ' + repoLink : ''}</div>
       <p class="urppp-skin-desc">${escapeHtml(item.description || '')}</p>
       <button type="button" class="urppp-skin-apply" data-store-theme="${escapeHtml(item.id)}"${downloaded ? ' disabled' : ''}>${downloaded ? '已安装' : '下载'}</button>
     </div>`;
@@ -6479,7 +6480,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const manageHtml = items.length
       ? items.map((p) => `
         <div class="urppp-store-item">
-          <div class="urppp-store-info"><strong>${escapeHtml(p.name || p.id)}</strong>${p.author ? `<span class="urppp-store-author">${escapeHtml(p.author)}</span>` : ''}<span class="urppp-store-ver">${p.version ? 'v' + escapeHtml(p.version) : ''}</span><span class="urppp-store-state ok">已装</span></div>
+          <div class="urppp-store-info"><strong>${escapeHtml(p.name || p.id)}</strong>${p.author ? `<span class="urppp-store-author">${escapeHtml(p.author)}</span>` : ''}<span class="urppp-store-ver">${p.version ? 'v' + escapeHtml(p.version) : ''}</span><span class="urppp-store-state ok">已装</span>${p.repo ? `<a class="urppp-store-repo" href="${escapeHtml(p.repo)}" target="_blank" rel="noopener noreferrer nofollow">仓库</a>` : ''}</div>
           ${p.description ? `<p class="urppp-store-item-desc">${escapeHtml(p.description)}</p>` : ''}
           <div class="urppp-store-ops"><button type="button" class="urppp-set-btn" data-plugin-op="reload" data-plugin-id="${escapeHtml(p.id)}">重新装载</button><button type="button" class="urppp-set-btn ghost" data-plugin-op="unload" data-plugin-id="${escapeHtml(p.id)}">卸载</button></div>
         </div>`).join('')
