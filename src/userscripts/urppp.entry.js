@@ -6347,7 +6347,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   function themeStoreCard(item, downloaded) {
-    const repoBtn = item.repo ? `<button type="button" class="urppp-set-btn ghost" style="position:absolute;left:12px;bottom:12px" data-repo="${escapeHtml(item.repo)}">仓库</button>` : '';
+    const srep = (SKIN_CATALOG.find((s) => s.id === item.id) || {}).repo;
+    const repo = item.repo || srep;
+    const repoBtn = repo ? `<button type="button" class="urppp-set-btn ghost" style="position:absolute;left:12px;bottom:12px" data-repo="${escapeHtml(repo)}">仓库</button>` : '';
     return `<div class="urppp-skin-card" data-skin="${escapeHtml(item.id)}">
       <div class="urppp-skin-name">${escapeHtml(item.name || item.id)}</div>
       <div class="urppp-skin-meta">${escapeHtml(item.author || '')}${item.author && item.version ? ' · ' : ''}v${escapeHtml(item.version || '')}</div>

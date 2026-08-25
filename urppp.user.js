@@ -6025,10 +6025,24 @@ html.urppp-theme-scu-red:not(.urppp-theme-follow) #urppp-settings-panel .urppp-s
   background: transparent !important; color: #1c1c1c !important; text-decoration-color: currentColor !important; box-shadow: none !important; transform: none !important;
 }
 #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] .urppp-set-btn.ghost {
-  background: transparent !important; color: #1c1c1c !important; border: 1px solid rgba(28,28,28,.18) !important; border-radius: 0 !important; box-shadow: none !important;
+  background: transparent !important; color: #1c1c1c !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; padding: 0 4px !important;
 }
 #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] .urppp-set-btn.ghost:hover {
-  background: rgba(28,28,28,.05) !important; text-decoration: underline !important;
+  text-decoration-line: underline !important; text-decoration-color: currentColor !important; text-underline-offset: 3px !important;
+}
+
+/* 下载主题（flat/organic/brutal/neu）卡内次要按钮：随所属卡片主题（覆盖全局当前主题变量） */
+#urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-set-btn.ghost {
+  background: #000 !important; color: #fff !important; border: 2px solid #000 !important; border-radius: 0 !important; box-shadow: none !important;
+}
+#urppp-settings-panel .urppp-skin-card[data-skin="organic"] .urppp-set-btn.ghost {
+  background: #fffcf7 !important; color: #5c4033 !important; border: 1px solid #d8cdbb !important; border-radius: 999px !important; box-shadow: none !important;
+}
+#urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-set-btn.ghost {
+  background: #fff !important; color: #000 !important; border: 2px solid #000 !important; border-radius: 0 !important; box-shadow: 2px 2px 0 #000 !important;
+}
+#urppp-settings-panel .urppp-skin-card[data-skin="neu"] .urppp-set-btn.ghost {
+  background: #e0e5ec !important; color: #3d4450 !important; border: none !important; border-radius: 12px !important; box-shadow: 3px 3px 6px #bec3ca, -3px -3px 6px #f7f9fc !important;
 }
 #urppp-settings-panel .urppp-skin-card[data-skin="neu"] {
   background: #e0e5ec !important; color: #3d4450 !important; border: none !important; border-radius: 20px !important;
@@ -11907,12 +11921,12 @@ ${w}
           <button type="button" class="urppp-store-sub-back" id="urppp-store-sub-back" aria-label="返回">←</button>
           <div class="urppp-store-sub-title" id="urppp-store-sub-title"></div>
         </div>
-        <div class="urppp-store-sub-body" id="urppp-store-sub-body"></div>`,e.appendChild(r),r.querySelector("#urppp-store-sub-back").onclick=Xi);let o=r.querySelector("#urppp-store-sub-title"),s=r.querySelector("#urppp-store-sub-body");o.textContent=t==="theme"?"主题商店":"插件商店",s.innerHTML="",t==="theme"?as(s):rn(s),r.classList.add("open")}a(_a,"openStoreSubPanel");function Xi(){let t=document.getElementById("urppp-store-subpanel");if(!t)return;t.classList.remove("open");let e=t.querySelector("#urppp-store-sub-body");e&&(e.innerHTML="")}a(Xi,"closeStoreSubPanel");function Qo(t){t.querySelectorAll(".urppp-store-tab").forEach(e=>{e.addEventListener("click",()=>{t.querySelectorAll(".urppp-store-tab").forEach(o=>o.className="urppp-store-tab"),e.className="urppp-store-tab ac",t.querySelectorAll(".urppp-store-pane").forEach(o=>o.style.display="none");let r=t.querySelector('.urppp-store-pane[data-pane="'+e.dataset.tab+'"]');r&&(r.style.display="")})})}a(Qo,"bindStoreTabs");function Xo(t){Array.isArray(t)&&t.forEach(e=>{if(!e||!e.cardCss||!e.id)return;let r=document.getElementById("urppp-store-card-css-"+e.id);r||(r=document.createElement("style"),r.id="urppp-store-card-css-"+e.id,(document.head||document.documentElement).appendChild(r)),r.textContent!==e.cardCss&&(r.textContent=e.cardCss)})}a(Xo,"ensureStoreCardStyles");function Ki(t,e){let r=t.repo?`<button type="button" class="urppp-set-btn ghost" style="position:absolute;left:12px;bottom:12px" data-repo="${at(t.repo)}">仓库</button>`:"";return`<div class="urppp-skin-card" data-skin="${at(t.id)}">
+        <div class="urppp-store-sub-body" id="urppp-store-sub-body"></div>`,e.appendChild(r),r.querySelector("#urppp-store-sub-back").onclick=Xi);let o=r.querySelector("#urppp-store-sub-title"),s=r.querySelector("#urppp-store-sub-body");o.textContent=t==="theme"?"主题商店":"插件商店",s.innerHTML="",t==="theme"?as(s):rn(s),r.classList.add("open")}a(_a,"openStoreSubPanel");function Xi(){let t=document.getElementById("urppp-store-subpanel");if(!t)return;t.classList.remove("open");let e=t.querySelector("#urppp-store-sub-body");e&&(e.innerHTML="")}a(Xi,"closeStoreSubPanel");function Qo(t){t.querySelectorAll(".urppp-store-tab").forEach(e=>{e.addEventListener("click",()=>{t.querySelectorAll(".urppp-store-tab").forEach(o=>o.className="urppp-store-tab"),e.className="urppp-store-tab ac",t.querySelectorAll(".urppp-store-pane").forEach(o=>o.style.display="none");let r=t.querySelector('.urppp-store-pane[data-pane="'+e.dataset.tab+'"]');r&&(r.style.display="")})})}a(Qo,"bindStoreTabs");function Xo(t){Array.isArray(t)&&t.forEach(e=>{if(!e||!e.cardCss||!e.id)return;let r=document.getElementById("urppp-store-card-css-"+e.id);r||(r=document.createElement("style"),r.id="urppp-store-card-css-"+e.id,(document.head||document.documentElement).appendChild(r)),r.textContent!==e.cardCss&&(r.textContent=e.cardCss)})}a(Xo,"ensureStoreCardStyles");function Ki(t,e){let r=(u.find(i=>i.id===t.id)||{}).repo,o=t.repo||r,s=o?`<button type="button" class="urppp-set-btn ghost" style="position:absolute;left:12px;bottom:12px" data-repo="${at(o)}">仓库</button>`:"";return`<div class="urppp-skin-card" data-skin="${at(t.id)}">
       <div class="urppp-skin-name">${at(t.name||t.id)}</div>
       <div class="urppp-skin-meta">${at(t.author||"")}${t.author&&t.version?" · ":""}v${at(t.version||"")}</div>
       <p class="urppp-skin-desc">${at(t.description||"")}</p>
       <button type="button" class="urppp-skin-apply" data-store-theme="${at(t.id)}"${e?" disabled":""}>${e?"已安装":"下载"}</button>
-      ${r}
+      ${s}
     </div>`}a(Ki,"themeStoreCard");async function Ea(t){let e=t.querySelector('[data-pane="download"]');if(!e)return;let r=[];try{r=(await De()).filter(o=>o.type==="theme"&&!Te(o.id))}catch{}if(!r.length){e.innerHTML='<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无待下载主题</p><p class="urppp-store-sub">已安装的主题不会再显示在这里。</p></div>';return}Xo(r),e.innerHTML=`<div class="urppp-store-theme-grid">${r.map(o=>Ki(o,!1)).join("")}</div>`,e.querySelectorAll("[data-store-theme]").forEach(o=>{o.addEventListener("click",()=>Zi(o.dataset.storeTheme,o))}),e.querySelectorAll("[data-repo]").forEach(o=>o.addEventListener("click",()=>{try{window.open(o.dataset.repo,"_blank","noopener")}catch{}}))}a(Ea,"fetchCatalogThemes");async function Zi(t,e){if(!e||e.disabled)return;let r=(await De()).find(i=>i.id===t);if(!r||!Array.isArray(r.entry)||!r.entry.length)return;e.disabled=!0,e.textContent="下载中…";let o="";for(let i of r.entry)try{let l=await fetch(i,{cache:"no-store"});if(l.ok){o=await l.text();break}}catch{}if(!o){e.textContent="下载失败",setTimeout(()=>{e.textContent="下载",e.disabled=!1},1400);return}try{GM_setValue("urppp_theme_css_"+t,o)}catch{}try{fo(t).textContent=o}catch{}e.textContent="已安装",e.disabled=!0;let s=e.closest&&e.closest(".urppp-store-inline");if(s){try{let i=s.querySelector("#urppp-theme-manage");i&&await Ca(i)}catch{}try{Ea(s)}catch{}}try{Dt()}catch{}}a(Zi,"downloadStoreTheme");function ts(t,e){let o=t.installed!==!1?"":`<button type="button" class="urppp-set-btn ghost" style="position:absolute;right:96px;bottom:12px" data-theme-del="${at(t.id)}">删除</button>`,s=e&&e.repo||t.repo,i=s?`<button type="button" class="urppp-set-btn ghost" style="position:absolute;left:12px;bottom:12px" data-repo="${at(s)}">仓库</button>`:"",l=e&&e.downloads!=null?`<span class="urppp-store-dl">↓ ${at(String(e.downloads))}</span>`:"",g=te()===t.id;return`<div class="urppp-skin-card${g?" is-active":""}" data-skin="${at(t.id)}">
       <div class="urppp-skin-name">${at(t.name)}</div>
       <div class="urppp-skin-meta">${at(e&&e.author||"")}${e&&e.author&&t.version?" · ":""}v${at(t.version||"")}${l?" · "+l:""}</div>
