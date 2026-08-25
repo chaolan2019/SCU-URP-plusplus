@@ -1610,9 +1610,9 @@
     function pluginSource(id) {
       if (id === "assist") {
         return [
-          "https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.plugin.js",
-          "https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/urpppp.plugin.js",
-          "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.plugin.js"
+          "https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/urpppp.plugin.js",
+          "https://cdn.jsdelivr.net/gh/chaolan2019/URP-plusplus-Repository@main/urpppp.plugin.js",
+          "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/urpppp.plugin.js"
         ];
       }
       return [];
@@ -24912,6 +24912,73 @@ ${arcs}
     </div>`;
     }
     __name(storeManageSettingsHtml, "storeManageSettingsHtml");
+    const CATALOG_SOURCES = [
+      "https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/catalog.json",
+      "https://cdn.jsdelivr.net/gh/chaolan2019/URP-plusplus-Repository@main/catalog.json",
+      "https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/catalog.json"
+    ];
+    async function fetchCatalogList() {
+      for (const url of CATALOG_SOURCES) {
+        try {
+          const r = await fetch(url, { cache: "no-store" });
+          if (r.ok) {
+            const j = await r.json();
+            if (j && Array.isArray(j.items)) return j.items;
+          }
+        } catch (_) {
+        }
+      }
+      return [];
+    }
+    __name(fetchCatalogList, "fetchCatalogList");
+    function versionGt(va, vb) {
+      const a = String(va || "0").split(".").map(Number);
+      const b = String(vb || "0").split(".").map(Number);
+      for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+        const x = a[i] || 0, y = b[i] || 0;
+        if (x !== y) return x > y;
+      }
+      return false;
+    }
+    __name(versionGt, "versionGt");
+    function applyStoreUpdateBadges(root, catalog) {
+      let updated = 0;
+      catalog.forEach((item) => {
+        if (!item.id) return;
+        const themeEl = root.querySelector('[data-theme-use="' + item.id + '"]');
+        if (themeEl && versionGt(item.version, SKIN_CATALOG.find((s) => s.id === item.id) && SKIN_CATALOG.find((s) => s.id === item.id).version)) {
+          addUpdateBadge(themeEl.closest(".urppp-store-item"), "主题");
+          updated += 1;
+        }
+        const pluginEl = root.querySelector('[data-plugin-id="' + item.id + '"]');
+        if (pluginEl) {
+          const cur = pluginManager && pluginManager.api && pluginManager.api.get && pluginManager.api.get(item.id);
+          if (cur && versionGt(item.version, cur.version)) {
+            addUpdateBadge(pluginEl.closest(".urppp-store-item"), "插件");
+            updated += 1;
+          }
+        }
+      });
+      return updated;
+    }
+    __name(applyStoreUpdateBadges, "applyStoreUpdateBadges");
+    function addUpdateBadge(itemEl, label) {
+      if (!itemEl || itemEl.querySelector(".urppp-store-update")) return;
+      const ops = itemEl.querySelector(".urppp-store-ops");
+      if (!ops) return;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "urppp-set-btn urppp-store-update";
+      b.textContent = "有新更新";
+      b.addEventListener("click", () => {
+        try {
+          b.textContent = "更新中…";
+        } catch (_) {
+        }
+      });
+      ops.appendChild(b);
+    }
+    __name(addUpdateBadge, "addUpdateBadge");
     function bindStoreManageSettings(root) {
       const auto = root.querySelector("[data-store-auto-update]");
       const check = root.querySelector("[data-store-check-update]");
@@ -24930,10 +24997,17 @@ ${arcs}
         check.disabled = true;
         const old = check.textContent;
         check.textContent = "检查中…";
+        try {
+          const catalog = await fetchCatalogList();
+          const n = applyStoreUpdateBadges(root, catalog);
+          check.textContent = n ? "发现更新" : "已是最新";
+        } catch (_) {
+          check.textContent = "检查失败";
+        }
         setTimeout(() => {
           check.textContent = old;
           check.disabled = false;
-        }, 1200);
+        }, 1600);
       });
     }
     __name(bindStoreManageSettings, "bindStoreManageSettings");

@@ -7601,6 +7601,66 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     </div>`;
   }
 
+  // 商店清单（新仓库）多源
+  const CATALOG_SOURCES = [
+    'https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/catalog.json',
+    'https://cdn.jsdelivr.net/gh/chaolan2019/URP-plusplus-Repository@main/catalog.json',
+    'https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/catalog.json',
+  ];
+
+  async function fetchCatalogList() {
+    for (const url of CATALOG_SOURCES) {
+      try {
+        const r = await fetch(url, { cache: 'no-store' });
+        if (r.ok) { const j = await r.json(); if (j && Array.isArray(j.items)) return j.items; }
+      } catch (_) { /* try next */ }
+    }
+    return [];
+  }
+
+  function versionGt(va, vb) {
+    const a = String(va || '0').split('.').map(Number);
+    const b = String(vb || '0').split('.').map(Number);
+    for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+      const x = a[i] || 0, y = b[i] || 0;
+      if (x !== y) return x > y;
+    }
+    return false;
+  }
+
+  // 检查后：在已装卡片右侧加上「有新更新」徽标按钮
+  function applyStoreUpdateBadges(root, catalog) {
+    let updated = 0;
+    catalog.forEach((item) => {
+      if (!item.id) return;
+      // 主题：已装且版本落后
+      const themeEl = root.querySelector('[data-theme-use="' + item.id + '"]');
+      if (themeEl && versionGt(item.version, SKIN_CATALOG.find((s) => s.id === item.id) && SKIN_CATALOG.find((s) => s.id === item.id).version)) {
+        addUpdateBadge(themeEl.closest('.urppp-store-item'), '主题');
+        updated += 1;
+      }
+      // 插件：已注册且版本落后
+      const pluginEl = root.querySelector('[data-plugin-id="' + item.id + '"]');
+      if (pluginEl) {
+        const cur = (pluginManager && pluginManager.api && pluginManager.api.get && pluginManager.api.get(item.id));
+        if (cur && versionGt(item.version, cur.version)) { addUpdateBadge(pluginEl.closest('.urppp-store-item'), '插件'); updated += 1; }
+      }
+    });
+    return updated;
+  }
+
+  function addUpdateBadge(itemEl, label) {
+    if (!itemEl || itemEl.querySelector('.urppp-store-update')) return;
+    const ops = itemEl.querySelector('.urppp-store-ops');
+    if (!ops) return;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'urppp-set-btn urppp-store-update';
+    b.textContent = '有新更新';
+    b.addEventListener('click', () => { try { b.textContent = '更新中…'; } catch (_) {} });
+    ops.appendChild(b);
+  }
+
   function bindStoreManageSettings(root) {
     const auto = root.querySelector('[data-store-auto-update]');
     const check = root.querySelector('[data-store-check-update]');
@@ -7611,8 +7671,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     auto.addEventListener('click', () => { on = !on; GM_setValue('urppp_store_auto_update', on); sync(); });
     check.addEventListener('click', async () => {
       check.disabled = true; const old = check.textContent; check.textContent = '检查中…';
-      // P1 占位：正式检查待 P2 接入仓库清单后实现
-      setTimeout(() => { check.textContent = old; check.disabled = false; }, 1200);
+      try {
+        const catalog = await fetchCatalogList();
+        const n = applyStoreUpdateBadges(root, catalog);
+        check.textContent = n ? '发现更新' : '已是最新';
+      } catch (_) { check.textContent = '检查失败'; }
+      setTimeout(() => { check.textContent = old; check.disabled = false; }, 1600);
     });
   }
 
