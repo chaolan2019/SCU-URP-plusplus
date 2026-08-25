@@ -552,56 +552,28 @@ html.urppp-theme-scu-red:not(.urppp-theme-follow) #urppp-settings-panel .urppp-s
   background: #e0e5ec !important; color: #3d4450 !important; border: none !important; border-radius: 12px !important; box-shadow: 3px 3px 6px #bec3ca, -3px -3px 6px #f7f9fc !important;
 }
 
-/* 暗色模式：卡片+主按钮+次要按钮一并适配（主题有暗色则卡片也适配暗色） */
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"],
-body.urppp-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] {
+/* 暗色：flat 卡（旧块补缺）+ 各主题卡内次要按钮(仓库/删除)随卡片主题 */
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] {
   background: #111 !important; color: #fff !important; border-color: #fff !important; box-shadow: none !important;
 }
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-skin-name, html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-skin-desc { color: #fff !important; }
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-skin-apply {
   background: #fff !important; color: #000 !important; border: 2px solid #fff !important;
 }
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-set-btn.ghost {
-  background: #fff !important; color: #000 !important; border: 2px solid #fff !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] {
-  background: #2a2620 !important; color: #f0e6d8 !important; border-color: #5c5346 !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] .urppp-skin-name, html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] .urppp-skin-desc { color: #f0e6d8 !important; }
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] .urppp-skin-apply {
-  background: #6f7d5a !important; color: #1c170f !important; border-color: #8b9d77 !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] .urppp-set-btn.ghost {
-  background: #3a342b !important; color: #e8dcc7 !important; border-color: #5c5346 !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] {
-  background: #0d0d0d !important; color: #fff !important; border-color: #fff !important; box-shadow: 5px 5px 0 #fff !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-skin-name, html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-skin-desc { color: #fff !important; }
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-skin-apply {
-  background: #ccff00 !important; color: #000 !important; border-color: #fff !important; box-shadow: 3px 3px 0 #fff !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-set-btn.ghost {
-  background: #1a1a1a !important; color: #fff !important; border-color: #fff !important; box-shadow: 2px 2px 0 #fff !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] {
-  background: #2a2f36 !important; color: #e6e9ee !important; box-shadow: 5px 5px 10px #1e2228, -5px -5px 10px #363d47 !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] .urppp-skin-name, html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] .urppp-skin-desc { color: #e6e9ee !important; }
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] .urppp-skin-apply {
-  background: #2a2f36 !important; color: #dfe3e9 !important; box-shadow: 4px 4px 8px #1e2228, -4px -4px 8px #363d47 !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] .urppp-set-btn.ghost {
-  background: #2a2f36 !important; color: #dfe3e9 !important; box-shadow: 3px 3px 6px #1e2228, -3px -3px 6px #363d47 !important;
-}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-set-btn.ghost { background: #fff !important; color: #000 !important; border: 2px solid #fff !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] .urppp-set-btn.ghost { background: #3a342b !important; color: #e8dcc7 !important; border-color: #5c5346 !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-set-btn.ghost { background: #1a1a1a !important; color: #fff !important; border-color: #fff !important; box-shadow: 2px 2px 0 #fff !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] .urppp-set-btn.ghost { background: #2a2f36 !important; color: #dfe3e9 !important; box-shadow: 3px 3px 6px #1e2228, -3px -3px 6px #363d47 !important; }
 
 /* 暗色 hover：背景与文字同色系，避免悬停变白但文字不变色 */
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover {
-  background: #1c1c1c !important; color: #fff !important; border-color: #fff !important;
+  background: #fff !important; color: #000 !important; border-color: #000 !important;
 }
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover .urppp-skin-name,
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover .urppp-skin-desc,
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover .urppp-skin-meta { color: #fff !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover .urppp-skin-meta { color: #000 !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover > .urppp-skin-apply,
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"]:hover .urppp-set-btn.ghost { color: #000 !important; border-color: #000 !important; }
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"]:hover {
   background: #403a30 !important; color: #f6eddc !important; border-color: #6a5f4e !important;
   box-shadow: 0 8px 20px rgba(0,0,0,.4) !important;
@@ -610,7 +582,7 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"]:hover .urppp-skin-desc,
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"]:hover .urppp-skin-meta { color: #f6eddc !important; }
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"]:hover {
-  background: #ccff00 !important; color: #000 !important; border-color: #fff !important;
+  background: #ccff00 !important; color: #000 !important; border-color: #000 !important;
 }
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"]:hover .urppp-skin-name,
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"]:hover .urppp-skin-desc,
