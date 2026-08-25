@@ -6503,8 +6503,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           try { document.documentElement.removeAttribute('data-urppp-skin'); } catch (_) {}
           try { if (document.body) document.body.removeAttribute('data-urppp-skin'); } catch (_) {}
           applySkinAttr();
-          // 保留当前配色（暗色/主题色不跳回亮色），只重置皮肤
-          applyTheme(getCurrent() || 'default', { manual: true });
+          // 保留原有主题模式：跟随系统 → 仍跟随系统；手动暗色/主题色 → 保持 getCurrent()
+          const following = isThemeFollowSystem();
+          const requested = following ? resolveFollowThemeName() : getCurrent();
+          applyTheme(requested, { system: following });
         }
       } catch (_) {}
       try { syncSettingsPanelUI(); } catch (_) {}
