@@ -6340,6 +6340,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (!Array.isArray(items)) return;
     items.forEach((it) => {
       if (!it || !it.cardCss || !it.id) return;
+      // 官方主题（在 SKIN_CATALOG 内，卡片样式已由主插件 settings.css 内置亮/暗）不注入 catalog cardCss，
+      // 避免覆盖内置暗色变体（cardCss 若只含亮色会致暗色白卡）；仅第三方（不在 SKIN_CATALOG）注入
+      if (SKIN_CATALOG.some((s) => s.id === it.id)) return;
       let el = document.getElementById('urppp-store-card-css-' + it.id);
       if (!el) { el = document.createElement('style'); el.id = 'urppp-store-card-css-' + it.id; (document.head || document.documentElement).appendChild(el); }
       if (el.textContent !== it.cardCss) el.textContent = it.cardCss;
