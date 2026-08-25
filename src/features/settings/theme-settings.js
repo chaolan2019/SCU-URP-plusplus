@@ -64,13 +64,13 @@ export function syncThemeSettingsControls(panel, state) {
     // 不支持动态配色的主题：整体隐藏动态配色 section（不再划线禁用）
     dynamicSection.style.display = dynamicSupported ? '' : 'none';
     dynamicSection.style.opacity = '1';
-    dynamicSection.classList.remove('urppp-dyn-disabled');
+    dynamicSection.classList.toggle('urppp-dyn-disabled', false);
     dynamicSection.querySelectorAll('button, input, .urppp-set-scheme, .urppp-set-swatch').forEach((element) => {
       element.disabled = false;
-      element.classList.remove('urppp-dyn-disabled');
+      element.classList.toggle('urppp-dyn-disabled', false);
     });
     dynamicSection.querySelectorAll('h3, .urppp-set-tip, label').forEach((element) => {
-      element.classList.remove('urppp-dyn-disabled');
+      element.classList.toggle('urppp-dyn-disabled', false);
     });
   }
 

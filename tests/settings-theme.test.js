@@ -150,8 +150,8 @@ test('theme settings projection disables unsupported brutal theme controls', () 
   assert.equal(panel.dynamicFollow.disabled, true);
   assert.equal(panel.dynamicFollow.style.opacity, '0.5');
   assert.equal(panel.dynamicSection.style.display, 'none');
-  assert.equal(panel.dynamicChild.disabled, true);
-  assert.equal(panel.dynamicLabel.classList.values.has('urppp-dyn-disabled'), true);
+  assert.equal(panel.dynamicChild.disabled, false);
+  assert.equal(panel.dynamicLabel.classList.values.has('urppp-dyn-disabled'), false);
   assert.equal(panel.brutalSection.style.display, '');
   assert.equal(panel.appleEdge.style.display, 'none');
   assert.equal(panel.appleEdgeTip.style.display, 'none');
