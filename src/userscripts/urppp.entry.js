@@ -6375,9 +6375,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   async function downloadStoreTheme(id, btn) {
     if (!btn || btn.disabled) return;
-    const item = (await fetchCatalogList()).find((it) => it.id === id);
-    if (!item || !Array.isArray(item.entry) || !item.entry.length) return;
+    // 先立即反馈，避免等待 catalog 期间无响应
     btn.disabled = true; btn.textContent = '下载中…';
+    const item = (await fetchCatalogList()).find((it) => it.id === id);
+    if (!item || !Array.isArray(item.entry) || !item.entry.length) { btn.disabled = false; btn.textContent = '下载'; return; }
     let css = '';
     for (const url of item.entry) {
       try { const r = await fetch(url, { cache: 'no-store' }); if (r.ok) { css = await r.text(); break; } } catch (_) { /* next */ }
@@ -6471,10 +6472,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 商店清单（新仓库）多源
   const CATALOG_SOURCES = [
     'https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/catalog.json',
+    'https://cdn.jsdelivr.net/gh/chaolan2019/URP-plusplus-Repository@main/catalog.json',
     'https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/catalog.json',
   ];
 
-  async function fetchCatalogList() {
+  let __catalogCache = null;
+  async function fetchCatalogList(force) {
+    if (__catalogCache && !force) return __catalogCache;
     const withTimeout = (promise, ms) => Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
     const results = await Promise.allSettled(CATALOG_SOURCES.map((url) => withTimeout(fetch(url, { cache: 'no-store' }), 5000)));
     let firstOk = [];
@@ -6485,10 +6489,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         if (j && Array.isArray(j.items)) {
           if (!firstOk.length) firstOk = j.items;
           // 优先返回「含 cardCss 的源」——jsdelivr 可能缓存旧版无 cardCss，raw/gh-proxy 有完整 cardCss
-          if (j.items.some((it) => it.type === 'theme' && it.cardCss)) return j.items;
+          if (j.items.some((it) => it.type === 'theme' && it.cardCss)) { __catalogCache = j.items; return j.items; }
         }
       } catch (_) { /* invalid json, try next */ }
     }
+    if (firstOk.length) __catalogCache = firstOk;
     return firstOk;
   }
 
