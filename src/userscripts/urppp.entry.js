@@ -1343,6 +1343,28 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     try { return !!GM_getValue('urppp_theme_css_' + id, ''); } catch (_) { return false; }
   }
 
+  // 本地主题（开发者调试 / 本地导入）：存于 GM，可加入主题管理/选择并应用
+  function localThemes() {
+    try {
+      const raw = GM_getValue('urppp_local_themes', '');
+      return raw ? (JSON.parse(raw) || {}) : {};
+    } catch (_) { return {}; }
+  }
+  function saveLocalTheme(id, meta) {
+    try {
+      const all = localThemes();
+      all[id] = meta;
+      GM_setValue('urppp_local_themes', JSON.stringify(all));
+    } catch (_) {}
+  }
+  function removeLocalTheme(id) {
+    try {
+      const all = localThemes();
+      delete all[id];
+      GM_setValue('urppp_local_themes', JSON.stringify(all));
+    } catch (_) {}
+  }
+
   // 下载主题 CSS 存储（带 id 的 style，便于刷新重注入 / 删除清理）
   function storeThemeStyleEl(id) {
     let el = document.getElementById('urppp-store-theme-' + id);
@@ -1379,7 +1401,11 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   function getSkin() {
     const id = GM_getValue(SKIN_KEY, 'apple');
     const hit = SKIN_CATALOG.find((s) => s.id === id);
-    return hit && hit.ready && (hit.installed !== false || themeDownloaded(hit.id)) ? id : 'apple';
+    const ok = hit && hit.ready && (hit.installed !== false || themeDownloaded(hit.id));
+    if (ok) return id;
+    // 本地主题（开发者调试）也可作为当前皮肤
+    if (localThemes()[id] && themeDownloaded(id)) return id;
+    return 'apple';
   }
   function getSkinCapability(skinId, key) {
     const id = skinId || getSkin();
@@ -2489,11 +2515,13 @@ import { createNavbarController } from '../features/navigation/navbar.js';
 
   function setSkin(id) {
     const hit = SKIN_CATALOG.find((s) => s.id === id && s.ready && (s.installed !== false || themeDownloaded(s.id)));
-    if (!hit) return false;
-    GM_setValue(SKIN_KEY, hit.id);
+    const localHit = (!hit && localThemes()[id] && themeDownloaded(id)) ? { id, ready: true, installed: false } : null;
+    const skin = hit || localHit;
+    if (!skin) return false;
+    GM_setValue(SKIN_KEY, skin.id);
     try {
-      if (!hit.dynamic) setFollowUseDynamic(false);
-      if (!hit.dark && isThemeFollowSystem()) setThemeFollowSystem(false);
+      if (!skin.dynamic) setFollowUseDynamic(false);
+      if (!skin.dark && isThemeFollowSystem()) setThemeFollowSystem(false);
       const following = isThemeFollowSystem();
       const requested = following ? resolveFollowThemeName() : getCurrent();
       const theme = isThemeModeAvailable(requested, hit.id) ? requested : 'default';
@@ -6433,7 +6461,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (!host) return;
     let catalog = [];
     try { catalog = await fetchCatalogList(); } catch (_) {}
-    const items = SKIN_CATALOG.filter((s) => s.installed !== false || themeDownloaded(s.id));
+    const locals = localThemes();
+    const localItems = Object.keys(locals).map((id) => ({
+      id, name: locals[id].name || id, desc: locals[id].desc || '本地主题',
+      version: locals[id].version || '1.0.0', author: locals[id].author || '本地', installed: false,
+    }));
+    const items = SKIN_CATALOG.filter((s) => s.installed !== false || themeDownloaded(s.id))
+      .concat(localItems.filter((l) => !SKIN_CATALOG.some((s) => s.id === l.id)));
     if (!items.length) { host.innerHTML = '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无已装主题</p></div>'; return; }
     ensureStoreCardStyles(items.map((s) => catalog.find((c) => c.id === s.id)));
     host.innerHTML = `<div class="urppp-store-theme-grid">${items.map((s) => themeManageCardHtml(s, catalog.find((c) => c.id === s.id))).join('')}</div>`;
@@ -6458,6 +6492,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const id = b.dataset.themeDel;
       try { GM_setValue('urppp_theme_css_' + id, ''); } catch (_) {}
       try { GM_setValue('urppp_card_css_' + id, ''); } catch (_) {}
+      removeLocalTheme(id);
       removeStoreThemeStyle(id);
       // 若删除的是当前正在应用的主题→重置为默认（内置）
       try {
@@ -6584,13 +6619,34 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         </div>
         <div class="urppp-store-body">
           <div class="urppp-store-pane" data-pane="download"><div class="urppp-store-empty"><p class="urppp-store-empty-title">加载中…</p></div></div>
-          <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}<div class="urppp-store-bd"><div id="urppp-theme-manage"><div class="urppp-store-empty"><p>加载中…</p></div></div></div></div>
+          <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}<button type="button" class="urppp-set-btn ghost" data-add-local-theme style="margin:0 0 10px">＋ 添加本地主题</button><input type="file" accept=".css,.txt" data-local-theme-file style="display:none"><div class="urppp-store-bd"><div id="urppp-theme-manage"><div class="urppp-store-empty"><p>加载中…</p></div></div></div></div>
         </div>
       </div>`;
     bindStoreTabs(body);
     bindStoreManageSettings(body);
+    bindLocalThemeImport(body);
     fetchCatalogThemes(body);
     fetchThemeManage(body.querySelector('#urppp-theme-manage'));
+  }
+
+  function bindLocalThemeImport(body) {
+    const btn = body.querySelector('[data-add-local-theme]');
+    const file = body.querySelector('[data-local-theme-file]');
+    if (!btn || !file) return;
+    btn.addEventListener('click', () => file.click());
+    file.addEventListener('change', async () => {
+      const f = file.files && file.files[0];
+      if (!f) return;
+      const text = await f.text();
+      const m = text.match(/html\[data-urppp-skin="([\w-]+)"\]/);
+      if (!m) { alert('未能从 CSS 中识别主题 id（需要 html[data-urppp-skin="…"]）'); file.value = ''; return; }
+      const id = m[1];
+      try { GM_setValue('urppp_theme_css_' + id, text); } catch (_) {}
+      saveLocalTheme(id, { name: id, desc: '本地主题', author: '本地', version: '1.0.0' });
+      try { storeThemeStyleEl(id).textContent = text; } catch (_) {}
+      file.value = '';
+      try { fetchThemeManage(body.querySelector('#urppp-theme-manage')); } catch (_) {}
+    });
   }
 
   function pluginStoreCard(item) {
