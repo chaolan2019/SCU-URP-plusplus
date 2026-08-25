@@ -1555,6 +1555,16 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       css += '}';
       css += '.urppp-nav-dot.urppp-theme-disabled{opacity:.42!important;cursor:not-allowed!important;box-shadow:none!important;filter:grayscale(1)!important;transform:none!important;}';
 
+      // 独立主题（flat/organic/brutal/neu）：皮肤由商店下载注入，主插件不内建；仅保留 brutal 调色板变量(内置接口)
+      if (id === 'flat' || id === 'organic' || id === 'brutal' || id === 'neu') {
+        if (id === 'brutal') {
+          const pal = getBrutalActivePalette();
+          css += 'html[data-urppp-skin="brutal"]{--brutal-accent:' + pal.accent + ';--brutal-secondary:' + pal.secondary + ';--brutal-info:' + pal.info + ';--brutal-warning:' + pal.warning + ';}';
+        }
+        el.textContent = css;
+        return;
+      }
+
       if (id === 'apple') {
         const edge = isAppleEdgeLine();
         const cardBorder = edge

@@ -19030,6 +19030,14 @@ ${arcs}
         });
         css += "}";
         css += ".urppp-nav-dot.urppp-theme-disabled{opacity:.42!important;cursor:not-allowed!important;box-shadow:none!important;filter:grayscale(1)!important;transform:none!important;}";
+        if (id === "flat" || id === "organic" || id === "brutal" || id === "neu") {
+          if (id === "brutal") {
+            const pal = getBrutalActivePalette();
+            css += 'html[data-urppp-skin="brutal"]{--brutal-accent:' + pal.accent + ";--brutal-secondary:" + pal.secondary + ";--brutal-info:" + pal.info + ";--brutal-warning:" + pal.warning + ";}";
+          }
+          el.textContent = css;
+          return;
+        }
         if (id === "apple") {
           const edge = isAppleEdgeLine();
           const cardBorder = edge ? "1px solid rgba(0,0,0,0.08)" : "none";
