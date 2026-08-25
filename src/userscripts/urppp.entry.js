@@ -1367,7 +1367,12 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       let css = '';
       try { css = GM_getValue(key, '') || ''; } catch (_) {}
       if (css) storeThemeStyleEl(s.id).textContent = css;
+      // 初始化即注入本地缓存的 cardCss（下载主题时缓存），皮肤卡/商店立即有卡样式，不依赖线上拉取
+      let cc = '';
+      try { cc = GM_getValue('urppp_card_css_' + s.id, '') || ''; } catch (_) {}
+      if (cc) ensureStoreCardStyles([{ id: s.id, cardCss: cc }]);
     });
+
     try { applySkinAttr(); } catch (_) {}
   }
 
@@ -6341,10 +6346,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   function ensureStoreCardStyles(items) {
     if (!Array.isArray(items)) return;
     items.forEach((it) => {
-      if (!it || !it.cardCss || !it.id) return;
+      if (!it || !it.id) return;
+      // 本地已存 cardCss（下载主题时缓存）优先，避免依赖线上拉取导致皮肤卡残缺/闪烁
+      let local = '';
+      try { local = GM_getValue('urppp_card_css_' + it.id, '') || ''; } catch (_) {}
+      const css = local || it.cardCss || '';
+      if (!css) return;
       let el = document.getElementById('urppp-store-card-css-' + it.id);
       if (!el) { el = document.createElement('style'); el.id = 'urppp-store-card-css-' + it.id; (document.head || document.documentElement).appendChild(el); }
-      if (el.textContent !== it.cardCss) el.textContent = it.cardCss;
+      if (el.textContent !== css) el.textContent = css;
     });
   }
 
@@ -6387,7 +6397,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }
     if (!css) { btn.textContent = '下载失败'; setTimeout(() => { btn.textContent = '下载'; btn.disabled = false; }, 1400); return; }
     try { GM_setValue('urppp_theme_css_' + id, css); } catch (_) {}
+    // 下载时也缓存 cardCss 到本地，皮肤卡/商店直接用本地卡样式（不再依赖线上拉取，避免残缺闪烁）
+    if (item.cardCss) { try { GM_setValue('urppp_card_css_' + id, item.cardCss); } catch (_) {} }
     try { storeThemeStyleEl(id).textContent = css; } catch (_) {}
+    try { ensureStoreCardStyles([{ id, cardCss: item.cardCss || '' }]); } catch (_) {}
     btn.textContent = '已安装'; btn.disabled = true;
     // 即时刷新：主题管理能看到刚下的主题 + 下载列表排除它
     const inline = (btn.closest && btn.closest('.urppp-store-inline'));
@@ -6444,6 +6457,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     host.querySelectorAll('[data-theme-del]').forEach((b) => b.addEventListener('click', () => {
       const id = b.dataset.themeDel;
       try { GM_setValue('urppp_theme_css_' + id, ''); } catch (_) {}
+      try { GM_setValue('urppp_card_css_' + id, ''); } catch (_) {}
       removeStoreThemeStyle(id);
       // 若删除的是当前正在应用的主题→重置为默认（内置）
       try {
