@@ -13,7 +13,7 @@ blob-report/
 Design/
 # 功能备忘/可复用片段：本地保留，不上传 GitHub
 list/
-# captcha OCR: 仅保留两个训练模型，其余（脚本/样本/文档）本地保留不上传
+# captcha OCR: 仅保留两个训练模型，其余（脚�?样本/文档）本地保留不上传
 ocr-training/*
 !ocr-training/model/
 ocr-training/model/*
@@ -23,3 +23,6 @@ ocr-training/model/*
 /docs/SCU_URP_System_Structure.md
 /docs/scu-urppp-logo-cli.svg
 /docs/scu-urppp-logo.svg
+
+# �̵��嵥׼��Ŀ¼(�����ֿ���, �������ֿ�)
+/store-prep/
