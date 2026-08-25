@@ -6400,11 +6400,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const repo = (item && item.repo) || s.repo;
     const repoBtn = repo ? `<button type="button" class="urppp-set-btn ghost" data-repo="${escapeHtml(repo)}">仓库</button>` : '';
     const dl = (item && item.downloads != null) ? `<span class="urppp-store-dl">↓ ${escapeHtml(String(item.downloads))}</span>` : '';
-    return `<div class="urppp-skin-card" data-skin="${escapeHtml(s.id)}">
+    const cur = (getSkin() === s.id);
+    return `<div class="urppp-skin-card${cur ? ' is-active' : ''}" data-skin="${escapeHtml(s.id)}">
       <div class="urppp-skin-name">${escapeHtml(s.name)}</div>
       <div class="urppp-skin-meta">${escapeHtml((item && item.author) || '')}${(item && item.author && s.version) ? ' · ' : ''}v${escapeHtml(s.version || '')}${dl ? ' · ' + dl : ''}</div>
       <p class="urppp-skin-desc">${escapeHtml(s.desc || '')}</p>
-      <button type="button" class="urppp-skin-apply" data-theme-use="${escapeHtml(s.id)}">使用</button>
+      <button type="button" class="urppp-skin-apply${cur ? ' is-current' : ''}" data-theme-use="${escapeHtml(s.id)}"${cur ? ' disabled' : ''}>${cur ? '使用中' : '使用'}</button>
       <div class="urppp-store-ops" style="position:absolute;left:12px;bottom:12px">${delBtn}${repoBtn}</div>
     </div>`;
   }
