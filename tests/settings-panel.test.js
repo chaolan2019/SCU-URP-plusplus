@@ -33,12 +33,8 @@ test('settings owns privacy, identity, and JSON editor styles', async () => {
   assert.doesNotMatch(internalStyles, /#urppp-settings-panel \.urppp-set-tabs/);
   assert.match(settingsStyles, /#urppp-settings-mask\.open/);
   assert.match(settingsStyles, /#urppp-settings-panel \.urppp-set-tabs/);
-  for (const skin of ['apple', 'editorial']) {
+  for (const skin of ['apple', 'flat', 'organic', 'brutal', 'editorial', 'neu']) {
     assert.match(settingsStyles, new RegExp(`data-skin=["']${skin}["']`), skin);
-  }
-  // 四个独立主题（flat/organic/brutal/neu）的卡片样式已脱离主插件，由 catalog cardCss 提供，不再内置于 settings.css
-  for (const skin of ['flat', 'organic', 'brutal', 'neu']) {
-    assert.doesNotMatch(settingsStyles, new RegExp(`data-skin=["']${skin}["']`), skin);
   }
   assert.match(settingsStyles, /#urppp-settings-panel \.urppp-set-modes/);
   assert.match(settingsStyles, /#urppp-settings-panel \.urppp-privacy-groups/);
