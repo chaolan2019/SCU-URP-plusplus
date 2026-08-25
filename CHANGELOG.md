@@ -5,7 +5,7 @@
 
 格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，版本号遵循语义化版本。
 
-## [Unreleased]
+## [1.9.5] - 2026-08-25
 
 ### Added
 - **主题商店完善（卡片样式由 catalog cardCss 驱动）**：

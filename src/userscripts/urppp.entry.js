@@ -119,7 +119,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   } catch (_) { /* viewport 注入失败不影响插件其余功能 */ }
 
   // 与脚本头 @version 保持同步
-  const URPPP_VERSION = '1.9.4';
+  const URPPP_VERSION = '1.9.5';
 
   // 统一认证页(id.scu)：主插件不做任何美化，仅作为宿主注入辅助插件(登录助手/2FA/会话保持)
   // 避免主插件的样式/布局污染统一认证网站界面，同时保留辅助插件的登录相关功能
