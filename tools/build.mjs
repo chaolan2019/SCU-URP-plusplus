@@ -39,15 +39,6 @@ const TARGETS = [
     outfile: 'urpppp.user.js',
     versionConstant: 'URPPPP_VERSION',
   },
-  {
-    // 插件产物：无 UserScript 头，供主插件「下载→注入」装载，不经油猴安装
-    name: 'urpppp-plugin',
-    entry: 'src/userscripts/urpppp.entry.js',
-    outfile: 'urpppp.plugin.js',
-    versionConstant: 'URPPPP_VERSION',
-    noBanner: true,
-    plugin: true,
-  },
 ];
 
 async function readJson(relativePath) {
