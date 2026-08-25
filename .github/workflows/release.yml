@@ -15,6 +15,13 @@ on:
       - "urppp.user.js"
       - "urpppp.user.js"
       - "CHANGELOG.md"
+      - "tools/build.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - "version.json"
+      - "README.md"
+      - "src/metadata/*.json"
+      - "src/userscripts/*.js"
       - ".github/workflows/release.yml"
   workflow_dispatch:
     inputs:
