@@ -801,11 +801,17 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"]
 }
 
 
-/* 次要按钮（仓库/删除）统一克制：细边+透明底+面板灰字，随面板明暗，不随卡片主题 */
-#urppp-settings-panel .urppp-skin-card .urppp-set-btn.ghost {
-  background: transparent !important; color: #6b7280 !important; border: 1px solid rgba(107,114,128,.45) !important;
-  border-radius: 999px !important; box-shadow: none !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card .urppp-set-btn.ghost {
-  background: transparent !important; color: #a6adbb !important; border-color: rgba(166,173,187,.38) !important;
-}
+/* 各主题卡次要按钮（仓库/删除）：随卡片主题色，但克制（细边 + 透明底 + 圆角），不做大面积色块/硬阴影 */
+#urppp-settings-panel .urppp-skin-card[data-skin="apple"] .urppp-set-btn.ghost { color:#0071e3!important; border:1px solid rgba(0,113,227,.4)!important; border-radius:999px!important; background:transparent!important; box-shadow:none!important; }
+#urppp-settings-panel .urppp-skin-card[data-skin="editorial"] .urppp-set-btn.ghost { color:#1c1c1c!important; border:none!important; background:transparent!important; border-radius:0!important; box-shadow:none!important; }
+#urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-set-btn.ghost { color:#000!important; border:1px solid rgba(0,0,0,.5)!important; background:transparent!important; border-radius:0!important; box-shadow:none!important; }
+#urppp-settings-panel .urppp-skin-card[data-skin="organic"] .urppp-set-btn.ghost { color:#5c4033!important; border:1px solid rgba(92,64,51,.35)!important; background:transparent!important; border-radius:999px!important; box-shadow:none!important; }
+#urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-set-btn.ghost { color:#000!important; border:1px solid rgba(0,0,0,.55)!important; background:transparent!important; border-radius:0!important; box-shadow:none!important; }
+#urppp-settings-panel .urppp-skin-card[data-skin="neu"] .urppp-set-btn.ghost { color:#4f5258!important; border:1px solid rgba(79,82,88,.35)!important; background:transparent!important; border-radius:12px!important; box-shadow:none!important; }
+/* 暗色下同样随卡片主题色（克制） */
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] .urppp-set-btn.ghost { color:#7aa2ff!important; border-color:rgba(122,162,255,.4)!important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] .urppp-set-btn.ghost { color:#e8e8e4!important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-set-btn.ghost { color:#fff!important; border-color:rgba(255,255,255,.4)!important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] .urppp-set-btn.ghost { color:#eadbc8!important; border-color:rgba(234,219,200,.35)!important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-set-btn.ghost { color:#fff!important; border-color:rgba(255,255,255,.4)!important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] .urppp-set-btn.ghost { color:#c9cdd6!important; border-color:rgba(201,205,214,.35)!important; }
