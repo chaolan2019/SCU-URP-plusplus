@@ -6308,7 +6308,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 主题下载列表（未安装主题，4 个）
   // 主题商店：下载 tab 从 catalog 拉主题列表（卡片式）+ 下载注入 css
   function themeStoreCard(item, downloaded) {
-    const repoLink = item.repo ? `<a class="urppp-store-repo" href="${escapeHtml(item.repo)}" target="_blank" rel="noopener noreferrer nofollow">仓库</a>` : '';
+    const repoLink = item.repo ? `<button type="button" class="urppp-store-repo" data-repo="${escapeHtml(item.repo)}">仓库</button>` : '';
     return `<div class="urppp-skin-card" data-skin="${escapeHtml(item.id)}">
       <div class="urppp-skin-name">${escapeHtml(item.name || item.id)}</div>
       <div class="urppp-skin-meta">${escapeHtml(item.author || '')}${item.author && item.version ? ' · ' : ''}v${escapeHtml(item.version || '')}${repoLink ? ' · ' + repoLink : ''}</div>
@@ -6321,12 +6321,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const downloadPane = body.querySelector('[data-pane="download"]');
     if (!downloadPane) return;
     let themes = [];
-    try { themes = (await fetchCatalogList()).filter((it) => it.type === 'theme'); } catch (_) {}
-    if (!themes.length) { downloadPane.innerHTML = '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无主题</p><p class="urppp-store-sub">主题市场正在筹备中。</p></div>'; return; }
-    downloadPane.innerHTML = `<div class="urppp-store-theme-grid">${themes.map((it) => themeStoreCard(it, themeDownloaded(it.id))).join('')}</div>`;
+    try { themes = (await fetchCatalogList()).filter((it) => it.type === 'theme' && !themeDownloaded(it.id)); } catch (_) {}
+    if (!themes.length) { downloadPane.innerHTML = '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无待下载主题</p><p class="urppp-store-sub">已安装的主题不会再显示在这里。</p></div>'; return; }
+    downloadPane.innerHTML = `<div class="urppp-store-theme-grid">${themes.map((it) => themeStoreCard(it, false)).join('')}</div>`;
     downloadPane.querySelectorAll('[data-store-theme]').forEach((b) => {
       b.addEventListener('click', () => downloadStoreTheme(b.dataset.storeTheme, b));
     });
+    downloadPane.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
   }
 
   async function downloadStoreTheme(id, btn) {
@@ -6345,19 +6346,37 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     try { syncSettingsPanelUI(); } catch (_) {}
   }
 
-  // 主题管理列表（已装主题：内置 + 已下载）
-  function themeManageListHtml() {
+  // 主题管理卡片（已装主题，卡片式，含仓库/删除管理按钮）
+  function themeManageCardHtml(s, item) {
+    const built = s.installed !== false;
+    const delBtn = built ? '' : `<button type="button" class="urppp-set-btn ghost" data-theme-del="${escapeHtml(s.id)}">删除</button>`;
+    const repoBtn = (item && item.repo) ? `<button type="button" class="urppp-set-btn ghost" data-repo="${escapeHtml(item.repo)}">仓库</button>` : '';
+    const dl = (item && item.downloads != null) ? `<span class="urppp-store-dl">↓ ${escapeHtml(String(item.downloads))}</span>` : '';
+    return `<div class="urppp-skin-card" data-skin="${escapeHtml(s.id)}">
+      <div class="urppp-skin-name">${escapeHtml(s.name)}</div>
+      <div class="urppp-skin-meta">${escapeHtml((item && item.author) || '')}${(item && item.author && s.version) ? ' · ' : ''}v${escapeHtml(s.version || '')}${dl ? ' · ' + dl : ''}</div>
+      <p class="urppp-skin-desc">${escapeHtml(s.desc || '')}</p>
+      <div class="urppp-store-ops" style="position:absolute;right:12px;bottom:12px">
+        <button type="button" class="urppp-set-btn" data-theme-use="${escapeHtml(s.id)}">使用</button>${delBtn}${repoBtn}
+      </div>
+    </div>`;
+  }
+
+  async function fetchThemeManage(host) {
+    if (!host) return;
+    let catalog = [];
+    try { catalog = await fetchCatalogList(); } catch (_) {}
     const items = SKIN_CATALOG.filter((s) => s.installed !== false || themeDownloaded(s.id));
-    if (!items.length) return '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无已装主题</p></div>';
-    return items.map((s) => {
-      const built = s.installed !== false;
-      const state = built ? '内置' : '已下载';
-      const delBtn = built ? '' : `<button type="button" class="urppp-set-btn ghost" data-theme-del="${escapeHtml(s.id)}">删除</button>`;
-      return `<div class="urppp-store-item">
-        <div class="urppp-store-info"><strong>${escapeHtml(s.name)}</strong><span class="urppp-store-ver">v${escapeHtml(s.version || '')}</span><span class="urppp-store-state${built ? ' ok' : ''}">${state}</span></div>
-        <div class="urppp-store-ops"><button type="button" class="urppp-set-btn" data-theme-use="${escapeHtml(s.id)}">使用</button>${delBtn}</div>
-      </div>`;
-    }).join('');
+    if (!items.length) { host.innerHTML = '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无已装主题</p></div>'; return; }
+    host.innerHTML = `<div class="urppp-store-theme-grid">${items.map((s) => themeManageCardHtml(s, catalog.find((c) => c.id === s.id))).join('')}</div>`;
+    host.querySelectorAll('[data-theme-use]').forEach((b) => b.addEventListener('click', () => { if (setSkin(b.dataset.themeUse)) syncSettingsPanelUI(); }));
+    host.querySelectorAll('[data-theme-del]').forEach((b) => b.addEventListener('click', () => {
+      try { GM_setValue('urppp_theme_css_' + b.dataset.themeDel, ''); } catch (_) {}
+      try { syncSettingsPanelUI(); } catch (_) {}
+      const body = host.closest('.urppp-store-inline');
+      try { renderThemeStoreBody(body); } catch (_) {}
+    }));
+    host.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
   }
 
   // 管理界面设置：自动检测更新（全宽开关按钮）+ 检查更新
@@ -6456,35 +6475,80 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         </div>
         <div class="urppp-store-body">
           <div class="urppp-store-pane" data-pane="download"><div class="urppp-store-empty"><p class="urppp-store-empty-title">加载中…</p></div></div>
-          <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}${themeManageListHtml()}</div>
+          <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}<div class="urppp-store-empty"><p>加载中…</p></div></div>
         </div>
       </div>`;
     bindStoreTabs(body);
-    body.querySelectorAll('[data-theme-use]').forEach((b) => {
-      b.addEventListener('click', () => { if (setSkin(b.dataset.themeUse)) syncSettingsPanelUI(); });
-    });
-    body.querySelectorAll('[data-theme-del]').forEach((b) => {
-      b.addEventListener('click', () => {
-        try { GM_setValue('urppp_theme_css_' + b.dataset.themeDel, ''); } catch (_) {}
-        try { syncSettingsPanelUI(); } catch (_) {}
-        try { renderThemeStoreBody(body); } catch (_) {}
-      });
-    });
     bindStoreManageSettings(body);
     fetchCatalogThemes(body);
+    fetchThemeManage(body.querySelector('[data-pane="manage"]'));
   }
 
-  // 插件商店：下载占位 + 管理（已装插件 重新装载/卸载）
-  function renderPluginStoreBody(body) {
+  function pluginStoreCard(item) {
+    const dl = (item.downloads != null) ? `${escapeHtml(String(item.downloads))}` : '';
+    const repoBtn = item.repo ? `<button type="button" class="urppp-store-repo" data-repo="${escapeHtml(item.repo)}">仓库</button>` : '';
+    return `<div class="urppp-skin-card" data-plugin-card="${escapeHtml(item.id)}">
+      <div class="urppp-skin-name">${escapeHtml(item.name || item.id)}</div>
+      <div class="urppp-skin-meta">${escapeHtml(item.author || '')}${item.author && item.version ? ' · ' : ''}v${escapeHtml(item.version || '')}${dl ? ' · ↓' + dl : ''}${repoBtn ? ' · ' + repoBtn : ''}</div>
+      <p class="urppp-skin-desc">${escapeHtml(item.description || '')}</p>
+      <button type="button" class="urppp-skin-apply" data-plugin-apply="${escapeHtml(item.id)}">安装</button>
+    </div>`;
+  }
+
+  // 插件下载：从 catalog 拉插件列表（排除已装）
+  async function fetchCatalogPlugins(host) {
+    if (!host) return;
+    let plugins = [];
+    try {
+      plugins = (await fetchCatalogList()).filter((it) => it.type === 'plugin' && !(pluginManager && pluginManager.api && pluginManager.api.isEnabled && pluginManager.api.isEnabled(it.id)));
+    } catch (_) {}
+    if (!plugins.length) { host.innerHTML = '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无待下载插件</p><p class="urppp-store-sub">已安装的插件不会再显示在这里。</p></div>'; return; }
+    host.innerHTML = `<div class="urppp-store-theme-grid">${plugins.map((it) => pluginStoreCard(it)).join('')}</div>`;
+    host.querySelectorAll('[data-plugin-apply]').forEach((b) => b.addEventListener('click', async () => {
+      b.disabled = true; const old = b.textContent; b.textContent = '下载中…';
+      try { if (pluginManager && pluginManager.api && pluginManager.api.install) await pluginManager.api.install(b.dataset.pluginApply, null); b.textContent = '已安装'; try { syncSettingsPanelUI(); } catch (_) {} }
+      catch (_) { b.textContent = '失败'; }
+      setTimeout(() => { b.textContent = old; b.disabled = false; }, 1200);
+    }));
+    host.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
+  }
+
+  // 插件管理：已装插件，行内右侧按钮（作者/版本/下载量/仓库）
+  async function fetchPluginManage(host) {
+    if (!host) return;
+    let catalog = [];
+    try { catalog = await fetchCatalogList(); } catch (_) {}
     const items = (pluginManager && pluginManager.api && pluginManager.api.list && pluginManager.api.list()) || [];
-    const manageHtml = items.length
-      ? items.map((p) => `
-        <div class="urppp-store-item">
-          <div class="urppp-store-info"><strong>${escapeHtml(p.name || p.id)}</strong>${p.author ? `<span class="urppp-store-author">${escapeHtml(p.author)}</span>` : ''}<span class="urppp-store-ver">${p.version ? 'v' + escapeHtml(p.version) : ''}</span><span class="urppp-store-state ok">已装</span>${p.repo ? `<a class="urppp-store-repo" href="${escapeHtml(p.repo)}" target="_blank" rel="noopener noreferrer nofollow">仓库</a>` : ''}</div>
-          ${p.description ? `<p class="urppp-store-item-desc">${escapeHtml(p.description)}</p>` : ''}
-          <div class="urppp-store-ops"><button type="button" class="urppp-set-btn" data-plugin-op="reload" data-plugin-id="${escapeHtml(p.id)}">重新装载</button><button type="button" class="urppp-set-btn ghost" data-plugin-op="unload" data-plugin-id="${escapeHtml(p.id)}">卸载</button></div>
-        </div>`).join('')
-      : '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无插件</p><p class="urppp-store-sub">已装载的插件会显示在这里。</p></div>';
+    if (!items.length) { host.innerHTML = '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无插件</p><p class="urppp-store-sub">已装载的插件会显示在这里。</p></div>'; return; }
+    host.innerHTML = items.map((p) => {
+      const cat = catalog.find((c) => c.id === p.id);
+      const dl = (cat && cat.downloads != null) ? `<span class="urppp-store-dl">↓ ${escapeHtml(String(cat.downloads))}</span>` : '';
+      const repoBtn = (p.repo || (cat && cat.repo)) ? `<button type="button" class="urppp-set-btn ghost" data-repo="${escapeHtml(p.repo || cat.repo)}">仓库</button>` : '';
+      return `<div class="urppp-store-item">
+        <div class="urppp-store-row">
+          <div class="urppp-store-info"><strong>${escapeHtml(p.name || p.id)}</strong>${p.author ? `<span class="urppp-store-author">${escapeHtml(p.author)}</span>` : ''}<span class="urppp-store-ver">${p.version ? 'v' + escapeHtml(p.version) : ''}</span><span class="urppp-store-state ok">已装</span>${dl}</div>
+          <div class="urppp-store-ops"><button type="button" class="urppp-set-btn" data-plugin-op="reload" data-plugin-id="${escapeHtml(p.id)}">重新装载</button><button type="button" class="urppp-set-btn ghost" data-plugin-op="unload" data-plugin-id="${escapeHtml(p.id)}">卸载</button>${repoBtn}</div>
+        </div>
+        ${p.description ? `<p class="urppp-store-item-desc">${escapeHtml(p.description)}</p>` : ''}
+      </div>`;
+    }).join('');
+    host.querySelectorAll('[data-plugin-op="reload"]').forEach((b) => b.addEventListener('click', async () => {
+      b.disabled = true; const old = b.textContent; b.textContent = '装载中…';
+      try { if (pluginManager && pluginManager.api && pluginManager.api.install) await pluginManager.api.install(b.dataset.pluginId, null); b.textContent = '已装载'; try { syncSettingsPanelUI(); } catch (_) {} }
+      catch (_) { b.textContent = '失败'; }
+      setTimeout(() => { b.textContent = old; b.disabled = false; }, 1200);
+    }));
+    host.querySelectorAll('[data-plugin-op="unload"]').forEach((b) => b.addEventListener('click', () => {
+      try { if (pluginManager && pluginManager.api && pluginManager.api.unregister) pluginManager.api.unregister(b.dataset.pluginId); } catch (_) {}
+      try { syncSettingsPanelUI(); } catch (_) {}
+      const wrap = host.closest('.urppp-store-inline');
+      try { renderPluginStoreBody(wrap); } catch (_) {}
+    }));
+    host.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
+  }
+
+  // 插件商店：下载 + 管理
+  function renderPluginStoreBody(body) {
     body.innerHTML = `
       <div class="urppp-store-inline">
         <div class="urppp-store-tabs">
@@ -6492,26 +6556,14 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           <button type="button" class="urppp-store-tab" data-tab="manage">插件管理</button>
         </div>
         <div class="urppp-store-body">
-          <div class="urppp-store-pane" data-pane="download"><div class="urppp-store-empty"><p class="urppp-store-empty-title">敬请期待</p><p class="urppp-store-sub">插件市场正在筹备中，后续可从这里在线安装更多功能插件。</p></div></div>
-          <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}${manageHtml}</div>
+          <div class="urppp-store-pane" data-pane="download"><div class="urppp-store-empty"><p class="urppp-store-empty-title">加载中…</p></div></div>
+          <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}<div class="urppp-store-bd" id="urppp-plugin-manage"><div class="urppp-store-empty"><p>加载中…</p></div></div></div>
         </div>
       </div>`;
     bindStoreTabs(body);
-    body.querySelectorAll('[data-plugin-op="reload"]').forEach((b) => {
-      b.addEventListener('click', async () => {
-        b.disabled = true; const old = b.textContent; b.textContent = '装载中…';
-        try { await pluginManager.api.install(b.dataset.pluginId, null); b.textContent = '已装载'; }
-        catch (_) { b.textContent = '失败'; }
-        setTimeout(() => { b.textContent = old; b.disabled = false; }, 1200);
-      });
-    });
-    body.querySelectorAll('[data-plugin-op="unload"]').forEach((b) => {
-      b.addEventListener('click', () => {
-        try { pluginManager.api.unregister(b.dataset.pluginId); } catch (_) {}
-        renderPluginStoreBody(body);
-      });
-    });
     bindStoreManageSettings(body);
+    fetchCatalogPlugins(body.querySelector('[data-pane="download"]'));
+    fetchPluginManage(body.querySelector('#urppp-plugin-manage'));
   }
 
   function renderSkinCards(panel) {

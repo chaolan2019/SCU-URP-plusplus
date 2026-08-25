@@ -755,9 +755,15 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-settings-panel .urppp-store-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 #urppp-settings-panel .urppp-store-info strong{font-size:14px;font-weight:700}
 #urppp-settings-panel .urppp-store-author{font-size:11px;color:var(--text-secondary,#5b5f69)}
-#urppp-settings-panel .urppp-store-repo{font-size:11px;color:var(--primary,#2563eb);text-decoration:none;cursor:pointer}
+#urppp-settings-panel .urppp-store-repo{background:transparent;border:none;color:var(--primary,#2563eb);font-size:11px;cursor:pointer;padding:0;text-decoration:none}
 #urppp-settings-panel .urppp-store-repo:hover{text-decoration:underline}
-#urppp-settings-panel .urppp-skin-meta .urppp-store-repo{font-size:11px}
+#urppp-settings-panel .urppp-store-bd{display:flex;flex-direction:column;gap:8px}
+#urppp-settings-panel .urppp-store-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+#urppp-settings-panel .urppp-store-dl{font-size:11px;color:var(--text-muted,#8a8378)}
+#urppp-settings-panel .urppp-store-item-desc{font-size:12px;color:var(--text-secondary,#5b5f69);line-height:1.5}
+#urppp-settings-panel .urppp-skin-meta{font-size:11px;color:var(--text-secondary,#5b5f69);margin:0 0 4px}
+#urppp-settings-panel .urppp-store-item{display:flex;flex-direction:column;align-items:stretch;gap:8px}
+#urppp-settings-panel .urppp-store-item .urppp-store-ops{justify-content:flex-end}
 #urppp-settings-panel .urppp-store-item-desc{font-size:12px;color:var(--text-secondary,#5b5f69);line-height:1.5}
 #urppp-settings-panel .urppp-skin-meta{font-size:11px;color:var(--text-secondary,#5b5f69);margin:0 0 4px}
 #urppp-settings-panel .urppp-store-item{display:flex;flex-direction:column;align-items:stretch;gap:8px}
