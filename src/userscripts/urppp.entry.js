@@ -6754,7 +6754,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       try { fetchPluginManage(body.querySelector('#urppp-plugin-manage')); } catch (_) {}
     });
   }
-  }
 
   function renderSkinCards(panel) {
     if (!panel) return;
