@@ -6308,6 +6308,12 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] .urppp-set-btn.ghost { color:#eadbc8!important; border-color:rgba(234,219,200,.35)!important; }
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-set-btn.ghost { color:#fff!important; border-color:rgba(255,255,255,.4)!important; }
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] .urppp-set-btn.ghost { color:#c9cdd6!important; border-color:rgba(201,205,214,.35)!important; }
+
+/* 类Apple风格暗色卡兜底（最后声明，确保暗色下深卡，不再白卡） */
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] {
+  background: #1d1d1f !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.14) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.3) !important;
+}
 `;var Gp=`      /* 表格美化：业务表格、分页、公告卡片（table-beautify） */
       /* 公告卡片：彻底切断 table-hover / ACE hover 白底 */
       table.urppp-notice-table,
