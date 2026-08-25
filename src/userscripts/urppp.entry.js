@@ -6420,7 +6420,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (!items.length) { host.innerHTML = '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无已装主题</p></div>'; return; }
     ensureStoreCardStyles(items.map((s) => catalog.find((c) => c.id === s.id)));
     host.innerHTML = `<div class="urppp-store-theme-grid">${items.map((s) => themeManageCardHtml(s, catalog.find((c) => c.id === s.id))).join('')}</div>`;
-    host.querySelectorAll('[data-theme-use]').forEach((b) => b.addEventListener('click', () => { if (setSkin(b.dataset.themeUse)) syncSettingsPanelUI(); }));
+    host.querySelectorAll('[data-theme-use]').forEach((b) => b.addEventListener('click', () => {
+      if (setSkin(b.dataset.themeUse)) {
+        try { syncSettingsPanelUI(); } catch (_) {}
+        // 立即重渲染管理列表，让「使用中」状态即时更新
+        try { fetchThemeManage(host); } catch (_) {}
+      }
+    }));
     host.querySelectorAll('[data-theme-del]').forEach((b) => b.addEventListener('click', () => {
       const id = b.dataset.themeDel;
       try { GM_setValue('urppp_theme_css_' + id, ''); } catch (_) {}

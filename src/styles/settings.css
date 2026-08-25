@@ -562,7 +562,7 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .
 }
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="flat"] .urppp-set-btn.ghost { background: #fff !important; color: #000 !important; border: 2px solid #fff !important; }
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="organic"] .urppp-set-btn.ghost { background: #3a342b !important; color: #e8dcc7 !important; border-color: #5c5346 !important; }
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-set-btn.ghost { background: #1a1a1a !important; color: #fff !important; border-color: #fff !important; box-shadow: 2px 2px 0 #fff !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-set-btn.ghost { background: transparent !important; color: #fff !important; border: 1px solid rgba(255,255,255,.4) !important; box-shadow: none !important; }
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="neu"] .urppp-set-btn.ghost { background: #2a2f36 !important; color: #dfe3e9 !important; box-shadow: 3px 3px 6px #1e2228, -3px -3px 6px #363d47 !important; }
 
 /* 暗色 hover：背景与文字同色系，避免悬停变白但文字不变色 */
@@ -829,5 +829,5 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"]
   background: #ff006e !important; color: #fff !important; border-color: #fff !important; box-shadow: 3px 3px 0 #fff !important;
 }
 html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="brutal"] .urppp-set-btn.ghost {
-  background: #1a1a1a !important; color: #fff !important; border-color: #fff !important; box-shadow: 2px 2px 0 #fff !important;
+  background: transparent !important; color: #fff !important; border: 1px solid rgba(255,255,255,.4) !important; box-shadow: none !important;
 }
