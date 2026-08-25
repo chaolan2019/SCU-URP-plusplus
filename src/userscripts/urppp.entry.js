@@ -6308,12 +6308,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 主题下载列表（未安装主题，4 个）
   // 主题商店：下载 tab 从 catalog 拉主题列表（卡片式）+ 下载注入 css
   function themeStoreCard(item, downloaded) {
-    const repoLink = item.repo ? `<button type="button" class="urppp-store-repo" data-repo="${escapeHtml(item.repo)}">仓库</button>` : '';
+    const repoBtn = item.repo ? `<div class="urppp-store-ops" style="position:absolute;left:12px;bottom:12px"><button type="button" class="urppp-set-btn ghost" data-repo="${escapeHtml(item.repo)}">仓库</button></div>` : '';
     return `<div class="urppp-skin-card" data-skin="${escapeHtml(item.id)}">
       <div class="urppp-skin-name">${escapeHtml(item.name || item.id)}</div>
-      <div class="urppp-skin-meta">${escapeHtml(item.author || '')}${item.author && item.version ? ' · ' : ''}v${escapeHtml(item.version || '')}${repoLink ? ' · ' + repoLink : ''}</div>
+      <div class="urppp-skin-meta">${escapeHtml(item.author || '')}${item.author && item.version ? ' · ' : ''}v${escapeHtml(item.version || '')}</div>
       <p class="urppp-skin-desc">${escapeHtml(item.description || '')}</p>
       <button type="button" class="urppp-skin-apply" data-store-theme="${escapeHtml(item.id)}"${downloaded ? ' disabled' : ''}>${downloaded ? '已安装' : '下载'}</button>
+      ${repoBtn}
     </div>`;
   }
 
@@ -6350,15 +6351,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   function themeManageCardHtml(s, item) {
     const built = s.installed !== false;
     const delBtn = built ? '' : `<button type="button" class="urppp-set-btn ghost" data-theme-del="${escapeHtml(s.id)}">删除</button>`;
-    const repoBtn = ((item && item.repo) || s.repo) ? `<button type="button" class="urppp-set-btn ghost" data-repo="${escapeHtml((item && item.repo) || s.repo)}">仓库</button>` : '';
+    const repo = (item && item.repo) || s.repo;
+    const repoBtn = repo ? `<button type="button" class="urppp-set-btn ghost" data-repo="${escapeHtml(repo)}">仓库</button>` : '';
     const dl = (item && item.downloads != null) ? `<span class="urppp-store-dl">↓ ${escapeHtml(String(item.downloads))}</span>` : '';
     return `<div class="urppp-skin-card" data-skin="${escapeHtml(s.id)}">
       <div class="urppp-skin-name">${escapeHtml(s.name)}</div>
       <div class="urppp-skin-meta">${escapeHtml((item && item.author) || '')}${(item && item.author && s.version) ? ' · ' : ''}v${escapeHtml(s.version || '')}${dl ? ' · ' + dl : ''}</div>
       <p class="urppp-skin-desc">${escapeHtml(s.desc || '')}</p>
-      <div class="urppp-store-ops" style="position:absolute;right:12px;bottom:12px">
-        <button type="button" class="urppp-skin-apply" data-theme-use="${escapeHtml(s.id)}">使用</button>${delBtn}${repoBtn}
-      </div>
+      <button type="button" class="urppp-skin-apply" data-theme-use="${escapeHtml(s.id)}">使用</button>
+      <div class="urppp-store-ops" style="position:absolute;left:12px;bottom:12px">${delBtn}${repoBtn}</div>
     </div>`;
   }
 
