@@ -18791,10 +18791,18 @@ ${arcs}
       return GM_getValue(THEME_KEY, "default");
     }
     __name(getCurrent, "getCurrent");
+    function themeDownloaded(id) {
+      try {
+        return !!GM_getValue("urppp_theme_css_" + id, "");
+      } catch (_) {
+        return false;
+      }
+    }
+    __name(themeDownloaded, "themeDownloaded");
     function getSkin() {
       const id = GM_getValue(SKIN_KEY, "apple");
       const hit = SKIN_CATALOG.find((s) => s.id === id);
-      return hit && hit.ready && hit.installed !== false ? id : "apple";
+      return hit && hit.ready && (hit.installed !== false || themeDownloaded(hit.id)) ? id : "apple";
     }
     __name(getSkin, "getSkin");
     function getSkinCapability(skinId, key) {
@@ -21183,7 +21191,7 @@ ${arcs}
     }
     __name(applySkinAttr, "applySkinAttr");
     function setSkin(id) {
-      const hit = SKIN_CATALOG.find((s) => s.id === id && s.ready && s.installed !== false);
+      const hit = SKIN_CATALOG.find((s) => s.id === id && s.ready && (s.installed !== false || themeDownloaded(s.id)));
       if (!hit) return false;
       GM_setValue(SKIN_KEY, hit.id);
       try {
@@ -24884,19 +24892,75 @@ ${arcs}
       });
     }
     __name(bindStoreTabs, "bindStoreTabs");
-    function themeDownloadListHtml() {
-      const pending = SKIN_CATALOG.filter((s) => !s.installed);
-      if (!pending.length) return '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无待下载主题</p></div>';
-      return `<div class="urppp-store-theme-grid">${pending.map((s) => `
-      <div class="urppp-skin-card" data-skin="${escapeHtml(s.id)}">
-        <div class="urppp-skin-name">${escapeHtml(s.name)}</div>
-        <p class="urppp-skin-desc">${escapeHtml(s.desc)}</p>
-        <button type="button" class="urppp-skin-apply" data-store-theme="${escapeHtml(s.id)}">下载</button>
-      </div>`).join("")}</div>`;
+    function themeStoreCard(item, downloaded) {
+      return `<div class="urppp-skin-card" data-skin="${escapeHtml(item.id)}">
+      <div class="urppp-skin-name">${escapeHtml(item.name || item.id)}</div>
+      <p class="urppp-skin-desc">${escapeHtml(item.description || "")}</p>
+      <button type="button" class="urppp-skin-apply" data-store-theme="${escapeHtml(item.id)}"${downloaded ? " disabled" : ""}>${downloaded ? "已安装" : "下载"}</button>
+    </div>`;
     }
-    __name(themeDownloadListHtml, "themeDownloadListHtml");
+    __name(themeStoreCard, "themeStoreCard");
+    async function fetchCatalogThemes(body) {
+      const downloadPane = body.querySelector('[data-pane="download"]');
+      if (!downloadPane) return;
+      let themes = [];
+      try {
+        themes = (await fetchCatalogList()).filter((it) => it.type === "theme");
+      } catch (_) {
+      }
+      if (!themes.length) {
+        downloadPane.innerHTML = '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无主题</p><p class="urppp-store-sub">主题市场正在筹备中。</p></div>';
+        return;
+      }
+      downloadPane.innerHTML = `<div class="urppp-store-theme-grid">${themes.map((it) => themeStoreCard(it, themeDownloaded(it.id))).join("")}</div>`;
+      downloadPane.querySelectorAll("[data-store-theme]").forEach((b) => {
+        b.addEventListener("click", () => downloadStoreTheme(b.dataset.storeTheme, b));
+      });
+    }
+    __name(fetchCatalogThemes, "fetchCatalogThemes");
+    async function downloadStoreTheme(id, btn) {
+      if (!btn || btn.disabled) return;
+      const item = (await fetchCatalogList()).find((it) => it.id === id);
+      if (!item || !Array.isArray(item.entry) || !item.entry.length) return;
+      btn.disabled = true;
+      btn.textContent = "下载中…";
+      let css = "";
+      for (const url of item.entry) {
+        try {
+          const r = await fetch(url, { cache: "no-store" });
+          if (r.ok) {
+            css = await r.text();
+            break;
+          }
+        } catch (_) {
+        }
+      }
+      if (!css) {
+        btn.textContent = "下载失败";
+        setTimeout(() => {
+          btn.textContent = "下载";
+          btn.disabled = false;
+        }, 1400);
+        return;
+      }
+      try {
+        GM_setValue("urppp_theme_css_" + id, css);
+      } catch (_) {
+      }
+      try {
+        if (typeof GM_addStyle === "function") GM_addStyle(css);
+      } catch (_) {
+      }
+      btn.textContent = "已安装";
+      btn.disabled = true;
+      try {
+        syncSettingsPanelUI();
+      } catch (_) {
+      }
+    }
+    __name(downloadStoreTheme, "downloadStoreTheme");
     function themeManageListHtml() {
-      const builtin = SKIN_CATALOG.filter((s) => s.installed);
+      const builtin = SKIN_CATALOG.filter((s) => s.installed !== false || themeDownloaded(s.id));
       if (!builtin.length) return '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无已装主题</p></div>';
       return builtin.map((s) => `
       <div class="urppp-store-item">
@@ -25019,28 +25083,18 @@ ${arcs}
           <button type="button" class="urppp-store-tab" data-tab="manage">主题管理</button>
         </div>
         <div class="urppp-store-body">
-          <div class="urppp-store-pane" data-pane="download">${themeDownloadListHtml()}</div>
+          <div class="urppp-store-pane" data-pane="download"><div class="urppp-store-empty"><p class="urppp-store-empty-title">加载中…</p></div></div>
           <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}${themeManageListHtml()}</div>
         </div>
       </div>`;
       bindStoreTabs(body);
-      body.querySelectorAll("[data-store-theme]").forEach((b) => {
-        b.addEventListener("click", () => {
-          const old = b.textContent;
-          b.textContent = "敬请期待";
-          b.disabled = true;
-          setTimeout(() => {
-            b.textContent = "下载";
-            b.disabled = false;
-          }, 1400);
-        });
-      });
       body.querySelectorAll("[data-theme-use]").forEach((b) => {
         b.addEventListener("click", () => {
           if (setSkin(b.dataset.themeUse)) syncSettingsPanelUI();
         });
       });
       bindStoreManageSettings(body);
+      fetchCatalogThemes(body);
     }
     __name(renderThemeStoreBody, "renderThemeStoreBody");
     function renderPluginStoreBody(body) {
@@ -25106,7 +25160,7 @@ ${arcs}
         list.innerHTML = '<p class="urppp-set-tip">暂无可用风格</p>';
         return;
       }
-      SKIN_CATALOG.filter((s) => s.installed).forEach((skin) => {
+      SKIN_CATALOG.filter((s) => s.installed !== false || themeDownloaded(s.id)).forEach((skin) => {
         const card = document.createElement("div");
         card.className = "urppp-skin-card" + (skin.id === cur ? " is-active" : "");
         card.dataset.skin = skin.id;
