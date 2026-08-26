@@ -6710,10 +6710,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       let c = document.getElementById('urppp-toast');
       if (!c) { c = document.createElement('div'); c.id = 'urppp-toast'; c.className = 'urppp-toast'; (document.body || document.documentElement).appendChild(c); }
       c.textContent = msg;
-      c.className = 'urppp-toast show' + (type === 'error' ? ' error' : '');
-      c.style.display = ''; // 复用实例时重新显示
+      c.className = 'urppp-toast' + (type === 'error' ? ' error' : '');
+      c.style.display = '';
+      c.style.transition = 'opacity .22s, transform .22s';
+      c.style.opacity = '0'; c.style.transform = 'translateY(14px)';
+      requestAnimationFrame(() => { c.style.opacity = '1'; c.style.transform = 'none'; });
       clearTimeout(c._t);
-      c._t = setTimeout(() => { c.classList.remove('show'); setTimeout(() => { c.style.display = 'none'; }, 260); }, 3200);
+      c._t = setTimeout(() => { c.style.opacity = '0'; c.style.transform = 'translateY(20px)'; setTimeout(() => { c.style.display = 'none'; }, 260); }, 3200);
     } catch (_) { try { window.alert(msg); } catch (__) {} }
   }
   function confirmBottom(msg) {
@@ -6728,8 +6731,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         }
         c.style.display = ''; // 复用实例时重新显示
         c.querySelector('.urppp-confirm-txt').textContent = msg;
-        c.classList.add('show');
-        const done = (ok) => { c.querySelector('[data-ok]').onclick = c.querySelector('[data-cac]').onclick = null; c.classList.remove('show'); setTimeout(() => { c.style.display = 'none'; }, 260); resolve(ok); };
+        c.style.transition = 'opacity .22s, transform .22s';
+        c.style.opacity = '0'; c.style.transform = 'translateY(14px)';
+        requestAnimationFrame(() => { c.style.opacity = '1'; c.style.transform = 'none'; });
+        const done = (ok) => { c.querySelector('[data-ok]').onclick = c.querySelector('[data-cac]').onclick = null; c.style.opacity = '0'; c.style.transform = 'translateY(20px)'; setTimeout(() => { c.style.display = 'none'; }, 260); resolve(ok); };
         c.querySelector('[data-ok]').onclick = () => done(true);
         c.querySelector('[data-cac]').onclick = () => done(false);
       } catch (_) { try { resolve(window.confirm(msg)); } catch (__) { resolve(false); } }
