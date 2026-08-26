@@ -9,6 +9,7 @@ import {
 import { createFeatureRuntime, defineFeature } from '../core/feature-runtime.js';
 import { escapeHtml } from '../core/html.js';
 import { compareVersions, parseUserscriptVersion } from '../core/version.js';
+import { sha256Bytes, ed25519Verify } from './pure-crypto.js';
 import {
   DEFAULT_SCHEDULE_JSON_MAPPING,
   buildCustomScheduleJson,
@@ -6654,7 +6655,16 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 返回：true=校验通过；false=校验失败(应拦截)；null=无法校验(未签名源/无webcrypto，交给调用方提示)
   async function verifyEntrySignature(entry, pubkeyB64) {
     const _wc = getWebCrypto();
-    if (!_wc) return null;
+    if (!_wc) {
+      // http 页面（无 crypto.subtle）：纯 JS Ed25519 verify（不依赖 WebCrypto）
+      try {
+        if (!pubkeyB64 || !entry || !entry.signature) return false;
+        const pub = b64ToU8(pubkeyB64); const sig = b64ToU8(entry.signature);
+        if (!pub || !sig) return false;
+        const json = JSON.stringify(normalizeEntry(entry));
+        return ed25519Verify(sig, pub, sha256Bytes(json));
+      } catch (_) { return null; }
+    }
     if (!pubkeyB64 || !entry || !entry.signature) return false;
     try {
       const raw = b64ToU8(pubkeyB64);
