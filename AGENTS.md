@@ -139,6 +139,15 @@ release: v1.6.0
 - UI 修改至少检查简约白、深邃暗，以及本次涉及的全部界面风格。
 - 支持 `prefers-reduced-motion`，避免动画改变稳定布局尺寸。
 
+### 5.5 浮层、动画与验签约束（P3 实践沉淀）
+
+- **复用型浮窗（toast/confirm）的动画必须用 JS inline style 驱动**：`display/opacity/transform/transition/pointer-events` 全部写在元素上，配合 `requestAnimationFrame` 触发过渡；不要依赖 CSS class 的 transition/keyframes/WAAPI fill:forwards——复用实例时残留动画与类切换时序会互相覆盖（实测会二次不显示、被旧动画压在 opacity:0）。
+- 浮窗显示时必须同步 `pointer-events:auto`，隐藏时恢复 `none`；基础样式里带 `pointer-events:none` 的话，JS 只改 opacity 不改它会出现“看得见点不了”。
+- 浮窗宽度对齐设置面板：`position:fixed; left:18px; width:min(460px, calc(100vw - 36px)); right:auto`，不要 `left+right` 双约束横跨视口。
+- 教务系统是 http，页面内 `crypto.subtle` 不可用；涉及加解密/验签一律用纯 JS 实现（pure-crypto.js），并以 RFC 向量 + 签名 catalog 做双测。
+- GM 迁移逻辑判断“是否已下载/已存在”只认**值非空**，键残留空串不算存在，避免删除后刷新复活。
+- 清爽模式顶栏高度参与占位计算（桌面 60px / 移动端 52px）；全屏 fixed 弹窗 top 必须从顶栏下方开始，层级调高不代表可以忽略占位。
+
 ## 6. 测试与验收
 
 ### 6.1 本地自动检查
