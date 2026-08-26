@@ -6559,10 +6559,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       }
     }));
     host.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
-    // 若 catalog 未加载，后台补一次（首次打开商店时）——补后重渲染细节，不阻塞已下载主题即时展示
-    if (!__catalogCache) {
-      try { fetchCatalogList(true).then((c) => { __catalogCache = c; if (document.body.contains(host)) try { fetchThemeManage(host); } catch (_) {} }); } catch (_) {}
-    }
+    // 不再后台拉 catalog 去补下载量/仓库——主题管理纯用本地缓存（避免抢网络/造成等待感）
   }
 
   // 管理界面设置：自动检测更新（全宽开关按钮）+ 检查更新
