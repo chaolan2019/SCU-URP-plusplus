@@ -1376,6 +1376,9 @@ import { createNavbarController } from '../features/navigation/navbar.js';
         const m = /^urppp_theme_css_(.+)$/.exec(key);
         if (!m) return;
         const id = m[1];
+        // 只有 css 非空才算已下载（删除只是清成空串，键仍在——空串不能触发补登记）
+        let css = ''; try { css = GM_getValue(key, '') || ''; } catch (_) {}
+        if (!css) return;
         if (SKIN_CATALOG.some((s) => s.id === id) || locals[id]) return;
         locals[id] = { name: id, desc: '下载主题', author: '', version: '1.0.0' };
         changed = true;
