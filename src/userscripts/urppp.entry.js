@@ -6713,7 +6713,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       c.className = 'urppp-toast show' + (type === 'error' ? ' error' : '');
       c.style.display = ''; // 复用实例时重新显示
       clearTimeout(c._t);
-      c._t = setTimeout(() => { c.className = 'urppp-toast'; c.style.display = 'none'; }, 3200);
+      c._t = setTimeout(() => { c.classList.remove('show'); setTimeout(() => { if (!c.classList.contains('show')) c.style.display = 'none'; }, 260); }, 3200);
     } catch (_) { try { window.alert(msg); } catch (__) {} }
   }
   function confirmBottom(msg) {
@@ -6730,7 +6730,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         }
         c.querySelector('.urppp-confirm-txt').textContent = msg;
         c.classList.add('show');
-        const done = (ok) => { c.classList.remove('show'); c.style.display = 'none'; c.querySelector('[data-ok]').onclick = c.querySelector('[data-cac]').onclick = null; resolve(ok); };
+        const done = (ok) => { c.classList.remove('show'); c.querySelector('[data-ok]').onclick = c.querySelector('[data-cac]').onclick = null; setTimeout(() => { if (!c.classList.contains('show')) c.style.display = 'none'; }, 260); resolve(ok); };
         c.querySelector('[data-ok]').onclick = () => done(true);
         c.querySelector('[data-cac]').onclick = () => done(false);
       } catch (_) { try { resolve(window.confirm(msg)); } catch (__) { resolve(false); } }
