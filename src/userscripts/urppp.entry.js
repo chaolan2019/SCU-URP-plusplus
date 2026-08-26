@@ -6528,31 +6528,69 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // 商店清单（新仓库）多源
-  const CATALOG_SOURCES = [
+  const OFFICIAL_CATALOG_URLS = [
     'https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/catalog.json',
     'https://cdn.jsdelivr.net/gh/chaolan2019/URP-plusplus-Repository@main/catalog.json',
     'https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/catalog.json',
   ];
 
+  // 自定义仓库源（多 catalog，社区去中心化）：{name,url,enabled,pubkey}
+  function getCustomSources() {
+    try {
+      const r = JSON.parse(GM_getValue('urppp_store_sources', '[]'));
+      return Array.isArray(r) ? r : [];
+    } catch (_) { return []; }
+  }
+  function saveCustomSources(arr) {
+    try { GM_setValue('urppp_store_sources', JSON.stringify(arr)); } catch (_) {}
+  }
+
   let __catalogCache = null;
   async function fetchCatalogList(force) {
     if (__catalogCache && !force) return __catalogCache;
     const withTimeout = (promise, ms) => Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
-    const results = await Promise.allSettled(CATALOG_SOURCES.map((url) => withTimeout(fetch(url, { cache: 'no-store' }), 5000)));
-    let firstOk = [];
-    for (const res of results) {
-      if (!(res.status === 'fulfilled' && res.value && res.value.ok)) continue;
+    const fetchCatalogDoc = async (url) => {
       try {
-        const j = await res.value.json();
-        if (j && Array.isArray(j.items)) {
-          if (!firstOk.length) firstOk = j.items;
-          // 优先返回「含 cardCss 的源」——jsdelivr 可能缓存旧版无 cardCss，raw/gh-proxy 有完整 cardCss
-          if (j.items.some((it) => it.type === 'theme' && it.cardCss)) { __catalogCache = j.items; return j.items; }
-        }
-      } catch (_) { /* invalid json, try next */ }
+        const res = await withTimeout(fetch(url, { cache: 'no-store' }), 5000);
+        if (!(res && res.ok)) return null;
+        const j = await res.json();
+        return (j && Array.isArray(j.items)) ? j : null;
+      } catch (_) { return null; }
+    };
+
+    // 官方源（mirror 冗余），取最优（含 cardCss 的源优先，jsdelivr 可能缓存旧版）
+    let officialDoc = null;
+    for (const url of OFFICIAL_CATALOG_URLS) {
+      const j = await fetchCatalogDoc(url);
+      if (!j) continue;
+      officialDoc = j;
+      if (j.items.some((it) => it.type === 'theme' && it.cardCss)) break;
     }
-    if (firstOk.length) __catalogCache = firstOk;
-    return firstOk;
+    const officialItems = (officialDoc && officialDoc.items) || [];
+
+    // 自定义源：并行拉取 enabled（多 catalog）
+    const customs = getCustomSources().filter((s) => s && s.url && s.enabled !== false);
+    const customsRes = await Promise.allSettled(customs.map(async (s) => {
+      const j = await fetchCatalogDoc(s.url);
+      return { doc: j, pubkey: j ? j.pubkey : '' };
+    }));
+
+    // 合并：官方 items 为 base，自定义追加；同 id 冲突官方优先
+    const merged = [...officialItems];
+    const seen = new Set(merged.map((it) => it && it.id).filter(Boolean));
+    for (const r of customsRes) {
+      if (!(r.status === 'fulfilled' && r.value && r.value.doc)) continue;
+      const srcPub = r.value.pubkey || '';
+      for (const it of r.value.doc.items) {
+        if (!it || !it.id || seen.has(it.id)) continue;
+        seen.add(it.id);
+        if (srcPub) it._srcPub = srcPub; // 记住来源公钥，安装前签名校验用
+        merged.push(it);
+      }
+    }
+
+    __catalogCache = merged;
+    return merged;
   }
 
   function versionGt(va, vb) {
@@ -6623,17 +6661,82 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         <div class="urppp-store-tabs">
           <button type="button" class="urppp-store-tab ac" data-tab="download">主题下载</button>
           <button type="button" class="urppp-store-tab" data-tab="manage">主题管理</button>
+          <button type="button" class="urppp-store-tab" data-tab="sources">仓库源</button>
         </div>
         <div class="urppp-store-body">
           <div class="urppp-store-pane" data-pane="download"><div class="urppp-store-empty"><p class="urppp-store-empty-title">加载中…</p></div></div>
           <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}<button type="button" class="urppp-set-btn ghost" data-add-local-theme style="width:100%;margin:0 0 10px">＋ 添加本地主题</button><input type="file" accept=".css,.txt" data-local-theme-file style="display:none"><div class="urppp-store-bd"><div id="urppp-theme-manage"><div class="urppp-store-empty"><p>加载中…</p></div></div></div></div>
+          <div class="urppp-store-pane" data-pane="sources" style="display:none">${storeSourcesHtml()}</div>
         </div>
       </div>`;
     bindStoreTabs(body);
     bindStoreManageSettings(body);
     bindLocalThemeImport(body);
+    bindStoreSources(body);
     fetchCatalogThemes(body);
     fetchThemeManage(body.querySelector('#urppp-theme-manage'));
+  }
+
+  function storeSourcesHtml() {
+    const customs = getCustomSources();
+    const rows = customs.length ? customs.map((s, i) => `
+      <div class="urppp-src-item">
+        <div class="urppp-src-meta"><strong>${escapeHtml(s.name || '未命名')}</strong><span class="urppp-src-url">${escapeHtml(s.url)}</span></div>
+        <div class="urppp-src-ops">
+          <button type="button" class="urppp-set-btn ghost" data-src-toggle="${i}">${s.enabled !== false ? '禁用' : '启用'}</button>
+          <button type="button" class="urppp-set-btn ghost" data-src-del="${i}">删除</button>
+        </div>
+      </div>`).join('') : '<div class="urppp-store-empty"><p>暂无自定义仓库源</p></div>';
+    return `<div class="urppp-src-manage">
+      <p class="urppp-src-hint">自定义仓库源：添加第三方 catalog 一起拉取，官方源始终优先（同 id 取官方）。签名源安装前自动校验。</p>
+      ${rows}
+      <div class="urppp-src-add">
+        <input type="text" class="urppp-input" data-src-url placeholder="catalog.json 地址">
+        <input type="text" class="urppp-input" data-src-name placeholder="源名称（可选）">
+        <button type="button" class="urppp-set-btn" data-src-add>添加仓库源</button>
+      </div>
+    </div>`;
+  }
+
+  function bindStoreSources(body) {
+    const add = body.querySelector('[data-src-add]');
+    if (add) {
+      const urlInput = body.querySelector('[data-src-url]');
+      const nameInput = body.querySelector('[data-src-name]');
+      add.addEventListener('click', async () => {
+        const url = (urlInput.value || '').trim();
+        if (!url) return;
+        add.disabled = true; const old = add.textContent; add.textContent = '验证中…';
+        try {
+          const res = await fetch(url, { cache: 'no-store' });
+          if (!(res && res.ok)) throw new Error('无法访问');
+          const j = await res.json();
+          if (!(j && Array.isArray(j.items))) throw new Error('不是合法 catalog（无 items）');
+          const arr = getCustomSources();
+          if (arr.some((s) => s.url === url)) { alert('该源已存在'); return; }
+          arr.push({ name: (nameInput.value || '').trim() || url, url, enabled: true });
+          saveCustomSources(arr);
+          __catalogCache = null;
+          refreshStoreSources(body);
+        } catch (e) { alert('添加失败：' + (e && e.message ? e.message : e)); }
+        finally { add.disabled = false; add.textContent = old; }
+      });
+    }
+    body.querySelectorAll('[data-src-toggle]').forEach((b) => b.addEventListener('click', () => {
+      const i = Number(b.dataset.srcToggle);
+      const arr = getCustomSources();
+      if (arr[i]) { arr[i].enabled = arr[i].enabled !== false ? false : true; saveCustomSources(arr); refreshStoreSources(body); }
+    }));
+    body.querySelectorAll('[data-src-del]').forEach((b) => b.addEventListener('click', () => {
+      const i = Number(b.dataset.srcDel);
+      const arr = getCustomSources();
+      if (arr[i]) { arr.splice(i, 1); saveCustomSources(arr); refreshStoreSources(body); }
+    }));
+  }
+
+  function refreshStoreSources(body) {
+    const pane = body.querySelector('[data-pane="sources"]');
+    if (pane) { const b = body; pane.innerHTML = storeSourcesHtml(); bindStoreSources(b); }
   }
 
   function bindLocalThemeImport(body) {
