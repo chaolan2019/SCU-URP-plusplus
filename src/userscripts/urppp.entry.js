@@ -6569,13 +6569,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       } catch (_) { return null; }
     };
 
-    // 官方源（mirror 冗余），取最优（含 cardCss 的源优先，jsdelivr 可能缓存旧版）
+    // 官方源（mirror 冗余）并行拉取，取最优（含 cardCss 的源优先，jsdelivr 可能缓存旧版）
+    const officialRes = await Promise.allSettled(OFFICIAL_CATALOG_URLS.map((url) => fetchCatalogDoc(url)));
     let officialDoc = null;
-    for (const url of OFFICIAL_CATALOG_URLS) {
-      const j = await fetchCatalogDoc(url);
-      if (!j) continue;
-      officialDoc = j;
-      if (j.items.some((it) => it.type === 'theme' && it.cardCss)) break;
+    for (const r of officialRes) {
+      if (!(r.status === 'fulfilled' && r.value && Array.isArray(r.value.items))) continue;
+      const hasCardCss = r.value.items.some((it) => it.type === 'theme' && it.cardCss);
+      if (!officialDoc || (hasCardCss && !officialDoc.items.some((it) => it.type === 'theme' && it.cardCss))) officialDoc = r.value;
     }
     const officialItems = (officialDoc && officialDoc.items) || [];
 
