@@ -6147,9 +6147,9 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-toast.error{background:#b2392f}
 #urppp-confirm{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(16px);z-index:99999;display:flex;flex-direction:column;gap:10px;min-width:min(420px,88vw);padding:12px 14px;border-radius:12px;background:var(--bg-card,#fff);border:1px solid var(--border,#e6e8ec);box-shadow:0 10px 30px rgba(0,0,0,.16);opacity:0;pointer-events:none;transition:.22s}
 #urppp-confirm.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
-#urppp-confirm .urppp-confirm-txt{font-size:13px;color:var(--text,#16181d)}
-#urppp-confirm .urppp-confirm-ops{display:flex;gap:8px}
-#urppp-confirm .urppp-confirm-ops button{flex:1;min-height:34px;padding:8px 14px;font-size:13px;border-radius:8px;border:1px solid var(--border,#e6e8ec);background:var(--bg-card,#fff);color:var(--text,#16181d);cursor:pointer;transition:.15s}
+#urppp-confirm .urppp-confirm-txt{font-size:15px;color:var(--text,#16181d);line-height:1.5;font-weight:500}
+#urppp-confirm .urppp-confirm-ops{display:flex;gap:10px;margin-top:2px}
+#urppp-confirm .urppp-confirm-ops button{flex:1;min-height:28px;padding:5px 12px;font-size:12px;border-radius:6px;border:1px solid var(--border,#e6e8ec);background:var(--bg-card,#fff);color:var(--text,#16181d);cursor:pointer;transition:.15s}
 #urppp-confirm .urppp-confirm-ops button:hover{background:var(--hover-bg,#f0f1f3)}
 #urppp-confirm .urppp-confirm-ops button[data-ok]{border-color:var(--accent,var(--link,#4a7bfa));background:var(--accent,var(--link,#4a7bfa));color:#fff}
 html.urppp-theme-dark #urppp-confirm .urppp-confirm-ops button{background:#2a2c30;border-color:#3a3d42;color:#e8e8ea}
