@@ -6429,6 +6429,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }
     if (!css) { btn.textContent = '下载失败'; setTimeout(() => { btn.textContent = '下载'; btn.disabled = false; }, 1400); return; }
     try { GM_setValue('urppp_theme_css_' + id, css); } catch (_) {}
+    // 下载的自定义主题（不在内置 SKIN_CATALOG）需登记为本地主题，否则主题管理/皮肤列表不显示、也无法应用
+    if (!SKIN_CATALOG.some((s) => s.id === id)) {
+      saveLocalTheme(id, { name: item.name || id, desc: item.desc || '下载主题', author: item.author || '', version: item.version || '1.0.0' });
+    }
     // 下载时也缓存 cardCss 到本地，皮肤卡/商店直接用本地卡样式（不再依赖线上拉取，避免残缺闪烁）
     if (item.cardCss) { try { GM_setValue('urppp_card_css_' + id, item.cardCss); } catch (_) {} }
     try { storeThemeStyleEl(id).textContent = css; } catch (_) {}
@@ -6634,7 +6638,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const key = await _wc.importKey('raw', raw, { name: 'Ed25519' }, false, ['verify']);
       const sig = b64ToU8(entry.signature);
       if (!sig) return false;
-      const data = new TextEncoder().encode(JSON.stringify(normalizeEntry(entry)));
+      const json = JSON.stringify(normalizeEntry(entry));
+      const hash = await _wc.digest('SHA-256', new TextEncoder().encode(json));
+      const data = new Uint8Array(hash); // 签名输入 = SHA256(规范化 JSON) 字节（与签名工具一致）
       return await _wc.verify({ name: 'Ed25519' }, key, sig, data);
     } catch (_) { return null; }
   }
