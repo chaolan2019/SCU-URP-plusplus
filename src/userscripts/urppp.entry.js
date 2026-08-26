@@ -6728,9 +6728,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           const hostPanel = document.getElementById('urppp-settings-panel');
           const h = hostPanel || document.body || document.documentElement;
           h.appendChild(c);
-          c.style.display = ''; // 复用实例时重新显示
-          try { c.getAnimations().forEach((a) => a.cancel()); } catch (_) {} // 清除上次 fill:forwards 残留动画
         }
+        c.style.display = ''; // 复用实例时重新显示
+        try { c.getAnimations().forEach((a) => a.cancel()); } catch (_) {} // 清除上次 fill:forwards 残留动画
         c.querySelector('.urppp-confirm-txt').textContent = msg;
         c.classList.remove('hide');
         c.classList.add('show');
