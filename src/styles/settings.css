@@ -435,147 +435,6 @@ html.urppp-theme-scu-red:not(.urppp-theme-follow) #urppp-settings-panel .urppp-s
 }
 
 /* Skin preview cards */
-#urppp-settings-panel .urppp-skin-card[data-skin="apple"] {
-  background: #f5f5f7 !important; color: #1d1d1f !important; border: 1px solid rgba(0,0,0,.06) !important;
-  border-radius: 18px !important; box-shadow: 0 8px 24px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.04) !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="apple"]:hover {
-  background: #fff !important; transform: translateY(-2px) !important;
-  box-shadow: 0 14px 32px rgba(0,0,0,.12), 0 3px 8px rgba(0,0,0,.05) !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="apple"].is-active { box-shadow: 0 0 0 2px #0071e3, 0 12px 30px rgba(0,113,227,.14) !important; }
-#urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply {
-  border: 1px solid #0071e3 !important; border-radius: 999px !important; background: rgba(255,255,255,.86) !important;
-  color: #0071e3 !important; box-shadow: none !important; transform: none !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply:not(:disabled):hover,
-#urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply.is-current {
-  background: #0071e3 !important; border-color: #0071e3 !important; color: #fff !important; box-shadow: none !important; transform: none !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="editorial"] {
-  background: #f5f4f1 !important; color: #1c1c1c !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="editorial"]:hover { background: #efeeea !important; transform: none !important; box-shadow: none !important; }
-#urppp-settings-panel .urppp-skin-card[data-skin="editorial"].is-active { background: #e8e7e2 !important; outline: none !important; }
-#urppp-settings-panel .urppp-skin-card[data-skin="editorial"] .urppp-skin-name {
-  font-family: Georgia, "Noto Serif SC", "Songti SC", STSong, SimSun, "Times New Roman", serif !important; font-weight: 500 !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply {
-  width: auto !important; min-height: 28px !important; height: auto !important; padding: 0 0 3px !important; border: 0 !important;
-  border-radius: 0 !important; background: transparent !important; color: #1c1c1c !important; box-shadow: none !important; transform: none !important;
-  text-decoration-line: underline !important; text-decoration-color: transparent !important; text-underline-offset: 3px !important;
-  text-decoration-thickness: 1px !important; transition: text-decoration-color 180ms ease-out !important;
-}
-#urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply:not(:disabled):hover,
-#urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply.is-current {
-  background: transparent !important; color: #1c1c1c !important; text-decoration-color: currentColor !important; box-shadow: none !important; transform: none !important;
-}
-/* 暗色下编辑杂志按钮 hover：保持浅字，不做反色处理（避免黑字深底不可读） */
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply:not(:disabled):hover,
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply.is-current {
-  background: transparent !important; color: #e8e8e4 !important; text-decoration-color: currentColor !important;
-}
-
-/* 暗色模式：主题卡片适配（深底浅字，保留各主题辨识主色） */
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] {
-  background: #1d1d1f !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.14) !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.3) !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"]:hover { background: #2c2c2e !important; }
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply {
-  background: rgba(255,255,255,.12) !important; color: #7aa2ff !important; border-color: #4a6cf7 !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply:not(:disabled):hover,
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply.is-current {
-  background: #4a6cf7 !important; border-color: #4a6cf7 !important; color: #fff !important;
-}
-
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] {
-  background: #1e1e1c !important; color: #e8e8e4 !important; border: 0 !important; box-shadow: none !important;
-}
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"]:hover { background: #262624 !important; }
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"].is-active { background: #2c2c28 !important; }
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply { color: #e8e8e4 !important; }
-
-/* About pane */
-#urppp-settings-panel .urppp-about {
-  display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center !important;
-  padding: 18px 8px 10px !important; gap: 10px !important;
-}
-#urppp-settings-panel .urppp-about-logo {
-  width: min(320px, 92%) !important; max-width: 100% !important; height: auto !important; display: block !important;
-  border-radius: 0 !important; object-fit: contain !important; background: transparent !important;
-  image-rendering: pixelated !important; image-rendering: crisp-edges !important;
-}
-#urppp-settings-panel .urppp-about-ver,
-#urppp-settings-panel a.urppp-about-ver {
-  margin: 4px 0 0 !important; font-size: 13px !important; font-weight: 700 !important; color: var(--text) !important;
-  text-decoration: none !important; cursor: pointer !important;
-}
-#urppp-settings-panel a.urppp-about-ver:hover { color: var(--primary) !important; text-decoration: underline !important; }
-#urppp-settings-panel .urppp-about-author,
-#urppp-settings-panel .urppp-about-contact { margin: 0 !important; font-size: 12px !important; color: var(--text-secondary) !important; }
-#urppp-settings-panel .urppp-about-msg {
-  margin: 8px 0 0 !important; font-size: 12px !important; line-height: 1.65 !important;
-  color: var(--text-secondary) !important; white-space: pre-line !important;
-}
-#urppp-settings-panel #urppp-set-assist-slot:empty { display: none !important; }
-#urppp-settings-panel #urppp-set-assist-slot .urppp-set-sec { margin-top: 14px !important; }
-
-#urppp-settings-panel .urppp-feature-grid{display:grid;gap:10px;margin-top:12px}
-#urppp-settings-panel .urppp-feature-row{display:grid;grid-template-columns:minmax(98px,.72fr) minmax(0,1.5fr);gap:12px;align-items:center;min-width:0}
-#urppp-settings-panel .urppp-feature-row>label{margin:0;color:var(--text-secondary);font-size:12px;font-weight:650;line-height:1.35;cursor:pointer}
-#urppp-settings-panel .urppp-feature-row>label input{margin:0 5px 0 0;vertical-align:-2px;accent-color:var(--primary)}
-#urppp-settings-panel .urppp-feature-input{width:100%;min-width:0;height:36px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text);padding:0 10px;outline:none;box-sizing:border-box;letter-spacing:0}
-#urppp-settings-panel .urppp-feature-input[type="file"]{height:auto;min-height:36px;padding:6px 8px;font-size:11px}
-#urppp-settings-panel .urppp-feature-input:focus{border-color:var(--primary);box-shadow:0 0 0 2px color-mix(in srgb,var(--primary) 16%,transparent)}
-#urppp-settings-panel .urppp-privacy-groups{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch;margin-top:14px;border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb,var(--surface) 78%,var(--input-bg));overflow:hidden}
-#urppp-settings-panel .urppp-privacy-group{min-width:0;padding:11px}
-#urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left:1px solid var(--border)}
-#urppp-settings-panel .urppp-privacy-group-title{margin:0 0 7px;color:var(--text);font-size:12px;font-weight:750;line-height:1.4}
-#urppp-settings-panel .urppp-privacy-group-fields{display:grid;gap:3px}
-#urppp-settings-panel .urppp-privacy-field{display:grid;grid-template-columns:18px minmax(0,1fr);gap:5px 6px;align-items:center;min-width:0;padding:2px 0 7px}
-#urppp-settings-panel .urppp-privacy-field>input[type="checkbox"]{width:16px;height:16px;margin:0;accent-color:var(--primary);cursor:pointer}
-#urppp-settings-panel .urppp-privacy-field>label{min-width:0;margin:0;color:var(--text-secondary);font-size:12px;font-weight:600;line-height:1.35;cursor:pointer;white-space:normal}
-#urppp-settings-panel .urppp-privacy-field>.urppp-feature-input{grid-column:1/-1;height:32px;padding:0 8px;font-size:12px}
-#urppp-settings-panel .urppp-privacy-note{grid-column:1/-1;padding-left:24px;font-size:10px;color:var(--text-muted);line-height:1.4}
-#urppp-settings-panel .urppp-direct-edit-control{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:10px 2px 0;border-top:1px solid var(--border)}
-#urppp-settings-panel .urppp-direct-edit-control>div{display:grid;gap:2px;min-width:0}
-#urppp-settings-panel .urppp-direct-edit-control strong{color:var(--text);font-size:12px;line-height:1.35}
-#urppp-settings-panel .urppp-direct-edit-control span{color:var(--text-muted);font-size:10px;line-height:1.4}
-#urppp-settings-panel #urppp-set-direct-edit-toggle{flex:0 0 auto;width:auto!important;min-width:116px;margin:0!important}
-#urppp-settings-panel .urppp-json-mapping-editor{display:none;gap:8px;margin-top:12px}
-#urppp-settings-panel .urppp-json-mapping-editor>label{margin:0;color:var(--text-secondary);font-size:12px;font-weight:650}
-#urppp-settings-panel #urppp-set-json-mapping{width:100%!important;min-width:0!important;min-height:260px!important;max-height:460px!important;margin:0!important;padding:10px 12px!important;box-sizing:border-box!important;resize:vertical!important;border:1px solid var(--border)!important;border-radius:8px!important;background:var(--input-bg)!important;color:var(--text)!important;outline:0!important;font-family:"JetBrains Mono","Cascadia Mono","Microsoft YaHei UI",monospace!important;font-size:11px!important;font-weight:400!important;line-height:1.55!important;letter-spacing:0!important;white-space:pre!important;overflow:auto!important}
-#urppp-settings-panel #urppp-set-json-mapping:focus{border-color:var(--primary)!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--primary) 16%,transparent)!important}
-#urppp-settings-panel #urppp-set-json-status.urppp-status-error{color:color-mix(in srgb,var(--danger,#b91c1c) 60%,var(--text))!important}
-#urppp-settings-panel .urppp-identity-editor{display:grid;grid-template-columns:minmax(0,1fr) 76px;gap:16px;align-items:start;margin-top:14px;padding:13px;border:1px solid var(--border);border-radius:12px;background:color-mix(in srgb,var(--surface) 78%,var(--input-bg))}
-#urppp-settings-panel .urppp-identity-fields{display:grid;gap:10px;min-width:0}
-#urppp-settings-panel .urppp-identity-preview{display:grid;justify-items:center;gap:7px;min-width:0}
-#urppp-settings-panel .urppp-identity-preview-label{color:var(--text-muted);font-size:10px;font-weight:650;line-height:1.3;white-space:nowrap}
-#urppp-settings-panel .urppp-avatar-preview-shell{position:relative;width:64px;height:64px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:10px;background:var(--input-bg);color:var(--text-muted);font-size:10px;overflow:hidden}
-#urppp-settings-panel .urppp-avatar-preview{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:inherit;background:var(--input-bg);object-fit:cover;display:none}
-#urppp-settings-panel .urppp-feature-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-privacy-groups,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-identity-editor{border:2px solid var(--text);border-radius:0;background:var(--surface)}
-html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left:2px solid var(--text)}
-html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-feature-input,html[data-urppp-skin="flat"] #urppp-settings-panel .urppp-avatar-preview-shell{border:2px solid var(--text);border-radius:0;background:var(--surface)}
-html[data-urppp-skin="flat"] #urppp-settings-panel #urppp-set-json-mapping{border:2px solid var(--text)!important;border-radius:0!important;background:var(--surface)!important}
-html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-privacy-groups,html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-identity-editor{border-radius:18px}
-html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-feature-input,html[data-urppp-skin="organic"] #urppp-settings-panel .urppp-avatar-preview-shell{border-radius:12px}
-html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-privacy-groups,html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-identity-editor{border:3px solid #000;border-radius:0;background:var(--surface)}
-html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-privacy-group+.urppp-privacy-group{border-left:3px solid #000}
-html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-feature-input,html[data-urppp-skin="brutal"] #urppp-settings-panel .urppp-avatar-preview-shell{border:2px solid #000;border-radius:0;background:var(--surface)}
-html[data-urppp-skin="brutal"] #urppp-settings-panel #urppp-set-json-mapping{border:2px solid #000!important;border-radius:0!important;background:var(--surface)!important}
-/* brutal 暗色：清爽服务卡文字/图标强制白字（补办学生证等黑底黑字可见） */
-html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-svc,
-html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-svc strong,
-html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-svc svg{color:#fff!important;stroke:#fff!important}
-html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-clean-root .uc-svc{background:#111!important;border-color:var(--brutal-accent)!important}
-/* brutal 暗色：校历弹窗'下一个事件'卡黑底白字(默认近白背景+白字) */
-html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-cal-modal .cal-widget,
-html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-cal-modal .cal-widget .cal-w-sub,
-html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-cal-modal .cal-widget .cal-w-wk,
-html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-cal-modal .cal-widget .cal-w-prog-lbl,
 html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-cal-modal .cal-widget .cal-w-ev b{color:#fff!important}
 html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-cal-modal .cal-widget{background:#0a0a0a!important;border-color:var(--brutal-accent)!important}
 html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-cal-modal .cal-widget .cal-w-num{color:var(--brutal-accent)!important}
@@ -676,13 +535,12 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-confirm.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
 #urppp-confirm .urppp-confirm-txt{font-size:13px;color:var(--text,#16181d)}
 #urppp-confirm .urppp-confirm-ops{display:flex;gap:8px}
-#urppp-confirm .urppp-confirm-ops .urppp-set-btn{flex:1}
+#urppp-confirm .urppp-confirm-ops button{flex:1;min-height:34px;padding:8px 14px;font-size:13px;border-radius:8px;border:1px solid var(--border,#e6e8ec);background:var(--bg-card,#fff);color:var(--text,#16181d);cursor:pointer;transition:.15s}
+#urppp-confirm .urppp-confirm-ops button:hover{background:var(--hover-bg,#f0f1f3)}
+#urppp-confirm .urppp-confirm-ops button[data-ok]{border-color:var(--accent,var(--link,#4a7bfa));background:var(--accent,var(--link,#4a7bfa));color:#fff}
+html.urppp-theme-dark #urppp-confirm .urppp-confirm-ops button{background:#2a2c30;border-color:#3a3d42;color:#e8e8ea}
+html.urppp-theme-dark #urppp-confirm .urppp-confirm-ops button[data-ok]{background:var(--accent,var(--link,#4a7bfa));border-color:var(--accent,var(--link,#4a7bfa));color:#fff}
 /* 仓库/删除按钮复用 apply 样式后的定位（覆盖 apply 默认 right:12px） */
 #urppp-settings-panel .urppp-skin-card > .urppp-skin-apply.urppp-store-repo { right:auto!important; left:12px!important; }
 #urppp-settings-panel .urppp-skin-card > .urppp-skin-apply.urppp-store-del { right:78px!important; }
 
-/* 类Apple风格暗色卡兜底（最后声明，确保暗色下深卡，不再白卡） */
-html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] {
-  background: #1d1d1f !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.14) !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.3) !important;
-}

@@ -6624,15 +6624,16 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // ---- 签名校验（Ed25519，自建源安全） ----
-  // @grant 沙箱下 globalThis.crypto.subtle 可能不可用，回退到页面上下文（unsafeWindow/window）
-  const _wc = (function () {
+  // @grant 沙箱下 globalThis.crypto.subtle 可能不可用，回退到页面上下文（unsafeWindow/window）。
+  // 每次动态取，避免脚本加载早于页面 crypto 就绪时恒为 null。
+  function getWebCrypto() {
     try {
       if (typeof crypto !== 'undefined' && crypto && crypto.subtle) return crypto.subtle;
       const g = (typeof unsafeWindow !== 'undefined' && unsafeWindow) ? unsafeWindow : (typeof window !== 'undefined' ? window : null);
       if (g && g.crypto && g.crypto.subtle) return g.crypto.subtle;
     } catch (_) {}
     return null;
-  })();
+  }
   function normalizeEntry(obj) {
     if (Array.isArray(obj)) return obj.map(normalizeEntry);
     if (obj && typeof obj === 'object') {
@@ -6652,6 +6653,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
   // 返回：true=校验通过；false=校验失败(应拦截)；null=无法校验(未签名源/无webcrypto，交给调用方提示)
   async function verifyEntrySignature(entry, pubkeyB64) {
+    const _wc = getWebCrypto();
     if (!_wc) return null;
     if (!pubkeyB64 || !entry || !entry.signature) return false;
     try {
@@ -7039,9 +7041,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       card.querySelector('.urppp-skin-desc').textContent = skin.desc;
       card.appendChild(btn);
       list.appendChild(card);
-      // 本地/自定义主题卡：注入原 cardCss（否则无样式）
-      if (isLoc) { try { let cc = ''; try { cc = GM_getValue('urppp_card_css_' + skin.id, '') || ''; } catch (_) {} if (cc) ensureStoreCardStyles([{ id: skin.id, cardCss: cc }]); } catch (_) {} }
     });
+    // 主题选择卡样式：全部从已下载缓存（GM urppp_card_css_<id>）读，不走线上 catalog
+    try {
+      const ccItems = skinList.map((s) => {
+        let cc = ''; try { cc = GM_getValue('urppp_card_css_' + s.id, '') || ''; } catch (_) {}
+        return { id: s.id, cardCss: cc };
+      });
+      ensureStoreCardStyles(ccItems);
+    } catch (_) {}
   }
 
   // ===================== 检查更新（主插件 + 可扩展） =====================
