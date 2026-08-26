@@ -6725,10 +6725,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           const hostPanel = document.getElementById('urppp-settings-panel');
           const h = hostPanel || document.body || document.documentElement;
           h.appendChild(c);
+          c.style.display = ''; // 复用实例时重新显示
         }
         c.querySelector('.urppp-confirm-txt').textContent = msg;
         c.classList.add('show');
-        const done = (ok) => { c.classList.remove('show'); c.querySelector('[data-ok]').onclick = c.querySelector('[data-cac]').onclick = null; resolve(ok); };
+        const done = (ok) => { c.classList.remove('show'); c.style.display = 'none'; c.querySelector('[data-ok]').onclick = c.querySelector('[data-cac]').onclick = null; resolve(ok); };
         c.querySelector('[data-ok]').onclick = () => done(true);
         c.querySelector('[data-cac]').onclick = () => done(false);
       } catch (_) { try { resolve(window.confirm(msg)); } catch (__) { resolve(false); } }
