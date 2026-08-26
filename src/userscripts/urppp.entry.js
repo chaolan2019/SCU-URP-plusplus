@@ -6413,7 +6413,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const srep = (SKIN_CATALOG.find((s) => s.id === item.id) || {}).repo;
     const repo = item.repo || srep;
     const repoBtn = repo ? `<button type="button" class="urppp-skin-apply urppp-store-repo" data-repo="${escapeHtml(repo)}">仓库</button>` : '';
+    const ccIn = item.cardCss || '';
+    const cardCssInline = ccIn ? `<style>${ccIn}</style>` : '';
     return `<div class="urppp-skin-card" data-skin="${escapeHtml(item.id)}">
+      ${cardCssInline}
       <div class="urppp-skin-name">${escapeHtml(item.name || item.id)}</div>
       <div class="urppp-skin-meta">${escapeHtml(item.author || '')}${item.author && item.version ? ' · ' : ''}v${escapeHtml(item.version || '')}</div>
       <p class="urppp-skin-desc">${escapeHtml(item.description || '')}</p>
