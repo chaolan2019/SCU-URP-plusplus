@@ -6455,7 +6455,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (!item || !Array.isArray(item.entry) || !item.entry.length) { btn.disabled = false; btn.textContent = '下载'; return; }
     // 签名校验（自建源安全）：官方源信任；失败拦截；无法校验(未签名源)提示自担风险
     const g = await guardEntrySignature(item);
-    if (g === 'fail') { toast('签名校验失败：该条目可能被篡改，已停止下载', 'error'); btn.disabled = false; btn.textContent = '下载'; return; }
+    if (g === 'fail') { const go = await confirmBottom('签名校验失败：该条目可能被篡改。是否仍要安装？'); if (!go) { btn.disabled = false; btn.textContent = '下载'; return; } }
     if (g === 'unknown' && item._srcPub) { const go = await confirmBottom('该源无有效签名校验，可能被篡改。是否自担风险继续下载？'); if (!go) { btn.disabled = false; btn.textContent = '下载'; return; } }
     let css = '';
     for (const url of item.entry) {
@@ -6931,7 +6931,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         try {
           const cat = (await fetchCatalogList()).find((it) => it.id === b.dataset.pluginApply);
           const g = cat ? await guardEntrySignature(cat) : 'trust';
-          if (g === 'fail') { toast('签名校验失败：该插件可能被篡改，已停止装载', 'error'); b.textContent = '下载'; b.disabled = false; return; }
+          if (g === 'fail') { const go = await confirmBottom('签名校验失败：该插件可能被篡改。是否仍要装载？'); if (!go) { b.textContent = '下载'; b.disabled = false; return; } }
           if (g === 'unknown' && cat && cat._srcPub) { const go = await confirmBottom('该源无有效签名校验，可能被篡改。是否自担风险继续装载？'); if (!go) { b.textContent = '下载'; b.disabled = false; return; } }
           if (pluginManager && pluginManager.api && pluginManager.api.install) await pluginManager.api.install(b.dataset.pluginApply, null); b.textContent = '已安装'; try { syncSettingsPanelUI(); } catch (_) {} }
         catch (_) { b.textContent = '失败'; }
