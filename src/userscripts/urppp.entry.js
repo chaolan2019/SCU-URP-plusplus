@@ -1384,17 +1384,20 @@ import { createNavbarController } from '../features/navigation/navbar.js';
 
   // 初始注入所有已下载主题的 CSS（刷新后仍生效，否则独立主题会丢大半）
   function injectAllStoreThemeStyles() {
-    SKIN_CATALOG.forEach((s) => {
-      const key = 'urppp_theme_css_' + s.id;
+    const seen = new Set();
+    const injectOne = (id) => {
+      if (seen.has(id)) return; seen.add(id);
       let css = '';
-      try { css = GM_getValue(key, '') || ''; } catch (_) {}
-      if (css) storeThemeStyleEl(s.id).textContent = css;
+      try { css = GM_getValue('urppp_theme_css_' + id, '') || ''; } catch (_) {}
+      if (css) storeThemeStyleEl(id).textContent = css;
       // 初始化即注入本地缓存的 cardCss（下载主题时缓存），皮肤卡/商店立即有卡样式，不依赖线上拉取
       let cc = '';
-      try { cc = GM_getValue('urppp_card_css_' + s.id, '') || ''; } catch (_) {}
-      if (cc) ensureStoreCardStyles([{ id: s.id, cardCss: cc }]);
-    });
-
+      try { cc = GM_getValue('urppp_card_css_' + id, '') || ''; } catch (_) {}
+      if (cc) ensureStoreCardStyles([{ id, cardCss: cc }]);
+    };
+    SKIN_CATALOG.forEach((s) => injectOne(s.id));
+    // 本地导入 / 下载的自定义主题（不在 SKIN_CATALOG）也要注入，否则刷新后丢失
+    Object.keys(localThemes()).forEach((id) => injectOne(id));
     try { applySkinAttr(); } catch (_) {}
   }
 
@@ -6421,8 +6424,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (!item || !Array.isArray(item.entry) || !item.entry.length) { btn.disabled = false; btn.textContent = '下载'; return; }
     // 签名校验（自建源安全）：官方源信任；失败拦截；无法校验(未签名源)提示自担风险
     const g = await guardEntrySignature(item);
-    if (g === 'fail') { alert('签名校验失败：该条目可能被篡改，已停止下载'); btn.disabled = false; btn.textContent = '下载'; return; }
-    if (g === 'unknown' && item._srcPub) { const go = confirm('该源无有效签名校验，可能被篡改。是否自担风险继续下载？'); if (!go) { btn.disabled = false; btn.textContent = '下载'; return; } }
+    if (g === 'fail') { toast('签名校验失败：该条目可能被篡改，已停止下载', 'error'); btn.disabled = false; btn.textContent = '下载'; return; }
+    if (g === 'unknown' && item._srcPub) { const go = await confirmBottom('该源无有效签名校验，可能被篡改。是否自担风险继续下载？'); if (!go) { btn.disabled = false; btn.textContent = '下载'; return; } }
     let css = '';
     for (const url of item.entry) {
       try { const r = await fetch(url, { cache: 'no-store' }); if (r.ok) { css = await r.text(); break; } } catch (_) { /* next */ }
@@ -6644,6 +6647,35 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       return await _wc.verify({ name: 'Ed25519' }, key, sig, data);
     } catch (_) { return null; }
   }
+
+  // 底部浮动提示（替代原生 alert，随主题）、底部确认条（替代原生 confirm）
+  function toast(msg, type) {
+    try {
+      let c = document.getElementById('urppp-toast');
+      if (!c) { c = document.createElement('div'); c.id = 'urppp-toast'; c.className = 'urppp-toast'; (document.body || document.documentElement).appendChild(c); }
+      c.textContent = msg;
+      c.className = 'urppp-toast show' + (type === 'error' ? ' error' : '');
+      clearTimeout(c._t);
+      c._t = setTimeout(() => { c.className = 'urppp-toast'; }, 3200);
+    } catch (_) { try { window.alert(msg); } catch (__) {} }
+  }
+  function confirmBottom(msg) {
+    return new Promise((resolve) => {
+      try {
+        let c = document.getElementById('urppp-confirm');
+        if (!c) {
+          c = document.createElement('div'); c.id = 'urppp-confirm'; c.className = 'urppp-confirm';
+          c.innerHTML = '<div class="urppp-confirm-txt"></div><div class="urppp-confirm-ops"><button type="button" class="urppp-set-btn ghost" data-cac>取消</button><button type="button" class="urppp-set-btn" data-ok>继续</button></div>';
+          (document.body || document.documentElement).appendChild(c);
+        }
+        c.querySelector('.urppp-confirm-txt').textContent = msg;
+        c.classList.add('show');
+        const done = (ok) => { c.classList.remove('show'); c.querySelector('[data-ok]').onclick = c.querySelector('[data-cac]').onclick = null; resolve(ok); };
+        c.querySelector('[data-ok]').onclick = () => done(true);
+        c.querySelector('[data-cac]').onclick = () => done(false);
+      } catch (_) { try { resolve(window.confirm(msg)); } catch (__) { resolve(false); } }
+    });
+  }
   // 安装前验签：source=源的pubkey(或''=官方/未签名源)。返回 {ok, fail} 请调用方决定拦截
   async function guardEntrySignature(entry) {
     const pub = entry && entry._srcPub;
@@ -6775,12 +6807,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           const j = await res.json();
           if (!(j && Array.isArray(j.items))) throw new Error('不是合法 catalog（无 items）');
           const arr = getCustomSources();
-          if (arr.some((s) => s.url === url)) { alert('该源已存在'); return; }
+          if (arr.some((s) => s.url === url)) { toast('该源已存在'); return; }
           arr.push({ name: (nameInput.value || '').trim() || url, url, enabled: true });
           saveCustomSources(arr);
           __catalogCache = null;
           refreshStoreSources(body);
-        } catch (e) { alert('添加失败：' + (e && e.message ? e.message : e)); }
+        } catch (e) { toast('添加失败：' + (e && e.message ? e.message : e), 'error'); }
         finally { add.disabled = false; add.textContent = old; }
       });
     }
@@ -6811,7 +6843,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       if (!f) return;
       const text = await f.text();
       const m = text.match(/html\[data-urppp-skin="([\w-]+)"\]/);
-      if (!m) { alert('未能从 CSS 中识别主题 id（需要 html[data-urppp-skin="…"]）'); file.value = ''; return; }
+      if (!m) { toast('未能从 CSS 中识别主题 id（需要 html[data-urppp-skin="…"]）', 'error'); file.value = ''; return; }
       const id = m[1];
       try { GM_setValue('urppp_theme_css_' + id, text); } catch (_) {}
       saveLocalTheme(id, { name: id, desc: '本地主题', author: '本地', version: '1.0.0' });
@@ -6846,8 +6878,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       try {
         const cat = (await fetchCatalogList()).find((it) => it.id === b.dataset.pluginApply);
         const g = cat ? await guardEntrySignature(cat) : 'trust';
-        if (g === 'fail') { alert('签名校验失败：该插件可能被篡改，已停止装载'); b.textContent = '下载'; b.disabled = false; return; }
-        if (g === 'unknown' && cat && cat._srcPub) { const go = confirm('该源无有效签名校验，可能被篡改。是否自担风险继续装载？'); if (!go) { b.textContent = '下载'; b.disabled = false; return; } }
+        if (g === 'fail') { toast('签名校验失败：该插件可能被篡改，已停止装载', 'error'); b.textContent = '下载'; b.disabled = false; return; }
+        if (g === 'unknown' && cat && cat._srcPub) { const go = await confirmBottom('该源无有效签名校验，可能被篡改。是否自担风险继续装载？'); if (!go) { b.textContent = '下载'; b.disabled = false; return; } }
         if (pluginManager && pluginManager.api && pluginManager.api.install) await pluginManager.api.install(b.dataset.pluginApply, null); b.textContent = '已安装'; try { syncSettingsPanelUI(); } catch (_) {} }
       catch (_) { b.textContent = '失败'; }
       setTimeout(() => { b.textContent = old; b.disabled = false; }, 1200);
@@ -6922,7 +6954,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       try {
         // 执行插件（IIFE），插件内部调用 window.__urpppPlugin.register 完成装载
         (new Function(text))();
-      } catch (e) { alert('本地插件加载失败：' + (e && e.message ? e.message : e)); }
+      } catch (e) { toast('本地插件加载失败：' + (e && e.message ? e.message : e), 'error'); }
       try { fetchPluginManage(body.querySelector('#urppp-plugin-manage')); } catch (_) {}
     });
   }
