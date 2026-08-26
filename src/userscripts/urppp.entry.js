@@ -6915,13 +6915,14 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   function pluginStoreCard(item) {
-    const dl = (item.downloads != null) ? `${escapeHtml(String(item.downloads))}` : '';
+    const dl = (item.downloads != null) ? ` · ↓${escapeHtml(String(item.downloads))}` : '';
     const repoBtn = item.repo ? `<button type="button" class="urppp-store-repo" data-repo="${escapeHtml(item.repo)}">仓库</button>` : '';
-    return `<div class="urppp-skin-card" data-plugin-card="${escapeHtml(item.id)}">
-      <div class="urppp-skin-name">${escapeHtml(item.name || item.id)}</div>
-      <div class="urppp-skin-meta">${escapeHtml(item.author || '')}${item.author && item.version ? ' · ' : ''}v${escapeHtml(item.version || '')}${dl ? ' · ↓' + dl : ''}${repoBtn ? ' · ' + repoBtn : ''}</div>
-      <p class="urppp-skin-desc">${escapeHtml(item.description || '')}</p>
-      <button type="button" class="urppp-skin-apply" data-plugin-apply="${escapeHtml(item.id)}">安装</button>
+    return `<div class="urppp-store-item" data-plugin-card="${escapeHtml(item.id)}">
+      <div class="urppp-store-info">
+        <div><strong>${escapeHtml(item.name || item.id)}</strong><span class="urppp-store-meta">${escapeHtml(item.author || '')}${item.author && item.version ? ' · ' : ''}v${escapeHtml(item.version || '')}${dl}</span></div>
+        <div class="urppp-store-item-desc">${escapeHtml(item.description || '')}</div>
+      </div>
+      <div class="urppp-store-ops"><button type="button" class="urppp-set-btn" data-plugin-apply="${escapeHtml(item.id)}">安装</button>${repoBtn}</div>
     </div>`;
   }
 
@@ -6930,7 +6931,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (!host) return;
     const render = (plugins) => {
       if (!plugins.length) { host.innerHTML = '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无待下载插件</p><p class="urppp-store-sub">已安装的插件不会再显示在这里。</p></div>'; return; }
-      host.innerHTML = `<div class="urppp-store-theme-grid">${plugins.map((it) => pluginStoreCard(it)).join('')}</div>`;
+      host.innerHTML = `${plugins.map((it) => pluginStoreCard(it)).join('')}`;
       host.querySelectorAll('[data-plugin-apply]').forEach((b) => b.addEventListener('click', async () => {
         b.disabled = true; const old = b.textContent; b.textContent = '下载中…';
         try {
