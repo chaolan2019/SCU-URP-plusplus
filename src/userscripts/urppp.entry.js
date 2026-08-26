@@ -6603,7 +6603,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (Array.isArray(obj)) return obj.map(normalizeEntry);
     if (obj && typeof obj === 'object') {
       const out = {};
-      for (const k of Object.keys(obj).filter((x) => x !== 'signature').sort()) out[k] = normalizeEntry(obj[k]);
+      for (const k of Object.keys(obj).filter((x) => x !== 'signature' && x !== '_srcPub').sort()) out[k] = normalizeEntry(obj[k]);
       return out;
     }
     return obj;

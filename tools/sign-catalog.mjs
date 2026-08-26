@@ -29,7 +29,7 @@ function normalize(obj) {
   if (Array.isArray(obj)) return obj.map(normalize);
   if (obj && typeof obj === 'object') {
     const out = {};
-    for (const k of Object.keys(obj).filter((x) => x !== 'signature').sort()) out[k] = normalize(obj[k]);
+    for (const k of Object.keys(obj).filter((x) => x !== 'signature' && x !== '_srcPub').sort()) out[k] = normalize(obj[k]);
     return out;
   }
   return obj;
