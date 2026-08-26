@@ -1364,6 +1364,24 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       GM_setValue('urppp_local_themes', JSON.stringify(all));
     } catch (_) {}
   }
+  // 迁移：扫描所有已下载主题（urppp_theme_css_<id> 存在），对不在 SKIN_CATALOG 且无 meta 的补登记，
+  // 否则旧版下载的主题（只写 css 未登记 meta）在主题管理/皮肤选择里会消失、卡无样式
+  function migrateDownloadedThemes() {
+    try {
+      if (typeof GM_listValues !== 'function') return;
+      const locals = localThemes();
+      let changed = false;
+      GM_listValues().forEach((key) => {
+        const m = /^urppp_theme_css_(.+)$/.exec(key);
+        if (!m) return;
+        const id = m[1];
+        if (SKIN_CATALOG.some((s) => s.id === id) || locals[id]) return;
+        locals[id] = { name: id, desc: '下载主题', author: '', version: '1.0.0' };
+        changed = true;
+      });
+      if (changed) GM_setValue('urppp_local_themes', JSON.stringify(locals));
+    } catch (_) {}
+  }
 
   // 下载主题 CSS 存储（带 id 的 style，便于刷新重注入 / 删除清理）
   function storeThemeStyleEl(id) {
@@ -1384,6 +1402,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
 
   // 初始注入所有已下载主题的 CSS（刷新后仍生效，否则独立主题会丢大半）
   function injectAllStoreThemeStyles() {
+    migrateDownloadedThemes();
     const seen = new Set();
     const injectOne = (id) => {
       if (seen.has(id)) return; seen.add(id);
