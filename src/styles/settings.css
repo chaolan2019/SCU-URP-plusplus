@@ -434,6 +434,75 @@ html.urppp-theme-scu-red:not(.urppp-theme-follow) #urppp-settings-panel .urppp-s
   opacity: 1 !important;
 }
 
+/* Apple / Editorial 内置主题卡片样式（builtin，保留） */
+#urppp-settings-panel .urppp-skin-card[data-skin="apple"] {
+  background: #f5f5f7 !important; color: #1d1d1f !important; border: 1px solid rgba(0,0,0,.06) !important;
+  border-radius: 18px !important; box-shadow: 0 8px 24px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.04) !important;
+}
+#urppp-settings-panel .urppp-skin-card[data-skin="apple"]:hover {
+  background: #fff !important; transform: translateY(-2px) !important;
+  box-shadow: 0 14px 32px rgba(0,0,0,.12), 0 3px 8px rgba(0,0,0,.05) !important;
+}
+#urppp-settings-panel .urppp-skin-card[data-skin="apple"].is-active { box-shadow: 0 0 0 2px #0071e3, 0 12px 30px rgba(0,113,227,.14) !important; }
+#urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply {
+  border: 1px solid #0071e3 !important; border-radius: 999px !important; background: rgba(255,255,255,.86) !important;
+  color: #0071e3 !important; box-shadow: none !important; transform: none !important;
+}
+#urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply:not(:disabled):hover,
+#urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply.is-current {
+  background: #0071e3 !important; border-color: #0071e3 !important; color: #fff !important; box-shadow: none !important; transform: none !important;
+}
+#urppp-settings-panel .urppp-skin-card[data-skin="editorial"] {
+  background: #f5f4f1 !important; color: #1c1c1c !important; border: 0 !important; border-radius: 0 !important; box-shadow: none !important;
+}
+#urppp-settings-panel .urppp-skin-card[data-skin="editorial"]:hover { background: #efeeea !important; transform: none !important; box-shadow: none !important; }
+#urppp-settings-panel .urppp-skin-card[data-skin="editorial"].is-active { background: #e8e7e2 !important; outline: none !important; }
+#urppp-settings-panel .urppp-skin-card[data-skin="editorial"] .urppp-skin-name {
+  font-family: Georgia, "Noto Serif SC", "Songti SC", STSong, SimSun, "Times New Roman", serif !important; font-weight: 500 !important;
+}
+#urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply {
+  width: auto !important; min-height: 28px !important; height: auto !important; padding: 0 0 3px !important; border: 0 !important;
+  border-radius: 0 !important; background: transparent !important; color: #1c1c1c !important; box-shadow: none !important; transform: none !important;
+  text-decoration-line: underline !important; text-decoration-color: transparent !important; text-underline-offset: 3px !important;
+  text-decoration-thickness: 1px !important; transition: text-decoration-color 180ms ease-out !important;
+}
+#urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply:not(:disabled):hover,
+#urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply.is-current {
+  background: transparent !important; color: #1c1c1c !important; text-decoration-color: currentColor !important; box-shadow: none !important; transform: none !important;
+}
+/* 暗色下编辑杂志按钮 hover：保持浅字，不做反色处理（避免黑字深底不可读） */
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply:not(:disabled):hover,
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply.is-current {
+  background: transparent !important; color: #e8e8e4 !important; text-decoration-color: currentColor !important;
+}
+
+/* 暗色模式：主题卡片适配（深底浅字，保留各主题辨识主色） */
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] {
+  background: #1d1d1f !important; color: #f5f5f7 !important; border-color: rgba(255,255,255,.14) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.3) !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"]:hover { background: #2c2c2e !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply {
+  background: rgba(255,255,255,.12) !important; color: #7aa2ff !important; border-color: #4a6cf7 !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply:not(:disabled):hover,
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] > .urppp-skin-apply.is-current {
+  background: #4a6cf7 !important; border-color: #4a6cf7 !important; color: #fff !important;
+}
+
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] {
+  background: #1e1e1c !important; color: #e8e8e4 !important; border: 0 !important; box-shadow: none !important;
+}
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"]:hover { background: #262624 !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"].is-active { background: #2c2c28 !important; }
+html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editorial"] > .urppp-skin-apply { color: #e8e8e4 !important; }
+
+/* About pane */
+#urppp-settings-panel .urppp-about {
+  display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center !important;
+  padding: 18px 8px 10px !important; gap: 10px !important;
+}
+
 /* Skin preview cards */
 html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-cal-modal .cal-widget .cal-w-ev b{color:#fff!important}
 html[data-urppp-skin="brutal"].urppp-theme-dark #urppp-cal-modal .cal-widget{background:#0a0a0a!important;border-color:var(--brutal-accent)!important}

@@ -6490,8 +6490,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   async function fetchThemeManage(host) {
     if (!host) return;
-    let catalog = [];
-    try { catalog = await fetchCatalogList(); } catch (_) {}
+    let catalog = __catalogCache || []; // 先本地已加载 cache（不等线上，避免已下载主题延迟展示）
     const locals = localThemes();
     const localItems = Object.keys(locals).map((id) => ({
       id, name: locals[id].name || id, desc: locals[id].desc || '本地主题',
@@ -6500,7 +6499,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const items = SKIN_CATALOG.filter((s) => s.installed !== false || themeDownloaded(s.id))
       .concat(localItems.filter((l) => !SKIN_CATALOG.some((s) => s.id === l.id)));
     if (!items.length) { host.innerHTML = '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无已装主题</p></div>'; return; }
-    ensureStoreCardStyles(items.map((s) => catalog.find((c) => c.id === s.id)));
+    // 卡样式优先从已下载缓存（GM cardCss）注入，不等 catalog
+    ensureStoreCardStyles(items.map((s) => { let cc = ''; try { cc = GM_getValue('urppp_card_css_' + s.id, '') || ''; } catch (_) {} return { id: s.id, cardCss: cc || ((catalog.find((c) => c.id === s.id) || {}).cardCss || '') }; }));
     host.innerHTML = `<div class="urppp-store-theme-grid">${items.map((s) => themeManageCardHtml(s, catalog.find((c) => c.id === s.id))).join('')}</div>`;
     host.querySelectorAll('[data-theme-use]').forEach((b) => b.addEventListener('click', () => {
       if (setSkin(b.dataset.themeUse)) {
@@ -6548,6 +6548,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       }
     }));
     host.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
+    // 若 catalog 未加载，后台补一次（首次打开商店时）——补后重渲染细节，不阻塞已下载主题即时展示
+    if (!__catalogCache) {
+      try { fetchCatalogList(true).then((c) => { __catalogCache = c; if (document.body.contains(host)) try { fetchThemeManage(host); } catch (_) {} }); } catch (_) {}
+    }
   }
 
   // 管理界面设置：自动检测更新（全宽开关按钮）+ 检查更新
