@@ -662,8 +662,8 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-confirm .urppp-confirm-ops button[data-ok]:hover{background:var(--primary-hover,#3a69e3)}
 
 /* 消失动画：.hide 触发 keyframes 淡出（比 transition 可靠） */
-@keyframes urpppFadeOut{from{opacity:1;transform:none}to{opacity:0;transform:translateY(14px)}}
-#urppp-toast.hide,#urppp-confirm.hide{animation:urpppFadeOut .28s ease forwards}
+@keyframes urpppFadeOut{from{opacity:1;transform:none}to{opacity:0;transform:translateY(30px)}}
+#urppp-toast.hide,#urppp-confirm.hide{animation:urpppFadeOut .3s cubic-bezier(.4,0,.2,1) forwards}
 
 /* 仓库/删除按钮复用 apply 样式后的定位（覆盖 apply 默认 right:12px） */
 #urppp-settings-panel .urppp-skin-card > .urppp-skin-apply.urppp-store-repo { right:auto!important; left:12px!important; }
