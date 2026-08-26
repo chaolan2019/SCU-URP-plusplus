@@ -6708,14 +6708,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   function toast(msg, type) {
     try {
       let c = document.getElementById('urppp-toast');
-      if (!c) { c = document.createElement('div'); c.id = 'urppp-toast'; c.className = 'urppp-toast'; const host = document.getElementById('urppp-settings-panel') || document.body || document.documentElement; host.appendChild(c); }
+      if (!c) { c = document.createElement('div'); c.id = 'urppp-toast'; c.className = 'urppp-toast'; (document.body || document.documentElement).appendChild(c); }
       c.textContent = msg;
       c.className = 'urppp-toast show' + (type === 'error' ? ' error' : '');
       c.style.display = ''; // 复用实例时重新显示
-      c.classList.remove('hide');
-      try { c.getAnimations().forEach((a) => a.cancel()); } catch (_) {} // 清除上次 fill:forwards 残留动画
       clearTimeout(c._t);
-      c._t = setTimeout(() => { try { const a = c.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(30px)' }], { duration: 280, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }); a.onfinish = () => { c.style.display = 'none'; c.classList.remove('show'); }; } catch (_) { c.style.display = 'none'; } }, 3200);
+      c._t = setTimeout(() => { c.classList.remove('show'); setTimeout(() => { c.style.display = 'none'; }, 260); }, 3200);
     } catch (_) { try { window.alert(msg); } catch (__) {} }
   }
   function confirmBottom(msg) {
@@ -6725,16 +6723,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         if (!c) {
           c = document.createElement('div'); c.id = 'urppp-confirm'; c.className = 'urppp-confirm';
           c.innerHTML = '<div class="urppp-confirm-card"><div class="urppp-confirm-txt"></div><div class="urppp-confirm-ops"><button type="button" class="urppp-set-btn ghost" data-cac>取消</button><button type="button" class="urppp-set-btn" data-ok>继续</button></div></div>';
-          const hostPanel = document.getElementById('urppp-settings-panel');
-          const h = hostPanel || document.body || document.documentElement;
+          const h = document.body || document.documentElement;
           h.appendChild(c);
         }
         c.style.display = ''; // 复用实例时重新显示
-        try { c.getAnimations().forEach((a) => a.cancel()); } catch (_) {} // 清除上次 fill:forwards 残留动画
         c.querySelector('.urppp-confirm-txt').textContent = msg;
-        c.classList.remove('hide');
         c.classList.add('show');
-        const done = (ok) => { c.querySelector('[data-ok]').onclick = c.querySelector('[data-cac]').onclick = null; try { const a = c.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(30px)' }], { duration: 280, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }); a.onfinish = () => { c.style.display = 'none'; c.classList.remove('show'); }; } catch (_) { c.style.display = 'none'; } resolve(ok); };
+        const done = (ok) => { c.querySelector('[data-ok]').onclick = c.querySelector('[data-cac]').onclick = null; c.classList.remove('show'); setTimeout(() => { c.style.display = 'none'; }, 260); resolve(ok); };
         c.querySelector('[data-ok]').onclick = () => done(true);
         c.querySelector('[data-cac]').onclick = () => done(false);
       } catch (_) { try { resolve(window.confirm(msg)); } catch (__) { resolve(false); } }
