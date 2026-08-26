@@ -6419,6 +6419,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     btn.disabled = true; btn.textContent = '下载中…';
     const item = (await fetchCatalogList()).find((it) => it.id === id);
     if (!item || !Array.isArray(item.entry) || !item.entry.length) { btn.disabled = false; btn.textContent = '下载'; return; }
+    // 签名校验（自建源安全）：官方源信任；失败拦截；无法校验(未签名源)提示自担风险
+    const g = await guardEntrySignature(item);
+    if (g === 'fail') { alert('签名校验失败：该条目可能被篡改，已停止下载'); btn.disabled = false; btn.textContent = '下载'; return; }
+    if (g === 'unknown' && item._srcPub) { const go = confirm('该源无有效签名校验，可能被篡改。是否自担风险继续下载？'); if (!go) { btn.disabled = false; btn.textContent = '下载'; return; } }
     let css = '';
     for (const url of item.entry) {
       try { const r = await fetch(url, { cache: 'no-store' }); if (r.ok) { css = await r.text(); break; } } catch (_) { /* next */ }
@@ -6591,6 +6595,50 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
     __catalogCache = merged;
     return merged;
+  }
+
+  // ---- 签名校验（Ed25519，自建源安全） ----
+  const _wc = (typeof crypto !== 'undefined' && crypto.subtle) ? crypto.subtle : null;
+  function normalizeEntry(obj) {
+    if (Array.isArray(obj)) return obj.map(normalizeEntry);
+    if (obj && typeof obj === 'object') {
+      const out = {};
+      for (const k of Object.keys(obj).filter((x) => x !== 'signature').sort()) out[k] = normalizeEntry(obj[k]);
+      return out;
+    }
+    return obj;
+  }
+  function b64ToU8(s) {
+    try {
+      const bin = atob(s);
+      const u = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i += 1) u[i] = bin.charCodeAt(i);
+      return u;
+    } catch (_) { return null; }
+  }
+  // 返回：true=校验通过；false=校验失败(应拦截)；null=无法校验(未签名源/无webcrypto，交给调用方提示)
+  async function verifyEntrySignature(entry, pubkeyB64) {
+    if (!_wc) return null;
+    if (!pubkeyB64 || !entry || !entry.signature) return false;
+    try {
+      const raw = b64ToU8(pubkeyB64);
+      if (!raw) return null;
+      const key = await _wc.importKey('raw', raw, { name: 'Ed25519' }, false, ['verify']);
+      const sig = b64ToU8(entry.signature);
+      if (!sig) return false;
+      const data = new TextEncoder().encode(JSON.stringify(normalizeEntry(entry)));
+      return await _wc.verify({ name: 'Ed25519' }, key, sig, data);
+    } catch (_) { return null; }
+  }
+  // 安装前验签：source=源的pubkey(或''=官方/未签名源)。返回 {ok, fail} 请调用方决定拦截
+  async function guardEntrySignature(entry) {
+    const pub = entry && entry._srcPub;
+    // 官方源（无 _srcPub）信任；无法校验(null)交给调用方提示
+    if (!pub) return 'trust';
+    const r = await verifyEntrySignature(entry, pub);
+    if (r === true) return 'ok';
+    if (r === false) return 'fail';
+    return 'unknown';
   }
 
   function versionGt(va, vb) {
@@ -6781,7 +6829,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     host.innerHTML = `<div class="urppp-store-theme-grid">${plugins.map((it) => pluginStoreCard(it)).join('')}</div>`;
     host.querySelectorAll('[data-plugin-apply]').forEach((b) => b.addEventListener('click', async () => {
       b.disabled = true; const old = b.textContent; b.textContent = '下载中…';
-      try { if (pluginManager && pluginManager.api && pluginManager.api.install) await pluginManager.api.install(b.dataset.pluginApply, null); b.textContent = '已安装'; try { syncSettingsPanelUI(); } catch (_) {} }
+      try {
+        const cat = (await fetchCatalogList()).find((it) => it.id === b.dataset.pluginApply);
+        const g = cat ? await guardEntrySignature(cat) : 'trust';
+        if (g === 'fail') { alert('签名校验失败：该插件可能被篡改，已停止装载'); b.textContent = '下载'; b.disabled = false; return; }
+        if (g === 'unknown' && cat && cat._srcPub) { const go = confirm('该源无有效签名校验，可能被篡改。是否自担风险继续装载？'); if (!go) { b.textContent = '下载'; b.disabled = false; return; } }
+        if (pluginManager && pluginManager.api && pluginManager.api.install) await pluginManager.api.install(b.dataset.pluginApply, null); b.textContent = '已安装'; try { syncSettingsPanelUI(); } catch (_) {} }
       catch (_) { b.textContent = '失败'; }
       setTimeout(() => { b.textContent = old; b.disabled = false; }, 1200);
     }));
