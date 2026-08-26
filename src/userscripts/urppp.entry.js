@@ -6479,7 +6479,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const repoBtn = repo ? `<button type="button" class="urppp-skin-apply urppp-store-repo" data-repo="${escapeHtml(repo)}">仓库</button>` : '';
     const dl = (item && item.downloads != null) ? `<span class="urppp-store-dl">↓ ${escapeHtml(String(item.downloads))}</span>` : '';
     const cur = (getSkin() === s.id);
+    // 卡样式直接内嵌随卡渲染（优先已下载缓存），避免依赖独立 style 注入时序造成延迟/闪烁
+    let ccIn = (item && item.cardCss) || '';
+    if (!ccIn) { try { ccIn = GM_getValue('urppp_card_css_' + s.id, '') || ''; } catch (_) {} }
+    const cardCssInline = ccIn ? `<style>${ccIn}</style>` : '';
     return `<div class="urppp-skin-card${cur ? ' is-active' : ''}" data-skin="${escapeHtml(s.id)}">
+      ${cardCssInline}
       <div class="urppp-skin-name">${escapeHtml(s.name)}</div>
       <div class="urppp-skin-meta">${escapeHtml((item && item.author) || '')}${(item && item.author && s.version) ? ' · ' : ''}v${escapeHtml(s.version || '')}${dl ? ' · ' + dl : ''}</div>
       <p class="urppp-skin-desc">${escapeHtml(s.desc || '')}</p>
@@ -7054,6 +7059,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       card.querySelector('.urppp-skin-name').textContent = skin.name;
       card.querySelector('.urppp-skin-desc').textContent = skin.desc;
       card.appendChild(btn);
+      // 卡样式直接内嵌随卡渲染（已下载缓存优先），避免独立 style 注入时序延迟
+      try { let cc2 = ''; try { cc2 = GM_getValue('urppp_card_css_' + skin.id, '') || ''; } catch (_) {} if (cc2) { const st = document.createElement('style'); st.textContent = cc2; card.appendChild(st); } } catch (_) {}
       list.appendChild(card);
     });
     // 主题选择卡样式：全部从已下载缓存（GM urppp_card_css_<id>）读，不走线上 catalog
