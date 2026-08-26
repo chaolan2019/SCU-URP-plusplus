@@ -6431,15 +6431,20 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   async function fetchCatalogThemes(body) {
     const downloadPane = body.querySelector('[data-pane="download"]');
     if (!downloadPane) return;
-    let themes = [];
-    try { themes = (await fetchCatalogList()).filter((it) => it.type === 'theme' && !themeDownloaded(it.id)); } catch (_) {}
-    if (!themes.length) { downloadPane.innerHTML = '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无待下载主题</p><p class="urppp-store-sub">已安装的主题不会再显示在这里。</p></div>'; return; }
-    ensureStoreCardStyles(themes);
-    downloadPane.innerHTML = `<div class="urppp-store-theme-grid">${themes.map((it) => themeStoreCard(it, false)).join('')}</div>`;
-    downloadPane.querySelectorAll('[data-store-theme]').forEach((b) => {
-      b.addEventListener('click', () => downloadStoreTheme(b.dataset.storeTheme, b));
-    });
-    downloadPane.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
+    const render = (themes) => {
+      if (!themes.length) { downloadPane.innerHTML = '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无待下载主题</p><p class="urppp-store-sub">已安装的主题不会再显示在这里。</p></div>'; return; }
+      ensureStoreCardStyles(themes);
+      downloadPane.innerHTML = `<div class="urppp-store-theme-grid">${themes.map((it) => themeStoreCard(it, false)).join('')}</div>`;
+      downloadPane.querySelectorAll('[data-store-theme]').forEach((b) => { b.addEventListener('click', () => downloadStoreTheme(b.dataset.storeTheme, b)); });
+      downloadPane.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
+    };
+    // 先用缓存立即渲染（GM urppp_catalog_cache），网络只在后台刷新，避免等 catalog 才出现主题
+    render((__catalogCache || []).filter((it) => it.type === 'theme' && !themeDownloaded(it.id)));
+    try {
+      const catalog = await fetchCatalogList(true);
+      __catalogCache = catalog; catalogCacheWrite(catalog);
+      if (document.body.contains(downloadPane)) render(catalog.filter((it) => it.type === 'theme' && !themeDownloaded(it.id)));
+    } catch (_) {}
   }
 
   async function downloadStoreTheme(id, btn) {
@@ -6588,7 +6593,14 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     try { GM_setValue('urppp_store_sources', JSON.stringify(arr)); } catch (_) {}
   }
 
-  let __catalogCache = null;
+  // catalog 持久缓存到 GM：启动时先读缓存立即渲染（不抢网络），网络只在后台刷新
+  function catalogCacheRead() {
+    try { const raw = GM_getValue('urppp_catalog_cache', ''); return raw ? (JSON.parse(raw) || null) : null; } catch (_) { return null; }
+  }
+  function catalogCacheWrite(items) {
+    try { if (Array.isArray(items) && items.length) GM_setValue('urppp_catalog_cache', JSON.stringify(items)); } catch (_) {}
+  }
+  let __catalogCache = catalogCacheRead();
   async function fetchCatalogList(force) {
     if (__catalogCache && !force) return __catalogCache;
     const withTimeout = (promise, ms) => Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
@@ -6633,6 +6645,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }
 
     __catalogCache = merged;
+    catalogCacheWrite(merged);
     return merged;
   }
 
@@ -6910,24 +6923,30 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 插件下载：从 catalog 拉插件列表（排除已装）
   async function fetchCatalogPlugins(host) {
     if (!host) return;
-    let plugins = [];
+    const render = (plugins) => {
+      if (!plugins.length) { host.innerHTML = '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无待下载插件</p><p class="urppp-store-sub">已安装的插件不会再显示在这里。</p></div>'; return; }
+      host.innerHTML = `<div class="urppp-store-theme-grid">${plugins.map((it) => pluginStoreCard(it)).join('')}</div>`;
+      host.querySelectorAll('[data-plugin-apply]').forEach((b) => b.addEventListener('click', async () => {
+        b.disabled = true; const old = b.textContent; b.textContent = '下载中…';
+        try {
+          const cat = (await fetchCatalogList()).find((it) => it.id === b.dataset.pluginApply);
+          const g = cat ? await guardEntrySignature(cat) : 'trust';
+          if (g === 'fail') { toast('签名校验失败：该插件可能被篡改，已停止装载', 'error'); b.textContent = '下载'; b.disabled = false; return; }
+          if (g === 'unknown' && cat && cat._srcPub) { const go = await confirmBottom('该源无有效签名校验，可能被篡改。是否自担风险继续装载？'); if (!go) { b.textContent = '下载'; b.disabled = false; return; } }
+          if (pluginManager && pluginManager.api && pluginManager.api.install) await pluginManager.api.install(b.dataset.pluginApply, null); b.textContent = '已安装'; try { syncSettingsPanelUI(); } catch (_) {} }
+        catch (_) { b.textContent = '失败'; }
+        setTimeout(() => { b.textContent = old; b.disabled = false; }, 1200);
+      }));
+      host.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
+    };
+    const filter = (c) => (c || []).filter((it) => it.type === 'plugin' && !(pluginManager && pluginManager.api && pluginManager.api.isEnabled && pluginManager.api.isEnabled(it.id)));
+    // 先用缓存立即渲染，网络只在后台刷新
+    render(filter(__catalogCache));
     try {
-      plugins = (await fetchCatalogList()).filter((it) => it.type === 'plugin' && !(pluginManager && pluginManager.api && pluginManager.api.isEnabled && pluginManager.api.isEnabled(it.id)));
+      const catalog = await fetchCatalogList(true);
+      __catalogCache = catalog; catalogCacheWrite(catalog);
+      if (document.body.contains(host)) render(filter(catalog));
     } catch (_) {}
-    if (!plugins.length) { host.innerHTML = '<div class="urppp-store-empty"><p class="urppp-store-empty-title">暂无待下载插件</p><p class="urppp-store-sub">已安装的插件不会再显示在这里。</p></div>'; return; }
-    host.innerHTML = `<div class="urppp-store-theme-grid">${plugins.map((it) => pluginStoreCard(it)).join('')}</div>`;
-    host.querySelectorAll('[data-plugin-apply]').forEach((b) => b.addEventListener('click', async () => {
-      b.disabled = true; const old = b.textContent; b.textContent = '下载中…';
-      try {
-        const cat = (await fetchCatalogList()).find((it) => it.id === b.dataset.pluginApply);
-        const g = cat ? await guardEntrySignature(cat) : 'trust';
-        if (g === 'fail') { toast('签名校验失败：该插件可能被篡改，已停止装载', 'error'); b.textContent = '下载'; b.disabled = false; return; }
-        if (g === 'unknown' && cat && cat._srcPub) { const go = await confirmBottom('该源无有效签名校验，可能被篡改。是否自担风险继续装载？'); if (!go) { b.textContent = '下载'; b.disabled = false; return; } }
-        if (pluginManager && pluginManager.api && pluginManager.api.install) await pluginManager.api.install(b.dataset.pluginApply, null); b.textContent = '已安装'; try { syncSettingsPanelUI(); } catch (_) {} }
-      catch (_) { b.textContent = '失败'; }
-      setTimeout(() => { b.textContent = old; b.disabled = false; }, 1200);
-    }));
-    host.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
   }
 
   // 插件管理：已装插件，行内右侧按钮（作者/版本/下载量/仓库）
