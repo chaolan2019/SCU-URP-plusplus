@@ -29,3 +29,5 @@ ocr-training/model/*
 
 # 辅助插件模块化产物已迁移到商店仓库
 /urpppp.plugin.js
+
+*.plugin.js.map
