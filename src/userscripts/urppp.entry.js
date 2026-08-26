@@ -6721,7 +6721,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         let c = document.getElementById('urppp-confirm');
         if (!c) {
           c = document.createElement('div'); c.id = 'urppp-confirm'; c.className = 'urppp-confirm';
-          c.innerHTML = '<div class="urppp-confirm-txt"></div><div class="urppp-confirm-ops"><button type="button" class="urppp-set-btn ghost" data-cac>取消</button><button type="button" class="urppp-set-btn" data-ok>继续</button></div>';
+          c.innerHTML = '<div class="urppp-confirm-card"><div class="urppp-confirm-txt"></div><div class="urppp-confirm-ops"><button type="button" class="urppp-set-btn ghost" data-cac>取消</button><button type="button" class="urppp-set-btn" data-ok>继续</button></div></div>';
           (document.body || document.documentElement).appendChild(c);
         }
         c.querySelector('.urppp-confirm-txt').textContent = msg;
