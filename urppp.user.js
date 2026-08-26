@@ -6142,10 +6142,10 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-settings-panel .urppp-src-add .urppp-input:focus{border-color:var(--accent,var(--link,#4a7bfa))}
 
 /* 底部浮动提示 / 确认条（替代原生 alert/confirm） */
-#urppp-toast{position:fixed;left:18px;right:18px;bottom:24px;z-index:99999;transform:translateY(14px);max-width:100%;box-sizing:border-box;padding:10px 18px;border-radius:var(--radius,10px);background:var(--surface,#2b2f36);color:var(--text,#fff);font-size:13px;font-family:inherit;opacity:0;pointer-events:none;transition:.22s;box-shadow:var(--shadow,0 -6px 18px rgba(0,0,0,.16))}
+#urppp-toast{position:fixed;left:18px;right:auto;bottom:24px;z-index:99999;transform:translateY(14px);width:min(460px,calc(100vw - 36px));box-sizing:border-box;padding:10px 18px;border-radius:var(--radius,10px);background:var(--surface,#2b2f36);color:var(--text,#fff);font-size:13px;font-family:inherit;opacity:0;pointer-events:none;transition:.22s;box-shadow:var(--shadow,0 -6px 18px rgba(0,0,0,.16))}
 #urppp-toast.show{opacity:1;transform:none;pointer-events:auto}
 #urppp-toast.error{background:var(--danger,#b2392f);color:var(--primary-foreground,#fff)}
-#urppp-confirm{position:fixed;left:18px;right:18px;bottom:24px;z-index:99999;transform:translateY(14px);opacity:0;pointer-events:none;transition:.22s}
+#urppp-confirm{position:fixed;left:18px;right:auto;bottom:24px;z-index:99999;transform:translateY(14px);width:min(460px,calc(100vw - 36px));box-sizing:border-box;opacity:0;pointer-events:none;transition:.22s}
 #urppp-confirm.show{opacity:1;transform:none;pointer-events:auto}
 #urppp-confirm .urppp-confirm-card{padding:14px 16px;border-radius:var(--radius,12px);background:var(--surface,#fff);border:1px solid var(--border,#e6e8ec);box-shadow:var(--shadow,0 -6px 18px rgba(0,0,0,.14));font-family:inherit}
 #urppp-confirm .urppp-confirm-txt{font-size:15px;color:var(--text,#16181d);line-height:1.5;font-weight:500}
