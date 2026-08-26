@@ -6714,7 +6714,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       c.style.display = ''; // 复用实例时重新显示
       c.classList.remove('hide');
       clearTimeout(c._t);
-      c._t = setTimeout(() => { c.classList.add('hide'); setTimeout(() => { c.style.display = 'none'; c.classList.remove('hide'); c.classList.remove('show'); }, 320); }, 3200);
+      c._t = setTimeout(() => { try { const a = c.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(30px)' }], { duration: 280, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }); a.onfinish = () => { c.style.display = 'none'; c.classList.remove('show'); }; } catch (_) { c.style.display = 'none'; } }, 3200);
     } catch (_) { try { window.alert(msg); } catch (__) {} }
   }
   function confirmBottom(msg) {
@@ -6731,7 +6731,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         }
         c.querySelector('.urppp-confirm-txt').textContent = msg;
         c.classList.add('show');
-        const done = (ok) => { c.classList.add('hide'); c.querySelector('[data-ok]').onclick = c.querySelector('[data-cac]').onclick = null; setTimeout(() => { c.style.display = 'none'; c.classList.remove('hide'); c.classList.remove('show'); }, 320); resolve(ok); };
+        const done = (ok) => { c.querySelector('[data-ok]').onclick = c.querySelector('[data-cac]').onclick = null; try { const a = c.animate([{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(30px)' }], { duration: 280, easing: 'cubic-bezier(.4,0,.2,1)', fill: 'forwards' }); a.onfinish = () => { c.style.display = 'none'; c.classList.remove('show'); }; } catch (_) { c.style.display = 'none'; } resolve(ok); };
         c.querySelector('[data-ok]').onclick = () => done(true);
         c.querySelector('[data-cac]').onclick = () => done(false);
       } catch (_) { try { resolve(window.confirm(msg)); } catch (__) { resolve(false); } }
