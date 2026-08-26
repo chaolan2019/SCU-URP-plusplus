@@ -6974,18 +6974,24 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       list.innerHTML = '<p class="urppp-set-tip">暂无可用风格</p>';
       return;
     }
-    SKIN_CATALOG.filter((s) => s.installed !== false || themeDownloaded(s.id)).forEach((skin) => {
+    const locals = localThemes();
+    const skinList = SKIN_CATALOG.filter((s) => s.installed !== false || themeDownloaded(s.id))
+      .concat(Object.keys(locals).filter((id) => !SKIN_CATALOG.some((s) => s.id === id)).map((id) => ({
+        id, name: locals[id].name || id, desc: locals[id].desc || '本地主题', version: locals[id].version || '1.0.0', installed: false,
+      })));
+    skinList.forEach((skin) => {
+      const isLoc = !!locals[skin.id];
       const card = document.createElement('div');
       card.className = 'urppp-skin-card' + (skin.id === cur ? ' is-active' : '');
       card.dataset.skin = skin.id;
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'urppp-skin-apply';
-      const skinInstalled = skin.installed !== false || themeDownloaded(skin.id);
+      const skinInstalled = skin.installed !== false || themeDownloaded(skin.id) || isLoc;
       if (!skinInstalled) {
         btn.classList.add('is-disabled');
         btn.textContent = '去下载';
-      } else if (skin.id === cur && skin.ready) {
+      } else if (skin.id === cur && (skin.ready || isLoc)) {
         btn.classList.add('is-current');
         btn.textContent = '使用中';
         btn.disabled = true;
@@ -7014,6 +7020,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       card.querySelector('.urppp-skin-desc').textContent = skin.desc;
       card.appendChild(btn);
       list.appendChild(card);
+      // 本地/自定义主题卡：注入原 cardCss（否则无样式）
+      if (isLoc) { try { let cc = ''; try { cc = GM_getValue('urppp_card_css_' + skin.id, '') || ''; } catch (_) {} if (cc) ensureStoreCardStyles([{ id: skin.id, cardCss: cc }]); } catch (_) {} }
     });
   }
 
