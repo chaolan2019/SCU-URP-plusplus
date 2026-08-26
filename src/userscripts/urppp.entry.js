@@ -6711,8 +6711,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       if (!c) { c = document.createElement('div'); c.id = 'urppp-toast'; c.className = 'urppp-toast'; const host = document.getElementById('urppp-settings-panel') || document.body || document.documentElement; host.appendChild(c); }
       c.textContent = msg;
       c.className = 'urppp-toast show' + (type === 'error' ? ' error' : '');
+      c.style.display = ''; // 复用实例时重新显示
       clearTimeout(c._t);
-      c._t = setTimeout(() => { c.className = 'urppp-toast'; }, 3200);
+      c._t = setTimeout(() => { c.className = 'urppp-toast'; c.style.display = 'none'; }, 3200);
     } catch (_) { try { window.alert(msg); } catch (__) {} }
   }
   function confirmBottom(msg) {
