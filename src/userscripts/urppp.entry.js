@@ -6598,7 +6598,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // ---- 签名校验（Ed25519，自建源安全） ----
-  const _wc = (typeof crypto !== 'undefined' && crypto.subtle) ? crypto.subtle : null;
+  // @grant 沙箱下 globalThis.crypto.subtle 可能不可用，回退到页面上下文（unsafeWindow/window）
+  const _wc = (function () {
+    try {
+      if (typeof crypto !== 'undefined' && crypto && crypto.subtle) return crypto.subtle;
+      const g = (typeof unsafeWindow !== 'undefined' && unsafeWindow) ? unsafeWindow : (typeof window !== 'undefined' ? window : null);
+      if (g && g.crypto && g.crypto.subtle) return g.crypto.subtle;
+    } catch (_) {}
+    return null;
+  })();
   function normalizeEntry(obj) {
     if (Array.isArray(obj)) return obj.map(normalizeEntry);
     if (obj && typeof obj === 'object') {
