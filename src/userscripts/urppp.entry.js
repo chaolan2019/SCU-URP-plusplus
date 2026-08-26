@@ -6712,11 +6712,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       c.textContent = msg;
       c.className = 'urppp-toast' + (type === 'error' ? ' error' : '');
       c.style.display = '';
+      c.style.pointerEvents = 'auto';
       c.style.transition = 'opacity .22s, transform .22s';
       c.style.opacity = '0'; c.style.transform = 'translateY(14px)';
       requestAnimationFrame(() => { c.style.opacity = '1'; c.style.transform = 'none'; });
       clearTimeout(c._t);
-      c._t = setTimeout(() => { c.style.opacity = '0'; c.style.transform = 'translateY(20px)'; setTimeout(() => { c.style.display = 'none'; }, 260); }, 3200);
+      c._t = setTimeout(() => { c.style.pointerEvents = 'none'; c.style.opacity = '0'; c.style.transform = 'translateY(20px)'; setTimeout(() => { c.style.display = 'none'; }, 260); }, 3200);
     } catch (_) { try { window.alert(msg); } catch (__) {} }
   }
   function confirmBottom(msg) {
@@ -6731,10 +6732,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         }
         c.style.display = ''; // 复用实例时重新显示
         c.querySelector('.urppp-confirm-txt').textContent = msg;
+        c.style.pointerEvents = 'auto';
         c.style.transition = 'opacity .22s, transform .22s';
         c.style.opacity = '0'; c.style.transform = 'translateY(14px)';
         requestAnimationFrame(() => { c.style.opacity = '1'; c.style.transform = 'none'; });
-        const done = (ok) => { c.querySelector('[data-ok]').onclick = c.querySelector('[data-cac]').onclick = null; c.style.opacity = '0'; c.style.transform = 'translateY(20px)'; setTimeout(() => { c.style.display = 'none'; }, 260); resolve(ok); };
+        const done = (ok) => { c.querySelector('[data-ok]').onclick = c.querySelector('[data-cac]').onclick = null; c.style.pointerEvents = 'none'; c.style.opacity = '0'; c.style.transform = 'translateY(20px)'; setTimeout(() => { c.style.display = 'none'; }, 260); resolve(ok); };
         c.querySelector('[data-ok]').onclick = () => done(true);
         c.querySelector('[data-cac]').onclick = () => done(false);
       } catch (_) { try { resolve(window.confirm(msg)); } catch (__) { resolve(false); } }
