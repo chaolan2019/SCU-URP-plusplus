@@ -637,7 +637,7 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 /* 仓库源管理 */
 #urppp-settings-panel .urppp-src-manage{display:flex;flex-direction:column;gap:10px;padding:0;margin:0}
 #urppp-settings-panel .urppp-src-hint{font-size:12px;color:var(--text-secondary,#5b5f69);margin:0;padding:0 2px}
-#urppp-settings-panel .urppp-src-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;background:var(--bg-card-soft,#f6f7f9);border:1px solid var(--border,#e6e8ec)}
+#urppp-settings-panel .urppp-src-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--radius,8px);background:var(--bg-card-soft,#f6f7f9);border:1px solid var(--border,#e6e8ec)}
 #urppp-settings-panel .urppp-src-item .urppp-src-meta{display:flex;flex-direction:column;gap:2px;flex:1 1 auto;min-width:0}
 #urppp-settings-panel .urppp-src-item .urppp-src-meta strong{font-size:13px;color:var(--text,#16181d);font-weight:700}
 #urppp-settings-panel .urppp-src-url{font-size:12px;color:var(--text-secondary,#5b5f69);word-break:break-all}
@@ -648,25 +648,19 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-settings-panel .urppp-src-add .urppp-input:focus{border-color:var(--accent,var(--link,#4a7bfa))}
 
 /* 底部浮动提示 / 确认条（替代原生 alert/confirm） */
-#urppp-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(16px);z-index:99999;max-width:min(560px,90vw);padding:10px 18px;border-radius:10px;background:#2b2f36;color:#fff;font-size:13px;opacity:0;pointer-events:none;transition:.22s;box-shadow:0 8px 28px rgba(0,0,0,.24)}
+#urppp-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(16px);z-index:99999;max-width:min(560px,90vw);padding:10px 18px;border-radius:var(--radius,10px);background:var(--nav-bg,#2b2f36);color:var(--accent-contrast,#fff);font-size:13px;opacity:0;pointer-events:none;transition:.22s;box-shadow:0 8px 28px rgba(0,0,0,.24)}
 #urppp-toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
 #urppp-toast.error{background:#b2392f}
-#urppp-confirm{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(16px);z-index:99999;display:flex;flex-direction:column;gap:10px;min-width:min(420px,88vw);padding:12px 14px;border-radius:12px;background:var(--bg-card,#fff);border:1px solid var(--border,#e6e8ec);box-shadow:0 10px 30px rgba(0,0,0,.16);opacity:0;pointer-events:none;transition:.22s}
+#urppp-confirm{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(16px);z-index:99999;display:flex;flex-direction:column;gap:10px;min-width:min(420px,88vw);padding:12px 14px;border-radius:var(--radius,12px);background:var(--bg-card,#fff);border:1px solid var(--border,#e6e8ec);box-shadow:0 10px 30px rgba(0,0,0,.16);opacity:0;pointer-events:none;transition:.22s}
 #urppp-confirm.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
 #urppp-confirm .urppp-confirm-txt{font-size:15px;color:var(--text,#16181d);line-height:1.5;font-weight:500}
 #urppp-confirm .urppp-confirm-ops{display:flex;gap:10px;margin-top:2px}
-#urppp-confirm .urppp-confirm-ops button{flex:1;min-height:28px;padding:5px 12px;font-size:12px;border-radius:6px;border:1px solid var(--border,#e6e8ec);background:var(--bg-card,#fff);color:var(--text,#16181d);cursor:pointer;transition:.15s}
+#urppp-confirm .urppp-confirm-ops button{flex:1;min-height:28px;padding:5px 12px;font-size:12px;border-radius:var(--radius,6px);border:1px solid var(--border,#e6e8ec);background:var(--bg-input,#fff);color:var(--text,#16181d);cursor:pointer;transition:.15s}
 #urppp-confirm .urppp-confirm-ops button:hover{background:var(--hover-bg,#f0f1f3)}
-#urppp-confirm .urppp-confirm-ops button[data-ok]{border-color:var(--accent,var(--link,#4a7bfa));background:var(--accent,var(--link,#4a7bfa));color:#fff}
+#urppp-confirm .urppp-confirm-ops button[data-ok]{border-color:var(--accent,var(--link,#4a7bfa));background:var(--accent,var(--link,#4a7bfa));color:var(--accent-contrast,#fff)}
 html.urppp-theme-dark #urppp-confirm .urppp-confirm-ops button{background:#2a2c30;border-color:#3a3d42;color:#e8e8ea}
-html.urppp-theme-dark #urppp-confirm .urppp-confirm-ops button[data-ok]{background:var(--accent,var(--link,#4a7bfa));border-color:var(--accent,var(--link,#4a7bfa));color:#fff}
+html.urppp-theme-dark #urppp-confirm .urppp-confirm-ops button[data-ok]{background:var(--accent,var(--link,#4a7bfa));border-color:var(--accent,var(--link,#4a7bfa));color:var(--accent-contrast,#fff)}
 
-/* 主题随动：编辑杂志（builtin）下 toast/确认条/仓库源卡片用矩形、无背景边框风格 */
-html[data-urppp-skin="editorial"] #urppp-toast{border-radius:0;border:0;font-family:Georgia,"Noto Serif SC","Songti SC",STSong,SimSun,"Times New Roman",serif}
-html[data-urppp-skin="editorial"] #urppp-confirm{border-radius:0;border-width:1px 0;border-left:0;border-right:0;font-family:Georgia,"Noto Serif SC","Songti SC",STSong,SimSun,"Times New Roman",serif}
-html[data-urppp-skin="editorial"] #urppp-confirm .urppp-confirm-ops button{border-radius:0}
-html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-src-item{background:transparent;border-radius:0;border-width:1px 0;border-left:0;border-right:0}
-html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-src-item .urppp-src-meta strong{font-family:Georgia,"Noto Serif SC","Songti SC",STSong,SimSun,"Times New Roman",serif}
 /* 仓库/删除按钮复用 apply 样式后的定位（覆盖 apply 默认 right:12px） */
 #urppp-settings-panel .urppp-skin-card > .urppp-skin-apply.urppp-store-repo { right:auto!important; left:12px!important; }
 #urppp-settings-panel .urppp-skin-card > .urppp-skin-apply.urppp-store-del { right:78px!important; }

@@ -6990,15 +6990,18 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         <div class="urppp-store-tabs">
           <button type="button" class="urppp-store-tab ac" data-tab="download">插件下载</button>
           <button type="button" class="urppp-store-tab" data-tab="manage">插件管理</button>
+          <button type="button" class="urppp-store-tab" data-tab="sources">仓库源</button>
         </div>
         <div class="urppp-store-body">
           <div class="urppp-store-pane" data-pane="download"><div class="urppp-store-empty"><p class="urppp-store-empty-title">加载中…</p></div></div>
           <div class="urppp-store-pane" data-pane="manage" style="display:none">${storeManageSettingsHtml()}<button type="button" class="urppp-set-btn ghost" data-add-local-plugin style="width:100%;margin:0 0 10px">＋ 添加本地插件</button><input type="file" accept=".js,.txt" data-local-plugin-file style="display:none"><div class="urppp-store-bd" id="urppp-plugin-manage"><div class="urppp-store-empty"><p>加载中…</p></div></div></div>
+          <div class="urppp-store-pane" data-pane="sources" style="display:none">${storeSourcesHtml()}</div>
         </div>
       </div>`;
     bindStoreTabs(body);
     bindStoreManageSettings(body);
     bindLocalPluginImport(body);
+    bindStoreSources(body);
     fetchCatalogPlugins(body.querySelector('[data-pane="download"]'));
     fetchPluginManage(body.querySelector('#urppp-plugin-manage'));
   }
