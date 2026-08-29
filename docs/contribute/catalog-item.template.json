@@ -1,0 +1,19 @@
+{
+  "id": "your-theme-id",
+  "type": "theme",
+  "name": "你的主题名",
+  "description": "一句话说明主题气质（会显示在商店卡片上）。",
+  "version": "1.0.0",
+  "author": "你的署名",
+  "repo": "https://github.com/你的用户名/你的主题仓库",
+  "minAPP": "1.9.4",
+  "entry": [
+    "https://raw.githubusercontent.com/你的用户名/你的主题仓库/main/主题文件.css",
+    "https://cdn.jsdelivr.net/gh/你的用户名/你的主题仓库@main/主题文件.css"
+  ],
+  "preview": ["#F6F4EF", "#33302A", "#4A6FA5"],
+  "cardCss": "/* 商店卡片样式：必须以 .urppp-skin-card[data-skin=\"your-theme-id\"] 开头，见投稿指南示例 */",
+  "dark": false,
+  "dynamic": false,
+  "palettes": false
+}

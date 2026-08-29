@@ -1,0 +1,54 @@
+/* ============================================================
+ * URP++ 主题模板 —— 复制本文件，全局替换 <your-theme-id> 为你的主题 id
+ * 规则：id 仅小写字母/数字/连字符，2~32 位，且不得与官方主题重名
+ *       （官方：flat / organic / brutal / neu / assist）
+ *
+ * 工作原理：插件应用主题后，<html> 会带上 data-urppp-skin="<your-theme-id>"
+ * 属性，本文件所有规则都挂在这个前缀下，只影响你的主题，互不干扰。
+ * 提交前运行：node tools/contribute-check.mjs <你的-catalog.json> <本文件>
+ * ============================================================ */
+
+html[data-urppp-skin="<your-theme-id>"] {
+  /* ---- 必填变量（缺一会被自检脚本拦下）---- */
+  --bg: #f6f4ef;                 /* 页面底色 */
+  --bg-card-soft: #efede6;       /* 卡片/弱底色 */
+  --bg-input: #fdfcf9;           /* 输入框底色 */
+  --border: #ddd6c8;             /* 边框 */
+  --text: #33302a;               /* 主文字 */
+  --text-secondary: #857e70;     /* 次级文字 */
+  --link: #4a6fa5;               /* 链接 */
+  --accent: #4a6fa5;             /* 主题强调色（按钮/选中态） */
+  --accent-contrast: #ffffff;    /* 强调色之上的文字色 */
+  --shadow: rgba(51, 48, 42, 0.08);  /* 阴影 */
+  --radius: 10px;                /* 圆角 */
+  --nav-bg: var(--bg-card-soft); /* 顶栏底色 */
+  --panel-bg: var(--bg);         /* 面板底色 */
+  --hover-bg: var(--bg-card-soft); /* 悬停底色 */
+
+  /* ---- 可选：你的主题专属扩展变量与样式 ---- */
+}
+
+/* ---- 必选基础映射（让主题即刻可见）---- */
+html[data-urppp-skin="<your-theme-id>"] body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+html[data-urppp-skin="<your-theme-id>"] a {
+  color: var(--link);
+}
+
+html[data-urppp-skin="<your-theme-id>"] button,
+html[data-urppp-skin="<your-theme-id>"] .urppp-set-btn {
+  border-radius: var(--radius);
+}
+
+/* ---- 可选：教务页面局部美化（课表/成绩/导航等），全部挂同前缀 ---- */
+/* 示例：卡片化内容区
+html[data-urppp-skin="<your-theme-id>"] .widget-box {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px var(--shadow);
+}
+*/
