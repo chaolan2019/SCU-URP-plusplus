@@ -6490,7 +6490,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const delBtn = built ? '' : `<button type="button" class="urppp-skin-apply urppp-store-del" data-theme-del="${escapeHtml(s.id)}">删除</button>`;
     const repo = (item && item.repo) || s.repo;
     const repoBtn = repo ? `<button type="button" class="urppp-skin-apply urppp-store-repo" data-repo="${escapeHtml(repo)}">仓库</button>` : '';
-    const dl = (item && item.downloads != null) ? `<span class="urppp-store-dl">↓ ${escapeHtml(String(item.downloads))}</span>` : '';
     const cur = (getSkin() === s.id);
     // 卡样式直接内嵌随卡渲染（优先已下载缓存），避免依赖独立 style 注入时序造成延迟/闪烁
     let ccIn = (item && item.cardCss) || '';
@@ -6499,7 +6498,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return `<div class="urppp-skin-card${cur ? ' is-active' : ''}" data-skin="${escapeHtml(s.id)}">
       ${cardCssInline}
       <div class="urppp-skin-name">${escapeHtml(s.name)}</div>
-      <div class="urppp-skin-meta">${escapeHtml((item && item.author) || '')}${(item && item.author && s.version) ? ' · ' : ''}v${escapeHtml(s.version || '')}${dl ? ' · ' + dl : ''}</div>
+      <div class="urppp-skin-meta">${escapeHtml((item && item.author) || '')}${(item && item.author && s.version) ? ' · ' : ''}v${escapeHtml(s.version || '')}<span class="urppp-dows" data-dows-id="${escapeHtml(s.id)}"></span></div>
       <p class="urppp-skin-desc">${escapeHtml(s.desc || '')}</p>
       <button type="button" class="urppp-skin-apply${cur ? ' is-current' : ''}" data-theme-use="${escapeHtml(s.id)}"${cur ? ' disabled' : ''}>${cur ? '使用中' : '使用'}</button>
       ${delBtn}${repoBtn}
@@ -6520,6 +6519,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     // 卡样式优先从已下载缓存（GM cardCss）注入，不等 catalog
     ensureStoreCardStyles(items.map((s) => { let cc = ''; try { cc = GM_getValue('urppp_card_css_' + s.id, '') || ''; } catch (_) {} return { id: s.id, cardCss: cc || ((catalog.find((c) => c.id === s.id) || {}).cardCss || '') }; }));
     host.innerHTML = `<div class="urppp-store-theme-grid">${items.map((s) => themeManageCardHtml(s, catalog.find((c) => c.id === s.id))).join('')}</div>`;
+    try { refreshStoreDowns(host); } catch (_) {} // 已装主题计数异步补显
     host.querySelectorAll('[data-theme-use]').forEach((b) => b.addEventListener('click', () => {
       if (setSkin(b.dataset.themeUse)) {
         try { syncSettingsPanelUI(); } catch (_) {}
