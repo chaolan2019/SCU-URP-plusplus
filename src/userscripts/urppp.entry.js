@@ -6831,13 +6831,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       try { console.log('[URP++ downs]', JSON.stringify(dbg)); } catch (_) {}
     } catch (e) { dbg.err = String(e); try { console.log('[URP++ downs] err', String(e)); } catch (_) {} }
   }
-  setInterval(() => { // 计数轮询：面板可见时每 30s 刷新一次
-    try {
-      const p = document.getElementById('urppp-settings-panel');
-      if (p && getComputedStyle(p).display !== 'none') refreshStoreDowns(p);
-    } catch (_) {}
-  }, 30000);
-  try { const _uw = (typeof unsafeWindow !== 'undefined' ? unsafeWindow : window); _uw.__urpppDownsTest = fetchStoreDowns; _uw.__urpppDownsRefresh = refreshStoreDowns; _uw.__urpppStoreTest = (host) => fetchCatalogThemes(host); } catch (_) {} // 调试：注入测试用
+  // 刷新时机：打开面板/商店即刷（render 链内 + renderThemeStoreBody 延迟补刷），无常驻轮询
+  try { const _uw = (typeof unsafeWindow !== 'undefined' ? unsafeWindow : window); _uw.__urpppDownsVer = 'v8'; _uw.__urpppDownsTest = fetchStoreDowns; _uw.__urpppDownsRefresh = refreshStoreDowns; _uw.__urpppStoreTest = (host) => fetchCatalogThemes(host); } catch (_) {} // 调试：Console里 __urpppDownsVer 验证脚本版本
   // 安装前验签：source=源的pubkey(或''=官方/未签名源)。返回 {ok, fail} 请调用方决定拦截
   async function guardEntrySignature(entry) {
     const pub = entry && entry._srcPub;
@@ -6930,6 +6925,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     bindLocalThemeImport(body);
     bindStoreSources(body);
     fetchCatalogThemes(body);
+    setTimeout(() => { try { refreshStoreDowns(body); } catch (_) {} }, 800); // 打开界面后补刷一次计数（防首刷竞态）
     fetchThemeManage(body.querySelector('#urppp-theme-manage'));
   }
 
