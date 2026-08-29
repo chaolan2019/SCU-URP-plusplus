@@ -6813,7 +6813,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       if (p && getComputedStyle(p).display !== 'none') refreshStoreDowns(p);
     } catch (_) {}
   }, 30000);
-  try { (typeof unsafeWindow !== 'undefined' ? unsafeWindow : window).__urpppDownsTest = fetchStoreDowns; } catch (_) {} // 调试：Console 里 __urpppDownsTest(['organic']).then(console.log)
+  try { const _uw = (typeof unsafeWindow !== 'undefined' ? unsafeWindow : window); _uw.__urpppDownsTest = fetchStoreDowns; _uw.__urpppDownsRefresh = refreshStoreDowns; } catch (_) {} // 调试：Console里 __urpppDownsTest(['organic']).then(console.log) / __urpppDownsRefresh(容器)
   // 安装前验签：source=源的pubkey(或''=官方/未签名源)。返回 {ok, fail} 请调用方决定拦截
   async function guardEntrySignature(entry) {
     const pub = entry && entry._srcPub;
