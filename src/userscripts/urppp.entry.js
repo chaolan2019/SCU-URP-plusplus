@@ -6792,17 +6792,20 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
   async function refreshStoreDowns(root) { // 卡片计数补显（0 也常驻显示；30s 轮询复用）
     try {
-      if (!root || !DOWNS_API) return;
+      if (!root || !DOWNS_API) { console.debug('[URP++ downs] skip: no root/api'); return; }
       const els = root.querySelectorAll('[data-dows-id]');
+      console.debug('[URP++ downs] refresh', (root.id || root.className || '').toString().slice(0, 40), 'els=' + els.length);
       if (!els.length) return;
       const ids = Array.from(new Set(Array.from(els).map((e) => e.dataset.dowsId)));
       const map = await fetchStoreDowns(ids);
-      if (!document.body.contains(root)) return;
+      console.debug('[URP++ downs] map=', JSON.stringify(map));
+      if (!document.body.contains(root)) { console.debug('[URP++ downs] root gone, abort'); return; }
       root.querySelectorAll('[data-dows-id]').forEach((el) => {
         const n = map[el.dataset.dowsId];
+        console.debug('[URP++ downs] fill', el.dataset.dowsId, '->', n);
         if (typeof n === 'number' && n >= 0) el.textContent = ' · ↓' + (n >= 10000 ? (n / 10000).toFixed(1) + 'w' : String(n));
       });
-    } catch (_) {}
+    } catch (e) { console.debug('[URP++ downs] err', e); }
   }
   setInterval(() => { // 计数轮询：面板可见时每 30s 刷新一次
     try {
