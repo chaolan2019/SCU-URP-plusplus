@@ -7024,7 +7024,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       b.disabled = true;
       const arr = getCustomSources();
       if (arr.some((c) => c.url === src.url)) { toast('该源已存在'); return; }
-      arr.push(Object.assign({ name: src.name || src.id || src.url, url: src.url, enabled: true }, Array.isArray(src.mirrors) && src.mirrors.length ? { mirrors: src.mirrors.slice() } : {}));
+      const entry = Object.assign({ name: src.name || src.id || src.url, url: src.url, enabled: true }, Array.isArray(src.mirrors) && src.mirrors.length ? { mirrors: src.mirrors.slice() } : {});
+      if (src.url === OFFICIAL_SOURCE_URL) arr.unshift(entry); else arr.push(entry);
       saveCustomSources(arr);
       __catalogCache = null;
       toast('已添加仓库源：' + (src.name || src.url));
