@@ -6821,7 +6821,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       dbg.ids = ids;
       const map = await fetchStoreDowns(ids);
       dbg.map = map;
-      if (!document.body.contains(root)) { dbg.stop = 'root-detached'; return; }
+      if (!root.isConnected) { dbg.stop = 'root-detached'; return; } // 面板挂在documentElement下，不能用body.contains判
       let filled = 0;
       root.querySelectorAll('[data-dows-id]').forEach((el) => {
         const n = map[el.dataset.dowsId];
