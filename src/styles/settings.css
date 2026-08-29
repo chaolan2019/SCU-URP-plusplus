@@ -645,7 +645,10 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-settings-panel .urppp-src-hint{font-size:12px;color:var(--text-secondary,#5b5f69);margin:0;padding:0 2px}
 #urppp-settings-panel .urppp-src-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--radius,8px);background:var(--surface,#f6f7f9);border:1px solid var(--border,#e6e8ec)}
 #urppp-settings-panel .urppp-src-item.urppp-src-hidden{opacity:.55}
-#urppp-settings-panel .urppp-src-official{margin-bottom:14px;padding-bottom:10px;border-bottom:1px dashed var(--border,#e6e8ec)}
+#urppp-settings-panel .urppp-src-official{margin-bottom:22px;padding-bottom:16px;border-bottom:1px dashed var(--border,#e6e8ec)}
+#urppp-settings-panel .urppp-src-official .urppp-src-hint,
+#urppp-settings-panel .urppp-src-mine .urppp-src-hint{margin-bottom:12px}
+#urppp-settings-panel .urppp-src-mine .urppp-src-add{margin-top:14px}
 html.urppp-theme-dark #urppp-settings-panel .urppp-src-item{background:var(--surface,#1c1c1e)}
 #urppp-settings-panel .urppp-src-item .urppp-src-meta{display:flex;flex-direction:column;gap:2px;flex:1 1 auto;min-width:0}
 #urppp-settings-panel .urppp-src-item .urppp-src-meta strong{font-size:13px;color:var(--text,#16181d);font-weight:700}

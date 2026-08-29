@@ -6621,11 +6621,18 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return null;
   }
 
-  // 自定义仓库源（多 catalog，社区去中心化）：{name,url,enabled,pubkey}
+  // 自定义仓库源（多 catalog，含官方条目）：{name,url,mirrors?,enabled,hidden,pubkey}
+  const OFFICIAL_SOURCE_URL = OFFICIAL_CATALOG_URLS[0];
   function getCustomSources() {
     try {
       const r = JSON.parse(GM_getValue('urppp_store_sources', '[]'));
-      return Array.isArray(r) ? r : [];
+      const arr = Array.isArray(r) ? r : [];
+      // 首次迁移：官方条目自动置首（三镜像冗余），此后官方主题完全由该条目管理
+      if (!arr.some((s) => s && s.url === OFFICIAL_SOURCE_URL)) {
+        arr.unshift({ name: 'SCU URP++ 官方商店仓库', url: OFFICIAL_SOURCE_URL, mirrors: OFFICIAL_CATALOG_URLS.slice(), enabled: true, hidden: false });
+        try { GM_setValue('urppp_store_sources', JSON.stringify(arr)); } catch (_) {}
+      }
+      return arr;
     } catch (_) { return []; }
   }
   function saveCustomSources(arr) {
@@ -6642,29 +6649,21 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   let __catalogCache = catalogCacheRead();
   async function fetchCatalogList(force) {
     if (__catalogCache && !force) return __catalogCache;
-    const withTimeout = (promise, ms) => Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
     const fetchCatalogDoc = async (url) => parseCatalogDoc(await fetchRemoteCatalog(url));
 
-    // 官方源（mirror 冗余）并行拉取，取最优（含 cardCss 的源优先，jsdelivr 可能缓存旧版）
-    const officialRes = await Promise.allSettled(OFFICIAL_CATALOG_URLS.map((url) => fetchCatalogDoc(url)));
-    let officialDoc = null;
-    for (const r of officialRes) {
-      if (!(r.status === 'fulfilled' && r.value && Array.isArray(r.value.items))) continue;
-      const hasCardCss = r.value.items.some((it) => it.type === 'theme' && it.cardCss);
-      if (!officialDoc || (hasCardCss && !officialDoc.items.some((it) => it.type === 'theme' && it.cardCss))) officialDoc = r.value;
-    }
-    const officialItems = (officialDoc && officialDoc.items) || [];
-
-    // 自定义源：并行拉取 enabled 且未隐藏的（多 catalog）
+    // 全部源平级拉取（官方条目已置首，同 id 顺序优先）：enabled 且未隐藏，逐源 mirrors 依次回退
     const customs = getCustomSources().filter((s) => s && s.url && s.enabled !== false && !s.hidden);
     const customsRes = await Promise.allSettled(customs.map(async (s) => {
-      const j = await fetchCatalogDoc(s.url);
-      return { doc: j, pubkey: j ? j.pubkey : '' };
+      const mirrors = Array.isArray(s.mirrors) && s.mirrors.length ? s.mirrors : [s.url];
+      if (!mirrors.includes(s.url)) mirrors.unshift(s.url);
+      let j = null;
+      for (const u of mirrors) { j = await fetchCatalogDoc(u); if (j) break; }
+      return { doc: j, pubkey: (j && j.pubkey) || '' };
     }));
 
-    // 合并：官方 items 为 base，自定义追加；同 id 冲突官方优先
-    const merged = [...officialItems];
-    const seen = new Set(merged.map((it) => it && it.id).filter(Boolean));
+    // 合并：先到先得（列表顺序即优先级，官方条目在首位）
+    const merged = [];
+    const seen = new Set();
     for (const r of customsRes) {
       if (!(r.status === 'fulfilled' && r.value && r.value.doc)) continue;
       const srcPub = r.value.pubkey || '';
@@ -7006,17 +7005,14 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (!box) return;
     const doc = await fetchOfficialSources();
     if (!doc || !box.isConnected) return;
-    const sources = (doc.sources || []).filter((s) => s && s.url);
-    if (!sources.length) { box.innerHTML = '<div class="urppp-store-empty"><p>暂无收录源</p></div>'; return; }
     const customs = getCustomSources();
-    box.innerHTML = sources.map((s, i) => {
-      const added = customs.some((c) => c.url === s.url);
-      return `
+    const sources = (doc.sources || []).filter((s) => s && s.url && !customs.some((c) => c.url === s.url)); // 只显示未添加的收录源
+    if (!sources.length) { box.innerHTML = '<div class="urppp-store-empty"><p>已收录全部可用源</p></div>'; return; }
+    box.innerHTML = sources.map((s, i) => `
       <div class="urppp-src-item">
         <div class="urppp-src-meta"><strong>${escapeHtml(s.name || s.id || '未命名')}</strong><span class="urppp-src-url">${escapeHtml(s.author ? s.author + ' · ' : '')}${escapeHtml(s.url)}</span>${s.description ? `<span class="urppp-src-url">${escapeHtml(s.description)}</span>` : ''}</div>
-        <div class="urppp-src-ops"><button type="button" class="urppp-set-btn ghost" data-src-official="${i}" ${added ? 'disabled' : ''}>${added ? '已添加' : '添加'}</button></div>
-      </div>`;
-    }).join('');
+        <div class="urppp-src-ops"><button type="button" class="urppp-set-btn ghost" data-src-official="${i}">添加</button></div>
+      </div>`).join('');
     box.querySelectorAll('[data-src-official]').forEach((b) => b.addEventListener('click', async () => {
       const src = sources[Number(b.dataset.srcOfficial)];
       if (!src || !src.url) return;
