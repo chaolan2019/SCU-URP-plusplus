@@ -6749,14 +6749,17 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   const DOWNS_API = 'https://api.yanjiangrd.site'; // 计数服务 base（nginx https 反代 → 127.0.0.1:8787）；置空可整体禁用
   function getDownsSalt() {
     return new Promise((resolve) => {
+      let done = false;
+      const fin = (v) => { if (!done) { done = true; resolve(v); } };
       try {
         const c = GM_getValue('urppp_downs_salt', '');
-        if (c) return resolve(c);
-        if (!DOWNS_API || typeof GM_xmlhttpRequest !== 'function') return resolve('');
+        if (c) return fin(c);
+        if (!DOWNS_API || typeof GM_xmlhttpRequest !== 'function') return fin('');
         GM_xmlhttpRequest({ method: 'GET', url: DOWNS_API + '/downs/salt', timeout: 8000,
-          onload: (res) => { try { const s = String((JSON.parse(res.responseText) || {}).salt || ''); if (/^[0-9a-f]{16,128}$/.test(s)) { try { GM_setValue('urppp_downs_salt', s); } catch (_) {} resolve(s); } else resolve(''); } catch (_) { resolve(''); } },
-          onerror: () => resolve(''), ontimeout: () => resolve('') });
-      } catch (_) { resolve(''); }
+          onload: (res) => { try { const s = String((JSON.parse(res.responseText) || {}).salt || ''); if (/^[0-9a-f]{16,128}$/.test(s)) { try { GM_setValue('urppp_downs_salt', s); } catch (_) {} fin(s); } else fin(''); } catch (_) { fin(''); } },
+          onerror: () => fin(''), ontimeout: () => fin('') });
+        setTimeout(() => fin(''), 9500); // 硬兑底：TM 不回调也解卡
+      } catch (_) { fin(''); }
     });
   }
   function getCurrentStudentId() { // 多级 fallback：GM缓存 → 登录面板输入 → URL参数；拿不到返回''（不上报）
@@ -6782,12 +6785,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
   function fetchStoreDowns(ids) {
     return new Promise((resolve) => {
+      let done = false;
+      const fin = (v) => { if (!done) { done = true; resolve(v || {}); } };
       try {
-        if (!DOWNS_API || !ids || !ids.length || typeof GM_xmlhttpRequest !== 'function') return resolve({});
+        if (!DOWNS_API || !ids || !ids.length || typeof GM_xmlhttpRequest !== 'function') return fin({});
         GM_xmlhttpRequest({ method: 'GET', url: DOWNS_API + '/downs?ids=' + encodeURIComponent(ids.join(',')), timeout: 8000,
-          onload: (res) => { try { resolve(JSON.parse(res.responseText) || {}); } catch (_) { resolve({}); } },
-          onerror: () => resolve({}), ontimeout: () => resolve({}) });
-      } catch (_) { resolve({}); }
+          onload: (res) => { try { fin(JSON.parse(res.responseText) || {}); } catch (_) { fin({}); } },
+          onerror: () => fin({}), ontimeout: () => fin({}) });
+        setTimeout(() => fin({}), 9500); // 硬兑底：TM 不回调也解卡（实测存在请求挂死且 GM timeout 不触发）
+      } catch (_) { fin({}); }
     });
   }
   async function refreshStoreDowns(root) { // 卡片计数补显（0 也常驻显示；30s 轮询复用）
