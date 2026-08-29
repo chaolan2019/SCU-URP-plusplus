@@ -5364,29 +5364,14 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       document.head.appendChild(navigationStyle);
     }
     navigationStyle.textContent = navigationStyles;
-    // 首页仪表板样式紧随其后，与 internal 的覆盖关系保持不变
-    let dashboardStyle = document.getElementById('urppp-dashboard-style');
-    if (!dashboardStyle) {
-      dashboardStyle = document.createElement('style');
-      dashboardStyle.id = 'urppp-dashboard-style';
-      document.head.appendChild(dashboardStyle);
-    }
-    dashboardStyle.textContent = dashboardStyles;
+    // 首页仪表板样式：仅首页需要（路由切换到首页时 ensureRouteStyles 立即补注；空闲预载兜底）
+    if (isHomePage()) ensureDashboardStyles();
     let scheduleCardStyle = document.getElementById('urppp-schedule-card-style');
     if (!scheduleCardStyle) {
-      scheduleCardStyle = document.createElement('style');
-      scheduleCardStyle.id = 'urppp-schedule-card-style';
-      document.head.appendChild(scheduleCardStyle);
+      if (isPersonalSchedulePage(location)) ensureScheduleCardStyles();
     }
-    scheduleCardStyle.textContent = scheduleCardStyles;
-    // 移动端兑底样式最后注入（urppp-mobile 标记类已在 document-start 设置）
-    let mobileStyle = document.getElementById('urppp-mobile-style');
-    if (!mobileStyle) {
-      mobileStyle = document.createElement('style');
-      mobileStyle.id = 'urppp-mobile-style';
-      document.head.appendChild(mobileStyle);
-    }
-    mobileStyle.textContent = mobileStyles;
+    // 移动端兑底样式：裸规则桌面也生效，不能按视口省略——移动 UA 启动即注，桌面空闲预载（零行为变化，仅错峰解析）
+    try { if (window.__urpppIsMobileUA) ensureMobileStyles(); } catch (_) {}
     try { applySkinAttr(); } catch (_) {}
 
     // 给表格包一层 wrapper：圆角 + 完整外框，绕过 Bootstrap thead border-top:0 和 overflow 裁剪
@@ -8098,6 +8083,50 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     (document.head || document.documentElement).appendChild(style);
   }
 
+  // ---- 条件性样式分组：命中即注 + 空闲预载（最终与全量注入等价，仅首屏解析错峰）----
+  function ensureDashboardStyles() {
+    if (document.getElementById('urppp-dashboard-style')) return;
+    const style = document.createElement('style');
+    style.id = 'urppp-dashboard-style';
+    style.textContent = dashboardStyles;
+    (document.head || document.documentElement).appendChild(style);
+  }
+
+  function ensureScheduleCardStyles() {
+    if (document.getElementById('urppp-schedule-card-style')) return;
+    const style = document.createElement('style');
+    style.id = 'urppp-schedule-card-style';
+    style.textContent = scheduleCardStyles;
+    (document.head || document.documentElement).appendChild(style);
+  }
+
+  function ensureMobileStyles() {
+    if (document.getElementById('urppp-mobile-style')) return;
+    const style = document.createElement('style');
+    style.id = 'urppp-mobile-style';
+    style.textContent = mobileStyles;
+    (document.head || document.documentElement).appendChild(style);
+  }
+
+  function ensureRouteStyles() { // 路由切换到目标页时立即补注，不等空闲
+    try { if (isHomePage()) ensureDashboardStyles(); } catch (_) {}
+    try { if (isPersonalSchedulePage(location)) ensureScheduleCardStyles(); } catch (_) {}
+  }
+
+  function scheduleDeferredStyles() { // 首屏完成后空闲预载剩余分组
+    if (window.__urpppDeferredStylesDone) return;
+    window.__urpppDeferredStylesDone = true;
+    const runAll = () => {
+      try { ensureMobileStyles(); } catch (_) {}
+      try { ensureDashboardStyles(); } catch (_) {}
+      try { ensureScheduleCardStyles(); } catch (_) {}
+    };
+    try {
+      if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(runAll, { timeout: 4000 });
+      else setTimeout(runAll, 2200);
+    } catch (_) { setTimeout(runAll, 2200); }
+  }
+
   function ensureNavNameTarget(root) {
     const scope = root && root.querySelector ? root : document;
     const user = scope.querySelector('#navbar .user-info, .ace-nav .user-info, .user-info');
@@ -10454,6 +10483,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       beautifyInternal();
       try { ensureFeatureStyles(); } catch (_) {}
       try { refreshRouteFeatures(); } catch (e) { console.warn('[URP++] route feature refresh', e); }
+      try { scheduleDeferredStyles(); } catch (_) {}
       try { applyPersonalDisplay(document); } catch (_) {}
       try { syncFestiveDecor(); } catch (_) {}
       ;[350, 900, 1800].forEach((ms) => setTimeout(() => {
@@ -10558,6 +10588,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         setTimeout(() => beautifyPlanTree(), 500);
         beautifyBreadcrumbs();
         scheduleBeautifyPagebar();
+        try { ensureRouteStyles(); } catch (_) {}
         try { refreshRouteFeatures(); } catch (_) {}
         try { applyPersonalDisplay(document); } catch (_) {}
         setTimeout(() => {
