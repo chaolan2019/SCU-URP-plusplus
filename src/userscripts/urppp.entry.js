@@ -6421,7 +6421,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return `<div class="urppp-skin-card" data-skin="${escapeHtml(item.id)}">
       ${cardCssInline}
       <div class="urppp-skin-name">${escapeHtml(item.name || item.id)}</div>
-      <div class="urppp-skin-meta">${escapeHtml(item.author || '')}${item.author && item.version ? ' · ' : ''}v${escapeHtml(item.version || '')}</div>
+      <div class="urppp-skin-meta">${escapeHtml(item.author || '')}${item.author && item.version ? ' · ' : ''}v${escapeHtml(item.version || '')}<span class="urppp-dows" data-dows-id="${escapeHtml(item.id)}"></span></div>
       <p class="urppp-skin-desc">${escapeHtml(item.description || '')}</p>
       <button type="button" class="urppp-skin-apply" data-store-theme="${escapeHtml(item.id)}"${downloaded ? ' disabled' : ''}>${downloaded ? '已安装' : '下载'}</button>
       ${repoBtn}
@@ -6437,6 +6437,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       downloadPane.innerHTML = `<div class="urppp-store-theme-grid">${themes.map((it) => themeStoreCard(it, false)).join('')}</div>`;
       downloadPane.querySelectorAll('[data-store-theme]').forEach((b) => { b.addEventListener('click', () => downloadStoreTheme(b.dataset.storeTheme, b)); });
       downloadPane.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
+      try { refreshStoreDowns(downloadPane); } catch (_) {} // 计数异步补显
     };
     // 先用缓存立即渲染（GM urppp_catalog_cache），网络只在后台刷新，避免等 catalog 才出现主题
     render((__catalogCache || []).filter((it) => it.type === 'theme' && !themeDownloaded(it.id)));
@@ -6472,6 +6473,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     try { storeThemeStyleEl(id).textContent = css; } catch (_) {}
     try { ensureStoreCardStyles([{ id, cardCss: item.cardCss || '' }]); } catch (_) {}
     btn.textContent = '已安装'; btn.disabled = true;
+    try { reportStoreDownload(id); } catch (_) {} // 下载计数（假名，静默）
     // 即时刷新：主题管理能看到刚下的主题 + 下载列表排除它
     const inline = (btn.closest && btn.closest('.urppp-store-inline'));
     if (inline) {
@@ -6742,6 +6744,66 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       } catch (_) { try { resolve(window.confirm(msg)); } catch (__) { resolve(false); } }
     });
   }
+  // ===== P3-4 下载计数（方案A：学号假名上报 + 实时查询）=====
+  // 隐私：学号不出浏览器；上报 SHA256(盐|学号|主题id) 截断假名；盐由服务端下发，不进源码
+  const DOWNS_API = ''; // TODO: 服务部署后填 base（如 'https://xxx' / 'http://ip:8787'）；空 = 完全禁用
+  function getDownsSalt() {
+    return new Promise((resolve) => {
+      try {
+        const c = GM_getValue('urppp_downs_salt', '');
+        if (c) return resolve(c);
+        if (!DOWNS_API || typeof GM_xmlhttpRequest !== 'function') return resolve('');
+        GM_xmlhttpRequest({ method: 'GET', url: DOWNS_API + '/downs/salt', timeout: 8000,
+          onload: (res) => { try { const s = String((JSON.parse(res.responseText) || {}).salt || ''); if (/^[0-9a-f]{16,128}$/.test(s)) { try { GM_setValue('urppp_downs_salt', s); } catch (_) {} resolve(s); } else resolve(''); } catch (_) { resolve(''); } },
+          onerror: () => resolve(''), ontimeout: () => resolve('') });
+      } catch (_) { resolve(''); }
+    });
+  }
+  function getCurrentStudentId() { // 多级 fallback：GM缓存 → 登录面板输入 → URL参数；拿不到返回''（不上报）
+    try {
+      const cached = GM_getValue('urppp_downs_sid', '');
+      if (cached && /^\d{6,20}$/.test(cached)) return cached;
+      const inp = document.getElementById('urppp-user');
+      if (inp && /^\d{6,20}$/.test(String(inp.value || '').trim())) { const v = String(inp.value).trim(); try { GM_setValue('urppp_downs_sid', v); } catch (_) {} return v; }
+      const m = String(location.search || '').match(/[?&](?:userAccount|sno)=(\d{6,20})/);
+      if (m) { try { GM_setValue('urppp_downs_sid', m[1]); } catch (_) {} return m[1]; }
+    } catch (_) {}
+    return '';
+  }
+  async function reportStoreDownload(id) { // fire-and-forget：任何失败静默，不挡下载
+    try {
+      if (!DOWNS_API || !id || typeof GM_xmlhttpRequest !== 'function') return;
+      const salt = await getDownsSalt(); if (!salt) return;
+      const sid = getCurrentStudentId(); if (!sid) return;
+      const bytes = sha256Bytes(new TextEncoder().encode(salt + '|' + sid + '|' + id));
+      let uid = ''; for (let i = 0; i < 16; i++) uid += bytes[i].toString(16).padStart(2, '0');
+      GM_xmlhttpRequest({ method: 'POST', url: DOWNS_API + '/downs', timeout: 8000, headers: { 'Content-Type': 'application/json' }, data: JSON.stringify({ id: String(id), uid }), onerror: () => {}, ontimeout: () => {} });
+    } catch (_) {}
+  }
+  function fetchStoreDowns(ids) {
+    return new Promise((resolve) => {
+      try {
+        if (!DOWNS_API || !ids || !ids.length || typeof GM_xmlhttpRequest !== 'function') return resolve({});
+        GM_xmlhttpRequest({ method: 'GET', url: DOWNS_API + '/downs?ids=' + encodeURIComponent(ids.join(',')), timeout: 8000,
+          onload: (res) => { try { resolve(JSON.parse(res.responseText) || {}); } catch (_) { resolve({}); } },
+          onerror: () => resolve({}), ontimeout: () => resolve({}) });
+      } catch (_) { resolve({}); }
+    });
+  }
+  async function refreshStoreDowns(root) { // 卡片渲染后异步补显 ↓N（0/无数据不显示）
+    try {
+      if (!root || !DOWNS_API) return;
+      const els = root.querySelectorAll('[data-dows-id]');
+      if (!els.length) return;
+      const ids = Array.from(new Set(Array.from(els).map((e) => e.dataset.dowsId)));
+      const map = await fetchStoreDowns(ids);
+      if (!document.body.contains(root)) return;
+      root.querySelectorAll('[data-dows-id]').forEach((el) => {
+        const n = map[el.dataset.dowsId];
+        if (typeof n === 'number' && n > 0) el.textContent = ' · ↓' + (n >= 10000 ? (n / 10000).toFixed(1) + 'w' : String(n));
+      });
+    } catch (_) {}
+  }
   // 安装前验签：source=源的pubkey(或''=官方/未签名源)。返回 {ok, fail} 请调用方决定拦截
   async function guardEntrySignature(entry) {
     const pub = entry && entry._srcPub;
@@ -6920,11 +6982,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   function pluginStoreCard(item) {
-    const dl = (item.downloads != null) ? ` · ↓${escapeHtml(String(item.downloads))}` : '';
     const repoBtn = item.repo ? `<button type="button" class="urppp-store-repo" data-repo="${escapeHtml(item.repo)}">仓库</button>` : '';
     return `<div class="urppp-store-item" data-plugin-card="${escapeHtml(item.id)}">
       <div class="urppp-store-info">
-        <div><strong>${escapeHtml(item.name || item.id)}</strong><span class="urppp-store-meta">${escapeHtml(item.author || '')}${item.author && item.version ? ' · ' : ''}v${escapeHtml(item.version || '')}${dl}</span></div>
+        <div><strong>${escapeHtml(item.name || item.id)}</strong><span class="urppp-store-meta">${escapeHtml(item.author || '')}${item.author && item.version ? ' · ' : ''}v${escapeHtml(item.version || '')}<span class="urppp-dows" data-dows-id="${escapeHtml(item.id)}"></span></span></div>
         <div class="urppp-store-item-desc">${escapeHtml(item.description || '')}</div>
       </div>
       <div class="urppp-store-ops"><button type="button" class="urppp-set-btn" data-plugin-apply="${escapeHtml(item.id)}">安装</button>${repoBtn}</div>
@@ -6944,13 +7005,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           const g = cat ? await guardEntrySignature(cat) : 'trust';
           if (g === 'fail') { const go = await confirmBottom('签名校验失败：该插件可能被篡改。是否仍要装载？'); if (!go) { b.textContent = '下载'; b.disabled = false; return; } }
           if (g === 'unknown' && cat && cat._srcPub) { const go = await confirmBottom('该源无有效签名校验，可能被篡改。是否自担风险继续装载？'); if (!go) { b.textContent = '下载'; b.disabled = false; return; } }
-          if (pluginManager && pluginManager.api && pluginManager.api.install) await pluginManager.api.install(b.dataset.pluginApply, null); b.textContent = '已安装'; try { syncSettingsPanelUI(); } catch (_) {} }
+          if (pluginManager && pluginManager.api && pluginManager.api.install) await pluginManager.api.install(b.dataset.pluginApply, null); b.textContent = '已安装'; try { syncSettingsPanelUI(); } catch (_) {} try { reportStoreDownload(b.dataset.pluginApply); } catch (_) {} }
         catch (_) { b.textContent = '失败'; }
         setTimeout(() => { b.textContent = old; b.disabled = false; }, 1200);
       }));
       host.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
-    };
-    const filter = (c) => (c || []).filter((it) => it.type === 'plugin' && !(pluginManager && pluginManager.api && pluginManager.api.isEnabled && pluginManager.api.isEnabled(it.id)));
+      try { refreshStoreDowns(host); } catch (_) {} // 计数异步补显 && !(pluginManager && pluginManager.api && pluginManager.api.isEnabled && pluginManager.api.isEnabled(it.id)));
     // 先用缓存立即渲染，网络只在后台刷新
     render(filter(__catalogCache));
     try {
@@ -9036,6 +9096,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const plan = readLabeledProfileValue(doc, ['主修方案名称']);
       const major = readLabeledProfileValue(doc, ['专业']);
       profile.studentId = readLabeledProfileValue(doc, ['学号']);
+      if (profile.studentId && /^\d{6,20}$/.test(String(profile.studentId))) { try { GM_setValue('urppp_downs_sid', String(profile.studentId)); } catch (_) {} }
       if (plan) profile.majorPlan = cleanMajorPlanName(plan);
       else if (!profile.majorPlan && major) profile.majorPlan = cleanMajorPlanName(major);
       const photo = doc.querySelector('.profile-picture img, img#avatar, img[src*="photo" i], img[src*="Photo"]');
