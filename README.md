@@ -211,17 +211,16 @@
 
 ## 主题投稿
 
-喜欢折腾 CSS？把你自己的教务主题投进 **URP++ 主题商店**，让所有用户一键可用。
+欢迎向 **URP++ 主题商店** 投稿自定义主题，审核通过后即可面向全部用户上架。
 
 - 主题与插件仓库：**[URP-plusplus-Repository](https://github.com/chaolan2019/URP-plusplus-Repository)**
 - 投稿指南与快捷工具（主题骨架模板、catalog 条目模板、自检脚本）：[contribute/](https://github.com/chaolan2019/URP-plusplus-Repository/tree/main/contribute)
 - 字段规范与开发必读：[DEV_GUIDELINES.md](https://github.com/chaolan2019/URP-plusplus-Repository/blob/main/DEV_GUIDELINES.md)
 
-两种上架方式：向官方仓库提 **PR**（进官方商店），或**自建仓库源**（设置 → 商店 → 仓库源，添加你的 catalog 地址，即时生效无需审核）。
+上架方式有两种：向官方仓库提交 Pull Request，经审核合并后进入官方商店；或搭建自建仓库源（设置 → 商店 → 仓库源，添加 catalog 地址后即时生效）。
 ## 特别鸣谢
 
-- **AI 支持**：GPT-5.6 Sol、Grok 4.5、Kimi K2.7 Code、DeepSeek V4 Pro/Flash
-- **Agent 支持**：[HanaAgent](https://github.com/liliMozi/openhanako)（原 OpenHanako，由 liliMozi 开发）
+- **Agent 支持**：[HanaAgent](https://github.com/liliMozi/openhanako)（Build by [liliMozi](https://github.com/liliMozi)）
 - **功能灵感来源**：陈一一的朵蜜、[scu-plus](https://github.com/The-Brotherhood-of-SCU/scu-plus)
 - **本地 OCR 参考**：[scu_ocr_lite_dart](https://github.com/The-Brotherhood-of-SCU/scu_ocr_lite_dart)（模型训练与预处理）
 - **美化风格支持**：[STYLEKIT](https://www.stylekit.top/zh)
