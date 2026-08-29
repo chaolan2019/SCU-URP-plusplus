@@ -6790,7 +6790,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       } catch (_) { resolve({}); }
     });
   }
-  async function refreshStoreDowns(root) { // 卡片渲染后异步补显 ↓N（0/无数据不显示）
+  async function refreshStoreDowns(root) { // 卡片计数补显（0 也常驻显示；30s 轮询复用）
     try {
       if (!root || !DOWNS_API) return;
       const els = root.querySelectorAll('[data-dows-id]');
@@ -6800,10 +6800,16 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       if (!document.body.contains(root)) return;
       root.querySelectorAll('[data-dows-id]').forEach((el) => {
         const n = map[el.dataset.dowsId];
-        if (typeof n === 'number' && n > 0) el.textContent = ' · ↓' + (n >= 10000 ? (n / 10000).toFixed(1) + 'w' : String(n));
+        if (typeof n === 'number' && n >= 0) el.textContent = ' · ↓' + (n >= 10000 ? (n / 10000).toFixed(1) + 'w' : String(n));
       });
     } catch (_) {}
   }
+  setInterval(() => { // 计数轮询：面板可见时每 30s 刷新一次
+    try {
+      const p = document.getElementById('urppp-settings-panel');
+      if (p && getComputedStyle(p).display !== 'none') refreshStoreDowns(p);
+    } catch (_) {}
+  }, 30000);
   // 安装前验签：source=源的pubkey(或''=官方/未签名源)。返回 {ok, fail} 请调用方决定拦截
   async function guardEntrySignature(entry) {
     const pub = entry && entry._srcPub;
