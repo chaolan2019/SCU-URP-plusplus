@@ -7010,7 +7010,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         setTimeout(() => { b.textContent = old; b.disabled = false; }, 1200);
       }));
       host.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
-      try { refreshStoreDowns(host); } catch (_) {} // 计数异步补显 && !(pluginManager && pluginManager.api && pluginManager.api.isEnabled && pluginManager.api.isEnabled(it.id)));
+      try { refreshStoreDowns(host); } catch (_) {} // 计数异步补显
+    };
+    const filter = (c) => (c || []).filter((it) => it.type === 'plugin' && !(pluginManager && pluginManager.api && pluginManager.api.isEnabled && pluginManager.api.isEnabled(it.id)));
     // 先用缓存立即渲染，网络只在后台刷新
     render(filter(__catalogCache));
     try {
