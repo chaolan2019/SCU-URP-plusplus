@@ -6775,26 +6775,40 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
   async function reportStoreDownload(id) { // fire-and-forget：任何失败静默，不挡下载
     try {
-      if (!DOWNS_API || !id || typeof GM_xmlhttpRequest !== 'function') return;
+      if (!DOWNS_API || !id) return;
       const salt = await getDownsSalt(); if (!salt) return;
       const sid = getCurrentStudentId(); if (!sid) return;
       const bytes = sha256Bytes(new TextEncoder().encode(salt + '|' + sid + '|' + id));
       let uid = ''; for (let i = 0; i < 16; i++) uid += bytes[i].toString(16).padStart(2, '0');
-      GM_xmlhttpRequest({ method: 'POST', url: DOWNS_API + '/downs', timeout: 8000, headers: { 'Content-Type': 'application/json' }, data: JSON.stringify({ id: String(id), uid }), onerror: () => {}, ontimeout: () => {} });
+      const body = JSON.stringify({ id: String(id), uid });
+      try { // fetch 优先（CORS preflight 由服务端 OPTIONS 处理）
+        await Promise.race([fetch(DOWNS_API + '/downs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000))]);
+        return;
+      } catch (_) {}
+      try { if (typeof GM_xmlhttpRequest === 'function') GM_xmlhttpRequest({ method: 'POST', url: DOWNS_API + '/downs', timeout: 8000, headers: { 'Content-Type': 'application/json' }, data: body, onerror: () => {}, ontimeout: () => {} }); } catch (_) {}
     } catch (_) {}
   }
   function fetchStoreDowns(ids) {
-    return new Promise((resolve) => {
+    // 优先页面 fetch（CORS 已由服务端放行；http→https 方向浏览器允许），GM_xmlhttpRequest 兑底（实测存在挂死不回调）
+    const url = DOWNS_API + '/downs?ids=' + encodeURIComponent(ids.join(','));
+    const gmFallback = () => new Promise((resolve) => {
       let done = false;
       const fin = (v) => { if (!done) { done = true; resolve(v || {}); } };
       try {
-        if (!DOWNS_API || !ids || !ids.length || typeof GM_xmlhttpRequest !== 'function') return fin({});
-        GM_xmlhttpRequest({ method: 'GET', url: DOWNS_API + '/downs?ids=' + encodeURIComponent(ids.join(',')), timeout: 8000,
+        if (typeof GM_xmlhttpRequest !== 'function') return fin({});
+        GM_xmlhttpRequest({ method: 'GET', url, timeout: 8000,
           onload: (res) => { try { fin(JSON.parse(res.responseText) || {}); } catch (_) { fin({}); } },
           onerror: () => fin({}), ontimeout: () => fin({}) });
-        setTimeout(() => fin({}), 9500); // 硬兑底：TM 不回调也解卡（实测存在请求挂死且 GM timeout 不触发）
+        setTimeout(() => fin({}), 9500);
       } catch (_) { fin({}); }
     });
+    return (async () => {
+      try {
+        const r = await Promise.race([fetch(url, { cache: 'no-store' }), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000))]);
+        if (r && r.ok) return (await r.json()) || {};
+      } catch (_) {}
+      return gmFallback();
+    })();
   }
   async function refreshStoreDowns(root) { // 卡片计数补显（0 也常驻显示；30s 轮询复用）
     const dbg = (typeof unsafeWindow !== 'undefined' ? unsafeWindow : window).__urpppDownsLast = { t: Date.now(), hasRoot: !!root, api: DOWNS_API || '(empty)' };

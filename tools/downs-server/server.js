@@ -69,6 +69,11 @@ const UID_RE = /^[0-9a-f]{8,64}$/;
 
 const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
+  if (req.method === 'OPTIONS') { // CORS preflight（页面 fetch POST JSON 需要）
+    res.writeHead(204, { 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Max-Age': '86400' });
+    res.end();
+    return;
+  }
   const ip = (req.socket.remoteAddress || '').replace('::ffff:', '') || 'unknown';
   if (ipLimited(ip)) { res.writeHead(429); res.end('{"ok":false,"err":"rate"}'); return; }
 
