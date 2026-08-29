@@ -6746,7 +6746,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
   // ===== P3-4 下载计数（方案A：学号假名上报 + 实时查询）=====
   // 隐私：学号不出浏览器；上报 SHA256(盐|学号|主题id) 截断假名；盐由服务端下发，不进源码
-  const DOWNS_API = ''; // TODO: 服务部署后填 base（如 'https://xxx' / 'http://ip:8787'）；空 = 完全禁用
+  const DOWNS_API = 'https://api.yanjiangrd.site'; // 计数服务 base（nginx https 反代 → 127.0.0.1:8787）；置空可整体禁用
   function getDownsSalt() {
     return new Promise((resolve) => {
       try {
