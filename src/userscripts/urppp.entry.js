@@ -6791,21 +6791,25 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     });
   }
   async function refreshStoreDowns(root) { // 卡片计数补显（0 也常驻显示；30s 轮询复用）
+    const dbg = (typeof unsafeWindow !== 'undefined' ? unsafeWindow : window).__urpppDownsLast = { t: Date.now(), hasRoot: !!root, api: DOWNS_API || '(empty)' };
     try {
-      if (!root || !DOWNS_API) { console.debug('[URP++ downs] skip: no root/api'); return; }
+      if (!root || !DOWNS_API) { dbg.stop = 'no-root-or-api'; return; }
       const els = root.querySelectorAll('[data-dows-id]');
-      console.debug('[URP++ downs] refresh', (root.id || root.className || '').toString().slice(0, 40), 'els=' + els.length);
-      if (!els.length) return;
+      dbg.els = els.length;
+      if (!els.length) { dbg.stop = 'no-placeholders'; return; }
       const ids = Array.from(new Set(Array.from(els).map((e) => e.dataset.dowsId)));
+      dbg.ids = ids;
       const map = await fetchStoreDowns(ids);
-      console.debug('[URP++ downs] map=', JSON.stringify(map));
-      if (!document.body.contains(root)) { console.debug('[URP++ downs] root gone, abort'); return; }
+      dbg.map = map;
+      if (!document.body.contains(root)) { dbg.stop = 'root-detached'; return; }
+      let filled = 0;
       root.querySelectorAll('[data-dows-id]').forEach((el) => {
         const n = map[el.dataset.dowsId];
-        console.debug('[URP++ downs] fill', el.dataset.dowsId, '->', n);
-        if (typeof n === 'number' && n >= 0) el.textContent = ' · ↓' + (n >= 10000 ? (n / 10000).toFixed(1) + 'w' : String(n));
+        if (typeof n === 'number' && n >= 0) { el.textContent = ' · ↓' + (n >= 10000 ? (n / 10000).toFixed(1) + 'w' : String(n)); filled++; }
       });
-    } catch (e) { console.debug('[URP++ downs] err', e); }
+      dbg.filled = filled;
+      try { console.log('[URP++ downs]', JSON.stringify(dbg)); } catch (_) {}
+    } catch (e) { dbg.err = String(e); try { console.log('[URP++ downs] err', String(e)); } catch (_) {} }
   }
   setInterval(() => { // 计数轮询：面板可见时每 30s 刷新一次
     try {
@@ -6813,7 +6817,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       if (p && getComputedStyle(p).display !== 'none') refreshStoreDowns(p);
     } catch (_) {}
   }, 30000);
-  try { const _uw = (typeof unsafeWindow !== 'undefined' ? unsafeWindow : window); _uw.__urpppDownsTest = fetchStoreDowns; _uw.__urpppDownsRefresh = refreshStoreDowns; } catch (_) {} // 调试：Console里 __urpppDownsTest(['organic']).then(console.log) / __urpppDownsRefresh(容器)
+  try { const _uw = (typeof unsafeWindow !== 'undefined' ? unsafeWindow : window); _uw.__urpppDownsTest = fetchStoreDowns; _uw.__urpppDownsRefresh = refreshStoreDowns; _uw.__urpppStoreTest = (host) => fetchCatalogThemes(host); } catch (_) {} // 调试：注入测试用
   // 安装前验签：source=源的pubkey(或''=官方/未签名源)。返回 {ok, fail} 请调用方决定拦截
   async function guardEntrySignature(entry) {
     const pub = entry && entry._srcPub;
