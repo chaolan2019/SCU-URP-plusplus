@@ -7028,10 +7028,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         if (!url) return;
         add.disabled = true; const old = add.textContent; add.textContent = '验证中…';
         try {
-          const res = await fetch(url, { cache: 'no-store' });
-          if (!(res && res.ok)) throw new Error('无法访问');
-          const j = await res.json();
-          if (!(j && Array.isArray(j.items))) throw new Error('不是合法 catalog（无 items）');
+          // GM 通道验证：页面 fetch 会被 Chrome PNA 拦截（公网页面 → loopback/私网）
+          const j = parseCatalogDoc(await fetchRemoteCatalog(url, 8000));
+          if (!j) throw new Error('无法访问或不是合法 catalog（无 items）');
           const arr = getCustomSources();
           if (arr.some((s) => s.url === url)) { toast('该源已存在'); return; }
           arr.push({ name: (nameInput.value || '').trim() || url, url, enabled: true });

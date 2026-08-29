@@ -19,6 +19,8 @@
   ],
   "run-at": "document-start",
   "connect": [
+        "127.0.0.1",
+        "localhost",
     "raw.githubusercontent.com",
     "github.com",
     "cdn.jsdelivr.net",
