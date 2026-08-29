@@ -6608,9 +6608,22 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const withTimeout = (promise, ms) => Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
     const fetchCatalogDoc = async (url) => {
       try {
-        const res = await withTimeout(fetch(url, { cache: 'no-store' }), 5000);
-        if (!(res && res.ok)) return null;
-        const j = await res.json();
+        let text = '';
+        if (typeof GM_xmlhttpRequest === 'function') { // GM 优先：免 CORS/PNA，避免 http 页面拉 raw 源的必现报错
+          text = await new Promise((resolve) => {
+            try {
+              GM_xmlhttpRequest({ method: 'GET', url, timeout: 5000,
+                onload: (res) => resolve((res && res.responseText) || ''),
+                onerror: () => resolve(''), ontimeout: () => resolve('') });
+            } catch (_) { resolve(''); }
+          });
+        } else {
+          const res = await withTimeout(fetch(url, { cache: 'no-store' }), 5000);
+          if (!(res && res.ok)) return null;
+          text = await res.text();
+        }
+        if (!text) return null;
+        const j = JSON.parse(text);
         return (j && Array.isArray(j.items)) ? j : null;
       } catch (_) { return null; }
     };
@@ -7239,11 +7252,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   function fetchTextForUpdate(url, opts) {
     const headers = { 'Cache-Control': 'no-cache' };
     if (opts && opts.range) headers.Range = opts.range;
-    return fetchWithTimeout(url, headers, 12000)
-      .catch((fetchError) => {
-        if (typeof GM_xmlhttpRequest === 'function') return gmRequestForUpdate(url, headers);
-        throw fetchError;
-      });
+    // GM 优先：无 CORS/PNA/preflight，避免页面 fetch 对 http 页面的必现报错（raw PNA 拦截 / gh-proxy 无CORS头 / jsdelivr 不允许cache-control头）
+    if (typeof GM_xmlhttpRequest === 'function') {
+      return gmRequestForUpdate(url, headers).catch(() => fetchWithTimeout(url, headers, 12000));
+    }
+    return fetchWithTimeout(url, headers, 12000);
   }
 
   // 多源探测：主源（GitHub 权威）优先，primaryTimeout 内未响应则并发切换加速源；主源稍后返回也参与竞争
