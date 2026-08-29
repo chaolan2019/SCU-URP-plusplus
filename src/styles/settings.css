@@ -516,7 +516,7 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editoria
 #urppp-settings-panel .urppp-about-author,
 #urppp-settings-panel .urppp-about-contact { margin: 0 !important; font-size: 12px !important; color: var(--text-secondary) !important; }
 #urppp-settings-panel .urppp-about-msg {
-  margin: 8px 0 0 !important; font-size: 12px !important; line-height: 1.65 !important;
+  margin: 8px 0 0 !important; font-size: 12px !important; line-height: 1.95 !important;
   color: var(--text-secondary) !important; white-space: pre-line !important;
 }
 #urppp-settings-panel #urppp-set-assist-slot:empty { display: none !important; }
