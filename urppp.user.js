@@ -21,6 +21,7 @@
 // @connect      github.com
 // @connect      cdn.jsdelivr.net
 // @connect      gh-proxy.com
+// @connect      api.yanjiangrd.site
 // @run-at       document-start
 // ==/UserScript==
 
