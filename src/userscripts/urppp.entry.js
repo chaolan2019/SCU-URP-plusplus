@@ -6445,7 +6445,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     try {
       const catalog = await fetchCatalogList(true);
       __catalogCache = catalog; catalogCacheWrite(catalog);
-      if (document.body.contains(downloadPane)) render(catalog.filter((it) => it.type === 'theme' && !themeDownloaded(it.id)));
+      if (downloadPane.isConnected) render(catalog.filter((it) => it.type === 'theme' && !themeDownloaded(it.id))); // 面板挂 documentElement 下，不能用 body.contains
     } catch (_) {}
   }
 
@@ -6971,9 +6971,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         </div>
       </div>`).join('') : '<div class="urppp-store-empty"><p>暂无自定义仓库源</p></div>';
     return `<div class="urppp-src-manage">
-      <p class="urppp-src-hint">自定义仓库源：添加第三方 catalog 一起拉取，官方源始终优先（同 id 取官方）。签名源安装前自动校验。隐藏的源不再拉取，但保留配置。</p>
       <div class="urppp-src-official">
-        <p class="urppp-src-hint"><strong>官方收录源</strong>（点击添加，收录申请见商店仓库投稿指南）</p>
+        <p class="urppp-src-hint"><strong>官方收录源</strong>（点击添加；收录申请见 <a class="urppp-src-link" href="https://github.com/chaolan2019/URP-plusplus-Repository/tree/main/contribute" target="_blank" rel="noopener noreferrer">商店仓库投稿指南</a>）</p>
         <div data-src-official-list><div class="urppp-store-empty"><p>正在加载收录列表…</p></div></div>
       </div>
       <div class="urppp-src-mine">
@@ -6986,6 +6985,20 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         </div>
       </div>
     </div>`;
+  }
+
+  function bindStoreAutoRefresh(body) { // 仓库源 pane 内任何按钮操作后，自动重拉 catalog 并刷新下载列表
+    if (body.dataset.srcAutoRefresh) return;
+    body.dataset.srcAutoRefresh = '1';
+    body.addEventListener('click', (e) => {
+      const t = e.target;
+      const btn = t && t.closest ? t.closest('button') : null;
+      if (!btn || !btn.closest('[data-pane="sources"]')) return;
+      clearTimeout(window.__urpppSrcAutoRefreshTimer);
+      window.__urpppSrcAutoRefreshTimer = setTimeout(() => {
+        try { fetchCatalogThemes(body); } catch (_) {}
+      }, 400);
+    });
   }
 
   async function renderOfficialSources(body) {
@@ -7057,6 +7070,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       if (arr[i]) { arr.splice(i, 1); saveCustomSources(arr); refreshStoreSources(body); }
     }));
     try { renderOfficialSources(body); } catch (_) {} // 官方收录源异步填充
+    bindStoreAutoRefresh(body);
   }
 
   function refreshStoreSources(body) {
