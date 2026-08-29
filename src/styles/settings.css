@@ -519,6 +519,12 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editoria
   margin: 8px 0 0 !important; font-size: 12px !important; line-height: 1.95 !important;
   color: var(--text-secondary) !important; white-space: pre-line !important;
 }
+#urppp-settings-panel .urppp-about-msg a.urppp-about-poem-link {
+  color: inherit !important; text-decoration: none !important; transition: color 0.15s ease !important;
+}
+#urppp-settings-panel .urppp-about-msg a.urppp-about-poem-link:hover {
+  color: var(--primary) !important; text-decoration: underline !important;
+}
 #urppp-settings-panel #urppp-set-assist-slot:empty { display: none !important; }
 #urppp-settings-panel #urppp-set-assist-slot .urppp-set-sec { margin-top: 14px !important; }
 

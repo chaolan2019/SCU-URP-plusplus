@@ -138,7 +138,7 @@ export function buildSettingsPanelHtml(options) {
     '      <a class="urppp-about-ver" id="urppp-about-ver" href="' + repositoryUrl + '" target="_blank" rel="noopener noreferrer">SCU URP++ v' + version + '</a>',
     '      <p class="urppp-about-author">作者：Chao_Lan · Hanako</p>',
     '      <p class="urppp-about-contact">QQ：2718748334</p>',
-    '      <p class="urppp-about-msg">有任何问题欢迎及时反馈！\n\n《在星星峡遇暴风雨》\n刘年\n在星星峡，穿过大漠，九死一生的玄奘\n遇到了第一个活人\n这位高僧，忍不住抱着对方，痛哭流涕\n也是在星星峡，风，抱着我不放\n沙子在咕咕地喝水\n喝饱水的沙子，黄豆一样膨胀\n焉支山上，那弯彩虹的出现与消失，意义重大\n我认为，它是人生的真相</p>',
+    '      <p class="urppp-about-msg">有任何问题欢迎及时反馈！\n\n<a class="urppp-about-poem-link" href="https://music.163.com/#/song?id=1338064727" target="_blank" rel="noopener noreferrer">《在星星峡遇暴风雨》</a>\n刘年\n在星星峡，穿过大漠，九死一生的玄奘\n遇到了第一个活人\n这位高僧，忍不住抱着对方，痛哭流涕\n也是在星星峡，风，抱着我不放\n沙子在咕咕地喝水\n喝饱水的沙子，黄豆一样膨胀\n焉支山上，那弯彩虹的出现与消失，意义重大\n我认为，它是人生的真相</p>',
     '    </div>',
     '  </div>',
     '</div>',
