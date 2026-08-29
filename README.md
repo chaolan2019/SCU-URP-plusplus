@@ -208,6 +208,16 @@
 
 ---
 
+
+## 主题投稿
+
+喜欢折腾 CSS？把你自己的教务主题投进 **URP++ 主题商店**，让所有用户一键可用。
+
+- 主题与插件仓库：**[URP-plusplus-Repository](https://github.com/chaolan2019/URP-plusplus-Repository)**
+- 投稿指南与快捷工具（主题骨架模板、catalog 条目模板、自检脚本）：[contribute/](https://github.com/chaolan2019/URP-plusplus-Repository/tree/main/contribute)
+- 字段规范与开发必读：[DEV_GUIDELINES.md](https://github.com/chaolan2019/URP-plusplus-Repository/blob/main/DEV_GUIDELINES.md)
+
+两种上架方式：向官方仓库提 **PR**（进官方商店），或**自建仓库源**（设置 → 商店 → 仓库源，添加你的 catalog 地址，即时生效无需审核）。
 ## 特别鸣谢
 
 - **AI 支持**：GPT-5.6 Sol、Grok 4.5、Kimi K2.7 Code、DeepSeek V4 Pro/Flash
