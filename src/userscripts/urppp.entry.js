@@ -6621,17 +6621,23 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return null;
   }
 
-  // 自定义仓库源（多 catalog，含官方条目）：{name,url,mirrors?,enabled,hidden,pubkey}
+  // 自定义仓库源（多 catalog，含官方条目）：{name,url,mirrors?,enabled,pubkey}
   const OFFICIAL_SOURCE_URL = OFFICIAL_CATALOG_URLS[0];
   function getCustomSources() {
     try {
       const r = JSON.parse(GM_getValue('urppp_store_sources', '[]'));
       const arr = Array.isArray(r) ? r : [];
-      // 首次迁移：官方条目自动置首（三镜像冗余），此后官方主题完全由该条目管理
-      if (!arr.some((s) => s && s.url === OFFICIAL_SOURCE_URL)) {
-        arr.unshift({ name: 'SCU URP++ 官方商店仓库', url: OFFICIAL_SOURCE_URL, mirrors: OFFICIAL_CATALOG_URLS.slice(), enabled: true, hidden: false });
-        try { GM_setValue('urppp_store_sources', JSON.stringify(arr)); } catch (_) {}
+      let dirty = false;
+      for (const s of arr) { if (s && 'hidden' in s) { delete s.hidden; dirty = true; } } // hidden 已废弃，归一为 enabled
+      // 首次迁移：官方条目自动置首（三镜像冗余）；只迁一次，删除后不回注，可从收录列表重新添加
+      if (!GM_getValue('urppp_sources_migrated', false)) {
+        if (!arr.some((s) => s && s.url === OFFICIAL_SOURCE_URL)) {
+          arr.unshift({ name: 'SCU URP++ 官方商店仓库', url: OFFICIAL_SOURCE_URL, mirrors: OFFICIAL_CATALOG_URLS.slice(), enabled: true });
+        }
+        GM_setValue('urppp_sources_migrated', true);
+        dirty = true;
       }
+      if (dirty) { try { GM_setValue('urppp_store_sources', JSON.stringify(arr)); } catch (_) {} }
       return arr;
     } catch (_) { return []; }
   }
@@ -6651,8 +6657,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (__catalogCache && !force) return __catalogCache;
     const fetchCatalogDoc = async (url) => parseCatalogDoc(await fetchRemoteCatalog(url));
 
-    // 全部源平级拉取（官方条目已置首，同 id 顺序优先）：enabled 且未隐藏，逐源 mirrors 依次回退
-    const customs = getCustomSources().filter((s) => s && s.url && s.enabled !== false && !s.hidden);
+    // 全部源平级拉取（官方条目已置首，同 id 顺序优先）：仅 enabled，逐源 mirrors 依次回退
+    const customs = getCustomSources().filter((s) => s && s.url && s.enabled !== false);
     const customsRes = await Promise.allSettled(customs.map(async (s) => {
       const mirrors = Array.isArray(s.mirrors) && s.mirrors.length ? s.mirrors : [s.url];
       if (!mirrors.includes(s.url)) mirrors.unshift(s.url);
@@ -6961,14 +6967,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   function storeSourcesHtml() {
     const customs = getCustomSources();
     const rows = customs.length ? customs.map((s, i) => `
-      <div class="urppp-src-item${s.hidden ? ' urppp-src-hidden' : ''}">
+      <div class="urppp-src-item">
         <div class="urppp-src-meta"><strong>${escapeHtml(s.name || '未命名')}</strong><span class="urppp-src-url">${escapeHtml(s.url)}</span></div>
         <div class="urppp-src-ops">
-          <button type="button" class="urppp-set-btn ghost" data-src-hide="${i}">${s.hidden ? '显示' : '隐藏'}</button>
           <button type="button" class="urppp-set-btn ghost" data-src-toggle="${i}">${s.enabled !== false ? '禁用' : '启用'}</button>
           <button type="button" class="urppp-set-btn ghost" data-src-del="${i}">删除</button>
         </div>
-      </div>`).join('') : '<div class="urppp-store-empty"><p>暂无自定义仓库源</p></div>';
+      </div>`).join('') : '<div class="urppp-store-empty"><p>暂无仓库源</p></div>';
     return `<div class="urppp-src-manage">
       <div class="urppp-src-official">
         <p class="urppp-src-hint"><strong>官方收录源</strong>（点击添加；收录申请见 <a class="urppp-src-link" href="https://github.com/chaolan2019/URP-plusplus-Repository/tree/main/contribute" target="_blank" rel="noopener noreferrer">商店仓库投稿指南</a>）</p>
@@ -7019,7 +7024,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       b.disabled = true;
       const arr = getCustomSources();
       if (arr.some((c) => c.url === src.url)) { toast('该源已存在'); return; }
-      arr.push({ name: src.name || src.id || src.url, url: src.url, enabled: true, hidden: false });
+      arr.push(Object.assign({ name: src.name || src.id || src.url, url: src.url, enabled: true }, Array.isArray(src.mirrors) && src.mirrors.length ? { mirrors: src.mirrors.slice() } : {}));
       saveCustomSources(arr);
       __catalogCache = null;
       toast('已添加仓库源：' + (src.name || src.url));
@@ -7054,11 +7059,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const i = Number(b.dataset.srcToggle);
       const arr = getCustomSources();
       if (arr[i]) { arr[i].enabled = arr[i].enabled !== false ? false : true; saveCustomSources(arr); refreshStoreSources(body); }
-    }));
-    body.querySelectorAll('[data-src-hide]').forEach((b) => b.addEventListener('click', () => {
-      const i = Number(b.dataset.srcHide);
-      const arr = getCustomSources();
-      if (arr[i]) { arr[i].hidden = !arr[i].hidden; saveCustomSources(arr); __catalogCache = null; refreshStoreSources(body); }
     }));
     body.querySelectorAll('[data-src-del]').forEach((b) => b.addEventListener('click', () => {
       const i = Number(b.dataset.srcDel);
