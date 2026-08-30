@@ -103,7 +103,7 @@ export function buildSettingsPanelHtml(options) {
     '        <div class="urppp-identity-fields">',
     '          <div class="urppp-feature-row"><label><input type="checkbox" id="urppp-set-name-enabled"> 自定义姓名</label><input class="urppp-feature-input" id="urppp-set-custom-name" maxlength="40" placeholder="输入显示姓名"></div>',
     '          <div class="urppp-feature-row"><label><input type="checkbox" id="urppp-set-avatar-enabled"> 自定义头像</label><input class="urppp-feature-input" id="urppp-set-custom-avatar-url" placeholder="https://... 图片地址"></div>',
-    '          <div class="urppp-feature-row"><label for="urppp-set-custom-avatar-file" class="urppp-avatar-file-btn" role="button" tabindex="0">选择图片</label><input class="urppp-feature-input urppp-avatar-file-hidden" type="file" id="urppp-set-custom-avatar-file" accept="image/png,image/jpeg,image/webp,image/gif"></div>',
+    '          <div class="urppp-feature-row"><label for="urppp-set-custom-avatar-file">本地图片</label><label class="urppp-feature-input urppp-avatar-file-trigger" for="urppp-set-custom-avatar-file" role="button" tabindex="0">选择文件</label><input class="urppp-avatar-file-hidden" type="file" id="urppp-set-custom-avatar-file" accept="image/png,image/jpeg,image/webp,image/gif"></div>',
     '        </div>',
     '        <div class="urppp-identity-preview">',
     '          <span class="urppp-identity-preview-label">头像预览</span>',
