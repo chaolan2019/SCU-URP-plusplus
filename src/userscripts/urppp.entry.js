@@ -6387,8 +6387,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           const downloadPane = body.querySelector('[data-pane="download"]');
           if (kind === 'theme') { try { fetchCatalogThemes(body); } catch (_) {} }
           else if (downloadPane) { try { fetchCatalogPlugins(downloadPane); } catch (_) {} }
-          try { refreshStoreDowns(body); } catch (_) {} // 顺带刷计数
-        } catch (_) {}
+                  } catch (_) {}
         refreshBtn.disabled = false; refreshBtn.textContent = '↻';
       };
     }
@@ -6460,7 +6459,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       downloadPane.innerHTML = `<div class="urppp-store-theme-grid">${themes.map((it) => themeStoreCard(it, false)).join('')}</div>`;
       downloadPane.querySelectorAll('[data-store-theme]').forEach((b) => { b.addEventListener('click', () => downloadStoreTheme(b.dataset.storeTheme, b)); });
       downloadPane.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
-      try { refreshStoreDowns(downloadPane); } catch (_) {} // 计数异步补显
     };
     // 先用缓存立即渲染（GM urppp_catalog_cache），网络只在后台刷新，避免等 catalog 才出现主题
     render((__catalogCache || []).filter((it) => it.type === 'theme' && !themeDownloaded(it.id)));
@@ -6497,7 +6495,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     try { storeThemeStyleEl(id).textContent = css; } catch (_) {}
     try { ensureStoreCardStyles([{ id, cardCss: item.cardCss || '' }]); } catch (_) {}
     btn.textContent = '已安装'; btn.disabled = true;
-    try { reportStoreDownload(id, item._srcUrl); } catch (_) {} // 下载计数（仅收录源，假名，静默）// 下载计数（假名，静默）
     // 即时刷新：主题管理能看到刚下的主题 + 下载列表排除它
     const inline = (btn.closest && btn.closest('.urppp-store-inline'));
     if (inline) {
@@ -6543,7 +6540,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     // 卡样式优先从已下载缓存（GM cardCss）注入，不等 catalog
     ensureStoreCardStyles(items.map((s) => { let cc = ''; try { cc = GM_getValue('urppp_card_css_' + s.id, '') || ''; } catch (_) {} return { id: s.id, cardCss: cc || ((catalog.find((c) => c.id === s.id) || {}).cardCss || '') }; }));
     host.innerHTML = `<div class="urppp-store-theme-grid">${items.map((s) => themeManageCardHtml(s, catalog.find((c) => c.id === s.id))).join('')}</div>`;
-    try { refreshStoreDowns(host); } catch (_) {} // 已装主题计数异步补显
     host.querySelectorAll('[data-theme-use]').forEach((b) => b.addEventListener('click', () => {
       if (setSkin(b.dataset.themeUse)) {
         try { syncSettingsPanelUI(); } catch (_) {}
@@ -6806,100 +6802,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
   // ===== P3-4 下载计数（方案A：学号假名上报 + 实时查询）=====
   // 隐私：学号不出浏览器；上报 SHA256(盐|学号|主题id) 截断假名；盐由服务端下发，不进源码
-  const DOWNS_API = 'https://api.yanjiangrd.site'; // 计数服务 base（nginx https 反代 → 127.0.0.1:8787）；置空可整体禁用
-  function getDownsSalt() {
-    return new Promise((resolve) => {
-      let done = false;
-      const fin = (v) => { if (!done) { done = true; resolve(v); } };
-      try {
-        const c = GM_getValue('urppp_downs_salt', '');
-        if (c) return fin(c);
-        if (!DOWNS_API || typeof GM_xmlhttpRequest !== 'function') return fin('');
-        GM_xmlhttpRequest({ method: 'GET', url: DOWNS_API + '/downs/salt', timeout: 8000,
-          onload: (res) => { try { const s = String((JSON.parse(res.responseText) || {}).salt || ''); if (/^[0-9a-f]{16,128}$/.test(s)) { try { GM_setValue('urppp_downs_salt', s); } catch (_) {} fin(s); } else fin(''); } catch (_) { fin(''); } },
-          onerror: () => fin(''), ontimeout: () => fin('') });
-        setTimeout(() => fin(''), 9500); // 硬兑底：TM 不回调也解卡
-      } catch (_) { fin(''); }
-    });
-  }
-  function getCurrentStudentId() { // 多级 fallback：GM缓存 → 登录面板输入 → URL参数；拿不到返回''（不上报）
-    try {
-      const cached = GM_getValue('urppp_downs_sid', '');
-      if (cached && /^\d{6,20}$/.test(cached)) return cached;
-      const inp = document.getElementById('urppp-user');
-      if (inp && /^\d{6,20}$/.test(String(inp.value || '').trim())) { const v = String(inp.value).trim(); try { GM_setValue('urppp_downs_sid', v); } catch (_) {} return v; }
-      const m = String(location.search || '').match(/[?&](?:userAccount|sno)=(\d{6,20})/);
-      if (m) { try { GM_setValue('urppp_downs_sid', m[1]); } catch (_) {} return m[1]; }
-    } catch (_) {}
-    return '';
-  }
-  async function reportStoreDownload(id, srcUrl) { // fire-and-forget：仅官方收录源计数；任何失败静默
-    try {
-      if (!DOWNS_API || !id) return;
-      const dir = await fetchOfficialSources(); // 收录目录（会话内缓存）；拉取失败则不计数（宁缺勿滥）
-      const urls = (dir && Array.isArray(dir.sources)) ? dir.sources.map((x) => x && x.url).filter(Boolean) : [];
-      if (!srcUrl || !urls.includes(srcUrl)) return; // 非收录源（本地/自建未收录）不计数
-      const salt = await getDownsSalt(); if (!salt) return;
-      const sid = getCurrentStudentId(); if (!sid) return;
-      const bytes = sha256Bytes(new TextEncoder().encode(salt + '|' + sid + '|' + id));
-      let uid = ''; for (let i = 0; i < 16; i++) uid += bytes[i].toString(16).padStart(2, '0');
-      const body = JSON.stringify({ id: String(id), uid });
-      try { // fetch 优先（CORS preflight 由服务端 OPTIONS 处理）
-        await Promise.race([fetch(DOWNS_API + '/downs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body }), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000))]);
-        return;
-      } catch (_) {}
-      try { if (typeof GM_xmlhttpRequest === 'function') GM_xmlhttpRequest({ method: 'POST', url: DOWNS_API + '/downs', timeout: 8000, headers: { 'Content-Type': 'application/json' }, data: body, onerror: () => {}, ontimeout: () => {} }); } catch (_) {}
-    } catch (_) {}
-  }
-  function fetchStoreDowns(ids) {
-    // 优先页面 fetch（CORS 已由服务端放行；http→https 方向浏览器允许），GM_xmlhttpRequest 兑底（实测存在挂死不回调）
-    const url = DOWNS_API + '/downs?ids=' + encodeURIComponent(ids.join(','));
-    const gmFallback = () => new Promise((resolve) => {
-      let done = false;
-      const fin = (v) => { if (!done) { done = true; resolve(v || {}); } };
-      try {
-        if (typeof GM_xmlhttpRequest !== 'function') return fin({});
-        GM_xmlhttpRequest({ method: 'GET', url, timeout: 8000,
-          onload: (res) => { try { fin(JSON.parse(res.responseText) || {}); } catch (_) { fin({}); } },
-          onerror: () => fin({}), ontimeout: () => fin({}) });
-        setTimeout(() => fin({}), 9500);
-      } catch (_) { fin({}); }
-    });
-    return (async () => {
-      try {
-        const r = await Promise.race([fetch(url, { cache: 'no-store' }), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000))]);
-        if (r && r.ok) return (await r.json()) || {};
-      } catch (_) {}
-      return gmFallback();
-    })();
-  }
-  async function refreshStoreDowns(root) { // 卡片计数补显（0 也常驻显示；30s 轮询复用）
-    const dbg = (typeof unsafeWindow !== 'undefined' ? unsafeWindow : window).__urpppDownsLast = { t: Date.now(), hasRoot: !!root, api: DOWNS_API || '(empty)' };
-    try {
-      if (!root || !DOWNS_API) { dbg.stop = 'no-root-or-api'; return; }
-      const els = root.querySelectorAll('[data-dows-id]');
-      dbg.els = els.length;
-      if (!els.length) { dbg.stop = 'no-placeholders'; return; }
-      const ids = Array.from(new Set(Array.from(els).map((e) => e.dataset.dowsId)));
-      dbg.ids = ids;
-      const map = await fetchStoreDowns(ids);
-      dbg.map = map;
-      if (!root.isConnected) { dbg.stop = 'root-detached'; return; } // 面板挂在documentElement下，不能用body.contains判
-      let filled = 0;
-      root.querySelectorAll('[data-dows-id]').forEach((el) => {
-        const n = map[el.dataset.dowsId];
-        if (typeof n === 'number' && n >= 0) { el.textContent = ' · ↓' + (n >= 10000 ? (n / 10000).toFixed(1) + 'w' : String(n)); filled++; }
-      });
-      dbg.filled = filled;
-      try { console.log('[URP++ downs]', JSON.stringify(dbg)); } catch (_) {}
-    } catch (e) { dbg.err = String(e); try { console.log('[URP++ downs] err', String(e)); } catch (_) {} }
-  }
   // 刷新时机：打开面板/商店即刷（render 链内 + renderThemeStoreBody 延迟补刷），无常驻轮询
   try {
     const _uw = (typeof unsafeWindow !== 'undefined' ? unsafeWindow : window);
-    _uw.__urpppDownsVer = 'v8';
-    _uw.__urpppDownsTest = fetchStoreDowns;
-    _uw.__urpppDownsRefresh = refreshStoreDowns;
     _uw.__urpppStoreTest = (host) => fetchCatalogThemes(host);
     _uw.__urpppStoreForceRefresh = async () => { const items = await fetchCatalogList(true); console.log('[urppp store] force refresh done:', items.map(i => i.id + ':' + (i._srcUrl || '?')).join(', ')); return items; }; // 强制重拉 catalog 并写缓存
     _uw.__urpppStoreProbe = async () => {
@@ -6938,7 +6843,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         } catch (e) { console.log('[urppp probe] EXC', u.slice(0, 60), e.message); }
       });
     };
-  } catch (_) {} // 调试：Console里 __urpppDownsVer 验证脚本版本
+  } catch (_) {}
   // 安装前验签：source=源的pubkey(或''=官方/未签名源)。返回 {ok, fail} 请调用方决定拦截
   async function guardEntrySignature(entry) {
     const pub = entry && entry._srcPub;
@@ -7031,7 +6936,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     bindLocalThemeImport(body);
     bindStoreSources(body);
     fetchCatalogThemes(body);
-    setTimeout(() => { try { refreshStoreDowns(body); } catch (_) {} }, 800); // 打开界面后补刷一次计数（防首刷竞态）
     fetchThemeManage(body.querySelector('#urppp-theme-manage'));
   }
 
@@ -7190,12 +7094,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           const g = cat ? await guardEntrySignature(cat) : 'trust';
           if (g === 'fail') { const go = await confirmBottom('签名校验失败：该插件可能被篡改。是否仍要装载？'); if (!go) { b.textContent = '下载'; b.disabled = false; return; } }
           if (g === 'unknown' && cat && cat._srcPub) { const go = await confirmBottom('该源无有效签名校验，可能被篡改。是否自担风险继续装载？'); if (!go) { b.textContent = '下载'; b.disabled = false; return; } }
-          if (pluginManager && pluginManager.api && pluginManager.api.install) await pluginManager.api.install(b.dataset.pluginApply, null); b.textContent = '已安装'; try { syncSettingsPanelUI(); } catch (_) {} try { reportStoreDownload(b.dataset.pluginApply); } catch (_) {} }
+          if (pluginManager && pluginManager.api && pluginManager.api.install) await pluginManager.api.install(b.dataset.pluginApply, null); b.textContent = '已安装'; try { syncSettingsPanelUI(); } catch (_) {} } 
         catch (_) { b.textContent = '失败'; }
         setTimeout(() => { b.textContent = old; b.disabled = false; }, 1200);
       }));
       host.querySelectorAll('[data-repo]').forEach((b) => b.addEventListener('click', () => { try { window.open(b.dataset.repo, '_blank', 'noopener'); } catch (_) {} }));
-      try { refreshStoreDowns(host); } catch (_) {} // 计数异步补显
     };
     const filter = (c) => (c || []).filter((it) => it.type === 'plugin' && !(pluginManager && pluginManager.api && pluginManager.api.isEnabled && pluginManager.api.isEnabled(it.id)));
     // 先用缓存立即渲染，网络只在后台刷新
@@ -9327,7 +9230,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const plan = readLabeledProfileValue(doc, ['主修方案名称']);
       const major = readLabeledProfileValue(doc, ['专业']);
       profile.studentId = readLabeledProfileValue(doc, ['学号']);
-      if (profile.studentId && /^\d{6,20}$/.test(String(profile.studentId))) { try { GM_setValue('urppp_downs_sid', String(profile.studentId)); } catch (_) {} }
       if (plan) profile.majorPlan = cleanMajorPlanName(plan);
       else if (!profile.majorPlan && major) profile.majorPlan = cleanMajorPlanName(major);
       const photo = doc.querySelector('.profile-picture img, img#avatar, img[src*="photo" i], img[src*="Photo"]');
@@ -10637,11 +10539,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (isLoginPage) {
       rebuild();
       try { applyBrandFavicon(); } catch (_) {}
-      try { scheduleBuiltinDownsReport(); } catch (_) {}
       try { scheduleGlobalPreload(); } catch (_) {}
     } else {
       try { applyBrandFavicon(); } catch (_) {}
-      try { scheduleBuiltinDownsReport(); } catch (_) {}
       try { scheduleGlobalPreload(); } catch (_) {}
       beautifyInternal();
       try { ensureFeatureStyles(); } catch (_) {}
@@ -10863,21 +10763,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       }, 3000);
       // P2（4s/5s）：更新检查 + 下载计数（非关键路径，最后）
       setTimeout(() => { try { maybeAutoCheckUpdate(); } catch (_) {} }, 4000);
-      setTimeout(() => { try { refreshStoreDowns(document.body); } catch (_) {} }, 5000);
-    } catch (_) {}
+      } catch (_) {}
   }
 
-  // 内置主题装机计数：每个用户每个内置主题只报一次，侧面反映插件装机量
-  function scheduleBuiltinDownsReport() {
-    setTimeout(() => {
-      try {
-        if (GM_getValue('urppp_builtin_downs_reported', false)) return;
-        const ids = (typeof SKIN_CATALOG !== 'undefined' ? SKIN_CATALOG : []).filter((t) => t && t.builtin).map((t) => t.id);
-        ids.forEach((id) => { try { reportStoreDownload(id, OFFICIAL_SOURCE_URL); } catch (_) {} });
-        GM_setValue('urppp_builtin_downs_reported', true);
-      } catch (_) {}
-    }, 2600);
-  }
+
 
   // 尽早注入已下载主题CSS并应用皮肤（刷新时 body 构建前即设 data-urppp-skin，避免先白后暖黄/主题色迟载）
   try { injectAllStoreThemeStyles(); } catch (_) {}
