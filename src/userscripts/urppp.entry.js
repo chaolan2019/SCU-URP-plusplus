@@ -10843,8 +10843,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   function scheduleGlobalPreload() {
     try {
       if (!isGlobalPreload()) return;
-      // P0（0ms）：当前主题样式 + catalog（进页面即可见的视觉内容；catalog 是商店列表与卡片样式的依赖）
-      try { fetchCatalogList(true).then((items) => { try { ensureStoreCardStyles(items); } catch (_) {} }); } catch (_) {}
+      // P0（0ms）：当前主题样式 + catalog（进页面即可见的视觉内容）。
+      // 用缓存优先：内存/GM 有缓存就直接用，避免进页面为预加载发起额外网络请求抢带宽；仅缓存缺失才拉取。
+      try {
+        if (__catalogCache && __catalogCache.length) {
+          try { ensureStoreCardStyles(__catalogCache); } catch (_) {}
+        } else {
+          fetchCatalogList().then((items) => { try { ensureStoreCardStyles(items); } catch (_) {} });
+        }
+      } catch (_) {}
       // P1（3s）：主题/插件商店列表（等首屏与清爽模式加载完成后，错峰预拉）
       setTimeout(() => {
         try {
