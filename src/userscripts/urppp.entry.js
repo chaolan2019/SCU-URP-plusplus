@@ -6871,7 +6871,33 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     } catch (e) { dbg.err = String(e); try { console.log('[URP++ downs] err', String(e)); } catch (_) {} }
   }
   // 刷新时机：打开面板/商店即刷（render 链内 + renderThemeStoreBody 延迟补刷），无常驻轮询
-  try { const _uw = (typeof unsafeWindow !== 'undefined' ? unsafeWindow : window); _uw.__urpppDownsVer = 'v8'; _uw.__urpppDownsTest = fetchStoreDowns; _uw.__urpppDownsRefresh = refreshStoreDowns; _uw.__urpppStoreTest = (host) => fetchCatalogThemes(host); } catch (_) {} // 调试：Console里 __urpppDownsVer 验证脚本版本
+  try {
+    const _uw = (typeof unsafeWindow !== 'undefined' ? unsafeWindow : window);
+    _uw.__urpppDownsVer = 'v8';
+    _uw.__urpppDownsTest = fetchStoreDowns;
+    _uw.__urpppDownsRefresh = refreshStoreDowns;
+    _uw.__urpppStoreTest = (host) => fetchCatalogThemes(host);
+    // 商店诊断：Console 里调 __urpppStoreDiag() 输出完整状态
+    _uw.__urpppStoreDiag = async () => {
+      const out = {};
+      try { const raw = GM_getValue('urppp_catalog_cache', ''); out.catalogCache = raw ? JSON.parse(raw).map(i => i.id + ':' + (i._srcUrl || '?')).join(', ') : '(empty)'; } catch (e) { out.catalogCache = 'ERR ' + e.message; }
+      try { out.sources = JSON.parse(GM_getValue('urppp_store_sources', '[]')).map(x => ({ n: x.name, u: x.url, e: x.enabled, m: (x.mirrors || []).length })); } catch (e) { out.sources = 'ERR ' + e.message; }
+      out.migrated = GM_getValue('urppp_sources_migrated', 'unset');
+      out.cacheInMem = __catalogCache ? __catalogCache.map(i => i.id + ':' + (i._srcUrl || '?')).join(', ') : '(null)';
+      out.officialURL = OFFICIAL_SOURCE_URL;
+      console.log('[urppp store diag]', JSON.stringify(out, null, 2));
+      // GM 通道探测官方源
+      ['https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/catalog.json',
+       'https://cdn.jsdelivr.net/gh/chaolan2019/URP-plusplus-Repository@main/catalog.json'].forEach(u => {
+        try {
+          GM_xmlhttpRequest({ method: 'GET', url: u, timeout: 8000,
+            onload: r => console.log('[urppp probe] GM-OK', u.slice(0, 60), (r.responseText || '').length + 'B'),
+            onerror: e => console.log('[urppp probe] GM-ERR', u.slice(0, 60)),
+            ontimeout: () => console.log('[urppp probe] GM-TIMEOUT', u.slice(0, 60)) });
+        } catch (e) { console.log('[urppp probe] EXC', u.slice(0, 60), e.message); }
+      });
+    };
+  } catch (_) {} // 调试：Console里 __urpppDownsVer 验证脚本版本
   // 安装前验签：source=源的pubkey(或''=官方/未签名源)。返回 {ok, fail} 请调用方决定拦截
   async function guardEntrySignature(entry) {
     const pub = entry && entry._srcPub;
