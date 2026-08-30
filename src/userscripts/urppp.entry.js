@@ -10837,23 +10837,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     setTimeout(() => { try { maybeAutoCheckUpdate(); } catch (_) {} }, 1800);
   }
 
-  // 全局预加载：按优先级预拉取需要联网的内容（开启时）
+  // 全局预加载：预拉取"用户暂未看到但会用到"的联网内容。
+  // 原则：不抢关键加载——清爽模式数据（课表/成绩/教室列表）由清爽模式自身 open 时加载，此处不预拉；
+  // 预加载只做"进页面即可见的视觉内容"与"商店等次要内容"，且全部错峰延后，避免与首屏/清爽模式抢带宽。
   function scheduleGlobalPreload() {
     try {
       if (!isGlobalPreload()) return;
-      // P0：优先加载看得到的主题样式（当前主题已由 applyTheme 应用；此处补拉 catalog + 卡片样式）
-      setTimeout(() => {
-        try { fetchCatalogList(true).then((items) => { try { ensureStoreCardStyles(items); } catch (_) {} }); } catch (_) {}
-      }, 0);
-      // P1：若默认进入清爽模式，预拉清爽模式数据（教室查询目录等）
-      setTimeout(() => {
-        try {
-          if (isCleanDefault() && window.__urpppCleanMode && window.__urpppCleanMode.data && window.__urpppCleanMode.data.ensureRoomCatalogLoaded) {
-            window.__urpppCleanMode.data.ensureRoomCatalogLoaded();
-          }
-        } catch (_) {}
-      }, 300);
-      // P2：主题商店 / 插件商店列表（依赖 catalog，先拉 catalog 后渲染）
+      // P0（0ms）：当前主题样式 + catalog（进页面即可见的视觉内容；catalog 是商店列表与卡片样式的依赖）
+      try { fetchCatalogList(true).then((items) => { try { ensureStoreCardStyles(items); } catch (_) {} }); } catch (_) {}
+      // P1（3s）：主题/插件商店列表（等首屏与清爽模式加载完成后，错峰预拉）
       setTimeout(() => {
         try {
           const inline = document.querySelector('.urppp-store-inline');
@@ -10861,10 +10853,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           const pluginPane = document.querySelector('[data-pane="download"]');
           if (pluginPane) { try { fetchCatalogPlugins(pluginPane); } catch (_) {} }
         } catch (_) {}
-      }, 800);
-      // P3：更新检查 + 下载计数（非关键路径，最后）
-      setTimeout(() => { try { maybeAutoCheckUpdate(); } catch (_) {} }, 1800);
-      setTimeout(() => { try { refreshStoreDowns(document.body); } catch (_) {} }, 2600);
+      }, 3000);
+      // P2（4s/5s）：更新检查 + 下载计数（非关键路径，最后）
+      setTimeout(() => { try { maybeAutoCheckUpdate(); } catch (_) {} }, 4000);
+      setTimeout(() => { try { refreshStoreDowns(document.body); } catch (_) {} }, 5000);
     } catch (_) {}
   }
 
