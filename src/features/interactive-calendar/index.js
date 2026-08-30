@@ -57,16 +57,18 @@ async function ensureCalendarData(onLoad, force) {
     if (!data) {
       try {
         const cached = GM_getValue('urppp_calendar_cache', '');
-        if (cached) { const j = JSON.parse(cached); if (j && j.terms) data = j; }
+        if (cached) { const j = JSON.parse(cached); if (j && j.terms) { data = j; try { console.log('[URP++ calendar] 数据来源: GM缓存'); } catch (_) {} } }
       } catch (_) {}
     }
     if (data && data.terms) {
       CAL_TERMS = data.terms;
       CAL_LUNAR = data.lunar || {};
       try { GM_setValue('urppp_calendar_cache', JSON.stringify({ terms: CAL_TERMS, lunar: CAL_LUNAR })); } catch (_) {}
+      try { console.log('[URP++ calendar] 数据来源: 远程/' + (data._meta && data._meta.source ? data._meta.source : 'json')); } catch (_) {}
     } else {
       CAL_TERMS = FALLBACK_TERMS;
       CAL_LUNAR = FALLBACK_LUNAR;
+      try { console.log('[URP++ calendar] 数据来源: FALLBACK 兜底（远程源均不可达）'); } catch (_) {}
     }
     __calLoaded = true;
     __calLoading = null;
