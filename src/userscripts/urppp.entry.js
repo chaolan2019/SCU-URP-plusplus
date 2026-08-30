@@ -6395,6 +6395,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }
     if (kind === 'theme') renderThemeStoreBody(body);
     else renderPluginStoreBody(body);
+    // 强制可见：内联样式优先级最高，绕过任何 CSS 覆盖（动画/opacity/z-index 问题）导致的隐形
+    sub.style.cssText = 'display:flex !important;opacity:1 !important;visibility:visible !important;position:absolute;top:0;left:0;width:100%;height:100%;z-index:6;background:var(--surface,#fff);flex-direction:column;';
     sub.classList.add('open');
   }
 
