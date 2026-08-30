@@ -1125,5 +1125,5 @@
       html.urppp-theme-dark body .red_background {
         background: rgba(239, 68, 68, 0.28) !important;
         background-color: rgba(239, 68, 68, 0.28) !important;
-        color: #fca5a5 !important;
+        color: color-mix(in srgb, var(--danger) 70%, var(--surface)) !important;
       }

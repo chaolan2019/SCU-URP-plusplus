@@ -777,9 +777,9 @@
         background: none !important;
       }
       .urppp-plan-legend .urppp-lg.done i,
-      .urppp-plan-legend .urppp-lg.pass i { color: #16a34a !important; }
+      .urppp-plan-legend .urppp-lg.pass i { color: var(--success) !important; }
       .urppp-plan-legend .urppp-lg.todo i { color: var(--primary) !important; }
-      .urppp-plan-legend .urppp-lg.fail i { color: #dc2626 !important; }
+      .urppp-plan-legend .urppp-lg.fail i { color: var(--danger) !important; }
       .urppp-plan-legend .urppp-lg.pending i { color: var(--text-muted) !important; }
       .urppp-plan-header .right_top_oper {
         margin-left: auto !important;
@@ -1073,11 +1073,11 @@
       .ztree.urppp-ztree li.urppp-node-done > a i,
       #treeDemo.ztree li.urppp-node-done > a i,
       .ztree.urppp-ztree li.urppp-node-pass > a i,
-      #treeDemo.ztree li.urppp-node-pass > a i { color: #16a34a !important; }
+      #treeDemo.ztree li.urppp-node-pass > a i { color: var(--success) !important; }
       .ztree.urppp-ztree li.urppp-node-todo > a i,
       #treeDemo.ztree li.urppp-node-todo > a i { color: var(--primary) !important; }
       .ztree.urppp-ztree li.urppp-node-fail > a i,
-      #treeDemo.ztree li.urppp-node-fail > a i { color: #dc2626 !important; }
+      #treeDemo.ztree li.urppp-node-fail > a i { color: var(--danger) !important; }
       .ztree.urppp-ztree li.urppp-node-pending > a i,
       #treeDemo.ztree li.urppp-node-pending > a i { color: var(--text-muted) !important; }
       .ztree.urppp-ztree li.urppp-node-done > a,
@@ -1132,7 +1132,7 @@
         font-variant-numeric: tabular-nums !important;
       }
       .urppp-kv.req b { color: var(--primary) !important; }
-      .urppp-kv.ok b { color: #15803d !important; }
+      .urppp-kv.ok b { color: var(--success) !important; }
       .urppp-kv.warn b { color: #ca8a04 !important; }
       .urppp-kv.muted b { color: var(--text-muted) !important; font-weight: 600 !important; }
 
@@ -1195,12 +1195,12 @@
         font-variant-numeric: tabular-nums !important;
       }
       .urppp-score.pass {
-        color: #15803d !important;
+        color: var(--success) !important;
         background: rgba(22,163,74,0.10) !important;
         border-color: rgba(22,163,74,0.22) !important;
       }
       .urppp-score.fail {
-        color: #b91c1c !important;
+        color: var(--danger) !important;
         background: rgba(220,38,38,0.10) !important;
         border-color: rgba(220,38,38,0.22) !important;
       }
@@ -2354,8 +2354,8 @@
       }
       .btn-success:hover, .btn-success:focus, .btn-success:active, .btn-success.active,
       .btn-success:active:focus, .btn-success:active:hover {
-        background: #2DB84D !important;
-        border-color: #2DB84D !important;
+        background: var(--success) !important;
+        border-color: var(--success) !important;
         color: #fff !important;
         box-shadow: 0 0 0 4px rgba(52,199,89,0.28) !important;
       }
@@ -2367,8 +2367,8 @@
       }
       .btn-warning:hover, .btn-warning:focus, .btn-warning:active, .btn-warning.active,
       .btn-warning:active:focus, .btn-warning:active:hover {
-        background: #E68A00 !important;
-        border-color: #E68A00 !important;
+        background: var(--warning) !important;
+        border-color: var(--warning) !important;
         color: #fff !important;
         box-shadow: 0 0 0 4px rgba(255,159,10,0.28) !important;
       }
@@ -2380,8 +2380,8 @@
       }
       .btn-danger:hover, .btn-danger:focus, .btn-danger:active, .btn-danger.active,
       .btn-danger:active:focus, .btn-danger:active:hover {
-        background: #E0342C !important;
-        border-color: #E0342C !important;
+        background: var(--danger) !important;
+        border-color: var(--danger) !important;
         color: #fff !important;
         box-shadow: 0 0 0 4px rgba(255,59,48,0.28) !important;
       }
@@ -4985,15 +4985,15 @@
       .list-group-item:hover { background: var(--input-bg) !important; }
       .list-group-item.active { background: var(--primary) !important; border-color: var(--primary) !important; color: #fff !important; }
       .alert, .alert-info { background: var(--input-bg) !important; border-color: var(--border) !important; color: var(--text) !important; border-radius: 10px !important; }
-      .alert-success { background: rgba(34,197,94,0.1) !important; border-color: rgba(34,197,94,0.2) !important; color: #22c55e !important; }
-      .alert-warning { background: rgba(245,158,11,0.1) !important; border-color: rgba(245,158,11,0.2) !important; color: #f59e0b !important; }
-      .alert-danger { background: rgba(239,68,68,0.1) !important; border-color: rgba(239,68,68,0.2) !important; color: #ef4444 !important; }
+      .alert-success { background: color-mix(in srgb, var(--success) 10%, transparent) !important; border-color: color-mix(in srgb, var(--success) 20%, transparent) !important; color: #22c55e !important; }
+      .alert-warning { background: color-mix(in srgb, var(--warning) 10%, transparent) !important; border-color: color-mix(in srgb, var(--warning) 20%, transparent) !important; color: #f59e0b !important; }
+      .alert-danger { background: color-mix(in srgb, var(--danger) 10%, transparent) !important; border-color: color-mix(in srgb, var(--danger) 20%, transparent) !important; color: #ef4444 !important; }
 
       /* 标签 / 徽章 */
       .label-info, .badge-info { background: var(--primary) !important; }
-      .label-success, .badge-success { background: #22c55e !important; }
-      .label-warning, .badge-warning { background: #f59e0b !important; }
-      .label-danger, .badge-danger { background: #ef4444 !important; }
+      .label-success, .badge-success { background: var(--success) !important; }
+      .label-warning, .badge-warning { background: var(--warning) !important; }
+      .label-danger, .badge-danger { background: var(--danger) !important; }
       .badge, .label { border-radius: var(--radius-sm) !important; }
       /* ============================================================
        * 深邃暗：压过 ACE 白底 / 浅字 / 硬编码灰底

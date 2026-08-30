@@ -591,8 +591,8 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 /* 辅助插件装载区（主插件侧，不依赖辅助 assist.css，首次加载即生效） */
 #urppp-settings-panel .urppp-plugin-sec{margin-top:12px}
 #urppp-settings-panel .urppp-plugin-status{font-size:12px;color:var(--text-secondary,#667085);margin:4px 0 6px}
-#urppp-settings-panel .urppp-plugin-status.ok{color:#15803d}
-#urppp-settings-panel .urppp-plugin-status.err{color:#b91c1c}
+#urppp-settings-panel .urppp-plugin-status.ok{color:var(--success)}
+#urppp-settings-panel .urppp-plugin-status.err{color:var(--danger)}
 #urppp-settings-panel .urppp-plugin-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 #urppp-settings-panel .urppp-plugin-sub{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 #urppp-settings-panel .urppp-plugin-sec .urppp-set-btn{width:100%;justify-content:center}
@@ -638,7 +638,7 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-settings-panel .urppp-store-item{display:flex;flex-direction:column;align-items:stretch;gap:8px}
 #urppp-settings-panel .urppp-store-ver{font-size:11px;color:var(--text-secondary,#5b5f69)}
 #urppp-settings-panel .urppp-store-state{font-size:11px;color:var(--text-secondary,#5b5f69);padding:2px 8px;border-radius:999px;background:color-mix(in srgb,var(--primary,#2563eb) 10%,transparent)}
-#urppp-settings-panel .urppp-store-state.ok{color:#15803d;background:color-mix(in srgb,#15803d 12%,transparent)}
+#urppp-settings-panel .urppp-store-state.ok{color:var(--success);background:color-mix(in srgb,var(--success) 12%,transparent)}
 #urppp-settings-panel .urppp-store-ops{display:flex;gap:8px;flex:0 0 auto}
 #urppp-settings-panel .urppp-store-ops .urppp-set-btn,#urppp-settings-panel .urppp-store-ops button{height:30px;padding:0 12px;font-size:12px;font-weight:650;border-radius:var(--radius-sm)}
 #urppp-settings-panel .urppp-store-theme-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:26px}

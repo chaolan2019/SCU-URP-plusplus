@@ -36,8 +36,10 @@
   border-color:var(--primary,#3b82f6);background:color-mix(in srgb,var(--primary,#3b82f6) 10%,var(--input-bg,#f8fafc))
 }
 #urpppp-eval-wait-tip{margin-left:10px;font-size:12px;color:var(--text-secondary,#667085)}
-#urppp-settings-panel .urpppp-status.ok{color:#15803d}
-#urppp-settings-panel .urpppp-status.err{color:#b91c1c}
+#urppp-settings-panel .urpppp-status.ok,
+#urpppp-subpanel .urpppp-status.ok{color:var(--success)}
+#urppp-settings-panel .urpppp-status.err,
+#urpppp-subpanel .urpppp-status.err{color:var(--danger)}
 #urppp-settings-panel .urpppp-sub{font-size:12px;font-weight:700;margin:10px 0 4px;color:var(--text,#111)}
 #urppp-settings-panel .urpppp-entry-sec{margin-top:4px}
 #urppp-settings-panel .urpppp-entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -107,6 +109,4 @@
 #urpppp-subpanel .urpppp-tip{font-size:12px;color:var(--text-muted,#98a2b3);line-height:1.55;margin:6px 0 0}
 #urpppp-subpanel .urpppp-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 #urpppp-subpanel .urpppp-status{margin-top:8px;font-size:12px;color:var(--text-secondary,#667085)}
-#urpppp-subpanel .urpppp-status.ok{color:#15803d}
-#urpppp-subpanel .urpppp-status.err{color:#b91c1c}
 #urpppp-subpanel .urpppp-sub{font-size:12px;font-weight:700;margin:10px 0 4px;color:var(--text,#111)}
