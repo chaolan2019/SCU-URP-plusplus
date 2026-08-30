@@ -30,50 +30,82 @@ function calFetchJson(url, timeoutMs = 6000) {
   });
 }
 
-// 确保校历数据已加载（幂等）：多源回退 → GM 缓存 → 加载完成回调 onLoad；全部失败则保持空态（不兜底）
-// force=true 时忽略已加载标记强制重拉（切本地源测试用）
-let __calLoaded = false;
-if (typeof unsafeWindow !== 'undefined') {
-  unsafeWindow.__urpppCalendarReload = async (onLoad) => {
-    __calLoaded = false;
-    await ensureCalendarData(onLoad, true);
-  };
+// 校历加载策略：缓存先行 + 后台自动刷新
+// - 进页面先同步用 GM 缓存（有则立即显示，秒开），同时后台拉远程
+// - 后台拉到新数据 → 覆盖缓存 + 刷新 UI（用户无需操作即自动更新）
+// - 远程失败 → 保留缓存显示；无缓存 → 空态显示加载失败
+// - 会话内每 CALENDAR_REFRESH_MS 自动再刷一次（长时间停留页面也能收到更新）
+const CALENDAR_REFRESH_MS = 60 * 1000; // 60 秒：每次渲染校历都会检查，超 60s 自动后台刷新
+function calCacheRead() {
+  try {
+    const raw = GM_getValue('urppp_calendar_cache', '');
+    if (!raw) return null;
+    const j = JSON.parse(raw);
+    if (!j || !j.terms) return null;
+    return j;
+  } catch (_) { return null; }
 }
+function calCacheWrite(terms, lunar) {
+  try { GM_setValue('urppp_calendar_cache', JSON.stringify({ terms, lunar, ts: Date.now() })); } catch (_) {}
+}
+
+let __calLoaded = false;      // 数据是否已填充（缓存或远程）
+let __calLastRefresh = 0;     // 上次后台刷新时间（节流）
 let __calLoading = null;
 async function ensureCalendarData(onLoad, force) {
-  if (force) { __calLoaded = false; }
-  if (__calLoaded) { try { if (onLoad) onLoad(); } catch (_) {} return; }
+  if (force) { __calLoaded = false; __calLastRefresh = 0; }
+  // 数据已填充：立即回调，并确保后台刷新（节流内跳过）
+  if (__calLoaded) {
+    try { if (onLoad) onLoad(); } catch (_) {}
+    // 每次渲染都检查后台刷新（60s 节流内跳过），保证远程更新能及时拉回
+    refreshCalendarData(onLoad);
+    return;
+  }
+  // 首次：缓存先行（同步填充，秒开）
+  const cached = calCacheRead();
+  if (cached && cached.terms) {
+    CAL_TERMS = cached.terms;
+    CAL_LUNAR = cached.lunar || {};
+    __calLoaded = true;
+    try { if (onLoad) onLoad(); } catch (_) {}
+  }
+  // 后台刷新（拉远程更新）
+  refreshCalendarData(onLoad);
+}
+
+// 后台刷新：拉远程，成功则更新数据+缓存+回调；失败静默（保留现有数据）
+function refreshCalendarData(onLoad) {
   if (__calLoading) { __calLoading.then(() => { try { if (onLoad) onLoad(); } catch (_) {} }); return; }
+  const now = Date.now();
+  if (now - __calLastRefresh < CALENDAR_REFRESH_MS) return;
+  __calLastRefresh = now;
   const sources = (typeof unsafeWindow !== 'undefined' && unsafeWindow.__urpppCalendarSources && unsafeWindow.__urpppCalendarSources.length)
     ? unsafeWindow.__urpppCalendarSources
     : CALENDAR_SOURCES;
   __calLoading = (async () => {
     let data = null;
     for (const url of sources) { data = await calFetchJson(url); if (data && data.terms) break; }
-    if (!data) {
-      try {
-        const cached = GM_getValue('urppp_calendar_cache', '');
-        if (cached) { const j = JSON.parse(cached); if (j && j.terms) { data = j; } }
-      } catch (_) {}
-    }
     if (data && data.terms) {
+      const changed = !CAL_TERMS || JSON.stringify(CAL_TERMS) !== JSON.stringify(data.terms);
       CAL_TERMS = data.terms;
       CAL_LUNAR = data.lunar || {};
-      try { GM_setValue('urppp_calendar_cache', JSON.stringify({ terms: CAL_TERMS, lunar: CAL_LUNAR })); } catch (_) {}
-
-    } else {
-      // 无兜底：数据保持空，UI 显示加载失败
-      CAL_TERMS = {};
-      CAL_LUNAR = {};
-
+      calCacheWrite(CAL_TERMS, CAL_LUNAR);
+      __calLoaded = true;
+      if (changed) { try { if (onLoad) onLoad(); } catch (_) {} }
     }
-    __calLoaded = true;
     __calLoading = null;
-    try { if (onLoad) onLoad(); } catch (_) {}
   })();
   return __calLoading;
 }
 
+// 强制重载接口（本地源测试用）：切源后调用 __urpppCalendarReload()
+if (typeof unsafeWindow !== 'undefined') {
+  unsafeWindow.__urpppCalendarReload = async (onLoad) => {
+    __calLoaded = false;
+    __calLastRefresh = 0;
+    await ensureCalendarData(onLoad, true);
+  };
+}
 const CAL_TYPE_META = {
   term: { color: '#44616f', label: '教学/开学' },
   reg: { color: '#8a74bd', label: '报到' },
