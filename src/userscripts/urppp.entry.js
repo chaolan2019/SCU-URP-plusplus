@@ -9663,10 +9663,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   async function loadSchedule() {
     try {
-      const __t0 = performance.now();
       // 优先 JSON（与页面 $.get 一致）
       const raw = await fetchText('/student/courseSelect/thisSemesterCurriculum/ajaxStudentSchedule/callback');
-      console.log('[URP++ perf] loadSchedule fetch耗时', Math.round(performance.now() - __t0), 'ms');
       let courses = [];
       let data = null;
       try {
@@ -10777,27 +10775,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       return result;
     };
   }
-
-  // 启动后 15s 内网络请求耗时探针（诊断加载慢用）
-  try {
-    const __probeUntil = performance.now() + 15000;
-    const __origGm = typeof GM_xmlhttpRequest === 'function' ? GM_xmlhttpRequest : null;
-    if (__origGm) {
-      const __probeGm = function (opts) {
-        if (performance.now() < __probeUntil && opts && opts.url) {
-          const t0 = performance.now();
-          const o = Object.assign({}, opts);
-          const done = (label) => console.log('[URP++ perf] GM', opts.method || 'GET', String(opts.url).slice(0, 70), Math.round(performance.now() - t0) + 'ms', label);
-          o.onload = function (r) { done('ok'); if (opts.onload) opts.onload(r); };
-          o.onerror = function (e) { done('ERR'); if (opts.onerror) opts.onerror(e); };
-          o.ontimeout = function () { done('TIMEOUT'); if (opts.ontimeout) opts.ontimeout(); };
-          return __origGm(o);
-        }
-        return __origGm(opts);
-      };
-      GM_xmlhttpRequest = __probeGm;
-    }
-  } catch (_) {}
 
   // 全局 API
   const global = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
