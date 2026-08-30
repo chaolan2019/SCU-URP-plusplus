@@ -6863,11 +6863,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const auto = root.querySelector('[data-store-auto-update]');
     const check = root.querySelector('[data-store-check-update]');
     if (!auto || !check) return;
-    // 防重复绑定：同一商店 body 重建时先清旧定时器（subpanel 每次打开重建）
-    if (root.__urpppAutoUpdateTimer) { clearInterval(root.__urpppAutoUpdateTimer); root.__urpppAutoUpdateTimer = null; }
     let on = GM_getValue('urppp_store_auto_update', false);
     const sync = () => { auto.textContent = '自动检测更新：' + (on ? '开' : '关'); };
-    // 自动检查 + 热更新：拉 catalog → 对已装且版本落后的主题/插件直接应用更新；返回更新数
     const runCheck = async () => {
       let updated = 0;
       try {
@@ -6909,17 +6906,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       } catch (_) {}
       return updated;
     };
-    // 会话内定时自动重查（30 分钟）
-    const ensureTimer = () => {
-      if (root.__urpppAutoUpdateTimer) { clearInterval(root.__urpppAutoUpdateTimer); root.__urpppAutoUpdateTimer = null; }
-      if (!on) return;
-      root.__urpppAutoUpdateTimer = setInterval(() => { try { runCheck(); } catch (_) {} }, 30 * 60 * 1000);
-    };
+    // 加载（打开商店）时若已开启自动检测，检查一次（不设定时器，减少后台占用）
     sync();
-    auto.addEventListener('click', () => { on = !on; GM_setValue('urppp_store_auto_update', on); sync(); ensureTimer(); if (on) { try { runCheck(); } catch (_) {} } });
-    // 打开商店时若已开启自动检测，立即检查一次
     if (on) { try { runCheck(); } catch (_) {} }
-    ensureTimer();
+    auto.addEventListener('click', () => { on = !on; GM_setValue('urppp_store_auto_update', on); sync(); if (on) { try { runCheck(); } catch (_) {} } });
     check.addEventListener('click', async () => {
       check.disabled = true; const old = check.textContent; check.textContent = '检查中…';
       try {
