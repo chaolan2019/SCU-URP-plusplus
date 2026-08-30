@@ -146,7 +146,9 @@ export function createPrivacySettingsController(options) {
       const input = panel.querySelector('#urppp-set-custom-avatar-url');
       if (input) input.disabled = !avatarEnabled.checked;
     });
+    const fileBtn = panel.querySelector('#urppp-set-avatar-file-btn');
     const fileInput = panel.querySelector('#urppp-set-custom-avatar-file');
+    if (fileBtn && fileInput) fileBtn.addEventListener('click', () => { try { fileInput.click(); } catch (_) {} });
     if (fileInput) fileInput.addEventListener('change', async () => {
       try {
         const source = await readAvatar(fileInput.files && fileInput.files[0]);
