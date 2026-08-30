@@ -6474,7 +6474,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     try { storeThemeStyleEl(id).textContent = css; } catch (_) {}
     try { ensureStoreCardStyles([{ id, cardCss: item.cardCss || '' }]); } catch (_) {}
     btn.textContent = '已安装'; btn.disabled = true;
-    try { reportStoreDownload(id); } catch (_) {} // 下载计数（假名，静默）
+    try { reportStoreDownload(id, item._srcUrl); } catch (_) {} // 下载计数（仅收录源，假名，静默）// 下载计数（假名，静默）
     // 即时刷新：主题管理能看到刚下的主题 + 下载列表排除它
     const inline = (btn.closest && btn.closest('.urppp-store-inline'));
     if (inline) {
@@ -6677,6 +6677,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         if (!it || !it.id || seen.has(it.id)) continue;
         seen.add(it.id);
         if (srcPub) it._srcPub = srcPub; // 记住来源公钥，安装前签名校验用
+        it._srcUrl = s.url; // 记住来源源 URL（计数只算官方收录源）
         merged.push(it);
       }
     }
@@ -6808,9 +6809,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     } catch (_) {}
     return '';
   }
-  async function reportStoreDownload(id) { // fire-and-forget：任何失败静默，不挡下载
+  async function reportStoreDownload(id, srcUrl) { // fire-and-forget：仅官方收录源计数；任何失败静默
     try {
       if (!DOWNS_API || !id) return;
+      const dir = await fetchOfficialSources(); // 收录目录（会话内缓存）；拉取失败则不计数（宁缺勿滥）
+      const urls = (dir && Array.isArray(dir.sources)) ? dir.sources.map((x) => x && x.url).filter(Boolean) : [];
+      if (!srcUrl || !urls.includes(srcUrl)) return; // 非收录源（本地/自建未收录）不计数
       const salt = await getDownsSalt(); if (!salt) return;
       const sid = getCurrentStudentId(); if (!sid) return;
       const bytes = sha256Bytes(new TextEncoder().encode(salt + '|' + sid + '|' + id));
@@ -10566,8 +10570,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (isLoginPage) {
       rebuild();
       try { applyBrandFavicon(); } catch (_) {}
+      try { scheduleBuiltinDownsReport(); } catch (_) {}
     } else {
       try { applyBrandFavicon(); } catch (_) {}
+      try { scheduleBuiltinDownsReport(); } catch (_) {}
       beautifyInternal();
       try { ensureFeatureStyles(); } catch (_) {}
       try { refreshRouteFeatures(); } catch (e) { console.warn('[URP++] route feature refresh', e); }
@@ -10760,6 +10766,18 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 自动检测更新：进入页面后延迟触发，避免抢首屏
   function scheduleAutoUpdateCheck() {
     setTimeout(() => { try { maybeAutoCheckUpdate(); } catch (_) {} }, 1800);
+  }
+
+  // 内置主题装机计数：每个用户每个内置主题只报一次，侧面反映插件装机量
+  function scheduleBuiltinDownsReport() {
+    setTimeout(() => {
+      try {
+        if (GM_getValue('urppp_builtin_downs_reported', false)) return;
+        const ids = (typeof SKIN_CATALOG !== 'undefined' ? SKIN_CATALOG : []).filter((t) => t && t.builtin).map((t) => t.id);
+        ids.forEach((id) => { try { reportStoreDownload(id, OFFICIAL_SOURCE_URL); } catch (_) {} });
+        GM_setValue('urppp_builtin_downs_reported', true);
+      } catch (_) {}
+    }, 2600);
   }
 
   // 尽早注入已下载主题CSS并应用皮肤（刷新时 body 构建前即设 data-urppp-skin，避免先白后暖黄/主题色迟载）
