@@ -6526,10 +6526,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     let ccIn = (item && item.cardCss) || '';
     if (!ccIn) { try { ccIn = GM_getValue('urppp_card_css_' + s.id, '') || ''; } catch (_) {} }
     const cardCssInline = ccIn ? `<style>${ccIn}</style>` : '';
+    // 版本号：优先 catalog 条目（随商店更新走），fallback 内置 SKIN_CATALOG 硬编码
+    const ver = (item && item.version) || s.version || '';
     return `<div class="urppp-skin-card${cur ? ' is-active' : ''}" data-skin="${escapeHtml(s.id)}">
       ${cardCssInline}
       <div class="urppp-skin-name">${escapeHtml(s.name)}</div>
-      <div class="urppp-skin-meta">${escapeHtml((item && item.author) || '')}${(item && item.author && s.version) ? ' · ' : ''}v${escapeHtml(s.version || '')}<span class="urppp-dows" data-dows-id="${escapeHtml(s.id)}"></span></div>
+      <div class="urppp-skin-meta">${escapeHtml((item && item.author) || '')}${(item && item.author && ver) ? ' · ' : ''}v${escapeHtml(ver)}<span class="urppp-dows" data-dows-id="${escapeHtml(s.id)}"></span></div>
       <p class="urppp-skin-desc">${escapeHtml(s.desc || '')}</p>
       <button type="button" class="urppp-skin-apply${cur ? ' is-current' : ''}" data-theme-use="${escapeHtml(s.id)}"${cur ? ' disabled' : ''}>${cur ? '使用中' : '使用'}</button>
       ${delBtn}${repoBtn}
@@ -6910,6 +6912,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           }
         }
       } catch (_) {}
+      // 有更新则刷新主题管理列表（版本号/卡样式即时更新），无更新保持现状
+      if (updated > 0) {
+        try {
+          const inline = document.querySelector('.urppp-store-inline');
+          const manage = inline && inline.querySelector('#urppp-theme-manage');
+          if (manage) fetchThemeManage(manage);
+          try { syncSettingsPanelUI(); } catch (_) {}
+        } catch (_) {}
+      }
       return updated;
     };
     // 加载（打开商店）时若已开启自动检测，检查一次（不设定时器，减少后台占用）
