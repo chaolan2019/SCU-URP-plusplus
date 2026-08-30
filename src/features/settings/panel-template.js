@@ -127,7 +127,7 @@ export function buildSettingsPanelHtml(options) {
     '    <section class="urppp-set-sec" id="urppp-set-preload">',
     '      <h3>全局预加载</h3>',
     '      <button type="button" class="urppp-set-follow" id="urppp-set-global-preload" aria-pressed="false" style="width:100%">全局预加载：关</button>',
-    '      <div class="urppp-set-tip" style="margin-top:8px">开启后，插件启动时会按优先级预拉取需要联网的内容：先加载当前主题样式；若勾选了默认进入清爽模式则同时预拉清爽模式数据；随后依次预加载主题商店、插件商店、教室查询列表等。开启会占用部分后台网络资源。</div>',
+    '      <div class="urppp-set-tip" style="margin-top:8px">开启后，插件启动时预加载主题样式、清爽模式、商店列表等联网内容，会占用少量后台资源。</div>',
     '    </section>',
     '    <section class="urppp-set-sec" id="urppp-set-update">',
     '      <h3>更新</h3>',
