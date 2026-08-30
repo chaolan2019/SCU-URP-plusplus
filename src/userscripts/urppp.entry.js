@@ -6877,6 +6877,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     _uw.__urpppDownsTest = fetchStoreDowns;
     _uw.__urpppDownsRefresh = refreshStoreDowns;
     _uw.__urpppStoreTest = (host) => fetchCatalogThemes(host);
+    _uw.__urpppStoreForceRefresh = async () => { const items = await fetchCatalogList(true); console.log('[urppp store] force refresh done:', items.map(i => i.id + ':' + (i._srcUrl || '?')).join(', ')); return items; }; // 强制重拉 catalog 并写缓存
     // 商店诊断：Console 里调 __urpppStoreDiag() 输出完整状态
     _uw.__urpppStoreDiag = async () => {
       const out = {};
