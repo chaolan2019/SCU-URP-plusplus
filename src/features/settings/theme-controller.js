@@ -104,6 +104,12 @@ export function createThemeSettingsController(options) {
       syncPanel();
     });
 
+    const preloadButton = panel.querySelector('#urppp-set-global-preload');
+    if (preloadButton) preloadButton.addEventListener('click', () => {
+      preferences.setGlobalPreload(!preferences.getGlobalPreload());
+      syncPanel();
+    });
+
     const checkUpdateButton = panel.querySelector('#urppp-set-check-update');
     if (checkUpdateButton && !checkUpdateButton.__urpppBound) {
       checkUpdateButton.__urpppBound = true;

@@ -158,6 +158,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     ],
   };
   const AUTO_UPDATE_KEY = 'urppp_auto_update_check_v1';
+  const PRELOAD_KEY = 'urppp_global_preload_v1';
   const SKIN_KEY = 'urppp_skin_v1';
   const SKIN_CATALOG = [
     { id: 'apple', name: '类Apple风格', desc: '系统灰底、链接蓝、大圆角与轻阴影，默认精修方向。', ready: true, dark: true, dynamic: true, installed: true, builtin: true, version: '1.0.0', author: 'Chao_Lan', repo: 'https://github.com/chaolan2019/SCU-URP-plusplus', caps: { scope: 'app', allowJS: false } },
@@ -1152,6 +1153,8 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     GM_setValue(AUTO_UPDATE_KEY, !!on);
     return !!on;
   }
+  function isGlobalPreload() { try { return !!GM_getValue(PRELOAD_KEY, false); } catch (_) { return false; } }
+  function setGlobalPreload(on) { GM_setValue(PRELOAD_KEY, !!on); return !!on; }
 
   function readJsonSetting(key, fallback) {
     try {
@@ -6121,6 +6124,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       cleanAnalysis: isCleanAnalysisDirect() ? 'direct' : 'tab',
       appleEdge: isAppleEdgeLine(),
       autoUpdate: isAutoUpdateCheck(),
+      globalPreload: isGlobalPreload(),
       modeAvailability,
     });
     if (fixedPalettes) renderBrutalPaletteCards(panel);
@@ -6232,6 +6236,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       applySkin: applySkinAttr,
       getAutoUpdate: isAutoUpdateCheck,
       setAutoUpdate: setAutoUpdateCheck,
+      getGlobalPreload: isGlobalPreload,
+      setGlobalPreload,
       checkUpdates: checkForUpdates,
     },
     accent: {
@@ -10632,9 +10638,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       rebuild();
       try { applyBrandFavicon(); } catch (_) {}
       try { scheduleBuiltinDownsReport(); } catch (_) {}
+      try { scheduleGlobalPreload(); } catch (_) {}
     } else {
       try { applyBrandFavicon(); } catch (_) {}
       try { scheduleBuiltinDownsReport(); } catch (_) {}
+      try { scheduleGlobalPreload(); } catch (_) {}
       beautifyInternal();
       try { ensureFeatureStyles(); } catch (_) {}
       try { refreshRouteFeatures(); } catch (e) { console.warn('[URP++] route feature refresh', e); }
@@ -10827,6 +10835,37 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 自动检测更新：进入页面后延迟触发，避免抢首屏
   function scheduleAutoUpdateCheck() {
     setTimeout(() => { try { maybeAutoCheckUpdate(); } catch (_) {} }, 1800);
+  }
+
+  // 全局预加载：按优先级预拉取需要联网的内容（开启时）
+  function scheduleGlobalPreload() {
+    try {
+      if (!isGlobalPreload()) return;
+      // P0：优先加载看得到的主题样式（当前主题已由 applyTheme 应用；此处补拉 catalog + 卡片样式）
+      setTimeout(() => {
+        try { fetchCatalogList(true).then((items) => { try { ensureStoreCardStyles(items); } catch (_) {} }); } catch (_) {}
+      }, 0);
+      // P1：若默认进入清爽模式，预拉清爽模式数据（教室查询目录等）
+      setTimeout(() => {
+        try {
+          if (isCleanDefault() && window.__urpppCleanMode && window.__urpppCleanMode.data && window.__urpppCleanMode.data.ensureRoomCatalogLoaded) {
+            window.__urpppCleanMode.data.ensureRoomCatalogLoaded();
+          }
+        } catch (_) {}
+      }, 300);
+      // P2：主题商店 / 插件商店列表（依赖 catalog，先拉 catalog 后渲染）
+      setTimeout(() => {
+        try {
+          const inline = document.querySelector('.urppp-store-inline');
+          if (inline) { try { fetchCatalogThemes(inline); } catch (_) {} }
+          const pluginPane = document.querySelector('[data-pane="download"]');
+          if (pluginPane) { try { fetchCatalogPlugins(pluginPane); } catch (_) {} }
+        } catch (_) {}
+      }, 800);
+      // P3：更新检查 + 下载计数（非关键路径，最后）
+      setTimeout(() => { try { maybeAutoCheckUpdate(); } catch (_) {} }, 1800);
+      setTimeout(() => { try { refreshStoreDowns(document.body); } catch (_) {} }, 2600);
+    } catch (_) {}
   }
 
   // 内置主题装机计数：每个用户每个内置主题只报一次，侧面反映插件装机量

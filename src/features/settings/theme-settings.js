@@ -14,6 +14,7 @@ export function syncThemeSettingsControls(panel, state) {
     cleanAnalysis,
     appleEdge,
     autoUpdate,
+    globalPreload,
     modeAvailability,
   } = state;
   const colorInput = panel.querySelector('#urppp-set-color');
@@ -110,5 +111,11 @@ export function syncThemeSettingsControls(panel, state) {
     autoUpdateButton.classList.toggle('ac', autoUpdate);
     autoUpdateButton.setAttribute('aria-pressed', autoUpdate ? 'true' : 'false');
     autoUpdateButton.textContent = autoUpdate ? '自动检测更新：开' : '自动检测更新：关';
+  }
+  const preloadButton = panel.querySelector('#urppp-set-global-preload');
+  if (preloadButton) {
+    preloadButton.classList.toggle('ac', globalPreload);
+    preloadButton.setAttribute('aria-pressed', globalPreload ? 'true' : 'false');
+    preloadButton.textContent = globalPreload ? '全局预加载：开' : '全局预加载：关';
   }
 }
