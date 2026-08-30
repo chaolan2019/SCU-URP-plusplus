@@ -6801,50 +6801,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       } catch (_) { try { resolve(window.confirm(msg)); } catch (__) { resolve(false); } }
     });
   }
-  // ===== P3-4 下载计数（方案A：学号假名上报 + 实时查询）=====
-  // 隐私：学号不出浏览器；上报 SHA256(盐|学号|主题id) 截断假名；盐由服务端下发，不进源码
-  // 刷新时机：打开面板/商店即刷（render 链内 + renderThemeStoreBody 延迟补刷），无常驻轮询
-  try {
-    const _uw = (typeof unsafeWindow !== 'undefined' ? unsafeWindow : window);
-    _uw.__urpppStoreTest = (host) => fetchCatalogThemes(host);
-    _uw.__urpppStoreForceRefresh = async () => { const items = await fetchCatalogList(true); console.log('[urppp store] force refresh done:', items.map(i => i.id + ':' + (i._srcUrl || '?')).join(', ')); return items; }; // 强制重拉 catalog 并写缓存
-    _uw.__urpppStoreProbe = async () => {
-      const items = await fetchCatalogList(true); // 强制重拉，确保是篡改版
-      const it = items.find(x => x.id === 'test-theme');
-      if (!it) { console.log('[probe] test-theme not found'); return; }
-      console.log('[probe] item:', JSON.stringify({ version: it.version, _srcPub: it._srcPub ? it._srcPub.slice(0,16)+'...' : null, _srcUrl: it._srcUrl, hasSig: !!it.signature, sigLen: (it.signature||'').length }, null, 2));
-      try { const g = await guardEntrySignature(it); console.log('[probe] guardEntrySignature ->', g); } catch (e) { console.log('[probe] guard threw:', e.message); }
-      // 直接验签
-      try {
-        const pub = it._srcPub;
-        const json = JSON.stringify(normalizeEntry(it));
-        const raw = b64ToU8(pub);
-        const sig = b64ToU8(it.signature);
-        const res = ed25519Verify(sig, raw, sha256Bytes(json));
-        console.log('[probe] ed25519Verify ->', res);
-      } catch (e) { console.log('[probe] verify threw:', e.message); }
-    };
-    // 商店诊断：Console 里调 __urpppStoreDiag() 输出完整状态
-    _uw.__urpppStoreDiag = async () => {
-      const out = {};
-      try { const raw = GM_getValue('urppp_catalog_cache', ''); out.catalogCache = raw ? JSON.parse(raw).map(i => i.id + ':' + (i._srcUrl || '?')).join(', ') : '(empty)'; } catch (e) { out.catalogCache = 'ERR ' + e.message; }
-      try { out.sources = JSON.parse(GM_getValue('urppp_store_sources', '[]')).map(x => ({ n: x.name, u: x.url, e: x.enabled, m: (x.mirrors || []).length })); } catch (e) { out.sources = 'ERR ' + e.message; }
-      out.migrated = GM_getValue('urppp_sources_migrated', 'unset');
-      out.cacheInMem = __catalogCache ? __catalogCache.map(i => i.id + ':' + (i._srcUrl || '?')).join(', ') : '(null)';
-      out.officialURL = OFFICIAL_SOURCE_URL;
-      console.log('[urppp store diag]', JSON.stringify(out, null, 2));
-      // GM 通道探测官方源
-      ['https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/catalog.json',
-       'https://cdn.jsdelivr.net/gh/chaolan2019/URP-plusplus-Repository@main/catalog.json'].forEach(u => {
-        try {
-          GM_xmlhttpRequest({ method: 'GET', url: u, timeout: 8000,
-            onload: r => console.log('[urppp probe] GM-OK', u.slice(0, 60), (r.responseText || '').length + 'B'),
-            onerror: e => console.log('[urppp probe] GM-ERR', u.slice(0, 60)),
-            ontimeout: () => console.log('[urppp probe] GM-TIMEOUT', u.slice(0, 60)) });
-        } catch (e) { console.log('[urppp probe] EXC', u.slice(0, 60), e.message); }
-      });
-    };
-  } catch (_) {}
   // 安装前验签：source=源的pubkey(或''=官方/未签名源)。返回 {ok, fail} 请调用方决定拦截
   async function guardEntrySignature(entry) {
     const pub = entry && entry._srcPub;

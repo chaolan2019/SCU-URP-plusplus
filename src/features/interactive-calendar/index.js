@@ -8,9 +8,9 @@ let CAL_LUNAR = {};
 
 // 校历数据源（多源回退；可通过外部覆盖 __urpppCalendarSources 指向本地源测试）
 const CALENDAR_SOURCES = [
-  'https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/calendar/calendar.json',
-  'https://cdn.jsdelivr.net/gh/chaolan2019/URP-plusplus-Repository@main/calendar/calendar.json',
-  'https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/calendar/calendar.json',
+  'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/calendar/calendar.json',
+  'https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/calendar/calendar.json',
+  'https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/calendar/calendar.json',
 ];
 
 // 远程拉取（GM 优先 + fetch 兜底；带超时与 no-store）
@@ -53,19 +53,19 @@ async function ensureCalendarData(onLoad, force) {
     if (!data) {
       try {
         const cached = GM_getValue('urppp_calendar_cache', '');
-        if (cached) { const j = JSON.parse(cached); if (j && j.terms) { data = j; try { console.log('[URP++ calendar] 数据来源: GM缓存'); } catch (_) {} } }
+        if (cached) { const j = JSON.parse(cached); if (j && j.terms) { data = j; } }
       } catch (_) {}
     }
     if (data && data.terms) {
       CAL_TERMS = data.terms;
       CAL_LUNAR = data.lunar || {};
       try { GM_setValue('urppp_calendar_cache', JSON.stringify({ terms: CAL_TERMS, lunar: CAL_LUNAR })); } catch (_) {}
-      try { console.log('[URP++ calendar] 数据来源: 远程/' + (data._meta && data._meta.source ? data._meta.source : 'json')); } catch (_) {}
+
     } else {
       // 无兜底：数据保持空，UI 显示加载失败
       CAL_TERMS = {};
       CAL_LUNAR = {};
-      try { console.warn('[URP++ calendar] 校历数据加载失败：所有源均不可达，校历不显示'); } catch (_) {}
+
     }
     __calLoaded = true;
     __calLoading = null;
