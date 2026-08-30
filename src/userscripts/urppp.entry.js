@@ -7108,12 +7108,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     body.querySelectorAll('[data-src-toggle]').forEach((b) => b.addEventListener('click', () => {
       const i = Number(b.dataset.srcToggle);
       const arr = getCustomSources();
-      if (arr[i]) { arr[i].enabled = arr[i].enabled !== false ? false : true; saveCustomSources(arr); refreshStoreSources(body); }
+      if (arr[i]) { arr[i].enabled = arr[i].enabled !== false ? false : true; saveCustomSources(arr); __catalogCache = null; refreshStoreSources(body); }
     }));
     body.querySelectorAll('[data-src-del]').forEach((b) => b.addEventListener('click', () => {
       const i = Number(b.dataset.srcDel);
       const arr = getCustomSources();
-      if (arr[i]) { arr.splice(i, 1); saveCustomSources(arr); refreshStoreSources(body); }
+      if (arr[i]) { arr.splice(i, 1); saveCustomSources(arr); __catalogCache = null; refreshStoreSources(body); }
     }));
     try { renderOfficialSources(body); } catch (_) {} // 官方收录源异步填充
     bindStoreAutoRefresh(body);
