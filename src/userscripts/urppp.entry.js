@@ -6596,7 +6596,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return new Promise((resolve) => {
       try {
         if (typeof GM_xmlhttpRequest === 'function') {
-          GM_xmlhttpRequest({ method: 'GET', url, timeout: timeoutMs,
+          GM_xmlhttpRequest({ method: 'GET', url, timeout: timeoutMs, cache: 'no-store',
             onload: (res) => resolve((res && res.responseText) || ''),
             onerror: () => resolve(''), ontimeout: () => resolve('') });
           return;
@@ -6880,6 +6880,22 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     _uw.__urpppDownsRefresh = refreshStoreDowns;
     _uw.__urpppStoreTest = (host) => fetchCatalogThemes(host);
     _uw.__urpppStoreForceRefresh = async () => { const items = await fetchCatalogList(true); console.log('[urppp store] force refresh done:', items.map(i => i.id + ':' + (i._srcUrl || '?')).join(', ')); return items; }; // 强制重拉 catalog 并写缓存
+    _uw.__urpppStoreProbe = async () => {
+      const items = await fetchCatalogList(true); // 强制重拉，确保是篡改版
+      const it = items.find(x => x.id === 'test-theme');
+      if (!it) { console.log('[probe] test-theme not found'); return; }
+      console.log('[probe] item:', JSON.stringify({ version: it.version, _srcPub: it._srcPub ? it._srcPub.slice(0,16)+'...' : null, _srcUrl: it._srcUrl, hasSig: !!it.signature, sigLen: (it.signature||'').length }, null, 2));
+      try { const g = await guardEntrySignature(it); console.log('[probe] guardEntrySignature ->', g); } catch (e) { console.log('[probe] guard threw:', e.message); }
+      // 直接验签
+      try {
+        const pub = it._srcPub;
+        const json = JSON.stringify(normalizeEntry(it));
+        const raw = b64ToU8(pub);
+        const sig = b64ToU8(it.signature);
+        const res = ed25519Verify(sig, raw, sha256Bytes(json));
+        console.log('[probe] ed25519Verify ->', res);
+      } catch (e) { console.log('[probe] verify threw:', e.message); }
+    };
     // 商店诊断：Console 里调 __urpppStoreDiag() 输出完整状态
     _uw.__urpppStoreDiag = async () => {
       const out = {};
