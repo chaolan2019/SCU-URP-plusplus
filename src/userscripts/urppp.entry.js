@@ -6361,6 +6361,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         <div class="urppp-store-sub-head">
           <button type="button" class="urppp-store-sub-back" id="urppp-store-sub-back" aria-label="返回">←</button>
           <div class="urppp-store-sub-title" id="urppp-store-sub-title"></div>
+          <button type="button" class="urppp-store-sub-refresh" id="urppp-store-sub-refresh" aria-label="刷新">↻</button>
         </div>
         <div class="urppp-store-sub-body" id="urppp-store-sub-body"></div>`;
       main.appendChild(sub);
@@ -6370,6 +6371,21 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const body = sub.querySelector('#urppp-store-sub-body');
     title.textContent = kind === 'theme' ? '主题商店' : '插件商店';
     body.innerHTML = '';
+    const refreshBtn = sub.querySelector('#urppp-store-sub-refresh');
+    if (refreshBtn) {
+      refreshBtn.onclick = async () => {
+        if (refreshBtn.disabled) return;
+        refreshBtn.disabled = true; refreshBtn.textContent = '…';
+        try {
+          await fetchCatalogList(true); // 强制重拉全部源并写缓存
+          const downloadPane = body.querySelector('[data-pane="download"]');
+          if (kind === 'theme') { try { fetchCatalogThemes(body); } catch (_) {} }
+          else if (downloadPane) { try { fetchCatalogPlugins(downloadPane); } catch (_) {} }
+          try { refreshStoreDowns(body); } catch (_) {} // 顺带刷计数
+        } catch (_) {}
+        refreshBtn.disabled = false; refreshBtn.textContent = '↻';
+      };
+    }
     if (kind === 'theme') renderThemeStoreBody(body);
     else renderPluginStoreBody(body);
     sub.classList.add('open');

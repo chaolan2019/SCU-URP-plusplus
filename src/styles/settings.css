@@ -599,6 +599,9 @@ html[data-urppp-skin="neu"] #urppp-settings-panel #urppp-set-json-mapping{border
 #urppp-settings-panel .urppp-store-subpanel.open{display:flex}
 @keyframes urpppStoreSubIn{from{opacity:0}to{opacity:1}}
 #urppp-settings-panel .urppp-store-sub-head{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--border,#e5e5ea)}
+#urppp-settings-panel .urppp-store-sub-refresh{margin-left:auto;width:30px;height:30px;border:1px solid var(--border,#e5e5ea);background:transparent;color:var(--text-secondary,#6b7078);cursor:pointer;font-size:15px;line-height:1;display:grid;place-items:center;flex:none;border-radius:var(--radius-sm);transition:background .15s,color .15s}
+#urppp-settings-panel .urppp-store-sub-refresh:hover{background:var(--bg-card-soft,#f2f3f5);color:var(--text,#16181d)}
+#urppp-settings-panel .urppp-store-sub-refresh:disabled{opacity:.5;cursor:default}
 #urppp-settings-panel .urppp-store-sub-back{width:30px;height:30px;border:none;background:transparent;color:var(--text,#16181d);cursor:pointer;font-size:17px;line-height:1;display:grid;place-items:center;flex:none;border-radius:var(--radius-sm)}
 #urppp-settings-panel .urppp-store-sub-back:hover{background:color-mix(in srgb,var(--primary,#2563eb) 10%,transparent)}
 #urppp-settings-panel .urppp-store-sub-title{font-size:16px;font-weight:750;flex:1}
