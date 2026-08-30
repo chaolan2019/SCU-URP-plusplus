@@ -533,9 +533,11 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="editoria
 #urppp-settings-panel .urppp-feature-row>label{margin:0;color:var(--text-secondary);font-size:12px;font-weight:650;line-height:1.35;cursor:pointer}
 #urppp-settings-panel .urppp-feature-row>label input{margin:0 5px 0 0;vertical-align:-2px;accent-color:var(--primary)}
 #urppp-settings-panel .urppp-feature-input{width:100%;min-width:0;height:36px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);color:var(--text);padding:0 10px;outline:none;box-sizing:border-box;letter-spacing:0}
-#urppp-settings-panel .urppp-avatar-file-trigger{display:inline-flex;align-items:center;justify-content:flex-start;width:100%;min-width:0;height:36px;border:1px solid var(--border,#e5e5ea);border-radius:8px;background:var(--input-bg,#fff);color:var(--text-secondary,#6b7078);padding:0 10px;font-size:12px;cursor:pointer;box-sizing:border-box;transition:border-color .15s,box-shadow .15s;user-select:none}
-#urppp-settings-panel .urppp-avatar-file-trigger:hover{border-color:var(--border-strong,#d0d2d8)}
-#urppp-settings-panel .urppp-avatar-file-trigger:focus-visible{outline:none;border-color:var(--primary,#2563eb);box-shadow:0 0 0 2px color-mix(in srgb,var(--primary,#2563eb) 16%,transparent)}
+#urppp-settings-panel .urppp-avatar-input-group{display:flex;align-items:center;gap:8px;min-width:0;width:100%}
+#urppp-settings-panel .urppp-avatar-input-group .urppp-feature-input{flex:1 1 auto;min-width:0}
+#urppp-settings-panel .urppp-avatar-file-btn{flex:none;display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 14px;border:1px solid var(--border,#e5e5ea);border-radius:8px;background:var(--bg-card-soft,#f2f3f5);color:var(--text,#16181d);font-size:12px;font-weight:600;cursor:pointer;user-select:none;transition:background .15s,color .15s,border-color .15s;box-sizing:border-box;white-space:nowrap}
+#urppp-settings-panel .urppp-avatar-file-btn:hover{background:var(--bg-hover,#e8e9ec);border-color:var(--border-strong,#d0d2d8)}
+#urppp-settings-panel .urppp-avatar-file-btn:focus-visible{outline:none;border-color:var(--primary,#2563eb);box-shadow:0 0 0 2px color-mix(in srgb,var(--primary,#2563eb) 16%,transparent)}
 #urppp-settings-panel .urppp-avatar-file-hidden{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;padding:0;margin:-1px}
 #urppp-settings-panel .urppp-avatar-file-hidden{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;padding:0;margin:-1px}
 #urppp-settings-panel .urppp-feature-input[type="file"]{height:auto;min-height:36px;padding:6px 8px;font-size:11px}
