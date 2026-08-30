@@ -1,11 +1,31 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  CAL_TERMS, calActiveTerm, calStatus, calendarSummaryHtml, calendarModalHtml, ensureCalendarData,
+  CAL_TERMS, CAL_LUNAR, calActiveTerm, calStatus, calendarSummaryHtml, calendarModalHtml,
 } from '../src/features/interactive-calendar/index.js';
 
-// 测试前加载校历数据（node 环境 fetch 失败则走内置 FALLBACK 兜底）
-await ensureCalendarData();
+// 测试数据注入（校历数据现由远程 JSON 加载，测试直接注入固定数据）
+CAL_TERMS.autumn = {
+  name: '秋季学期', weeks: 20, start: '2026-08-31', end: '2027-02-20',
+  events: [
+    { t: 'reg', name: '本科生新生报到', start: '2026-08-24', end: '2026-08-25' },
+    { t: 'term', name: '在校生正式行课', start: '2026-08-31', end: '2026-09-06' },
+    { t: 'holiday', name: '中秋节', start: '2026-09-25' },
+    { t: 'sport', name: '校秋季田径运动会', start: '2026-10-23', end: '2026-10-24' },
+    { t: 'exam', name: '本科生期末集中考试周', start: '2027-01-04', end: '2027-01-15' },
+  ],
+};
+CAL_TERMS.spring = {
+  name: '春季学期', weeks: 18, start: '2027-03-01', end: '2027-07-03',
+  events: [
+    { t: 'reg', name: '在校生报到', start: '2027-02-25', end: '2027-02-26' },
+    { t: 'term', name: '正式行课', start: '2027-03-01', end: '2027-03-07' },
+  ],
+};
+CAL_LUNAR['2026-08-24'] = '农历七月十二';
+CAL_LUNAR['2026-09-25'] = '农历八月十五';
+CAL_LUNAR['2026-10-23'] = '农历九月十四';
+CAL_LUNAR['2027-02-25'] = '农历正月二十';
 
 test('calActiveTerm picks autumn for Aug through Feb and spring in term', () => {
   assert.equal(calActiveTerm('2026-09-10'), 'autumn');

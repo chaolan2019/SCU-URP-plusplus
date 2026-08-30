@@ -2,13 +2,9 @@
  * @file 互动校历：读取校历事件 → 时间线 → 多形态展示（清爽模式简略块 + 详细窗口 + 顶栏入口）
  * 数据基于川大 2026-2027 学年官方校历（jwc.scu.edu.cn），农历由 zhdate 离线核验固化。
  */
-// 校历数据（远程 JSON 加载；初始为空，加载后填充。FALLBACK 为内置兜底，仅当网络不可用时使用）
+// 校历数据（远程 JSON 加载；初始为空，加载成功后填充；加载失败不显示）
 let CAL_TERMS = {};
 let CAL_LUNAR = {};
-
-// 内置兜底数据（与原数据相同，仅当全部网络源不可用时启用）
-const FALLBACK_TERMS = {"autumn":{"name":"秋季学期","weeks":20,"start":"2026-08-31","end":"2027-02-20","events":[{"t":"reg","name":"本科生新生报到","start":"2026-08-24","end":"2026-08-25"},{"t":"reg","name":"在校生报到","start":"2026-08-27","end":"2026-08-28"},{"t":"reg","name":"研究生新生报到","start":"2026-08-27","end":"2026-08-28"},{"t":"reg","name":"在校本科补缓考","start":"2026-08-28","end":"2026-08-30"},{"t":"term","name":"本科生开学典礼","start":"2026-09-01"},{"t":"term","name":"研究生开学典礼","start":"2026-09-04"},{"t":"term","name":"在校生正式行课","start":"2026-08-31","end":"2026-09-06"},{"t":"holiday","name":"中秋节","start":"2026-09-25"},{"t":"holiday","name":"国庆节假期","start":"2026-10-01","end":"2026-10-07"},{"t":"sport","name":"校秋季田径运动会","start":"2026-10-23","end":"2026-10-24"},{"t":"exam","name":"本科生期末集中考试周","start":"2027-01-04","end":"2027-01-15"},{"t":"holiday","name":"寒假","start":"2027-01-18","end":"2027-02-20"},{"t":"holiday","name":"春节","start":"2027-02-06"}]},"spring":{"name":"春季学期","weeks":18,"start":"2027-03-01","end":"2027-07-03","events":[{"t":"reg","name":"在校生报到","start":"2027-02-25","end":"2027-02-26"},{"t":"term","name":"正式行课","start":"2027-03-01","end":"2027-03-07"},{"t":"holiday","name":"清明节","start":"2027-04-05"},{"t":"holiday","name":"劳动节假期","start":"2027-05-01","end":"2027-05-05"},{"t":"holiday","name":"端午节","start":"2027-06-09"},{"t":"exam","name":"期末集中考试","start":"2027-06-21","end":"2027-06-27"},{"t":"term","name":"毕业典礼","start":"2027-06-25"},{"t":"holiday","name":"暑假开始","start":"2027-07-04"}]}};
-const FALLBACK_LUNAR = {"2026-08-24":"农历七月十二","2026-08-25":"农历七月十三","2026-08-27":"农历七月十五","2026-08-28":"农历七月十六","2026-08-30":"农历七月十八","2026-08-31":"农历七月十九","2026-09-01":"农历七月二十","2026-09-04":"农历七月廿三","2026-09-25":"农历八月十五","2026-10-01":"农历八月廿一","2026-10-07":"农历八月廿七","2026-10-23":"农历九月十四","2026-10-24":"农历九月十五","2027-01-04":"农历冬月廿七","2027-01-15":"农历腊月初八","2027-01-18":"农历腊月十一","2027-02-06":"农历正月初一","2027-02-20":"农历正月十五","2027-02-25":"农历正月二十","2027-02-26":"农历正月廿一","2027-03-01":"农历正月廿四","2027-04-05":"农历二月廿九","2027-05-01":"农历三月廿五","2027-05-05":"农历三月廿九","2027-06-09":"农历五月初五","2027-06-21":"农历五月十七","2027-06-25":"农历五月廿一","2027-06-27":"农历五月廿三","2027-07-03":"农历五月廿九","2027-07-04":"农历六月初一"};
 
 // 校历数据源（多源回退；可通过外部覆盖 __urpppCalendarSources 指向本地源测试）
 const CALENDAR_SOURCES = [
@@ -34,7 +30,7 @@ function calFetchJson(url, timeoutMs = 6000) {
   });
 }
 
-// 确保校历数据已加载（幂等）：多源回退 → GM 缓存 → 内置兜底；加载完成后回调 onLoad
+// 确保校历数据已加载（幂等）：多源回退 → GM 缓存 → 加载完成回调 onLoad；全部失败则保持空态（不兜底）
 // force=true 时忽略已加载标记强制重拉（切本地源测试用）
 let __calLoaded = false;
 if (typeof unsafeWindow !== 'undefined') {
@@ -66,9 +62,10 @@ async function ensureCalendarData(onLoad, force) {
       try { GM_setValue('urppp_calendar_cache', JSON.stringify({ terms: CAL_TERMS, lunar: CAL_LUNAR })); } catch (_) {}
       try { console.log('[URP++ calendar] 数据来源: 远程/' + (data._meta && data._meta.source ? data._meta.source : 'json')); } catch (_) {}
     } else {
-      CAL_TERMS = FALLBACK_TERMS;
-      CAL_LUNAR = FALLBACK_LUNAR;
-      try { console.log('[URP++ calendar] 数据来源: FALLBACK 兜底（远程源均不可达）'); } catch (_) {}
+      // 无兜底：数据保持空，UI 显示加载失败
+      CAL_TERMS = {};
+      CAL_LUNAR = {};
+      try { console.warn('[URP++ calendar] 校历数据加载失败：所有源均不可达，校历不显示'); } catch (_) {}
     }
     __calLoaded = true;
     __calLoading = null;
@@ -132,6 +129,9 @@ function calStatus(termId, today) {
 /** 入口①：清爽模式个人资料卡右侧的简略信息块 */
 function calendarSummaryHtml(termId, today) {
   const st = calStatus(termId, today);
+  if (st.empty) {
+    return '<button type="button" class="uc-cal-summary uc-cal-empty" data-urppp-cal-open aria-label="校历数据加载失败"><span class="cal-s-right"><span class="cal-s-wk">校历数据加载失败</span></span></button>';
+  }
   const dot = st.next ? CAL_TYPE_META[st.next.e.t].color : '#c9cdd4';
   const tl = st.term;
   return `<button type="button" class="uc-cal-summary" data-urppp-cal-open aria-label="打开校历时间线">
@@ -167,6 +167,9 @@ function calendarSummaryCompactHtml(termId, today) {
 /** 详细窗口内容：横置倒计时小组件（上）+ 完整时间线（下） */
 function calendarModalHtml(termId, today) {
   const st = calStatus(termId, today);
+  if (st.empty) {
+    return '<div class="uc-cal-empty-modal"><p>校历数据加载失败</p><p class="uc-cal-empty-sub">请检查网络后刷新重试</p></div>';
+  }
   const dot = st.next ? CAL_TYPE_META[st.next.e.t].color : '#c9cdd4';
   const T = st.term;
   const termPills = Object.keys(CAL_TERMS).map((id) =>
