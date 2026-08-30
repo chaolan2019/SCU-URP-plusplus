@@ -6461,7 +6461,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (g === 'unknown' && item._srcPub) { const go = await confirmBottom('该源无有效签名校验，可能被篡改。是否自担风险继续下载？'); if (!go) { btn.disabled = false; btn.textContent = '下载'; return; } }
     let css = '';
     for (const url of item.entry) {
-      try { const r = await Promise.race([fetch(url, { cache: 'no-store' }), new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 6000))]); if (r && r.ok) { css = await r.text(); break; } } catch (_) { /* next */ }
+      const t = await fetchRemoteCatalog(url, 6000); // GM 优先：绕开页面 fetch 的 PNA/CORS 限制（catalog 已走此通道）
+      if (t) { css = t; break; }
     }
     if (!css) { toast('下载失败：所有源均不可达（本地测试源已关/网络不通）', 'error'); btn.textContent = '下载失败'; setTimeout(() => { btn.textContent = '下载'; btn.disabled = false; }, 1400); return; }
     try { GM_setValue('urppp_theme_css_' + id, css); } catch (_) {}
