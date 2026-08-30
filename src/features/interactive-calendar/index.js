@@ -2,52 +2,70 @@
  * @file 互动校历：读取校历事件 → 时间线 → 多形态展示（清爽模式简略块 + 详细窗口 + 顶栏入口）
  * 数据基于川大 2026-2027 学年官方校历（jwc.scu.edu.cn），农历由 zhdate 离线核验固化。
  */
-const CAL_TERMS = {
-  autumn: {
-    name: '秋季学期', weeks: 20, start: '2026-08-31', end: '2027-02-20',
-    events: [
-      { t: 'reg', name: '本科生新生报到', start: '2026-08-24', end: '2026-08-25' },
-      { t: 'reg', name: '在校生报到', start: '2026-08-27', end: '2026-08-28' },
-      { t: 'reg', name: '研究生新生报到', start: '2026-08-27', end: '2026-08-28' },
-      { t: 'reg', name: '在校本科补缓考', start: '2026-08-28', end: '2026-08-30' },
-      { t: 'term', name: '本科生开学典礼', start: '2026-09-01' },
-      { t: 'term', name: '研究生开学典礼', start: '2026-09-04' },
-      { t: 'term', name: '在校生正式行课', start: '2026-08-31', end: '2026-09-06' },
-      { t: 'holiday', name: '中秋节', start: '2026-09-25' },
-      { t: 'holiday', name: '国庆节假期', start: '2026-10-01', end: '2026-10-07' },
-      { t: 'sport', name: '校秋季田径运动会', start: '2026-10-23', end: '2026-10-24' },
-      { t: 'exam', name: '本科生期末集中考试周', start: '2027-01-04', end: '2027-01-15' },
-      { t: 'holiday', name: '寒假', start: '2027-01-18', end: '2027-02-20' },
-      { t: 'holiday', name: '春节', start: '2027-02-06' },
-    ],
-  },
-  spring: {
-    name: '春季学期', weeks: 18, start: '2027-03-01', end: '2027-07-03',
-    events: [
-      { t: 'reg', name: '在校生报到', start: '2027-02-25', end: '2027-02-26' },
-      { t: 'term', name: '正式行课', start: '2027-03-01', end: '2027-03-07' },
-      { t: 'holiday', name: '清明节', start: '2027-04-05' },
-      { t: 'holiday', name: '劳动节假期', start: '2027-05-01', end: '2027-05-05' },
-      { t: 'holiday', name: '端午节', start: '2027-06-09' },
-      { t: 'exam', name: '期末集中考试', start: '2027-06-21', end: '2027-06-27' },
-      { t: 'term', name: '毕业典礼', start: '2027-06-25' },
-      { t: 'holiday', name: '暑假开始', start: '2027-07-04' },
-    ],
-  },
-};
+// 校历数据（远程 JSON 加载；初始为空，加载后填充。FALLBACK 为内置兜底，仅当网络不可用时使用）
+let CAL_TERMS = {};
+let CAL_LUNAR = {};
 
-const CAL_LUNAR = {
-  '2026-08-24': '农历七月十二', '2026-08-25': '农历七月十三', '2026-08-27': '农历七月十五',
-  '2026-08-28': '农历七月十六', '2026-08-30': '农历七月十八', '2026-08-31': '农历七月十九',
-  '2026-09-01': '农历七月二十', '2026-09-04': '农历七月廿三', '2026-09-25': '农历八月十五',
-  '2026-10-01': '农历八月廿一', '2026-10-07': '农历八月廿七', '2026-10-23': '农历九月十四',
-  '2026-10-24': '农历九月十五', '2027-01-04': '农历冬月廿七', '2027-01-15': '农历腊月初八',
-  '2027-01-18': '农历腊月十一', '2027-02-06': '农历正月初一', '2027-02-20': '农历正月十五',
-  '2027-02-25': '农历正月二十', '2027-02-26': '农历正月廿一', '2027-03-01': '农历正月廿四',
-  '2027-04-05': '农历二月廿九', '2027-05-01': '农历三月廿五', '2027-05-05': '农历三月廿九',
-  '2027-06-09': '农历五月初五', '2027-06-21': '农历五月十七', '2027-06-25': '农历五月廿一',
-  '2027-06-27': '农历五月廿三', '2027-07-03': '农历五月廿九', '2027-07-04': '农历六月初一',
-};
+// 内置兜底数据（与原数据相同，仅当全部网络源不可用时启用）
+const FALLBACK_TERMS = {"autumn":{"name":"秋季学期","weeks":20,"start":"2026-08-31","end":"2027-02-20","events":[{"t":"reg","name":"本科生新生报到","start":"2026-08-24","end":"2026-08-25"},{"t":"reg","name":"在校生报到","start":"2026-08-27","end":"2026-08-28"},{"t":"reg","name":"研究生新生报到","start":"2026-08-27","end":"2026-08-28"},{"t":"reg","name":"在校本科补缓考","start":"2026-08-28","end":"2026-08-30"},{"t":"term","name":"本科生开学典礼","start":"2026-09-01"},{"t":"term","name":"研究生开学典礼","start":"2026-09-04"},{"t":"term","name":"在校生正式行课","start":"2026-08-31","end":"2026-09-06"},{"t":"holiday","name":"中秋节","start":"2026-09-25"},{"t":"holiday","name":"国庆节假期","start":"2026-10-01","end":"2026-10-07"},{"t":"sport","name":"校秋季田径运动会","start":"2026-10-23","end":"2026-10-24"},{"t":"exam","name":"本科生期末集中考试周","start":"2027-01-04","end":"2027-01-15"},{"t":"holiday","name":"寒假","start":"2027-01-18","end":"2027-02-20"},{"t":"holiday","name":"春节","start":"2027-02-06"}]},"spring":{"name":"春季学期","weeks":18,"start":"2027-03-01","end":"2027-07-03","events":[{"t":"reg","name":"在校生报到","start":"2027-02-25","end":"2027-02-26"},{"t":"term","name":"正式行课","start":"2027-03-01","end":"2027-03-07"},{"t":"holiday","name":"清明节","start":"2027-04-05"},{"t":"holiday","name":"劳动节假期","start":"2027-05-01","end":"2027-05-05"},{"t":"holiday","name":"端午节","start":"2027-06-09"},{"t":"exam","name":"期末集中考试","start":"2027-06-21","end":"2027-06-27"},{"t":"term","name":"毕业典礼","start":"2027-06-25"},{"t":"holiday","name":"暑假开始","start":"2027-07-04"}]}};
+const FALLBACK_LUNAR = {"2026-08-24":"农历七月十二","2026-08-25":"农历七月十三","2026-08-27":"农历七月十五","2026-08-28":"农历七月十六","2026-08-30":"农历七月十八","2026-08-31":"农历七月十九","2026-09-01":"农历七月二十","2026-09-04":"农历七月廿三","2026-09-25":"农历八月十五","2026-10-01":"农历八月廿一","2026-10-07":"农历八月廿七","2026-10-23":"农历九月十四","2026-10-24":"农历九月十五","2027-01-04":"农历冬月廿七","2027-01-15":"农历腊月初八","2027-01-18":"农历腊月十一","2027-02-06":"农历正月初一","2027-02-20":"农历正月十五","2027-02-25":"农历正月二十","2027-02-26":"农历正月廿一","2027-03-01":"农历正月廿四","2027-04-05":"农历二月廿九","2027-05-01":"农历三月廿五","2027-05-05":"农历三月廿九","2027-06-09":"农历五月初五","2027-06-21":"农历五月十七","2027-06-25":"农历五月廿一","2027-06-27":"农历五月廿三","2027-07-03":"农历五月廿九","2027-07-04":"农历六月初一"};
+
+// 校历数据源（多源回退；可通过外部覆盖 __urpppCalendarSources 指向本地源测试）
+const CALENDAR_SOURCES = [
+  'https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/calendar/calendar.json',
+  'https://cdn.jsdelivr.net/gh/chaolan2019/URP-plusplus-Repository@main/calendar/calendar.json',
+  'https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/calendar/calendar.json',
+];
+
+// 远程拉取（GM 优先 + fetch 兜底；带超时与 no-store）
+function calFetchJson(url, timeoutMs = 6000) {
+  return new Promise((resolve) => {
+    try {
+      if (typeof GM_xmlhttpRequest === 'function') {
+        GM_xmlhttpRequest({
+          method: 'GET', url, timeout: timeoutMs, cache: 'no-store',
+          onload: (r) => { try { resolve(JSON.parse((r && r.responseText) || 'null')); } catch (_) { resolve(null); } },
+          onerror: () => resolve(null), ontimeout: () => resolve(null),
+        });
+        return;
+      }
+      fetch(url, { cache: 'no-store' }).then((r) => (r && r.ok ? r.json() : null)).then(resolve).catch(() => resolve(null));
+    } catch (_) { resolve(null); }
+  });
+}
+
+// 确保校历数据已加载（幂等）：多源回退 → GM 缓存 → 内置兜底；加载完成后回调 onLoad
+let __calLoaded = false;
+let __calLoading = null;
+async function ensureCalendarData(onLoad) {
+  if (__calLoaded) { try { if (onLoad) onLoad(); } catch (_) {} return; }
+  if (__calLoading) { __calLoading.then(() => { try { if (onLoad) onLoad(); } catch (_) {} }); return; }
+  const sources = (typeof unsafeWindow !== 'undefined' && unsafeWindow.__urpppCalendarSources && unsafeWindow.__urpppCalendarSources.length)
+    ? unsafeWindow.__urpppCalendarSources
+    : CALENDAR_SOURCES;
+  __calLoading = (async () => {
+    let data = null;
+    for (const url of sources) { data = await calFetchJson(url); if (data && data.terms) break; }
+    if (!data) {
+      try {
+        const cached = GM_getValue('urppp_calendar_cache', '');
+        if (cached) { const j = JSON.parse(cached); if (j && j.terms) data = j; }
+      } catch (_) {}
+    }
+    if (data && data.terms) {
+      CAL_TERMS = data.terms;
+      CAL_LUNAR = data.lunar || {};
+      try { GM_setValue('urppp_calendar_cache', JSON.stringify({ terms: CAL_TERMS, lunar: CAL_LUNAR })); } catch (_) {}
+    } else {
+      CAL_TERMS = FALLBACK_TERMS;
+      CAL_LUNAR = FALLBACK_LUNAR;
+    }
+    __calLoaded = true;
+    __calLoading = null;
+    try { if (onLoad) onLoad(); } catch (_) {}
+  })();
+  return __calLoading;
+}
 
 const CAL_TYPE_META = {
   term: { color: '#44616f', label: '教学/开学' },
@@ -66,7 +84,9 @@ function calDayDiff(a, b) {
   return Math.round((Date.parse(b) - Date.parse(a)) / 86400000);
 }
 function calWeekNo(termId, date) {
-  const p = calDayDiff(CAL_TERMS[termId].start, date);
+  const T = CAL_TERMS[termId];
+  if (!T || !T.start) return 0;
+  const p = calDayDiff(T.start, date);
   return p < 0 ? 0 : Math.floor(p / 7) + 1;
 }
 function calLunar(date) { return CAL_LUNAR[date] || ''; }
@@ -82,9 +102,12 @@ function calActiveTerm(today) {
 
 /** 下一个事件（今天之后或正在进行）及其倒计时、学期进度 */
 function calStatus(termId, today) {
-  const tid = termId && CAL_TERMS[termId] ? termId : 'autumn';
-  const T = CAL_TERMS[tid];
+  const tid = termId && CAL_TERMS[termId] ? termId : (CAL_TERMS.autumn ? 'autumn' : '');
+  const T = tid ? CAL_TERMS[tid] : null;
   const now = today || calToday();
+  if (!T || !T.events || !T.start || !T.weeks) {
+    return { term: null, termId: tid, next: null, daysLeft: null, weekNo: 0, progress: 0, started: false, today: now, empty: true };
+  }
   const next = T.events
     .map((e) => ({ e, d: calDayDiff(now, e.start) }))
     .filter((o) => o.d >= -0) // 今天起（含今天已开始的）
@@ -421,12 +444,14 @@ function ensureCalendarStyle() {
 }
 
 /** 模块初始化：注入样式 + 入口②（顶栏清爽按钮右侧校历按钮） */
-function initCalendar({ doc, isHomePage = () => true } = {}) {
+function initCalendar({ doc, isHomePage = () => true, onLoad } = {}) {
   const d = doc || (typeof document !== 'undefined' ? document : null);
   if (!d) return;
   ensureCalendarStyle();
   if (typeof isHomePage === 'function' && !isHomePage()) removeCalendarButton();
   else mountCalendarButton();
+  // 异步加载校历数据，完成后触发 onLoad（调用方刷新 UI）
+  try { ensureCalendarData(onLoad); } catch (_) {}
 }
 
 function mountCalendarButton() {
@@ -468,7 +493,7 @@ function removeCalendarButton() {
 }
 
 export {
-  CAL_TERMS, CAL_LUNAR, calActiveTerm, calStatus, calendarSummaryHtml, calendarSummaryCompactHtml, calendarModalHtml,
+  CAL_TERMS, CAL_LUNAR, CALENDAR_SOURCES, ensureCalendarData, calActiveTerm, calStatus, calendarSummaryHtml, calendarSummaryCompactHtml, calendarModalHtml,
   openCalendarModal, closeCalendarModal, bindCalendarOpen, ensureCalendarStyle, initCalendar,
   mountCalendarButton, removeCalendarButton,
 };

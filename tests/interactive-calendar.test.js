@@ -1,8 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  CAL_TERMS, calActiveTerm, calStatus, calendarSummaryHtml, calendarModalHtml,
+  CAL_TERMS, calActiveTerm, calStatus, calendarSummaryHtml, calendarModalHtml, ensureCalendarData,
 } from '../src/features/interactive-calendar/index.js';
+
+// 测试前加载校历数据（node 环境 fetch 失败则走内置 FALLBACK 兜底）
+await ensureCalendarData();
 
 test('calActiveTerm picks autumn for Aug through Feb and spring in term', () => {
   assert.equal(calActiveTerm('2026-09-10'), 'autumn');

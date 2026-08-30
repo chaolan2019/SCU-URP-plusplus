@@ -85,6 +85,7 @@ import { createCleanModeDataLoader } from '../features/clean-mode/data.js';
 import { createCleanModeRenderer } from '../features/clean-mode/render.js';
 import { createCleanModeUI } from '../features/clean-mode/ui.js';
 import { createCleanModeController } from '../features/clean-mode/controller.js';
+import { ensureCalendarData } from '../features/interactive-calendar/index.js';
 import { createDashboardController } from '../features/dashboard/dashboard.js';
 import { createScoreAnalysisController } from '../features/score-analysis/controller.js';
 import { createScoreAnalysisData } from '../features/score-analysis/data.js';
@@ -10502,6 +10503,14 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   });
 
   window.__urpppCleanMode = cleanModeApi;
+
+  // 校历时间线：异步加载远程 JSON（多源回退 + GM 缓存 + 内置兜底），完成后刷新清爽模式渲染
+  try {
+    ensureCalendarData(() => {
+      try { if (window.__urpppCleanMode && window.__urpppCleanMode.refreshRender) window.__urpppCleanMode.refreshRender(); } catch (_) {}
+      try { if (window.__urpppCleanMode && window.__urpppCleanMode.refresh) window.__urpppCleanMode.refresh(); } catch (_) {}
+    });
+  } catch (_) {}
 
   // ============================================================
   // 初始化
