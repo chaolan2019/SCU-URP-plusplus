@@ -35,9 +35,17 @@ function calFetchJson(url, timeoutMs = 6000) {
 }
 
 // 确保校历数据已加载（幂等）：多源回退 → GM 缓存 → 内置兜底；加载完成后回调 onLoad
+// force=true 时忽略已加载标记强制重拉（切本地源测试用）
 let __calLoaded = false;
+if (typeof unsafeWindow !== 'undefined') {
+  unsafeWindow.__urpppCalendarReload = async (onLoad) => {
+    __calLoaded = false;
+    await ensureCalendarData(onLoad, true);
+  };
+}
 let __calLoading = null;
-async function ensureCalendarData(onLoad) {
+async function ensureCalendarData(onLoad, force) {
+  if (force) { __calLoaded = false; }
   if (__calLoaded) { try { if (onLoad) onLoad(); } catch (_) {} return; }
   if (__calLoading) { __calLoading.then(() => { try { if (onLoad) onLoad(); } catch (_) {} }); return; }
   const sources = (typeof unsafeWindow !== 'undefined' && unsafeWindow.__urpppCalendarSources && unsafeWindow.__urpppCalendarSources.length)
