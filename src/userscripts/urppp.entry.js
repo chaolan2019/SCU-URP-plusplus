@@ -6496,7 +6496,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       saveLocalTheme(id, { name: item.name || id, desc: item.desc || '下载主题', author: item.author || '', version: item.version || '1.0.0' });
     }
     // 下载时也缓存 cardCss 到本地，皮肤卡/商店直接用本地卡样式（不再依赖线上拉取，避免残缺闪烁）
+    // catalog 无 cardCss 时自动从主题 CSS 变量生成，保证卡不裸奔
     if (item.cardCss) { try { GM_setValue('urppp_card_css_' + id, item.cardCss); } catch (_) {} }
+    else { const cc = autoCardCssFromVars(css, id); if (cc) { try { GM_setValue('urppp_card_css_' + id, cc); } catch (_) {} } }
     try { storeThemeStyleEl(id).textContent = css; } catch (_) {}
     try { ensureStoreCardStyles([{ id, cardCss: item.cardCss || '' }]); } catch (_) {}
     btn.textContent = '已安装'; btn.disabled = true;
@@ -7068,9 +7070,67 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       try { GM_setValue('urppp_theme_css_' + id, text); } catch (_) {}
       saveLocalTheme(id, { name: id, desc: '本地主题', author: '本地', version: '1.0.0' });
       try { storeThemeStyleEl(id).textContent = text; } catch (_) {}
+      // 卡片样式：优先提取 CSS 内自带的 cardCss 段（.urppp-skin-card[data-skin="<id>"]）
+      // 没有则从主题变量自动生成默认卡样式，保证皮肤卡/商店不裸奔
+      let cc = extractLocalCardCss(text, id);
+      if (!cc) cc = autoCardCssFromVars(text, id);
+      if (cc) { try { GM_setValue('urppp_card_css_' + id, cc); } catch (_) {} try { ensureStoreCardStyles([{ id, cardCss: cc }]); } catch (_) {} }
       file.value = '';
       try { fetchThemeManage(body.querySelector('#urppp-theme-manage')); } catch (_) {}
     });
+  }
+
+  // 从本地主题 CSS 中提取 cardCss 段（.urppp-skin-card[data-skin="<id>"]）
+  function extractLocalCardCss(css, id) {
+    try {
+      const parts = [];
+      const re = /([^{}]+)\{([^{}]*)\}/g;
+      const needle = '.urppp-skin-card[data-skin="' + id + '"]';
+      let m;
+      while ((m = re.exec(css)) !== null) {
+        const sel = m[1];
+        const body = m[2];
+        if (sel.indexOf(needle) !== -1) {
+          parts.push(sel.trim() + '{' + body.trim() + '}');
+        }
+      }
+      // 去掉混入的 CSS 注释（/* */ 或 // 或缩进空白行）
+      return parts.join('\n').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '').trim();
+    } catch (_) { return ''; }
+  }
+
+  // 从主题 CSS 变量自动生成默认 cardCss（保证皮肤卡/商店不裸奔，用户可后续覆盖）
+  function autoCardCssFromVars(css, id) {
+    try {
+      const pick = (block, name) => {
+        const mm = block.match(new RegExp('--' + name + '\\s*:\\s*([^!;]+)'));
+        return mm ? String(mm[1]).trim() : '';
+      };
+      // 亮色变量块：优先 html[data-urppp-skin="<id>"]，否则任意 :root/顶层块
+      let lightBlock = '';
+      const lm = css.match(new RegExp('html\\[data-urppp-skin="' + id + '\\"\\][^{]*\\{([^}]*)\\}'));
+      if (lm) lightBlock = lm[1]; else { const r = css.match(/:root[^{]*\\{([^}]*)\\}/); if (r) lightBlock = r[1]; }
+      // 暗色变量块
+      let darkBlock = '';
+      const dm = css.match(new RegExp('html\\[data-urppp-skin="' + id + '\\"\\]\.urppp-theme-dark[^{]*\\{([^}]*)\\}'));
+      if (!dm) { const d2 = css.match(new RegExp('html\\.urppp-theme-dark\\[data-urppp-skin="' + id + '\\"\\][^{]*\\{([^}]*)\\}')); if (d2) darkBlock = d2[1]; }
+      const L = (n) => pick(lightBlock, n) || (n === 'surface' ? '#fff' : n === 'bg' ? '#f5f5f5' : n === 'primary' ? '#2563eb' : n === 'text' ? '#111' : n === 'border' ? '#e5e5e5' : '');
+      const D = (n) => pick(darkBlock, n) || (n === 'surface' ? '#1f2937' : n === 'bg' ? '#111827' : n === 'primary' ? '#60a5fa' : n === 'text' ? '#f3f4f6' : n === 'border' ? '#374151' : '');
+      const hasDark = darkBlock !== '' || css.includes('urppp-theme-dark');
+      const cc = ''
+        + '.urppp-skin-card[data-skin="' + id + '"]{background:' + L('surface') + ';color:' + L('text') + ';border:1px solid ' + L('border') + ';border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.06);padding-bottom:52px}'
+        + '.urppp-skin-card[data-skin="' + id + '"] .urppp-skin-name,.urppp-skin-card[data-skin="' + id + '"] .urppp-skin-desc{color:inherit}'
+        + '.urppp-skin-card[data-skin="' + id + '"] .urppp-skin-apply,.urppp-skin-card[data-skin="' + id + '"] .urppp-store-repo,.urppp-skin-card[data-skin="' + id + '"] .urppp-store-del{background:' + L('surface') + ';color:' + L('primary') + ';border:1px solid ' + L('primary') + ';border-radius:8px;box-shadow:none;transition:background 150ms,color 150ms}'
+        + '.urppp-skin-card[data-skin="' + id + '"] .urppp-skin-apply:hover,.urppp-skin-card[data-skin="' + id + '"] .urppp-store-repo:hover,.urppp-skin-card[data-skin="' + id + '"] .urppp-store-del:hover{background:' + L('primary') + ';color:#fff}'
+        + '.urppp-skin-card[data-skin="' + id + '"] .urppp-skin-apply.is-current{background:' + L('primary') + ';color:#fff}'
+        + (hasDark
+          ? 'html.urppp-theme-dark .urppp-skin-card[data-skin="' + id + '"]{background:' + D('surface') + ';color:' + D('text') + ';border-color:' + D('border') + '}'
+            + 'html.urppp-theme-dark .urppp-skin-card[data-skin="' + id + '"] .urppp-skin-name,html.urppp-theme-dark .urppp-skin-card[data-skin="' + id + '"] .urppp-skin-desc{color:inherit}'
+            + 'html.urppp-theme-dark .urppp-skin-card[data-skin="' + id + '"] .urppp-skin-apply,html.urppp-theme-dark .urppp-skin-card[data-skin="' + id + '"] .urppp-store-repo,html.urppp-theme-dark .urppp-skin-card[data-skin="' + id + '"] .urppp-store-del{background:' + D('surface') + ';color:' + D('primary') + ';border-color:' + D('primary') + '}'
+            + 'html.urppp-theme-dark .urppp-skin-card[data-skin="' + id + '"] .urppp-skin-apply:hover,html.urppp-theme-dark .urppp-skin-card[data-skin="' + id + '"] .urppp-store-repo:hover,html.urppp-theme-dark .urppp-skin-card[data-skin="' + id + '"] .urppp-store-del:hover{background:' + D('primary') + ';color:#fff}'
+          : '');
+      return cc;
+    } catch (_) { return ''; }
   }
 
   function pluginStoreCard(item) {
