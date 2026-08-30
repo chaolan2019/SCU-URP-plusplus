@@ -6863,16 +6863,68 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const auto = root.querySelector('[data-store-auto-update]');
     const check = root.querySelector('[data-store-check-update]');
     if (!auto || !check) return;
+    // 防重复绑定：同一商店 body 重建时先清旧定时器（subpanel 每次打开重建）
+    if (root.__urpppAutoUpdateTimer) { clearInterval(root.__urpppAutoUpdateTimer); root.__urpppAutoUpdateTimer = null; }
     let on = GM_getValue('urppp_store_auto_update', false);
     const sync = () => { auto.textContent = '自动检测更新：' + (on ? '开' : '关'); };
+    // 自动检查 + 热更新：拉 catalog → 对已装且版本落后的主题/插件直接应用更新；返回更新数
+    const runCheck = async () => {
+      let updated = 0;
+      try {
+        const catalog = await fetchCatalogList();
+        for (const item of catalog) {
+          if (!item || !item.id || !item.entry || !item.entry.length) continue;
+          if (item.type === 'theme') {
+            // 已装且版本落后
+            const cur = SKIN_CATALOG.find((s) => s.id === item.id);
+            const installed = cur ? (cur.installed !== false) : themeDownloaded(item.id);
+            if (!installed) continue;
+            if (!cur || !versionGt(item.version, cur.version)) continue;
+            // 热更新：下载新版 CSS 覆盖缓存（自动场景跳过签名确认，签名失败则跳过该主题）
+            try {
+              const g = await guardEntrySignature(item);
+              if (g === 'fail') continue;
+              if (g === 'unknown' && item._srcPub) continue; // 无法验证签名：不自动更新，避免风险
+              let css = '';
+              for (const url of item.entry) {
+                const t = await fetchRemoteCatalog(url, 6000);
+                if (t) { css = t; break; }
+              }
+              if (!css) continue;
+              try { GM_setValue('urppp_theme_css_' + item.id, css); } catch (_) {}
+              try { storeThemeStyleEl(item.id).textContent = css; } catch (_) {} // 正在使用则即时换新
+              try { ensureStoreCardStyles([{ id: item.id, cardCss: item.cardCss || '' }]); } catch (_) {}
+              updated += 1;
+            } catch (_) {}
+          } else if (item.type === 'plugin') {
+            // 已注册且版本落后
+            const cur = (pluginManager && pluginManager.api && pluginManager.api.get && pluginManager.api.get(item.id));
+            if (!cur || !versionGt(item.version, cur.version)) continue;
+            try {
+              await pluginManager.api.update(item.id, item.entry);
+              updated += 1;
+            } catch (_) {}
+          }
+        }
+      } catch (_) {}
+      return updated;
+    };
+    // 会话内定时自动重查（30 分钟）
+    const ensureTimer = () => {
+      if (root.__urpppAutoUpdateTimer) { clearInterval(root.__urpppAutoUpdateTimer); root.__urpppAutoUpdateTimer = null; }
+      if (!on) return;
+      root.__urpppAutoUpdateTimer = setInterval(() => { try { runCheck(); } catch (_) {} }, 30 * 60 * 1000);
+    };
     sync();
-    auto.addEventListener('click', () => { on = !on; GM_setValue('urppp_store_auto_update', on); sync(); });
+    auto.addEventListener('click', () => { on = !on; GM_setValue('urppp_store_auto_update', on); sync(); ensureTimer(); if (on) { try { runCheck(); } catch (_) {} } });
+    // 打开商店时若已开启自动检测，立即检查一次
+    if (on) { try { runCheck(); } catch (_) {} }
+    ensureTimer();
     check.addEventListener('click', async () => {
       check.disabled = true; const old = check.textContent; check.textContent = '检查中…';
       try {
-        const catalog = await fetchCatalogList();
-        const n = applyStoreUpdateBadges(root, catalog);
-        check.textContent = n ? '发现更新' : '已是最新';
+        const n = await runCheck();
+        check.textContent = n ? ('已更新 ' + n + ' 项') : '已是最新';
       } catch (_) { check.textContent = '检查失败'; }
       setTimeout(() => { check.textContent = old; check.disabled = false; }, 1600);
     });
