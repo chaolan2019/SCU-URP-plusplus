@@ -6664,7 +6664,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       if (!mirrors.includes(s.url)) mirrors.unshift(s.url);
       let j = null;
       for (const u of mirrors) { j = await fetchCatalogDoc(u); if (j) break; }
-      return { doc: j, pubkey: (j && j.pubkey) || '' };
+      return { doc: j, pubkey: (j && j.pubkey) || '', srcUrl: s.url };
     }));
 
     // 合并：先到先得（列表顺序即优先级，官方条目在首位）
@@ -6673,11 +6673,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     for (const r of customsRes) {
       if (!(r.status === 'fulfilled' && r.value && r.value.doc)) continue;
       const srcPub = r.value.pubkey || '';
+      const srcUrl = r.value.srcUrl || '';
       for (const it of r.value.doc.items) {
         if (!it || !it.id || seen.has(it.id)) continue;
         seen.add(it.id);
         if (srcPub) it._srcPub = srcPub; // 记住来源公钥，安装前签名校验用
-        it._srcUrl = s.url; // 记住来源源 URL（计数只算官方收录源）
+        if (srcUrl) it._srcUrl = srcUrl; // 记住来源源 URL（计数只算官方收录源）
         merged.push(it);
       }
     }
