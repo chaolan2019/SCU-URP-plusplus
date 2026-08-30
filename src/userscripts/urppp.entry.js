@@ -6879,7 +6879,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           if (item.type === 'theme') {
             // 已装且版本落后
             const cur = SKIN_CATALOG.find((s) => s.id === item.id);
-            const installed = cur ? (cur.installed !== false) : themeDownloaded(item.id);
+            // 已下载（GM 有 CSS）或内置已装（apple/editorial）才算已安装；官方未下载主题不参与更新
+            const installed = themeDownloaded(item.id) || !!(cur && cur.installed !== false);
             if (!installed) continue;
             if (!cur || !versionGt(item.version, cur.version)) continue;
             // 热更新：下载新版 CSS 覆盖缓存（自动场景跳过签名确认，签名失败则跳过该主题）
