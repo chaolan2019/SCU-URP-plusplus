@@ -6359,21 +6359,22 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   function openStoreSubPanel(kind) {
     const main = document.getElementById('urppp-settings-panel');
     if (!main) return;
-    let sub = document.getElementById('urppp-store-subpanel');
-    if (!sub) {
-      sub = document.createElement('div');
-      sub.id = 'urppp-store-subpanel';
-      sub.className = 'urppp-store-subpanel';
-      sub.innerHTML = `
+    // 每次打开重建 subpanel：彻底清除上次的残留状态（监听/定时器/DOM）
+    const oldSub = document.getElementById('urppp-store-subpanel');
+    if (oldSub) { try { oldSub.remove(); } catch (_) {} }
+    try { if (window.__urpppSrcAutoRefreshTimer) { clearTimeout(window.__urpppSrcAutoRefreshTimer); window.__urpppSrcAutoRefreshTimer = null; } } catch (_) {}
+    const sub = document.createElement('div');
+    sub.id = 'urppp-store-subpanel';
+    sub.className = 'urppp-store-subpanel';
+    sub.innerHTML = `
         <div class="urppp-store-sub-head">
           <button type="button" class="urppp-store-sub-back" id="urppp-store-sub-back" aria-label="返回">←</button>
           <div class="urppp-store-sub-title" id="urppp-store-sub-title"></div>
           <button type="button" class="urppp-store-sub-refresh" id="urppp-store-sub-refresh" aria-label="刷新">↻</button>
         </div>
         <div class="urppp-store-sub-body" id="urppp-store-sub-body"></div>`;
-      main.appendChild(sub);
-      sub.querySelector('#urppp-store-sub-back').onclick = closeStoreSubPanel;
-    }
+    main.appendChild(sub);
+    sub.querySelector('#urppp-store-sub-back').onclick = closeStoreSubPanel;
     const title = sub.querySelector('#urppp-store-sub-title');
     const body = sub.querySelector('#urppp-store-sub-body');
     title.textContent = kind === 'theme' ? '主题商店' : '插件商店';
@@ -6398,11 +6399,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   function closeStoreSubPanel() {
+    try { if (window.__urpppSrcAutoRefreshTimer) { clearTimeout(window.__urpppSrcAutoRefreshTimer); window.__urpppSrcAutoRefreshTimer = null; } } catch (_) {}
     const sub = document.getElementById('urppp-store-subpanel');
     if (!sub) return;
     sub.classList.remove('open');
-    const body = sub.querySelector('#urppp-store-sub-body');
-    if (body) body.innerHTML = '';
+    sub.style.display = 'none'; // 强制隐藏，防动画中断残留遮挡
+    try { sub.remove(); } catch (_) {} // 彻底移除，下次打开重建
   }
 
   function bindStoreTabs(root) {
