@@ -6388,11 +6388,18 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         if (refreshBtn.disabled) return;
         refreshBtn.disabled = true; refreshBtn.textContent = '…';
         try {
-          await fetchCatalogList(true); // 强制重拉全部源并写缓存
+          const before = JSON.stringify(__catalogCache || []);
+          const fresh = await fetchCatalogList(true); // 强制重拉全部源并写缓存（失败保留旧缓存）
+          const after = JSON.stringify(fresh || []);
           const downloadPane = body.querySelector('[data-pane="download"]');
           if (kind === 'theme') { try { fetchCatalogThemes(body); } catch (_) {} }
           else if (downloadPane) { try { fetchCatalogPlugins(downloadPane); } catch (_) {} }
-                  } catch (_) {}
+          if (after !== before) {
+            toast('商店目录已更新');
+          } else {
+            toast('已是最新目录');
+          }
+        } catch (_) {}
         refreshBtn.disabled = false; refreshBtn.textContent = '↻';
       };
     }
@@ -6721,9 +6728,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       }
     }
 
-    __catalogCache = merged;
-    catalogCacheWrite(merged);
-    return merged;
+    // 拉取结果非空才替换缓存（失败/空则保留旧缓存，避免界面闪空）
+    if (merged.length) {
+      __catalogCache = merged;
+      catalogCacheWrite(merged);
+    }
+    return merged.length ? merged : (__catalogCache || []);
   }
 
   // ---- 签名校验（Ed25519，自建源安全） ----
@@ -6924,7 +6934,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     let on = GM_getValue('urppp_store_auto_update', false);
     const sync = () => { auto.textContent = '自动检测更新：' + (on ? '开' : '关'); };
     const runCheck = async () => {
-      let updated = 0;
+      const updatedNames = [];
       try {
         const catalog = await fetchCatalogList();
         for (const item of catalog) {
@@ -6950,7 +6960,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
               try { GM_setValue('urppp_theme_css_' + item.id, css); } catch (_) {}
               try { storeThemeStyleEl(item.id).textContent = css; } catch (_) {} // 正在使用则即时换新
               try { ensureStoreCardStyles([{ id: item.id, cardCss: item.cardCss || '' }]); } catch (_) {}
-              updated += 1;
+              updatedNames.push((item.name || item.id) + ' v' + item.version);
             } catch (_) {}
           } else if (item.type === 'plugin') {
             // 已注册且版本落后
@@ -6958,13 +6968,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
             if (!cur || !versionGt(item.version, cur.version)) continue;
             try {
               await pluginManager.api.update(item.id, item.entry);
-              updated += 1;
+              updatedNames.push((item.name || item.id) + ' v' + item.version);
             } catch (_) {}
           }
         }
       } catch (_) {}
       // 有更新则刷新主题管理列表（版本号/卡样式即时更新），无更新保持现状
-      if (updated > 0) {
+      if (updatedNames.length > 0) {
         try {
           const inline = document.querySelector('.urppp-store-inline');
           const manage = inline && inline.querySelector('#urppp-theme-manage');
@@ -6972,7 +6982,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           try { syncSettingsPanelUI(); } catch (_) {}
         } catch (_) {}
       }
-      return updated;
+      return { count: updatedNames.length, names: updatedNames };
     };
     // 加载（打开商店）时若已开启自动检测，检查一次（不设定时器，减少后台占用）
     sync();
@@ -6981,8 +6991,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     check.addEventListener('click', async () => {
       check.disabled = true; const old = check.textContent; check.textContent = '检查中…';
       try {
-        const n = await runCheck();
-        check.textContent = n ? ('已更新 ' + n + ' 项') : '已是最新';
+        const r = await runCheck();
+        if (r && r.count > 0) {
+          check.textContent = '已更新 ' + r.count + ' 项：' + r.names.join('、');
+          toast('已更新：' + r.names.join('、'));
+        } else {
+          check.textContent = '已是最新';
+        }
       } catch (_) { check.textContent = '检查失败'; }
       setTimeout(() => { check.textContent = old; check.disabled = false; }, 1600);
     });
