@@ -7026,6 +7026,7 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-src-item{background:var(--sur
 /* 底部浮动提示 / 确认条 / 下载进度（替代原生 alert/confirm，宽度与设置面板对齐） */
 #urppp-toast{position:fixed;left:18px;right:auto;bottom:24px;z-index:99999;width:min(460px,calc(100vw - 24px));box-sizing:border-box;padding:10px 18px;border-radius:var(--radius,10px);background:var(--surface,#2b2f36);color:var(--text,#fff);font-size:13px;font-family:inherit;opacity:0;pointer-events:none;box-shadow:var(--shadow,0 -6px 18px rgba(0,0,0,.16))}
 #urppp-toast.error{background:var(--danger,#b2392f);color:var(--primary-foreground,#fff)}
+html.urppp-mobile #urppp-toast{left:10px!important;right:10px!important;width:auto!important;bottom:calc(16px + env(safe-area-inset-bottom, 0px))}
 #urppp-confirm{position:fixed;left:18px;right:auto;bottom:24px;z-index:99999;width:min(460px,calc(100vw - 24px));box-sizing:border-box;opacity:0;pointer-events:none}
 /* 移动端：底部确认条与设置面板同边距对齐 */
 @media (max-width: 640px) {
