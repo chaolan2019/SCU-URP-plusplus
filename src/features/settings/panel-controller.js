@@ -56,6 +56,19 @@ export function createSettingsPanelController(options) {
     const mask = document.getElementById('urppp-settings-mask');
     if (panel) panel.classList.remove('open');
     if (mask) mask.classList.remove('open');
+    // 面板收起时同步隐藏/清理由面板内操作触发的浮窗（toast/确认条/下载进度），避免残留
+    try {
+      const dl = document.getElementById('urppp-dl-progress');
+      if (dl) dl.style.display = 'none';
+    } catch (_) {}
+    try {
+      const toast = document.getElementById('urppp-toast');
+      if (toast) toast.style.display = 'none';
+    } catch (_) {}
+    try {
+      const confirm = document.getElementById('urppp-confirm');
+      if (confirm) confirm.style.display = 'none';
+    } catch (_) {}
   }
 
   return { close, open };
