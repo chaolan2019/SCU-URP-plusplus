@@ -4,7 +4,7 @@
  * 注入策略保持运行时（每次 applySkinAttr 重写 textContent 并移到末尾），覆盖优先级不变。
  */
 
-export function createApplySkinAttr({ getSkin, isAppleEdgeLine, getBrutalActivePalette, applyPersonalDisplay }) {
+export function createApplySkinAttr({ getSkin, getSkinShapeOverrides, isAppleEdgeLine, getBrutalActivePalette, applyPersonalDisplay }) {
   return function applySkinAttr() {
     const id = getSkin();
     try { document.documentElement.setAttribute('data-urppp-skin', id); } catch (_) {}

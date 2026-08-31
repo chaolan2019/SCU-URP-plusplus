@@ -1669,7 +1669,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   }
 
   // 皮肤 override 样式引擎已拆至 styles/skins.js（P1-12）：行为不变，依赖注入
-  const applySkinAttr = createApplySkinAttr({ getSkin, isAppleEdgeLine, getBrutalActivePalette, applyPersonalDisplay });
+  const applySkinAttr = createApplySkinAttr({ getSkin, getSkinShapeOverrides, isAppleEdgeLine, getBrutalActivePalette, applyPersonalDisplay });
 
   function setSkin(id) {
     const hit = SKIN_CATALOG.find((s) => s.id === id && s.ready && (s.installed !== false || themeDownloaded(s.id)));
