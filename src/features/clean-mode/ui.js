@@ -143,8 +143,7 @@ export function createCleanModeUI({ state, deps }) {
         } catch (_) { /* ignore */ }
       });
     });
-    // 课表周次切换（幽灵层动画：当前周滑出，邻周幽灵层滑入，动画毕重渲染回原位）
-    const findScheduleWrap = (root) => root.querySelector('.uc-schedule-wrap');
+    // 课表周次切换（幽灵层仅服务移动端手势；桌面按钮直接换屏无动画）
     // ghost(wrap, delta): 在 wrap 内挂目标周幽灵层，返回 {ghost, target, cur}；失败/边界返回 null
     const makeGhost = (wrap, delta) => {
       try {
@@ -163,34 +162,7 @@ export function createCleanModeUI({ state, deps }) {
         return { ghost, target, cur };
       } catch (_) { return null; }
     };
-    // 动画：当前周滑出 + 幽灵层从邻侧滑入，完毕后切周重渲染并销毁幽灵层
-    const ghostShift = (wrap, delta, onDone) => {
-      const pack = makeGhost(wrap, delta);
-      if (!pack) { applyWeekDelta(delta); if (onDone) onDone(); return; }
-      const { ghost, target, cur } = pack;
-      const dir = delta > 0 ? 1 : -1;
-      requestAnimationFrame(() => {
-        cur.style.transition = 'transform .3s cubic-bezier(.22,1,.36,1)';
-        cur.style.transform = 'translateX(' + (-dir * 100) + '%)';
-        ghost.style.transition = 'transform .3s cubic-bezier(.22,1,.36,1)';
-        ghost.style.transform = 'translateX(0)';
-      });
-      setTimeout(() => {
-        const courses = (state.schedule && state.schedule.courses) || [];
-        const maxWeek = deps.inferMaxWeek(courses);
-        state.weekLocked = true;
-        state.viewWeek = Math.min(maxWeek, Math.max(1, target));
-        deps.render();
-        const label = document.querySelector('#urppp-clean-root .uc-week-label');
-        if (label) {
-          label.classList.remove('uc-pop');
-          void label.offsetWidth;
-          label.classList.add('uc-pop');
-        }
-        if (onDone) onDone();
-      }, 310);
-    };
-    // 无动画直接切周（兑底）
+    // 无动画直接切周（按钮路径：点击直接换屏；幽灵层动画仅保留给移动端手势）
     const applyWeekDelta = (delta) => {
       const courses = (state.schedule && state.schedule.courses) || [];
       const maxWeek = deps.inferMaxWeek(courses);
@@ -207,16 +179,14 @@ export function createCleanModeUI({ state, deps }) {
         label.classList.add('uc-pop');
       }
     };
-    // 按钮切周（带幽灵层动画）
+    // 按钮切周（直接换屏，无动画）
     scope.querySelectorAll('[data-week-delta]').forEach((button) => {
       if (!markCleanUiBound(button, 'weekDelta')) return;
       button.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
         const delta = parseInt(button.getAttribute('data-week-delta') || '0', 10) || 0;
-        const wrap = findScheduleWrap(scope);
-        if (wrap) ghostShift(wrap, delta);
-        else applyWeekDelta(delta);
+        applyWeekDelta(delta);
       });
     });
     // 移动端滑动手势：跟手平移当前周+幽灵层，松手判定
