@@ -681,6 +681,14 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-src-item{background:var(--sur
 #urppp-confirm .urppp-confirm-ops button[data-ok]:hover{background:var(--primary-hover,#3a69e3)}
 #urppp-confirm .urppp-confirm-ops button[data-cac]:hover{background:var(--primary,#4a7bfa);border-color:var(--primary,#4a7bfa);color:var(--primary-foreground,#fff)}
 
+/* 下载进度浮窗（主题/插件下载时展示，随主题） */
+#urppp-dl-progress{position:fixed;left:18px;right:auto;bottom:24px;z-index:99999;width:min(420px,calc(100vw - 36px));box-sizing:border-box;padding:12px 16px;border-radius:var(--radius,12px);background:var(--surface,#fff);border:1px solid var(--border,#e6e8ec);box-shadow:var(--shadow,0 -6px 18px rgba(0,0,0,.14));font-family:inherit;opacity:0;transform:translateY(14px);pointer-events:none;transition:opacity .22s,transform .22s}
+#urppp-dl-progress .urppp-dl-title{font-size:13px;font-weight:600;color:var(--text,#16181d);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+#urppp-dl-progress .urppp-dl-track{height:6px;border-radius:999px;background:var(--input-bg,#f5f5f7);overflow:hidden}
+#urppp-dl-progress .urppp-dl-bar{height:100%;width:0%;border-radius:999px;background:var(--primary,#4a7bfa);transition:width .2s ease}
+#urppp-dl-progress .urppp-dl-text{font-size:12px;color:var(--text-secondary,#6e6e73);margin-top:7px;line-height:1.45}
+#urppp-dl-progress.urppp-dl-error{opacity:1!important;transform:none!important;pointer-events:auto!important}
+
 /* 仓库/删除按钮复用 apply 样式后的定位（覆盖 apply 默认 right:12px） */
 #urppp-settings-panel .urppp-skin-card > .urppp-skin-apply.urppp-store-repo { right:auto!important; left:12px!important; }
 #urppp-settings-panel .urppp-skin-card > .urppp-skin-apply.urppp-store-del { right:78px!important; }

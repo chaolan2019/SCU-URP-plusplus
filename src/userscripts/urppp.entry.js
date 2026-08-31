@@ -6487,12 +6487,18 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const g = await guardEntrySignature(item);
     if (g === 'fail') { const go = await confirmBottom('签名校验失败：该条目可能被篡改。是否仍要安装？'); if (!go) { btn.disabled = false; btn.textContent = '下载'; return; } }
     if (g === 'unknown' && item._srcPub) { const go = await confirmBottom('该源无有效签名校验，可能被篡改。是否自担风险继续下载？'); if (!go) { btn.disabled = false; btn.textContent = '下载'; return; } }
+    const dl = showDownloadProgress('正在下载「' + (item.name || id) + '」');
     let css = '';
-    for (const url of item.entry) {
+    const total = item.entry.length;
+    for (let i = 0; i < total; i += 1) {
+      const url = item.entry[i];
+      const basePct = Math.round((i / total) * 100);
+      dl.set(basePct, '正在从镜像 ' + (i + 1) + '/' + total + ' 下载…');
       const t = await fetchRemoteCatalog(url, 6000); // GM 优先：绕开页面 fetch 的 PNA/CORS 限制（catalog 已走此通道）
-      if (t) { css = t; break; }
+      if (t) { css = t; dl.set(100, '下载完成，正在处理…'); break; }
+      if (i < total - 1) dl.set(basePct + 5, '镜像 ' + (i + 1) + ' 不可用，切换下一镜像…');
     }
-    if (!css) { toast('下载失败：所有源均不可达（本地测试源已关/网络不通）', 'error'); btn.textContent = '下载失败'; setTimeout(() => { btn.textContent = '下载'; btn.disabled = false; }, 1400); return; }
+    if (!css) { dl.fail('下载失败：所有源均不可达'); toast('下载失败：所有源均不可达（本地测试源已关/网络不通）', 'error'); btn.textContent = '下载失败'; setTimeout(() => { btn.textContent = '下载'; btn.disabled = false; }, 1400); return; }
     try { GM_setValue('urppp_theme_css_' + id, css); } catch (_) {}
     // 下载的自定义主题（不在内置 SKIN_CATALOG）需登记为本地主题，否则主题管理/皮肤列表不显示、也无法应用
     if (!SKIN_CATALOG.some((s) => s.id === id)) {
@@ -6504,6 +6510,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     else { const cc = autoCardCssFromVars(css, id); if (cc) { try { GM_setValue('urppp_card_css_' + id, cc); } catch (_) {} } }
     try { storeThemeStyleEl(id).textContent = css; } catch (_) {}
     try { ensureStoreCardStyles([{ id, cardCss: item.cardCss || '' }]); } catch (_) {}
+    try { dl.done('下载完成，已安装'); } catch (_) {}
     btn.textContent = '已安装'; btn.disabled = true;
     // 即时刷新：主题管理能看到刚下的主题 + 下载列表排除它
     const inline = (btn.closest && btn.closest('.urppp-store-inline'));
@@ -6772,6 +6779,50 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const data = new Uint8Array(hash); // 签名输入 = SHA256(规范化 JSON) 字节（与签名工具一致）
       return await _wc.verify({ name: 'Ed25519' }, key, sig, data);
     } catch (_) { return null; }
+  }
+
+  // 下载进度浮窗（主题/插件下载时展示）：返回 { set(pct, text), done(text), fail(text) } 控制器
+  function showDownloadProgress(title) {
+    let el = document.getElementById('urppp-dl-progress');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'urppp-dl-progress';
+      el.className = 'urppp-dl-progress';
+      el.innerHTML = '<div class="urppp-dl-title"></div><div class="urppp-dl-track"><div class="urppp-dl-bar"></div></div><div class="urppp-dl-text"></div>';
+      (document.body || document.documentElement).appendChild(el);
+    }
+    const titleEl = el.querySelector('.urppp-dl-title');
+    const bar = el.querySelector('.urppp-dl-bar');
+    const text = el.querySelector('.urppp-dl-text');
+    titleEl.textContent = title;
+    el.classList.remove('urppp-dl-error');
+    el.style.display = '';
+    el.style.pointerEvents = 'auto';
+    el.style.opacity = '0'; el.style.transform = 'translateY(14px)';
+    requestAnimationFrame(() => { el.style.opacity = '1'; el.style.transform = 'none'; });
+    const hide = () => {
+      try { el.style.pointerEvents = 'none'; el.style.opacity = '0'; el.style.transform = 'translateY(20px)'; setTimeout(() => { el.style.display = 'none'; }, 260); } catch (_) {}
+    };
+    return {
+      set(pct, msg) {
+        try {
+          const p = Math.max(0, Math.min(100, pct || 0));
+          bar.style.width = p + '%';
+          if (msg) text.textContent = msg;
+        } catch (_) {}
+      },
+      done(msg) {
+        try { if (msg) text.textContent = msg; } catch (_) {}
+        setTimeout(hide, 650);
+      },
+      fail(msg) {
+        try {
+          el.classList.add('urppp-dl-error');
+          if (msg) text.textContent = msg;
+        } catch (_) {}
+        setTimeout(hide, 2200);
+      },
+    };
   }
 
   // 底部浮动提示（替代原生 alert，随主题）、底部确认条（替代原生 confirm）
@@ -7172,7 +7223,21 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           const g = cat ? await guardEntrySignature(cat) : 'trust';
           if (g === 'fail') { const go = await confirmBottom('签名校验失败：该插件可能被篡改。是否仍要装载？'); if (!go) { b.textContent = '下载'; b.disabled = false; return; } }
           if (g === 'unknown' && cat && cat._srcPub) { const go = await confirmBottom('该源无有效签名校验，可能被篡改。是否自担风险继续装载？'); if (!go) { b.textContent = '下载'; b.disabled = false; return; } }
-          if (pluginManager && pluginManager.api && pluginManager.api.install) await pluginManager.api.install(b.dataset.pluginApply, null); b.textContent = '已安装'; try { syncSettingsPanelUI(); } catch (_) {} } 
+          if (pluginManager && pluginManager.api && pluginManager.api.install) {
+            const dlp = showDownloadProgress('正在下载「' + (cat && cat.name ? cat.name : b.dataset.pluginApply) + '」');
+            try {
+              await pluginManager.api.install(b.dataset.pluginApply, null, (p) => {
+                try {
+                  if (p.stage === 'downloading') dlp.set(Math.round((p.index / p.total) * 100), '正在从镜像 ' + p.index + '/' + p.total + ' 下载…');
+                  else if (p.stage === 'source_failed') dlp.set(Math.round((p.index / p.total) * 100), '镜像 ' + p.index + ' 不可用，切换下一镜像…');
+                  else if (p.stage === 'downloaded') dlp.set(100, '下载完成，正在注入…');
+                  else if (p.stage === 'injecting') dlp.set(100, '正在注入…');
+                } catch (_) {}
+              });
+              dlp.done('已安装');
+            } catch (_) { dlp.fail('安装失败'); }
+          }
+          b.textContent = '已安装'; try { syncSettingsPanelUI(); } catch (_) {} } 
         catch (_) { b.textContent = '失败'; }
         setTimeout(() => { b.textContent = old; b.disabled = false; }, 1200);
       }));
@@ -7209,7 +7274,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }).join('');
     host.querySelectorAll('[data-plugin-op="reload"]').forEach((b) => b.addEventListener('click', async () => {
       b.disabled = true; const old = b.textContent; b.textContent = '装载中…';
-      try { if (pluginManager && pluginManager.api && pluginManager.api.install) await pluginManager.api.install(b.dataset.pluginId, null); b.textContent = '已装载'; try { syncSettingsPanelUI(); } catch (_) {} }
+      try { if (pluginManager && pluginManager.api && pluginManager.api.install) {
+        const dlp = showDownloadProgress('正在装载「' + b.dataset.pluginId + '」');
+        try { await pluginManager.api.install(b.dataset.pluginId, null); dlp.done('已装载'); } catch (_) { dlp.fail('装载失败'); }
+      } b.textContent = '已装载'; try { syncSettingsPanelUI(); } catch (_) {} }
       catch (_) { b.textContent = '失败'; }
       setTimeout(() => { b.textContent = old; b.disabled = false; }, 1200);
     }));
