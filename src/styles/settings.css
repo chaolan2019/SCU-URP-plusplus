@@ -336,6 +336,8 @@ html.urppp-theme-scu-red:not(.urppp-theme-follow) #urppp-settings-panel .urppp-s
   color: var(--text-muted) !important;
 }
 
+/* urppp-mobile 标记（UA 命中移动端，无视口不确定性）：面板全宽贴边（与浮窗对齐规则同源） */
+html.urppp-mobile #urppp-settings-panel{top:max(10px, env(safe-area-inset-top, 0px))!important;left:10px!important;right:10px!important;bottom:max(10px, env(safe-area-inset-bottom, 0px))!important;width:auto!important;max-height:none!important;height:auto!important;transform-origin:center center!important}
 /* Settings tabs and skin list layout */
 #urppp-settings-panel { width: min(460px, calc(100vw - 24px)) !important; }
 #urppp-settings-panel .urppp-set-tabs {
@@ -676,6 +678,7 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-src-item{background:var(--sur
 @media (max-width: 640px) {
   #urppp-confirm{left:10px!important;right:10px!important;width:auto!important;bottom:calc(16px + env(safe-area-inset-bottom, 0px))}
 }
+html.urppp-mobile #urppp-confirm{left:10px!important;right:10px!important;width:auto!important;bottom:calc(16px + env(safe-area-inset-bottom, 0px))}
 #urppp-confirm .urppp-confirm-card{padding:14px 16px;border-radius:var(--radius,12px);background:var(--surface,#fff);border:1px solid var(--border,#e6e8ec);box-shadow:var(--shadow,0 -6px 18px rgba(0,0,0,.14));font-family:inherit}
 #urppp-confirm .urppp-confirm-txt{font-size:15px;color:var(--text,#16181d);line-height:1.5;font-weight:500}
 #urppp-confirm .urppp-confirm-ops{display:flex;gap:10px;margin-top:14px}
@@ -696,6 +699,9 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-src-item{background:var(--sur
 @media (max-width: 640px) {
   #urppp-dl-progress{left:10px!important;right:10px!important;width:auto!important;bottom:calc(16px + env(safe-area-inset-bottom, 0px))}
 }
+/* urppp-mobile 标记（UA 命中移动端，无视口不确定性）：浮窗全程与面板同位同宽
+   覆盖 980px 布局视口等媒体查询覆盖不到的场景 */
+html.urppp-mobile #urppp-dl-progress{left:10px!important;right:10px!important;width:auto!important;bottom:calc(16px + env(safe-area-inset-bottom, 0px))}
 
 /* 仓库/删除按钮复用 apply 样式后的定位（覆盖 apply 默认 right:12px） */
 #urppp-settings-panel .urppp-skin-card > .urppp-skin-apply.urppp-store-repo { right:auto!important; left:12px!important; }
