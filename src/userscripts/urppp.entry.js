@@ -6435,6 +6435,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }));
     host.querySelectorAll('[data-plugin-op="unload"]').forEach((b) => b.addEventListener('click', () => {
       try { if (pluginManager && pluginManager.api && pluginManager.api.unregister) pluginManager.api.unregister(b.dataset.pluginId); } catch (_) {}
+      // 与插件管理页卸载行为一致：真删缓存代码（否则已卸载插件的 code 无限残留）
+      try { if (typeof GM_setValue === 'function') GM_setValue('urppp_plugin_' + b.dataset.pluginId + '_code', ''); } catch (_) {}
       try { syncSettingsPanelUI(); } catch (_) {}
       const wrap = host.closest('.urppp-store-inline');
       try { renderPluginStoreBody(wrap); } catch (_) {}
