@@ -76,8 +76,8 @@ export function createCleanModeRenderer({ state, deps }) {
     return 56;
   }
 
-  function renderScheduleBoard(courses) {
-    const weekNo = deps.getViewWeekNumber();
+  function renderScheduleBoard(courses, weekNoOverride) {
+    const weekNo = weekNoOverride || deps.getViewWeekNumber();
     const ROW = getScheduleRowHeight();
     const CELL = Math.max(ROW - 4, 28);
     const list = (courses || []).map((c) => Object.assign({}, c, {

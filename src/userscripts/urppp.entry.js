@@ -10616,6 +10616,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       metricHtml,
       occupancyHtml,
       render,
+      renderScheduleBoard,
       rootEl: () => rootEl(),
       roomPickerHtml,
       scoreToGpa,

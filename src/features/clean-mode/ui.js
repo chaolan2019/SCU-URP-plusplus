@@ -143,18 +143,43 @@ export function createCleanModeUI({ state, deps }) {
         } catch (_) { /* ignore */ }
       });
     });
-    // 课表周次切换
-    scope.querySelectorAll('[data-week-delta]').forEach((button) => {
-      if (!markCleanUiBound(button, 'weekDelta')) return;
-      button.addEventListener('click', (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const delta = parseInt(button.getAttribute('data-week-delta') || '0', 10) || 0;
+    // 课表周次切换（幽灵层动画：当前周滑出，邻周幽灵层滑入，动画毕重渲染回原位）
+    const findScheduleWrap = (root) => root.querySelector('.uc-schedule-wrap');
+    // ghost(wrap, delta): 在 wrap 内挂目标周幽灵层，返回 {ghost, target, cur}；失败/边界返回 null
+    const makeGhost = (wrap, delta) => {
+      try {
         const courses = (state.schedule && state.schedule.courses) || [];
         const maxWeek = deps.inferMaxWeek(courses);
         const current = deps.getViewWeekNumber();
+        const target = Math.min(maxWeek, Math.max(1, current + delta));
+        if (target === current) return null; // 到边界周，无邻周
+        const cur = wrap.querySelector('.uc-week');
+        if (!cur || typeof deps.renderScheduleBoard !== 'function') return null;
+        const ghost = document.createElement('div');
+        ghost.className = 'uc-week uc-ghost-week';
+        ghost.innerHTML = deps.renderScheduleBoard(courses, target);
+        ghost.style.cssText = 'position:absolute;top:0;left:0;width:100%;pointer-events:none;margin:0;transform:translateX(' + (delta > 0 ? '100%' : '-100%') + ')';
+        wrap.appendChild(ghost);
+        return { ghost, target, cur };
+      } catch (_) { return null; }
+    };
+    // 动画：当前周滑出 + 幽灵层从邻侧滑入，完毕后切周重渲染并销毁幽灵层
+    const ghostShift = (wrap, delta, onDone) => {
+      const pack = makeGhost(wrap, delta);
+      if (!pack) { applyWeekDelta(delta); if (onDone) onDone(); return; }
+      const { ghost, target, cur } = pack;
+      const dir = delta > 0 ? 1 : -1;
+      requestAnimationFrame(() => {
+        cur.style.transition = 'transform .3s cubic-bezier(.22,1,.36,1)';
+        cur.style.transform = 'translateX(' + (-dir * 100) + '%)';
+        ghost.style.transition = 'transform .3s cubic-bezier(.22,1,.36,1)';
+        ghost.style.transform = 'translateX(0)';
+      });
+      setTimeout(() => {
+        const courses = (state.schedule && state.schedule.courses) || [];
+        const maxWeek = deps.inferMaxWeek(courses);
         state.weekLocked = true;
-        state.viewWeek = Math.min(maxWeek, Math.max(1, current + delta));
+        state.viewWeek = Math.min(maxWeek, Math.max(1, target));
         deps.render();
         const label = document.querySelector('#urppp-clean-root .uc-week-label');
         if (label) {
@@ -162,7 +187,110 @@ export function createCleanModeUI({ state, deps }) {
           void label.offsetWidth;
           label.classList.add('uc-pop');
         }
+        if (onDone) onDone();
+      }, 310);
+    };
+    // 无动画直接切周（兑底）
+    const applyWeekDelta = (delta) => {
+      const courses = (state.schedule && state.schedule.courses) || [];
+      const maxWeek = deps.inferMaxWeek(courses);
+      const current = deps.getViewWeekNumber();
+      const next = Math.min(maxWeek, Math.max(1, current + delta));
+      if (next === current) return;
+      state.weekLocked = true;
+      state.viewWeek = next;
+      deps.render();
+      const label = document.querySelector('#urppp-clean-root .uc-week-label');
+      if (label) {
+        label.classList.remove('uc-pop');
+        void label.offsetWidth;
+        label.classList.add('uc-pop');
+      }
+    };
+    // 按钮切周（带幽灵层动画）
+    scope.querySelectorAll('[data-week-delta]').forEach((button) => {
+      if (!markCleanUiBound(button, 'weekDelta')) return;
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const delta = parseInt(button.getAttribute('data-week-delta') || '0', 10) || 0;
+        const wrap = findScheduleWrap(scope);
+        if (wrap) ghostShift(wrap, delta);
+        else applyWeekDelta(delta);
       });
+    });
+    // 移动端滑动手势：跟手平移当前周+幽灵层，松手判定
+    scope.querySelectorAll('.uc-schedule-wrap').forEach((wrap) => {
+      if (!wrap || !markCleanUiBound(wrap, 'weekSwipe')) return;
+      let sx = 0, sy = 0, st = 0, tracking = false, ghost = null, target = null, cur = null, dir = 0;
+      const clearGhost = () => {
+        if (ghost && ghost.parentNode) ghost.parentNode.removeChild(ghost);
+        ghost = null; target = null; cur = null; dir = 0;
+      };
+      wrap.addEventListener('touchstart', (e) => {
+        const t = e.touches && e.touches[0];
+        if (!t) return;
+        if (wrap.querySelector('.uc-ghost-week')) return; // 动画中忽略
+        sx = t.clientX; sy = t.clientY; st = Date.now();
+        tracking = true; clearGhost();
+      }, { passive: true });
+      wrap.addEventListener('touchmove', (e) => {
+        if (!tracking) return;
+        const t = e.touches && e.touches[0];
+        if (!t) return;
+        const dx = t.clientX - sx;
+        const dy = t.clientY - sy;
+        if (!dir && Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { tracking = false; return; }
+        if (!dir && Math.abs(dx) > 18) {
+          dir = dx < 0 ? 1 : -1;
+          const pack = makeGhost(wrap, dir);
+          if (pack) {
+            ghost = pack.ghost; target = pack.target; cur = pack.cur;
+            ghost.style.transition = 'none';
+            ghost.style.willChange = 'transform';
+            cur.style.willChange = 'transform';
+          }
+        }
+        if (ghost && cur) {
+          const w = wrap.clientWidth || 320;
+          const pct = dx / w * 100;
+          cur.style.transform = 'translateX(' + pct + '%)';
+          ghost.style.transform = 'translateX(' + (dir > 0 ? 100 + pct : -100 + pct) + '%)';
+        }
+      }, { passive: true });
+      wrap.addEventListener('touchend', (e) => {
+        if (!tracking) return;
+        tracking = false;
+        const t = e.changedTouches && e.changedTouches[0];
+        const dx = t ? t.clientX - sx : 0;
+        const dy = t ? Math.abs(t.clientY - sy) : 0;
+        const dt = Date.now() - st;
+        const w = wrap.clientWidth || 320;
+        const threshold = Math.max(60, w * 0.22);
+        const swiped = Math.abs(dx) > threshold && Math.abs(dx) > dy * 1.5 && dt < 700;
+        if (!ghost || !cur || !target) { clearGhost(); return; }
+        if (swiped) {
+          const endDir = dx < 0 ? 1 : -1;
+          cur.style.transition = 'transform .25s cubic-bezier(.22,1,.36,1)';
+          cur.style.transform = 'translateX(' + (-endDir * 100) + '%)';
+          ghost.style.transition = 'transform .25s cubic-bezier(.22,1,.36,1)';
+          ghost.style.transform = 'translateX(0)';
+          setTimeout(() => {
+            const courses = (state.schedule && state.schedule.courses) || [];
+            const maxWeek = deps.inferMaxWeek(courses);
+            state.weekLocked = true;
+            state.viewWeek = Math.min(maxWeek, Math.max(1, target));
+            deps.render();
+          }, 260);
+          setTimeout(clearGhost, 320);
+        } else {
+          cur.style.transition = 'transform .28s cubic-bezier(.22,1,.36,1)';
+          cur.style.transform = 'translateX(0)';
+          ghost.style.transition = 'transform .28s cubic-bezier(.22,1,.36,1)';
+          ghost.style.transform = 'translateX(' + (dir > 0 ? '100%' : '-100%') + ')';
+          setTimeout(clearGhost, 300);
+        }
+      }, { passive: true });
     });
     scope.querySelectorAll('[data-week-reset]').forEach((button) => {
       if (!markCleanUiBound(button, 'weekReset')) return;
