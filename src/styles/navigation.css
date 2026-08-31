@@ -76,7 +76,9 @@
         overflow: hidden !important;
         text-indent: 0 !important;
       }
-      /* 动态配色渐变点：避免被 .btn 全局规则压成胶囊/透明边 */
+      /* 动态配色渐变点：避免被 .btn 全局规则压成胶囊/透明边
+       ⚠ 本组规则为双目标共用：站点顶栏(#urppp-nav-theme) + 清爽模式顶栏(#urppp-clean-root .uc-top-theme)。
+       带无!important，覆盖 clean-mode.css 的基础尺寸(18px)；两处需同改，删除清爽分支会导致清爽顶栏圆点失重置 */
       #urppp-nav-theme .urppp-nav-dot[data-theme="scu-red"],
       #urppp-clean-root .uc-top-theme .urppp-nav-dot[data-theme="scu-red"] {
         border-radius: 50% !important;
