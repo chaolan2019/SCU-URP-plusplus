@@ -369,7 +369,7 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
   #sidebar.urppp-clean-sidebar{top:52px !important;height:calc(100vh - 52px) !important}
   #urppp-clean-root .uc-top-actions .uc-btn span{display:none}
   #urppp-clean-root .uc-top-actions .uc-btn{width:34px;padding:0;justify-content:center}
-  #urppp-clean-root .uc-shell{padding:10px 10px 90px;align-items:stretch;justify-content:flex-start}
+  #urppp-clean-root .uc-shell{padding:0 10px calc(68px + env(safe-area-inset-bottom));align-items:stretch;justify-content:flex-start}
   #urppp-clean-root .uc-desktop{display:none}
   #urppp-clean-root .uc-mobile{display:block}
   #urppp-clean-root .uc-tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;height:68px;background:var(--surface);border-top:1px solid var(--border);z-index:12005;padding:4px 0 calc(4px + env(safe-area-inset-bottom))}
