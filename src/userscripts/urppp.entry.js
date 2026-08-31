@@ -10798,11 +10798,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       ;[400, 1200, 2500].forEach((ms) => setTimeout(() => {
         try { if (window.__urpppCleanMode) window.__urpppCleanMode.inject(); } catch (_) {}
       }, ms));
-      // 默认进入清爽模式：仅首页；遮罩保持到清爽模式首帧渲染完成再撤（体验连贯）
+      // 默认进入清爽模式：仅首页；站点脚本就绪即直接打开（不再额外延时），
+    // 遮罩保持到清爽模式进入动画播完再撤（体验连贯）
       try {
         if (isCleanDefault() && isHomePage() && window.__urpppCleanMode) {
           window.__urpppCleanBootPending = true;
-          setTimeout(() => { try { window.__urpppCleanMode.open(false); } catch (_) {} }, 700);
+          setTimeout(() => { try { window.__urpppCleanMode.open(false); } catch (_) {} }, 0);
         }
       } catch (_) {}
     }
