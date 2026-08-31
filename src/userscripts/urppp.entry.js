@@ -759,6 +759,20 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     if (host) host.appendChild(el);
   }
   function hideBootLoader() {
+    // 默认进入清爽模式时：遮罩保持到清爽模式首帧渲染完成，避免中途露出站点半成品；
+    // 兕底 3s：清爽模式渲染失败/异常时遮罩必须能撤，绝不死锁
+    if (window.__urpppCleanBootPending) {
+      if (window.__urpppCleanBootDone) { window.__urpppCleanBootPending = false; }
+      else {
+        if (!window.__urpppCleanBootWait) {
+          window.__urpppCleanBootWait = setTimeout(() => {
+            window.__urpppCleanBootPending = false;
+            try { hideBootLoader(); } catch (_) {}
+          }, 2500);
+        }
+        return;
+      }
+    }
     try {
       document.documentElement.classList.add('urppp-ready');
       if (document.body) {
@@ -773,6 +787,12 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   }
   // 立刻挂遮罩（document-start 阶段 html 已存在）
   try { ensureBootLoader(); } catch (_) {}
+  // 清爽模式首帧就绪回调（render.js 首帧渲染完成时调用）：撤遮罩
+  window.__urpppCleanBootReady = () => {
+    window.__urpppCleanBootDone = true;
+    if (window.__urpppCleanBootWait) { clearTimeout(window.__urpppCleanBootWait); window.__urpppCleanBootWait = null; }
+    try { hideBootLoader(); } catch (_) {}
+  };
   // 兜底：最多 2.5s 必须进入
   if (!window.__urpppBootSafety) {
     window.__urpppBootSafety = setTimeout(() => { try { hideBootLoader(); } catch (_) {} }, 2500);
@@ -10778,9 +10798,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       ;[400, 1200, 2500].forEach((ms) => setTimeout(() => {
         try { if (window.__urpppCleanMode) window.__urpppCleanMode.inject(); } catch (_) {}
       }, ms));
-      // 默认进入清爽模式：仅首页
+      // 默认进入清爽模式：仅首页；遮罩保持到清爽模式首帧渲染完成再撤（体验连贯）
       try {
         if (isCleanDefault() && isHomePage() && window.__urpppCleanMode) {
+          window.__urpppCleanBootPending = true;
           setTimeout(() => { try { window.__urpppCleanMode.open(false); } catch (_) {} }, 700);
         }
       } catch (_) {}

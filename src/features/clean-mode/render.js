@@ -376,6 +376,8 @@ export function createCleanModeRenderer({ state, deps }) {
       el.classList.add('uc-settled');
     } else {
       state.uiReady = true;
+      // 默认进入清爽模式的启动路径：首帧已渲染，通知主脚本撤全屏遮罩（无监听时静默）
+      try { if (typeof window !== 'undefined' && typeof window.__urpppCleanBootReady === 'function') window.__urpppCleanBootReady(); } catch (_) {}
       el.classList.remove('uc-settled');
       clearTimeout(el.__ucSettleTimer);
       el.__ucSettleTimer = setTimeout(() => {
