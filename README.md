@@ -103,11 +103,20 @@
 ## 安装
 
 1. 浏览器安装 [Tampermonkey](https://www.tampermonkey.net/)（或 Violentmonkey）
-2. 安装主脚本，任选其一：
-   - **Greasy Fork**：打开 [Greasy Fork](https://greasyfork.org)，搜索 **`SCU URP++`** 安装
+2. 安装主脚本，**点击下面任意一个源即可直接安装**（油猴会弹出安装确认）：
+
+| 源 | 一键安装 | 更新及时性 | 网络环境 | 适合场景 |
+|---|---|---|---|---|
+| **GitHub** | [点击安装](https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js) | ⭐⭐⭐ 最及时（发布即同步） | 海外直连 / 国内需代理 | 开发环境、海外用户、追求最新版 |
+| **Gitee** | [点击安装](https://gitee.com/chaolan2026/SCU-URP-plusplus/raw/main/urppp.user.js) | ⭐⭐ 次之（手动/镜像同步） | 国内直连最快 | 国内用户、无代理环境 |
+| **jsDelivr** | [点击安装](https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/urppp.user.js) | ⭐ 最后（CDN 缓存延迟） | 全球 CDN 最通用 | 各网络环境均可、更新不敏感 |
+
+   - **Greasy Fork**：也可打开 [Greasy Fork](https://greasyfork.org)，搜索 **`SCU URP++`** 安装
    - 本地：打开仓库中的 `urppp.user.js` 导入 / 安装
 3. 访问 [四川大学教务](http://zhjw.scu.edu.cn/login) 硬刷新
 4. （可选）**辅助插件**：主插件 v1.9.0 起可直接在主插件 设置 → 系统设置 → 辅助插件 里点「装载辅助插件」，无需单独安装；也可按旧方式单独安装 `urpppp.user.js`（见 [README_.md](./README_.md)）
+
+> **三源说明**：主插件内置同样的三源多路探测（GitHub → Gitee → jsDelivr），安装后更新检查/商店拉取会自动按此顺序降级，任一源不可达时自动切换下一源。
 
 匹配域名：
 
