@@ -223,8 +223,8 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
     if (id === 'assist') {
       return [
         'https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/plugins/urpppp.plugin.js',
+        'https://gitee.com/chaolan2026/URP-plusplus-Repository/raw/main/plugins/urpppp.plugin.js',
         'https://cdn.jsdelivr.net/gh/chaolan2019/URP-plusplus-Repository@main/plugins/urpppp.plugin.js',
-        'https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/plugins/urpppp.plugin.js',
       ];
     }
     return [];

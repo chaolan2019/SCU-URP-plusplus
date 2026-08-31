@@ -150,12 +150,12 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     repo: 'https://github.com/chaolan2019/SCU-URP-plusplus',
     changelogPage: 'https://github.com/chaolan2019/SCU-URP-plusplus/blob/main/CHANGELOG.md',
     greasySearch: 'https://greasyfork.org/zh-CN/scripts?q=SCU+URP%2B%2B',
-    // 多源探测：GitHub（权威）优先，超过 1s 未响应自动切换 jsDelivr / gh-proxy 加速源
+    // 多源探测：GitHub（权威）优先，Gitee 次之（国内直连），jsDelivr 兑底
     versionJson: 'version.json',
     sourceUrls: (file) => [
       `https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/${file}`,
+      `https://gitee.com/chaolan2026/SCU-URP-plusplus/raw/main/${file}`,
       `https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/${file}`,
-      `https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/${file}`,
     ],
   };
   const AUTO_UPDATE_KEY = 'urppp_auto_update_check_v1';
@@ -6616,17 +6616,17 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     </div>`;
   }
 
-  // 商店清单（新仓库）多源
+  // 商店清单（新仓库）多源：GitHub 权威 → Gitee 国内直连 → jsDelivr 兑底
   const OFFICIAL_CATALOG_URLS = [
     'https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/catalog.json',
+    'https://gitee.com/chaolan2026/URP-plusplus-Repository/raw/main/catalog.json',
     'https://cdn.jsdelivr.net/gh/chaolan2019/URP-plusplus-Repository@main/catalog.json',
-    'https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/catalog.json',
   ];
-  // 官方收录的第三方源目录（仓库源界面一键添加）
+  // 官方收录的第三方源目录（仓库源界面一键添加）：GitHub → Gitee → jsDelivr
   const OFFICIAL_SOURCES_URLS = [
     'https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/sources.json',
+    'https://gitee.com/chaolan2026/URP-plusplus-Repository/raw/main/sources.json',
     'https://cdn.jsdelivr.net/gh/chaolan2019/URP-plusplus-Repository@main/sources.json',
-    'https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/URP-plusplus-Repository/main/sources.json',
   ];
   // 远程文本拉取：GM 优先（免 CORS/PNA），页面 fetch 兑底
   function fetchRemoteCatalog(url, timeoutMs = 5000) {

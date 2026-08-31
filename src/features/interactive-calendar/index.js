@@ -9,8 +9,8 @@ let CAL_LUNAR = {};
 // 校历数据源（多源回退；可通过外部覆盖 __urpppCalendarSources 指向本地源测试）
 const CALENDAR_SOURCES = [
   'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/calendar/calendar.json',
+  'https://gitee.com/chaolan2026/SCU-URP-plusplus/raw/main/calendar/calendar.json',
   'https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/calendar/calendar.json',
-  'https://gh-proxy.com/https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/calendar/calendar.json',
 ];
 
 // 远程拉取（GM 优先 + fetch 兜底；带超时与 no-store）
