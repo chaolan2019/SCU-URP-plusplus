@@ -250,6 +250,28 @@ export function createCleanModeUI({ state, deps }) {
             ghost.style.willChange = 'transform';
             cur.style.willChange = 'transform';
           }
+        } else if (dir && ghost && cur) {
+          // 滑动中反向：反向位移超过迟滞阈值（28px）则销毁旧层换新方向邻周，避免手抖来回闪烁
+          const reversed = (dir > 0 && dx > 28) || (dir < 0 && dx < -28);
+          if (reversed) {
+            // 重挂新方向：以当前触摸点为新基准（dx 归零重算），cur 恢复原位不残留 transform
+            clearGhost();
+            cur = wrap.querySelector('.uc-week');
+            if (cur) cur.style.transform = '';
+            sx = t.clientX; sy = t.clientY; st = Date.now();
+            const newDir = dx < 0 ? 1 : -1;
+            const pack = makeGhost(wrap, newDir);
+            if (pack) {
+              dir = newDir;
+              ghost = pack.ghost; target = pack.target; cur = pack.cur;
+              ghost.style.transition = 'none';
+              ghost.style.willChange = 'transform';
+              cur.style.willChange = 'transform';
+            } else {
+              // 新方向是边界周（无邻周）：不挂层，回到无层跟随状态
+              dir = newDir;
+            }
+          }
         }
         if (ghost && cur) {
           const w = wrap.clientWidth || 320;
