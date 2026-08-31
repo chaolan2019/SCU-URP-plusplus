@@ -6674,6 +6674,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const arr = Array.isArray(r) ? r : [];
       let dirty = false;
       for (const s of arr) { if (s && 'hidden' in s) { delete s.hidden; dirty = true; } } // hidden 已废弃，归一为 enabled
+      // 清理已废弃的 gh-proxy 镜像（旧缓存自愈，避免连接被拒报错）
+      for (const s of arr) {
+        if (!s) continue;
+        if (/gh-proxy\.(com|net)/.test(String(s.url || ''))) { s.url = ''; dirty = true; }
+        if (Array.isArray(s.mirrors)) {
+          const m2 = s.mirrors.filter((u) => !/gh-proxy\.(com|net)/.test(String(u)));
+          if (m2.length !== s.mirrors.length) { s.mirrors = m2; dirty = true; }
+        }
+      }
       // 首次迁移：官方条目自动置首（三镜像冗余）；只迁一次，删除后不回注，可从收录列表重新添加
       if (!GM_getValue('urppp_sources_migrated', false)) {
         if (!arr.some((s) => s && s.url === OFFICIAL_SOURCE_URL)) {
@@ -6691,8 +6700,20 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // catalog 持久缓存到 GM：启动时先读缓存立即渲染（不抢网络），网络只在后台刷新
+  // 读缓存时过滤已废弃的 gh-proxy 镜像 URL（旧缓存自愈，避免控制台连接被拒报错）
   function catalogCacheRead() {
-    try { const raw = GM_getValue('urppp_catalog_cache', ''); return raw ? (JSON.parse(raw) || null) : null; } catch (_) { return null; }
+    try {
+      const raw = GM_getValue('urppp_catalog_cache', '');
+      if (!raw) return null;
+      const items = JSON.parse(raw) || null;
+      if (Array.isArray(items)) {
+        items.forEach((it) => {
+          if (it && Array.isArray(it.entry)) it.entry = it.entry.filter((u) => !/gh-proxy\.(com|net)/.test(String(u)));
+          if (it && Array.isArray(it.sources)) it.sources = it.sources.filter((u) => !/gh-proxy\.(com|net)/.test(String(u)));
+        });
+      }
+      return items;
+    } catch (_) { return null; }
   }
   function catalogCacheWrite(items) {
     try { if (Array.isArray(items) && items.length) GM_setValue('urppp_catalog_cache', JSON.stringify(items)); } catch (_) {}

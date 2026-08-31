@@ -106,7 +106,8 @@ export function createDashboardController({ deps }) {
       if (!force && host.dataset.urpppFcSized === '1') return true;
 
       const $el = $(host);
-      if (!($el.data('fullCalendar') || $el.hasClass('fc'))) return false;
+      // 必须确认 fullCalendar 实例存在：仅 hasClass('fc') 不够（重挂载后 data 丢失但 class 残留，调用会报未初始化）
+      if (!$el.data('fullCalendar')) return false;
 
       const scrollers = Array.from(host.querySelectorAll('.fc-scroller'));
       const saved = scrollers.map((s) => ({ el: s, top: s.scrollTop, left: s.scrollLeft }));
