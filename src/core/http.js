@@ -6,8 +6,14 @@
  * - 两者均 GM 优先，fetch 兜底；withCredentials 仅 fetchText（同源会话）需要
  */
 
+/** 已废弃的 GitHub 加速镜像：@connect 未授权，请求必被拒产生控制台报错，网络层统一拦截 */
+const DEPRECATED_HOSTS = /gh-proxy\.(com|net)/i;
+
 /** 基础 GM→fetch 实现。onFail 决定失败语义（reject 或 resolve(fallback)） */
 function gmFetchText(url, { method = 'GET', headers = {}, data = null, timeoutMs = 12000, withCredentials = false } = {}, onFail) {
+  if (DEPRECATED_HOSTS.test(String(url || ''))) {
+    return Promise.reject(new Error('该地址使用了已停止服务的 gh-proxy 镜像，请更换为 GitHub/Gitee 直链'));
+  }
   return new Promise((resolve, reject) => {
     const done = (ok, val) => (ok ? resolve(val) : onFail(reject, resolve, val));
     try {
