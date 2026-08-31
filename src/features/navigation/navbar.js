@@ -1,3 +1,5 @@
+import { markBound } from '../../core/bind.js';
+
 export function createNavbarController({
   theme,
   settings,
@@ -220,8 +222,7 @@ export function createNavbarController({
       const clicki = documentRef.getElementById('clicki');
       if (clicki) force(clicki, { color: 'var(--text-secondary)', 'margin-top': '0' });
 
-      if (!clickDiv.__urpppNavbarClickBound) {
-        clickDiv.__urpppNavbarClickBound = true;
+      if (markBound(clickDiv, 'navbarClick')) {
         clickDiv.addEventListener('mouseenter', () => clickDiv.style.setProperty('background-color', 'var(--input-bg)', 'important'));
         clickDiv.addEventListener('mouseleave', () => clickDiv.style.setProperty('background-color', 'transparent', 'important'));
 
@@ -242,8 +243,7 @@ export function createNavbarController({
         });
       }
 
-      if (!windowRef.__urpppNavbarOutsideClickBound) {
-        windowRef.__urpppNavbarOutsideClickBound = true;
+      if (markBound(windowRef, 'navbarOutsideClick')) {
         documentRef.addEventListener('click', (event) => {
           const activeClickDiv = documentRef.getElementById('clickdiv');
           const activeFormSearch = documentRef.getElementById('form-search');

@@ -1,11 +1,6 @@
+import { markBound as markCleanUiBound } from '../../core/bind.js';
+
 export function createCleanModeUI({ state, deps }) {
-  function markCleanUiBound(node, key) {
-    if (!node) return false;
-    if (!node.__urpppCleanUiBindings) node.__urpppCleanUiBindings = new Set();
-    if (node.__urpppCleanUiBindings.has(key)) return false;
-    node.__urpppCleanUiBindings.add(key);
-    return true;
-  }
 
   function bindUI(scope) {
     if (!scope) return;

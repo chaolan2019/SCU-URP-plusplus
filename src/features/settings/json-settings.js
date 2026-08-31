@@ -1,4 +1,5 @@
 // JSON export settings UI with storage and validation injected by the entry adapter.
+import { markBound } from '../../core/bind.js';
 
 export function createJsonSettingsController(options) {
   const {
@@ -39,8 +40,7 @@ export function createJsonSettingsController(options) {
   }
 
   function bind(panel) {
-    if (!panel || panel.__urpppJsonSettingsBound) return;
-    panel.__urpppJsonSettingsBound = true;
+    if (!panel || !markBound(panel, 'jsonSettings')) return;
     const toggle = panel.querySelector('#urppp-set-json-custom');
     const textarea = panel.querySelector('#urppp-set-json-mapping');
     const save = panel.querySelector('#urppp-set-json-save');
