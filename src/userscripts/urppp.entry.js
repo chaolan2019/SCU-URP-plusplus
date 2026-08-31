@@ -1056,18 +1056,26 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     ].forEach((k) => root.style.removeProperty(k));
   }
 
+  // GM 存储安全包装：异常时返回 fallback（@grant 缺失/存储满/隐私模式等场景不炸主流程）
+  function gmGet(key, fallback) {
+    try { return GM_getValue(key, fallback); } catch (_) { return fallback; }
+  }
+  function gmSet(key, value) {
+    try { GM_setValue(key, value); } catch (_) {}
+  }
+
   function getAccent() {
-    return normalizeHexColor(GM_getValue(ACCENT_KEY, '')) || '';
+    return normalizeHexColor(gmGet(ACCENT_KEY, '')) || '';
   }
 
   function getScheme() {
-    const s = String(GM_getValue(SCHEME_KEY, DEFAULT_SCHEME) || DEFAULT_SCHEME);
+    const s = String(gmGet(SCHEME_KEY, DEFAULT_SCHEME) || DEFAULT_SCHEME);
     return SCHEME_DEFS.some((d) => d.id === s) ? s : DEFAULT_SCHEME;
   }
 
   function setScheme(id) {
     const sid = SCHEME_DEFS.some((d) => d.id === id) ? id : DEFAULT_SCHEME;
-    GM_setValue(SCHEME_KEY, sid);
+    gmSet(SCHEME_KEY, sid);
     return sid;
   }
 
@@ -1075,7 +1083,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     if (!hex) return;
     const h = normalizeHexColor(hex);
     if (!h) return;
-    GM_setValue(ACCENT_KEY, h);
+    gmSet(ACCENT_KEY, h);
     if (opts && opts.scheme) setScheme(opts.scheme);
     if (opts && opts.skipTheme) {
       const hover = darken(h, 0.15);
@@ -1111,7 +1119,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     let list = getAccentPresets();
     list = [h].concat(list.filter((x) => x.toLowerCase() !== h.toLowerCase()));
     list = list.slice(0, 12);
-    GM_setValue(ACCENT_PRESETS_KEY, JSON.stringify(list));
+    gmSet(ACCENT_PRESETS_KEY, JSON.stringify(list));
     return list;
   }
 
@@ -1120,7 +1128,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   }
 
   function setThemeFollowSystem(on) {
-    GM_setValue(THEME_FOLLOW_KEY, !!on);
+    gmSet(THEME_FOLLOW_KEY, !!on);
     return !!on;
   }
 
@@ -1128,7 +1136,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     try { return !!GM_getValue(CLEAN_DEFAULT_KEY, false); } catch (_) { return false; }
   }
   function setCleanDefault(on) {
-    GM_setValue(CLEAN_DEFAULT_KEY, !!on);
+    gmSet(CLEAN_DEFAULT_KEY, !!on);
     return !!on;
   }
   /** 清爽模式成绩分析展示方式：tab（选项卡）| direct（直接显示） */
@@ -1136,7 +1144,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     try { return GM_getValue(CLEAN_ANALYSIS_KEY, 'tab') === 'direct'; } catch (_) { return false; }
   }
   function setCleanAnalysis(mode) {
-    GM_setValue(CLEAN_ANALYSIS_KEY, mode === 'direct' ? 'direct' : 'tab');
+    gmSet(CLEAN_ANALYSIS_KEY, mode === 'direct' ? 'direct' : 'tab');
     return mode === 'direct' ? 'direct' : 'tab';
   }
   /** 类Apple 卡片淡边线：默认开 */
@@ -1147,18 +1155,18 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     } catch (_) { return true; }
   }
   function setAppleEdgeLine(on) {
-    GM_setValue(APPLE_EDGE_KEY, !!on);
+    gmSet(APPLE_EDGE_KEY, !!on);
     return !!on;
   }
   function isAutoUpdateCheck() {
     try { return !!GM_getValue(AUTO_UPDATE_KEY, false); } catch (_) { return false; }
   }
   function setAutoUpdateCheck(on) {
-    GM_setValue(AUTO_UPDATE_KEY, !!on);
+    gmSet(AUTO_UPDATE_KEY, !!on);
     return !!on;
   }
   function isGlobalPreload() { try { return !!GM_getValue(PRELOAD_KEY, false); } catch (_) { return false; } }
-  function setGlobalPreload(on) { GM_setValue(PRELOAD_KEY, !!on); return !!on; }
+  function setGlobalPreload(on) { gmSet(PRELOAD_KEY, !!on); return !!on; }
 
   function readJsonSetting(key, fallback) {
     try {
@@ -1170,7 +1178,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   }
 
   function writeJsonSetting(key, value) {
-    GM_setValue(key, JSON.stringify(value));
+    gmSet(key, JSON.stringify(value));
     return value;
   }
 
@@ -1241,7 +1249,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   }
 
   function setFollowUseDynamic(on) {
-    GM_setValue(FOLLOW_DYNAMIC_KEY, !!on);
+    gmSet(FOLLOW_DYNAMIC_KEY, !!on);
     return !!on;
   }
 
@@ -1282,7 +1290,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     }
     if (!isThemeModeAvailable(finalName)) finalName = 'default';
     const t = THEMES[finalName] || THEMES['default'];
-    if (!opts.skipPersist) GM_setValue(THEME_KEY, finalName);
+    if (!opts.skipPersist) gmSet(THEME_KEY, finalName);
     clearInlinePrimaryOverrides();
     const el = document.getElementById('urppp-theme-vars') || (() => {
       const e = document.createElement('style'); e.id = 'urppp-theme-vars';
@@ -1344,7 +1352,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     if (boot) boot.style.fontFamily = t.font;
   }
 
-  function getCurrent() { return GM_getValue(THEME_KEY, 'default'); }
+  function getCurrent() { return gmGet(THEME_KEY, 'default'); }
 
   // 主题是否已下载（商店下载后存在 css 缓存即视为已装）
   function themeDownloaded(id) {
@@ -1394,6 +1402,27 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     } catch (_) {}
   }
 
+  // 2.0.0 存储清理迁移：删除主题时旧版只清空值不清键，长期累积无限残留；
+  // 启动时扫一次，把空值主题键真正删除（一次性，带迁移标记）
+  function migrateStorageCleanup() {
+    try {
+      if (typeof GM_listValues !== 'function') return;
+      if (GM_getValue('urppp_storage_cleanup_v1', false)) return;
+      let removed = 0;
+      const keys = GM_listValues();
+      keys.forEach((key) => {
+        if (!/^urppp_(theme_css|card_css)_.+/.test(key)) return;
+        let val = '';
+        try { val = GM_getValue(key, ''); } catch (_) { return; }
+        if (val === '' || val == null) {
+          try { GM_deleteValue(key); removed += 1; } catch (_) {}
+        }
+      });
+      GM_setValue('urppp_storage_cleanup_v1', true);
+      if (removed) console.log('[URP++] 存储清理：移除空值主题键 ' + removed + ' 个');
+    } catch (_) {}
+  }
+
   // 下载主题 CSS 存储（带 id 的 style，便于刷新重注入 / 删除清理）
   function storeThemeStyleEl(id) {
     let el = document.getElementById('urppp-store-theme-' + id);
@@ -1414,6 +1443,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   // 初始注入所有已下载主题的 CSS（刷新后仍生效，否则独立主题会丢大半）
   function injectAllStoreThemeStyles() {
     migrateDownloadedThemes();
+    migrateStorageCleanup();
     const seen = new Set();
     const injectOne = (id) => {
       if (seen.has(id)) return; seen.add(id);
@@ -1432,7 +1462,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   }
 
   function getSkin() {
-    const id = GM_getValue(SKIN_KEY, 'apple');
+    const id = gmGet(SKIN_KEY, 'apple');
     const hit = SKIN_CATALOG.find((s) => s.id === id);
     const ok = hit && hit.ready && (hit.installed !== false || themeDownloaded(hit.id));
     if (ok) return id;
@@ -1458,19 +1488,19 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     return BRUTAL_PALETTES.find((item) => item.id === id) || BRUTAL_PALETTES[0];
   }
   function getBrutalSelectedPalette() {
-    const raw = String(GM_getValue(BRUTAL_PALETTE_KEY, 'acid') || 'acid');
+    const raw = String(gmGet(BRUTAL_PALETTE_KEY, 'acid') || 'acid');
     const palette = getBrutalPaletteById(raw);
     return palette.id === BRUTAL_DEFAULT_PALETTE ? getBrutalPaletteById('acid') : palette;
   }
   function getBrutalActivePalette() {
-    const raw = String(GM_getValue(BRUTAL_ACTIVE_PALETTE_KEY, BRUTAL_DEFAULT_PALETTE) || BRUTAL_DEFAULT_PALETTE);
+    const raw = String(gmGet(BRUTAL_ACTIVE_PALETTE_KEY, BRUTAL_DEFAULT_PALETTE) || BRUTAL_DEFAULT_PALETTE);
     return getBrutalPaletteById(raw);
   }
   function setBrutalPalette(paletteId, options) {
     const opts = options || {};
     const palette = getBrutalPaletteById(paletteId);
-    if (opts.select && palette.id !== BRUTAL_DEFAULT_PALETTE) GM_setValue(BRUTAL_PALETTE_KEY, palette.id);
-    GM_setValue(BRUTAL_ACTIVE_PALETTE_KEY, palette.id);
+    if (opts.select && palette.id !== BRUTAL_DEFAULT_PALETTE) gmSet(BRUTAL_PALETTE_KEY, palette.id);
+    gmSet(BRUTAL_ACTIVE_PALETTE_KEY, palette.id);
     try { applySkinAttr(); } catch (_) {}
     try { syncNavbarThemeUI(); } catch (_) {}
     try { syncSettingsPanelUI(); } catch (_) {}
@@ -2551,7 +2581,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     const localHit = (!hit && localThemes()[id] && themeDownloaded(id)) ? { id, ready: true, installed: false } : null;
     const skin = hit || localHit;
     if (!skin) return false;
-    GM_setValue(SKIN_KEY, skin.id);
+    gmSet(SKIN_KEY, skin.id);
     try {
       if (!skin.dynamic) setFollowUseDynamic(false);
       if (!skin.dark && isThemeFollowSystem()) setThemeFollowSystem(false);
@@ -6030,7 +6060,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
 
     console.log('[URP++] style applied apple-leaning');
-    try { bindScheduleHoverNearCursor(); } catch (_) {}
 
     // 课表背景段落不透明度 50%（卡片用 CSS opacity 处理）
     bindCourseTableOpacityObserver();
@@ -6153,7 +6182,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         b.title = hex;
         b.style.background = hex;
         b.addEventListener('click', () => {
-          GM_setValue(ACCENT_KEY, hex);
+          gmSet(ACCENT_KEY, hex);
           if (isThemeFollowSystem()) applyTheme(resolveFollowThemeName(), { system: true });
           else applyTheme('scu-red', { manual: true });
           syncSettingsPanelUI();
@@ -6184,7 +6213,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         ].join('');
         card.addEventListener('click', () => {
           setScheme(item.id);
-          GM_setValue(ACCENT_KEY, seed);
+          gmSet(ACCENT_KEY, seed);
           if (isThemeFollowSystem()) applyTheme(resolveFollowThemeName(), { system: true });
           else applyTheme('scu-red', { manual: true });
           syncSettingsPanelUI();
@@ -6246,7 +6275,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     },
     accent: {
       normalize: normalizeHexColor,
-      setAccent: (color) => GM_setValue(ACCENT_KEY, color),
+      setAccent: (color) => gmSet(ACCENT_KEY, color),
       savePreset: saveAccentPreset,
       getScheme,
       setScheme,
@@ -6587,14 +6616,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const id = b.dataset.themeDel;
       // 先判断是否为当前皮肤（必须在清理前，否则清理后 getSkin 已回退到默认，永远不等）
       const wasCurrent = (getSkin() === id);
-      try { GM_setValue('urppp_theme_css_' + id, ''); } catch (_) {}
-      try { GM_setValue('urppp_card_css_' + id, ''); } catch (_) {}
+      // 2.0.0：删除改为真正清键（旧版只清空值，键无限残留，已由迁移清理存量）
+      try { GM_deleteValue('urppp_theme_css_' + id); } catch (_) {}
+      try { GM_deleteValue('urppp_card_css_' + id); } catch (_) {}
       removeLocalTheme(id);
       removeStoreThemeStyle(id);
       // 若删除的是当前正在应用的主题→重置为默认（内置），完全清掉被删主题的皮肤/配色残留
       try {
         if (wasCurrent) {
-          GM_setValue(SKIN_KEY, 'apple');
+          gmSet(SKIN_KEY, 'apple');
           try { document.documentElement.removeAttribute('data-urppp-skin'); } catch (_) {}
           try { if (document.body) document.body.removeAttribute('data-urppp-skin'); } catch (_) {}
           applySkinAttr();
@@ -6952,7 +6982,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const auto = root.querySelector('[data-store-auto-update]');
     const check = root.querySelector('[data-store-check-update]');
     if (!auto || !check) return;
-    let on = GM_getValue('urppp_store_auto_update', false);
+    let on = gmGet('urppp_store_auto_update', false);
     const sync = () => { auto.textContent = '自动检测更新：' + (on ? '开' : '关'); };
     const runCheck = async () => {
       const updatedNames = [];

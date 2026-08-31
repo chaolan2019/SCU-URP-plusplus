@@ -29,14 +29,14 @@ jobs:
         run: npm ci
 
       - name: Install Playwright Chromium
-        continue-on-error: true
+        # 仅安装容错：安装失败时测试步骤会显式失败，不再静默跳过
         run: npx playwright install --with-deps chromium
 
       - name: Run tests
         run: npm test
 
       - name: Run browser regression tests
-        continue-on-error: true
+        # 2.0.0 起浏览器回归为必过项：安装失败会导致后续测试失败并显式标红，不再静默放行
         run: npm run test:browser
 
       - name: Verify generated userscripts

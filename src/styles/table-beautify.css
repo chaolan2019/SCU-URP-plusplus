@@ -968,6 +968,33 @@
         background-color: #fbcaca !important;
         color: #7f1d1d !important;
       }
+      /* 暗色变体：通过/挂科行底色换暗色系，避免亮色块刺眼（2.0.0 补） */
+      html.urppp-theme-dark body td.green_background, html.urppp-theme-dark body .green_background,
+      html.urppp-theme-dark body .table > tbody > tr > td.green_background,
+      html.urppp-theme-dark body .table-striped > tbody > tr > td.green_background {
+        background: rgba(52, 199, 89, .16) !important;
+        background-color: rgba(52, 199, 89, .16) !important;
+        color: #6ee7a0 !important;
+      }
+      html.urppp-theme-dark body .table-hover > tbody > tr:hover > td.green_background,
+      html.urppp-theme-dark body .table-hover > tbody > tr.hover > td.green_background {
+        background: rgba(52, 199, 89, .26) !important;
+        background-color: rgba(52, 199, 89, .26) !important;
+        color: #8ff0b0 !important;
+      }
+      html.urppp-theme-dark body td.red_background, html.urppp-theme-dark body .red_background,
+      html.urppp-theme-dark body .table > tbody > tr > td.red_background,
+      html.urppp-theme-dark body .table-striped > tbody > tr > td.red_background {
+        background: rgba(255, 105, 97, .16) !important;
+        background-color: rgba(255, 105, 97, .16) !important;
+        color: #fda4a0 !important;
+      }
+      html.urppp-theme-dark body .table-hover > tbody > tr:hover > td.red_background,
+      html.urppp-theme-dark body .table-hover > tbody > tr.hover > td.red_background {
+        background: rgba(255, 105, 97, .26) !important;
+        background-color: rgba(255, 105, 97, .26) !important;
+        color: #ffb8b5 !important;
+      }
       .tab-content .urppp-table-wrap,
       .tab-content .table,
       .tab-content .table-bordered {

@@ -450,6 +450,7 @@
         transition: margin-left .25s ease !important;
       }
       /* 小屏：侧栏默认隐藏为覆盖层，内容贴左；展开侧栏也不挤占内容 */
+      /* ⚠ 侧栏样式分层契约：本段是加载期兑底（mobile.css 空闲注入前生效），改动前先看 clean-mode.css 头部契约注释 */
       @media (max-width: 991px) {
         /* 顶栏元素向左聚拢（汉堡+主题点+设置+清爽 紧凑靠左） */
         #navbar .navbar-header{justify-content:flex-start !important;gap:8px !important;width:auto !important;}

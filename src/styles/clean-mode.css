@@ -150,7 +150,13 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
 #urppp-clean-root .uc-menu-toggle .urppp-menu-icon svg.urppp-menu-icon-close{display:none}
 #urppp-clean-root .uc-menu-toggle[aria-expanded="true"] .urppp-menu-icon svg.urppp-menu-icon-open{display:none}
 #urppp-clean-root .uc-menu-toggle[aria-expanded="true"] .urppp-menu-icon svg.urppp-menu-icon-close{display:block}
-/* 清爽模式下复用站点侧边栏抽屉：固定左侧 260px 滑出，z-index 在清爽模式之上 */
+/* 清爽模式下复用站点侧边栏抽屉：固定左侧 260px 滑出，z-index 在清爽模式之上
+   ⚠ 侧栏样式分层契约（2.0.0 审计结论，改动前必读）：
+   - 本文件（clean-mode.css）是清爽模式下的最高层：注入于所有静态样式之后，恒胜出
+   - mobile.css 顶层 #sidebar 规则是常态抽屉层（空闲时无条件注入）
+   - navigation.css @media(991px) 的 .sidebar.display 段是加载期兑底（mobile.css 未注入前）
+   三处存在同值重复属有意保留：mobile.css 加载前打开清爽模式时需要本层自洽。
+   真正的合并需先补 browser 回归，见 2.0.0 P1 清单 */
 #sidebar.urppp-clean-sidebar{
   position: fixed !important;
   top: 60px !important;

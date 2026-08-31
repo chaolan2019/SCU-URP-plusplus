@@ -14,6 +14,7 @@ const artifacts = [
 ];
 
 const readmeUrl = new URL('../README.md', import.meta.url);
+const assistReadmeUrl = new URL('../README_.md', import.meta.url);
 const packageUrl = new URL('../package.json', import.meta.url);
 const assistMetadataUrl = new URL('../src/metadata/urpppp.json', import.meta.url);
 
@@ -48,5 +49,17 @@ test('README advertises the current main and assistant versions', async () => {
   assert.match(
     readme,
     new RegExp(`<strong>主脚本 v${mainVersion.replaceAll('.', '\\.')}<\\/strong> · 辅助插件 v${assistVersion.replaceAll('.', '\\.')}`),
+  );
+});
+
+test('assist README advertises the current assistant version', async () => {
+  const [assistReadme, assistMetadataText] = await Promise.all([
+    readFile(assistReadmeUrl, 'utf8'),
+    readFile(assistMetadataUrl, 'utf8'),
+  ]);
+  const assistVersion = JSON.parse(assistMetadataText).version;
+  assert.match(
+    assistReadme,
+    new RegExp(`当前版本.*\\*\\*${assistVersion.replaceAll('.', '\\.')}\\*\\*`),
   );
 });

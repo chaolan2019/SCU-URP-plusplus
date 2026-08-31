@@ -296,10 +296,12 @@ function closeCalendarModal() {
   setTimeout(() => { el.remove(); }, 200);
 }
 
-/** 全局点击委托：入口打开时调用（挂载在校历 root / 文档） */
+/** 全局点击委托：入口打开时调用（挂载在校历 root / 文档）；带守卫防重复叠加 */
 function bindCalendarOpen(scopeEl, termId) {
   const node = scopeEl || (typeof document !== 'undefined' ? document : null);
   if (!node) return;
+  if (node.__urpppCalOpenBound) return;
+  node.__urpppCalOpenBound = true;
   node.addEventListener('click', (ev) => {
     const t = ev.target;
     const hit = t && t.closest ? t.closest('[data-urppp-cal-open]') : null;

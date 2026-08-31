@@ -426,7 +426,9 @@
         #navbar #intellegenceUDiv {
           display: none !important;
         }
-        /* 移动抽屉常驻渲染，以 transform 实现可逆的滑入/滑出动画 */
+        /* 移动抽屉常驻渲染，以 transform 实现可逆的滑入/滑出动画
+   ⚠ 侧栏样式分层契约：本文件是常态抽屉层（空闲时无条件注入）。
+   清爽模式由 clean-mode.css 最后注入覆盖；加载期兑底在 navigation.css。三处同值重复属有意保留，改动前先看 clean-mode.css 头部契约注释 */
         #sidebar {
           display: block !important;
           position: fixed !important;
