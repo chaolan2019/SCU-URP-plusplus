@@ -14,7 +14,8 @@ test('clean mode owns its root, card, and lesson styles', async () => {
   assert.doesNotMatch(entry, /st\.textContent = `\n#urppp-clean-root/);
   assert.doesNotMatch(entry, /uc-top-actions\{/);
   assert.match(entry, /import cleanModeStyles from '\.\.\/styles\/clean-mode\.css'/);
-  assert.match(entry, /st\.textContent = cleanModeStyles;/);
+  // 2.0.0 P1：ensureStyle 工厂化后注入点改为 ensureStyleOnce('urppp-clean-style', cleanModeStyles)
+  assert.match(entry, /ensureStyleOnce\('urppp-clean-style', cleanModeStyles\)/);
 
   assert.match(cleanModeStyles, /#urppp-clean-root\{/);
   assert.match(cleanModeStyles, /\.uc-lesson\{/);

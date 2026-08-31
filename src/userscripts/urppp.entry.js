@@ -10,6 +10,8 @@ import { createFeatureRuntime, defineFeature } from '../core/feature-runtime.js'
 import { escapeHtml } from '../core/html.js';
 import { compareVersions, parseUserscriptVersion } from '../core/version.js';
 import { sha256Bytes, ed25519Verify } from './pure-crypto.js';
+import { gmGet, gmSet } from '../core/gm.js';
+import { httpText, httpTextSoft } from '../core/http.js';
 import {
   DEFAULT_SCHEDULE_JSON_MAPPING,
   buildCustomScheduleJson,
@@ -1074,14 +1076,6 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       '--bg', '--surface', '--text', '--text-secondary', '--text-muted',
       '--border', '--input-bg', '--shadow', '--primary-container', '--secondary'
     ].forEach((k) => root.style.removeProperty(k));
-  }
-
-  // GM 存储安全包装：异常时返回 fallback（@grant 缺失/存储满/隐私模式等场景不炸主流程）
-  function gmGet(key, fallback) {
-    try { return GM_getValue(key, fallback); } catch (_) { return fallback; }
-  }
-  function gmSet(key, value) {
-    try { GM_setValue(key, value); } catch (_) {}
   }
 
   function getAccent() {
@@ -6687,17 +6681,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   ];
   // 远程文本拉取：GM 优先（免 CORS/PNA），页面 fetch 兑底
   function fetchRemoteCatalog(url, timeoutMs = 5000) {
-    return new Promise((resolve) => {
-      try {
-        if (typeof GM_xmlhttpRequest === 'function') {
-          GM_xmlhttpRequest({ method: 'GET', url, timeout: timeoutMs, cache: 'no-store',
-            onload: (res) => resolve((res && res.responseText) || ''),
-            onerror: () => resolve(''), ontimeout: () => resolve('') });
-          return;
-        }
-        fetch(url, { cache: 'no-store' }).then((r) => (r && r.ok ? r.text() : '')).then((t) => resolve(t || '')).catch(() => resolve(''));
-      } catch (_) { resolve(''); }
-    });
+    // 统一网络层：失败返回空串（多源降级语义）
+    return httpTextSoft(url, timeoutMs);
   }
   function parseCatalogDoc(text) {
     try { const j = JSON.parse(text); return (j && Array.isArray(j.items)) ? j : null; } catch (_) { return null; }
@@ -7508,32 +7493,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   function gmRequestForUpdate(url, headers) {
-    return new Promise((resolve, reject) => {
-      try {
-        GM_xmlhttpRequest({
-          method: 'GET',
-          url,
-          timeout: 12000,
-          headers,
-          onload: (r) => {
-            if (r.status >= 200 && r.status < 400) resolve(r.responseText || '');
-            else reject(new Error('HTTP ' + r.status));
-          },
-          onerror: () => reject(new Error('network error')),
-          ontimeout: () => reject(new Error('timeout'))
-        });
-      } catch (e) { reject(e); }
-    });
+    // 统一网络层：失败抛错语义（供 fetchTextForUpdate 降级链感知失败）
+    return httpText(url, { headers, timeoutMs: 12000 });
   }
 
   function fetchTextForUpdate(url, opts) {
     const headers = { 'Cache-Control': 'no-cache' };
     if (opts && opts.range) headers.Range = opts.range;
-    // GM 优先：无 CORS/PNA/preflight，避免页面 fetch 对 http 页面的必现报错（raw PNA 拦截 / gh-proxy 无CORS头 / jsdelivr 不允许cache-control头）
-    if (typeof GM_xmlhttpRequest === 'function') {
-      return gmRequestForUpdate(url, headers).catch(() => fetchWithTimeout(url, headers, 12000));
-    }
-    return fetchWithTimeout(url, headers, 12000);
+    // 统一网络层：GM 优先（无 CORS/PNA/preflight），失败降级 fetchWithTimeout（保留原降级链）
+    return gmRequestForUpdate(url, headers).catch(() => fetchWithTimeout(url, headers, 12000));
   }
 
   // 多源探测：主源（GitHub 权威）优先，primaryTimeout 内未响应则并发切换加速源；主源稍后返回也参与竞争
@@ -8312,38 +8280,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   // 注意：不要带 X-Requested-With，否则部分 URP 页只回片段、没有完整 table
   function fetchText(url, opts) {
-    const full = absUrl(url);
-    const method = (opts && opts.method) || 'GET';
-    const data = (opts && opts.data) || null;
-    return new Promise((resolve, reject) => {
-      const done = (ok, val) => (ok ? resolve(val) : reject(new Error(val || 'fetch failed')));
-      try {
-        if (typeof GM_xmlhttpRequest === 'function') {
-          GM_xmlhttpRequest({
-            method,
-            url: full,
-            data: data || undefined,
-            headers: opts && opts.headers ? opts.headers : {},
-            withCredentials: true,
-            onload: (r) => {
-              if (r.status >= 200 && r.status < 400) done(true, r.responseText || '');
-              else done(false, 'HTTP ' + r.status);
-            },
-            onerror: () => done(false, 'network error')
-          });
-          return;
-        }
-      } catch (_) {}
-      fetch(full, {
-        method,
-        credentials: 'include',
-        cache: 'no-store',
-        headers: opts && opts.headers ? opts.headers : {},
-        body: data || undefined
-      }).then((r) => {
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.text();
-      }).then((txt) => done(true, txt)).catch((e) => done(false, e && e.message));
+    // 统一网络层：站点会话版（同源相对路径 + withCredentials + POST 支持），失败抛错
+    return httpText(absUrl(url), {
+      method: (opts && opts.method) || 'GET',
+      data: (opts && opts.data) || null,
+      headers: (opts && opts.headers) || {},
+      withCredentials: true,
     });
   }
 
@@ -8351,54 +8293,27 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return new DOMParser().parseFromString(String(html || ''), 'text/html');
   }
 
-  function ensureFeatureStyles() {
-    if (document.getElementById('urppp-feature-style')) return;
+  // 样式注入工厂：同构 ensure*Style 的统一实现（id 幂等，已注入则跳过）
+  function ensureStyleOnce(id, css) {
+    if (document.getElementById(id)) return;
     const style = document.createElement('style');
-    style.id = 'urppp-feature-style';
-    style.textContent = featureStyles;
+    style.id = id;
+    style.textContent = css;
     (document.head || document.documentElement).appendChild(style);
   }
 
-  function ensureScheduleExportStyles() {
-    if (document.getElementById('urppp-schedule-export-style')) return;
-    const style = document.createElement('style');
-    style.id = 'urppp-schedule-export-style';
-    style.textContent = scheduleExportStyles;
-    (document.head || document.documentElement).appendChild(style);
-  }
+  function ensureFeatureStyles() { ensureStyleOnce('urppp-feature-style', featureStyles); }
 
-  function ensureSettingsStyles() {
-    if (document.getElementById('urppp-settings-style')) return;
-    const style = document.createElement('style');
-    style.id = 'urppp-settings-style';
-    style.textContent = settingsStyles;
-    (document.head || document.documentElement).appendChild(style);
-  }
+  function ensureScheduleExportStyles() { ensureStyleOnce('urppp-schedule-export-style', scheduleExportStyles); }
+
+  function ensureSettingsStyles() { ensureStyleOnce('urppp-settings-style', settingsStyles); }
 
   // ---- 条件性样式分组：命中即注 + 空闲预载（最终与全量注入等价，仅首屏解析错峰）----
-  function ensureDashboardStyles() {
-    if (document.getElementById('urppp-dashboard-style')) return;
-    const style = document.createElement('style');
-    style.id = 'urppp-dashboard-style';
-    style.textContent = dashboardStyles;
-    (document.head || document.documentElement).appendChild(style);
-  }
+  function ensureDashboardStyles() { ensureStyleOnce('urppp-dashboard-style', dashboardStyles); }
 
-  function ensureScheduleCardStyles() {
-    if (document.getElementById('urppp-schedule-card-style')) return;
-    const style = document.createElement('style');
-    style.id = 'urppp-schedule-card-style';
-    style.textContent = scheduleCardStyles;
-    (document.head || document.documentElement).appendChild(style);
-  }
+  function ensureScheduleCardStyles() { ensureStyleOnce('urppp-schedule-card-style', scheduleCardStyles); }
 
-  function ensureMobileStyles() {
-    if (document.getElementById('urppp-mobile-style')) return;
-    const style = document.createElement('style');
-    style.id = 'urppp-mobile-style';
-    style.textContent = mobileStyles;
-    (document.head || document.documentElement).appendChild(style);
-  }
+  function ensureMobileStyles() { ensureStyleOnce('urppp-mobile-style', mobileStyles); }
 
   function ensureRouteStyles() { // 路由切换到目标页时立即补注，不等空闲
     try { if (isHomePage()) ensureDashboardStyles(); } catch (_) {}
@@ -10595,13 +10510,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   const state = createCleanModeState();
 
-  function ensureStyle() {
-    if (document.getElementById('urppp-clean-style')) return;
-    const st = document.createElement('style');
-    st.id = 'urppp-clean-style';
-    st.textContent = cleanModeStyles;
-    (document.head || document.documentElement).appendChild(st);
-  }
+  function ensureStyle() { ensureStyleOnce('urppp-clean-style', cleanModeStyles); }
 
   const cleanAnalysisData = createScoreAnalysisData({
     deps: { scoreToNumber, scoreToGpa },
