@@ -105,11 +105,11 @@
 1. 浏览器安装 [Tampermonkey](https://www.tampermonkey.net/)（或 Violentmonkey）
 2. 安装主脚本，**点击下面任意一个源即可直接安装**（油猴会弹出安装确认）：
 
-| 源 | 一键安装 | 更新及时性 | 网络环境 | 适合场景 |
-|---|---|---|---|---|
-| **GitHub** | [点击安装](https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js) | ⭐⭐⭐ 最及时（发布即同步） | 海外直连 / 国内需代理 | 开发环境、海外用户、追求最新版 |
-| **Gitee** | [点击安装](https://gitee.com/chaolan2026/SCU-URP-plusplus/raw/main/urppp.user.js) | ⭐⭐ 次之（手动/镜像同步） | 国内直连最快 | 国内用户、无代理环境 |
-| **jsDelivr** | [点击安装](https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/urppp.user.js) | ⭐ 最后（CDN 缓存延迟） | 全球 CDN 最通用 | 各网络环境均可、更新不敏感 |
+| 源 | 一键安装 | 更新及时性 | 网络环境 |
+|---|---|---|---|
+| **GitHub** | [点击安装](https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js) | ⭐⭐⭐ | 海外直连 / 国内需代理 |
+| **Gitee** | [点击安装](https://gitee.com/chaolan2026/SCU-URP-plusplus/raw/main/urppp.user.js) | ⭐⭐ | 国内直连最快 |
+| **jsDelivr** | [点击安装](https://cdn.jsdelivr.net/gh/chaolan2019/SCU-URP-plusplus@main/urppp.user.js) | ⭐ | 全球 CDN 最通用 |
 
    - **Greasy Fork**：也可打开 [Greasy Fork](https://greasyfork.org)，搜索 **`SCU URP++`** 安装
    - 本地：打开仓库中的 `urppp.user.js` 导入 / 安装
