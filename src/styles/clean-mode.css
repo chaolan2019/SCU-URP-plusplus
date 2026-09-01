@@ -31,15 +31,15 @@
 #urppp-clean-root *{box-sizing:border-box}
 #urppp-clean-root .uc-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px}
 #urppp-clean-root .uc-top-actions{display:flex;gap:8px}
-#urppp-clean-root .uc-btn{height:32px;padding:0 12px;border-radius:10px;border:1px solid var(--border);background:var(--input-bg,#f7f7f8);color:var(--text);font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:transform .18s ease,box-shadow .18s ease,background .18s ease,border-color .18s ease,color .18s ease}
+#urppp-clean-root .uc-btn{height:26px;padding:0 10px;border-radius:8px;border:1px solid var(--border);background:var(--input-bg,#f7f7f8);color:var(--text);font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:transform .18s ease,box-shadow .18s ease,background .18s ease,border-color .18s ease,color .18s ease}
 #urppp-clean-root .uc-btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.06)}
 #urppp-clean-root .uc-btn:active{transform:translateY(0) scale(.98);box-shadow:none}
 #urppp-clean-root .uc-btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
-#urppp-clean-root .uc-shell{flex:1;min-height:0;overflow:auto;padding:20px 28px 28px;display:flex;align-items:stretch;justify-content:center}
+#urppp-clean-root .uc-shell{flex:1;min-height:0;overflow:auto;padding:14px 20px 20px;display:flex;align-items:stretch;justify-content:center}
 #urppp-clean-root .uc-shell-inner{max-width:1520px;margin:0 auto;width:100%;max-height:100%;min-height:0;overflow:auto;display:flex;flex-direction:column}
 #urppp-clean-root .uc-desktop{display:grid;flex:0 0 auto;grid-template-columns:1fr 1fr;grid-template-rows:auto;gap:16px;min-height:0;align-items:start}
 #urppp-clean-root .uc-col{display:flex;flex-direction:column;gap:16px;min-height:0;min-width:0}
-#urppp-clean-root .uc-card{background:var(--surface,#fff);border:1px solid var(--border,#e7e7ea);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04);opacity:0;transform:translateY(14px) scale(.985);animation:ucCardIn .36s cubic-bezier(.22,1,.36,1) forwards;transition:box-shadow .22s ease,transform .22s ease,border-color .22s ease;will-change:transform,opacity}
+#urppp-clean-root .uc-card{background:var(--surface,#fff);border:1px solid var(--border,#e7e7ea);border-radius:12px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04);opacity:0;transform:translateY(14px) scale(.985);animation:ucCardIn .36s cubic-bezier(.22,1,.36,1) forwards;transition:box-shadow .22s ease,transform .22s ease,border-color .22s ease;will-change:transform,opacity}
 #urppp-clean-root .uc-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.06),0 0 0 1px color-mix(in srgb,var(--primary) 8%,var(--border))}
 #urppp-clean-root .uc-desktop > .uc-col:first-child > .uc-card:nth-child(1){animation-delay:.05s}
 #urppp-clean-root .uc-desktop > .uc-col:first-child > .uc-card:nth-child(2){animation-delay:.12s}
@@ -49,13 +49,13 @@
 #urppp-clean-root .uc-mobile > .uc-card:nth-child(2){animation-delay:.12s}
 #urppp-clean-root .uc-mobile > .uc-card:nth-child(3){animation-delay:.19s}
 #urppp-clean-root .uc-card.grow{flex:0 0 auto;min-height:0;display:flex;flex-direction:column}
-#urppp-clean-root .uc-hd{padding:12px 14px;border-bottom:1px solid var(--border);font-weight:700;font-size:16px;display:flex;justify-content:space-between;align-items:center}
-#urppp-clean-root .uc-bd{padding:14px}
+#urppp-clean-root .uc-hd{padding:9px 11px;border-bottom:1px solid var(--border);font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center}
+#urppp-clean-root .uc-bd{padding:10px}
 #urppp-clean-root .uc-card.grow .uc-bd{flex:1;overflow:auto}
 #urppp-clean-root .uc-profile{display:flex;gap:14px;align-items:center}
-#urppp-clean-root .uc-avatar{width:auto;height:72px;max-width:96px;min-width:56px;border-radius:12px;background:var(--input-bg);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:var(--primary);flex:0 0 auto}
-#urppp-clean-root .uc-avatar img{height:72px;width:auto;max-width:96px;object-fit:contain;display:block;border-radius:12px}
-#urppp-clean-root .uc-name{font-size:18px;font-weight:700;margin:0 0 4px}
+#urppp-clean-root .uc-avatar{width:auto;height:54px;max-width:72px;min-width:44px;border-radius:12px;background:var(--input-bg);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;color:var(--primary);flex:0 0 auto}
+#urppp-clean-root .uc-avatar img{height:54px;width:auto;max-width:72px;object-fit:contain;display:block;border-radius:12px}
+#urppp-clean-root .uc-name{font-size:15px;font-weight:700;margin:0 0 4px}
 #urppp-clean-root .uc-sub{font-size:12px;color:var(--text-secondary,#667085);line-height:1.5}
 #urppp-clean-root .uc-gpa{margin-top:6px;display:inline-flex;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--primary) 12%,var(--input-bg));font-weight:700;font-size:13px}
 #urppp-clean-root .uc-schedule-wrap{position:relative;overflow:auto;max-height:calc(100vh - 340px)}
@@ -88,9 +88,9 @@
 #urppp-clean-root .uc-week-head{display:grid;grid-template-columns:36px repeat(7,minmax(0,1fr));gap:6px;margin-bottom:6px}
 #urppp-clean-root .uc-week-head .h{font-size:11px;text-align:center;color:var(--text-secondary)}
 #urppp-clean-root .uc-week-body{display:grid;grid-template-columns:36px repeat(7,minmax(0,1fr));gap:6px;align-items:start}
-#urppp-clean-root .uc-sec-col .s{height:56px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text-muted,#98a2b3)}
-#urppp-clean-root .uc-day-col{position:relative;height:calc(56px * 12);background:transparent}
-#urppp-clean-root .uc-grid-cell{position:absolute;left:0;right:0;height:52px;border-radius:10px;background:var(--input-bg);border:1px solid color-mix(in srgb,var(--border) 65%,transparent)}
+#urppp-clean-root .uc-sec-col .s{height:42px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text-muted,#98a2b3)}
+#urppp-clean-root .uc-day-col{position:relative;height:calc(42px * 12);background:transparent}
+#urppp-clean-root .uc-grid-cell{position:absolute;left:0;right:0;height:38px;border-radius:10px;background:var(--input-bg);border:1px solid color-mix(in srgb,var(--border) 65%,transparent)}
 #urppp-clean-root .uc-day-col .uc-grid-cell{width:100%}
 #urppp-clean-root .uc-lesson{position:absolute;left:0;right:0;z-index:2;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:10px;padding:6px 7px 16px;cursor:pointer;overflow:hidden;box-sizing:border-box;transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;will-change:transform}
 #urppp-clean-root .uc-lesson:hover{transform:translateY(-1px) scale(1.01);box-shadow:0 6px 16px rgba(0,0,0,.08);z-index:12!important}
@@ -159,13 +159,13 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
    真正的合并需先补 browser 回归，见 2.0.0 P1 清单 */
 #sidebar.urppp-clean-sidebar{
   position: fixed !important;
-  top: 60px !important;
+  top: 45px !important;
   left: 0 !important;
   bottom: 0 !important;
   width: 260px !important;
   min-width: 260px !important;
   max-width: 260px !important;
-  height: calc(100vh - 60px) !important;
+  height: calc(100vh - 45px) !important;
   z-index: 12030 !important;
   transform: translate3d(-100%, 0, 0) !important;
   visibility: hidden !important;
@@ -229,7 +229,7 @@ html.urppp-theme-dark #urppp-clean-root .uc-slot.kind-borrow,body.urppp-dark #ur
 /* 清爽模式下站点弹窗（作息时间表等）置于清爽模式之上 */
 html.urppp-clean-open .modal{z-index:12050 !important}
 html.urppp-clean-open .modal-backdrop{z-index:12045 !important}
-#urppp-clean-root .uc-top{flex:0 0 60px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid var(--border);background:var(--surface,#fff);animation:ucTopIn .36s cubic-bezier(.22,1,.36,1) both;position:relative;z-index:12040}
+#urppp-clean-root .uc-top{flex:0 0 45px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid var(--border);background:var(--surface,#fff);animation:ucTopIn .36s cubic-bezier(.22,1,.36,1) both;position:relative;z-index:12040}
 #urppp-clean-root .uc-score-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 #urppp-clean-root .uc-score-pane{border:1px solid var(--border);border-radius:14px;padding:12px;cursor:pointer;background:var(--input-bg);transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease,background .2s ease}
 #urppp-clean-root .uc-score-pane:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.06);background:color-mix(in srgb,var(--primary) 5%,var(--input-bg))}
@@ -239,7 +239,7 @@ html.urppp-clean-open .modal-backdrop{z-index:12045 !important}
 #urppp-clean-root .uc-metric{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
 #urppp-clean-root .uc-metric:hover{transform:translateY(-1px);border-color:color-mix(in srgb,var(--primary) 30%,var(--border));box-shadow:0 4px 12px rgba(0,0,0,.04)}
 #urppp-clean-root .uc-metric em{display:block;font-style:normal;font-size:13px;color:var(--text-muted);margin-bottom:3px}
-#urppp-clean-root .uc-metric b{font-size:20px;display:inline-block;transition:transform .2s ease}
+#urppp-clean-root .uc-metric b{font-size:16px;display:inline-block;transition:transform .2s ease}
 #urppp-clean-root .uc-metric:hover b{transform:scale(1.04)}
 #urppp-clean-root .uc-services{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:stretch}
 #urppp-clean-root .uc-svc{width:100%;min-width:0;aspect-ratio:1/1;height:auto;border-radius:12px;border:1px solid var(--border);background:var(--input-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;color:var(--text);padding:8px 4px;text-align:center;margin:0;box-sizing:border-box;opacity:0;transform:translateY(10px) scale(.96);animation:ucSvcIn .36s cubic-bezier(.22,1,.36,1) forwards;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease}
@@ -261,9 +261,9 @@ html.urppp-clean-open .modal-backdrop{z-index:12045 !important}
 #urppp-clean-root .uc-tabbar{display:none}
 #urppp-clean-root .uc-mask{position:fixed;inset:0;background:rgba(15,23,42,.36);z-index:12010;display:block;opacity:0;pointer-events:none;transition:opacity .22s ease;backdrop-filter:blur(0px)}
 #urppp-clean-root .uc-mask.open{opacity:1;pointer-events:auto;backdrop-filter:blur(2px)}
-#urppp-clean-root .uc-modal{position:fixed;z-index:12060;left:50%;top:calc(60px + 14px);transform:translate(-50%,0) scale(.96);width:min(980px,92vw);max-height:calc(100vh - 60px - 28px);background:var(--surface);border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .24s cubic-bezier(.22,1,.36,1),transform .28s cubic-bezier(.22,1,.36,1)}
+#urppp-clean-root .uc-modal{position:fixed;z-index:12060;left:50%;top:calc(45px + 12px);transform:translate(-50%,0) scale(.96);width:min(980px,92vw);max-height:calc(100vh - 45px - 24px);background:var(--surface);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .24s cubic-bezier(.22,1,.36,1),transform .28s cubic-bezier(.22,1,.36,1)}
 #urppp-clean-root .uc-modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,0) scale(1)}
-#urppp-clean-root .uc-modal-hd{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:17px;flex:0 0 auto}
+#urppp-clean-root .uc-modal-hd{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:14px;flex:0 0 auto}
 #urppp-clean-root .uc-modal-bd{padding:12px 14px;overflow:auto;flex:1 1 auto;min-height:0}
 #urppp-clean-root .uc-modal-ft{padding:10px 14px;border-top:1px solid var(--border);background:var(--input-bg);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;flex:0 0 auto;position:relative;z-index:2}
 #urppp-clean-root .uc-modal-ft #uc-calc{flex:1 1 auto;min-width:0;font-size:14px}

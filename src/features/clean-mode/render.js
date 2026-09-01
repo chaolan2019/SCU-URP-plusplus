@@ -73,7 +73,7 @@ export function createCleanModeRenderer({ state, deps }) {
     try {
       if (window.matchMedia && window.matchMedia('(max-width:900px)').matches) return 40;
     } catch (_) { /* ignore */ }
-    return 56;
+    return 42;
   }
 
   function renderScheduleBoard(courses, weekNoOverride) {
