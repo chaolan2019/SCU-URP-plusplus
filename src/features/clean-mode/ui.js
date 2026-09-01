@@ -518,8 +518,15 @@ export function createCleanModeUI({ state, deps }) {
     openModal('空闲教室', '<div class="uc-loading">加载教学楼</div>', '');
     try {
       await deps.ensureRoomCatalogLoaded(false);
+      // 用户可能在加载期间关闭了弹窗：此时不再强行重开（否则会出现"关闭后又自己弹出来"）
+      const el = deps.rootEl();
+      const modal = el && el.querySelector('#uc-modal');
+      if (!modal || !modal.classList.contains('open')) return;
       openModal('空闲教室', deps.roomPickerHtml(), `<span class="uc-sub">选择楼栋查看教室×节次占用（对齐教室使用状况）</span>`);
     } catch (error) {
+      const el = deps.rootEl();
+      const modal = el && el.querySelector('#uc-modal');
+      if (!modal || !modal.classList.contains('open')) return;
       openModal('空闲教室', `<div class="uc-empty">${deps.escapeHtml(error && error.message || error)}</div>`, '');
     }
   }
