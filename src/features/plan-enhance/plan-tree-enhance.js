@@ -177,8 +177,13 @@ export function createPlanTreeEnhance({ tree, header, scrollCtx, deps }) {
     bar.appendChild(input);
     bar.appendChild(btn);
     bar.appendChild(count);
-    // 作为 header 子元素（h4 内另起一行），随 header 一起 sticky 常驻
-    header.appendChild(bar);
+    // 插到标题/图例与课组操作按钮组之间；同处 header 内 flex-wrap，能同行就同行，挤不下自动换行
+    const oper = header.querySelector('.right_top_oper');
+    if (oper) {
+      header.insertBefore(bar, oper);
+    } else {
+      header.appendChild(bar);
+    }
 
     const runSearch = async () => {
       const q = input.value.trim();

@@ -19,16 +19,16 @@
   gap: 0 12px !important;
 }
 
-/* --- header 内下方的搜索条（h4 内另起一行，随 header sticky 常驻） --- */
+/* --- header 内的搜索条（插在标题/图例与课组按钮之间，flex-wrap 同行/换行自适应） --- */
 #two h4.header .urppp-plan-searchbar,
 #two .header .urppp-plan-searchbar {
   display: flex !important;
   align-items: center !important;
-  gap: 8px !important;
-  flex-basis: 100% !important;
-  width: 100% !important;
-  margin: 8px 0 0 !important;
+  gap: 6px !important;
+  flex: 0 1 auto !important;
+  margin: 0 0 0 10px !important;
   padding: 0 !important;
+  min-width: 0 !important;
 }
 #two .urppp-plan-searchbar input[type="text"] {
   flex: 0 1 300px !important;
