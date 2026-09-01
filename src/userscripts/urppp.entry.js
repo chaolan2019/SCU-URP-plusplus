@@ -4955,9 +4955,22 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           event.stopPropagation();
           const open = searchPanel.hidden;
           if (open) {
+            // 自愈：form-search 不在面板内（被外部逻辑移走/重建）时找回并重新移入
+            let fs = searchPanel.querySelector('#form-search');
+            if (!fs) {
+              fs = document.getElementById('form-search');
+              if (fs) {
+                if (!fs.__urpppMobileParent) {
+                  fs.__urpppMobileParent = fs.parentElement;
+                  fs.__urpppMobileNext = fs.nextSibling;
+                }
+                fs.classList.add('urppp-mobile-form-search');
+                fs.dataset.open = '0';
+                searchPanel.appendChild(fs);
+              }
+            }
             // 每次打开都重置 form-search 布局并聚焦，确保 typeahead 输入态稳定
             syncMobileSearchLayout();
-            const fs = searchPanel.querySelector('#form-search');
             if (fs) {
               // data-open 只属于桌面顶栏搜索；移动面板以 hidden/aria-expanded 管理开合。
               fs.dataset.open = '0';
