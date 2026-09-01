@@ -8232,7 +8232,7 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] 
   display: flex !important;
   flex-wrap: wrap !important;
   align-items: center !important;
-  gap: 0 12px !important;
+  gap: 6px 12px !important;
 }
 
 /* --- header 内的搜索条（插在标题/图例与课组按钮之间，flex-wrap 同行/换行自适应） --- */
@@ -8250,10 +8250,13 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] 
 /* 搜索框：参考教务顶栏 .nav-search-input */
 #two h4.header .urppp-plan-searchbar input[type="text"],
 #two .header .urppp-plan-searchbar input[type="text"] {
-  flex: 0 1 240px !important;
-  height: 28px !important;
-  padding: 0 10px !important;
-  font: 500 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif !important;
+  flex: 0 1 220px !important;
+  height: 26px !important;
+  min-height: 26px !important;
+  max-height: 26px !important;
+  padding: 0 9px !important;
+  line-height: 24px !important;
+  font: 500 11px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif !important;
   color: var(--text, #1d1d1f) !important;
   background: var(--input-bg, #f5f5f7) !important;
   border: 1px solid var(--border, #dfe3e8) !important;
@@ -8274,16 +8277,16 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] 
   box-shadow: 0 0 0 3px var(--ring, rgba(181, 52, 52, 0.15)) !important;
 }
 
-/* 查找按钮：参考课组操作按钮 .btn.btn-info（胶囊、主色） */
+/* 查找按钮：参考课组操作按钮 .btn.btn-info（跟随 --radius-sm，editorial 下自动矩形） */
 #two h4.header .urppp-plan-search-btn,
 #two .header .urppp-plan-search-btn {
-  height: 28px !important;
-  padding: 0 12px !important;
-  font: 600 12px/1 sans-serif !important;
+  height: 26px !important;
+  padding: 0 10px !important;
+  font: 600 11px/1 sans-serif !important;
   color: #fff !important;
   background: var(--primary, #b53434) !important;
   border: 1px solid var(--primary, #b53434) !important;
-  border-radius: 999px !important;
+  border-radius: var(--radius-sm, 0) !important;
   cursor: pointer !important;
   white-space: nowrap !important;
   display: inline-flex !important;
