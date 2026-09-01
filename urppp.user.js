@@ -9494,7 +9494,7 @@ html.urppp-clean-open .modal-backdrop{z-index:12045 !important}
 #urppp-clean-root .uc-tabbar{display:none}
 #urppp-clean-root .uc-mask{position:fixed;inset:0;background:rgba(15,23,42,.36);z-index:12010;display:block;opacity:0;pointer-events:none;transition:opacity .22s ease;backdrop-filter:blur(0px)}
 #urppp-clean-root .uc-mask.open{opacity:1;pointer-events:auto;backdrop-filter:blur(2px)}
-#urppp-clean-root .uc-modal{position:fixed;z-index:12060;left:50%;top:calc(60px + (100vh - 60px)/2);transform:translate(-50%,-50%) scale(.96);width:min(980px,92vw);max-height:calc(100vh - 60px - 16px);background:var(--surface);border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .24s cubic-bezier(.22,1,.36,1),transform .28s cubic-bezier(.22,1,.36,1)}
+#urppp-clean-root .uc-modal{position:fixed;z-index:12060;left:50%;top:calc(60px + (100dvh - 60px)/2);transform:translate(-50%,-50%) scale(.96);width:min(980px,92vw);max-height:calc(100dvh - 60px - 16px);background:var(--surface);border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .24s cubic-bezier(.22,1,.36,1),transform .28s cubic-bezier(.22,1,.36,1)}
 #urppp-clean-root .uc-modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
 #urppp-clean-root .uc-modal-hd{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:17px;flex:0 0 auto}
 #urppp-clean-root .uc-modal-bd{padding:12px 14px;overflow:auto;flex:1 1 auto;min-height:0}
@@ -9626,7 +9626,7 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
   #urppp-clean-root .uc-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
   #urppp-clean-root .uc-services{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
   #urppp-clean-root .uc-svc{width:100%;height:auto}
-  #urppp-clean-root .uc-modal{inset:0;left:0;top:52px;right:0;bottom:0;width:100%;height:auto;max-height:none;border-radius:0;transform:translateY(16px)}
+  #urppp-clean-root .uc-modal{inset:0;left:0;top:52px;right:0;bottom:0;width:100%;height:auto;max-height:calc(100dvh - 52px);border-radius:0;transform:translateY(16px)}
   #urppp-clean-root .uc-modal.open{transform:translateY(0) scale(1)}
   #urppp-clean-root .uc-modal-hd{padding:12px 12px;padding-top:calc(12px + env(safe-area-inset-top))}
   #urppp-clean-root .uc-modal-bd{padding:10px 12px;flex:1 1 auto;min-height:0}
