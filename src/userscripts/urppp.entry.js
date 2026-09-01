@@ -9571,7 +9571,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const date = formatLocalDate(addDays(new Date(), offset));
     // 会话内缓存：同楼同日期复用（切换日期/返回列表再进来不重复拉取）
     const occCacheKey = xqh + '/' + jxlh + '/' + date;
-    if (!force && occupancyCache.has(occCacheKey)) return occupancyCache.get(occCacheKey);
+    if (occupancyCache.has(occCacheKey)) return occupancyCache.get(occCacheKey);
     // 与页面 $("#searchCondition").serialize() 对齐
     const body = 'xqh=' + encodeURIComponent(xqh)
       + '&jxlh=' + encodeURIComponent(jxlh)
