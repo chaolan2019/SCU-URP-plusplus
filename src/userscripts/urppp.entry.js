@@ -8811,20 +8811,29 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
   // 判定拉取结果是否有效（有真实数据）；无效（错误/空态）不写缓存，避免错误态污染
   function cleanCacheHasData(d) {
-    if (!d || typeof d !== 'object') return false;
+    if (!d || typeof d !== 'object' || d.__empty || d.__error) return false;
     if (Array.isArray(d.courses) && d.courses.length) return true; // 课表
-    const pc = d.passing && d.passing[0] && Array.isArray(d.passing[0].courses) ? d.passing[0].courses.length : 0; // 成绩壳内真实课程数
+    const pc = d.passing &&
+ d.passing[0] && Array.isArray(d.passing[0].courses) ? d.passing[0].courses.length : 0; // 成绩壳内真实课程数
     if (pc > 0) return true;
     if (Array.isArray(d.schemes) && d.schemes.some((s) => Array.isArray(s.courses) && s.courses.length)) return true;
     return false;
   }
   // 带缓存的加载器：缓存命中立即返回旧数据并触发一次渲染，随后拉新；拉新结果与缓存不同则覆盖写回并重渲染
   // onFresh(fresh)：后台拉新成功后的同步回调（把新数据写回 state 并触发重渲染）
+  // ttlMs：后台刷新节流阈值——命中缓存后 ttl 内不再发起后台拉新（低频变化数据避免每次打开都发请求）
+  const CLEAN_TTL = { schedule: 2 * 60 * 1000, scores: 5 * 60 * 1000, profile: 10 * 60 * 1000, roomcat: 30 * 60 * 1000 };
   function withCleanCache(kind, loader, onFresh) {
     return async function loadWithCache(force) {
       const cached = force ? null : cleanCacheRead(kind);
       if (cached) {
         cleanCacheLog(kind, '命中缓存，先渲染旧数据（' + new Date(cached.ts).toLocaleString() + ' 保存）');
+        // TTL 节流：刚拉取过（ttl 内）跳过后台刷新，彻底不发请求
+        const ttl = CLEAN_TTL[kind] || 0;
+        if (!force && ttl && Date.now() - cached.ts < ttl) {
+          cleanCacheLog(kind, '缓存新鲜（TTL ' + Math.round(ttl / 1000) + 's 内），跳过后台刷新');
+          return cached.data;
+        }
         // 后台刷新：完成后若数据变化则覆盖缓存并重渲染
         Promise.resolve().then(async () => {
           try {
@@ -8879,8 +8888,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     try {
       const cat = await loadClassroomCatalog();
       if (Array.isArray(cat) && cat.length) return cat;
-      return { __empty: true };
-    } catch (e) { return { __error: String(e && e.message || e) }; }
+      return { __empty: true, error: 'empty-catalog' };
+    } catch (e) { const msg = String(e && e.message || e); return { __error: msg, error: msg }; }
   }, (fresh) => {
     try {
       if (state.catalog && state.catalog.length) return;
