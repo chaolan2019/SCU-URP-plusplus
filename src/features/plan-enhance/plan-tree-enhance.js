@@ -2,15 +2,15 @@
  * @file 培养方案查增强（plan-enhance）
  * @author ma
  * @date 2026-09-01
- * @version 1.0.0
+ * @version 1.1.0
  *
  * 针对 /student/integratedQuery/planCompletion/getPyfaIndex/ 页面：
  *  1) 点击课程节点复制课程号
- *  2) header 搜索框：按课程号/课程名检索，命中自动展开祖先链并高亮
+ *  2) header 下方搜索区：输入课程号/课程名 + 「查找」按钮 → 展开祖先链、滚动到第一个命中课程并高亮
  *  3) header 常驻（sticky，不随滚动容器滚出视口）
  *
  * 依赖 zTree 骨架（#treeDemo），与 beautifyPlanTree 共建，两者互不干扰：
- * 本模块只读课程号/课程名文本 + 操作 zTree 的展开/高亮，不改节点 HTML。
+ * 本模块只读课程号/课程名文本 + 操作 zTree 的展开/高亮/滚动，不改节点 HTML。
  */
 
 /** 从课程节点里嗅探课程号（兼容已格式化 .urppp-code span 与裸 [code] 文本） */
@@ -77,6 +77,15 @@ function readCourseInfo(li) {
   return { code, name, text };
 }
 
+/** 判断节点是否为课程叶子（带课程号，非课组/子组标题） */
+function isCourseLeaf(li) {
+  const a = li && li.querySelector(':scope > a');
+  if (!a) return false;
+  const sw = li.querySelector(':scope > span.button.switch');
+  if (sw && /_docu\b/.test(sw.className)) return true;
+  return !!extractCourseCodeFromNode(a);
+}
+
 /** 展开某课程节点的所有祖先链（逐级 point 尚未展开的 switch） */
 async function expandAncestors(li, tree) {
   if (tree) {
@@ -108,8 +117,9 @@ async function expandAncestors(li, tree) {
 
 /** 清除所有节点高亮 */
 function clearAllHighlights(tree) {
-  tree.querySelectorAll('.urppp-search-hit').forEach((n) => n.classList.remove('urppp-search-hit'));
-  tree.querySelectorAll('.urppp-code-highlight').forEach((n) => n.classList.remove('urppp-code-highlight', 'urppp-code-hit'));
+  tree.querySelectorAll('.urppp-search-hit, .urppp-code-highlight, .urppp-code-hit').forEach((n) => {
+    n.classList.remove('urppp-search-hit', 'urppp-code-highlight', 'urppp-code-hit');
+  });
 }
 
 /** 匹配节点：返回是否命中 */
@@ -124,7 +134,7 @@ function nodeMatches(info, query) {
 }
 
 /**
- * 主入口。treeHost = #tree_div 或 #treeDemo；headerHost = header 元素
+ * 主入口。tree = #treeDemo；header = #two h4.header；scrollCtx = 滚动容器
  */
 export function createPlanTreeEnhance({ tree, header, scrollCtx, deps }) {
   if (!tree) return { dispose() {} };
@@ -138,12 +148,9 @@ export function createPlanTreeEnhance({ tree, header, scrollCtx, deps }) {
       if (!a) return;
       const li = a.closest('li');
       if (!li) return;
+      if (!isCourseLeaf(li)) return;
       const info = readCourseInfo(li);
       if (!info || !info.code) return;
-      // 只在课程叶子节点上拦截（防止与课组标题展开冲突）
-      const sw = li.querySelector(':scope > span.button.switch');
-      const isLeaf = sw && /_docu\b/.test(sw.className);
-      if (!isLeaf) return;
       e.preventDefault();
       e.stopPropagation();
       copyText(info.code).then((ok) => {
@@ -152,78 +159,88 @@ export function createPlanTreeEnhance({ tree, header, scrollCtx, deps }) {
     }, true);
   }
 
-  // 2) header 搜索框
+  // 2) header 下方搜索区：输入框 + 查找按钮，触发展开+滚动+高亮
   if (header && !header.dataset.urpppSearchBound) {
     header.dataset.urpppSearchBound = '1';
-    const wrap = document.createElement('div');
-    wrap.className = 'urppp-plan-search';
+    const bar = document.createElement('div');
+    bar.className = 'urppp-plan-searchbar';
     const input = document.createElement('input');
     input.type = 'text';
-    input.placeholder = '搜课程号或课程名…';
-    input.setAttribute('aria-label', '搜索课程');
+    input.placeholder = '输入课程号或课程名';
+    input.setAttribute('aria-label', '查找课程');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'urppp-plan-search-btn';
+    btn.textContent = '查找';
     const count = document.createElement('span');
     count.className = 'urppp-plan-search-count';
-    wrap.appendChild(input);
-    wrap.appendChild(count);
-    // 插到操作按钮组之前，避免被挤到最右、与按钮贴太近
-    const oper = header.querySelector('.right_top_oper');
-    if (oper) {
-      header.insertBefore(wrap, oper);
-    } else {
-      header.appendChild(wrap);
-    }
+    bar.appendChild(input);
+    bar.appendChild(btn);
+    bar.appendChild(count);
+    // 作为 header 子元素（h4 内另起一行），随 header 一起 sticky 常驻
+    header.appendChild(bar);
 
-    let prevKey = '';
-    const runSearch = () => {
+    const runSearch = async () => {
       const q = input.value.trim();
-      if (q === prevKey) return;
-      prevKey = q;
       clearAllHighlights(tree);
       if (!q) { count.textContent = ''; return; }
-      const nodes = Array.from(tree.querySelectorAll('li'));
-      let hit = 0;
-      for (const li of nodes) {
+      // 收集所有命中课程节点
+      const hits = [];
+      for (const li of tree.querySelectorAll('li')) {
+        if (!isCourseLeaf(li)) continue;
         const info = readCourseInfo(li);
-        if (!info) continue;
-        if (nodeMatches(info, q)) {
-          hit++;
-          li.classList.add('urppp-search-hit');
-          const codeEl = li.querySelector(':scope > a .urppp-code');
-          if (codeEl) codeEl.classList.add('urppp-code-hit');
-          // 展开祖先链让命中节点可见
-          expandAncestors(li, tree);
-        }
+        if (nodeMatches(info, q)) hits.push({ li, info });
       }
-      count.textContent = hit ? `${hit} 门` : '未找到';
+      if (!hits.length) {
+        count.textContent = '未找到';
+        toast(`未找到课程「${q}」`, 'error');
+        return;
+      }
+      count.textContent = `找到 ${hits.length} 门`;
+      // 全部展开（命中的祖先链都要可见）
+      await Promise.all(hits.map(({ li }) => expandAncestors(li, tree)));
+      // 高亮所有命中
+      hits.forEach(({ li }) => {
+        li.classList.add('urppp-search-hit');
+        const codeEl = li.querySelector(':scope > a .urppp-code');
+        if (codeEl) codeEl.classList.add('urppp-code-hit');
+      });
+      // 展开后滚动到第一个命中节点
+      const first = hits[0].li;
+      await new Promise((r) => setTimeout(r, 60));
+      scrollToNode(first, scrollCtx);
+      toast('');
     };
 
-    let debounce = 0;
-    input.addEventListener('input', () => {
-      clearTimeout(debounce);
-      debounce = setTimeout(runSearch, 120);
-    });
+    btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); runSearch(); });
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); runSearch(); }
-      if (e.key === 'Escape') { input.value = ''; runSearch(); }
+      if (e.key === 'Escape') { input.value = ''; clearAllHighlights(tree); count.textContent = ''; }
     });
   }
 
-  // 3) header 常驻：把滚动容器设为 sticky 上下文
+  // 3) header 常驻（sticky）
   if (header && scrollCtx && !header.dataset.urpppStickyBound) {
     header.dataset.urpppStickyBound = '1';
-    // 某些 zTree 重建会替换 header，用 MutationObserver 兜底重挂
     const makeSticky = () => {
       header.classList.add('urppp-plan-sticky');
-      if (scrollCtx) {
-        // 保持滚动容器自身定位上下文
-        const st = getComputedStyle(scrollCtx);
-        // 已是 auto/scroll 才接管；若原本 static，设相对不破坏布局
-        if (st.position === 'static' || st.position === '') {
-          scrollCtx.style.position = 'relative';
-        }
+      const st = getComputedStyle(scrollCtx);
+      if (st.position === 'static' || st.position === '') {
+        scrollCtx.style.position = 'relative';
       }
     };
     makeSticky();
+    // header 可能被父级 JS 重建替换，用 MutationObserver 兜底重挂 sticky
+    if (!header.dataset.urpppStickyObsBound) {
+      header.dataset.urpppStickyObsBound = '1';
+      if (window.__urpppPlanStickyObs) { try { window.__urpppPlanStickyObs.disconnect(); } catch (_) {} }
+      const target = scrollCtx || document.getElementById('tree_div') || document.getElementById('treeDemo');
+      window.__urpppPlanStickyObs = new MutationObserver(() => {
+        const h = document.querySelector('#two h4.header, #two .header');
+        if (h && !h.classList.contains('urppp-plan-sticky')) h.classList.add('urppp-plan-sticky');
+      });
+      if (target) window.__urpppPlanStickyObs.observe(target, { childList: true, subtree: true });
+    }
   }
 
   return {
@@ -231,4 +248,21 @@ export function createPlanTreeEnhance({ tree, header, scrollCtx, deps }) {
       clearAllHighlights(tree);
     },
   };
+}
+
+/** 滚动容器内把命中节点滚到可见位置（居中） */
+function scrollToNode(li, scrollCtx) {
+  if (!li) return;
+  try {
+    if (typeof li.scrollIntoView === 'function') {
+      li.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+      return;
+    }
+  } catch (_) { /* fall through */ }
+  // 手动：定位滚动容器并计算偏移
+  if (scrollCtx) {
+    const liRect = li.getBoundingClientRect();
+    const cRect = scrollCtx.getBoundingClientRect();
+    scrollCtx.scrollTop += (liRect.top - cRect.top) - (cRect.height / 2) + (liRect.height / 2);
+  }
 }

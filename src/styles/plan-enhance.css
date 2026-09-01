@@ -10,27 +10,31 @@
   z-index: 11800 !important;
   background: var(--surface, #fff) !important;
   border-bottom: 1px solid var(--border, #e5e9ef) !important;
-  padding: 8px 10px !important;
+  padding: 8px 12px !important;
   margin: 0 !important;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05) !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 0 12px !important;
 }
 
-/* --- header 内的搜索框 --- */
-#two h4.header .urppp-plan-search,
-#two .header .urppp-plan-search {
-  display: inline-flex !important;
+/* --- header 内下方的搜索条（h4 内另起一行，随 header sticky 常驻） --- */
+#two h4.header .urppp-plan-searchbar,
+#two .header .urppp-plan-searchbar {
+  display: flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  margin-left: 12px !important;
-  vertical-align: middle !important;
-  position: relative !important;
-  top: -1px !important;
+  gap: 8px !important;
+  flex-basis: 100% !important;
+  width: 100% !important;
+  margin: 8px 0 0 !important;
+  padding: 0 !important;
 }
-#two .urppp-plan-search input[type="text"] {
-  width: 220px !important;
-  height: 30px !important;
-  padding: 0 10px !important;
-  font: 500 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif !important;
+#two .urppp-plan-searchbar input[type="text"] {
+  flex: 0 1 300px !important;
+  height: 32px !important;
+  padding: 0 12px !important;
+  font: 500 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif !important;
   color: var(--text, #1d1d1f) !important;
   background: var(--surface, #fff) !important;
   border: 1px solid var(--border, #dfe3e8) !important;
@@ -40,19 +44,41 @@
   box-sizing: border-box !important;
   transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
-#two .urppp-plan-search input[type="text"]::placeholder {
+#two .urppp-plan-searchbar input[type="text"]::placeholder {
   color: var(--text-muted, #7c8491) !important;
-  opacity: 0.8 !important;
+  opacity: 0.85 !important;
 }
-#two .urppp-plan-search input[type="text"]:focus {
+#two .urppp-plan-searchbar input[type="text"]:focus {
   border-color: var(--primary, #b53434) !important;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary, #b53434) 18%, transparent) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary, #b53434) 16%, transparent) !important;
 }
+
+/* 查找按钮：主色、克制的实心 */
+#two .urppp-plan-search-btn {
+  height: 32px !important;
+  padding: 0 18px !important;
+  font: 600 13px/1 sans-serif !important;
+  color: #fff !important;
+  background: var(--primary, #b53434) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+  transition: filter 0.15s ease !important;
+}
+#two .urppp-plan-search-btn:hover {
+  filter: brightness(1.08) !important;
+}
+#two .urppp-plan-search-btn:active {
+  filter: brightness(0.96) !important;
+}
+
+/* 命中计数 */
 #two .urppp-plan-search-count {
-  font: 600 11px/1 sans-serif !important;
+  font: 600 12px/1.4 sans-serif !important;
   color: var(--text-muted, #7c8491) !important;
   white-space: nowrap !important;
-  min-width: 0 !important;
 }
 
 /* --- 命中课程节点高亮 --- */
@@ -75,16 +101,8 @@
 }
 
 /* --- 课程节点 hover 提示可复制 --- */
-#treeDemo li[data-urppp-copy-bound="1"] > a {
-  cursor: pointer !important;
-}
-#treeDemo li[data-urppp-copy-bound="1"] > a:hover .urppp-code {
+#treeDemo li > a:hover .urppp-code {
   background: color-mix(in srgb, var(--primary, #b53434) 12%, transparent) !important;
   border-radius: 3px !important;
   padding: 0 2px !important;
-}
-
-/* --- 搜索结果状态：无命中时输入框轻提示 --- */
-#two .urppp-plan-search.ok-empty input[type="text"] {
-  border-color: var(--danger, #d33) !important;
 }

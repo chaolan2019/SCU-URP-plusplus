@@ -3646,7 +3646,8 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       if (!tree) return;
       const header = document.querySelector('#two h4.header, #two .header');
       if (!header) return;
-      // header 已注入搜索框但树未就绪也不重复绑（search 用委托+幂等）
+      // 先注入本模块样式（必须在使用前，否则 sticky/搜索框样式不生效）
+      ensurePlanEnhanceStyles();
       const scrollCtx = header.closest('.scrollspy-example') || header.closest('[class*="scroll"]') || document.getElementById('page-content-template');
       createPlanTreeEnhance({ tree, header, scrollCtx, deps: { toast } });
     } catch (_) { /* 非目标页面忽略 */ }
@@ -7425,6 +7426,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   function ensureDashboardStyles() { ensureStyleOnce('urppp-dashboard-style', dashboardStyles); }
 
   function ensureScheduleCardStyles() { ensureStyleOnce('urppp-schedule-card-style', scheduleCardStyles); }
+
+  function ensurePlanEnhanceStyles() { ensureStyleOnce('urppp-plan-enhance-style', planEnhanceStyles); }
 
   function ensureMobileStyles() { ensureStyleOnce('urppp-mobile-style', mobileStyles); }
 
