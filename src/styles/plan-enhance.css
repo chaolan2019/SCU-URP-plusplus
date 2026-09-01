@@ -119,3 +119,22 @@
   border-radius: 3px !important;
   padding: 0 2px !important;
 }
+
+/* --- 课组操作按钮（打开/关闭课组）暗色逻辑统一为查找按钮同款 ---
+   原生带 .btn.btn-white.btn-info，暗色下走深蓝底规则；这里压成 --primary/--primary-foreground，
+   与查找按钮主题变量一致，避免暗色 editorail 下米白底/深蓝底两套逻辑不统一。 */
+body.urppp-dark #two .right_top_oper .btn,
+body.urppp-dark .urppp-plan-header .right_top_oper .btn {
+  background: var(--primary, #b53434) !important;
+  background-color: var(--primary, #b53434) !important;
+  background-image: none !important;
+  border-color: var(--primary, #b53434) !important;
+  color: var(--primary-foreground, #fff) !important;
+}
+body.urppp-dark #two .right_top_oper .btn:hover,
+body.urppp-dark .urppp-plan-header .right_top_oper .btn:hover {
+  background: var(--primary-hover, #000) !important;
+  background-color: var(--primary-hover, #000) !important;
+  border-color: var(--primary-hover, #000) !important;
+  box-shadow: 0 0 0 4px var(--ring, rgba(181, 52, 52, 0.15)) !important;
+}
