@@ -10,7 +10,7 @@ import { createFeatureRuntime, defineFeature } from '../core/feature-runtime.js'
 import { escapeHtml } from '../core/html.js';
 import { compareVersions, parseUserscriptVersion } from '../core/version.js';
 import { sha256Bytes, ed25519Verify } from './pure-crypto.js';
-import { gmGet, gmSet } from '../core/gm.js';
+import { gmGet, gmSet, gmGetJson, gmSetJson } from '../core/gm.js';
 import { createApplySkinAttr } from '../styles/skins.js';
 import { httpText, httpTextSoft } from '../core/http.js';
 import {
@@ -8793,6 +8793,76 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     });
   }
 
+  // ---- 清爽模式持久缓存（GM 存储，跨会话）：先读缓存立即渲染，后台拉新覆盖 ----
+  const CLEAN_CACHE_KEY_PREFIX = 'urppp_clean_cache_';
+  function cleanCacheRead(kind) {
+    try {
+      const raw = gmGetJson(CLEAN_CACHE_KEY_PREFIX + kind, null);
+      if (!raw || typeof raw !== 'object' || !('data' in raw)) return null;
+      if (raw.v !== URPPP_VERSION) return null; // 版本变更时废弃旧缓存（数据结构可能变）
+      return raw;
+    } catch (_) { return null; }
+  }
+  function cleanCacheWrite(kind, data) {
+    try { gmSetJson(CLEAN_CACHE_KEY_PREFIX + kind, { v: URPPP_VERSION, ts: Date.now(), data }); } catch (_) {}
+  }
+  function cleanCacheLog(...args) {
+    try { console.log('[URP++ cache]', ...args); } catch (_) {}
+  }
+  // 判定拉取结果是否有效（有真实数据）；无效（错误/空态）不写缓存，避免错误态污染
+  function cleanCacheHasData(d) {
+    if (!d || typeof d !== 'object') return false;
+    if (Array.isArray(d.courses) && d.courses.length) return true; // 课表
+    const pc = d.passing && d.passing[0] && Array.isArray(d.passing[0].courses) ? d.passing[0].courses.length : 0; // 成绩壳内真实课程数
+    if (pc > 0) return true;
+    if (Array.isArray(d.schemes) && d.schemes.some((s) => Array.isArray(s.courses) && s.courses.length)) return true;
+    return false;
+  }
+  // 带缓存的加载器：缓存命中立即返回旧数据并触发一次渲染，随后拉新；拉新结果与缓存不同则覆盖写回并重渲染
+  // onFresh(fresh)：后台拉新成功后的同步回调（把新数据写回 state 并触发重渲染）
+  function withCleanCache(kind, loader, onFresh) {
+    return async function loadWithCache(force) {
+      const cached = force ? null : cleanCacheRead(kind);
+      if (cached) {
+        cleanCacheLog(kind, '命中缓存，先渲染旧数据（' + new Date(cached.ts).toLocaleString() + ' 保存）');
+        // 后台刷新：完成后若数据变化则覆盖缓存并重渲染
+        Promise.resolve().then(async () => {
+          try {
+            const fresh = await loader();
+            if (!cleanCacheHasData(fresh)) { cleanCacheLog(kind, '后台拉取无有效数据，保留旧缓存:', fresh && fresh.error); return; }
+            const changed = JSON.stringify(fresh) !== JSON.stringify(cached.data);
+            cleanCacheLog(kind, changed ? '后台拉取完成，数据有更新，覆盖缓存' : '后台拉取完成，与缓存一致');
+            if (changed) {
+              cleanCacheWrite(kind, fresh);
+              if (typeof onFresh === 'function') { try { onFresh(fresh); } catch (_) {} }
+            }
+          } catch (e) { cleanCacheLog(kind, '后台拉取异常，保留旧缓存:', e && e.message || e); }
+        });
+        return cached.data;
+      }
+      const fresh = await loader();
+      if (cleanCacheHasData(fresh)) { cleanCacheWrite(kind, fresh); cleanCacheLog(kind, '首次拉取成功，写入缓存'); }
+      else cleanCacheLog(kind, '首次拉取无有效数据，不缓存:', fresh && fresh.error);
+      return fresh;
+    };
+  }
+  const loadScheduleCached = withCleanCache('schedule', loadSchedule, (fresh) => {
+    // 后台拉到新课表：同步 state 并重渲染（保持用户锁定周次）
+    try {
+      if (state.schedule && !state.schedule.error) return; // state 已有可用数据（如用户已手动刷新），不覆盖
+      state.schedule = fresh;
+      scheduleRender();
+    } catch (_) {}
+  });
+  const loadScoresCached = withCleanCache('scores', (force) => force ? loadScores(true) : loadScores(false), (fresh) => {
+    try {
+      if (state.scores && !state.scores.error) return;
+      state.scores = fresh;
+      reconcileProfileAndScores();
+      scheduleRender();
+    } catch (_) {}
+  });
+
   async function loadSchedule() {
     try {
       // 优先 JSON（与页面 $.get 一致）
@@ -9641,8 +9711,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       getCurrentWeekNumber,
       loadClassroomCatalog,
       loadProfile,
-      loadSchedule,
-      loadScores,
+      loadSchedule: loadScheduleCached,
+      loadScores: loadScoresCached,
       readRememberedTermWeek,
       reconcileProfileAndScores,
       render,

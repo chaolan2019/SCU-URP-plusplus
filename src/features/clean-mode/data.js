@@ -20,6 +20,18 @@ export function createCleanModeDataLoader({ state, deps }) {
     return state.catalog;
   }
 
+  // 数据是否可用（非 error 态且有内容）；error/空态不算已有数据，下次进入仍尝试缓存/重新拉取
+  function hasUsableSchedule(s) { return !!(s && !s.error && Array.isArray(s.courses) && s.courses.length); }
+  function hasUsableScores(s) {
+    if (!s || s.error) return false;
+    const pc = s.passing && s.passing[0] && Array.isArray(s.passing[0].courses) ? s.passing[0].courses.length : 0;
+    const sc = Array.isArray(s.schemes) && s.schemes.some((x) => Array.isArray(x.courses) && x.courses.length);
+    return pc > 0 || sc;
+  }
+
+  // 个人资料无严格可用性判定（始终拉新，体积小）
+  function hasUsableProfile(p) { return !!p; }
+
   async function loadAll(force) {
     if (force) {
       resetCleanModeData(state);
@@ -34,7 +46,7 @@ export function createCleanModeDataLoader({ state, deps }) {
     await Promise.all([
       (async () => {
         try {
-          if (!(state.profile && !force)) state.profile = await deps.loadProfile();
+          if (!hasUsableProfile(state.profile)) state.profile = await deps.loadProfile();
           deps.reconcileProfileAndScores();
         } catch (error) {
           state.profile = { name: '同学', majorPlan: '主修方案', majorGpa: '—', avatar: '' };
@@ -46,7 +58,7 @@ export function createCleanModeDataLoader({ state, deps }) {
       })(),
       (async () => {
         try {
-          if (!(state.schedule && !force)) state.schedule = await deps.loadSchedule();
+          if (!hasUsableSchedule(state.schedule)) state.schedule = await deps.loadSchedule(force);
         } catch (error) {
           state.schedule = { courses: [], error: String(error && error.message || error) };
         } finally {
@@ -62,7 +74,7 @@ export function createCleanModeDataLoader({ state, deps }) {
       (async () => {
         let scorePack = null;
         try {
-          if (!(state.scores && !force)) state.scores = await deps.loadScores(force);
+          if (!hasUsableScores(state.scores)) scorePack = state.scores = await deps.loadScores(force);
           scorePack = state.scores;
           deps.reconcileProfileAndScores();
           if (scorePack && !scorePack.error && !scorePack.evaluationReady) {
