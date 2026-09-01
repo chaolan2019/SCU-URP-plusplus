@@ -8280,7 +8280,7 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] 
   height: 26px !important;
   padding: 0 10px !important;
   font: 600 11px/1 sans-serif !important;
-  color: #fff !important;
+  color: var(--primary-foreground, #fff) !important;
   background: var(--primary, #b53434) !important;
   border: 1px solid var(--primary, #b53434) !important;
   border-radius: var(--radius-sm, 0) !important;
