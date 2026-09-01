@@ -118,9 +118,13 @@ export function createCleanModeController({ state, deps }) {
         const topRect = topEl ? topEl.getBoundingClientRect() : null;
         const topOffset = Math.max(44, Math.round(topRect ? topRect.bottom - rootRect.top : 60));
         const availableHeight = Math.max(0, Math.round(rootRect.height - topOffset));
+        // zoom 坐标系换算：rect 是视觉像素，而内联 height 是布局像素（会被 root 的 zoom 再缩放）。
+        // zoom=0.9 时布局高 = 视觉高 / 0.9，否则侧栏比可用空间矮一截，底部留白。
+        const zoom = parseFloat(getComputedStyle(el).zoom) || 1;
+        const layoutHeight = zoom !== 1 ? Math.round(availableHeight / zoom) : availableHeight;
         // 站点内联 z-index/top/height 均为 !important，需 JS 内联 important 后设覆盖
         sidebar.style.setProperty('top', topOffset + 'px', 'important');
-        sidebar.style.setProperty('height', availableHeight + 'px', 'important');
+        sidebar.style.setProperty('height', layoutHeight + 'px', 'important');
         sidebar.style.setProperty('z-index', '12030', 'important');
         sidebar.style.setProperty('position', 'fixed', 'important');
       } else {
