@@ -8246,54 +8246,64 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] 
   padding: 0 !important;
   min-width: 0 !important;
 }
-#two .urppp-plan-searchbar input[type="text"] {
-  flex: 0 1 300px !important;
-  height: 32px !important;
-  padding: 0 12px !important;
-  font: 500 13px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif !important;
+
+/* 搜索框：参考教务顶栏 .nav-search-input */
+#two h4.header .urppp-plan-searchbar input[type="text"],
+#two .header .urppp-plan-searchbar input[type="text"] {
+  flex: 0 1 240px !important;
+  height: 28px !important;
+  padding: 0 10px !important;
+  font: 500 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif !important;
   color: var(--text, #1d1d1f) !important;
-  background: var(--surface, #fff) !important;
+  background: var(--input-bg, #f5f5f7) !important;
   border: 1px solid var(--border, #dfe3e8) !important;
-  border-radius: 8px !important;
+  border-radius: var(--radius-sm, 8px) !important;
   outline: none !important;
   box-shadow: none !important;
   box-sizing: border-box !important;
   transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
-#two .urppp-plan-searchbar input[type="text"]::placeholder {
-  color: var(--text-muted, #7c8491) !important;
+#two h4.header .urppp-plan-searchbar input[type="text"]::placeholder,
+#two .header .urppp-plan-searchbar input[type="text"]::placeholder {
+  color: var(--text-secondary, var(--text-muted, #7c8491)) !important;
   opacity: 0.85 !important;
 }
-#two .urppp-plan-searchbar input[type="text"]:focus {
-  border-color: var(--primary, #b53434) !important;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary, #b53434) 16%, transparent) !important;
+#two h4.header .urppp-plan-searchbar input[type="text"]:focus,
+#two .header .urppp-plan-searchbar input[type="text"]:focus {
+  border-color: var(--border-focus, var(--primary, #b53434)) !important;
+  box-shadow: 0 0 0 3px var(--ring, rgba(181, 52, 52, 0.15)) !important;
 }
 
-/* 查找按钮：主色、克制的实心 */
-#two .urppp-plan-search-btn {
-  height: 32px !important;
-  padding: 0 18px !important;
-  font: 600 13px/1 sans-serif !important;
+/* 查找按钮：参考课组操作按钮 .btn.btn-info（胶囊、主色） */
+#two h4.header .urppp-plan-search-btn,
+#two .header .urppp-plan-search-btn {
+  height: 28px !important;
+  padding: 0 12px !important;
+  font: 600 12px/1 sans-serif !important;
   color: #fff !important;
   background: var(--primary, #b53434) !important;
-  border: none !important;
-  border-radius: 8px !important;
+  border: 1px solid var(--primary, #b53434) !important;
+  border-radius: 999px !important;
   cursor: pointer !important;
   white-space: nowrap !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
   box-sizing: border-box !important;
-  transition: filter 0.15s ease !important;
+  transition: all 0.15s ease !important;
 }
-#two .urppp-plan-search-btn:hover {
-  filter: brightness(1.08) !important;
-}
-#two .urppp-plan-search-btn:active {
-  filter: brightness(0.96) !important;
+#two h4.header .urppp-plan-search-btn:hover,
+#two .header .urppp-plan-search-btn:hover {
+  background: var(--primary-hover, #000) !important;
+  border-color: var(--primary-hover, #000) !important;
+  box-shadow: 0 0 0 4px var(--ring, rgba(181, 52, 52, 0.15)) !important;
 }
 
 /* 命中计数 */
 #two .urppp-plan-search-count {
   font: 600 12px/1.4 sans-serif !important;
-  color: var(--text-muted, #7c8491) !important;
+  color: var(--text-secondary, #7c8491) !important;
   white-space: nowrap !important;
 }
 
