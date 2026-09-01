@@ -9133,7 +9133,7 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] 
 #urppp-clean-root .uc-btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
 #urppp-clean-root .uc-shell{flex:1;min-height:0;overflow:auto;padding:20px 28px 28px;display:flex;align-items:stretch;justify-content:center}
 #urppp-clean-root .uc-shell-inner{max-width:1520px;margin:0 auto;width:100%;max-height:100%;min-height:0;overflow:auto;display:flex;flex-direction:column}
-#urppp-clean-root .uc-desktop{display:grid;flex:1 1 auto;grid-template-columns:1fr 1fr;grid-template-rows:minmax(0,1fr);gap:16px;min-height:0}
+#urppp-clean-root .uc-desktop{display:grid;flex:0 0 auto;grid-template-columns:1fr 1fr;grid-template-rows:auto;gap:16px;min-height:0;align-items:start}
 #urppp-clean-root .uc-col{display:flex;flex-direction:column;gap:16px;min-height:0;min-width:0}
 #urppp-clean-root .uc-card{background:var(--surface,#fff);border:1px solid var(--border,#e7e7ea);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04);opacity:0;transform:translateY(14px) scale(.985);animation:ucCardIn .36s cubic-bezier(.22,1,.36,1) forwards;transition:box-shadow .22s ease,transform .22s ease,border-color .22s ease;will-change:transform,opacity}
 #urppp-clean-root .uc-card:hover{box-shadow:0 8px 24px rgba(0,0,0,.06),0 0 0 1px color-mix(in srgb,var(--primary) 8%,var(--border))}
@@ -9144,7 +9144,7 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] 
 #urppp-clean-root .uc-mobile > .uc-card{animation-delay:.05s}
 #urppp-clean-root .uc-mobile > .uc-card:nth-child(2){animation-delay:.12s}
 #urppp-clean-root .uc-mobile > .uc-card:nth-child(3){animation-delay:.19s}
-#urppp-clean-root .uc-card.grow{flex:1 1 0;min-height:220px;display:flex;flex-direction:column}
+#urppp-clean-root .uc-card.grow{flex:0 0 auto;min-height:0;display:flex;flex-direction:column}
 #urppp-clean-root .uc-hd{padding:12px 14px;border-bottom:1px solid var(--border);font-weight:700;font-size:16px;display:flex;justify-content:space-between;align-items:center}
 #urppp-clean-root .uc-bd{padding:14px}
 #urppp-clean-root .uc-card.grow .uc-bd{flex:1;overflow:auto}
@@ -9154,7 +9154,7 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] 
 #urppp-clean-root .uc-name{font-size:18px;font-weight:700;margin:0 0 4px}
 #urppp-clean-root .uc-sub{font-size:12px;color:var(--text-secondary,#667085);line-height:1.5}
 #urppp-clean-root .uc-gpa{margin-top:6px;display:inline-flex;padding:4px 10px;border-radius:999px;background:color-mix(in srgb,var(--primary) 12%,var(--input-bg));font-weight:700;font-size:13px}
-#urppp-clean-root .uc-schedule-wrap{position:relative;overflow:hidden}
+#urppp-clean-root .uc-schedule-wrap{position:relative;overflow:auto;max-height:calc(100vh - 340px)}
 #urppp-clean-root .uc-ghost-week{z-index:6;background:inherit}
 #urppp-clean-root .uc-schedule-wrap .uc-schedule-mask{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;z-index:30;background:color-mix(in srgb,var(--surface) 72%,var(--bg-card));backdrop-filter:blur(3px)}
 #urppp-clean-root .uc-schedule-wrap .uc-mask-ico{width:52px;height:52px;color:var(--primary);line-height:0}
