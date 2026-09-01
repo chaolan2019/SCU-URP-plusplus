@@ -72,12 +72,14 @@ import {
   exportNativePdfIsolated,
   isNativePdfIsolationActive,
 } from '../features/schedule-export/native-pdf.js';
+import { createPlanTreeEnhance } from '../features/plan-enhance/plan-tree-enhance.js';
 import featureStyles from '../styles/features.css';
 import internalStyles from '../styles/internal.css';
 import scheduleCardStyles from '../styles/schedule-cards.css';
 import scheduleExportStyles from '../styles/schedule-export.css';
 import settingsStyles from '../styles/settings.css';
 import tableBeautifyStyles from '../styles/table-beautify.css';
+import planEnhanceStyles from '../styles/plan-enhance.css';
 import navigationStyles from '../styles/navigation.css';
 import cleanModeStyles from '../styles/clean-mode.css';
 import dashboardStyles from '../styles/dashboard.css';
@@ -3637,6 +3639,18 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       });
     }
   }
+  // 培养方案查增强：点课程复制课程号 + header 搜索 + header 常驻
+  function initPlanEnhance() {
+    try {
+      const tree = document.getElementById('treeDemo');
+      if (!tree) return;
+      const header = document.querySelector('#two h4.header, #two .header');
+      if (!header) return;
+      // header 已注入搜索框但树未就绪也不重复绑（search 用委托+幂等）
+      const scrollCtx = header.closest('.scrollspy-example') || header.closest('[class*="scroll"]') || document.getElementById('page-content-template');
+      createPlanTreeEnhance({ tree, header, scrollCtx, deps: { toast } });
+    } catch (_) { /* 非目标页面忽略 */ }
+  }
   // 表格外框 wrapper：圆角 + 完整四边线
 
   // 评估公告 / 通知列表：
@@ -5104,6 +5118,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     setTimeout(fixSinglePairProfileForms, 1000);
     beautifyPlanTree();
     setTimeout(() => beautifyPlanTree(), 400);
+    // 培养方案查增强：点课程复制课程号 + header 搜索 + header 常驻
+    initPlanEnhance();
+    setTimeout(() => initPlanEnhance(), 400);
     if (!window.__urpppPlanTreeObs) {
       let planTimer = 0;
       window.__urpppPlanTreeObs = new MutationObserver(() => {

@@ -1,0 +1,90 @@
+/* ==========================================================================
+   培养方案查增强（plan-enhance）
+   只作用于 /student/integratedQuery/planCompletion/getPyfaIndex/ 页面
+   ========================================================================== */
+
+/* --- header 常驻（sticky，跟随滚动容器 .scrollspy-example） --- */
+#two h4.header.urppp-plan-sticky {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 11800 !important;
+  background: var(--surface, #fff) !important;
+  border-bottom: 1px solid var(--border, #e5e9ef) !important;
+  padding: 8px 10px !important;
+  margin: 0 !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05) !important;
+}
+
+/* --- header 内的搜索框 --- */
+#two h4.header .urppp-plan-search,
+#two .header .urppp-plan-search {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-left: 12px !important;
+  vertical-align: middle !important;
+  position: relative !important;
+  top: -1px !important;
+}
+#two .urppp-plan-search input[type="text"] {
+  width: 220px !important;
+  height: 30px !important;
+  padding: 0 10px !important;
+  font: 500 12px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif !important;
+  color: var(--text, #1d1d1f) !important;
+  background: var(--surface, #fff) !important;
+  border: 1px solid var(--border, #dfe3e8) !important;
+  border-radius: 8px !important;
+  outline: none !important;
+  box-shadow: none !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+#two .urppp-plan-search input[type="text"]::placeholder {
+  color: var(--text-muted, #7c8491) !important;
+  opacity: 0.8 !important;
+}
+#two .urppp-plan-search input[type="text"]:focus {
+  border-color: var(--primary, #b53434) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary, #b53434) 18%, transparent) !important;
+}
+#two .urppp-plan-search-count {
+  font: 600 11px/1 sans-serif !important;
+  color: var(--text-muted, #7c8491) !important;
+  white-space: nowrap !important;
+  min-width: 0 !important;
+}
+
+/* --- 命中课程节点高亮 --- */
+#treeDemo .urppp-search-hit > a {
+  outline: 2px solid var(--primary, #b53434) !important;
+  outline-offset: -2px !important;
+  border-radius: 4px !important;
+  background: color-mix(in srgb, var(--primary, #b53434) 8%, transparent) !important;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary, #b53434) 30%, transparent) !important;
+}
+#treeDemo .urppp-search-hit > a .urppp-code {
+  color: var(--primary, #b53434) !important;
+  font-weight: 700 !important;
+}
+#treeDemo .urppp-code-hit {
+  text-decoration: underline !important;
+  text-decoration-style: dashed !important;
+  text-decoration-color: var(--primary, #b53434) !important;
+  text-underline-offset: 2px !important;
+}
+
+/* --- 课程节点 hover 提示可复制 --- */
+#treeDemo li[data-urppp-copy-bound="1"] > a {
+  cursor: pointer !important;
+}
+#treeDemo li[data-urppp-copy-bound="1"] > a:hover .urppp-code {
+  background: color-mix(in srgb, var(--primary, #b53434) 12%, transparent) !important;
+  border-radius: 3px !important;
+  padding: 0 2px !important;
+}
+
+/* --- 搜索结果状态：无命中时输入框轻提示 --- */
+#two .urppp-plan-search.ok-empty input[type="text"] {
+  border-color: var(--danger, #d33) !important;
+}
