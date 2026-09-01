@@ -1,23 +1,28 @@
 import { resetCleanModeData } from './state.js';
 
 export function createCleanModeDataLoader({ state, deps }) {
+  let roomCatalogPromise = null; // 并发共享：进行中的加载 Promise，避免后来者拿到空数组后无人刷新弹窗
   async function ensureRoomCatalogLoaded(force) {
     if (!force && state.catalog && state.catalog.length) return state.catalog;
-    if (state.loading.room) return state.catalog;
+    if (state.loading.room && roomCatalogPromise) return roomCatalogPromise;
     state.loading.room = true;
-    try { deps.render(); } catch (_) { /* ignore */ }
-    try {
-      state.catalog = await deps.loadClassroomCatalog();
-      state.roomError = '';
-    } catch (error) {
-      state.catalog = state.catalog || [];
-      state.roomError = String(error && error.message || error);
-      console.warn('[URP++] room catalog', error);
-    } finally {
-      state.loading.room = false;
-      try { deps.scheduleRender(); } catch (_) { /* ignore */ }
-    }
-    return state.catalog;
+    roomCatalogPromise = (async () => {
+      try { deps.render(); } catch (_) { /* ignore */ }
+      try {
+        state.catalog = await deps.loadClassroomCatalog();
+        state.roomError = '';
+      } catch (error) {
+        state.catalog = state.catalog || [];
+        state.roomError = String(error && error.message || error);
+        console.warn('[URP++] room catalog', error);
+      } finally {
+        state.loading.room = false;
+        roomCatalogPromise = null;
+        try { deps.scheduleRender(); } catch (_) { /* ignore */ }
+      }
+      return state.catalog;
+    })();
+    return roomCatalogPromise;
   }
 
   // 数据是否可用（非 error 态且有内容）；error/空态不算已有数据，下次进入仍尝试缓存/重新拉取
