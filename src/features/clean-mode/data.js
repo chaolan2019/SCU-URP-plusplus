@@ -9,8 +9,11 @@ export function createCleanModeDataLoader({ state, deps }) {
     roomCatalogPromise = (async () => {
       try { deps.render(); } catch (_) { /* ignore */ }
       try {
-        state.catalog = await deps.loadClassroomCatalog();
-        state.roomError = '';
+        // 缓存版加载器可能返回归一化包装（__empty/__error），拆包为数组
+        const raw = await deps.loadClassroomCatalog();
+        const cat = Array.isArray(raw) ? raw : [];
+        state.catalog = cat;
+        state.roomError = cat.length ? '' : (!Array.isArray(raw) && raw && raw.__error ? raw.__error : '未解析到教学楼，请刷新后重试');
       } catch (error) {
         state.catalog = state.catalog || [];
         state.roomError = String(error && error.message || error);
@@ -34,8 +37,8 @@ export function createCleanModeDataLoader({ state, deps }) {
     return pc > 0 || sc;
   }
 
-  // 个人资料无严格可用性判定（始终拉新，体积小）
-  function hasUsableProfile(p) { return !!p; }
+  // 个人资料无严格可用性判定（缓存层以 name 非空为准；缓存命中时 state.profile 直接可用）
+  function hasUsableProfile(p) { return !!(p && (p.name || p.avatar || p.majorPlan)); }
 
   async function loadAll(force) {
     if (force) {

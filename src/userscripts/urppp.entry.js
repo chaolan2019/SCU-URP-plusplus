@@ -8862,6 +8862,31 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       scheduleRender();
     } catch (_) {}
   });
+  // 个人资料（姓名/方案/绩点，变化极少）与教室目录（学期内稳定）同样持久缓存
+  const loadProfileCached = withCleanCache('profile', async () => {
+    const p = await loadProfile();
+    // profile 无 error 字段：以姓名非空为有效判定
+    return p && p.name ? p : { ...p, error: 'profile-empty' };
+  }, (fresh) => {
+    try {
+      if (state.profile && state.profile.name) return;
+      state.profile = fresh;
+      reconcileProfileAndScores();
+      scheduleRender();
+    } catch (_) {}
+  });
+  const loadRoomCatCached = withCleanCache('roomcat', async () => {
+    try {
+      const cat = await loadClassroomCatalog();
+      if (Array.isArray(cat) && cat.length) return cat;
+      return { __empty: true };
+    } catch (e) { return { __error: String(e && e.message || e) }; }
+  }, (fresh) => {
+    try {
+      if (state.catalog && state.catalog.length) return;
+      if (Array.isArray(fresh)) { state.catalog = fresh; scheduleRender(); }
+    } catch (_) {}
+  });
 
   async function loadSchedule() {
     try {
@@ -9401,7 +9426,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return occupancyTypeLabel(ct);
   }
 
+  // 教室课表会话缓存：同教室同方案学期内稳定，切换日期/重进楼栋不重复拉取
+  const roomCurriculumCache = new Map();
   async function fetchClassroomCurriculum(planNumber, campusNumber, buildingNumber, classroomNumber) {
+    const ck = planNumber + '/' + campusNumber + '/' + buildingNumber + '/' + classroomNumber;
+    if (roomCurriculumCache.has(ck)) return roomCurriculumCache.get(ck);
     const q = new URLSearchParams({
       planNumber: String(planNumber || ''),
       campusNumber: String(campusNumber || ''),
@@ -9411,12 +9440,16 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const raw = await fetchText('/student/teachingResources/classroomCurriculum/searchCurriculum/callback?' + q.toString());
     try {
       const data = JSON.parse(raw);
+      let out;
       if (Array.isArray(data)) {
-        if (data.length && Array.isArray(data[0])) return data[0];
-        return data.filter((x) => x && typeof x === 'object' && (x.kcm || (x.id && x.id.kch)));
+        out = (data.length && Array.isArray(data[0])) ? data[0] : data.filter((x) => x && typeof x === 'object' && (x.kcm || (x.id && x.id.kch)));
+      } else if (data && Array.isArray(data.list)) {
+        out = data.list;
+      } else {
+        out = [];
       }
-      if (data && Array.isArray(data.list)) return data.list;
-      return [];
+      roomCurriculumCache.set(ck, out);
+      return out;
     } catch (_) {
       return [];
     }
@@ -9465,7 +9498,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       }
       return cache[roomName];
     };
-    const concurrency = 4;
+    const concurrency = 6;
     let idx = 0;
     const workers = new Array(Math.min(concurrency, Math.max(busyRooms.length, 1))).fill(0).map(async () => {
       while (idx < busyRooms.length) {
@@ -9513,6 +9546,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     return 'kind-busy';
   }
 
+  const occupancyCache = new Map(); // 楼栋占用会话缓存 key: xqh/jxlh/date
+
   async function loadBuildingOccupancy(building) {
     // building: {path, campusNumber, buildingNumber, name} or legacy path string
     let xqh = '', jxlh = '', name = '', pagePath = '';
@@ -9529,6 +9564,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (!xqh || !jxlh) throw new Error('缺少校区/楼栋编号');
     const offset = Number(building && building.dateOffset != null ? building.dateOffset : state.roomDateOffset) || 0;
     const date = formatLocalDate(addDays(new Date(), offset));
+    // 会话内缓存：同楼同日期复用（切换日期/返回列表再进来不重复拉取）
+    const occCacheKey = xqh + '/' + jxlh + '/' + date;
+    if (!force && occupancyCache.has(occCacheKey)) return occupancyCache.get(occCacheKey);
     // 与页面 $("#searchCondition").serialize() 对齐
     const body = 'xqh=' + encodeURIComponent(xqh)
       + '&jxlh=' + encodeURIComponent(jxlh)
@@ -9619,7 +9657,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const dObj = parseLocalDate(data.date || date) || addDays(new Date(), offset);
     const weekday = data.week != null ? Number(data.week) : dObj.getDay();
     const dayTag = offset === 1 ? '明天' : (offset === 2 ? '后天' : '今天');
-    return {
+    const result = {
       rooms,
       dateLabel: (data.date || date) + '（周' + (weekNames[weekday] || weekday) + ' · ' + dayTag + '）',
       jxzc: data.jxzc,
@@ -9628,6 +9666,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       searchDate: data.date || date,
       dateOffset: offset
     };
+    occupancyCache.set(occCacheKey, result);
+    return result;
   }
 
   function addDays(base, days) {
@@ -9709,8 +9749,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       ensureTermWeekResolved,
       enrichScoresWithEvaluation,
       getCurrentWeekNumber,
-      loadClassroomCatalog,
-      loadProfile,
+      loadClassroomCatalog: loadRoomCatCached,
+      loadProfile: loadProfileCached,
       loadSchedule: loadScheduleCached,
       loadScores: loadScoresCached,
       readRememberedTermWeek,
