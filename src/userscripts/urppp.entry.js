@@ -6063,38 +6063,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   }
 
   // 检查后：在已装卡片右侧加上「有新更新」徽标按钮
-  function applyStoreUpdateBadges(root, catalog) {
-    let updated = 0;
-    catalog.forEach((item) => {
-      if (!item.id) return;
-      // 主题：已装且版本落后
-      const themeEl = root.querySelector('[data-theme-use="' + item.id + '"]');
-      if (themeEl && versionGt(item.version, SKIN_CATALOG.find((s) => s.id === item.id) && SKIN_CATALOG.find((s) => s.id === item.id).version)) {
-        addUpdateBadge(themeEl.closest('.urppp-skin-card'), '主题');
-        updated += 1;
-      }
-      // 插件：已注册且版本落后
-      const pluginEl = root.querySelector('[data-plugin-id="' + item.id + '"]');
-      if (pluginEl) {
-        const cur = (pluginManager && pluginManager.api && pluginManager.api.get && pluginManager.api.get(item.id));
-        if (cur && versionGt(item.version, cur.version)) { addUpdateBadge(pluginEl.closest('.urppp-store-item'), '插件'); updated += 1; }
-      }
-    });
-    return updated;
-  }
-
-  function addUpdateBadge(itemEl, label) {
-    if (!itemEl || itemEl.querySelector('.urppp-store-update')) return;
-    const ops = itemEl.querySelector('.urppp-store-ops');
-    if (!ops) return;
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'urppp-set-btn urppp-store-update';
-    b.textContent = '有新更新';
-    b.addEventListener('click', () => { try { b.textContent = '更新中…'; } catch (_) {} });
-    ops.appendChild(b);
-  }
-
   function bindStoreManageSettings(root) {
     const auto = root.querySelector('[data-store-auto-update]');
     const check = root.querySelector('[data-store-check-update]');

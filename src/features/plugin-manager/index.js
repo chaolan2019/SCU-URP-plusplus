@@ -28,7 +28,6 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
   const registry = new Map(); // id -> plugin instance
   const state = new Map();    // id -> { loaded, enabled, version, code? }
   const events = new Map();   // event -> Set<cb>
-  const listeners = [];       // onPage 回调（页面级引导）收集
   let lastFail = null;        // 最近一次装载失败信息（refresh 不清空，避免被覆盖）
 
   function emit(name, payload) {
