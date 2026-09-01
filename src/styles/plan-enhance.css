@@ -3,11 +3,12 @@
    只作用于 /student/integratedQuery/planCompletion/getPyfaIndex/ 页面
    ========================================================================== */
 
-/* --- header 常驻（sticky，跟随滚动容器 .scrollspy-example） --- */
+/* --- header 常驻（sticky，跟随滚动容器 .scrollspy-example） ---
+   z-index 必须低于教务原生顶栏 navbar(z=1100) 和清爽模式(UIP), 否则 sticky 吸顶时会盖住顶栏 */
 #two h4.header.urppp-plan-sticky {
   position: sticky !important;
   top: 0 !important;
-  z-index: 11800 !important;
+  z-index: 1030 !important;
   background: var(--surface, #fff) !important;
   border-bottom: 1px solid var(--border, #e5e9ef) !important;
   padding: 8px 12px !important;

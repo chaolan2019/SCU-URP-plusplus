@@ -8216,11 +8216,12 @@ html.urppp-theme-dark #urppp-settings-panel .urppp-skin-card[data-skin="apple"] 
    只作用于 /student/integratedQuery/planCompletion/getPyfaIndex/ 页面
    ========================================================================== */
 
-/* --- header 常驻（sticky，跟随滚动容器 .scrollspy-example） --- */
+/* --- header 常驻（sticky，跟随滚动容器 .scrollspy-example） ---
+   z-index 必须低于教务原生顶栏 navbar(z=1100) 和清爽模式(UIP), 否则 sticky 吸顶时会盖住顶栏 */
 #two h4.header.urppp-plan-sticky {
   position: sticky !important;
   top: 0 !important;
-  z-index: 11800 !important;
+  z-index: 1030 !important;
   background: var(--surface, #fff) !important;
   border-bottom: 1px solid var(--border, #e5e9ef) !important;
   padding: 8px 12px !important;
@@ -9493,7 +9494,7 @@ html.urppp-clean-open .modal-backdrop{z-index:12045 !important}
 #urppp-clean-root .uc-tabbar{display:none}
 #urppp-clean-root .uc-mask{position:fixed;inset:0;background:rgba(15,23,42,.36);z-index:12010;display:block;opacity:0;pointer-events:none;transition:opacity .22s ease;backdrop-filter:blur(0px)}
 #urppp-clean-root .uc-mask.open{opacity:1;pointer-events:auto;backdrop-filter:blur(2px)}
-#urppp-clean-root .uc-modal{position:fixed;z-index:12060;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);width:min(980px,92vw);max-height:calc(100vh - 48px);background:var(--surface);border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .24s cubic-bezier(.22,1,.36,1),transform .28s cubic-bezier(.22,1,.36,1)}
+#urppp-clean-root .uc-modal{position:fixed;z-index:12060;left:50%;top:calc(60px + (100vh - 60px)/2);transform:translate(-50%,-50%) scale(.96);width:min(980px,92vw);max-height:calc(100vh - 60px - 16px);background:var(--surface);border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .24s cubic-bezier(.22,1,.36,1),transform .28s cubic-bezier(.22,1,.36,1)}
 #urppp-clean-root .uc-modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
 #urppp-clean-root .uc-modal-hd{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:17px;flex:0 0 auto}
 #urppp-clean-root .uc-modal-bd{padding:12px 14px;overflow:auto;flex:1 1 auto;min-height:0}
