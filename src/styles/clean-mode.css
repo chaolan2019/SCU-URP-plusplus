@@ -22,7 +22,7 @@
   #urppp-clean-root .uc-modal,#urppp-settings-panel,#urppp-update-changelog,#urppp-update-toast,#urppp-clean-root,#urppp-cal-modal .cal-dialog{transition:none!important;animation:none!important;opacity:1!important;transform:none!important}
   #urppp-clean-root .uc-modal.open>*,#urppp-settings-panel.open>*,#urppp-update-changelog.open>*,#urppp-cal-modal.open .cal-modal-wrap>*,#urppp-clean-root.open .uc-card,#urppp-clean-root.open .uc-top{opacity:1!important;transform:none!important;animation:none!important}
 }
-#urppp-clean-root{position:fixed;inset:0;z-index:12000;display:none;flex-direction:column;background:var(--bg,#F4F6F9);color:var(--text,#111);font-family:inherit;clip-path:inset(0 0 100% 0);opacity:.6;transform:translateY(10px);zoom:0.9}
+#urppp-clean-root{position:fixed;inset:0;z-index:12000;display:none;flex-direction:column;background:var(--bg,#F4F6F9);color:var(--text,#111);font-family:inherit;clip-path:inset(0 0 100% 0);opacity:.6;transform:translateY(10px)}
 #urppp-clean-root.open{display:flex;clip-path:inset(0 0 0 0);opacity:1;transform:none;animation:cleanExpand .38s cubic-bezier(.22,1,.36,1) forwards;will-change:clip-path,opacity}
 @keyframes cleanExpand{from{clip-path:inset(0 0 100% 0);opacity:.6;transform:translateY(10px)}to{clip-path:inset(0 0 0 0);opacity:1;transform:none}}
 /* 清爽模式退出：矩形收回 + 淡出。closing 保持 display:flex，动画总播 */
@@ -36,7 +36,7 @@
 #urppp-clean-root .uc-btn:active{transform:translateY(0) scale(.98);box-shadow:none}
 #urppp-clean-root .uc-btn.primary{background:var(--primary);border-color:var(--primary);color:#fff}
 #urppp-clean-root .uc-shell{flex:1;min-height:0;overflow:auto;padding:20px 28px 28px;display:flex;align-items:stretch;justify-content:center}
-#urppp-clean-root .uc-shell-inner{max-width:1520px;margin:0 auto;width:100%;max-height:100%;min-height:0;overflow:auto;display:flex;flex-direction:column;padding:0 10px}
+#urppp-clean-root .uc-shell-inner{max-width:1685px;margin:0 auto;width:100%;min-height:0;display:flex;flex-direction:column;padding:0 10px;zoom:0.9}
 #urppp-clean-root .uc-desktop{display:grid;flex:0 0 auto;grid-template-columns:1fr 1fr;grid-template-rows:auto;gap:16px;min-height:0;align-items:start}
 #urppp-clean-root .uc-col{display:flex;flex-direction:column;gap:16px;min-height:0;min-width:0}
 #urppp-clean-root .uc-card{background:var(--surface,#fff);border:1px solid var(--border,#e7e7ea);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04);opacity:0;transform:translateY(14px) scale(.985);animation:ucCardIn .36s cubic-bezier(.22,1,.36,1) forwards;transition:box-shadow .22s ease,transform .22s ease,border-color .22s ease;will-change:transform,opacity}
@@ -264,7 +264,7 @@ html.urppp-clean-open .modal-backdrop{z-index:12045 !important}
 #urppp-clean-root .uc-modal{position:fixed;z-index:12060;left:50%;top:calc(60px + 14px);transform:translate(-50%,0) scale(.96);width:min(980px,92vw);max-height:calc(100vh - 60px - 28px);background:var(--surface);border:1px solid var(--border);border-radius:16px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .24s cubic-bezier(.22,1,.36,1),transform .28s cubic-bezier(.22,1,.36,1)}
 #urppp-clean-root .uc-modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,0) scale(1)}
 #urppp-clean-root .uc-modal-hd{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:17px;flex:0 0 auto}
-#urppp-clean-root .uc-modal-bd{padding:12px 14px;overflow:auto;flex:1 1 auto;min-height:0}
+#urppp-clean-root .uc-modal-bd{padding:12px 14px;overflow:auto;flex:1 1 auto;min-height:0;zoom:0.9}
 #urppp-clean-root .uc-modal-ft{padding:10px 14px;border-top:1px solid var(--border);background:var(--input-bg);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;flex:0 0 auto;position:relative;z-index:2}
 #urppp-clean-root .uc-modal-ft #uc-calc{flex:1 1 auto;min-width:0;font-size:14px}
 #urppp-clean-root .uc-modal-ft #uc-clear{flex:0 0 auto}
