@@ -858,7 +858,7 @@
           }
           @media (max-width:900px){
             html[data-urppp-skin="editorial"] #urppp-clean-root .uc-shell{
-              padding:14px 22px 12px!important;
+              padding:14px 10px 12px!important;
             }
             html[data-urppp-skin="editorial"] #urppp-clean-root .uc-desktop,
             html[data-urppp-skin="editorial"] #urppp-clean-root .uc-col{
@@ -9608,7 +9608,8 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
   #sidebar.urppp-clean-sidebar{top:52px !important;height:calc(100vh - 52px) !important}
   #urppp-clean-root .uc-top-actions .uc-btn span{display:none}
   #urppp-clean-root .uc-top-actions .uc-btn{width:34px;padding:0;justify-content:center}
-  #urppp-clean-root .uc-shell{padding:0 22px calc(12px + env(safe-area-inset-bottom));align-items:stretch;justify-content:flex-start}
+  #urppp-clean-root .uc-shell{padding:0 10px calc(12px + env(safe-area-inset-bottom));align-items:stretch;justify-content:flex-start}
+  #urppp-clean-root .uc-shell-inner{padding:0 6px}
   #urppp-clean-root .uc-mobile > .uc-card:first-child{margin-top:4px}
   #urppp-clean-root .uc-mobile > .uc-card:last-child{margin-bottom:10px}
   #urppp-clean-root .uc-desktop{display:none}

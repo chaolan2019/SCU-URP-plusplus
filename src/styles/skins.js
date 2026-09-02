@@ -896,7 +896,7 @@ export function createApplySkinAttr({ getSkin, getSkinShapeOverrides, isAppleEdg
           }
           @media (max-width:900px){
             html[data-urppp-skin="editorial"] #urppp-clean-root .uc-shell{
-              padding:14px 22px 12px!important;
+              padding:14px 10px 12px!important;
             }
             html[data-urppp-skin="editorial"] #urppp-clean-root .uc-desktop,
             html[data-urppp-skin="editorial"] #urppp-clean-root .uc-col{
