@@ -9604,7 +9604,7 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
   #urppp-clean-root .uc-top-actions .uc-btn{width:34px;padding:0;justify-content:center}
   #urppp-clean-root .uc-shell{padding:0 10px calc(12px + env(safe-area-inset-bottom));align-items:stretch;justify-content:flex-start}
   #urppp-clean-root .uc-shell-inner{padding:0 6px}
-  #urppp-clean-root .uc-mobile > .uc-card:first-child{margin-top:4px}
+  #urppp-clean-root .uc-mobile > .uc-card:first-child{margin-top:8px}
   #urppp-clean-root .uc-mobile > .uc-card:last-child{margin-bottom:10px}
   #urppp-clean-root .uc-desktop{display:none}
   #urppp-clean-root .uc-mobile{display:block}
