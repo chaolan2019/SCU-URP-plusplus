@@ -9613,7 +9613,7 @@ html body #navbar #urppp-nav-clean,#urppp-nav-cal,html body #urppp-nav-theme #ur
   #urppp-clean-root .uc-mobile > .uc-card:last-child{margin-bottom:10px}
   #urppp-clean-root .uc-desktop{display:none}
   #urppp-clean-root .uc-mobile{display:block}
-  #urppp-clean-root .uc-tabbar{display:flex;position:relative;left:0;right:0;bottom:0;height:68px;box-sizing:border-box;background:var(--surface);border-top:1px solid var(--border);z-index:12005;padding:4px 0 calc(4px + env(safe-area-inset-bottom));flex-shrink:0}
+  #urppp-clean-root .uc-tabbar{display:flex;position:relative;height:68px;box-sizing:border-box;background:var(--surface);border-top:1px solid var(--border);z-index:12005;padding:4px 0 calc(4px + env(safe-area-inset-bottom));flex-shrink:0}
   #urppp-clean-root .uc-tabbar button{flex:1;border:0;background:transparent;color:var(--text-secondary);font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
   #urppp-clean-root .uc-tabbar button svg{width:28px!important;height:28px!important;display:block;flex:0 0 auto}
   #urppp-clean-root .uc-tabbar button.ac{color:var(--primary);font-weight:700}
