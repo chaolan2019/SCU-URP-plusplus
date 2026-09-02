@@ -88,7 +88,7 @@
 #urppp-clean-root .uc-week-head .h{font-size:11px;text-align:center;color:var(--text-secondary)}
 #urppp-clean-root .uc-week-body{display:grid;grid-template-columns:26px repeat(7,minmax(0,1fr));gap:5px;align-items:start}
 #urppp-clean-root .uc-sec-col .s{height:56px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text-muted,#98a2b3)}
-#urppp-clean-root .uc-day-col{position:relative;height:calc(48px * 12);background:transparent}
+#urppp-clean-root .uc-day-col{position:relative;height:calc(52px * 12);background:transparent}
 #urppp-clean-root .uc-grid-cell{position:absolute;left:0;right:0;height:52px;border-radius:10px;background:var(--input-bg);border:1px solid color-mix(in srgb,var(--border) 65%,transparent)}
 #urppp-clean-root .uc-day-col .uc-grid-cell{width:100%}
 #urppp-clean-root .uc-lesson{position:absolute;left:0;right:0;z-index:2;border:1px solid color-mix(in srgb,var(--primary) 24%,var(--border));border-radius:10px;padding:6px 7px 16px;cursor:pointer;overflow:hidden;box-sizing:border-box;transition:transform .18s ease,box-shadow .18s ease,filter .18s ease;will-change:transform}
