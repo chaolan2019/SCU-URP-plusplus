@@ -858,7 +858,7 @@
           }
           @media (max-width:900px){
             html[data-urppp-skin="editorial"] #urppp-clean-root .uc-shell{
-              padding:14px 12px 88px!important;
+              padding:14px 22px 12px!important;
             }
             html[data-urppp-skin="editorial"] #urppp-clean-root .uc-desktop,
             html[data-urppp-skin="editorial"] #urppp-clean-root .uc-col{
