@@ -651,9 +651,6 @@
           }
           html[data-urppp-skin="editorial"] #urppp-clean-root .uc-hd-tabs .uc-sa-tab.ac::after,
           html[data-urppp-skin="editorial"] #urppp-settings-panel .urppp-set-tab.ac::after{display:none!important;}
-          html[data-urppp-skin="editorial"] #urppp-clean-root .uc-shell{
-            padding:28px 36px 36px!important;
-          }
           html[data-urppp-skin="editorial"] #urppp-clean-root .uc-desktop,
           html[data-urppp-skin="editorial"] #urppp-clean-root .uc-col{
             gap:24px!important;
@@ -857,9 +854,6 @@
             outline:1px solid var(--text)!important;outline-offset:3px!important;
           }
           @media (max-width:900px){
-            html[data-urppp-skin="editorial"] #urppp-clean-root .uc-shell{
-              padding:14px 10px 12px!important;
-            }
             html[data-urppp-skin="editorial"] #urppp-clean-root .uc-desktop,
             html[data-urppp-skin="editorial"] #urppp-clean-root .uc-col{
               gap:18px!important;
