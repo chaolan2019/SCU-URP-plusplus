@@ -34,6 +34,6 @@ SCU URP++ 各界面效果截图全集。主 README 仅展示核心四图，本�
 
 ![清爽 · 编辑杂志](./Clean-Mode-Magazine.jpg)
 
-## 移动端侧边栏
+## 重构侧边栏
 
 ![移动端侧边栏](./Side-Bar-Mobile.jpg)
