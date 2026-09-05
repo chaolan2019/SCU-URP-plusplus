@@ -28,6 +28,20 @@ test('metadata versions match runtime constants', async () => {
   }
 });
 
+test('main userscript keeps broad match but isolates runtime beautification hosts', async () => {
+  const [metadataText, source] = await Promise.all([
+    readFile(new URL('../src/metadata/urppp.json', import.meta.url), 'utf8'),
+    readFile(new URL('../src/userscripts/urppp.entry.js', import.meta.url), 'utf8'),
+  ]);
+  const metadata = JSON.parse(metadataText);
+  assert.ok(metadata.match.includes('https://*.scu.edu.cn/*'), '保留 SCU 子域名 @match');
+  assert.match(source, /MAIN_BEAUTIFY_HOSTS\s*=\s*new Set\(\['zhjw\.scu\.edu\.cn',\s*'202\.115\.47\.141'\]\)/);
+  assert.match(source, /location\.protocol\s*===\s*['"]http:['"]/);
+  assert.match(source, /if \(!isMainBeautifyTarget\) return;/);
+  assert.ok(source.indexOf('if (/^id\\./i.test') < source.indexOf('if (!isMainBeautifyTarget) return;'), '登录辅助分支先于主站隔离');
+  assert.ok(source.indexOf('if (!isMainBeautifyTarget) return;') < source.indexOf('function ensureBootLoader'), '隔离先于遮罩注入');
+});
+
 test('current main userscript version has a changelog release section', async () => {
   const [metadataText, changelog] = await Promise.all([
     readFile(new URL('../src/metadata/urppp.json', import.meta.url), 'utf8'),

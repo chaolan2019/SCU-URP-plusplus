@@ -105,28 +105,14 @@ import { createNavbarController } from '../features/navigation/navbar.js';
 (function () {
   'use strict';
 
-  // ===== 移动端早期适配（UA 检测，document-start 阶段执行） =====
-  // 教务系统部分页面无 viewport meta：手机浏览器默认按 980px 布局渲染再整体缩放，
-  // 叠加插件媒体查询后布局错乱。UA 命中移动端时注入 viewport 让视口等于真实设备宽度，
-  // 并给 <html> 打 urppp-mobile 标记供后续功能（如移动端清爽模式）引用。
-  try {
-    const UA = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
-    if (/Android|iPhone|iPad|iPod|Mobile/i.test(UA)) {
-      if (document.documentElement) {
-        document.documentElement.classList.add('urppp-mobile');
-      }
-      let viewportMeta = document.querySelector('meta[name="viewport"]');
-      if (!viewportMeta) {
-        viewportMeta = document.createElement('meta');
-        viewportMeta.name = 'viewport';
-        viewportMeta.content = 'width=device-width, initial-scale=1';
-        (document.head || document.documentElement || document).appendChild(viewportMeta);
-      }
-    }
-  } catch (_) { /* viewport 注入失败不影响插件其余功能 */ }
-
   // 与脚本头 @version 保持同步
   const URPPP_VERSION = '2.0.0';
+
+  // @match 需要覆盖 SCU 子域名以兼容脚本运行环境，但主站美化严格限定在两个旧版 URP 入口。
+  // 其他 SCU 站点在任何 DOM/CSS/viewport 副作用发生前退出，避免被误套用整套教务美化。
+  const MAIN_BEAUTIFY_HOSTS = new Set(['zhjw.scu.edu.cn', '202.115.47.141']);
+  const isMainBeautifyTarget = location.protocol === 'http:'
+    && MAIN_BEAUTIFY_HOSTS.has(String(location.hostname || '').toLowerCase());
 
   // 统一认证页(id.scu)：主插件不做任何美化，仅作为宿主注入辅助插件(登录助手/2FA/会话保持)
   // 避免主插件的样式/布局污染统一认证网站界面，同时保留辅助插件的登录相关功能
@@ -149,6 +135,29 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     } catch (_) { /* ignore */ }
     return;
   }
+  // 保留宽泛 @match，但非两个主站入口不执行主插件，避免 HTTPS/其他 SCU 子站被误美化。
+  if (!isMainBeautifyTarget) return;
+
+  // ===== 移动端早期适配（UA 检测，document-start 阶段执行） =====
+  // 教务系统部分页面无 viewport meta：手机浏览器默认按 980px 布局渲染再整体缩放，
+  // 叠加插件媒体查询后布局错乱。UA 命中移动端时注入 viewport 让视口等于真实设备宽度，
+  // 并给 <html> 打 urppp-mobile 标记供后续功能（如移动端清爽模式）引用。
+  try {
+    const UA = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+    if (/Android|iPhone|iPad|iPod|Mobile/i.test(UA)) {
+      if (document.documentElement) {
+        document.documentElement.classList.add('urppp-mobile');
+      }
+      let viewportMeta = document.querySelector('meta[name="viewport"]');
+      if (!viewportMeta) {
+        viewportMeta = document.createElement('meta');
+        viewportMeta.name = 'viewport';
+        viewportMeta.content = 'width=device-width, initial-scale=1';
+        (document.head || document.documentElement || document).appendChild(viewportMeta);
+      }
+    }
+  } catch (_) { /* viewport 注入失败不影响插件其余功能 */ }
+
   const URPPP_UPDATE = {
     mainRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urppp.user.js',
     assistRaw: 'https://raw.githubusercontent.com/chaolan2019/SCU-URP-plusplus/main/urpppp.user.js',
