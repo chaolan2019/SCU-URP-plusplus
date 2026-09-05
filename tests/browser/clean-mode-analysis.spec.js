@@ -92,6 +92,33 @@ test('clean mode opens with score data and renders analysis charts', async ({ pa
   expect(pageErrors).toEqual([]);
 });
 
+test('update changelog modal fills the mobile viewport', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'mobile-home',
+    viewport: { width: 390, height: 844 },
+  });
+  await page.evaluate(() => window.urppp.update.showToast({
+    local: '1.9.9',
+    remote: '2.0.0',
+    changelogMd: '## [2.0.0] - 2026-09-05\\n\\n### Fixed\\n- update modal',
+  }));
+  await page.locator('#urppp-update-toast [data-act="log"]').click();
+  const modal = page.locator('#urppp-update-changelog');
+  await expect(modal).toHaveClass(/open/);
+  const geometry = await modal.evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      left: Math.round(rect.left),
+      top: Math.round(rect.top),
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+      transform: getComputedStyle(element).transform,
+    };
+  });
+  expect(geometry).toEqual({ left: 0, top: 0, width: 390, height: 844, transform: 'none' });
+  expect(pageErrors).toEqual([]);
+});
+
 test('default clean mode keeps the boot mask until final content render', async ({ page }) => {
   const { pageErrors } = await loadUrpFixture(page, {
     fixture: 'home',

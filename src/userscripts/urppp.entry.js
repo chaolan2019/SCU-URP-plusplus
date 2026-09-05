@@ -6875,18 +6875,19 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       }
       #urppp-update-toast .uut-close:hover{background:var(--input-bg,#f8fafc)!important;color:var(--text,#0f172a)!important}
       #urppp-update-changelog{
-        position:fixed!important;inset:0!important;z-index:14090!important;
+        position:fixed!important;inset:0!important;left:0!important;top:0!important;right:0!important;bottom:0!important;
+        transform:none!important;z-index:14090!important;
         display:flex!important;align-items:center!important;justify-content:center!important;
         background:rgba(15,23,42,0)!important;padding:16px!important;box-sizing:border-box!important;
         opacity:0;pointer-events:none;visibility:hidden;
         transition:opacity .26s ease,background .26s ease,visibility 0s linear .26s;
       }
       #urppp-update-changelog.open{
-        opacity:1;pointer-events:auto;visibility:visible;background:rgba(15,23,42,.42)!important;
+        opacity:1;transform:none!important;pointer-events:auto;visibility:visible;background:rgba(15,23,42,.42)!important;
         transition:opacity .26s ease,background .26s ease,visibility 0s linear 0s;
       }
       #urppp-update-changelog.closing{
-        opacity:0;pointer-events:none;visibility:visible;background:rgba(15,23,42,0)!important;
+        opacity:0;transform:none!important;pointer-events:none;visibility:visible;background:rgba(15,23,42,0)!important;
       }
       #urppp-update-changelog .uuc-panel{
         width:min(520px,100%)!important;max-height:min(72vh,640px)!important;overflow:auto!important;
