@@ -92,6 +92,8 @@ export function createCleanModeController({ state, deps }) {
         else origin.parent.appendChild(sidebar);
       }
       delete sidebar.__urpppCleanOrigin;
+      // 清爽模式退出：sidebar 已移回原位置且无 urppp-clean-sidebar，重算导航布局（顶栏/内容偏移/面包屑间距），恢复退出后不再错位
+      try { if (typeof deps.syncSidebarUnderNavbar === 'function') deps.syncSidebarUnderNavbar(); } catch (_) { /* ignore */ }
     };
     const syncCleanSidebarZ = () => {
       const sidebar = document.getElementById('sidebar');
@@ -264,12 +266,45 @@ export function createCleanModeController({ state, deps }) {
       // 退出动画：先收回矩形（closing），播完再移除 open
       el.classList.remove('open', 'uc-settled', 'uc-drawer-open');
       el.classList.add('closing');
-      clearTimeout(el.__ucSettleTimer);
+      // 先把 sidebar 移回原位置并移除清爽 class，再恢复页面导航结构，避免桌面端短暂显示清爽侧栏样式。
+      const mobile = !!(globalThis.matchMedia && globalThis.matchMedia('(max-width: 640px)').matches);
       try { if (el.__closeCleanDrawer) el.__closeCleanDrawer(); } catch (_) { /* ignore */ }
-      setTimeout(() => { el.classList.remove('closing'); }, 360);
+      if (!mobile) {
+        try { deps.refreshMobileNavbar(); } catch (_) { /* ignore */ }
+      }
+      // 退出动画以 CSS animationend 为准，避免固定 360ms 后再次触发布局跳变。
+      let closingFinished = false;
+      const finishClosing = () => {
+        if (closingFinished || !el.isConnected) return;
+        closingFinished = true;
+        el.classList.remove('closing');
+        if (mobile) {
+          try { deps.refreshMobileNavbar(); } catch (_) { /* ignore */ }
+        }
+        try { if (typeof deps.syncSidebarUnderNavbar === 'function') deps.syncSidebarUnderNavbar(); } catch (_) { /* ignore */ }
+      };
+      const onAnimationEnd = (event) => {
+        if (event.target === el && event.animationName === 'cleanCollapse') {
+          el.removeEventListener('animationend', onAnimationEnd);
+          finishClosing();
+        }
+      };
+      el.addEventListener('animationend', onAnimationEnd);
+      try {
+        const animation = typeof el.getAnimations === 'function'
+          ? el.getAnimations().find((item) => item.animationName === 'cleanCollapse')
+          : null;
+        if (animation) animation.finished.then(() => {
+          el.removeEventListener('animationend', onAnimationEnd);
+          finishClosing();
+        }).catch(() => {});
+        else if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => {
+          el.removeEventListener('animationend', onAnimationEnd);
+          finishClosing();
+        });
+        else finishClosing();
+      } catch (_) { finishClosing(); }
     }
-    // 退出清爽模式后清理桌面注入的移动端区块（用户卡/快捷区/搜索面板），恢复桌面侧边栏
-    try { deps.refreshMobileNavbar(); } catch (_) { /* ignore */ }
   }
 
   function injectCleanEntry() {

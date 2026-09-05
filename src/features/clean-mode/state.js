@@ -20,6 +20,7 @@ export function createCleanModeState() {
     _termWeek: 0,
     _termWeekResolved: false,
     uiReady: false,
+    _bootRenderSettled: false,
   };
 }
 

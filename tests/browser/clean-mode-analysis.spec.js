@@ -92,6 +92,68 @@ test('clean mode opens with score data and renders analysis charts', async ({ pa
   expect(pageErrors).toEqual([]);
 });
 
+test('default clean mode keeps the boot mask until final content render', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'home',
+    values: { urppp_clean_default_v1: true },
+  });
+  const boot = await page.evaluate(() => {
+    const loader = document.getElementById('urppp-boot-loader');
+    return {
+      loaderVisible: !!loader && getComputedStyle(loader).pointerEvents !== 'none' && getComputedStyle(loader).opacity !== '0',
+      htmlReady: document.documentElement.classList.contains('urppp-ready'),
+      cleanOpen: document.documentElement.classList.contains('urppp-clean-open'),
+      pending: !!window.__urpppCleanBootPending,
+      dataReady: !!window.__urpppCleanDataReady,
+      renderReady: !!window.__urpppCleanRenderReady,
+    };
+  });
+  expect(boot.loaderVisible).toBe(false);
+  expect(boot.htmlReady).toBe(true);
+  expect(boot.cleanOpen).toBe(true);
+  expect(boot.pending).toBe(false);
+  expect(boot.dataReady).toBe(true);
+  expect(boot.renderReady).toBe(true);
+  expect(pageErrors).toEqual([]);
+});
+
+test('mobile ordinary page keeps breadcrumb geometry stable after the boot mask hides', async ({ page }) => {
+  await loadUrpFixture(page, {
+    fixture: 'mobile-home',
+    viewport: { width: 390, height: 844 },
+  });
+  const readTop = () => page.evaluate(() => {
+    const navbar = document.getElementById('navbar')?.getBoundingClientRect();
+    const breadcrumb = document.querySelector('#breadcrumbs, .breadcrumbs, .breadcrumb')?.getBoundingClientRect();
+    return {
+      navbarBottom: navbar ? Math.round(navbar.bottom) : null,
+      breadcrumbTop: breadcrumb ? Math.round(breadcrumb.top) : null,
+    };
+  });
+  const initial = await readTop();
+  await page.waitForTimeout(1200);
+  expect(await readTop()).toEqual(initial);
+});
+
+test('mobile default clean exit keeps navbar geometry stable after the exit event', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, {
+    fixture: 'mobile-home',
+    viewport: { width: 390, height: 844 },
+    values: { urppp_clean_default_v1: true },
+  });
+  const signature = () => page.evaluate(() => Array.from(document.querySelectorAll('#navbar .navbar-container > *, #navbar .navbar-header > *, #navbar .navbar-buttons > *')).map((element) => {
+    const rect = element.getBoundingClientRect();
+    return [element.id, element.className, Math.round(rect.left), Math.round(rect.top), Math.round(rect.width), Math.round(rect.height)];
+  }));
+  await page.locator('#uc-exit').click();
+  await page.waitForTimeout(500);
+  const settled = await signature();
+  await page.waitForTimeout(700);
+  const later = await signature();
+  expect(later).toEqual(settled);
+  expect(pageErrors).toEqual([]);
+});
+
 test('clean mode mobile score analysis uses readable responsive charts', async ({ page }) => {
   const { pageErrors } = await loadUrpFixture(page, {
     fixture: 'mobile-home',
@@ -432,8 +494,18 @@ test('clean mode exit removes injected mobile sections on desktop', async ({ pag
   expect(await page.evaluate(() => !!document.getElementById('urppp-mobile-user'))).toBe(true);
   expect(await page.evaluate(() => !!document.getElementById('urppp-mobile-quick'))).toBe(true);
 
-  // 退出清爽模式：桌面侧边栏恢复原样，不再有移动端区块
-  await page.evaluate(() => document.getElementById('uc-exit').click());
+  // 退出清爽模式：桌面侧边栏在清爽根收起期间也不应短暂保留清爽区块
+  const immediate = await page.evaluate(() => {
+    document.getElementById('uc-exit').click();
+    const sidebar = document.getElementById('sidebar');
+    return {
+      hasCleanClass: sidebar.classList.contains('urppp-clean-sidebar'),
+      hasUser: !!document.getElementById('urppp-mobile-user'),
+      hasQuick: !!document.getElementById('urppp-mobile-quick'),
+      sidebarInRoot: sidebar.parentElement === document.getElementById('urppp-clean-root'),
+    };
+  });
+  expect(immediate).toEqual({ hasCleanClass: false, hasUser: false, hasQuick: false, sidebarInRoot: false });
   await page.waitForTimeout(600);
   const after = await page.evaluate(() => ({
     hasUser: !!document.getElementById('urppp-mobile-user'),

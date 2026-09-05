@@ -372,23 +372,41 @@ export function createCleanModeRenderer({ state, deps }) {
     // 仅首次进入播放卡片入场；后续数据刷新不再重播，避免闪烁
     const firstPaint = !state.uiReady;
     body.innerHTML = mobile ? renderMobile() : renderDesktop();
+    const reportBootProgress = () => {
+      try {
+        if (typeof window === 'undefined' || !state.open) return;
+        if (window.__urpppCleanDataReady) window.__urpppCleanRenderReady = true;
+        if (state._bootRenderSettled) window.__urpppCleanAnimationReady = true;
+        if (typeof window.__urpppCleanBootReady === 'function') window.__urpppCleanBootReady();
+      } catch (_) {}
+    };
     if (!firstPaint) {
       el.classList.add('uc-settled');
     } else {
       state.uiReady = true;
       el.classList.remove('uc-settled');
-      clearTimeout(el.__ucSettleTimer);
-      el.__ucSettleTimer = setTimeout(() => {
-        if (state.open) {
-          el.classList.add('uc-settled');
-          // 默认进入清爽模式的启动路径：进入动画播完才通知主脚本撤全屏遮罩。
-          // inject() 触发的渲染（state.open=false）不算；open 前首帧也不算
-          try { if (typeof window !== 'undefined' && typeof window.__urpppCleanBootReady === 'function') window.__urpppCleanBootReady(); } catch (_) {}
-        }
-      }, 480);
+      // 首次进入动画由 Web Animations 状态决定；启动遮罩由最终数据 DOM 与动画完成信号共同解除。
+      const settle = () => {
+        if (!state.open) return;
+        state._bootRenderSettled = true;
+        el.classList.add('uc-settled');
+        reportBootProgress();
+      };
+      try {
+        const animations = typeof el.getAnimations === 'function'
+          ? el.getAnimations({ subtree: true }).filter((animation) => {
+            try { return animation.effect?.getComputedTiming?.().iterations !== Infinity; } catch (_) { return true; }
+          })
+          : [];
+        if (animations.length) Promise.all(animations.map((animation) => animation.finished.catch(() => undefined))).then(settle);
+        else if (typeof requestAnimationFrame === 'function') requestAnimationFrame(settle);
+        else settle();
+      } catch (_) { settle(); }
     }
     deps.bindUI(body);
     deps.applyPersonalDisplay(body);
+    // 只有最终数据已经写入清爽 DOM 后才报告 render ready，避免 loading 占位首帧抢先解除遮罩。
+    reportBootProgress();
   }
 
   function scheduleRender() {

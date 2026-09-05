@@ -108,6 +108,13 @@ export function createCleanModeDataLoader({ state, deps }) {
       if (termWeek >= 1) state.viewWeek = termWeek;
     }
     deps.scheduleRender();
+    // 清爽模式数据加载完成：通知主脚本，遮罩待撤时（默认进入清爽）等数据就绪后再撤，避免遮罩消失后清爽还在加载数据
+    try {
+      if (typeof window !== 'undefined') {
+        window.__urpppCleanDataReady = true;
+        if (window.__urpppCleanBootPending && typeof window.__urpppCleanBootReady === 'function') window.__urpppCleanBootReady();
+      }
+    } catch (_) { /* ignore */ }
   }
 
   return { ensureRoomCatalogLoaded, loadAll };

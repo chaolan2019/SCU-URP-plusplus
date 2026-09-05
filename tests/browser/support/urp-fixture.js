@@ -120,7 +120,16 @@ export async function loadUrpFixture(page, options = {}) {
 
   const pageErrors = [];
   page.on('pageerror', (error) => pageErrors.push(error.message));
-  await installUserscriptMocks(page, options.values || {});
+  // 预装非内置主题的 css：若测试指定了非内置皮肤（flat/organic/brutal/editorial/neu），
+  // getSkin() 依赖 themeDownloaded(id)（读 urppp_theme_css_<id>）才不回落 apple。
+  const fixtureValues = { ...(options.values || {}) };
+  const skinId = fixtureValues.urppp_skin_v1;
+  const BUILTIN_SKINS = new Set(['apple', 'editorial']);
+  if (skinId && !BUILTIN_SKINS.has(skinId)) {
+    const cssKey = `urppp_theme_css_${skinId}`;
+    if (fixtureValues[cssKey] == null) fixtureValues[cssKey] = '/* fixture mock theme */';
+  }
+  await installUserscriptMocks(page, fixtureValues);
   await page.route('http://zhjw.scu.edu.cn/**', (route) => route.fulfill({
     path: fixturePath,
     contentType: 'text/html; charset=utf-8',

@@ -66,7 +66,7 @@
         .main-content .page-content,
         #page-content-template.page-content,
         div.page-content {
-          padding: 8px 8px 24px !important;
+          padding: 20px 8px 24px !important;
           max-width: 100% !important;
         }
         .breadcrumbs,

@@ -24,6 +24,7 @@
   <p>
     <a href="#json-课表导出">JSON 课表导出</a> ·
     <a href="#隐私与自定义身份">隐私与自定义身份</a> ·
+    <a href="#主题投稿">主题投稿</a> ·
     <a href="#特别鸣谢">特别鸣谢</a> ·
     <a href="#仓库结构">仓库结构</a>
   </p>
@@ -31,6 +32,7 @@
     <a href="#注意">注意</a> ·
     <a href="#开发">开发</a> ·
     <a href="#更新日志">更新日志</a> ·
+    <a href="#打赏支持">打赏支持</a> ·
     <a href="#许可">许可</a>
   </p>
 
@@ -289,6 +291,31 @@ npm run build:check
 `npm run build:check` 会重新构建并逐字节核对根目录产物，防止源码与发布文件不同步。正式输出不压缩、不混淆，并保留函数名和许可证声明。
 
 常见调试入口：`window.__urpppCleanMode`、`window.urppp`、`window.__urppppAssist`。
+
+---
+
+## 打赏支持
+
+如果你觉得 **SCU URP++** 对你有帮助，可以赏点Token费，蓝色大肥鱼和我会非常感谢你！
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="./docs/AliPay.jpg" alt="支付宝打赏" width="160" height="240">
+        <br>
+        <sub>支付宝</sub>
+      </td>
+      <td align="center">
+        <img src="./docs/WeChat.png" alt="微信打赏" width="160" height="240">
+        <br>
+        <sub>微信</sub>
+      </td>
+    </tr>
+  </table>
+</div>
+
+> 打赏纯属自愿，无论如何都感谢你的使用与支持！
 
 ---
 

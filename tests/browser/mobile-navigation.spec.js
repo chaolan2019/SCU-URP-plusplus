@@ -78,7 +78,8 @@ for (const [skin, expectedShape] of Object.entries(skinShapes)) {
       containerPaddingTop: '0px',
     });
     expect(compactLayout.cleanGap).toBeGreaterThanOrEqual(8);
-    expect(compactLayout.breadcrumbGap).toBeLessThanOrEqual(20);
+    // 面包屑与顶栏保持一定距离（移动端导航设计：面包屑在顶栏下方留白，不紧贴）
+    expect(compactLayout.breadcrumbGap).toBeGreaterThanOrEqual(20);
 
     await expect(page.locator('#urppp-mobile-menu-button')).toHaveCount(1);
     await expect(page.locator('#navbar .menu-toggler')).toBeHidden();

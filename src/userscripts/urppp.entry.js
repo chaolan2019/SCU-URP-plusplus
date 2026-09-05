@@ -764,20 +764,8 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     if (host) host.appendChild(el);
   }
   function hideBootLoader() {
-    // 默认进入清爽模式时：遮罩保持到清爽模式首帧渲染完成，避免中途露出站点半成品；
-    // 兕底 3s：清爽模式渲染失败/异常时遮罩必须能撤，绝不死锁
-    if (window.__urpppCleanBootPending) {
-      if (window.__urpppCleanBootDone) { window.__urpppCleanBootPending = false; }
-      else {
-        if (!window.__urpppCleanBootWait) {
-          window.__urpppCleanBootWait = setTimeout(() => {
-            window.__urpppCleanBootPending = false;
-            try { hideBootLoader(); } catch (_) {}
-          }, 2500);
-        }
-        return;
-      }
-    }
+    // 默认进入清爽模式时，遮罩只能由完整就绪状态机解除，避免局部渲染完成就露出半成品。
+    if (window.__urpppCleanBootPending && !window.__urpppCleanBootDone) return;
     try {
       document.documentElement.classList.add('urppp-ready');
       if (document.body) {
@@ -786,22 +774,114 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       }
       const el = document.getElementById('urppp-boot-loader');
       if (!el) return;
+      const remove = () => { try { el.remove(); } catch (_) {} };
       el.classList.add('urppp-boot-hide');
-      setTimeout(() => { try { el.remove(); } catch (_) {} }, 280);
+      if (typeof el.addEventListener === 'function') {
+        const onTransitionEnd = (event) => {
+          if (event.propertyName !== 'opacity') return;
+          el.removeEventListener('transitionend', onTransitionEnd);
+          remove();
+        };
+        el.addEventListener('transitionend', onTransitionEnd);
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => {
+          try {
+            const opacity = Number.parseFloat(getComputedStyle(el).opacity);
+            if (!Number.isFinite(opacity) || opacity <= 0) remove();
+          } catch (_) { remove(); }
+        });
+      } else remove();
     } catch (_) {}
   }
   // 立刻挂遮罩（document-start 阶段 html 已存在）
   try { ensureBootLoader(); } catch (_) {}
-  // 清爽模式首帧就绪回调（render.js 首帧渲染完成时调用）：撤遮罩
-  window.__urpppCleanBootReady = () => {
-    window.__urpppCleanBootDone = true;
-    if (window.__urpppCleanBootWait) { clearTimeout(window.__urpppCleanBootWait); window.__urpppCleanBootWait = null; }
-    try { hideBootLoader(); } catch (_) {}
+  // 清爽启动进度通知：各阶段完成时主动触发同一判定，不用轮询或固定延时猜测。
+  const notifyCleanBootProgress = () => {
+    try { if (typeof window.__urpppCleanBootReady === 'function') window.__urpppCleanBootReady(); } catch (_) {}
   };
-  // 兜底：最多 2.5s 必须进入
-  if (!window.__urpppBootSafety) {
-    window.__urpppBootSafety = setTimeout(() => { try { hideBootLoader(); } catch (_) {} }, 2500);
+  window.__urpppCleanBootReady = () => {
+    if (!window.__urpppCleanBootPending || window.__urpppCleanBootDone) return;
+    try {
+      const mobile = !!(window.matchMedia && window.matchMedia('(max-width: 991px)').matches);
+      const ready = !!window.__urpppCleanRenderReady
+        && !!window.__urpppCleanAnimationReady
+        && !!window.__urpppCleanDataReady
+        && !!window.__urpppPageLayoutReady
+        && document.readyState === 'complete'
+        && (!mobile || !!window.__urpppMobileNavReady);
+      if (!ready || window.__urpppCleanBootRevealQueued) return;
+      window.__urpppCleanBootRevealQueued = true;
+      const reveal = () => {
+        if (!window.__urpppCleanBootPending || window.__urpppCleanBootDone) return;
+        window.__urpppCleanBootDone = true;
+        window.__urpppCleanBootPending = false;
+        window.__urpppCleanBootRevealQueued = false;
+        hideBootLoader();
+      };
+      // 等待数据完成后的 DOM 更新进入渲染帧；帧边界不是加载等待时间。
+      if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => requestAnimationFrame(reveal));
+      else reveal();
+    } catch (_) {}
+  };
+  // 页面资源加载完成是普通页面与默认清爽共同需要的启动事件。
+  if (document.readyState === 'complete') notifyCleanBootProgress();
+  else window.addEventListener('load', notifyCleanBootProgress, { once: true });
+  // 等待首屏关键几何连续稳定；DOM/尺寸变化会重新开始观察，不使用固定等待时长。
+  function waitForInitialLayoutStable(done) {
+    const targets = () => [
+      document.querySelector('#navbar'),
+      document.querySelector('#breadcrumbs, .breadcrumbs, .breadcrumb'),
+      document.querySelector('.main-content'),
+      document.querySelector('#page-content-template, .page-content'),
+      document.querySelector('#sidebar'),
+    ].filter(Boolean);
+    const geometry = () => targets().map((element) => {
+      const rect = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      return [element.id || element.className || element.tagName, rect.left, rect.top, rect.width, rect.height, style.display, style.position].join(':');
+    }).join('|');
+    let raf = 0;
+    let previous = '';
+    let stableFrames = 0;
+    let finished = false;
+    let observer = null;
+    let resizeObserver = null;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      if (raf) cancelAnimationFrame(raf);
+      if (observer) observer.disconnect();
+      if (resizeObserver) resizeObserver.disconnect();
+      done();
+    };
+    const check = () => {
+      raf = 0;
+      if (document.readyState !== 'complete') return;
+      const current = geometry();
+      stableFrames = current === previous ? stableFrames + 1 : 0;
+      previous = current;
+      if (stableFrames >= 2) finish();
+      else raf = requestAnimationFrame(check);
+    };
+    const schedule = () => {
+      stableFrames = 0;
+      if (!raf) raf = requestAnimationFrame(check);
+    };
+    const start = () => {
+      if (finished) return;
+      try {
+        observer = new MutationObserver(schedule);
+        if (document.body) observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+        if (typeof ResizeObserver === 'function') {
+          resizeObserver = new ResizeObserver(schedule);
+          targets().forEach((element) => resizeObserver.observe(element));
+        }
+      } catch (_) { /* geometry frames remain sufficient */ }
+      schedule();
+    };
+    if (document.readyState === 'complete') start();
+    else window.addEventListener('load', start, { once: true });
   }
+
   const THEMES = {
     'default': {
       name: '简约白',
@@ -2097,7 +2177,16 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     }
 
     console.log('[URP++] 登录界面已重建');
-    setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 100);
+    const markLoginReady = () => {
+      if (window.__urpppLoginReadyHidden) return;
+      window.__urpppLoginReadyHidden = true;
+      try { document.body.classList.add('urppp-ready'); hideBootLoader(); } catch (_) {}
+    };
+    const revealLoginAfterLoad = () => {
+      try { requestAnimationFrame(() => requestAnimationFrame(markLoginReady)); } catch (_) { markLoginReady(); }
+    };
+    if (document.readyState === 'complete') revealLoginAfterLoad();
+    else window.addEventListener('load', revealLoginAfterLoad, { once: true });
   }
 
   // ============================================================
@@ -4549,14 +4638,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     // 首页进行组件级重构
     const pageContent = document.querySelector('.page-content');
     const hasWidgets = pageContent && pageContent.querySelectorAll('.widget-box').length >= 4;
-    if (hasWidgets) {
-      setTimeout(rebuildDashboard, 500);
-    }
+    if (hasWidgets) rebuildDashboard();
 
     // 完全重构侧边栏为 Hanako 风格
     rebuildSidebarCompletely();
     syncSidebarUnderNavbar();
     setupMobileNavbar();
+    // 移动端导航转换会改变 navbar 实际高度，必须在转换完成后立刻重算内容起点，避免首屏 breadcrumb 被推远。
+    syncSidebarUnderNavbar();
+    observeNavbarGeometry();
 
     function setupMobileNavbar() {
       const mobileQuery = '(max-width: 640px)';
@@ -4780,9 +4870,13 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           toggler.__urpppToggleHandler = (event) => {
             event.preventDefault();
             event.stopImmediatePropagation();
-            if (isNarrow()) syncMobileSidebarMode(sidebar, true);
-            const open = toggler.getAttribute('aria-expanded') !== 'true';
-            setDrawerOpen(sidebar, toggler, open);
+            // PJAX 可能替换 sidebar；点击时动态取当前节点，避免按钮继续操作已脱离 DOM 的旧 sidebar。
+            const currentSidebar = document.getElementById('sidebar');
+            if (!currentSidebar) return;
+            if (isNarrow()) syncMobileSidebarMode(currentSidebar, true);
+            // 以 sidebar 的真实 class 为状态源；路由重建期间 aria-expanded 可能暂时落后于动画状态。
+            const open = !currentSidebar.classList.contains('display');
+            setDrawerOpen(currentSidebar, toggler, open);
           };
           toggler.addEventListener('click', toggler.__urpppToggleHandler, true);
         }
@@ -5067,9 +5161,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         try { ensureMobileQuick(btns, sidebar, menus, { cleanMode: true }); } catch (_) { /* ignore */ }
       };
       try { apply(); } catch (_) { /* ignore */ }
-      setTimeout(apply, 300);
-      setTimeout(apply, 900);
-      setTimeout(apply, 1800);
       if (window.matchMedia) {
         const mq = window.matchMedia(mobileQuery);
         const onChange = () => apply();
@@ -5092,7 +5183,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     }
     // 强制内容区内边距（ACE 偶发内联样式覆盖）；移动端用紧凑内距
     const urpppMobileLayout = !!(window.matchMedia && window.matchMedia('(max-width: 991px)').matches);
-    const urpppContentPadding = urpppMobileLayout ? '8px 8px 24px' : '16px 64px 40px';
+    const urpppContentPadding = urpppMobileLayout ? '20px 8px 24px' : '16px 64px 40px';
     document.querySelectorAll('.page-content, #page-content-template').forEach((el) => {
       el.style.setProperty('padding', urpppContentPadding, 'important');
       el.style.setProperty('box-sizing', 'border-box', 'important');
@@ -5161,14 +5252,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     bindDesktopNavbarSearch();
     patchSchoolCalendarLink();
 
-    // 非查询/公告关键路径：合并延迟波，减少重复 DOM 扫描（不改最终样式）
-    const layoutWave = () => {
-      alignRollInfoLayout();
-      patchAceTabNavbars();
-      beautifyBreadcrumbs();
-    };
-    setTimeout(layoutWave, 200);
-    setTimeout(layoutWave, 800);
+    // 首屏布局在当前页面内容到位后同步完成，避免遮罩撤除后再用延迟波重写面包屑位置。
+    alignRollInfoLayout();
+    patchAceTabNavbars();
+    beautifyBreadcrumbs();
 
     if (!window.__urpppLoadBound) {
       window.__urpppLoadBound = true;
@@ -5180,10 +5267,41 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         beautifyBreadcrumbs();
         alignRollInfoLayout();
         patchAceTabNavbars();
+        // 移动端存在额外的导航转换层，等 load 后完成一次转换再报告移动端就绪。
+        try {
+          if (window.matchMedia && window.matchMedia('(max-width: 991px)').matches) {
+            if (typeof window.__urpppRefreshMobileNavbar === 'function') window.__urpppRefreshMobileNavbar();
+            window.__urpppMobileNavReady = true;
+            notifyCleanBootProgress();
+          }
+        } catch (_) {}
       });
     }
+    if (document.readyState === 'complete') {
+      try {
+        if (window.matchMedia && window.matchMedia('(max-width: 991px)').matches) {
+          if (typeof window.__urpppRefreshMobileNavbar === 'function') window.__urpppRefreshMobileNavbar();
+          window.__urpppMobileNavReady = true;
+          notifyCleanBootProgress();
+        }
+      } catch (_) {}
+    }
 
-    setTimeout(() => { document.body.classList.add('urppp-ready'); hideBootLoader(); }, 600);
+    // 正式首页美化批次完成后撤遮罩（事件驱动，不写死固定延时）；非默认进清爽时 `urppp-ready` 由这里标记
+    const markReadyAndHide = () => {
+      if (window.__urpppReadyHidden) return;
+      // 默认进清爽时：遮罩撤除交给 __urpppCleanBootReady（等清爽首帧/移动端导航就绪），这里不提前撤
+      if (window.__urpppCleanBootPending && !window.__urpppCleanBootDone) return;
+      window.__urpppReadyHidden = true;
+      try { document.body.classList.add('urppp-ready'); hideBootLoader(); } catch (_) {}
+    };
+    // load 后等待实际首屏几何稳定；移动端的导航转换和后续 DOM 改写也会触发观察器重新确认。
+    const hideAfterLayoutStable = () => waitForInitialLayoutStable(() => {
+      window.__urpppPageLayoutReady = true;
+      notifyCleanBootProgress();
+      markReadyAndHide();
+    });
+    hideAfterLayoutStable();
 
     console.log('[URP++] style applied apple-leaning');
 
@@ -7213,6 +7331,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   publishUpdateApi();
 
   const { rebuildSidebarCompletely, syncMobileContentOffset, syncSidebarUnderNavbar } = createSidebarController({});
+  function observeNavbarGeometry() {
+    try {
+      const navbar = document.getElementById('navbar');
+      if (!navbar || typeof ResizeObserver !== 'function') return;
+      window.__urpppNavbarGeometryObserver?.disconnect();
+      window.__urpppNavbarGeometryObserver = new ResizeObserver(() => syncSidebarUnderNavbar());
+      window.__urpppNavbarGeometryObserver.observe(navbar);
+    } catch (_) { /* ignore */ }
+  }
 
   const { rebuildDashboard } = createDashboardController({
     deps: {
@@ -9836,6 +9963,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       scoreToGpa,
       summarizeCourses,
       syncNavbarThemeUI,
+      syncSidebarUnderNavbar: () => { try { syncSidebarUnderNavbar(); } catch (_) { /* ignore */ } },
       syncSettingsPanelUI,
       syncThemeDotGroup,
     },
@@ -9857,6 +9985,18 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   function init() {
     if (!document.body) { setTimeout(init, 10); return; }
+    const cleanBootRequired = isCleanDefault() && isHomePage() && !!window.__urpppCleanMode;
+    if (cleanBootRequired) {
+      // 在首屏美化开始前建立默认清爽启动状态，防止普通页面路径抢先解除遮罩。
+      window.__urpppCleanBootPending = true;
+      window.__urpppCleanBootDone = false;
+      window.__urpppCleanBootRevealQueued = false;
+      window.__urpppCleanRenderReady = false;
+      window.__urpppCleanAnimationReady = false;
+      window.__urpppCleanDataReady = false;
+      window.__urpppPageLayoutReady = false;
+      window.__urpppMobileNavReady = false;
+    }
     injectAllStoreThemeStyles();
     applyTheme(getCurrent());
 
@@ -9902,16 +10042,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         try { applyPersonalDisplay(document); } catch (_) {}
       }, ms));
       try { if (window.__urpppCleanMode) window.__urpppCleanMode.inject(); } catch (_) {}
-      ;[400, 1200, 2500].forEach((ms) => setTimeout(() => {
-        try { if (window.__urpppCleanMode) window.__urpppCleanMode.inject(); } catch (_) {}
-      }, ms));
-      // 默认进入清爽模式：仅首页；站点脚本就绪即直接打开（不再额外延时），
-    // 遮罩保持到清爽模式进入动画播完再撤（体验连贯）
+      // 默认进入清爽模式：状态已在初始化最前面建立，遮罩由完整就绪事件解除。
       try {
-        if (isCleanDefault() && isHomePage() && window.__urpppCleanMode) {
-          window.__urpppCleanBootPending = true;
-          setTimeout(() => { try { window.__urpppCleanMode.open(false); } catch (_) {} }, 0);
-        }
+        if (cleanBootRequired && window.__urpppCleanMode) window.__urpppCleanMode.open(false);
       } catch (_) {}
     }
   }
@@ -9927,8 +10060,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     window.addEventListener('load', () => {
       syncSidebarUnderNavbar();
       syncMobileContentOffset();
-      setTimeout(syncSidebarUnderNavbar, 100);
-      setTimeout(syncSidebarUnderNavbar, 400);
     });
     document.addEventListener('click', (e) => {
       const t = e.target && e.target.closest
@@ -9969,8 +10100,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         syncSidebarUnderNavbar();
         rebuildSidebarCompletely();
         rebuildNavbar();
+        observeNavbarGeometry();
         syncSidebarUnderNavbar();
         try { if (window.__urpppRefreshMobileNavbar) window.__urpppRefreshMobileNavbar(); } catch (_) { /* ignore */ }
+        // 路由替换可能保留旧抽屉的动画帧；重新绑定后显式收拢当前 sidebar，避免旧帧在后续覆盖菜单状态。
+        try {
+          if (window.matchMedia && window.matchMedia('(max-width: 640px)').matches && window.__urpppCloseMobileDrawer) {
+            window.__urpppCloseMobileDrawer();
+          }
+        } catch (_) { /* ignore */ }
         bindDesktopNavbarSearch();
         [250, 700].forEach((delay) => setTimeout(() => {
           try { if (window.__urpppRefreshMobileNavbar) window.__urpppRefreshMobileNavbar(); } catch (_) { /* ignore */ }
@@ -9984,7 +10122,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         scheduleScrubTableInlineBg();
         document.querySelectorAll('.page-content, #page-content-template').forEach((el) => {
           const urpppMobileLayout = !!(window.matchMedia && window.matchMedia('(max-width: 991px)').matches);
-          el.style.setProperty('padding', urpppMobileLayout ? '8px 8px 24px' : '16px 64px 40px', 'important');
+          el.style.setProperty('padding', urpppMobileLayout ? '20px 8px 24px' : '16px 64px 40px', 'important');
           el.style.setProperty('box-sizing', 'border-box', 'important');
         });
         alignRollInfoLayout();
