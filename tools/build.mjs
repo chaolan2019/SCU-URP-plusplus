@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { build } from 'esbuild';
+import { build, transform } from 'esbuild';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CHECK_ONLY = process.argv.includes('--check');
@@ -84,7 +84,8 @@ const readableCssPlugin = {
   setup(context) {
     context.onLoad({ filter: /\.css$/ }, async ({ path: cssPath }) => {
       const css = await readFile(cssPath, 'utf8');
-      const escaped = css
+      const minified = await transform(css, { loader: 'css', minify: true });
+      const escaped = minified.code
         .replace(/\\/g, '\\\\')
         .replace(/`/g, '\\`')
         .replace(/\$\{/g, '\\${');
