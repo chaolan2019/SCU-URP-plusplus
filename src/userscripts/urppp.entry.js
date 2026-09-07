@@ -4682,8 +4682,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
       const drawerAnimations = new WeakMap();
       const stopDrawerAnimation = (sidebar) => {
-        const frame = drawerAnimations.get(sidebar);
-        if (frame) cancelAnimationFrame(frame);
+        const state = drawerAnimations.get(sidebar);
+        if (state) {
+          if (state.raf) cancelAnimationFrame(state.raf);
+          if (state.timer) clearTimeout(state.timer);
+        }
         drawerAnimations.delete(sidebar);
       };
       const animateDrawer = (sidebar, open) => {
@@ -4708,7 +4711,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         sidebar.classList.toggle('urppp-drawer-closing', !open);
         sidebar.classList.add('display');
 
-        const finish = () => {
+        const settle = () => {
           sidebar.style.setProperty('transform', `translate3d(${endX}px, 0, 0)`, 'important');
           if (open) {
             sidebar.classList.remove('urppp-drawer-closing');
@@ -4718,16 +4721,28 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
             sidebar.style.setProperty('visibility', 'hidden', 'important');
             sidebar.style.setProperty('z-index', hiddenZ, 'important');
           }
+        };
+        const finish = () => {
+          const state = drawerAnimations.get(sidebar);
+          if (!state || state.done) return;
+          state.done = true;
+          if (state.raf) cancelAnimationFrame(state.raf);
+          if (state.timer) clearTimeout(state.timer);
           drawerAnimations.delete(sidebar);
+          settle();
         };
         if (distance < 1) {
-          finish();
+          settle();
           return;
         }
 
+        const state = { done: false, raf: 0, timer: 0 };
+        drawerAnimations.set(sidebar, state);
         const step = (now) => {
+          const current = drawerAnimations.get(sidebar);
+          if (!current || current.done) return;
           if (!sidebar.isConnected) {
-            drawerAnimations.delete(sidebar);
+            stopDrawerAnimation(sidebar);
             return;
           }
           const progress = Math.min(1, (now - startAt) / duration);
@@ -4740,9 +4755,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
             finish();
             return;
           }
-          drawerAnimations.set(sidebar, requestAnimationFrame(step));
+          current.raf = requestAnimationFrame(step);
         };
-        drawerAnimations.set(sidebar, requestAnimationFrame(step));
+        state.raf = requestAnimationFrame(step);
+        // 兜底：rAF 在无头/后台标签可能被节流或暂停（CI 偶发卡动画中间态），
+        // 用墙钟定时器保证动画必然在 duration 后收尾，与 rAF 到达终点互斥。
+        state.timer = setTimeout(finish, duration + 80);
       };
       const setDrawerOpen = (sidebar, toggler, open) => {
         if (!sidebar) return;
