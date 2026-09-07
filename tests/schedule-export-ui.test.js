@@ -140,7 +140,10 @@ test('schedule export UI orchestrates format execution and restores its trigger'
       calls.push(['json']);
       return { unscheduledCourses: 1 };
     },
-    exportIcs: async () => {},
+    exportIcs: async (data, timetableMode) => {
+      calls.push(['ics', timetableMode]);
+      return {};
+    },
     exportPng: async () => {},
     showToast: (message, error) => calls.push(['toast', message, error]),
     nativePageUrl: '/schedule',
@@ -154,6 +157,40 @@ test('schedule export UI orchestrates format execution and restores its trigger'
     ['load', 'clean'],
     ['json'],
     ['toast', '课表已导出：JSON；1 门未排定时间的课程未写入 JSON', undefined],
+  ]);
+  assert.equal(trigger.disabled, false);
+  assert.equal(trigger.innerHTML, '<i>export</i>');
+});
+
+test('schedule export UI exports ICS silently with no timetable prompt', async () => {
+  const calls = [];
+  const trigger = { disabled: false, innerHTML: '<i>export</i>' };
+  const ui = createScheduleExportUi({
+    document: {},
+    window: {},
+    ensureStyles: () => {},
+    loadData: async (source) => {
+      calls.push(['load', source]);
+      return { courses: [{ arrangements: [] }] };
+    },
+    exportJson: async () => {},
+    exportIcs: async (data, timetableMode) => {
+      calls.push(['ics', timetableMode]);
+      return {};
+    },
+    exportPng: async () => {},
+    showToast: (message, error) => calls.push(['toast', message, error]),
+    nativePageUrl: '/schedule',
+    navigate: () => {},
+    logger: { warn: (...args) => calls.push(['warn', ...args]) },
+  });
+
+  await ui.run('ics', 'clean', null, trigger);
+
+  assert.deepEqual(calls, [
+    ['load', 'clean'],
+    ['ics', undefined],
+    ['toast', '课表已导出：ICS；1 门未排定时间的课程未写入日历', undefined],
   ]);
   assert.equal(trigger.disabled, false);
   assert.equal(trigger.innerHTML, '<i>export</i>');

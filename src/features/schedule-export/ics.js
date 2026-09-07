@@ -62,6 +62,58 @@ function scheduleUid(value) {
   return (hash >>> 0).toString(16) + '@scu-urppp';
 }
 
+// 川大两套作息：望江/华西与江安各 12 节。教务接口只返回一套 jcsjbs，
+// 而课表可能含跨校区课程，导出日历必须按课程归属校区映射，否则时间整体对不上。
+const WANGJIANG_TIMETABLE = {
+  1: { start: '08:00', end: '08:45' },
+  2: { start: '08:55', end: '09:40' },
+  3: { start: '10:00', end: '10:45' },
+  4: { start: '10:55', end: '11:40' },
+  5: { start: '14:00', end: '14:45' },
+  6: { start: '14:55', end: '15:40' },
+  7: { start: '15:50', end: '16:35' },
+  8: { start: '16:55', end: '17:40' },
+  9: { start: '17:50', end: '18:35' },
+  10: { start: '19:30', end: '20:15' },
+  11: { start: '20:25', end: '21:10' },
+  12: { start: '21:20', end: '22:05' },
+};
+
+const JIANGAN_TIMETABLE = {
+  1: { start: '08:15', end: '09:00' },
+  2: { start: '09:10', end: '09:55' },
+  3: { start: '10:15', end: '11:00' },
+  4: { start: '11:10', end: '11:55' },
+  5: { start: '13:50', end: '14:35' },
+  6: { start: '14:45', end: '15:30' },
+  7: { start: '15:40', end: '16:25' },
+  8: { start: '16:45', end: '17:30' },
+  9: { start: '17:40', end: '18:25' },
+  10: { start: '19:20', end: '20:05' },
+  11: { start: '20:15', end: '21:00' },
+  12: { start: '21:10', end: '21:55' },
+};
+
+// 校名归一：课表 campusName 可能是「望江」「华西」「江安」或带「校区」后缀；
+// 华西与望江同作息（8:00 首节），江安单独一套（8:15 首节）。
+// 返回 'jiangAn' | 'wangjiang' | ''（未知）。
+export function timetableKeyForCampus(campus) {
+  const name = String(campus || '').replace(/校区$/, '');
+  if (name === '江安') return 'jiangAn';
+  if (name === '望江' || name === '华西') return 'wangjiang';
+  return '';
+}
+
+const TIMETABLES = {
+  jiangAn: JIANGAN_TIMETABLE,
+  wangjiang: WANGJIANG_TIMETABLE,
+};
+
+// 按课程校区返回作息表；未知校区返回 null，由调用方回退接口作息。
+function timetableForCampus(campus) {
+  return TIMETABLES[timetableKeyForCampus(campus)] || null;
+}
+
 function scheduleSectionMap(data) {
   const map = new Map();
   data.sections.forEach((item) => map.set(item.section, item));
@@ -77,6 +129,15 @@ export function buildScheduleIcs(data, firstMondayIso, options = {}) {
   if (!firstMonday) throw new Error('第一教学周日期无效');
   const sectionMap = scheduleSectionMap(data);
   if (!sectionMap.size) throw new Error('教务接口没有返回节次时间，无法生成 ICS');
+  // 每节上课安排按课程所属校区选择作息：江安一套、望江/华西一套。
+  // 校区未知或未收录时回退接口作息（至少匹配登录者所在校区），保证时间恒可映射。
+  const sectionOf = (timetable, section) => {
+    if (timetable) {
+      const entry = timetable[section];
+      if (entry) return entry;
+    }
+    return sectionMap.get(section) || null;
+  };
   const timestamp = formatTimestamp(options.now instanceof Date ? options.now : new Date());
   let eventCount = 0;
   const lines = [
@@ -89,8 +150,9 @@ export function buildScheduleIcs(data, firstMondayIso, options = {}) {
     'END:VTIMEZONE',
   ];
   data.courses.forEach((course) => course.arrangements.forEach((arrangement) => {
-    const startInfo = sectionMap.get(arrangement.startSection);
-    const endInfo = sectionMap.get(arrangement.endSection);
+    const timetable = timetableForCampus(arrangement.campus);
+    const startInfo = sectionOf(timetable, arrangement.startSection);
+    const endInfo = sectionOf(timetable, arrangement.endSection);
     if (!startInfo || !endInfo) return;
     arrangement.weeks.forEach((week) => {
       const date = new Date(firstMonday);
