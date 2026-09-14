@@ -3754,11 +3754,49 @@
          这里用属性选择器而不是靠 JS 打标记：真实 layui 的 src 与类名常常是
          节点插入之后才补上的，只有在 DOM 当前状态下动态匹配，才能保证第一帧就盖住。
          放行由 .urppp-layer-revealed 控制（内层样式就绪时报到，或超时兜底）。 */
+      /* opacity 参与过渡，让内容出现时是淡入而非突变；扫描线在这一过程中被自然盖住 */
       .layui-layer-iframe iframe[src*="menu-recommend"] {
         visibility: hidden !important;
+        opacity: 0 !important;
+        transition: opacity .18s ease !important;
       }
       .layui-layer-iframe iframe[src*="menu-recommend"].urppp-layer-revealed {
         visibility: visible !important;
+        opacity: 1 !important;
+      }
+      /* 遮蔽期间露出的是弹窗底色，补一条克制的扫描线，避免看上去像卡住。
+         伪元素铺在 content 上，iframe 可见时会把它盖住（靠下方 z-index 分层），
+         所以无需遮蔽的弹窗不受影响。 */
+      .layui-layer-iframe > .layui-layer-content::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 10%;
+        right: 10%;
+        height: 2px;
+        margin-top: -1px;
+        border-radius: 2px;
+        background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        background-size: 38% 100%;
+        background-repeat: no-repeat;
+        opacity: .45;
+        animation: urppp-layer-scan 1.15s ease-in-out infinite;
+        pointer-events: none !important;
+        z-index: 1;
+      }
+      .layui-layer-iframe > .layui-layer-content > iframe {
+        position: relative;
+        z-index: 2;
+      }
+      @keyframes urppp-layer-scan {
+        0% { background-position: -38% 0; }
+        100% { background-position: 138% 0; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .layui-layer-iframe > .layui-layer-content::after {
+          animation: none;
+          background-position: 50% 0;
+        }
       }
       .layui-layer-iframe > .layui-layer-title,
       .layui-layer-page > .layui-layer-title {
