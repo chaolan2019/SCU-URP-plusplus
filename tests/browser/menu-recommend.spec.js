@@ -17,6 +17,7 @@ const LIGHT = {
 };
 
 const MENU_RECOMMEND_URL = 'http://zhjw.scu.edu.cn/student/menu-recommend/page';
+const LAYER_IFRAME_SELECTOR = '.layui-layer-iframe iframe';
 
 test('智能应用推荐页：接管视觉，但不夺走页面自身布局', async ({ page }) => {
   await loadUrpFixture(page, { fixture: 'menu-recommend' });
@@ -193,30 +194,62 @@ test('智能应用推荐页：样式早于 DOMContentLoaded 注入，避免首�
   expect(state.hasPageStyles).toBe(true);
 });
 
-// 弹窗与内层页面共用的搭建流程：只建壳，内层脚本由调用方决定何时注入
-async function mountLayerWithInnerPage(page, { injectInnerScript }) {
+/*
+ * 弹窗的搭建方式按真实 layui 的行为分三种。遮蔽效果必须与插入方式无关：
+ * 曾经的实现只在「节点插入的瞬间」扫一次 src，于是后补 src 或后补类名的
+ * 场景每次都漏，用户会稳定看到未美化的原生界面。
+ */
+async function mountLayer(page, { insertMode, url }) {
+  await page.evaluate(({ insertMode, url }) => {
+    const layer = document.createElement('div');
+    const content = document.createElement('div');
+    content.className = 'layui-layer-content';
+    const iframe = document.createElement('iframe');
+
+    if (insertMode === 'src-late') {
+      // 先插入无 src 的 iframe，稍后再设置 src
+      layer.className = 'layui-layer layui-layer-iframe';
+      content.appendChild(iframe);
+      layer.appendChild(content);
+      document.body.appendChild(layer);
+      setTimeout(() => iframe.setAttribute('src', url), 120);
+      return;
+    }
+    if (insertMode === 'class-late') {
+      // 先插入普通节点，稍后才补上 layui-layer 类名与 src
+      layer.className = 'layer-anim';
+      content.appendChild(iframe);
+      layer.appendChild(content);
+      document.body.appendChild(layer);
+      setTimeout(() => {
+        layer.className = 'layui-layer layui-layer-iframe layer-anim';
+        iframe.setAttribute('src', url);
+      }, 120);
+      return;
+    }
+    // atomic：src 与节点同时插入
+    layer.className = 'layui-layer layui-layer-iframe layer-anim';
+    iframe.setAttribute('src', url);
+    content.appendChild(iframe);
+    layer.appendChild(content);
+    document.body.appendChild(layer);
+  }, { insertMode, url });
+}
+
+async function mountLayerWithInnerPage(page, { insertMode = 'atomic', injectInnerScript }) {
   await loadUrpFixture(page, { fixture: 'home' });
   await page.route('**/student/menu-recommend/page', (route) => route.fulfill({
     path: path.join(ROOT, 'tests/fixtures/menu-recommend.html'),
     contentType: 'text/html; charset=utf-8',
   }));
-  await page.evaluate((base) => {
-    const layer = document.createElement('div');
-    layer.className = 'layui-layer layui-layer-iframe layer-anim';
-    layer.setAttribute('type', 'iframe');
-    layer.style.cssText = 'width:600px;height:520px;top:100px;left:100px;';
-    layer.innerHTML = [
-      '<div class="layui-layer-title">智能应用推荐</div>',
-      '<div class="layui-layer-content"><iframe src="' + base + '/student/menu-recommend/page" style="height:478px;width:100%"></iframe></div>',
-      '<span class="layui-layer-setwin"><a class="layui-layer-close"></a></span>',
-    ].join('');
-    document.body.appendChild(layer);
-  }, 'http://zhjw.scu.edu.cn');
+  await mountLayer(page, { insertMode, url: MENU_RECOMMEND_URL });
 
-  await page.waitForFunction(() => {
-    const iframe = document.querySelector('.layui-layer-iframe iframe');
-    return !!iframe && iframe.classList.contains('urppp-layer-awaiting');
-  });
+  // 等 src 真正挂上；类名后补的场景在此之后才可命中
+  await page.waitForFunction((selector) => {
+    const iframe = document.querySelector(selector);
+    return !!iframe && !!iframe.getAttribute('src');
+  }, LAYER_IFRAME_SELECTOR);
+
   if (injectInnerScript) {
     const frame = page.frames().find((f) => f.url().includes('menu-recommend'));
     await frame.addScriptTag({ path: USERSCRIPT_PATH });
@@ -224,50 +257,49 @@ async function mountLayerWithInnerPage(page, { injectInnerScript }) {
   }
 }
 
-test('layui iframe 弹窗：内层美化就绪前先藏住 iframe，不露出原生界面', async ({ page }) => {
-  // 油猴在内层文档的注入本来就晚于它的首次绘制，因此不能指望内层脚本自己抢在绘制前完成；
-  // 改由主文档先藏住 iframe，等内层打出 urppp-ready 再显示。
-  await mountLayerWithInnerPage(page, { injectInnerScript: false });
+const insertionModes = ['atomic', 'src-late', 'class-late'];
+for (const insertMode of insertionModes) {
+  test(`layui iframe 弹窗（${insertMode}）：内层样式就位前保持遮蔽`, async ({ page }) => {
+    await mountLayerWithInnerPage(page, { insertMode, injectInnerScript: false });
 
-  const guarded = await page.evaluate(() => {
-    const iframe = document.querySelector('.layui-layer-iframe iframe');
-    const doc = iframe.contentDocument;
-    return {
-      visibility: getComputedStyle(iframe).visibility,
-      innerReady: !!(doc && doc.documentElement && doc.documentElement.classList.contains('urppp-ready')),
-      innerBg: doc && doc.body ? getComputedStyle(doc.body).backgroundColor : null,
-    };
+    const state = await page.evaluate((selector) => {
+      const iframe = document.querySelector(selector);
+      const doc = iframe.contentDocument;
+      return {
+        visibility: getComputedStyle(iframe).visibility,
+        innerReady: !!(doc && doc.documentElement && doc.documentElement.classList.contains('urppp-ready')),
+        innerBg: doc && doc.body ? getComputedStyle(doc.body).backgroundColor : null,
+      };
+    }, LAYER_IFRAME_SELECTOR);
+
+    expect(state.visibility).toBe('hidden');
+    expect(state.innerReady).toBe(false);
+    // 内层此刻确实还是原生白底，只是被遮住了，用户看不到
+    expect(state.innerBg).toBe('rgb(255, 255, 255)');
   });
+}
 
-  expect(guarded.visibility).toBe('hidden');
-  expect(guarded.innerReady).toBe(false);
-  // 此刻内层确实还是原生白底，只是被藏住了，用户看不到
-  expect(guarded.innerBg).toBe('rgb(255, 255, 255)');
-});
-
-test('layui iframe 弹窗：内层脚本就绪后放行，显示美化后的内容', async ({ page }) => {
+test('layui iframe 弹窗：内层样式报到后放行', async ({ page }) => {
   await mountLayerWithInnerPage(page, { injectInnerScript: true });
 
-  await page.waitForFunction(() => {
-    const iframe = document.querySelector('.layui-layer-iframe iframe');
-    return !!iframe && !iframe.classList.contains('urppp-layer-awaiting');
-  });
-  const visibility = await page.evaluate(() => (
-    getComputedStyle(document.querySelector('.layui-layer-iframe iframe')).visibility
-  ));
+  await page.waitForFunction((selector) => (
+    document.querySelector(selector).classList.contains('urppp-layer-revealed')
+  ), LAYER_IFRAME_SELECTOR);
+  const visibility = await page.evaluate((selector) => (
+    getComputedStyle(document.querySelector(selector)).visibility
+  ), LAYER_IFRAME_SELECTOR);
   expect(visibility).toBe('visible');
 });
 
 test('layui iframe 弹窗：内层脚本缺席时不会永久隐藏', async ({ page }) => {
   // 若内层没有脚本（无需美化的页面或脚本未生效），兜底必须在短时间内放行，避免误伤
-  await mountLayerWithInnerPage(page, { injectInnerScript: false });
+  await mountLayerWithInnerPage(page, { insertMode: 'src-late', injectInnerScript: false });
 
-  await page.waitForFunction(() => {
-    const iframe = document.querySelector('.layui-layer-iframe iframe');
-    return !!iframe && !iframe.classList.contains('urppp-layer-awaiting');
-  }, null, { timeout: 5000 });
-  const visibility = await page.evaluate(() => (
-    getComputedStyle(document.querySelector('.layui-layer-iframe iframe')).visibility
-  ));
+  await page.waitForFunction((selector) => (
+    document.querySelector(selector).classList.contains('urppp-layer-revealed')
+  ), LAYER_IFRAME_SELECTOR, { timeout: 6000 });
+  const visibility = await page.evaluate((selector) => (
+    getComputedStyle(document.querySelector(selector)).visibility
+  ), LAYER_IFRAME_SELECTOR);
   expect(visibility).toBe('visible');
 });

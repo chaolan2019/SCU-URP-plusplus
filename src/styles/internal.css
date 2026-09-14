@@ -3750,6 +3750,16 @@
       .layui-layer.layui-layer-iframe {
         overflow: hidden !important;
       }
+      /* 内层样式就位前先遮蔽 iframe，避免看到未经美化的原生界面。
+         这里用属性选择器而不是靠 JS 打标记：真实 layui 的 src 与类名常常是
+         节点插入之后才补上的，只有在 DOM 当前状态下动态匹配，才能保证第一帧就盖住。
+         放行由 .urppp-layer-revealed 控制（内层样式就绪时报到，或超时兜底）。 */
+      .layui-layer-iframe iframe[src*="menu-recommend"] {
+        visibility: hidden !important;
+      }
+      .layui-layer-iframe iframe[src*="menu-recommend"].urppp-layer-revealed {
+        visibility: visible !important;
+      }
       .layui-layer-iframe > .layui-layer-title,
       .layui-layer-page > .layui-layer-title {
         background: var(--surface) !important;

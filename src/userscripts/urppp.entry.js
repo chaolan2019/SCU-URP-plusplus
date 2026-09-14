@@ -4582,12 +4582,13 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     applyCourseTableOpacity();
   }
 
-  // layui iframe 型弹窗的内容由独立文档承载，其脚本注入本就晚于该文档的首次绘制，
-  // 因而会先画出一张未美化的原生界面再被接管。把「提前注入」寄望于脚本自身没有意义，
-  // 改由主文档侧兜住：弹窗一出现就先把 iframe 藏住（露出的是主题底色），
-  // 等内层样式就绪的报到消息到达再放出。带超时兜底，避免误伤无需美化的弹窗。
-  const LAYER_GUARD_PATHS = ['/student/menu-recommend'];
-  const LAYER_GUARD_HIDE_CLASS = 'urppp-layer-awaiting';
+  // layui iframe 型弹窗的内层文档由独立脚本接管，而该脚本的注入晚于它自己的首次绘制，
+  // 于是会先画出一张未美化的原生界面再被接管。
+  // 遮蔽交给 internal.css 的属性选择器（src 与类名后补也能动态匹配），
+  // 这里只保证「一定会被放行」：内层样式就绪后主动报到，报到不到则超时兜底。
+  // 选择器需与 internal.css 中的规则保持一致。
+  const LAYER_GUARD_SELECTOR = '.layui-layer-iframe iframe[src*="menu-recommend"]';
+  const LAYER_GUARD_REVEAL_CLASS = 'urppp-layer-revealed';
   const LAYER_GUARD_TIMEOUT = 1500;
   // 内层样式就绪后向宿主报到；两侧共用同一个值
   const LAYER_STYLED_MESSAGE = 'urppp-layer-styled';
@@ -4598,49 +4599,35 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     if (window.__urpppLayerGuardReady) return;
     window.__urpppLayerGuardReady = true;
 
-    const style = document.createElement('style');
-    style.id = 'urppp-layer-guard-style';
-    style.textContent = '.' + LAYER_GUARD_HIDE_CLASS + '{visibility:hidden !important;}';
-    (document.head || document.documentElement).appendChild(style);
-
-    const pending = new Map();
-    const watch = (iframe) => {
-      if (!iframe || pending.has(iframe)) return;
-      const src = String(iframe.getAttribute('src') || '');
-      if (!LAYER_GUARD_PATHS.some((p) => src.includes(p))) return;
-      iframe.classList.add(LAYER_GUARD_HIDE_CLASS);
-      const release = () => {
-        if (!pending.has(iframe)) return;
-        pending.delete(iframe);
-        iframe.classList.remove(LAYER_GUARD_HIDE_CLASS);
-      };
-      pending.set(iframe, release);
-      // 内层脚本何时执行不由宿主决定，报到消息没来就靠超时兜底
-      setTimeout(release, LAYER_GUARD_TIMEOUT);
+    const reveal = (iframe) => {
+      try { iframe.classList.add(LAYER_GUARD_REVEAL_CLASS); } catch (_) {}
     };
 
     // 只认领消息来源，不读取另一个文档的内容
     window.addEventListener('message', (event) => {
       if (!event.data || event.data.urppp !== LAYER_STYLED_MESSAGE) return;
-      pending.forEach((release, iframe) => {
-        if (iframe.contentWindow === event.source) release();
+      document.querySelectorAll(LAYER_GUARD_SELECTOR).forEach((iframe) => {
+        if (iframe.contentWindow === event.source) reveal(iframe);
       });
     });
 
-    const scan = () => {
-      document.querySelectorAll('.layui-layer-iframe iframe').forEach(watch);
+    // 给每个新出现的 iframe 挂一个放行计时。
+    // 用轮询而不是只在节点插入时扫一次：src 与类名可能在那之后才补上。
+    const arm = () => {
+      document.querySelectorAll(LAYER_GUARD_SELECTOR).forEach((iframe) => {
+        if (iframe.dataset.urpppLayerArm) return;
+        iframe.dataset.urpppLayerArm = '1';
+        setTimeout(() => reveal(iframe), LAYER_GUARD_TIMEOUT);
+      });
     };
-    scan();
+    arm();
     try {
-      new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-          for (const node of mutation.addedNodes) {
-            if (node.nodeType !== 1) continue;
-            if (node.classList && node.classList.contains('layui-layer')) { scan(); return; }
-          }
-        }
-      }).observe(document.body || document.documentElement, { childList: true, subtree: true });
+      new MutationObserver(arm).observe(document.documentElement, {
+        childList: true, subtree: true, attributes: true, attributeFilter: ['src'],
+      });
     } catch (_) {}
+    // 类名后补的场景观察器盖不到，补一个低频轮询兜底
+    try { setInterval(arm, 500); } catch (_) {}
   }
 
   function beautifyInternal() {
