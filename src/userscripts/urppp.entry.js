@@ -86,6 +86,7 @@ import dashboardStyles from '../styles/dashboard.css';
 import scoreAnalysisStyles from '../styles/score-analysis.css';
 import mobileStyles from '../styles/mobile.css';
 import menuRecommendStyles from '../styles/menu-recommend.css';
+import { startLayerGuard } from '../features/layer-guard/index.js';
 import { createCleanModeState, resetCleanModeData } from '../features/clean-mode/state.js';
 import { createCleanModeDataLoader } from '../features/clean-mode/data.js';
 import { createCleanModeRenderer } from '../features/clean-mode/render.js';
@@ -4582,53 +4583,9 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     applyCourseTableOpacity();
   }
 
-  // layui iframe 型弹窗的内层文档由独立脚本接管，而该脚本的注入晚于它自己的首次绘制，
-  // 于是会先画出一张未美化的原生界面再被接管。
-  // 遮蔽交给 internal.css 的属性选择器（src 与类名后补也能动态匹配），
-  // 这里只保证「一定会被放行」：内层样式就绪后主动报到，报到不到则超时兜底。
-  // 选择器需与 internal.css 中的规则保持一致。
-  const LAYER_GUARD_SELECTOR = '.layui-layer-iframe iframe[src*="menu-recommend"]';
-  const LAYER_GUARD_REVEAL_CLASS = 'urppp-layer-revealed';
-  const LAYER_GUARD_TIMEOUT = 1500;
-  // 内层样式就绪后向宿主报到；两侧共用同一个值
-  const LAYER_STYLED_MESSAGE = 'urppp-layer-styled';
-  function guardLayerIframeFlash() {
-    try {
-      if (window !== window.top) return;
-    } catch (_) { return; }
-    if (window.__urpppLayerGuardReady) return;
-    window.__urpppLayerGuardReady = true;
-
-    const reveal = (iframe) => {
-      try { iframe.classList.add(LAYER_GUARD_REVEAL_CLASS); } catch (_) {}
-    };
-
-    // 只认领消息来源，不读取另一个文档的内容
-    window.addEventListener('message', (event) => {
-      if (!event.data || event.data.urppp !== LAYER_STYLED_MESSAGE) return;
-      document.querySelectorAll(LAYER_GUARD_SELECTOR).forEach((iframe) => {
-        if (iframe.contentWindow === event.source) reveal(iframe);
-      });
-    });
-
-    // 给每个新出现的 iframe 挂一个放行计时。
-    // 用轮询而不是只在节点插入时扫一次：src 与类名可能在那之后才补上。
-    const arm = () => {
-      document.querySelectorAll(LAYER_GUARD_SELECTOR).forEach((iframe) => {
-        if (iframe.dataset.urpppLayerArm) return;
-        iframe.dataset.urpppLayerArm = '1';
-        setTimeout(() => reveal(iframe), LAYER_GUARD_TIMEOUT);
-      });
-    };
-    arm();
-    try {
-      new MutationObserver(arm).observe(document.documentElement, {
-        childList: true, subtree: true, attributes: true, attributeFilter: ['src'],
-      });
-    } catch (_) {}
-    // 类名后补的场景观察器盖不到，补一个低频轮询兜底
-    try { setInterval(arm, 500); } catch (_) {}
-  }
+  // layui iframe 弹窗的首帧守卫已拆到 features/layer-guard：那里主动把主题底色写进内层文档，
+  // 因此不必再等内层脚本报到，等待也被压到只剩文档创建到一次轮询。
+  // 遮蔽规则仍在 internal.css（属性选择器，第一帧即生效）。
 
   function beautifyInternal() {
     // body 晚于首屏 applyTheme 时补挂暗色 class
@@ -4705,7 +4662,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     scheduleCurriculumDrawerBeautify();
     beautifyCurriculumDrawer();
     bindTableWrapObserver();
-    guardLayerIframeFlash();
+    startLayerGuard();
     // 首页进行组件级重构
     const pageContent = document.querySelector('.page-content');
     const hasWidgets = pageContent && pageContent.querySelectorAll('.widget-box').length >= 4;
@@ -10352,18 +10309,14 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 尽早注入已下载主题CSS并应用皮肤（刷新时 body 构建前即设 data-urppp-skin，避免先白后暖黄/主题色迟载）
   try { injectAllStoreThemeStyles(); } catch (_) {}
 
-  // 首帧防闪：智能应用推荐页常作为 iframe 弹窗内容加载，趁最早时机把变量与专属样式落好；
-  // 落好后向宿主报到，宿主侧对 iframe 的遮蔽由此解除（见 guardLayerIframeFlash）。
+  // 首帧防闪：智能应用推荐页常作为 iframe 弹窗内容加载，趁最早时机把变量与专属样式落好。
+  // 内层脚本注入之前的空窗由宿主侧的 layer-guard 填上（它会把主题底色直接写进本页），
+  // 所以这里不再需要向宿主报到。
   // applyTheme 与 ensureMenuRecommendStyles 均为幂等，init() 中会再跑一次，不会重复建节点。
   try {
     if (document.documentElement && isMenuRecommendPage()) {
       applyTheme(getCurrent());
       ensureMenuRecommendStyles();
-      try {
-        if (window.parent && window.parent !== window) {
-          window.parent.postMessage({ urppp: LAYER_STYLED_MESSAGE }, '*');
-        }
-      } catch (_) {}
     }
   } catch (_) {}
 
