@@ -3764,38 +3764,52 @@
         visibility: visible !important;
         opacity: 1 !important;
       }
-      /* 遮蔽期间露出的是弹窗底色，补一条克制的扫描线，避免看上去像卡住。
-         伪元素铺在 content 上，iframe 可见时会把它盖住（靠下方 z-index 分层），
-         所以无需遮蔽的弹窗不受影响。 */
+      /* 遮蔽期间露出的底色上给出明确的加载态：带轨道的细进度条。
+         只画滑块会被读成一根孤立的白线，轨道负责交代它的语义。
+         两者都画在内容层上，iframe 可见时被整体盖住，无需遮蔽的弹窗不受影响。 */
+      .layui-layer-iframe > .layui-layer-content::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 12%;
+        right: 12%;
+        height: 2px;
+        margin-top: -1px;
+        border-radius: 2px;
+        background: var(--border);
+        opacity: .5;
+        pointer-events: none !important;
+        z-index: 1;
+      }
       .layui-layer-iframe > .layui-layer-content::after {
         content: '';
         position: absolute;
         top: 50%;
-        left: 10%;
-        right: 10%;
+        left: 12%;
+        width: 18%;
         height: 2px;
         margin-top: -1px;
         border-radius: 2px;
-        background: linear-gradient(90deg, transparent, var(--primary), transparent);
-        background-size: 38% 100%;
-        background-repeat: no-repeat;
-        opacity: .45;
-        animation: urppp-layer-scan 1.15s ease-in-out infinite;
+        background: var(--primary);
+        opacity: .55;
+        animation: urppp-layer-progress 1.15s ease-in-out infinite;
         pointer-events: none !important;
         z-index: 1;
       }
+      @keyframes urppp-layer-progress {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(430%); }
+      }
+      /* 伪元素按规范绘制在内容之后，需把 iframe 抬到它之上，
+         否则内容就绪后进度条仍会盖在页面上 */
       .layui-layer-iframe > .layui-layer-content > iframe {
         position: relative;
         z-index: 2;
       }
-      @keyframes urppp-layer-scan {
-        0% { background-position: -38% 0; }
-        100% { background-position: 138% 0; }
-      }
       @media (prefers-reduced-motion: reduce) {
         .layui-layer-iframe > .layui-layer-content::after {
           animation: none;
-          background-position: 50% 0;
+          transform: translateX(210%);
         }
       }
       .layui-layer-iframe > .layui-layer-title,
