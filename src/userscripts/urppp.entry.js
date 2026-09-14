@@ -10303,6 +10303,16 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 尽早注入已下载主题CSS并应用皮肤（刷新时 body 构建前即设 data-urppp-skin，避免先白后暖黄/主题色迟载）
   try { injectAllStoreThemeStyles(); } catch (_) {}
 
+  // 首帧防闪：智能应用推荐页常作为 iframe 弹窗内容加载，网络往返与解析期间若还没有样式，
+  // 会先按原生外观绘制、随后才被接管，肉眼可见闪烁。趁 DOMContentLoaded 之前先把变量与专属样式落好。
+  // applyTheme 与 ensureMenuRecommendStyles 均为幂等，init() 中会再跑一次，不会重复建节点。
+  try {
+    if (document.documentElement && isMenuRecommendPage()) {
+      applyTheme(getCurrent());
+      ensureMenuRecommendStyles();
+    }
+  } catch (_) {}
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       init();

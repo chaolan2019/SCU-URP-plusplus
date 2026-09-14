@@ -3763,15 +3763,29 @@
       .layui-layer-page > .layui-layer-content {
         background: var(--bg) !important;
       }
-      /* 关闭按钮：去掉 layui sprite 背景图，改由 CSS 绘制，使其跟随主题明暗 */
+      /* 关闭按钮：先把 setwin 从 layui 的绝对偏移改为“与标题栏等高 + 右对齐”，
+         不同 layui 版本的 top/right 取值不一，只调按钮自身会让它落到标题栏之外；
+         图标本身去掉 sprite 背景图、改由 CSS 绘制，以跟随主题明暗。
+         高度取 layui 默认标题栏高度，若站点改过标题栏高度需同步此处。 */
+      .layui-layer-iframe > .layui-layer-setwin,
+      .layui-layer-page > .layui-layer-setwin {
+        top: 0 !important;
+        right: 0 !important;
+        height: 42px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        padding-right: 8px !important;
+        box-sizing: border-box !important;
+      }
       .layui-layer-iframe > .layui-layer-setwin .layui-layer-close,
       .layui-layer-page > .layui-layer-setwin .layui-layer-close {
-        display: inline-block !important;
+        display: inline-flex !important;
         position: relative !important;
-        top: 0 !important;
+        top: auto !important;
         width: 28px !important;
         height: 28px !important;
-        margin: 7px 8px 0 0 !important;
+        margin: 0 !important;
         background: transparent !important;
         border-radius: calc(var(--radius) * 0.75) !important;
         opacity: .55 !important;
