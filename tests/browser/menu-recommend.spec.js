@@ -296,6 +296,43 @@ test('layui iframe 弹窗：内层脚本接管后底色不变', async ({ page })
   expect(innerBg).toBe(LIGHT.bg);
 });
 
+test('layui iframe 弹窗：放行逻辑缺席时靠样式兜底自行显示', async ({ page }) => {
+  // 占住守卫的安装标志，模拟「放行逻辑因故未生效」，只留样式层的遮蔽。
+  // 这一层必须自己收场，否则弹窗会永久空白。
+  await page.addInitScript(() => { window.__urpppLayerGuardReady = true; });
+  await loadUrpFixture(page, { fixture: 'home' });
+  await page.route('**/student/menu-recommend/page', (route) => route.fulfill({
+    path: path.join(ROOT, 'tests/fixtures/menu-recommend.html'),
+    contentType: 'text/html; charset=utf-8',
+  }));
+  await mountLayer(page, { insertMode: 'atomic', url: MENU_RECOMMEND_URL });
+  await page.waitForFunction((selector) => {
+    const iframe = document.querySelector(selector);
+    return !!iframe && !!iframe.getAttribute('src');
+  }, LAYER_IFRAME_SELECTOR);
+
+  const during = await page.evaluate((selector) => ({
+    visibility: getComputedStyle(document.querySelector(selector)).visibility,
+    revealed: document.querySelector(selector).classList.contains('urppp-layer-revealed'),
+  }), LAYER_IFRAME_SELECTOR);
+  // 一开始确实被样式层遮住
+  expect(during.visibility).toBe('hidden');
+  expect(during.revealed).toBe(false);
+
+  // 随后必须自行露出，不依赖任何脚本参与
+  await page.waitForFunction(
+    (selector) => getComputedStyle(document.querySelector(selector)).visibility === 'visible',
+    LAYER_IFRAME_SELECTOR,
+    { timeout: 4000 },
+  );
+  const after = await page.evaluate((selector) => ({
+    visibility: getComputedStyle(document.querySelector(selector)).visibility,
+    revealed: document.querySelector(selector).classList.contains('urppp-layer-revealed'),
+  }), LAYER_IFRAME_SELECTOR);
+  expect(after.visibility).toBe('visible');
+  expect(after.revealed).toBe(false);
+});
+
 test('layui iframe 弹窗：非目标路径的 iframe 不受影响', async ({ page }) => {
   await loadUrpFixture(page, { fixture: 'home' });
   await page.evaluate(() => {

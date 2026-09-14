@@ -3754,15 +3754,21 @@
          这里用属性选择器而不是靠 JS 打标记：真实 layui 的 src 与类名常常是
          节点插入之后才补上的，只有在 DOM 当前状态下动态匹配，才能保证第一帧就盖住。
          放行由 .urppp-layer-revealed 控制（内层样式就绪时报到，或超时兜底）。 */
-      /* opacity 参与过渡，让内容出现时是淡入而非突变；扫描线在这一过程中被自然盖住 */
+      /* 遮蔽不能带 !important：它优先级高于 animation 的填充值，
+         会把下面那道「超时自显」的硬兜底压死，放行一旦出问题就是永久空白。
+         作用于父文档的 iframe 元素，无需担心被内层样式改掉。 */
       .layui-layer-iframe iframe[src*="menu-recommend"] {
-        visibility: hidden !important;
-        opacity: 0 !important;
-        transition: opacity .18s ease !important;
+        visibility: hidden;
+        opacity: 0;
+        transition: opacity .18s ease;
+        animation: urppp-layer-awaited-expire 0s linear 1.5s forwards;
       }
       .layui-layer-iframe iframe[src*="menu-recommend"].urppp-layer-revealed {
-        visibility: visible !important;
-        opacity: 1 !important;
+        visibility: visible;
+        opacity: 1;
+      }
+      @keyframes urppp-layer-awaited-expire {
+        to { visibility: visible; opacity: 1; }
       }
       /* 遮蔽期间只有弹窗底色，不叠任何加载指示：
          自绘的孤立元素容易被读成渲染瑕疵，保持干净更稳妥。 */
