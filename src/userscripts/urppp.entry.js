@@ -85,6 +85,7 @@ import cleanModeStyles from '../styles/clean-mode.css';
 import dashboardStyles from '../styles/dashboard.css';
 import scoreAnalysisStyles from '../styles/score-analysis.css';
 import mobileStyles from '../styles/mobile.css';
+import menuRecommendStyles from '../styles/menu-recommend.css';
 import { createCleanModeState, resetCleanModeData } from '../features/clean-mode/state.js';
 import { createCleanModeDataLoader } from '../features/clean-mode/data.js';
 import { createCleanModeRenderer } from '../features/clean-mode/render.js';
@@ -1345,6 +1346,16 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     try {
       const p = String(location.pathname || '').replace(/\/+$/, '') || '/';
       return p === '/' || p === '/index' || /\/index\.html?$/i.test(p);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // 智能应用推荐页：路径为主，DOM 为兜底（该页可能在 iframe 内独立加载或直访）
+  function isMenuRecommendPage() {
+    try {
+      if (/\/menu-recommend/i.test(String(location.pathname || ''))) return true;
+      return !!document.querySelector('.chat-container');
     } catch (_) {
       return false;
     }
@@ -4615,6 +4626,8 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     if (!scheduleCardStyle) {
       if (isPersonalSchedulePage(location)) ensureScheduleCardStyles();
     }
+    // 智能应用推荐页：仅该页需要（iframe 弹窗内容与直访共用同一套样式）
+    if (isMenuRecommendPage()) ensureMenuRecommendStyles();
     // 移动端兑底样式：裸规则桌面也生效，不能按视口省略——移动 UA 启动即注，桌面空闲预载（零行为变化，仅错峰解析）
     try { if (window.__urpppIsMobileUA) ensureMobileStyles(); } catch (_) {}
     try { applySkinAttr(); } catch (_) {}
@@ -7554,9 +7567,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   function ensureMobileStyles() { ensureStyleOnce('urppp-mobile-style', mobileStyles); }
 
+  function ensureMenuRecommendStyles() { ensureStyleOnce('urppp-menu-recommend-style', menuRecommendStyles); }
+
   function ensureRouteStyles() { // 路由切换到目标页时立即补注，不等空闲
     try { if (isHomePage()) ensureDashboardStyles(); } catch (_) {}
     try { if (isPersonalSchedulePage(location)) ensureScheduleCardStyles(); } catch (_) {}
+    try { if (isMenuRecommendPage()) ensureMenuRecommendStyles(); } catch (_) {}
   }
 
   function scheduleDeferredStyles() { // 首屏完成后空闲预载剩余分组

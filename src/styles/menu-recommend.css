@@ -1,0 +1,150 @@
+/*
+ * 智能应用推荐（/student/menu-recommend/page）
+ *
+ * 该页既作为 layui iframe 弹窗内容加载，也可能被直接访问。
+ * 脚本的 @match 覆盖 SCU 主域且未声明 @noframes，入口判断为 http + 主站 host，
+ * 因此 iframe 内会独立注入同一套样式与主题变量；本文件只依赖自身结构，
+ * 不假设自己运行在弹窗上下文中。
+ *
+ * 覆盖原则：只接管视觉（底色 / 文字 / 边框 / 圆角 / 表单控件），
+ * 布局（flex 结构、尺寸）交给页面自身，避免与站点原有布局相互打架。
+ * 颜色一律取语义变量，主题切换时自动跟随，无需按主题各改一份。
+ */
+
+/* ---------- 结构区 ---------- */
+
+.chat-container {
+  background: var(--bg) !important;
+  color: var(--text) !important;
+}
+
+.chat-header {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border-bottom: 1px solid var(--border) !important;
+}
+
+/* 页面未填充标题内容时，不留一条空的分隔带 */
+.chat-header:empty {
+  display: none !important;
+}
+
+.chat-messages {
+  color: var(--text) !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: var(--border) !important;
+  border-radius: 3px !important;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted) !important;
+}
+
+/* ---------- 空状态 ---------- */
+
+.empty-state {
+  color: var(--text-muted) !important;
+}
+
+.empty-state i {
+  color: var(--primary) !important;
+  opacity: .8 !important;
+}
+
+.empty-state p {
+  color: var(--text-secondary) !important;
+}
+
+.empty-state p:last-child {
+  color: var(--text-muted) !important;
+}
+
+/* ---------- 输入区 ---------- */
+
+.chat-input-area {
+  background: var(--surface) !important;
+  border-top: 1px solid var(--border) !important;
+}
+
+.chat-input-area input[type="text"],
+.chat-input-area input[type="search"],
+.chat-input-area input:not([type]),
+.chat-input-area textarea {
+  /* 输入框撑满可用宽度：页面若写死宽度，在宽弹窗里会被卡成半截 */
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  background: var(--input-bg) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm, var(--radius)) !important;
+  box-shadow: none !important;
+}
+
+.chat-input-area input::placeholder,
+.chat-input-area textarea::placeholder {
+  color: var(--text-muted) !important;
+}
+
+.chat-input-area input:focus,
+.chat-input-area textarea:focus {
+  border-color: var(--border-focus, var(--primary)) !important;
+  box-shadow: 0 0 0 3px var(--ring, transparent) !important;
+  outline: none !important;
+}
+
+.chat-input-area button,
+.chat-input-area .btn {
+  background: var(--primary) !important;
+  color: var(--primary-foreground, #fff) !important;
+  border: 1px solid transparent !important;
+  border-radius: var(--radius-sm, var(--radius)) !important;
+  box-shadow: none !important;
+}
+
+.chat-input-area button:hover,
+.chat-input-area .btn:hover {
+  filter: brightness(1.06);
+}
+
+/* ---------- 兜底 ---------- */
+/* 结果项与后续新增内容的具体类名无法预知，这里只接管表单控件这类
+   必然会出现的元素，不猜业务类名，避免误伤 */
+
+.chat-container a {
+  color: var(--primary) !important;
+}
+
+.chat-container select {
+  background: var(--input-bg) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm, var(--radius)) !important;
+  box-shadow: none !important;
+}
+
+.chat-messages button,
+.chat-messages .btn {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm, var(--radius)) !important;
+  box-shadow: none !important;
+}
+
+.chat-messages button:hover,
+.chat-messages .btn:hover {
+  background: var(--hover-bg, rgba(127, 127, 127, 0.08)) !important;
+}

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>URP 智能应用推荐 fixture</title>
+  <style>
+    html, body { margin: 0; height: 100%; color: #333; background: #fff; font: 14px Arial, sans-serif; }
+    /*
+     * 模拟站点自带样式。布局（flex 结构与尺寸）由页面自己决定：
+     * URPP++ 只接管视觉，不应夺走这些属性，
+     * 一旦有人给它们加上 !important，下方断言会立刻失败。
+     */
+    .page-content { height: 100%; display: flex; flex-direction: column; }
+    .chat-container { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+    .chat-messages { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100%; text-align: center; }
+    .chat-input-area { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+    /* 输入框刻意写死宽度：验证样式层会把它放开撑满，而不是被固定值卡成半截 */
+    .chat-input-area input { width: 200px; height: 32px; border: 1px solid #ccc; }
+    .chat-input-area button { height: 32px; border: 1px solid #ccc; background: #f5f5f5; color: #333; }
+  </style>
+</head>
+<body>
+  <div class="page-content" id="page-content-template">
+    <div class="chat-container">
+      <div class="chat-header"></div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="empty-state">
+          <i class="fa fa-lightbulb-o"></i>
+          <p>输入业务关键词，为您推荐相关应用</p>
+          <p style="font-size:12px;margin-top:4px;">试试：成绩、选课、课表、考试、学籍、毕业...</p>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <input type="text" placeholder="请输入关键词">
+        <button type="button">发送</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

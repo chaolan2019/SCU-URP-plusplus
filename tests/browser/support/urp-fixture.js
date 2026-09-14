@@ -11,6 +11,7 @@ export const FIXTURE_URLS = {
   grades: 'http://zhjw.scu.edu.cn/student/integratedQuery/scoreQuery/allTermScores/index',
   evaluation: 'http://zhjw.scu.edu.cn/student/teachingEvaluation/teachingEvaluation/search',
   'free-classroom': 'http://zhjw.scu.edu.cn/student/teachingResources/freeClassroom/index',
+  'menu-recommend': 'http://zhjw.scu.edu.cn/student/menu-recommend/page',
 };
 
 const DEFAULT_VALUES = {

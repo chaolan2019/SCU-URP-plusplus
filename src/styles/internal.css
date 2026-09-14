@@ -3736,6 +3736,75 @@
         padding: 12px 18px !important;
       }
 
+      /* layui iframe / page 型弹窗骨架（如「智能应用推荐」）
+         只改视觉、不动尺寸：layui 以内联 width/height 反算 iframe 高度，
+         改动 title 高度会让 content 与 iframe 之间露出缝隙 */
+      .layui-layer.layui-layer-iframe,
+      .layui-layer.layui-layer-page {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius) !important;
+        box-shadow: 0 18px 48px rgba(15, 23, 42, 0.20), 0 2px 8px rgba(15, 23, 42, 0.06) !important;
+      }
+      /* 仅 iframe 型裁圆角：page 型内容在同文档内，裁剪会切掉内部浮层 */
+      .layui-layer.layui-layer-iframe {
+        overflow: hidden !important;
+      }
+      .layui-layer-iframe > .layui-layer-title,
+      .layui-layer-page > .layui-layer-title {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        border-bottom: 1px solid var(--border) !important;
+        padding: 0 46px 0 18px !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+      }
+      .layui-layer-iframe > .layui-layer-content,
+      .layui-layer-page > .layui-layer-content {
+        background: var(--bg) !important;
+      }
+      /* 关闭按钮：去掉 layui sprite 背景图，改由 CSS 绘制，使其跟随主题明暗 */
+      .layui-layer-iframe > .layui-layer-setwin .layui-layer-close,
+      .layui-layer-page > .layui-layer-setwin .layui-layer-close {
+        display: inline-block !important;
+        position: relative !important;
+        top: 0 !important;
+        width: 28px !important;
+        height: 28px !important;
+        margin: 7px 8px 0 0 !important;
+        background: transparent !important;
+        border-radius: calc(var(--radius) * 0.75) !important;
+        opacity: .55 !important;
+        transition: opacity .15s ease, background-color .15s ease !important;
+      }
+      .layui-layer-iframe > .layui-layer-setwin .layui-layer-close::before,
+      .layui-layer-iframe > .layui-layer-setwin .layui-layer-close::after,
+      .layui-layer-page > .layui-layer-setwin .layui-layer-close::before,
+      .layui-layer-page > .layui-layer-setwin .layui-layer-close::after {
+        content: '' !important;
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        width: 13px !important;
+        height: 1.5px !important;
+        margin: -0.75px 0 0 -6.5px !important;
+        background: var(--text) !important;
+        border-radius: 1px !important;
+      }
+      .layui-layer-iframe > .layui-layer-setwin .layui-layer-close::before,
+      .layui-layer-page > .layui-layer-setwin .layui-layer-close::before {
+        transform: rotate(45deg) !important;
+      }
+      .layui-layer-iframe > .layui-layer-setwin .layui-layer-close::after,
+      .layui-layer-page > .layui-layer-setwin .layui-layer-close::after {
+        transform: rotate(-45deg) !important;
+      }
+      .layui-layer-iframe > .layui-layer-setwin .layui-layer-close:hover,
+      .layui-layer-page > .layui-layer-setwin .layui-layer-close:hover {
+        opacity: 1 !important;
+        background: var(--hover-bg, rgba(127, 127, 127, 0.12)) !important;
+      }
+
       /* 弹窗：只美化外观；display 尽量交给 Bootstrap */
       /* 仅兜底关闭态 fade 且无 in/show，避免假弹窗常驻；不要强制 .in{display:block} 以免干扰打开动画 */
       .modal.fade:not(.in):not(.show) {
