@@ -192,3 +192,82 @@ test('智能应用推荐页：样式早于 DOMContentLoaded 注入，避免首�
   expect(state.hasThemeVars).toBe(true);
   expect(state.hasPageStyles).toBe(true);
 });
+
+// 弹窗与内层页面共用的搭建流程：只建壳，内层脚本由调用方决定何时注入
+async function mountLayerWithInnerPage(page, { injectInnerScript }) {
+  await loadUrpFixture(page, { fixture: 'home' });
+  await page.route('**/student/menu-recommend/page', (route) => route.fulfill({
+    path: path.join(ROOT, 'tests/fixtures/menu-recommend.html'),
+    contentType: 'text/html; charset=utf-8',
+  }));
+  await page.evaluate((base) => {
+    const layer = document.createElement('div');
+    layer.className = 'layui-layer layui-layer-iframe layer-anim';
+    layer.setAttribute('type', 'iframe');
+    layer.style.cssText = 'width:600px;height:520px;top:100px;left:100px;';
+    layer.innerHTML = [
+      '<div class="layui-layer-title">智能应用推荐</div>',
+      '<div class="layui-layer-content"><iframe src="' + base + '/student/menu-recommend/page" style="height:478px;width:100%"></iframe></div>',
+      '<span class="layui-layer-setwin"><a class="layui-layer-close"></a></span>',
+    ].join('');
+    document.body.appendChild(layer);
+  }, 'http://zhjw.scu.edu.cn');
+
+  await page.waitForFunction(() => {
+    const iframe = document.querySelector('.layui-layer-iframe iframe');
+    return !!iframe && iframe.classList.contains('urppp-layer-awaiting');
+  });
+  if (injectInnerScript) {
+    const frame = page.frames().find((f) => f.url().includes('menu-recommend'));
+    await frame.addScriptTag({ path: USERSCRIPT_PATH });
+    await frame.waitForSelector('html.urppp-ready');
+  }
+}
+
+test('layui iframe 弹窗：内层美化就绪前先藏住 iframe，不露出原生界面', async ({ page }) => {
+  // 油猴在内层文档的注入本来就晚于它的首次绘制，因此不能指望内层脚本自己抢在绘制前完成；
+  // 改由主文档先藏住 iframe，等内层打出 urppp-ready 再显示。
+  await mountLayerWithInnerPage(page, { injectInnerScript: false });
+
+  const guarded = await page.evaluate(() => {
+    const iframe = document.querySelector('.layui-layer-iframe iframe');
+    const doc = iframe.contentDocument;
+    return {
+      visibility: getComputedStyle(iframe).visibility,
+      innerReady: !!(doc && doc.documentElement && doc.documentElement.classList.contains('urppp-ready')),
+      innerBg: doc && doc.body ? getComputedStyle(doc.body).backgroundColor : null,
+    };
+  });
+
+  expect(guarded.visibility).toBe('hidden');
+  expect(guarded.innerReady).toBe(false);
+  // 此刻内层确实还是原生白底，只是被藏住了，用户看不到
+  expect(guarded.innerBg).toBe('rgb(255, 255, 255)');
+});
+
+test('layui iframe 弹窗：内层脚本就绪后放行，显示美化后的内容', async ({ page }) => {
+  await mountLayerWithInnerPage(page, { injectInnerScript: true });
+
+  await page.waitForFunction(() => {
+    const iframe = document.querySelector('.layui-layer-iframe iframe');
+    return !!iframe && !iframe.classList.contains('urppp-layer-awaiting');
+  });
+  const visibility = await page.evaluate(() => (
+    getComputedStyle(document.querySelector('.layui-layer-iframe iframe')).visibility
+  ));
+  expect(visibility).toBe('visible');
+});
+
+test('layui iframe 弹窗：内层脚本缺席时不会永久隐藏', async ({ page }) => {
+  // 若内层没有脚本（无需美化的页面或脚本未生效），兜底必须在短时间内放行，避免误伤
+  await mountLayerWithInnerPage(page, { injectInnerScript: false });
+
+  await page.waitForFunction(() => {
+    const iframe = document.querySelector('.layui-layer-iframe iframe');
+    return !!iframe && !iframe.classList.contains('urppp-layer-awaiting');
+  }, null, { timeout: 5000 });
+  const visibility = await page.evaluate(() => (
+    getComputedStyle(document.querySelector('.layui-layer-iframe iframe')).visibility
+  ));
+  expect(visibility).toBe('visible');
+});

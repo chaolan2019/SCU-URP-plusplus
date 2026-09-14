@@ -4582,6 +4582,67 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     applyCourseTableOpacity();
   }
 
+  // layui iframe 型弹窗的内容由独立文档承载，其脚本注入本就晚于该文档的首次绘制，
+  // 因而会先画出一张未美化的原生界面再被接管。把「提前注入」寄望于脚本自身没有意义，
+  // 改由主文档侧兜住：弹窗一出现就先把 iframe 藏住（露出的是主题底色），
+  // 等内层样式就绪的报到消息到达再放出。带超时兜底，避免误伤无需美化的弹窗。
+  const LAYER_GUARD_PATHS = ['/student/menu-recommend'];
+  const LAYER_GUARD_HIDE_CLASS = 'urppp-layer-awaiting';
+  const LAYER_GUARD_TIMEOUT = 1500;
+  // 内层样式就绪后向宿主报到；两侧共用同一个值
+  const LAYER_STYLED_MESSAGE = 'urppp-layer-styled';
+  function guardLayerIframeFlash() {
+    try {
+      if (window !== window.top) return;
+    } catch (_) { return; }
+    if (window.__urpppLayerGuardReady) return;
+    window.__urpppLayerGuardReady = true;
+
+    const style = document.createElement('style');
+    style.id = 'urppp-layer-guard-style';
+    style.textContent = '.' + LAYER_GUARD_HIDE_CLASS + '{visibility:hidden !important;}';
+    (document.head || document.documentElement).appendChild(style);
+
+    const pending = new Map();
+    const watch = (iframe) => {
+      if (!iframe || pending.has(iframe)) return;
+      const src = String(iframe.getAttribute('src') || '');
+      if (!LAYER_GUARD_PATHS.some((p) => src.includes(p))) return;
+      iframe.classList.add(LAYER_GUARD_HIDE_CLASS);
+      const release = () => {
+        if (!pending.has(iframe)) return;
+        pending.delete(iframe);
+        iframe.classList.remove(LAYER_GUARD_HIDE_CLASS);
+      };
+      pending.set(iframe, release);
+      // 内层脚本何时执行不由宿主决定，报到消息没来就靠超时兜底
+      setTimeout(release, LAYER_GUARD_TIMEOUT);
+    };
+
+    // 只认领消息来源，不读取另一个文档的内容
+    window.addEventListener('message', (event) => {
+      if (!event.data || event.data.urppp !== LAYER_STYLED_MESSAGE) return;
+      pending.forEach((release, iframe) => {
+        if (iframe.contentWindow === event.source) release();
+      });
+    });
+
+    const scan = () => {
+      document.querySelectorAll('.layui-layer-iframe iframe').forEach(watch);
+    };
+    scan();
+    try {
+      new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          for (const node of mutation.addedNodes) {
+            if (node.nodeType !== 1) continue;
+            if (node.classList && node.classList.contains('layui-layer')) { scan(); return; }
+          }
+        }
+      }).observe(document.body || document.documentElement, { childList: true, subtree: true });
+    } catch (_) {}
+  }
+
   function beautifyInternal() {
     // body 晚于首屏 applyTheme 时补挂暗色 class
     try {
@@ -4657,6 +4718,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     scheduleCurriculumDrawerBeautify();
     beautifyCurriculumDrawer();
     bindTableWrapObserver();
+    guardLayerIframeFlash();
     // 首页进行组件级重构
     const pageContent = document.querySelector('.page-content');
     const hasWidgets = pageContent && pageContent.querySelectorAll('.widget-box').length >= 4;
@@ -10303,13 +10365,18 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 尽早注入已下载主题CSS并应用皮肤（刷新时 body 构建前即设 data-urppp-skin，避免先白后暖黄/主题色迟载）
   try { injectAllStoreThemeStyles(); } catch (_) {}
 
-  // 首帧防闪：智能应用推荐页常作为 iframe 弹窗内容加载，网络往返与解析期间若还没有样式，
-  // 会先按原生外观绘制、随后才被接管，肉眼可见闪烁。趁 DOMContentLoaded 之前先把变量与专属样式落好。
+  // 首帧防闪：智能应用推荐页常作为 iframe 弹窗内容加载，趁最早时机把变量与专属样式落好；
+  // 落好后向宿主报到，宿主侧对 iframe 的遮蔽由此解除（见 guardLayerIframeFlash）。
   // applyTheme 与 ensureMenuRecommendStyles 均为幂等，init() 中会再跑一次，不会重复建节点。
   try {
     if (document.documentElement && isMenuRecommendPage()) {
       applyTheme(getCurrent());
       ensureMenuRecommendStyles();
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ urppp: LAYER_STYLED_MESSAGE }, '*');
+        }
+      } catch (_) {}
     }
   } catch (_) {}
 
