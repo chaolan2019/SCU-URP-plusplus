@@ -186,14 +186,21 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     { id: 'neu', name: '新拟物', desc: '同色双阴影凸起/内凹，立体柔和。支持暗色，不支持动态配色。', ready: true, dark: true, dynamic: false, installed: false, version: '1.0.0', author: 'Chao_Lan', repo: 'https://github.com/chaolan2019/SCU-URP-plusplus', caps: { scope: 'app', allowJS: false } },
   ];
 
-  // 最早阶段：最高优先级遮罩盖住未美化界面，完成后淡入
+  // 最早阶段：最高优先级遮罩盖住未美化界面，完成后淡入。
+  // 智能应用推荐页例外：它作为弹窗内层文档时，宿主已用主题底色打好底，
+  // 这层自遮只会慢一拍，还会把加载遮罩露出来，因此整段跳过。
+  const hostedInLayer = isMenuRecommendPage();
+  const bodyVeil = hostedInLayer ? '' : [
+    'html:not(.urppp-ready) body {',
+    '  opacity: 0 !important;',
+    '  pointer-events: none !important;',
+    '}',
+  ].join('\n');
+  const bootLoaderVeil = hostedInLayer ? 'display: none !important;' : '';
   const earlyStyle = GM_addStyle(`
     html, body { background: var(--bg, #F5F5F7) !important; color: var(--text, #1D1D1F) !important; }
     /* 未就绪时隐藏页面主体，避免 ACE 原样式闪现 */
-    html:not(.urppp-ready) body {
-      opacity: 0 !important;
-      pointer-events: none !important;
-    }
+    ${bodyVeil}
     html.urppp-ready body,
     body.urppp-ready {
       opacity: 1 !important;
@@ -216,6 +223,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif !important;
       transition: opacity .25s ease, visibility .25s ease, background-color .2s ease !important;
       pointer-events: all !important;
+      ${bootLoaderVeil}
     }
     #urppp-boot-loader.urppp-boot-hide {
       opacity: 0 !important;
