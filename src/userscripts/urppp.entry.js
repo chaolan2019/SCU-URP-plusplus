@@ -950,9 +950,10 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       } catch (_) {}
       try { hideBootLoader(); } catch (_) {}
     };
-    // 只要**用户真的动手/看向页面**的事件。刻意不含 focus：
-    // 页面加载时浏览器自己就会给一次 focus，那不是用户意图——线上就是它一直在顶着撤遮罩。
-    ['visibilitychange', 'pointerdown', 'keydown', 'wheel', 'scroll'].forEach((type) => {
+    // 只要**用户真的动手**的事件。刻意不含 focus 与 visibilitychange：
+    // 两者在页面加载时浏览器都会自己发一次，那不是用户意图（线上就是它们一直在顶着撤遮罩，
+    // 把真问题掩盖了）。
+    ['pointerdown', 'keydown', 'wheel', 'scroll'].forEach((type) => {
       window.addEventListener(type, revealOnUserIntent, { once: true, passive: true, capture: true });
     });
   } catch (_) {}
@@ -1045,9 +1046,13 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       done();
     };
     // 上限：站点持续重排时也要把首屏交出去，不留无限期遮罩。
-    // 曾经把它收到 300ms，但线上读数反而从 922ms 变成 1070ms——上限只会把等待变短，
-    // 所以它根本不是约束。先退回 1500ms，等时间点读数出来再决定。
-    const LAYOUT_STABLE_CEILING_MS = 1500;
+    //
+    // 这里已经是当前的主要机制，不再是「兜底」：线上实测「几何连续两帧完全不变」
+    // 在活跃页面上不可达（日历、公告、插件自身重渲染一直在改几何，stableEnd 永远为空），
+    // 而稳定判定的本意只是「等插件自己的首页渲染做完再掀遮罩」——
+    // 那个时刻就是 bootAt（它在首页重构之后才被调用）。
+    // 所以保留很短的 settle（帧级抖动不可见），比等一个永远不会到来的静止可靠。
+    const LAYOUT_STABLE_CEILING_MS = 150;
     let deadline = 0;
     const check = () => {
       tickTimer = 0;

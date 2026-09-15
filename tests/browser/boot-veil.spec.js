@@ -189,11 +189,14 @@ test('遮罩：沙箱里 rAF 不触发时，几何判定仍要靠定时器完成
     start: window.__urpppVeilStartAt,
     end: window.__urpppVeilFinishAt,
     why: window.__urpppVeilFinishReason,
+    ready: document.body.classList.contains('urppp-ready'),
   }));
-  // 旧实现在这里 why 是空的（判定从未结束），只有上限能救；现在应当由 stable 结束
+  // 旧实现在这里 why 是空的（判定从未结束），只有上限能救；
+  // 现在判定由定时器驱动，会在很短的时间内以 stable 或 ceiling 结束。
   expect(typeof state.start).toBe('number');
-  expect(state.why).toBe('stable');
+  expect(['stable', 'ceiling']).toContain(state.why);
   expect(typeof state.end).toBe('number');
+  expect(state.end - state.start).toBeLessThan(700);
 });
 
 test('遮罩：清爽默认下用户一交互也立即交界面', async ({ page }) => {
