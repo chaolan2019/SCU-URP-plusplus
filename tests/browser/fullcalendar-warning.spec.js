@@ -33,10 +33,23 @@ async function installJQueryStub(page) {
 }
 
 test('FullCalendar 空操作警告被静默，初始化调用照常透传', async ({ page }) => {
+  const warnings = [];
+  page.on('console', (msg) => { if (msg.type() === 'warning') warnings.push(msg.text()); });
   await loadUrpFixture(page, {
     fixture: 'home',
     beforeUserscript: installJQueryStub,
   });
+
+  // 第二道保底：这条确切支案直接走 console.warn 也应被过滤（不依赖 $.fn 补丁是否赶上）
+  const filtered = await page.evaluate(() => {
+    window.console.warn('Attempting to call a FullCalendar method on an element with no calendar.');
+    window.console.warn('别的警告应当照旧');
+    return !!window.__urpppFullCalendarQuiet;
+  });
+  expect(filtered).toBe(true);
+  await page.waitForTimeout(200);
+  expect(warnings.some((line) => line.includes('no calendar'))).toBe(false);
+  expect(warnings.some((line) => line.includes('别的警告应当照旧'))).toBe(true);
 
   // 补丁要装上（jQuery 可能晚于插件出现，插件会用轮询补装）
   await expect.poll(

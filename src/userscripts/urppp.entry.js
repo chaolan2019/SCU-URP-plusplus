@@ -864,9 +864,30 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   try { ensureBootLoader(); } catch (_) {}
   // 站点的 fullCalendars 初始化会对没有实例的元素调 fullCalendar('...')，FullCalendar 的
   // jQuery 包装就会打印 “Attempting to call a FullCalendar method on an element with no calendar.”。
-  // 那是无害空操作，但会刷控制台。只吞这一类：首参是方法名（字符串）且该元素没有实例；
-  // 初始化传的是配置对象，照旧透传——吞错会造成日历根本不初始化。
+  // 那是无害空操作，但会刷控制台。
+  //
+  // 双保险：
+  // 1) 拦 $.fn.fullCalendar 的无实例调用（只拦方法名参数，配置对象照旧透传）；
+  // 2) 再对**这条确切文案**做一次 console.warn 过滤——
+  //    因为站点可能在插件装补丁前就调过，或者它用的 jQuery 实例与页面全局不是同一个。
   (function quietFullCalendarNoopWarning() {
+    const NO_CAL_MESSAGE = 'Attempting to call a FullCalendar method on an element with no calendar.';
+    try {
+      const pageWindow = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+      [console, (pageWindow && pageWindow.console) || null].forEach((target) => {
+        if (!target || typeof target.warn !== 'function' || target.warn.__urpppQuiet) return;
+        const originalWarn = target.warn.bind(target);
+        const filtered = function (...args) {
+          try {
+            if (args.length && typeof args[0] === 'string' && args[0].includes(NO_CAL_MESSAGE)) return;
+          } catch (_) { /* 判定失败就照旧输出 */ }
+          return originalWarn(...args);
+        };
+        filtered.__urpppQuiet = true;
+        target.warn = filtered;
+      });
+      window.__urpppFullCalendarQuiet = true;
+    } catch (_) {}
     const install = () => {
       try {
         const g = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
@@ -885,6 +906,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
         };
         patched.__urpppQuiet = true;
         jq.fn.fullCalendar = patched;
+        console.log('[URP++] FullCalendar 空操作警告已静默');
         return true;
       } catch (_) { return false; }
     };
