@@ -87,8 +87,7 @@ import scoreAnalysisStyles from '../styles/score-analysis.css';
 import mobileStyles from '../styles/mobile.css';
 import menuRecommendStyles from '../styles/menu-recommend.css';
 import { startLayerGuard } from '../features/layer-guard/index.js';
-import { startCourseGridIsolation } from '../features/course-grid-isolation/index.js';
-import { isCourseTimeGrid } from '../features/table-beautify/course-time-grid.js';
+import { startInlineBgGuard } from '../features/inline-bg-guard/index.js';
 import { installConfirmDialog } from '../features/confirm-dialog/index.js';
 import { createCleanModeState, resetCleanModeData } from '../features/clean-mode/state.js';
 import { createCleanModeDataLoader } from '../features/clean-mode/data.js';
@@ -112,6 +111,11 @@ import { createNavbarController } from '../features/navigation/navbar.js';
 
   // 与脚本头 @version 保持同步
   const URPPP_VERSION = '2.0.2';
+
+  // 站点用内联底色表达语义（选课页的时间筛选器靠它标「已占用 / 空闲」），
+  // 主题的任何覆盖或清理都会把它抹平。守护必须早于插件自己的主题逻辑装上：
+  // 一旦浅色先被清掉，记录里就没有可提权的值了。
+  startInlineBgGuard();
 
   // @match 需要覆盖 SCU 子域名以兼容脚本运行环境，但主站美化严格限定在两个旧版 URP 入口。
   // 其他 SCU 站点在任何 DOM/CSS/viewport 副作用发生前退出，避免被误套用整套教务美化。
@@ -4329,9 +4333,6 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   }
 
   function isBusinessDataTable(table) {
-    // 选课页的时间筛选器由 coursetable 自行渲染，自己管理 DOM 与内联样式。
-    // 整块隔离：一旦被包一层或清一次样式，它就再也填不出「已占用时段」，只剩空网格。
-    if (isCourseTimeGrid(table)) return false;
     return classifyBusinessDataTable(table, { noticePage: isNoticePageContext() });
   }
 
@@ -4594,10 +4595,10 @@ import { createNavbarController } from '../features/navigation/navbar.js';
 
   function applyCourseTableOpacity() {
     if (isNativePdfIsolationActive()) return;
-    const table = document.getElementById('courseTable');
+    // 只针对周课表：这套改写处理的是周课表卡片的 rgba 底色，
+    // 别处叫 #courseTable 的表（如选课页的时间筛选器）不归它管
+    const table = document.querySelector('#mycoursetable #courseTable');
     if (!table) return;
-    // 选课页的时间筛选器整块隔离：那里的底色是站点自己的占用标记，不参与改写
-    if (isCourseTimeGrid(table)) return;
     table.querySelectorAll('td').forEach((cell) => {
       const background = cell.style.backgroundColor;
       if (!background || !background.includes('rgba')) return;
@@ -4607,7 +4608,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   }
 
   function bindCourseTableOpacityObserver() {
-    const host = document.getElementById('mycoursetable') || document.getElementById('courseTable');
+    const host = document.getElementById('mycoursetable');
     if (courseOpacityObserverEntry && courseOpacityObserverEntry.root === host && host?.isConnected) {
       applyCourseTableOpacity();
       return;
@@ -4710,7 +4711,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     beautifyCurriculumDrawer();
     bindTableWrapObserver();
     startLayerGuard();
-    startCourseGridIsolation();
     installConfirmDialogWhenReady();
     // 首页进行组件级重构
     const pageContent = document.querySelector('.page-content');
@@ -10227,7 +10227,6 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         bindTableWrapObserver();
         scheduleWeekScheduleFix();
         bindCourseTableOpacityObserver();
-        startCourseGridIsolation();
         scheduleBeautifyNoticeTables();
         scheduleScrubTableInlineBg();
         document.querySelectorAll('.page-content, #page-content-template').forEach((el) => {

@@ -79,6 +79,36 @@ test('选课页课表：站点清掉底色时不残留提权', async ({ page }) 
     .toBe('');
 });
 
+test('站点后写入的内联底色同样被提权，但周课表除外', async ({ page }) => {
+  await loadUrpFixture(page, { fixture: 'course-time-table' });
+
+  await page.evaluate(() => {
+    const host = document.getElementById('page-content-template');
+    // 周课表的 rgba 卡片底色由 applyCourseTableOpacity 按设计改写成半透明，锁住就废了
+    const weekly = document.createElement('div');
+    weekly.id = 'mycoursetable';
+    weekly.innerHTML = '<table id="weeklyTable"><tbody><tr>'
+      + '<td id="weekly-cell" style="background-color: rgba(91, 127, 166, 0.9);">周课表卡片</td>'
+      + '</tr></tbody></table>';
+    host.appendChild(weekly);
+    // 别处站点自己写下的语义色应当被提权
+    const other = document.createElement('div');
+    other.innerHTML = '<table><tbody><tr>'
+      + '<td id="other-cell" style="background-color: #8EBDDD;">语义标记</td>'
+      + '</tr></tbody></table>';
+    host.appendChild(other);
+  });
+
+  await page.waitForTimeout(300);
+
+  const priorities = await page.evaluate(() => ({
+    other: document.getElementById('other-cell').style.getPropertyPriority('background-color'),
+    weekly: document.getElementById('weekly-cell').style.getPropertyPriority('background-color'),
+  }));
+  expect(priorities.other).toBe('important');
+  expect(priorities.weekly).toBe('');
+});
+
 test('选课页课表：表格不被包裹，交由 coursetable 自行管理 DOM', async ({ page }) => {
   await loadUrpFixture(page, { fixture: 'course-time-table' });
 

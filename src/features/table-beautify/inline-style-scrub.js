@@ -1,4 +1,4 @@
-import { isCourseTimeGrid } from './course-time-grid.js';
+import { isLockedInlineBg } from '../inline-bg-guard/index.js';
 
 export function isLightInlineColor(value) {
   const color = String(value || '').trim().toLowerCase();
@@ -15,6 +15,8 @@ export function isLightInlineColor(value) {
 
 export function scrubLightInlineBackground(element) {
   if (!element?.style) return;
+  // 站点自己写下的底色已被 inline-bg-guard 提权，任何清理都不许动它
+  if (isLockedInlineBg(element)) return;
   const inlineStyle = element.getAttribute('style') || '';
   if (!inlineStyle || !/background/i.test(inlineStyle)) return;
 
@@ -60,8 +62,6 @@ export function createTableInlineStyleScrubber({
       documentRef.querySelectorAll(
         'table, table thead, table thead tr, table thead th, table thead td, table tbody, table tbody tr, table tbody td, table tbody th, .table-box, .table-box table, .table-box td, .table-box th',
       ).forEach((element) => {
-        // 选课页的课表整块隔离：它靠内联背景色标出已占用时段，清理等于把它抹平
-        if (isCourseTimeGrid(element)) return;
         scrubLightInlineBackground(element);
       });
     } catch (_) { /* page DOM may be replaced during PJAX */ }
