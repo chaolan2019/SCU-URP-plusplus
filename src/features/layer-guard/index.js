@@ -89,7 +89,23 @@ export function startLayerGuard(options = {}) {
     return true;
   };
 
+  // 内层解析完成意味着它自己的样式表已经应用，首帧不会再以默认字号绘制后跳变
+  const isInnerStylesReady = (iframe) => {
+    try {
+      const inner = iframe.contentDocument;
+      if (!inner) return false;
+      return inner.readyState !== 'loading';
+    } catch (_) {
+      // 取不到就不以此设卡，交给兜底
+      return true;
+    }
+  };
+
+  const marked = new WeakSet();
+
   const reveal = (iframe) => {
+    if (marked.has(iframe)) return;
+    marked.add(iframe);
     try { iframe.classList.add(REVEAL_CLASS); } catch (_) {}
   };
 
@@ -99,25 +115,30 @@ export function startLayerGuard(options = {}) {
     if (!iframe || tracked.has(iframe)) return;
     tracked.add(iframe);
 
-    let done = false;
-    let timer = null;
-    const finish = () => {
-      if (done) return;
-      done = true;
-      if (timer) { clearInterval(timer); timer = null; }
-      reveal(iframe);
-    };
+    const settle = () => injectPreflight(iframe) && isInnerStylesReady(iframe);
 
-    // 底色一落即可放行；内层已是主题色，没有原生白底可看
-    if (injectPreflight(iframe)) {
-      finish();
+    // 底色已写且内层解析完成，才放行：早一步会让用户看到内层用默认字号画的头一帧
+    if (settle()) {
+      reveal(iframe);
       return;
     }
-    timer = setInterval(() => {
-      if (injectPreflight(iframe)) finish();
+    const timer = setInterval(() => {
+      if (settle()) {
+        clearInterval(timer);
+        reveal(iframe);
+      }
     }, POLL_INTERVAL);
     // 内层始终拿不到（跨域等）时兜底放行，避免把弹窗永久藏住
-    win.setTimeout(finish, FALLBACK_TIMEOUT);
+    win.setTimeout(() => { clearInterval(timer); reveal(iframe); }, FALLBACK_TIMEOUT);
+
+    // 内层文档被替换（重定向、刷新）时补一次底色。这里不重新遮蔽：
+    // 再藏一次会在已经显示之后突然白一下，比原样展示更难受。
+    try {
+      iframe.addEventListener('load', () => {
+        injectPreflight(iframe);
+        reveal(iframe);
+      });
+    } catch (_) {}
   };
 
   const scan = () => {

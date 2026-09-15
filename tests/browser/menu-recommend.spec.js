@@ -333,6 +333,55 @@ test('layui iframe 弹窗：放行逻辑缺席时靠样式兜底自行显示', a
   expect(after.revealed).toBe(false);
 });
 
+test('layui iframe 弹窗：内层重定向后仍保持底色与可见', async ({ page }) => {
+  // 内层文档被替换时注入会随之丢失。此前放行就停掉了轮询、iframe 也被记为已处理，
+  // 新文档完全没保护，表现为「显了一下又变空白，过几秒才恢复」。
+  await loadUrpFixture(page, { fixture: 'home' });
+  // 路由后注册的优先：夹具的统一拦截会盖住这条，所以必须放在它之后
+  let hits = 0;
+  await page.route('**/student/menu-recommend/page**', async (route) => {
+    hits += 1;
+    if (hits === 1) {
+      await route.fulfill({
+        contentType: 'text/html; charset=utf-8',
+        body: '<!doctype html><meta http-equiv="refresh" content="0;url=/student/menu-recommend/page?next=1">',
+      });
+      return;
+    }
+    await route.fulfill({
+      path: path.join(ROOT, 'tests/fixtures/menu-recommend.html'),
+      contentType: 'text/html; charset=utf-8',
+    });
+  });
+  await mountLayer(page, { insertMode: 'src-late', url: MENU_RECOMMEND_URL });
+
+  // 等重定向真正落到第二个文档上
+  await page.waitForFunction((selector) => {
+    const iframe = document.querySelector(selector);
+    try {
+      return !!iframe.contentDocument && String(iframe.contentDocument.location.href).includes('next=1');
+    } catch (_) {
+      return false;
+    }
+  }, LAYER_IFRAME_SELECTOR, { timeout: 8000 });
+  await page.waitForTimeout(300);
+
+  const state = await page.evaluate(({ selector, preflight }) => {
+    const iframe = document.querySelector(selector);
+    const doc = iframe.contentDocument;
+    return {
+      visibility: getComputedStyle(iframe).visibility,
+      hasPreflight: !!(doc && doc.querySelector(preflight)),
+      innerBg: doc && doc.body ? getComputedStyle(doc.body).backgroundColor : null,
+    };
+  }, { selector: LAYER_IFRAME_SELECTOR, preflight: PREFLIGHT_SELECTOR });
+
+  // 新文档同样拿到底色，且全程可见（不因重定向再藏一次）
+  expect(state.visibility).toBe('visible');
+  expect(state.hasPreflight).toBe(true);
+  expect(state.innerBg).toBe(LIGHT.bg);
+});
+
 test('layui iframe 弹窗：非目标路径的 iframe 不受影响', async ({ page }) => {
   await loadUrpFixture(page, { fixture: 'home' });
   await page.evaluate(() => {
