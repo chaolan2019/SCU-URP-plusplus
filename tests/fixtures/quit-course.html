@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>退课 fixture</title>
+  <style>
+    html, body { margin: 0; color: #393939; background: #fff; font: 14px Arial, sans-serif; }
+    .page-content { padding: 16px; }
+    .table { border-collapse: collapse; }
+    .table td { border: 1px solid #ddd; padding: 8px 12px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content">
+    <div class="page-content" id="page-content-template">
+      <table class="table">
+        <thead><tr><th>课程名称</th><th>操作</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>测试课程 A</td>
+            <td>
+              <i class="fa fa-trash-o red bigger-120" id="quit-btn" title="退课"
+                 onclick="quitSel('202503250927','K001','X01','01')">🗑</i>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    // 复刻教务页面的 urp.confirm：插件应当接管它
+    window.__quitSelCalls = 0;
+    window.__confirmCallbackFired = null;
+
+    function Urp() {}
+    Urp.prototype = {
+      confirm: function (msg, callback) {
+        // 页面原实现走 layer.confirm；这里只标记被调用，实际由插件接管
+        window.__legacyConfirmCalls = (window.__legacyConfirmCalls || 0) + 1;
+      }
+    };
+    window.urp = new Urp();
+
+    function quitSel(fajhh, kch, kxh, xdfsdm) {
+      window.__quitSelCalls += 1;
+      var tip = '是否确定要删除此门课程？';
+      urp.confirm(tip, function (ok) {
+        window.__confirmCallbackFired = ok;
+        if (ok) {
+          window.__deleteRequested = true;
+        }
+      });
+    }
+  </script>
+</body>
+</html>

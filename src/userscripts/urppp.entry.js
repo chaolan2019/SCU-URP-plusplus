@@ -86,7 +86,9 @@ import dashboardStyles from '../styles/dashboard.css';
 import scoreAnalysisStyles from '../styles/score-analysis.css';
 import mobileStyles from '../styles/mobile.css';
 import menuRecommendStyles from '../styles/menu-recommend.css';
+import confirmDialogStyles from '../styles/confirm-dialog.css';
 import { startLayerGuard } from '../features/layer-guard/index.js';
+import { installConfirmDialog } from '../features/confirm-dialog/index.js';
 import { createCleanModeState, resetCleanModeData } from '../features/clean-mode/state.js';
 import { createCleanModeDataLoader } from '../features/clean-mode/data.js';
 import { createCleanModeRenderer } from '../features/clean-mode/render.js';
@@ -4702,6 +4704,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     beautifyCurriculumDrawer();
     bindTableWrapObserver();
     startLayerGuard();
+    installConfirmDialogWhenReady();
     // 首页进行组件级重构
     const pageContent = document.querySelector('.page-content');
     const hasWidgets = pageContent && pageContent.querySelectorAll('.widget-box').length >= 4;
@@ -7613,6 +7616,19 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   function ensureMobileStyles() { ensureStyleOnce('urppp-mobile-style', mobileStyles); }
 
   function ensureMenuRecommendStyles() { ensureStyleOnce('urppp-menu-recommend-style', menuRecommendStyles); }
+
+  // 退课、申请退费等操作依赖页面自带的 urp.confirm，其内部走 layer.confirm，
+  // 在插件环境下可能弹不出来，结果就是直接执行。改由插件接管确认框。
+  // 页面脚本可能晚于插件执行，所以带几次重试。
+  function installConfirmDialogWhenReady(attempt = 0) {
+    try {
+      if (installConfirmDialog()) {
+        ensureStyleOnce('urppp-confirm-dialog-style', confirmDialogStyles);
+        return;
+      }
+    } catch (_) {}
+    if (attempt < 10) setTimeout(() => installConfirmDialogWhenReady(attempt + 1), 300);
+  }
 
   function ensureRouteStyles() { // 路由切换到目标页时立即补注，不等空闲
     try { if (isHomePage()) ensureDashboardStyles(); } catch (_) {}
