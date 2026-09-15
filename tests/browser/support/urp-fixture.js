@@ -135,7 +135,8 @@ export async function loadUrpFixture(page, options = {}) {
     if (fixtureValues[cssKey] == null) fixtureValues[cssKey] = '/* fixture mock theme */';
   }
   await installUserscriptMocks(page, fixtureValues);
-  await page.route('http://zhjw.scu.edu.cn/**', (route) => route.fulfill({
+  // 按夹具实际域名放行：测试非教务域名（如 jwc.scu.edu.cn）时也要能加载页面
+  await page.route(`${new URL(fixtureUrl).origin}/**`, (route) => route.fulfill({
     path: fixturePath,
     contentType: 'text/html; charset=utf-8',
   }));
@@ -146,7 +147,10 @@ export async function loadUrpFixture(page, options = {}) {
   const nativePageHtml = await pageRoot.evaluate((element) => element.outerHTML);
   if (options.beforeUserscript) await options.beforeUserscript(page);
   await page.addScriptTag({ path: USERSCRIPT_PATH });
-  await expect(page.locator('html')).toHaveClass(/urppp-ready/);
+  // 非教务域名上主脚本提前退出，不会打 urppp-ready，由调用方声明
+  if (options.expectReady !== false) {
+    await expect(page.locator('html')).toHaveClass(/urppp-ready/);
+  }
 
   return { fixtureUrl, nativePageHtml, pageErrors };
 }
