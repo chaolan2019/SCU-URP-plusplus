@@ -858,6 +858,40 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   }
   // 立刻挂遮罩（document-start 阶段 html 已存在）
   try { ensureBootLoader(); } catch (_) {}
+  // 站点的 fullCalendars 初始化会对没有实例的元素调 fullCalendar('...')，FullCalendar 的
+  // jQuery 包装就会打印 “Attempting to call a FullCalendar method on an element with no calendar.”。
+  // 那是无害空操作，但会刷控制台。只吞这一类：首参是方法名（字符串）且该元素没有实例；
+  // 初始化传的是配置对象，照旧透传——吞错会造成日历根本不初始化。
+  (function quietFullCalendarNoopWarning() {
+    let tries = 0;
+    const install = () => {
+      try {
+        const g = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+        const jq = g && (g.jQuery || g.$);
+        const fc = jq && jq.fn && jq.fn.fullCalendar;
+        if (typeof fc !== 'function') return false;
+        if (fc.__urpppQuiet) return true;
+        const patched = function (...args) {
+          try {
+            if (typeof args[0] === 'string') {
+              const first = this && this.first ? this.first() : this;
+              if (first && first.length && !first.data('fullCalendar')) return this;
+            }
+          } catch (_) { /* 判定失败就走原函数 */ }
+          return fc.apply(this, args);
+        };
+        patched.__urpppQuiet = true;
+        jq.fn.fullCalendar = patched;
+        return true;
+      } catch (_) { return false; }
+    };
+    if (install()) return;
+    const timer = setInterval(() => {
+      tries += 1;
+      if (install() || tries > 60) clearInterval(timer);
+    }, 250);
+  })();
+
   // 遮罩的兜底时限：正常路径要等「首屏几何稳定 + load」，而这两条都可能被外部因素拖住
   //（实测线上出现过 11.5 秒才撤：首屏几何从 1.1 秒起就没动过，但遮罩一直挂着）。
   // 所以计时从遮罩挂上那一刻开始，不依赖 load；判据与 hideBootLoader 一致（默认进清爽时仍交给它的状态机）。
@@ -918,11 +952,11 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     try {
       const mobile = !!(window.matchMedia && window.matchMedia('(max-width: 991px)').matches);
       const timedOut = !!window.__urpppCleanBootTimedOut;
+      // 只等清爽外壳自己的完成信号：渲染就绪（缓存即可视为就绪）+ 入场动画落定。
+      // 不再绑 PageLayoutReady 与 readyState：那两项量的是**站点页面**的首屏布局，
+      // 而清爽外壳是插件自己的版面，等站点 load 与几何稳定只会白等一秒钟。
       const ready = timedOut || (!!window.__urpppCleanRenderReady
         && !!window.__urpppCleanAnimationReady
-        && !!window.__urpppCleanDataReady
-        && !!window.__urpppPageLayoutReady
-        && document.readyState === 'complete'
         && (!mobile || !!window.__urpppMobileNavReady));
       if (!ready || window.__urpppCleanBootRevealQueued) return;
       window.__urpppCleanBootRevealQueued = true;
