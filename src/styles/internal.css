@@ -3785,6 +3785,59 @@
       .layui-layer-page > .layui-layer-content {
         background: var(--bg) !important;
       }
+      /* layui dialog 型（确认框、提示框）。与 iframe/page 型分开写：
+         它是卡片形，底与面板同色，带按钮栏 */
+      .layui-layer.layui-layer-dialog {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius) !important;
+        box-shadow: 0 18px 48px rgba(15, 23, 42, 0.20), 0 2px 8px rgba(15, 23, 42, 0.06) !important;
+        overflow: hidden !important;
+      }
+      .layui-layer-dialog > .layui-layer-title {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        border-bottom: 1px solid var(--border) !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+      }
+      .layui-layer-dialog > .layui-layer-content {
+        background: var(--surface) !important;
+        color: var(--text) !important;
+        font-size: 13px !important;
+        line-height: 1.7 !important;
+      }
+      .layui-layer-dialog .layui-layer-btn {
+        background: var(--surface) !important;
+        border-top: 1px solid var(--border) !important;
+        text-align: right !important;
+      }
+      .layui-layer-dialog .layui-layer-btn a {
+        display: inline-block !important;
+        height: 30px !important;
+        line-height: 28px !important;
+        padding: 0 16px !important;
+        margin-left: 8px !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius-sm, var(--radius)) !important;
+        background: var(--input-bg) !important;
+        color: var(--text) !important;
+        font-size: 13px !important;
+        text-decoration: none !important;
+        cursor: pointer !important;
+        box-shadow: none !important;
+      }
+      .layui-layer-dialog .layui-layer-btn .layui-layer-btn0 {
+        background: var(--primary) !important;
+        color: var(--primary-foreground, #fff) !important;
+        border-color: transparent !important;
+      }
+      /* 确认框里补上的课程信息行 */
+      .urppp-confirm-course {
+        margin-bottom: 6px !important;
+        color: var(--text) !important;
+        font-weight: 600 !important;
+      }
       /* 关闭按钮：先把 setwin 从 layui 的绝对偏移改为“与标题栏等高 + 右对齐”，
          不同 layui 版本的 top/right 取值不一，只调按钮自身会让它落到标题栏之外；
          图标本身去掉 sprite 背景图、改由 CSS 绘制，以跟随主题明暗。

@@ -86,8 +86,8 @@ import dashboardStyles from '../styles/dashboard.css';
 import scoreAnalysisStyles from '../styles/score-analysis.css';
 import mobileStyles from '../styles/mobile.css';
 import menuRecommendStyles from '../styles/menu-recommend.css';
-import confirmDialogStyles from '../styles/confirm-dialog.css';
 import { startLayerGuard } from '../features/layer-guard/index.js';
+import { startDivKbIsolation } from '../features/div-kb-isolation/index.js';
 import { installConfirmDialog } from '../features/confirm-dialog/index.js';
 import { createCleanModeState, resetCleanModeData } from '../features/clean-mode/state.js';
 import { createCleanModeDataLoader } from '../features/clean-mode/data.js';
@@ -4328,6 +4328,10 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   }
 
   function isBusinessDataTable(table) {
+    // 选课页的时间筛选器（#div_kb 内的 #courseTable）由 coursetable 自行渲染，
+    // 自己管理 DOM 与内联样式。整块隔离：一旦被包一层或清一次样式，
+    // 它就再也填不出「已占用时段」，只剩一张空网格。
+    if (table && table.closest && table.closest('#div_kb')) return false;
     return classifyBusinessDataTable(table, { noticePage: isNoticePageContext() });
   }
 
@@ -4592,6 +4596,8 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     if (isNativePdfIsolationActive()) return;
     const table = document.getElementById('courseTable');
     if (!table) return;
+    // 选课页的 #div_kb 网格整块隔离：那里的底色是站点自己的占用标记，不参与改写
+    if (table.closest('#div_kb')) return;
     table.querySelectorAll('td').forEach((cell) => {
       const background = cell.style.backgroundColor;
       if (!background || !background.includes('rgba')) return;
@@ -4704,6 +4710,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     beautifyCurriculumDrawer();
     bindTableWrapObserver();
     startLayerGuard();
+    startDivKbIsolation();
     installConfirmDialogWhenReady();
     // 首页进行组件级重构
     const pageContent = document.querySelector('.page-content');
@@ -7617,15 +7624,12 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   function ensureMenuRecommendStyles() { ensureStyleOnce('urppp-menu-recommend-style', menuRecommendStyles); }
 
-  // 退课、申请退费等操作依赖页面自带的 urp.confirm，其内部走 layer.confirm，
-  // 在插件环境下可能弹不出来，结果就是直接执行。改由插件接管确认框。
-  // 页面脚本可能晚于插件执行，所以带几次重试。
+  // 退课确认框由页面自己的 layui 渲染（其 dialog 样式已在 internal.css 接管），
+  // 但提示语只有「是否确定要删除此门课程？」，不说退的是哪一门。
+  // 这里包装 urp.confirm 补上课程信息；页面脚本可能晚于插件执行，所以带几次重试。
   function installConfirmDialogWhenReady(attempt = 0) {
     try {
-      if (installConfirmDialog()) {
-        ensureStyleOnce('urppp-confirm-dialog-style', confirmDialogStyles);
-        return;
-      }
+      if (installConfirmDialog()) return;
     } catch (_) {}
     if (attempt < 10) setTimeout(() => installConfirmDialogWhenReady(attempt + 1), 300);
   }
@@ -10223,6 +10227,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         bindTableWrapObserver();
         scheduleWeekScheduleFix();
         bindCourseTableOpacityObserver();
+        startDivKbIsolation();
         scheduleBeautifyNoticeTables();
         scheduleScrubTableInlineBg();
         document.querySelectorAll('.page-content, #page-content-template').forEach((el) => {

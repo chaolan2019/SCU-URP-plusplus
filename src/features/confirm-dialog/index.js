@@ -1,97 +1,48 @@
 /**
- * @file 通用确认弹窗，用于接管教务页面自带的 urp.confirm。
+ * @file 给页面自带的确认框补上「退的是哪门课」。
  *
- * 退课页的 quitSel / applyForRefund 都走 urp.confirm，而它内部是 layer.confirm，
- * 实测在插件环境下不一定弹得出来 —— 结果就是点了退课直接执行，用户没有任何确认机会。
- * 这里不再依赖页面那套，改由插件自己弹：调用签名保持 (message, callback)，
- * 回调语义同样是 true / false，因此页面代码无需改动。
+ * 退课页的 quitSel 只把提示语写成「是否确定要删除此门课程？」，不带课程信息，
+ * 用户点确认时并不知道自己在退哪一门。这里包装 urp.confirm，在提示语前补一行课程名。
+ *
+ * 注意：弹窗本体仍由页面自己的 layui 渲染（其 dialog 样式已由 internal.css 接管），
+ * 这里不替换弹窗机制，只增强内容。调用签名与回调语义保持不变。
  */
 
-const DIALOG_ID = 'urppp-confirm-dialog';
-const TITLE_TEXT = '提示信息';
+import { escapeHtml } from '../../core/html.js';
 
-export function createConfirmDialog({ doc = document } = {}) {
-  let root = null;
-  let body = null;
-  let okBtn = null;
-  let pending = null;
+const COURSE_CLASS = 'urppp-confirm-course';
 
-  function close(answer) {
-    const callback = pending;
-    pending = null;
-    if (root) root.hidden = true;
-    if (typeof callback === 'function') {
-      try { callback(answer); } catch (_) { /* 页面回调自身的问题不外抛 */ }
-    }
+// 退课按钮位于课程行内，行内第一个非空单元格即课程名
+function courseNameFromTarget(target) {
+  const row = target && target.closest ? target.closest('tr') : null;
+  if (!row) return '';
+  const cells = Array.from(row.cells || []);
+  for (const cell of cells) {
+    const text = String(cell.textContent || '').replace(/\s+/g, ' ').trim();
+    if (text) return text;
   }
-
-  function ensure() {
-    if (root && root.isConnected) return root;
-
-    root = doc.getElementById(DIALOG_ID);
-    if (!root) {
-      root = doc.createElement('div');
-      root.id = DIALOG_ID;
-      root.hidden = true;
-      root.innerHTML = [
-        '<div class="urppp-cd-mask"></div>',
-        '<div class="urppp-cd-panel" role="dialog" aria-modal="true">',
-        `<div class="urppp-cd-title">${TITLE_TEXT}</div>`,
-        '<div class="urppp-cd-body"></div>',
-        '<div class="urppp-cd-actions">',
-        '<button type="button" class="urppp-cd-btn urppp-cd-cancel">取消</button>',
-        '<button type="button" class="urppp-cd-btn urppp-cd-ok">确定</button>',
-        '</div>',
-        '</div>',
-      ].join('');
-      (doc.body || doc.documentElement).appendChild(root);
-    }
-
-    body = root.querySelector('.urppp-cd-body');
-    okBtn = root.querySelector('.urppp-cd-ok');
-    const cancelBtn = root.querySelector('.urppp-cd-cancel');
-    const mask = root.querySelector('.urppp-cd-mask');
-
-    if (okBtn) okBtn.addEventListener('click', () => close(true));
-    if (cancelBtn) cancelBtn.addEventListener('click', () => close(false));
-    if (mask) mask.addEventListener('click', () => close(false));
-    doc.addEventListener('keydown', (event) => {
-      if (!root || root.hidden) return;
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        close(false);
-      } else if (event.key === 'Enter') {
-        event.preventDefault();
-        close(true);
-      }
-    }, true);
-
-    return root;
-  }
-
-  function ask(message, callback) {
-    ensure();
-    // 提示语可能带 <br> 等标记，与页面原实现保持一致
-    if (body) body.innerHTML = String(message == null ? '' : message);
-    pending = callback;
-    root.hidden = false;
-    try { okBtn.focus(); } catch (_) {}
-  }
-
-  return { ask };
+  return '';
 }
 
-/**
- * 接管页面的 urp.confirm。返回是否安装成功：页面脚本可能晚于插件执行，
- * 拿不到 urp 时应由调用方稍后重试，而不是在这里自己转圈。
- */
 export function installConfirmDialog({ doc = document, win = window } = {}) {
   if (win.__urpppConfirmInstalled) return true;
   const urp = win.urp;
   if (!urp || typeof urp.confirm !== 'function') return false;
 
-  const dialog = createConfirmDialog({ doc });
+  // 记下触发元素：urp.confirm 只拿到提示语，课程信息要从点击的那一行取
+  let lastTarget = null;
+  doc.addEventListener('click', (event) => { lastTarget = event.target; }, true);
+
+  const original = urp.confirm.bind(urp);
+  urp.confirm = (message, callback) => {
+    const course = courseNameFromTarget(lastTarget);
+    const text = String(message == null ? '' : message);
+    const enriched = course && !text.includes(course)
+      ? `<div class="${COURSE_CLASS}">${escapeHtml(course)}</div>${text}`
+      : text;
+    return original(enriched, callback);
+  };
+
   win.__urpppConfirmInstalled = true;
-  urp.confirm = (message, callback) => dialog.ask(message, callback);
   return true;
 }

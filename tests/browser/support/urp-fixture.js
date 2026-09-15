@@ -13,6 +13,7 @@ export const FIXTURE_URLS = {
   'free-classroom': 'http://zhjw.scu.edu.cn/student/teachingResources/freeClassroom/index',
   'menu-recommend': 'http://zhjw.scu.edu.cn/student/menu-recommend/page',
   'quit-course': 'http://zhjw.scu.edu.cn/student/courseSelect/quitCourse/index',
+  'course-time-table': 'http://zhjw.scu.edu.cn/student/courseSelect/courseSelect/index',
 };
 
 const DEFAULT_VALUES = {

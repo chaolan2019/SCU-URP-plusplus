@@ -57,7 +57,11 @@ export function createTableInlineStyleScrubber({
 
       documentRef.querySelectorAll(
         'table, table thead, table thead tr, table thead th, table thead td, table tbody, table tbody tr, table tbody td, table tbody th, .table-box, .table-box table, .table-box td, .table-box th',
-      ).forEach(scrubLightInlineBackground);
+      ).forEach((element) => {
+        // 选课页的课表整块隔离：它靠内联背景色标出已占用时段，清理等于把它抹平
+        if (element.closest && element.closest('#div_kb')) return;
+        scrubLightInlineBackground(element);
+      });
     } catch (_) { /* page DOM may be replaced during PJAX */ }
   }
 

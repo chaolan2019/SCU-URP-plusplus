@@ -7,7 +7,14 @@
     html, body { margin: 0; color: #393939; background: #fff; font: 14px Arial, sans-serif; }
     .page-content { padding: 16px; }
     .table { border-collapse: collapse; }
-    .table td { border: 1px solid #ddd; padding: 8px 12px; }
+    .table td, .table th { border: 1px solid #ddd; padding: 8px 12px; }
+    /* 复刻 layui 原生 dialog 外观：样式应由插件接管，这里给出被覆盖的原始值。
+       z-index 与定位也照真实值给，否则夹具里的 sidebar 会挡住弹窗 */
+    .layui-layer { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 19891016; background: #fff; border-radius: 2px; box-shadow: 1px 1px 50px rgba(0,0,0,.3); }
+    .layui-layer-title { height: 42px; line-height: 42px; padding: 0 80px 0 20px; background: #F8F8F8; border-bottom: 1px solid #eee; }
+    .layui-layer-content { padding: 16px 20px; }
+    .layui-layer-btn { padding: 0 12px 12px; text-align: right; }
+    .layui-layer-btn a { display: inline-block; height: 30px; line-height: 30px; padding: 0 14px; margin-left: 8px; border: 1px solid #dedede; background: #f8f8f8; color: #333; text-decoration: none; }
   </style>
 </head>
 <body>
@@ -30,27 +37,37 @@
     </div>
   </main>
   <script>
-    // 复刻教务页面的 urp.confirm：插件应当接管它
-    window.__quitSelCalls = 0;
+    window.__dialogOpened = 0;
     window.__confirmCallbackFired = null;
 
+    // 复刻教务页面的 urp.confirm：内部走 layui 的 dialog
     function Urp() {}
     Urp.prototype = {
       confirm: function (msg, callback) {
-        // 页面原实现走 layer.confirm；这里只标记被调用，实际由插件接管
-        window.__legacyConfirmCalls = (window.__legacyConfirmCalls || 0) + 1;
+        window.__dialogOpened += 1;
+        var layer = document.createElement('div');
+        layer.className = 'layui-layer layui-layer-dialog layer-anim';
+        layer.id = 'layui-layer-fixture';
+        layer.innerHTML = [
+          '<div class="layui-layer-title">提示信息</div>',
+          '<div class="layui-layer-content"></div>',
+          '<div class="layui-layer-btn">',
+          '<a class="layui-layer-btn0">确定</a>',
+          '<a class="layui-layer-btn1">取消</a>',
+          '</div>',
+        ].join('');
+        layer.querySelector('.layui-layer-content').innerHTML = msg;
+        document.body.appendChild(layer);
+        layer.querySelector('.layui-layer-btn0').onclick = function () { layer.remove(); callback(true); };
+        layer.querySelector('.layui-layer-btn1').onclick = function () { layer.remove(); callback(false); };
       }
     };
     window.urp = new Urp();
 
     function quitSel(fajhh, kch, kxh, xdfsdm) {
-      window.__quitSelCalls += 1;
-      var tip = '是否确定要删除此门课程？';
-      urp.confirm(tip, function (ok) {
+      urp.confirm('是否确定要删除此门课程？', function (ok) {
         window.__confirmCallbackFired = ok;
-        if (ok) {
-          window.__deleteRequested = true;
-        }
+        if (ok) window.__deleteRequested = true;
       });
     }
   </script>

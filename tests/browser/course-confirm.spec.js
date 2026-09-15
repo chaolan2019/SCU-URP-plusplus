@@ -1,46 +1,69 @@
 import { expect, test } from '@playwright/test';
 import { loadUrpFixture } from './support/urp-fixture.js';
 
-const DIALOG = '#urppp-confirm-dialog';
+const DIALOG = '#layui-layer-fixture';
 
-test('退课确认：插件接管 urp.confirm 并弹出跟随主题的确认框', async ({ page }) => {
-  // 用暗色主题验证「跟随主题」：深邃暗的 --surface 是 #1C1C1E，与默认白底区分明显
+test('退课确认：提示语补上要退的课程', async ({ page }) => {
+  await loadUrpFixture(page, { fixture: 'quit-course' });
+
+  await page.click('#quit-btn');
+
+  // 弹窗仍由页面自己的 layui 渲染
+  await expect(page.locator(DIALOG)).toHaveCount(1);
+  const content = page.locator(`${DIALOG} .layui-layer-content`);
+  await expect(content).toContainText('测试课程 A');
+  // 原有提示语保持不动，只是在前面补了课程
+  await expect(content).toContainText('是否确定要删除此门课程？');
+});
+
+test('退课确认：弹窗沿用主题样式（layui dialog 型）', async ({ page }) => {
+  // 暗色主题下判定更明确：深邃暗的 --surface 是 #1C1C1E
   await loadUrpFixture(page, {
     fixture: 'quit-course',
     values: { urppp_theme_v3: 'dark' },
   });
 
-  // 页面自带的 urp.confirm 已由插件接管
-  expect(await page.evaluate(() => !!window.__urpppConfirmInstalled)).toBe(true);
-
   await page.click('#quit-btn');
+  await expect(page.locator(DIALOG)).toHaveCount(1);
 
-  await expect(page.locator(DIALOG)).toBeVisible();
-  await expect(page.locator(`${DIALOG} .urppp-cd-body`)).toContainText('删除此门课程');
+  const styles = await page.evaluate((sel) => {
+    const layer = document.querySelector(sel);
+    const title = layer.querySelector('.layui-layer-title');
+    const btn0 = layer.querySelector('.layui-layer-btn0');
+    const btn1 = layer.querySelector('.layui-layer-btn1');
+    const cs = (el) => getComputedStyle(el);
+    return {
+      layerBg: cs(layer).backgroundColor,
+      layerRadius: cs(layer).borderTopLeftRadius,
+      titleBg: cs(title).backgroundColor,
+      titleWeight: cs(title).fontWeight,
+      okBg: cs(btn0).backgroundColor,
+      cancelBg: cs(btn1).backgroundColor,
+    };
+  }, DIALOG);
 
-  const panel = await page.locator(`${DIALOG} .urppp-cd-panel`).evaluate((el) => {
-    const cs = getComputedStyle(el);
-    return { bg: cs.backgroundColor, color: cs.color, radius: cs.borderTopLeftRadius };
-  });
-  // 面板取自主题变量，而不是浏览器默认外观
-  expect(panel.bg).toBe('rgb(28, 28, 30)');
-  expect(panel.radius).not.toBe('0px');
+  expect(styles.layerBg).toBe('rgb(28, 28, 30)');
+  expect(styles.titleBg).toBe('rgb(28, 28, 30)');
+  expect(styles.titleWeight).toBe('600');
+  // 主按钮用主题主色，次按钮用输入底色，两者可区分
+  expect(styles.okBg).not.toBe(styles.cancelBg);
+  // 圆角取自主题变量（editorial 为 0，apple 为设计值）
+  expect(styles.layerRadius).not.toBe('2px');
 });
 
 test('退课确认：取消不会执行退课', async ({ page }) => {
   await loadUrpFixture(page, { fixture: 'quit-course' });
 
   await page.click('#quit-btn');
-  await expect(page.locator(DIALOG)).toBeVisible();
+  await expect(page.locator(DIALOG)).toHaveCount(1);
 
-  await page.click(`${DIALOG} .urppp-cd-cancel`);
-  await expect(page.locator(DIALOG)).toBeHidden();
+  await page.click(`${DIALOG} .layui-layer-btn1`);
+  await expect(page.locator(DIALOG)).toHaveCount(0);
 
   const state = await page.evaluate(() => ({
     answered: window.__confirmCallbackFired,
     deleted: !!window.__deleteRequested,
   }));
-  // 关键：确认流程必须真的走完，且取消不产生任何删除动作
   expect(state.answered).toBe(false);
   expect(state.deleted).toBe(false);
 });
@@ -49,10 +72,10 @@ test('退课确认：点确定才真正执行', async ({ page }) => {
   await loadUrpFixture(page, { fixture: 'quit-course' });
 
   await page.click('#quit-btn');
-  await expect(page.locator(DIALOG)).toBeVisible();
+  await expect(page.locator(DIALOG)).toHaveCount(1);
 
-  await page.click(`${DIALOG} .urppp-cd-ok`);
-  await expect(page.locator(DIALOG)).toBeHidden();
+  await page.click(`${DIALOG} .layui-layer-btn0`);
+  await expect(page.locator(DIALOG)).toHaveCount(0);
 
   const state = await page.evaluate(() => ({
     answered: window.__confirmCallbackFired,

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>选课页课表 fixture</title>
+  <style>
+    html, body { margin: 0; color: #393939; background: #fff; font: 14px Arial, sans-serif; }
+    .page-content { padding: 16px; }
+    .table { border-collapse: collapse; }
+    .table td, .table th { border: 1px solid #ddd; padding: 6px 10px; }
+    /* 复刻站点原始表现：占用时段由内联背景色标记 */
+    #div_kb { overflow: hidden auto; max-height: 900px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content">
+    <div class="page-content" id="page-content-template">
+      <div id="div_kb">
+        <div id="myselectTable">
+          <table class="table table-bordered" id="courseTable">
+            <thead>
+              <tr id="courseTableHead">
+                <th colspan="2">节次/时间</th>
+                <th>一</th>
+                <th>二</th>
+              </tr>
+            </thead>
+            <tbody id="courseTableBody">
+              <tr>
+                <td>1-2节</td>
+                <td>08:00-09:40</td>
+                <!-- 已占用时段：靠内联背景色表达，插件不得覆盖 -->
+                <td id="occupied-cell" style="background-color: #5b7fa6;">测试课程 A</td>
+                <td id="free-cell"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
