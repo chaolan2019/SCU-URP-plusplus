@@ -878,7 +878,13 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   // 用户脚本沙箱位于隐藏 frame、或标签页在后台时，前两者都会被浏览器大幅推迟，
   // 于是“按时间兜底”会跟着一起晚。交互事件不受这个节流影响。
   try {
-    const revealOnUserIntent = () => { try { hideBootLoader(); } catch (_) {} };
+    const revealOnUserIntent = () => {
+      try {
+        // 清爽待启动期间 hideBootLoader 会拒绝放行，先把它的状态推进放行
+        if (typeof window.__urpppForceCleanReveal === 'function') window.__urpppForceCleanReveal();
+      } catch (_) {}
+      try { hideBootLoader(); } catch (_) {}
+    };
     ['visibilitychange', 'focus', 'pointerdown', 'keydown', 'wheel', 'scroll'].forEach((type) => {
       window.addEventListener(type, revealOnUserIntent, { once: true, passive: true, capture: true });
     });
@@ -887,16 +893,37 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   const notifyCleanBootProgress = () => {
     try { if (typeof window.__urpppCleanBootReady === 'function') window.__urpppCleanBootReady(); } catch (_) {}
   };
+  // 清爽启动的兜底：数据阶段依赖网络，慢或卡住时遮罩会一直挂着。
+  // 注意 hideBootLoader 在「清爽待启动」期间是被拒绝放行的（那条守卫防的是露出半成品），
+  // 所以定时器、交互这些兜底手段在那段时间里全是空转——必须在这里把状态推进放行。
+  // 计时偏短是有意的：首屏缓存已经渲染过（日志里“命中缓存，先渲染旧数据”），
+  // 界面并非半成品，没必要为了等接口把遮罩挂着。
+  const CLEAN_BOOT_DEADLINE_MS = 2000;
+  let cleanBootDeadlineTimer = 0;
+  const forceCleanBootReveal = () => {
+    try {
+      if (!window.__urpppCleanBootPending || window.__urpppCleanBootDone) return false;
+      window.__urpppCleanBootTimedOut = true;
+      notifyCleanBootProgress();
+      return true;
+    } catch (_) { return false; }
+  };
+  const armCleanBootDeadline = () => {
+    if (cleanBootDeadlineTimer) clearTimeout(cleanBootDeadlineTimer);
+    cleanBootDeadlineTimer = setTimeout(forceCleanBootReveal, CLEAN_BOOT_DEADLINE_MS);
+  };
+  window.__urpppForceCleanReveal = forceCleanBootReveal;
   window.__urpppCleanBootReady = () => {
     if (!window.__urpppCleanBootPending || window.__urpppCleanBootDone) return;
     try {
       const mobile = !!(window.matchMedia && window.matchMedia('(max-width: 991px)').matches);
-      const ready = !!window.__urpppCleanRenderReady
+      const timedOut = !!window.__urpppCleanBootTimedOut;
+      const ready = timedOut || (!!window.__urpppCleanRenderReady
         && !!window.__urpppCleanAnimationReady
         && !!window.__urpppCleanDataReady
         && !!window.__urpppPageLayoutReady
         && document.readyState === 'complete'
-        && (!mobile || !!window.__urpppMobileNavReady);
+        && (!mobile || !!window.__urpppMobileNavReady));
       if (!ready || window.__urpppCleanBootRevealQueued) return;
       window.__urpppCleanBootRevealQueued = true;
       const reveal = () => {
@@ -10176,6 +10203,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       window.__urpppCleanDataReady = false;
       window.__urpppPageLayoutReady = false;
       window.__urpppMobileNavReady = false;
+      armCleanBootDeadline();
     }
     injectAllStoreThemeStyles();
     applyTheme(getCurrent());

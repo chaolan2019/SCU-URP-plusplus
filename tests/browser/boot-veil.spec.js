@@ -62,6 +62,47 @@ test('遮罩：时限在 document-start 就武装，不等 load', async ({ page 
  * 线上实测时限武装于 187ms、本该 1687ms 触发，实际 11659ms 才触发——晚了约 10 秒。
  * 这种情况下靠“按时间兜底”没用，所以补一条：用户一有交互就交界面。
  */
+test('遮罩：清爽默认 + 网络卡住时，遮罩仍在时限内撤除（不等数据）', async ({ page }) => {
+  await loadUrpFixture(page, {
+    fixture: 'home',
+    expectReady: false,
+    values: { urppp_clean_default_v1: true },
+    // 接口不报错也不回调：数据阶段永远不完成
+    beforeUserscript: (target) => target.evaluate(() => {
+      window.GM_xmlhttpRequest = () => {};
+      window.fetch = () => new Promise(() => {});
+    }),
+  });
+
+  const started = Date.now();
+  await page.waitForFunction(() => document.body.classList.contains('urppp-ready'), { timeout: 6000 });
+  const elapsed = Date.now() - started;
+  const state = await page.evaluate(() => ({
+    timedOut: !!window.__urpppCleanBootTimedOut,
+    cleanOpen: document.documentElement.classList.contains('urppp-clean-open'),
+  }));
+  // 线上实测：这条路径曾卡到 11576ms（时限和交互都被 hideBootLoader 的清爽守卫挡住）
+  expect(elapsed).toBeLessThan(4000);
+  expect(state.timedOut).toBe(true);
+  expect(state.cleanOpen).toBe(true);
+});
+
+test('遮罩：清爽默认下用户一交互也立即交界面', async ({ page }) => {
+  await loadUrpFixture(page, {
+    fixture: 'home',
+    expectReady: false,
+    values: { urppp_clean_default_v1: true },
+    beforeUserscript: (target) => target.evaluate(() => {
+      window.GM_xmlhttpRequest = () => {};
+      window.fetch = () => new Promise(() => {});
+    }),
+  });
+  await page.evaluate(() => window.dispatchEvent(new Event('pointerdown')));
+  await page.waitForFunction(() => document.body.classList.contains('urppp-ready'), { timeout: 4000 });
+  const ready = await page.evaluate(() => document.body.classList.contains('urppp-ready'));
+  expect(ready).toBe(true);
+});
+
 test('遮罩：用户一交互立即交界面（不等定时器）', async ({ page }) => {
   await loadUrpFixture(page, { fixture: 'home', expectReady: false });
   // 立刻派发一次交互，应当直接把遮罩撤掉
