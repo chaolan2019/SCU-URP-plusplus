@@ -31,3 +31,34 @@ test('遮罩：站点持续切换类名（几何不变）也要按时撤除', as
   await page.evaluate(() => clearInterval(window.__urpppChurnTimer));
   expect(elapsed).toBeLessThan(5000);
 });
+
+/*
+ * 同一类问题的另一种表现，也是线上实际遇到的那种：侧边栏在加载期持续变高
+ *（多出的菜单项 / 站点自己重算），而内容区是稳定的。
+ *
+ * #sidebar 在采样目标里，于是它的高度变化会把「几何稳定」一直顶住，
+ * 即使内容早就绪也要等到上限才撤遮罩。而侧边栏属于 chrome，不是首屏内容，
+ * 且插件自己也会往它写内联样式——把它算进首屏几何稳定本来就不合适。
+ */
+test('遮罩：侧边栏高度在变化时也要按时撤除（内容区已稳定）', async ({ page }) => {
+  await loadUrpFixture(page, {
+    fixture: 'home',
+    expectReady: false,
+    beforeUserscript: (target) => target.evaluate(() => {
+      const menus = document.getElementById('menus');
+      window.__urpppGrowTimer = setInterval(() => {
+        if (!menus) return;
+        const li = document.createElement('li');
+        li.innerHTML = '<a href="/x"><span class="menu-text">填充项</span></a>';
+        menus.appendChild(li);
+      }, 10);
+    }),
+  });
+
+  const started = Date.now();
+  await page.waitForFunction(() => document.body.classList.contains('urppp-ready'), { timeout: 8000 });
+  const elapsed = Date.now() - started;
+
+  await page.evaluate(() => clearInterval(window.__urpppGrowTimer));
+  expect(elapsed).toBeLessThan(1200);
+});
