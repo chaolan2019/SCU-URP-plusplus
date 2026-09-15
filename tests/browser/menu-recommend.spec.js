@@ -236,6 +236,16 @@ async function mountLayer(page, { insertMode, url }) {
   }, { insertMode, url });
 }
 
+// frame 的注册晚于 src 赋值，直接 find 会偶发拿不到（表现为 undefined.addScriptTag）
+async function getLayerFrame(page) {
+  for (let i = 0; i < 100; i += 1) {
+    const frame = page.frames().find((f) => f.url().includes('menu-recommend'));
+    if (frame) return frame;
+    await page.waitForTimeout(50);
+  }
+  throw new Error('menu-recommend frame 未出现');
+}
+
 async function mountLayerWithInnerPage(page, { insertMode = 'atomic', injectInnerScript = true } = {}) {
   await loadUrpFixture(page, { fixture: 'home' });
   await page.route('**/student/menu-recommend/page', (route) => route.fulfill({
@@ -252,7 +262,7 @@ async function mountLayerWithInnerPage(page, { insertMode = 'atomic', injectInne
 
   // 内层脚本按真实油猴的方式补注入：宿主等它的就绪报到才放行
   if (injectInnerScript) {
-    const frame = page.frames().find((f) => f.url().includes('menu-recommend'));
+    const frame = await getLayerFrame(page);
     await frame.addScriptTag({ path: USERSCRIPT_PATH });
     await frame.waitForSelector('html.urppp-ready');
   }
@@ -387,7 +397,7 @@ test('layui iframe 弹窗：内层重定向后仍保持底色与可见', async (
   }, LAYER_IFRAME_SELECTOR, { timeout: 8000 });
 
   // 重定向后的新文档同样需要内层脚本；注入后等它就绪报到
-  const frame = page.frames().find((f) => f.url().includes('menu-recommend'));
+  const frame = await getLayerFrame(page);
   await frame.addScriptTag({ path: USERSCRIPT_PATH });
   await page.waitForFunction((selector) => (
     document.querySelector(selector).classList.contains('urppp-layer-revealed')

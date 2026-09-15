@@ -795,11 +795,32 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       // 宿主的 layer-guard 据此放行 iframe（消息名与 features/layer-guard 保持一致）
       if (!window.__urpppLayerReadyNotified) {
         window.__urpppLayerReadyNotified = true;
+        const notifyHost = () => {
+          try {
+            if (window.parent && window.parent !== window) {
+              window.parent.postMessage({ urppp: 'urppp-layer-styled' }, '*');
+            }
+          } catch (_) {}
+        };
+        // 报到前再等两件事，否则宿主放行时画面还会再动一下：
+        // 一是字体就绪（webfont 迟到会先用替代字体渲染，到位后重排），
+        // 二是两个渲染帧（避开当前帧尚未落定的布局）。
+        const notifyAfterPaint = () => {
+          const raf = typeof requestAnimationFrame === 'function'
+            ? requestAnimationFrame
+            : (cb) => setTimeout(cb, 16);
+          raf(() => raf(notifyHost));
+        };
         try {
-          if (window.parent && window.parent !== window) {
-            window.parent.postMessage({ urppp: 'urppp-layer-styled' }, '*');
+          const fonts = document.fonts;
+          if (fonts && fonts.ready && typeof fonts.ready.then === 'function') {
+            fonts.ready.then(notifyAfterPaint, notifyAfterPaint);
+          } else {
+            notifyAfterPaint();
           }
-        } catch (_) {}
+        } catch (_) {
+          notifyAfterPaint();
+        }
       }
       const el = document.getElementById('urppp-boot-loader');
       if (!el) return;
