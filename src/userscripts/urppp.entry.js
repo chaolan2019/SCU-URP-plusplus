@@ -791,6 +791,16 @@ import { createNavbarController } from '../features/navigation/navbar.js';
         document.body.classList.add('urppp-ready');
         document.body.style.removeProperty('opacity');
       }
+      // 作为弹窗内层文档时向宿主报到：这是「内容已是最终形态」的可靠信号，
+      // 宿主的 layer-guard 据此放行 iframe（消息名与 features/layer-guard 保持一致）
+      if (!window.__urpppLayerReadyNotified) {
+        window.__urpppLayerReadyNotified = true;
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ urppp: 'urppp-layer-styled' }, '*');
+          }
+        } catch (_) {}
+      }
       const el = document.getElementById('urppp-boot-loader');
       if (!el) return;
       const remove = () => { try { el.remove(); } catch (_) {} };
@@ -10318,8 +10328,8 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   try { injectAllStoreThemeStyles(); } catch (_) {}
 
   // 首帧防闪：智能应用推荐页常作为 iframe 弹窗内容加载，趁最早时机把变量与专属样式落好。
-  // 内层脚本注入之前的空窗由宿主侧的 layer-guard 填上（它会把主题底色直接写进本页），
-  // 所以这里不再需要向宿主报到。
+  // 内层脚本注入之前的空窗由宿主侧的 layer-guard 填上（它会把主题底色写进本页）；
+  // 本页就绪后由 hideBootLoader 向宿主报到，宿主才放行 iframe。
   // applyTheme 与 ensureMenuRecommendStyles 均为幂等，init() 中会再跑一次，不会重复建节点。
   try {
     if (document.documentElement && isMenuRecommendPage()) {

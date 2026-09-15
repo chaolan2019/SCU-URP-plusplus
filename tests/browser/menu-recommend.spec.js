@@ -236,7 +236,7 @@ async function mountLayer(page, { insertMode, url }) {
   }, { insertMode, url });
 }
 
-async function mountLayerWithInnerPage(page, { insertMode = 'atomic' } = {}) {
+async function mountLayerWithInnerPage(page, { insertMode = 'atomic', injectInnerScript = true } = {}) {
   await loadUrpFixture(page, { fixture: 'home' });
   await page.route('**/student/menu-recommend/page', (route) => route.fulfill({
     path: path.join(ROOT, 'tests/fixtures/menu-recommend.html'),
@@ -249,6 +249,13 @@ async function mountLayerWithInnerPage(page, { insertMode = 'atomic' } = {}) {
     const iframe = document.querySelector(selector);
     return !!iframe && !!iframe.getAttribute('src');
   }, LAYER_IFRAME_SELECTOR);
+
+  // 内层脚本按真实油猴的方式补注入：宿主等它的就绪报到才放行
+  if (injectInnerScript) {
+    const frame = page.frames().find((f) => f.url().includes('menu-recommend'));
+    await frame.addScriptTag({ path: USERSCRIPT_PATH });
+    await frame.waitForSelector('html.urppp-ready');
+  }
 }
 
 const insertionModes = ['atomic', 'src-late', 'class-late'];
@@ -278,22 +285,36 @@ for (const insertMode of insertionModes) {
   });
 }
 
-test('layui iframe 弹窗：内层脚本接管后底色不变', async ({ page }) => {
+test('layui iframe 弹窗：内层报到后才放行，接管前后底色一致', async ({ page }) => {
   await mountLayerWithInnerPage(page, { insertMode: 'src-late' });
+
   await page.waitForFunction((selector) => (
     document.querySelector(selector).classList.contains('urppp-layer-revealed')
   ), LAYER_IFRAME_SELECTOR);
 
-  // 内层脚本随后注入，应无缝接管，不产生视觉跳变
-  const frame = page.frames().find((f) => f.url().includes('menu-recommend'));
-  await frame.addScriptTag({ path: USERSCRIPT_PATH });
-  await frame.waitForSelector('html.urppp-ready');
-
-  const innerBg = await page.evaluate((selector) => {
+  // 内层脚本已接管，底色应仍与宿主主题一致，不产生视觉跳变
+  const state = await page.evaluate((selector) => {
     const doc = document.querySelector(selector).contentDocument;
-    return doc && doc.body ? getComputedStyle(doc.body).backgroundColor : null;
+    return {
+      innerBg: doc && doc.body ? getComputedStyle(doc.body).backgroundColor : null,
+      ready: !!(doc && doc.documentElement && doc.documentElement.classList.contains('urppp-ready')),
+    };
   }, LAYER_IFRAME_SELECTOR);
-  expect(innerBg).toBe(LIGHT.bg);
+  expect(state.ready).toBe(true);
+  expect(state.innerBg).toBe(LIGHT.bg);
+});
+
+test('layui iframe 弹窗：内层脚本缺席时靠兜底放行', async ({ page }) => {
+  await mountLayerWithInnerPage(page, { insertMode: 'src-late', injectInnerScript: false });
+
+  // 没有报到信号，放行只可能来自兜底；关键是它必须发生，不能让弹窗永久空白
+  await page.waitForFunction((selector) => (
+    document.querySelector(selector).classList.contains('urppp-layer-revealed')
+  ), LAYER_IFRAME_SELECTOR, { timeout: 6000 });
+  const visibility = await page.evaluate((selector) => (
+    getComputedStyle(document.querySelector(selector)).visibility
+  ), LAYER_IFRAME_SELECTOR);
+  expect(visibility).toBe('visible');
 });
 
 test('layui iframe 弹窗：放行逻辑缺席时靠样式兜底自行显示', async ({ page }) => {
@@ -364,7 +385,13 @@ test('layui iframe 弹窗：内层重定向后仍保持底色与可见', async (
       return false;
     }
   }, LAYER_IFRAME_SELECTOR, { timeout: 8000 });
-  await page.waitForTimeout(300);
+
+  // 重定向后的新文档同样需要内层脚本；注入后等它就绪报到
+  const frame = page.frames().find((f) => f.url().includes('menu-recommend'));
+  await frame.addScriptTag({ path: USERSCRIPT_PATH });
+  await page.waitForFunction((selector) => (
+    document.querySelector(selector).classList.contains('urppp-layer-revealed')
+  ), LAYER_IFRAME_SELECTOR, { timeout: 8000 });
 
   const state = await page.evaluate(({ selector, preflight }) => {
     const iframe = document.querySelector(selector);

@@ -1,20 +1,21 @@
 /**
  * @file layui iframe 型弹窗的首帧守卫。
  *
- * 内层文档由独立脚本接管，而该脚本的注入晚于该文档的首次绘制，于是会先画出一张
- * 未美化的原生界面再被接管。此前靠「等内层报到」来回避，代价是一段肉眼可感的等待。
+ * 内层文档由独立脚本接管，而该脚本的注入晚于该文档的首次绘制。此前试过两条路：
+ * 等内层脚本报到（稳定，但等待可感），或提前放行（快，但把内层从初始态走到最终态
+ * 的过程露给了用户——字号跳变、内容闪空）。两者都只解决一半。
  *
- * 改为主动出击：弹窗的 iframe 一出现就先遮蔽（样式表按属性选择器匹配，第一帧即生效），
- * 同时尽早把宿主当前主题的底色写进内层文档。底色一落，就说明内层不会再有原生白底可看，
- * 立即放行。内层脚本注入后自然接管后续的完整美化。
+ * 现在合成一条：等待照旧以内层脚本报到的「内容已是最终形态」为准，但等待期间不再是
+ * 空白——主文档先把宿主当前主题的底色写进内层文档，用户看到的是主题色，不是原生白底。
  *
- * 因此等待只剩「iframe 文档创建 + 一次轮询」，而不是等脚本就绪。
+ * 也就是说：慢的部分交给信号，难看的中间态交给打底。
  */
 
 const DEFAULT_TARGET = 'menu-recommend';
 const REVEAL_CLASS = 'urppp-layer-revealed';
 const PREFLIGHT_ID = 'urppp-layer-preflight';
-const POLL_INTERVAL = 10;
+const STYLED_MESSAGE = 'urppp-layer-styled';
+const POLL_INTERVAL = 50;
 const FALLBACK_TIMEOUT = 1500;
 
 export function startLayerGuard(options = {}) {
@@ -45,7 +46,7 @@ export function startLayerGuard(options = {}) {
     return { bg: bg || '#F5F5F7', text: text || '#1D1D1F' };
   };
 
-  // 把主题底色写进内层文档，填上内层脚本注入之前的空窗
+  // 把主题底色写进内层文档，填上内层脚本就绪之前的空窗
   const injectPreflight = (iframe) => {
     let inner = null;
     try {
@@ -56,7 +57,7 @@ export function startLayerGuard(options = {}) {
     if (!inner || !inner.documentElement) return false;
 
     // 文档必须已经是目标页面：src 刚设置时 contentDocument 仍指向旧的 about:blank，
-    // 注入到那里会随新文档加载而丢失，放行也就白放了
+    // 注入到那里会随新文档加载而丢失
     let href = '';
     try {
       href = String(inner.location.href || '');
@@ -89,25 +90,23 @@ export function startLayerGuard(options = {}) {
     return true;
   };
 
-  // 内层解析完成意味着它自己的样式表已经应用，首帧不会再以默认字号绘制后跳变
-  const isInnerStylesReady = (iframe) => {
-    try {
-      const inner = iframe.contentDocument;
-      if (!inner) return false;
-      return inner.readyState !== 'loading';
-    } catch (_) {
-      // 取不到就不以此设卡，交给兜底
-      return true;
-    }
-  };
-
   const marked = new WeakSet();
-
   const reveal = (iframe) => {
     if (marked.has(iframe)) return;
     marked.add(iframe);
     try { iframe.classList.add(REVEAL_CLASS); } catch (_) {}
   };
+
+  // 内层脚本就绪后主动报到。这是「内容已是最终形态」的可靠信号，
+  // 早一步放行就会看到内层的字号跳变与内容闪烁。
+  win.addEventListener('message', (event) => {
+    if (!event.data || event.data.urppp !== STYLED_MESSAGE) return;
+    try {
+      doc.querySelectorAll(selector).forEach((iframe) => {
+        if (iframe.contentWindow === event.source) reveal(iframe);
+      });
+    } catch (_) {}
+  });
 
   const tracked = new WeakSet();
 
@@ -115,30 +114,15 @@ export function startLayerGuard(options = {}) {
     if (!iframe || tracked.has(iframe)) return;
     tracked.add(iframe);
 
-    const settle = () => injectPreflight(iframe) && isInnerStylesReady(iframe);
-
-    // 底色已写且内层解析完成，才放行：早一步会让用户看到内层用默认字号画的头一帧
-    if (settle()) {
+    injectPreflight(iframe);
+    // 持续打底而不是只做一次：内层文档可能被替换（重定向、刷新）。
+    // 这里不重新遮蔽——已经显示之后再藏一次会突然白一下。
+    const timer = win.setInterval(() => injectPreflight(iframe), POLL_INTERVAL);
+    // 内层脚本迟迟不报到（未生效、跨域等）时兜底放行，避免把弹窗永久藏住
+    win.setTimeout(() => {
+      clearInterval(timer);
       reveal(iframe);
-      return;
-    }
-    const timer = setInterval(() => {
-      if (settle()) {
-        clearInterval(timer);
-        reveal(iframe);
-      }
-    }, POLL_INTERVAL);
-    // 内层始终拿不到（跨域等）时兜底放行，避免把弹窗永久藏住
-    win.setTimeout(() => { clearInterval(timer); reveal(iframe); }, FALLBACK_TIMEOUT);
-
-    // 内层文档被替换（重定向、刷新）时补一次底色。这里不重新遮蔽：
-    // 再藏一次会在已经显示之后突然白一下，比原样展示更难受。
-    try {
-      iframe.addEventListener('load', () => {
-        injectPreflight(iframe);
-        reveal(iframe);
-      });
-    } catch (_) {}
+    }, FALLBACK_TIMEOUT);
   };
 
   const scan = () => {
