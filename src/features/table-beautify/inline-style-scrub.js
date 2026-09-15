@@ -17,7 +17,11 @@ export function scrubLightInlineBackground(element) {
   if (!inlineStyle || !/background/i.test(inlineStyle)) return;
 
   const background = element.style.backgroundColor || element.style.background || '';
-  if (isLightInlineColor(background) || /background(-color|-image)?\s*:/i.test(inlineStyle)) {
+  // 只清理浅色内联背景。此前这里是「只要写了 background 就清」，与函数名和
+  // 测试名（preserving unrelated styles）都不相符：它会把用颜色表达语义的单元格
+  // 一并抹平——选课页的时间筛选器正是靠内联背景标出已占用时段，
+  // 被清掉就只剩一张空网格。
+  if (isLightInlineColor(background)) {
     element.style.removeProperty('background');
     element.style.removeProperty('background-color');
     element.style.removeProperty('background-image');
