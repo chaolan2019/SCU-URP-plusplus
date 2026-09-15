@@ -901,10 +901,14 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       if (finished) return;
       finished = true;
       if (raf) cancelAnimationFrame(raf);
+      if (deadline) clearTimeout(deadline);
       if (observer) observer.disconnect();
       if (resizeObserver) resizeObserver.disconnect();
       done();
     };
+    // 上限：站点持续重排时也要把首屏交出去，不留无限期遮罩
+    const LAYOUT_STABLE_CEILING_MS = 1500;
+    let deadline = 0;
     const check = () => {
       raf = 0;
       if (document.readyState !== 'complete') return;
@@ -915,7 +919,9 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       else raf = requestAnimationFrame(check);
     };
     const schedule = () => {
-      stableFrames = 0;
+      // 不在这里清零：几何有没有变，交给 check 里的比较判定。
+      // 旧写法是任何 class/style 变更都清零，而达标条件是「几何两帧不变」——
+      // 两件事不是一回事：站点只要持续切类名（几何其实没动），计数就永远回零，遮罩永不撤。
       if (!raf) raf = requestAnimationFrame(check);
     };
     const start = () => {
@@ -928,6 +934,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           targets().forEach((element) => resizeObserver.observe(element));
         }
       } catch (_) { /* geometry frames remain sufficient */ }
+      deadline = setTimeout(() => { if (!finished) finish(); }, LAYOUT_STABLE_CEILING_MS);
       schedule();
     };
     if (document.readyState === 'complete') start();
