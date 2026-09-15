@@ -33,6 +33,8 @@ test('抽屉：点开面板后才渲染出来的抽屉，也会被接管并在�
   const rightAfter = await drawerState(page);
   expect(rightAfter.height).toBeGreaterThan(opened.height);
   expect(Math.abs(rightAfter.offset + rightAfter.height)).toBeLessThan(1);
+  // 诊断标记：校正确实跑过（挂在 DOM 上，沙箱 window 里的标志在页面控制台看不到）
+  expect(await page.evaluate(() => document.documentElement.dataset.urpppDrawerFixed)).toBe('1');
 });
 
 test('抽屉：展开态不被干扰', async ({ page }) => {
