@@ -794,6 +794,8 @@ import { createNavbarController } from '../features/navigation/navbar.js';
         console.log('[URP++] 遮罩撤除 @' + Math.round(performance.now()) + 'ms'
           + ' (armed@' + (window.__urpppVeilArmedAt == null ? '-' : window.__urpppVeilArmedAt) + 'ms'
           + ', deadline=' + (window.__urpppVeilDeadlineFired ? 'yes' : 'no')
+          + ', late=' + (window.__urpppVeilDeadlineLate == null ? '-' : window.__urpppVeilDeadlineLate + 'ms')
+          + ', vis=' + document.visibilityState + ', focused=' + (document.hasFocus() ? 'yes' : 'no')
           + ', rs=' + document.readyState + ')');
       }
     } catch (_) {}
@@ -862,12 +864,24 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   const URPPP_VEIL_DEADLINE_MS = 1500;
   try {
     window.__urpppVeilArmedAt = Math.round(performance.now());
+    const dueAt = window.__urpppVeilArmedAt + URPPP_VEIL_DEADLINE_MS;
     setTimeout(() => {
       try {
         window.__urpppVeilDeadlineFired = true;
+        // 实际比预期晚多少：这个数字能直接看出运行环境的定时器是否被节流
+        window.__urpppVeilDeadlineLate = Math.round(performance.now()) - dueAt;
         hideBootLoader();
       } catch (_) {}
     }, URPPP_VEIL_DEADLINE_MS);
+  } catch (_) {}
+  // 用户一有交互就说明他在看——此时直接交界面，不再等定时器或 rAF。
+  // 用户脚本沙箱位于隐藏 frame、或标签页在后台时，前两者都会被浏览器大幅推迟，
+  // 于是“按时间兜底”会跟着一起晚。交互事件不受这个节流影响。
+  try {
+    const revealOnUserIntent = () => { try { hideBootLoader(); } catch (_) {} };
+    ['visibilitychange', 'focus', 'pointerdown', 'keydown', 'wheel', 'scroll'].forEach((type) => {
+      window.addEventListener(type, revealOnUserIntent, { once: true, passive: true, capture: true });
+    });
   } catch (_) {}
   // 清爽启动进度通知：各阶段完成时主动触发同一判定，不用轮询或固定延时猜测。
   const notifyCleanBootProgress = () => {

@@ -57,6 +57,24 @@ test('遮罩：时限在 document-start 就武装，不等 load', async ({ page 
   expect(state.ready).toBe(true);
 });
 
+/*
+ * 有些环境（用户脚本沙箱位于隐藏 frame、标签页在后台）会把 setTimeout 与 rAF 一起推迟，
+ * 线上实测时限武装于 187ms、本该 1687ms 触发，实际 11659ms 才触发——晚了约 10 秒。
+ * 这种情况下靠“按时间兜底”没用，所以补一条：用户一有交互就交界面。
+ */
+test('遮罩：用户一交互立即交界面（不等定时器）', async ({ page }) => {
+  await loadUrpFixture(page, { fixture: 'home', expectReady: false });
+  // 立刻派发一次交互，应当直接把遮罩撤掉
+  await page.evaluate(() => window.dispatchEvent(new Event('pointerdown')));
+  await page.waitForFunction(() => document.body.classList.contains('urppp-ready'), { timeout: 3000 });
+  const delivered = await page.evaluate(() => ({
+    ready: document.body.classList.contains('urppp-ready'),
+    logged: !!window.__urpppVeilLogged,
+  }));
+  expect(delivered.ready).toBe(true);
+  expect(delivered.logged).toBe(true);
+});
+
 test('遮罩：侧边栏高度在变化时也要按时撤除（内容区已稳定）', async ({ page }) => {
   // 注：这条是上限守卫，不是复现用例——侧边栏 rect 不随内容变，见提交说明。
   await loadUrpFixture(page, {
