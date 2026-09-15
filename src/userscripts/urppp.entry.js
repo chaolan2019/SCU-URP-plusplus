@@ -1008,8 +1008,11 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       if (resizeObserver) resizeObserver.disconnect();
       done();
     };
-    // 上限：站点持续重排时也要把首屏交出去，不留无限期遮罩
-    const LAYOUT_STABLE_CEILING_MS = 1500;
+    // 上限：站点持续重排时也要把首屏交出去，不留无限期遮罩。
+    // 偏短是有意的：插件自己的首页重构与缓存重渲染也会持续改几何，
+    // 而这条判定只是防「掀遮罩时页面还在跳」，不该被插件自身的渲染顶住
+    //（线上实测：rs 已是 interactive，但拖到 922ms 才稳）。
+    const LAYOUT_STABLE_CEILING_MS = 300;
     let deadline = 0;
     const check = () => {
       raf = 0;

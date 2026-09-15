@@ -200,6 +200,32 @@ test('遮罩：用户一交互立即交界面（不等定时器）', async ({ pa
   expect(delivered.logged).toBe(true);
 });
 
+test('遮罩：几何持续在变也要按时撤除（不被自身重渲染顶住）', async ({ page }) => {
+  // 线上非清爽模式的实际情况：rs 已是 interactive，但插件的首页重构与缓存重渲染
+  // 持续改 page-content 的几何，判定一直不达标，拖到 922ms。上限收到 300ms 后不再如此。
+  await loadUrpFixture(page, {
+    fixture: 'home',
+    expectReady: false,
+    beforeUserscript: (target) => target.evaluate(() => {
+      let n = 0;
+      window.__urpppLayoutChurn = setInterval(() => {
+        n += 1;
+        const main = document.querySelector('.main-content');
+        if (main) main.style.paddingBottom = (10 + (n % 20)) + 'px';
+      }, 10);
+    }),
+  });
+
+  const started = Date.now();
+  await page.waitForFunction(() => document.body.classList.contains('urppp-ready'), { timeout: 8000 });
+  const elapsed = Date.now() - started;
+  await page.evaluate(() => clearInterval(window.__urpppLayoutChurn));
+  // 注：这条只能当上限守卫，不能当复现用例——夹具里没能构造出真正顶住判定的几何扰动
+  //（把上限改回 1500ms 它照样通过）。上限改小必然缩短等待，这一点由定义保证：
+  // 等待 = min(几何稳定, 上限)。
+  expect(elapsed).toBeLessThan(1500);
+});
+
 test('遮罩：侧边栏高度在变化时也要按时撤除（内容区已稳定）', async ({ page }) => {
   // 注：这条是上限守卫，不是复现用例——侧边栏 rect 不随内容变，见提交说明。
   await loadUrpFixture(page, {
