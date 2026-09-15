@@ -27,13 +27,13 @@ function createDrawerOffsetSync({ doc, ResizeObserverRef, MutationObserverRef })
   let resizeObserver = null;
 
   function settle() {
-    if (!panel || !panel.isConnected) return false;
+    if (!panel || !panel.isConnected) return;
     const top = parseFloat(panel.style.top);
     // 展开态或没有位移：不碰
-    if (!Number.isFinite(top) || top >= 0) return false;
+    if (!Number.isFinite(top) || top >= 0) return;
     const height = panel.offsetHeight;
     // 高度还没量出来，或已经对齐
-    if (!height || Math.abs(top + height) < 1) return false;
+    if (!height || Math.abs(top + height) < 1) return;
     // 抽屉带 transition: top。只写内联值不够：过渡会从当时的计算值开始插值，
     // 那一帧画出来的仍是旧位置（露出的那一截就是这么来的）。
     // 所以校正要瞬发：停掉过渡、写入、强制一次重排、再恢复。
@@ -46,7 +46,6 @@ function createDrawerOffsetSync({ doc, ResizeObserverRef, MutationObserverRef })
     // 所以写在 DOM 上：documentElement.dataset.urpppDrawerFixed
     const root = doc.documentElement;
     if (root) root.dataset.urpppDrawerFixed = String((Number(root.dataset.urpppDrawerFixed) || 0) + 1);
-    return true;
   }
 
   function bind() {
@@ -80,16 +79,17 @@ function createDrawerOffsetSync({ doc, ResizeObserverRef, MutationObserverRef })
 export function startDrawerOffsetSync(options = {}) {
   const win = options.win || window;
   const doc = options.doc || document;
+  const MutationObserverRef = options.MutationObserverRef || MutationObserver;
   if (!win.__urpppDrawerOffsetSync) {
     const instance = createDrawerOffsetSync({
       doc,
       ResizeObserverRef: options.ResizeObserverRef || win.ResizeObserver,
-      MutationObserverRef: options.MutationObserverRef || MutationObserver,
+      MutationObserverRef,
     });
     // 文档级观察器：抽屉何时出现、是否被整块替换，都从这里知道。
     // childList 的回调是微任务，落在布局之前，正好用来赶在绘制前校正。
     if (doc.documentElement) {
-      new MutationObserver(instance.bind).observe(doc.documentElement, { childList: true, subtree: true });
+      new MutationObserverRef(instance.bind).observe(doc.documentElement, { childList: true, subtree: true });
     }
     win.__urpppDrawerOffsetSync = instance;
   }

@@ -201,22 +201,6 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   const bootLoaderVeil = hostedInLayer ? 'display: none !important;' : '';
   const earlyStyle = GM_addStyle(`
     html, body { background: var(--bg, #F5F5F7) !important; color: var(--text, #1D1D1F) !important; }
-    /* 课表的尺寸必须和最终样式一致：站点会量完高度再算筛选器抽屉的滑动位置，
-       量到的是美化前的值，抽屉就会停在差一截的位置（实测差 107px，正是 12 行 × 8.889px）。
-       颜色、边框等仍由后面的主题样式接管，这里只提前固定会影响高度的部分。 */
-    #mycoursetable > table,
-    #mycoursetable table#courseTable,
-    #courseTable {
-      width: 100% !important;
-      max-width: 100% !important;
-      table-layout: fixed !important;
-      border-collapse: collapse !important;
-      box-sizing: border-box !important;
-    }
-    #courseTable th { padding: 10px 8px !important; font-size: 13px !important; text-align: center !important; }
-    #courseTable td { padding: 4px !important; font-size: 13px !important; line-height: 1.6 !important; vertical-align: top !important; }
-    #mycoursetable td,
-    #mycoursetable th { vertical-align: top !important; box-sizing: border-box !important; }
     /* 未就绪时隐藏页面主体，避免 ACE 原样式闪现 */
     ${bodyVeil}
     html.urppp-ready body,
