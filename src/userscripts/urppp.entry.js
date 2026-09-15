@@ -87,7 +87,8 @@ import scoreAnalysisStyles from '../styles/score-analysis.css';
 import mobileStyles from '../styles/mobile.css';
 import menuRecommendStyles from '../styles/menu-recommend.css';
 import { startLayerGuard } from '../features/layer-guard/index.js';
-import { startDivKbIsolation } from '../features/div-kb-isolation/index.js';
+import { startCourseGridIsolation } from '../features/course-grid-isolation/index.js';
+import { isCourseTimeGrid } from '../features/table-beautify/course-time-grid.js';
 import { installConfirmDialog } from '../features/confirm-dialog/index.js';
 import { createCleanModeState, resetCleanModeData } from '../features/clean-mode/state.js';
 import { createCleanModeDataLoader } from '../features/clean-mode/data.js';
@@ -4328,10 +4329,9 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   }
 
   function isBusinessDataTable(table) {
-    // 选课页的时间筛选器（#div_kb 内的 #courseTable）由 coursetable 自行渲染，
-    // 自己管理 DOM 与内联样式。整块隔离：一旦被包一层或清一次样式，
-    // 它就再也填不出「已占用时段」，只剩一张空网格。
-    if (table && table.closest && table.closest('#div_kb')) return false;
+    // 选课页的时间筛选器由 coursetable 自行渲染，自己管理 DOM 与内联样式。
+    // 整块隔离：一旦被包一层或清一次样式，它就再也填不出「已占用时段」，只剩空网格。
+    if (isCourseTimeGrid(table)) return false;
     return classifyBusinessDataTable(table, { noticePage: isNoticePageContext() });
   }
 
@@ -4596,8 +4596,8 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     if (isNativePdfIsolationActive()) return;
     const table = document.getElementById('courseTable');
     if (!table) return;
-    // 选课页的 #div_kb 网格整块隔离：那里的底色是站点自己的占用标记，不参与改写
-    if (table.closest('#div_kb')) return;
+    // 选课页的时间筛选器整块隔离：那里的底色是站点自己的占用标记，不参与改写
+    if (isCourseTimeGrid(table)) return;
     table.querySelectorAll('td').forEach((cell) => {
       const background = cell.style.backgroundColor;
       if (!background || !background.includes('rgba')) return;
@@ -4710,7 +4710,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     beautifyCurriculumDrawer();
     bindTableWrapObserver();
     startLayerGuard();
-    startDivKbIsolation();
+    startCourseGridIsolation();
     installConfirmDialogWhenReady();
     // 首页进行组件级重构
     const pageContent = document.querySelector('.page-content');
@@ -10227,7 +10227,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         bindTableWrapObserver();
         scheduleWeekScheduleFix();
         bindCourseTableOpacityObserver();
-        startDivKbIsolation();
+        startCourseGridIsolation();
         scheduleBeautifyNoticeTables();
         scheduleScrubTableInlineBg();
         document.querySelectorAll('.page-content, #page-content-template').forEach((el) => {

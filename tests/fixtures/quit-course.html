@@ -6,14 +6,15 @@
   <style>
     html, body { margin: 0; color: #393939; background: #fff; font: 14px Arial, sans-serif; }
     .page-content { padding: 16px; }
+    .toolbar { margin-bottom: 10px; }
     .table { border-collapse: collapse; }
     .table td, .table th { border: 1px solid #ddd; padding: 8px 12px; white-space: nowrap; }
     .fa-trash-o { display: inline-block; width: 14px; height: 14px; background: #d9534f; cursor: pointer; }
-    /* 复刻 layui 原生 dialog 外观：样式应由插件接管，这里给出被覆盖的原始值。
-       z-index 与定位也照真实值给，否则夹具里的 sidebar 会挡住弹窗 */
-    .layui-layer { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 19891016; background: #fff; border-radius: 2px; box-shadow: 1px 1px 50px rgba(0,0,0,.3); }
+    /* 复刻 layui 1.x 原生 dialog 外观：内容节点是 id 形态，样式应由插件接管，
+       这里给出被覆盖的原始值。top/left 由内联样式给，与真实 DOM 一致 */
+    .layui-layer { position: fixed; z-index: 19891016; background: #fff; border-radius: 2px; box-shadow: 1px 1px 50px rgba(0,0,0,.3); }
     .layui-layer-title { height: 42px; line-height: 42px; padding: 0 80px 0 20px; background: #F8F8F8; border-bottom: 1px solid #eee; }
-    .layui-layer-content { padding: 16px 20px; }
+    #layui-layer-content { padding: 16px 20px; }
     .layui-layer-btn { padding: 0 12px 12px; text-align: right; }
     .layui-layer-btn a { display: inline-block; height: 30px; line-height: 30px; padding: 0 14px; margin-left: 8px; border: 1px solid #dedede; background: #f8f8f8; color: #333; text-decoration: none; }
   </style>
@@ -24,6 +25,9 @@
   <main class="main-content">
     <div class="page-content" id="page-content-template">
       <!-- 表头照抄真实页面：首列是操作（图标无文字），课程名在第 4 列 -->
+      <div class="toolbar">
+        <button type="button" id="toolbar-btn" onclick="bulkQuit()">批量退课</button>
+      </div>
       <table class="table">
         <thead>
           <tr>
@@ -36,7 +40,7 @@
           <tr>
             <td>
               <i class="fa-trash-o" id="quit-btn" title="退课" onclick="quitSel('202503250927','105806020','01','01')"></i>
-              <i class="fa-trash-o" id="quit-btn-direct" title="直接调 layui" onclick="directConfirm()"></i>
+              <i class="fa-trash-o" id="other-btn" title="选课冲突提示" onclick="showConflict()"></i>
             </td>
             <td>电气电子创新设计（微专业）教学计划</td>
             <td>105806020</td>
@@ -84,71 +88,48 @@
     window.__dialogOpened = 0;
     window.__confirmCallbackFired = null;
     window.__deleteRequested = false;
+    var layerSeq = 0;
 
-    // 复刻 layui 的 layer：dialog 由它渲染，样式交给插件接管
-    var layer = {
-      open: function (options) {
-        window.__dialogOpened += 1;
-        var dialog = document.createElement('div');
-        dialog.className = 'layui-layer layui-layer-dialog layer-anim';
-        dialog.id = 'layui-layer-fixture';
-        dialog.innerHTML = '<div class="layui-layer-title">' + (options.title || '信息') + '</div>'
-          + '<div class="layui-layer-content"></div>'
-          + '<div class="layui-layer-btn"></div>';
-        dialog.querySelector('.layui-layer-content').innerHTML = options.content;
-        var bar = dialog.querySelector('.layui-layer-btn');
-        (options.btn || []).forEach(function (label, index) {
-          var button = document.createElement('a');
-          button.className = 'layui-layer-btn' + index;
-          button.textContent = label;
-          button.onclick = function () {
-            dialog.remove();
-            var handler = index === 0 ? options.yes : options.btn2;
-            if (typeof handler === 'function') handler();
-          };
-          bar.appendChild(button);
-        });
-        document.body.appendChild(dialog);
-      },
-      // confirm 把回调塞进 options 再走 open，与 layui 内部一致
-      confirm: function (content, options, yes, cancel) {
-        var opts = {};
-        for (var key in options) opts[key] = options[key];
-        opts.content = content;
-        opts.btn = (options && options.btn) || ['确定', '取消'];
-        opts.yes = yes;
-        if (cancel !== undefined) opts.btn2 = cancel;
-        this.open(opts);
-      }
-    };
-    window.layer = layer;
-
-    function Urp() {}
-    Urp.prototype = {
-      confirm: function (msg, callback) {
-        layer.confirm(msg, { title: '提示信息', btn: ['确定', '取消'], closeBtn: 0 }, function () {
-          callback(true);
-        }, function () {
-          callback(false);
-        });
-      }
-    };
-    window.urp = new Urp();
-
-    function quitSel(fajhh, kch, kxh, xdfsdm) {
-      urp.confirm('是否确定要删除此门课程？', function (ok) {
-        window.__confirmCallbackFired = ok;
-        if (ok) window.__deleteRequested = true;
-      });
+    // 复刻真实页面的确认框：由页面自己的脚本拼出 layui 1.x 的 dialog DOM。
+    // 刻意既不挂 window.layer 也不挂 window.urp —— 增强不该依赖它们
+    //（真实页面上这两个全局都不保证存在，挂上去拿不到就静默失效）。
+    function openConfirm(message, onOk, onCancel) {
+      window.__dialogOpened += 1;
+      layerSeq += 1;
+      var dialog = document.createElement('div');
+      dialog.className = 'layui-layer layui-layer-dialog layer-anim';
+      dialog.id = 'layui-layer' + layerSeq;
+      dialog.setAttribute('type', 'dialog');
+      dialog.setAttribute('times', String(layerSeq));
+      dialog.setAttribute('showtime', '0');
+      dialog.setAttribute('contype', 'string');
+      dialog.style.cssText = 'z-index: 19891016; top: 485px; left: 643px;';
+      dialog.innerHTML = '<div class="layui-layer-title" style="cursor: move;">提示信息</div>'
+        + '<div id="layui-layer-content"></div>'
+        + '<span class="layui-layer-setwin"></span>'
+        + '<div class="layui-layer-btn"><a class="layui-layer-btn0">确定</a><a class="layui-layer-btn1">取消</a></div>';
+      dialog.querySelector('#layui-layer-content').textContent = message;
+      dialog.querySelector('.layui-layer-btn0').onclick = function () { dialog.remove(); onOk(); };
+      dialog.querySelector('.layui-layer-btn1').onclick = function () { dialog.remove(); onCancel(); };
+      document.body.appendChild(dialog);
     }
 
-    // 不经过 urp.confirm 的路径：验证增强挂在 layui 上而不是页面对象上
-    function directConfirm() {
-      layer.confirm('是否确定要删除此门课程？', { title: '提示信息', btn: ['确定', '取消'] }, function () {
+    function quitSel(fajhh, kch, kxh, xdfsdm) {
+      openConfirm('是否确定要删除此门课程？', function () {
         window.__confirmCallbackFired = true;
+        window.__deleteRequested = true;
       }, function () {
         window.__confirmCallbackFired = false;
       });
+    }
+
+    function showConflict() {
+      openConfirm('选课时间冲突，请重新选择时间段', function () {}, function () {});
+    }
+
+    // 表格外的按钮：没有点过任何一行，不该凭空补上某个课程名
+    function bulkQuit() {
+      openConfirm('是否确定要删除所选课程？', function () {}, function () {});
     }
   </script>
 </body>

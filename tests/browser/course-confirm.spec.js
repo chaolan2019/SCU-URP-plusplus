@@ -1,19 +1,23 @@
 import { expect, test } from '@playwright/test';
 import { loadUrpFixture } from './support/urp-fixture.js';
 
-const DIALOG = '#layui-layer-fixture';
-const CONTENT = `${DIALOG} .layui-layer-content`;
+const DIALOG = '.layui-layer-dialog';
+const CONTENT = `${DIALOG} #layui-layer-content`;
 
 test('退课确认：提示语补上要退的课程', async ({ page }) => {
   await loadUrpFixture(page, { fixture: 'quit-course' });
 
   await page.click('#quit-btn');
 
-  // 弹窗仍由页面自己的 layui 渲染
+  // 弹窗仍由页面自己的脚本渲染
   await expect(page.locator(DIALOG)).toHaveCount(1);
   await expect(page.locator(CONTENT)).toContainText('跨文化实用交际_28');
   // 原有提示语保持不动，只是在前面补了课程
   await expect(page.locator(CONTENT)).toContainText('是否确定要删除此门课程？');
+  // 课程名按「课程名」列取：首列是操作图标，次列是培养方案，都不是课程
+  const text = await page.locator(CONTENT).innerText();
+  expect(text).not.toContain('电气电子创新设计');
+  expect(text).not.toContain('105806020');
 });
 
 test('退课确认：补的是被点那一行的课程', async ({ page }) => {
@@ -25,28 +29,38 @@ test('退课确认：补的是被点那一行的课程', async ({ page }) => {
   await expect(page.locator(CONTENT)).not.toContainText('跨文化实用交际_28');
 });
 
-test('退课确认：课程名按「课程名」列取，不拿首列的操作或培养方案', async ({ page }) => {
+test('退课确认：增强不依赖 urp / layer 这类全局', async ({ page }) => {
   await loadUrpFixture(page, { fixture: 'quit-course' });
+
+  // 真实页面上这两个全局都不保证存在；挂它们的结果就是静默失效
+  const globals = await page.evaluate(() => ({
+    urp: typeof window.urp,
+    layer: typeof window.layer,
+  }));
+  expect(globals).toEqual({ urp: 'undefined', layer: 'undefined' });
 
   await page.click('#quit-btn');
-
-  const text = await page.locator(CONTENT).innerText();
-  expect(text).not.toContain('电气电子创新设计');
-  expect(text).not.toContain('自动化培养方案');
-  expect(text).not.toContain('105806020');
-});
-
-test('退课确认：弹窗不经过 urp.confirm 时同样补上课程名', async ({ page }) => {
-  await loadUrpFixture(page, { fixture: 'quit-course' });
-
-  // 增强挂在 layui 的弹窗入口上，页面对象是不是 window.urp 不影响
-  await page.click('#quit-btn-direct');
-
   await expect(page.locator(CONTENT)).toContainText('跨文化实用交际_28');
 });
 
-test('退课确认：弹窗沿用主题样式（layui dialog 型）', async ({ page }) => {
-  // 暗色主题下判定更明确：深邃暗的 --surface 是 #1C1C1E
+test('退课确认：不是退课类的弹窗不动它', async ({ page }) => {
+  await loadUrpFixture(page, { fixture: 'quit-course' });
+
+  await page.click('#other-btn');
+
+  await expect(page.locator(CONTENT)).toHaveText('选课时间冲突，请重新选择时间段');
+});
+
+test('退课确认：没点过课程行时不凭空补课程名', async ({ page }) => {
+  await loadUrpFixture(page, { fixture: 'quit-course' });
+
+  await page.click('#toolbar-btn');
+
+  await expect(page.locator(CONTENT)).toHaveText('是否确定要删除所选课程？');
+});
+
+test('退课确认：内容节点是 layui 1.x 的 id 形态也跟随主题', async ({ page }) => {
+  // 暗色主题下判定更明确：--surface 是 #1C1C1E
   await loadUrpFixture(page, {
     fixture: 'quit-course',
     values: { urppp_theme_v3: 'dark' },
@@ -55,24 +69,27 @@ test('退课确认：弹窗沿用主题样式（layui dialog 型）', async ({ p
   await page.click('#quit-btn');
   await expect(page.locator(DIALOG)).toHaveCount(1);
 
-  const styles = await page.evaluate((sel) => {
-    const layer = document.querySelector(sel);
-    const title = layer.querySelector('.layui-layer-title');
-    const btn0 = layer.querySelector('.layui-layer-btn0');
-    const btn1 = layer.querySelector('.layui-layer-btn1');
+  const styles = await page.evaluate(() => {
+    const dialog = document.querySelector('.layui-layer-dialog');
+    const content = dialog.querySelector('#layui-layer-content');
+    const title = dialog.querySelector('.layui-layer-title');
+    const btn0 = dialog.querySelector('.layui-layer-btn0');
+    const btn1 = dialog.querySelector('.layui-layer-btn1');
     const cs = (el) => getComputedStyle(el);
     return {
-      layerBg: cs(layer).backgroundColor,
-      layerRadius: cs(layer).borderTopLeftRadius,
-      titleBg: cs(title).backgroundColor,
+      layerBg: cs(dialog).backgroundColor,
+      layerRadius: cs(dialog).borderTopLeftRadius,
+      contentBg: cs(content).backgroundColor,
+      contentColor: cs(content).color,
       titleWeight: cs(title).fontWeight,
       okBg: cs(btn0).backgroundColor,
       cancelBg: cs(btn1).backgroundColor,
     };
-  }, DIALOG);
+  });
 
   expect(styles.layerBg).toBe('rgb(28, 28, 30)');
-  expect(styles.titleBg).toBe('rgb(28, 28, 30)');
+  expect(styles.contentBg).toBe('rgb(28, 28, 30)');
+  expect(styles.contentColor).toBe('rgb(245, 245, 247)');
   expect(styles.titleWeight).toBe('600');
   // 主按钮用主题主色，次按钮用输入底色，两者可区分
   expect(styles.okBg).not.toBe(styles.cancelBg);

@@ -1,9 +1,10 @@
 /**
- * @file #div_kb 整块隔离：选课页的时间筛选器。
+ * @file 选课页时间筛选器的整块隔离。
  *
- * 这块网格由站点自己的 coursetable 渲染，靠**内联背景色**标出「已占用 / 空闲」。
- * 美化层为暗色适配给所有表格单元格写了 `background: var(--surface) !important`，
- * 这类声明会把占用标记一并抹平——网格看上去永远是空的，与有没有数据无关。
+ * 这块网格由站点自己的 coursetable 渲染，靠**内联背景色**标出「已占用 / 空闲」，
+ * 其中空闲格是浅色，正好落在美化层的射程里：样式表里
+ * `background: var(--surface) !important`（含 editorial 皮肤的 transparent 变体）
+ * 会把它连标记一起抹平，网格看上去就永远是空的，与有没有数据无关。
  *
  * 让样式表「不匹配」需要给整个美化层逐个选择器加排除，代价是几十处补丁；
  * 而内联 `!important` 是唯一能压过样式表 `!important` 的通道（已实测）。
@@ -11,14 +12,15 @@
  * 该区域的 DOM 同样不再被插件改写（见 isBusinessDataTable / inline-style-scrub）。
  */
 
-const REGION_ID = 'div_kb';
+import { findCourseTimeGrid } from '../table-beautify/course-time-grid.js';
+
 // 站点可能把标记写在行上而不是格子上，一并接管
 const MARKED_SELECTOR = 'table, thead, tbody, tr, th, td';
 // 网格由站点脚本后置渲染，给它几次机会
 const RETRY_INTERVAL = 300;
 const RETRY_LIMIT = 10;
 
-function createDivKbIsolation({ doc, MutationObserverRef }) {
+function createCourseGridIsolation({ doc, MutationObserverRef }) {
   // 记下「上一次被我们提权过的值」，用来辨认哪些写入是自己的，避免自激
   const locked = new WeakMap();
   let observed = null;
@@ -42,7 +44,7 @@ function createDivKbIsolation({ doc, MutationObserverRef }) {
 
   function flush() {
     pending = 0;
-    const region = doc.getElementById(REGION_ID);
+    const region = findCourseTimeGrid(doc);
     if (!region) return;
     try {
       region.querySelectorAll(MARKED_SELECTOR).forEach(lockElement);
@@ -55,7 +57,7 @@ function createDivKbIsolation({ doc, MutationObserverRef }) {
   }
 
   function start() {
-    const region = doc.getElementById(REGION_ID);
+    const region = findCourseTimeGrid(doc);
     if (!region) {
       if (attempts < RETRY_LIMIT) {
         attempts += 1;
@@ -81,14 +83,14 @@ function createDivKbIsolation({ doc, MutationObserverRef }) {
   return { start };
 }
 
-export function startDivKbIsolation(options = {}) {
+export function startCourseGridIsolation(options = {}) {
   const win = options.win || window;
-  if (!win.__urpppDivKbIsolation) {
-    win.__urpppDivKbIsolation = createDivKbIsolation({
+  if (!win.__urpppCourseGridIsolation) {
+    win.__urpppCourseGridIsolation = createCourseGridIsolation({
       doc: options.doc || document,
       MutationObserverRef: options.MutationObserverRef || MutationObserver,
     });
   }
   // 可重复调用：路由替换掉区域后重新绑定
-  win.__urpppDivKbIsolation.start();
+  win.__urpppCourseGridIsolation.start();
 }

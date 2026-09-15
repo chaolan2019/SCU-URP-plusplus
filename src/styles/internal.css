@@ -3801,7 +3801,10 @@
         font-size: 14px !important;
         font-weight: 600 !important;
       }
-      .layui-layer-dialog > .layui-layer-content {
+      /* layui 1.x 的内容节点是 <div id="layui-layer-content">，2.x 才用 class；
+         这个页面是 1.x，只写 class 会让内容区间不到主题色 */
+      .layui-layer-dialog > .layui-layer-content,
+      .layui-layer-dialog > #layui-layer-content {
         background: var(--surface) !important;
         color: var(--text) !important;
         font-size: 13px !important;
