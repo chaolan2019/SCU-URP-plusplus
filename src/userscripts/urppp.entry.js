@@ -5127,14 +5127,20 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
           const owner = anchor.closest('li');
           if (owner?.classList.contains('light-blue')) return;
           if (owner?.querySelector('#intellegenceUDiv, #form-search')) return;
-          if (anchor === helpSource || anchor.classList.contains('dropdown-toggle')) return;
+          // 站点有些入口把行为挂在内联 onclick 上（作息时间表、菜单推荐），这类要连行为一起保留。
+          // 白名单先算出来，因为它是“是否算下拉”的判据之一。
+          const rawOnclick = String(anchor.getAttribute('onclick') || '');
+          const keepOnclick = /openWorkRestSchedule|openMenuRecommend|open\w*Schedule/i.test(rawOnclick);
+          if (anchor === helpSource) return;
+          // dropdown-toggle 一律跳过是为了不把顶栏下拉菜单搬进快捷区；
+          // 但带白名单 onclick 的入口不是下拉，它只是站点给加了同一个 class。
+          if (anchor.classList.contains('dropdown-toggle') && !keepOnclick) return;
           if (!anchor.getAttribute('href') && !anchor.getAttribute('onclick')) return;
           const clone = anchor.cloneNode(true);
           clone.className = 'urppp-mobile-quick-link';
           clone.removeAttribute('style');
-          // 保留可交互项的 onclick（作息时间表等），只移除会触发侧边栏收回的无关 onclick
-          const rawOnclick = String(anchor.getAttribute('onclick') || '');
-          const keepOnclick = /openWorkRestSchedule|open\w*Schedule/i.test(rawOnclick);
+          // 克隆上不保留下拉语义（class 已被替换，data-toggle 也去掉），只留站点的 onclick
+          clone.removeAttribute('data-toggle');
           if (!keepOnclick) clone.removeAttribute('onclick');
           // 假期状态等静态项：清爽模式下完全不可点（删 href 变纯文本）
           if (opts.cleanMode) {

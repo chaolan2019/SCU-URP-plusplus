@@ -26,6 +26,9 @@
         <li><a href="/calendar"><i class="ace-icon fa fa-calendar"></i><span>校历</span></a></li>
         <li><a href="/schedule"><i class="ace-icon fa fa-clock-o"></i><span>作息</span></a></li>
         <li><a href="/holiday"><i class="ace-icon fa fa-flag"></i><span class="span_bbzx">假期</span></a></li>
+        <!-- 真实顶栏：作息时间表之后是当前日期，再后面是站点新增的「菜单推荐」 -->
+        <li><a href="#"><i class="ace-icon fa fa-calendar-o"></i><span class="span_bbzx">2026-2027 秋  第3周</span></a></li>
+        <li><a data-toggle="dropdown" class="dropdown-toggle" href="#" onclick="openMenuRecommend();return false;" title="菜单推荐"><i class="ace-icon fa fa-magic"></i><span class="span_bbzx">菜单推荐</span></a></li>
         <li><a href="/main/customerServiceCenter"><i class="ace-icon glyphicon glyphicon-headphones"></i></a></li>
         <li class="green">
           <div class="intellegenceUDiv" id="intellegenceUDiv"><div id="clickdiv"><i class="fa fa-search" id="clicki"></i></div></div>
@@ -75,5 +78,11 @@
     </div>
   </main>
   </div>
+  <script>
+    // 站点自己的入口实现（真实页面里由站点 JS 提供）。夹具只记录被调用过。
+    window.openMenuRecommend = function () {
+      window.__urpppMenuRecommendCalls = (window.__urpppMenuRecommendCalls || 0) + 1;
+    };
+  </script>
 </body>
 </html>
