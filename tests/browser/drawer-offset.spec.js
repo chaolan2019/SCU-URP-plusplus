@@ -28,8 +28,8 @@ test('抽屉：点开面板后才渲染出来的抽屉，也会被接管并在�
   // 查询：网格填满、面板长高，站点仍按旧高度收起
   await page.click('#fill');
 
-  // 校正必须发生在布局后、绘制前：读值取在下一帧（rAF 排在 ResizeObserver 之后、绘制之前）
-  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => resolve())));
+  // 不等下一帧：内容变更的微任务里就该已经校正完，
+  // 这正是「本帧绘制用的是修正后的值」的判据——若校正晚到一帧，这里读到的是旧值
   const rightAfter = await drawerState(page);
   expect(rightAfter.height).toBeGreaterThan(opened.height);
   expect(Math.abs(rightAfter.offset + rightAfter.height)).toBeLessThan(1);

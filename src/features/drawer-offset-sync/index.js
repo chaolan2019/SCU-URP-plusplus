@@ -21,6 +21,7 @@ function createDrawerOffsetSync({ doc, ResizeObserverRef, MutationObserverRef })
   let panel = null;
   let observer = null;
   let resizeObserver = null;
+  let contentObserver = null;
   let watcher = null;
 
   function settle() {
@@ -59,10 +60,17 @@ function createDrawerOffsetSync({ doc, ResizeObserverRef, MutationObserverRef })
     panel = next;
     if (observer) observer.disconnect();
     if (resizeObserver) resizeObserver.disconnect();
+    if (contentObserver) contentObserver.disconnect();
     // 站点改位移：收起 / 展开都从这里经过
     observer = new MutationObserverRef(settle);
     observer.observe(panel, { attributes: true, attributeFilter: ['style'] });
-    // 内容长高：查询后网格被填满就发生在这里
+    // 内容长高：这里必须是 MutationObserver，不能用 ResizeObserver。
+    // ResizeObserver 的回调落在布局之后，那一帧该露的已经画出来了；
+    // MutationObserver 的回调是微任务，落在布局之前，
+    // 在这里读一次高度（强制布局）再写位移，本帧绘制用的就是修正后的值。
+    contentObserver = new MutationObserverRef(settle);
+    contentObserver.observe(container, { childList: true, subtree: true });
+    // 兜底：尺寸因字体、缩放等不由 DOM 变更引起的原因变化时
     if (typeof ResizeObserverRef === 'function') {
       resizeObserver = new ResizeObserverRef(settle);
       resizeObserver.observe(container);
