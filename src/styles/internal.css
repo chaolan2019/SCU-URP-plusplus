@@ -4645,10 +4645,12 @@
         border-collapse: collapse !important;
         box-sizing: border-box !important;
       }
+      /* 站点写过的内联底色不走主题：时间筛选器靠它标可选 / 已占用，
+         :where 不改变特异度 */
       #mycoursetable td,
       #mycoursetable th,
-      #courseTable td,
-      #courseTable th {
+      #courseTable td:where(:not([style*="background"])),
+      #courseTable th:where(:not([style*="background"])) {
         position: relative !important;
         vertical-align: top !important;
         box-sizing: border-box !important;

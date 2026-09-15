@@ -454,15 +454,16 @@ export function createApplySkinAttr({ getSkin, getSkinShapeOverrides, isAppleEdg
           html[data-urppp-skin="editorial"] .dataTable{
             background:transparent!important;border:0!important;border-radius:0!important;border-collapse:collapse!important;box-shadow:none!important;
           }
-          html[data-urppp-skin="editorial"] .table>thead>tr>th,
-          html[data-urppp-skin="editorial"] .table>tbody>tr>th,
-          html[data-urppp-skin="editorial"] .table>tbody>tr>td,
-          html[data-urppp-skin="editorial"] .table>tfoot>tr>th,
-          html[data-urppp-skin="editorial"] .table>tfoot>tr>td,
-          html[data-urppp-skin="editorial"] .table-bordered>thead>tr>th,
-          html[data-urppp-skin="editorial"] .table-bordered>tbody>tr>td,
-          html[data-urppp-skin="editorial"] .dataTable>thead>tr>th,
-          html[data-urppp-skin="editorial"] .dataTable>tbody>tr>td{
+          /* 格子上的内联底色是站点写的数据，皮肤只接管没被写过的格子；:where 不改特异度 */
+          html[data-urppp-skin="editorial"] .table>thead>tr>th:where(:not([style*="background"])),
+          html[data-urppp-skin="editorial"] .table>tbody>tr>th:where(:not([style*="background"])),
+          html[data-urppp-skin="editorial"] .table>tbody>tr>td:where(:not([style*="background"])),
+          html[data-urppp-skin="editorial"] .table>tfoot>tr>th:where(:not([style*="background"])),
+          html[data-urppp-skin="editorial"] .table>tfoot>tr>td:where(:not([style*="background"])),
+          html[data-urppp-skin="editorial"] .table-bordered>thead>tr>th:where(:not([style*="background"])),
+          html[data-urppp-skin="editorial"] .table-bordered>tbody>tr>td:where(:not([style*="background"])),
+          html[data-urppp-skin="editorial"] .dataTable>thead>tr>th:where(:not([style*="background"])),
+          html[data-urppp-skin="editorial"] .dataTable>tbody>tr>td:where(:not([style*="background"])){
             background:transparent!important;color:var(--text)!important;border:0!important;
             border-bottom:1px solid var(--editorial-line)!important;
           }
@@ -578,15 +579,15 @@ export function createApplySkinAttr({ getSkin, getSkinShapeOverrides, isAppleEdg
           html[data-urppp-skin="editorial"] #courseTable{
             background:transparent!important;border:0!important;border-collapse:collapse!important;box-shadow:none!important;
           }
-          html[data-urppp-skin="editorial"] #courseTable th{
+          html[data-urppp-skin="editorial"] #courseTable th:where(:not([style*="background"])){
             background:transparent!important;color:var(--text-secondary)!important;border:0!important;
             border-bottom:1px solid var(--editorial-line-strong)!important;
           }
-          html[data-urppp-skin="editorial"] #courseTable td{
+          html[data-urppp-skin="editorial"] #courseTable td:where(:not([style*="background"])){
             background:transparent!important;color:var(--text)!important;border:0!important;
             border-bottom:1px solid var(--editorial-line)!important;
           }
-          html[data-urppp-skin="editorial"] #courseTable td:first-child{
+          html[data-urppp-skin="editorial"] #courseTable td:first-child:where(:not([style*="background"])){
             background:transparent!important;color:var(--text-secondary)!important;
             border-right:1px solid var(--editorial-line)!important;
           }

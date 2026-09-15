@@ -47,13 +47,13 @@
   <script>
     window.__divBuildRuns = 0;
 
-    // 站点自己的渲染函数：画完底色、摆好卡片。占用的刷成蓝，空闲的刷回浅灰。
-    // 关键点：插件不得把这个函数整个换掉，否则空闲格永远停在初始的蓝色。
+    // 站点自己的渲染函数：画完底色、摆好卡片。空闲的刷成蓝（可选的时段），
+    // 占用的留空（由里面的课程卡片自己表达）。写的是普通内联值，不带 !important。
     window.divBuild = function () {
       window.__divBuildRuns += 1;
       document.querySelectorAll('#courseTableBody td').forEach(function (cell) {
         var occupied = !!cell.getAttribute('title');
-        cell.style.setProperty('background-color', occupied ? '#8EBDDD' : '#C8D2D8', 'important');
+        cell.style.setProperty('background-color', occupied ? 'rgba(0, 0, 0, 0)' : '#8EBDDD');
       });
     };
 

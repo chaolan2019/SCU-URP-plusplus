@@ -900,13 +900,15 @@
         font-weight: 600 !important;
         white-space: nowrap !important;
       }
+      /* 单元格底色：站点写过的内联值不动（时间筛选器靠它标可选 / 已占用），
+         :where 不改变特异度，原有级联不受影响 */
       .table > tbody > tr,
-      .table > tbody > tr > td,
-      .table > tbody > tr > th,
+      .table > tbody > tr > td:where(:not([style*="background"])),
+      .table > tbody > tr > th:where(:not([style*="background"])),
       .table-bordered > tbody > tr,
-      .table-bordered > tbody > tr > td,
+      .table-bordered > tbody > tr > td:where(:not([style*="background"])),
       .dataTable > tbody > tr,
-      .dataTable > tbody > tr > td {
+      .dataTable > tbody > tr > td:where(:not([style*="background"])) {
         background: var(--surface) !important;
         background-color: var(--surface) !important;
         color: var(--text) !important;
