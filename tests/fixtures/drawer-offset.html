@@ -19,26 +19,31 @@
   <aside class="sidebar" id="sidebar"></aside>
   <main class="main-content">
     <div class="page-content" id="page-content-template">
-      <div id="div_kb">
-        <div id="div_kbt" class="div-kbt div-kbt-trans" style="top: -120px;">
-          <table id="courseTable">
-            <thead><tr><th>节次/时间</th><th>一</th><th>二</th></tr></thead>
-            <tbody id="courseTableBody">
-              <tr><th>1</th><td></td><td></td></tr>
-              <tr><th>2</th><td></td><td></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <button type="button" id="fill">模拟查询后填满网格</button>
-      <button type="button" id="expand">模拟展开抽屉</button>
+      <!-- 抽屉由站点在用户点开面板时才渲染，启动时页面上还没有它 -->
+      <div id="host"></div>
+      <button type="button" id="open">打开筛选面板</button>
+      <button type="button" id="fill">点查询（填满网格）</button>
+      <button type="button" id="expand">展开抽屉</button>
     </div>
   </main>
   <script>
-    // 复刻站点的约定：收起 = top 为面板高度的负值。
-    // 关键是它只在载入时量一次并记住，之后不再重新量。
+    // 复刻站点的行为：面板打开时才渲染抽屉，量一次高度并记住；
+    // 点查询后网格被填满、面板长高，而它仍按记住的旧高度收起。
     var measured = 0;
-    function measure() { measured = document.getElementById('div_kbt').offsetHeight; }
+
+    function buildDrawer() {
+      var container = document.createElement('div');
+      container.id = 'div_kb';
+      container.innerHTML = '<div id="div_kbt" class="div-kbt div-kbt-trans">'
+        + '<table id="courseTable"><thead><tr><th>节次/时间</th><th>一</th><th>二</th></tr></thead>'
+        + '<tbody id="courseTableBody">'
+        + '<tr><th>1</th><td></td><td></td></tr>'
+        + '<tr><th>2</th><td></td><td></td></tr>'
+        + '</tbody></table></div>';
+      document.getElementById('host').appendChild(container);
+      measured = document.getElementById('div_kbt').offsetHeight;
+    }
+
     window.hideDrawer = function () {
       document.getElementById('div_kbt').style.top = -measured + 'px';
     };
@@ -46,20 +51,24 @@
       document.getElementById('div_kbt').style.top = '0px';
     };
 
+    document.getElementById('open').onclick = function () {
+      if (document.getElementById('div_kbt')) return;
+      buildDrawer();
+      window.hideDrawer();
+    };
+
     document.getElementById('fill').onclick = function () {
-      // 查询：网格被填满，面板长高，而站点仍按载入时记住的旧高度重新收起
       var body = document.getElementById('courseTableBody');
       for (var i = 3; i <= 12; i++) {
         var row = document.createElement('tr');
         row.innerHTML = '<th>' + i + '</th><td>课程 ' + i + '</td><td></td>';
         body.appendChild(row);
       }
+      // 站点仍按载入时记住的旧高度收起
       window.hideDrawer();
     };
-    document.getElementById('expand').onclick = function () { window.showDrawer(); };
 
-    measure();
-    window.hideDrawer();
+    document.getElementById('expand').onclick = function () { window.showDrawer(); };
   </script>
 </body>
 </html>

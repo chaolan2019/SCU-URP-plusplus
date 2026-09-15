@@ -3,48 +3,42 @@ import { loadUrpFixture } from './support/urp-fixture.js';
 
 /*
  * 时间筛选器的抽屉（#div_kbt，站点自己渲染）靠内联 top 收起：top = 面板高度的负值。
- * 站点只在载入时量一次；查询后网格被填满、面板长高，位移还是旧值，收起态底下就会
- * 露出一截（实测 107px）。站点不会因为 resize 重算，所以由插件把位移补齐到当前高度。
+ * 站点只在打开面板时量一次并记住；点查询后网格被填满、面板长高，它仍按旧值收起，
+ * 于是收起态底下会露出一截（实测 107px）。站点要过一会儿才自己补量，那段间隔就是
+ * 用户看到的「先露出一部分再收回」。
+ *
+ * 注意：抽屉是点开面板时才渲染的，启动时页面上没有它——插件必须等它出现再接管。
  */
 
 function drawerState(page) {
   return page.evaluate(() => {
     const panel = document.getElementById('div_kbt');
-    return {
-      top: panel.style.top,
-      height: panel.offsetHeight,
-      offset: parseFloat(panel.style.top),
-    };
+    if (!panel) return { top: null, height: 0, offset: NaN };
+    return { top: panel.style.top, height: panel.offsetHeight, offset: parseFloat(panel.style.top) };
   });
 }
 
-test('抽屉：内容长高后，收起位移被补齐到当前高度', async ({ page }) => {
+test('抽屉：点开面板后才渲染出来的抽屉，也会被接管并在同一帧内校正', async ({ page }) => {
   await loadUrpFixture(page, { fixture: 'drawer-offset' });
 
-  // 站点按载入时的高度收起，此时是对的
-  const before = await drawerState(page);
-  expect(Math.abs(before.offset + before.height)).toBeLessThan(1);
+  await page.click('#open');
+  const opened = await drawerState(page);
+  expect(Math.abs(opened.offset + opened.height)).toBeLessThan(1);
 
-  // 查询：网格被填满，面板长高，而站点不再重新量
+  // 查询：网格填满、面板长高，站点仍按旧高度收起
   await page.click('#fill');
 
-  // 校正必须发生在布局后、绘制前，不能等防抖——否则会先闪一瞬再收回。
-  // 等到下一帧（rAF 在 ResizeObserver 之后、绘制之前）再读，值就该已经对了。
+  // 校正必须发生在布局后、绘制前：读值取在下一帧（rAF 排在 ResizeObserver 之后、绘制之前）
   await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => resolve())));
   const rightAfter = await drawerState(page);
+  expect(rightAfter.height).toBeGreaterThan(opened.height);
   expect(Math.abs(rightAfter.offset + rightAfter.height)).toBeLessThan(1);
-
-  await expect
-    .poll(async () => {
-      const now = await drawerState(page);
-      return now.height > before.height && Math.abs(now.offset + now.height) < 1;
-    })
-    .toBe(true);
 });
 
 test('抽屉：展开态不被干扰', async ({ page }) => {
   await loadUrpFixture(page, { fixture: 'drawer-offset' });
 
+  await page.click('#open');
   await page.click('#expand');
   await page.waitForTimeout(400);
 

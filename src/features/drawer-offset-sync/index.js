@@ -21,7 +21,7 @@ function createDrawerOffsetSync({ doc, ResizeObserverRef, MutationObserverRef })
   let panel = null;
   let observer = null;
   let resizeObserver = null;
-  let attempts = 0;
+  let watcher = null;
 
   function settle() {
     if (!panel || !panel.isConnected) return;
@@ -34,19 +34,28 @@ function createDrawerOffsetSync({ doc, ResizeObserverRef, MutationObserverRef })
     panel.style.top = `${-height}px`;
   }
 
+  // 抽屉是用户点开面板时站点才渲染出来的，启动时往往还不存在。
+  // 早前只在固定时刻找它，于是从未绑定，校正也就从未发生。
+  function watchForDrawer() {
+    if (watcher) return;
+    watcher = new MutationObserverRef(() => {
+      if (!doc.getElementById(PANEL_ID) || !doc.getElementById(CONTAINER_ID)) return;
+      watcher.disconnect();
+      watcher = null;
+      bind();
+      settle();
+    });
+    watcher.observe(doc.documentElement, { childList: true, subtree: true });
+  }
+
   function bind() {
     const next = doc.getElementById(PANEL_ID);
     const container = doc.getElementById(CONTAINER_ID);
     if (!next || !container) {
-      // 抽屉由站点后置渲染，给它几次机会
-      if (attempts < 10) {
-        attempts += 1;
-        setTimeout(bind, 300);
-      }
+      watchForDrawer();
       return;
     }
     if (panel === next && observer) return;
-    attempts = 0;
     panel = next;
     if (observer) observer.disconnect();
     if (resizeObserver) resizeObserver.disconnect();
