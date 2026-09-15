@@ -7,6 +7,9 @@
 
 ## [Unreleased]
 
+### 辅助插件
+- **彻底去掉已停止服务的 gh-proxy 镜像**：更新源改为 GitHub → Gitee → jsDelivr 三源。此前虽然源码已清理，但商店里的插件包（`urpppp.plugin.js`）长期停在旧构建，浏览器实际加载的就是那份旧代码，仍在请求 gh-proxy，控制台会出现连接被拒的报错。现在插件包按当前模块化源码重新生成（197483 → 142293 字节，不含 gh-proxy），并纳入 `npm run build` / `build:check`，不会再与源码脱节。
+
 ## [2.0.2] - 2026-09-07
 
 ### Fixed

@@ -39,6 +39,17 @@ const TARGETS = [
     outfile: 'urpppp.user.js',
     versionConstant: 'URPPPP_VERSION',
   },
+  {
+    // 商店里的插件形态包：与辅助插件同一份源码，但不带 UserScript 元数据块。
+    // 插件管理器（plugin-manager/index.js）会剥掉元数据块后 new Function 执行，
+    // 所以两者内容等价。之前这个文件没有任何构建步骤去生成，导致它长期停在旧构建
+    //（8/31 去掉 gh-proxy 之后它没跟着更新，线上实际加载的就是那份旧的）。
+    name: 'urpppp-plugin',
+    entry: 'src/userscripts/urpppp.entry.js',
+    outfile: '.store-prep/repo/urpppp.plugin.js',
+    versionConstant: 'URPPPP_VERSION',
+    noBanner: true,
+  },
 ];
 
 async function readJson(relativePath) {
