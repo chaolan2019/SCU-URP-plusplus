@@ -4940,11 +4940,29 @@
         position: relative !important;
         top: 2px !important;
       }
+      /*
+       * 日历事件卡片。站点用 fullCalendar 3 渲染，事件元素本身就是 <a class="fc-event" href=...>，
+       * 会被两条链接色规则命中：
+       *   a, a:link, a:visited —— :link 伪类把特异度抬到 (0,1,1)，高于 .fc-event 的 (0,1,0)；
+       *   html[data-urppp-skin="editorial"] .page-content td a —— (0,2,3)，日历格子正好在 <td> 里。
+       * 文字因此变成 var(--text)，而卡片底色是 var(--primary)：杂志主题下两边同为
+       * #1C1C1C（暗色同为 #F3F0EA），亮暗两种模式全都看不见字。
+       * 带上 id 把特异度提到 (1,1,x) 才能压过类选择器那几条。
+       * 颜色取主题的 on-primary 语义色，不再写死 #fff：暗色主题的 primary 是浅色，
+       * 白字同样读不出来。
+       */
+      #main-calendar a.fc-event,
+      #main-calendar a.fc-time-grid-event,
+      #main-calendar .fc-event,
+      #main-calendar .fc-time-grid-event,
+      /* 带 url 的事件渲染成 <a>，不带的是 <div>；后四条是日历不在 #main-calendar 里时的兵底 */
+      a.fc-event,
+      a.fc-time-grid-event,
       .fc-time-grid-event,
       .fc-event {
         background: var(--primary) !important;
         border-color: var(--primary) !important;
-        color: #fff !important;
+        color: var(--primary-foreground, #fff) !important;
         border-radius: var(--radius-sm) !important;
         margin: 2px 4px !important;
       }

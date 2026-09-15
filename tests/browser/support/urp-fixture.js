@@ -15,6 +15,7 @@ export const FIXTURE_URLS = {
   'quit-course': 'http://zhjw.scu.edu.cn/student/courseSelect/quitCourse/index',
   'course-time-table': 'http://zhjw.scu.edu.cn/student/courseSelect/courseSelect/index',
   'drawer-offset': 'http://zhjw.scu.edu.cn/student/courseSelect/planCourse/index',
+  calendar: 'http://zhjw.scu.edu.cn/index',
 };
 
 const DEFAULT_VALUES = {

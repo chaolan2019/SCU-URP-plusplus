@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>日历事件卡片 fixture</title>
+  <style>
+    html, body { margin: 0; color: #393939; background: #fff; font: 14px Arial, sans-serif; }
+    .page-content { padding: 16px; }
+    table { border-collapse: collapse; }
+    td { border: 1px solid #ddd; padding: 4px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content">
+    <div class="page-content" id="page-content-template">
+      <!--
+        按 fullCalendar 3 的真实结构复刻（站点那套就是这个版本：fc-event / fc-h-event /
+        fc-day-grid-event / fc-content / fc-title）。两个事件一个有 href（渲染成 <a>，
+        会被全局链接色规则命中），一个没有（渲染成 <div>）。
+      -->
+      <div id="main-calendar" class="fc">
+        <div class="fc-view-container">
+          <div class="fc-view fc-dayGrid-view">
+            <table class="fc-day-grid">
+              <tbody>
+                <tr>
+                  <td class="fc-day fc-widget-content">
+                    <div class="fc-day-grid-event-container">
+                      <a class="fc-day-grid-event fc-h-event fc-event fc-start fc-end" href="/student/courseSelect/planCourse/index">
+                        <div class="fc-content"><span class="fc-title">数据结构</span></div>
+                      </a>
+                      <div class="fc-day-grid-event fc-h-event fc-event fc-start fc-end">
+                        <div class="fc-content"><span class="fc-title">大学物理</span></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="fc-day fc-widget-content fc-other-month">
+                    <div class="fc-day-grid-event-container"></div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
