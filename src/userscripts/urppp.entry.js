@@ -3918,6 +3918,10 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     try {
       const g = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
       if (!g || g.__urpppDivBuildPatched) return;
+      // 只对周课表生效。#soliderbox 在选课页的时间筛选器上同样存在（同一套站点组件
+      // 渲染），但那里没有 #mycoursetable，布局纠正本就什么也不做，替换 divBuild 只会
+      // 让站点自己的渲染（把空闲格刷回本色）不再执行——净损失。
+      if (!document.getElementById('mycoursetable')) return;
       // 可能尚未定义，稍后重试
       if (typeof g.divBuild !== 'function') return;
       g.__urpppDivBuildPatched = true;
