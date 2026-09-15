@@ -375,7 +375,7 @@ export function createCleanModeRenderer({ state, deps }) {
     const reportBootProgress = () => {
       try {
         if (typeof window === 'undefined' || !state.open) return;
-        if (window.__urpppCleanDataReady) window.__urpppCleanRenderReady = true;
+        if (window.__urpppCleanDataReady || window.__urpppCleanCacheReady) window.__urpppCleanRenderReady = true;
         if (state._bootRenderSettled) window.__urpppCleanAnimationReady = true;
         if (typeof window.__urpppCleanBootReady === 'function') window.__urpppCleanBootReady();
       } catch (_) {}

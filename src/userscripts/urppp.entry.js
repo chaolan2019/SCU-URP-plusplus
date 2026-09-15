@@ -898,7 +898,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   // 所以定时器、交互这些兜底手段在那段时间里全是空转——必须在这里把状态推进放行。
   // 计时偏短是有意的：首屏缓存已经渲染过（日志里“命中缓存，先渲染旧数据”），
   // 界面并非半成品，没必要为了等接口把遮罩挂着。
-  const CLEAN_BOOT_DEADLINE_MS = 2000;
+  const CLEAN_BOOT_DEADLINE_MS = 1000;
   let cleanBootDeadlineTimer = 0;
   const forceCleanBootReveal = () => {
     try {
@@ -9164,6 +9164,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const cached = force ? null : cleanCacheRead(kind);
       if (cached) {
         cleanCacheLog(kind, '命中缓存，先渲染旧数据（' + new Date(cached.ts).toLocaleString() + ' 保存）');
+        // 缓存已经能撑起首屏：清爽启动的「渲染就绪」应该认它，而不是等后台拉新
+        //（线上实测那条路径让遮罩等到 11.5 秒）。冷启动没有缓存时这个标记不会置，仍按原逻辑等数据。
+        try { window.__urpppCleanCacheReady = true; } catch (_) {}
         // 后台静默拉新：完成后若数据变化则覆盖缓存并重渲染（SWR 单次加载内闭环，无时间窗口）
         Promise.resolve().then(async () => {
           try {

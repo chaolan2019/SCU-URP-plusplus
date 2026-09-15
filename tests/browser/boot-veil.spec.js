@@ -82,9 +82,48 @@ test('遮罩：清爽默认 + 网络卡住时，遮罩仍在时限内撤除（�
     cleanOpen: document.documentElement.classList.contains('urppp-clean-open'),
   }));
   // 线上实测：这条路径曾卡到 11576ms（时限和交互都被 hideBootLoader 的清爽守卫挡住）
-  expect(elapsed).toBeLessThan(4000);
+  expect(elapsed).toBeLessThan(2500);
   expect(state.timedOut).toBe(true);
   expect(state.cleanOpen).toBe(true);
+});
+
+/*
+ * 潮蓝的真实场景：缓存全部命中（日志里四行「命中缓存，先渲染旧数据」），
+ * 而接口要好几秒。旧实现里「渲染就绪」只认网络阶段，于是首屏早就用缓存画完了，
+ * 遮罩却一直等到数据回来（实测 11576ms）。
+ * 现在缓存命中即视为可撑起首屏，遮罩不再等接口。
+ */
+test('遮罩：清爽默认 + 缓存命中 + 接口很慢时，不等接口就交界面', async ({ page }) => {
+  const cacheEntry = (data) => JSON.stringify({ v: '2.0.2', ts: Date.now(), data });
+  await loadUrpFixture(page, {
+    fixture: 'home',
+    expectReady: false,
+    values: {
+      urppp_clean_default_v1: true,
+      urppp_clean_cache_schedule: cacheEntry({ courses: [{ name: '高数', room: 'A101', weeks: '1-16', weekday: 1, startNode: 1, endNode: 2 }] }),
+      urppp_clean_cache_scores: cacheEntry({ passing: [{ courses: [{ courseName: '高数', credit: 5, cj: '95' }] }], schemes: [] }),
+      urppp_clean_cache_profile: cacheEntry({ name: '测试同学' }),
+      urppp_clean_cache_roomcat: cacheEntry([{ name: 'A101' }]),
+    },
+    // 接口永远不回调
+    beforeUserscript: (target) => target.evaluate(() => {
+      window.GM_xmlhttpRequest = () => {};
+      window.fetch = () => new Promise(() => {});
+    }),
+  });
+
+  const started = Date.now();
+  await page.waitForFunction(() => document.body.classList.contains('urppp-ready'), { timeout: 8000 });
+  const elapsed = Date.now() - started;
+  const state = await page.evaluate(() => ({
+    cacheReady: !!window.__urpppCleanCacheReady,
+    dataReady: !!window.__urpppCleanDataReady,
+    timedOut: !!window.__urpppCleanBootTimedOut,
+  }));
+  // 不依赖接口：既不是靠时限救的，也不是等数据等到的
+  expect(state.cacheReady).toBe(true);
+  expect(state.dataReady).toBe(false);
+  expect(elapsed).toBeLessThan(2500);
 });
 
 test('遮罩：清爽默认下用户一交互也立即交界面', async ({ page }) => {
