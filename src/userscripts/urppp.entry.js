@@ -787,6 +787,16 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   function hideBootLoader() {
     // 默认进入清爽模式时，遮罩只能由完整就绪状态机解除，避免局部渲染完成就露出半成品。
     if (window.__urpppCleanBootPending && !window.__urpppCleanBootDone) return;
+    // 启动轨迹：一行，够定位「遮罩这次是怎么撤的、花了多久」
+    try {
+      if (!window.__urpppVeilLogged) {
+        window.__urpppVeilLogged = true;
+        console.log('[URP++] 遮罩撤除 @' + Math.round(performance.now()) + 'ms'
+          + ' (armed@' + (window.__urpppVeilArmedAt == null ? '-' : window.__urpppVeilArmedAt) + 'ms'
+          + ', deadline=' + (window.__urpppVeilDeadlineFired ? 'yes' : 'no')
+          + ', rs=' + document.readyState + ')');
+      }
+    } catch (_) {}
     try {
       document.documentElement.classList.add('urppp-ready');
       if (document.body) {
@@ -846,6 +856,19 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   }
   // 立刻挂遮罩（document-start 阶段 html 已存在）
   try { ensureBootLoader(); } catch (_) {}
+  // 遮罩的兜底时限：正常路径要等「首屏几何稳定 + load」，而这两条都可能被外部因素拖住
+  //（实测线上出现过 11.5 秒才撤：首屏几何从 1.1 秒起就没动过，但遮罩一直挂着）。
+  // 所以计时从遮罩挂上那一刻开始，不依赖 load；判据与 hideBootLoader 一致（默认进清爽时仍交给它的状态机）。
+  const URPPP_VEIL_DEADLINE_MS = 1500;
+  try {
+    window.__urpppVeilArmedAt = Math.round(performance.now());
+    setTimeout(() => {
+      try {
+        window.__urpppVeilDeadlineFired = true;
+        hideBootLoader();
+      } catch (_) {}
+    }, URPPP_VEIL_DEADLINE_MS);
+  } catch (_) {}
   // 清爽启动进度通知：各阶段完成时主动触发同一判定，不用轮询或固定延时猜测。
   const notifyCleanBootProgress = () => {
     try { if (typeof window.__urpppCleanBootReady === 'function') window.__urpppCleanBootReady(); } catch (_) {}

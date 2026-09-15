@@ -40,7 +40,25 @@ test('遮罩：站点持续切换类名（几何不变）也要按时撤除', as
  * 即使内容早就绪也要等到上限才撤遮罩。而侧边栏属于 chrome，不是首屏内容，
  * 且插件自己也会往它写内联样式——把它算进首屏几何稳定本来就不合适。
  */
+test('遮罩：时限在 document-start 就武装，不等 load', async ({ page }) => {
+  await loadUrpFixture(page, { fixture: 'home', expectReady: false });
+  await page.waitForFunction(() => document.body.classList.contains('urppp-ready'), { timeout: 8000 });
+  const state = await page.evaluate(() => ({
+    armedAt: window.__urpppVeilArmedAt,
+    logged: !!window.__urpppVeilLogged,
+    ready: document.body.classList.contains('urppp-ready'),
+  }));
+  // 旧实现把时限放在 waitForInitialLayoutStable 的 start() 里，而 start() 要等 load 事件；
+  // 线上那次 11.5 秒就是上限压根没参与。这里锁住「遮罩一挂上就开始计时」。
+  // 注：夹具是在 load 之后注入插件的（真实浏览器是 document-start），所以这里不卡绝对时刻。
+  expect(typeof state.armedAt).toBe('number');
+  expect(state.armedAt).toBeLessThan(5000);
+  expect(state.logged).toBe(true);
+  expect(state.ready).toBe(true);
+});
+
 test('遮罩：侧边栏高度在变化时也要按时撤除（内容区已稳定）', async ({ page }) => {
+  // 注：这条是上限守卫，不是复现用例——侧边栏 rect 不随内容变，见提交说明。
   await loadUrpFixture(page, {
     fixture: 'home',
     expectReady: false,
