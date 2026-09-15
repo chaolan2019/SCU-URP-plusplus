@@ -13,18 +13,22 @@ import { loadUrpFixture } from './support/urp-fixture.js';
 async function installJQueryStub(page) {
   await page.evaluate(() => {
     window.__fcCalls = 0;
-    // 仿 jQuery：实例方法来自 $.fn（真实 jQuery 是原型链，这里用 Proxy 等价表达）
-    const jq = function () {
-      const inst = { length: 1, first() { return inst; }, data() { return undefined; } };
-      return new Proxy(inst, {
-        get(target, prop) {
-          if (prop in target) return target[prop];
-          return jq.fn[prop];
-        },
-      });
+    const factory = () => {
+      // 仿 jQuery：实例方法来自 $.fn（真实 jQuery 是原型链，这里用 Proxy 等价表达）
+      const jq = function () {
+        const inst = { length: 1, first() { return inst; }, data() { return undefined; } };
+        return new Proxy(inst, {
+          get(target, prop) {
+            if (prop in target) return target[prop];
+            return jq.fn[prop];
+          },
+        });
+      };
+      jq.fn = { fullCalendar: function () { window.__fcCalls += 1; return this; } };
+      return jq;
     };
-    jq.fn = { fullCalendar: function () { window.__fcCalls += 1; return this; } };
-    window.jQuery = window.$ = jq;
+    window.__jqFactory = factory;
+    window.jQuery = window.$ = factory();
   });
 }
 
@@ -47,4 +51,30 @@ test('FullCalendar 空操作警告被静默，初始化调用照常透传', asyn
   // 初始化（对象参数）：必须透传
   await page.evaluate(() => { window.jQuery('x').fullCalendar({ header: false }); });
   expect(await page.evaluate(() => window.__fcCalls)).toBe(1);
+});
+
+test('jQuery 晚到时补丁也要赶上站点的调用', async ({ page }) => {
+  await loadUrpFixture(page, {
+    fixture: 'home',
+    beforeUserscript: (target) => target.evaluate(() => {
+      window.__fcCalls = 0;
+      // 站点场景：jQuery 在 260ms 出现，随后就调用；旧的 250ms 轮询会错过（下一次在 500ms）
+      setTimeout(() => {
+        const factory = () => {
+          const jq = function () {
+            const inst = { length: 1, first() { return inst; }, data() { return undefined; } };
+            return new Proxy(inst, { get: (t, p) => (p in t ? t[p] : jq.fn[p]) });
+          };
+          jq.fn = { fullCalendar: function () { window.__fcCalls += 1; return this; } };
+          return jq;
+        };
+        window.jQuery = window.$ = factory();
+        setTimeout(() => { window.jQuery('x').fullCalendar('render'); }, 40);
+      }, 260);
+    }),
+  });
+
+  await page.waitForTimeout(1200);
+  // 无实例的空操作应当被静默：计数保持 0（未被静默就会是 1）
+  expect(await page.evaluate(() => window.__fcCalls)).toBe(0);
 });

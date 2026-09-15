@@ -863,7 +863,6 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   // 那是无害空操作，但会刷控制台。只吞这一类：首参是方法名（字符串）且该元素没有实例；
   // 初始化传的是配置对象，照旧透传——吞错会造成日历根本不初始化。
   (function quietFullCalendarNoopWarning() {
-    let tries = 0;
     const install = () => {
       try {
         const g = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
@@ -886,10 +885,16 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       } catch (_) { return false; }
     };
     if (install()) return;
-    const timer = setInterval(() => {
+    // jQuery 通常晚于插件出现，而站点的调用可能很早。先密后疏：前 500ms 每 25ms 试一次，
+    // 之后改 250ms。原先固定 250ms 会赶不上站点 ~300ms 的那次调用（警告依旧打印）。
+    let tries = 0;
+    const tick = () => {
       tries += 1;
-      if (install() || tries > 60) clearInterval(timer);
-    }, 250);
+      if (install()) return;
+      if (tries > 80) return;
+      setTimeout(tick, tries < 20 ? 25 : 250);
+    };
+    tick();
   })();
 
   // 遮罩的兜底时限：正常路径要等「首屏几何稳定 + load」，而这两条都可能被外部因素拖住
@@ -1008,7 +1013,10 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     let deadline = 0;
     const check = () => {
       raf = 0;
-      if (document.readyState !== 'complete') return;
+      // 不再因为「还没 complete」就断链：断链后只能靠下一次 DOM 变更唤醒，
+      // 页面安静时遮罩就会一直挂着。这里保持续跑，直到几何稳定或到上限。
+      // 而「未 loading」就够了：见下方 start() 的说明。
+      if (document.readyState === 'loading') { raf = requestAnimationFrame(check); return; }
       const current = geometry();
       stableFrames = current === previous ? stableFrames + 1 : 0;
       previous = current;
@@ -1034,8 +1042,12 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       deadline = setTimeout(() => { if (!finished) finish(); }, LAYOUT_STABLE_CEILING_MS);
       schedule();
     };
-    if (document.readyState === 'complete') start();
-    else window.addEventListener('load', start, { once: true });
+    // 从「文档解析完、外部资源还在加载」就开始观察，而不是等 load。
+    // load 要等完站点的图片/字体（线上实测 domInteractive 296ms 而 loadEnd 987ms），
+    // 那段时间遮罩白挂着；而几何稳定判定本身是采样式、会自我修正的：
+    // 后续资源引起布局变化时判定不会通过，所以提前开始不会露出半成品。
+    if (document.readyState !== 'loading') start();
+    else document.addEventListener('DOMContentLoaded', start, { once: true });
   }
 
   const THEMES = {
