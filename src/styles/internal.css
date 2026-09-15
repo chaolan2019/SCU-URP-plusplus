@@ -5244,10 +5244,11 @@
         background: var(--surface) !important;
         color: var(--text) !important;
       }
+      /* 站点写过的内联底色（时间筛选器标可选 / 已占用）不走主题，:where 不改特异度 */
       html.urppp-theme-dark #mycoursetable td,
       html.urppp-theme-dark #mycoursetable th,
-      html.urppp-theme-dark #courseTable td,
-      html.urppp-theme-dark #courseTable th {
+      html.urppp-theme-dark #courseTable td:where(:not([style*="background"])),
+      html.urppp-theme-dark #courseTable th:where(:not([style*="background"])) {
         background: var(--surface) !important;
         background-color: var(--surface) !important;
         color: var(--text) !important;

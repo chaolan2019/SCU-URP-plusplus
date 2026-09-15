@@ -53,17 +53,29 @@ test('时间筛选器：editorial 皮肤不擦掉站点写在格子上的底色'
   expect((await cellState(page, '1_1')).computed).toBe(TAKEN_SLOT);
 });
 
-test('时间筛选器：清理浅色内联底色的规则不删站点写的值', async ({ page }) => {
+test('时间筛选器：暗色下站点写下的底色同样不被覆盖', async ({ page }) => {
   await loadUrpFixture(page, {
     fixture: 'course-time-table',
-    values: { urppp_theme_v3: 'dark' },
+    values: { urppp_theme_v3: 'dark', urppp_skin_v1: 'editorial' },
   });
 
   await page.click('#open-filter');
 
-  // 暗色下的主题规则仍会接管格子的呈现，但站点的值本身不该被删掉
-  expect((await cellState(page, '2_1')).inline).toBe(FREE_SLOT);
-  expect((await cellState(page, '1_1')).inline).toBe(TAKEN_SLOT);
+  expect((await cellState(page, '2_1')).computed).toBe(FREE_SLOT);
+  expect((await cellState(page, '1_1')).computed).toBe(TAKEN_SLOT);
+});
+
+test('时间筛选器：悬停不把格子擦成空白', async ({ page }) => {
+  await loadUrpFixture(page, {
+    fixture: 'course-time-table',
+    values: { urppp_skin_v1: 'editorial' },
+  });
+
+  await page.click('#open-filter');
+  // id 以数字开头，只能用属性选择器
+  await page.hover('td[id="2_1"]');
+
+  expect((await cellState(page, '2_1')).computed).toBe(FREE_SLOT);
 });
 
 test('周课表：需要接管卡片布局时，站点的渲染函数仍会被调用', async ({ page }) => {

@@ -473,9 +473,9 @@ export function createApplySkinAttr({ getSkin, getSkinShapeOverrides, isAppleEdg
             background:transparent!important;color:var(--text-secondary)!important;
             border-bottom:1px solid var(--editorial-line-strong)!important;font-weight:500!important;font-size:13px!important;
           }
-          html[data-urppp-skin="editorial"] .table-hover>tbody>tr:hover>td,
-          html[data-urppp-skin="editorial"] .table>tbody>tr:hover>td,
-          html[data-urppp-skin="editorial"] .dataTable>tbody>tr:hover>td{
+          html[data-urppp-skin="editorial"] .table-hover>tbody>tr:hover>td:where(:not([style*="background"])),
+          html[data-urppp-skin="editorial"] .table>tbody>tr:hover>td:where(:not([style*="background"])),
+          html[data-urppp-skin="editorial"] .dataTable>tbody>tr:hover>td:where(:not([style*="background"])){
             background:var(--editorial-hover-soft)!important;
           }
           html[data-urppp-skin="editorial"] body .table>tbody>tr>td.green_background,

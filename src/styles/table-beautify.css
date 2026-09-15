@@ -1043,20 +1043,21 @@
         color: var(--text) !important;
         border-color: var(--border) !important;
       }
-      html.urppp-theme-dark .page-content table td,
-      html.urppp-theme-dark .page-content table th,
-      html.urppp-theme-dark #page-content-template table td,
-      html.urppp-theme-dark #page-content-template table th,
-      html.urppp-theme-dark .main-content table td,
-      html.urppp-theme-dark .main-content table th,
-      html.urppp-theme-dark .widget-body table td,
-      html.urppp-theme-dark .widget-body table th,
-      html.urppp-theme-dark table.table-box td,
-      html.urppp-theme-dark table.table-box th,
-      html.urppp-theme-dark .table-box td,
-      html.urppp-theme-dark .table-box th,
-      body.urppp-dark .page-content table td,
-      body.urppp-dark .page-content table th {
+      /* 站点写过的内联底色不走主题（时间筛选器靠它标可选 / 已占用），:where 不改特异度 */
+      html.urppp-theme-dark .page-content table td:where(:not([style*="background"])),
+      html.urppp-theme-dark .page-content table th:where(:not([style*="background"])),
+      html.urppp-theme-dark #page-content-template table td:where(:not([style*="background"])),
+      html.urppp-theme-dark #page-content-template table th:where(:not([style*="background"])),
+      html.urppp-theme-dark .main-content table td:where(:not([style*="background"])),
+      html.urppp-theme-dark .main-content table th:where(:not([style*="background"])),
+      html.urppp-theme-dark .widget-body table td:where(:not([style*="background"])),
+      html.urppp-theme-dark .widget-body table th:where(:not([style*="background"])),
+      html.urppp-theme-dark table.table-box td:where(:not([style*="background"])),
+      html.urppp-theme-dark table.table-box th:where(:not([style*="background"])),
+      html.urppp-theme-dark .table-box td:where(:not([style*="background"])),
+      html.urppp-theme-dark .table-box th:where(:not([style*="background"])),
+      body.urppp-dark .page-content table td:where(:not([style*="background"])),
+      body.urppp-dark .page-content table th:where(:not([style*="background"])) {
         background: var(--surface) !important;
         background-color: var(--surface) !important;
         color: var(--text) !important;
@@ -1102,11 +1103,11 @@
         background-color: var(--input-bg) !important;
         background-image: none !important;
       }
-      html.urppp-theme-dark .table > tbody > tr > td:not(.green_background):not(.red_background),
-      html.urppp-theme-dark .table > tbody > tr > th,
-      html.urppp-theme-dark .table-bordered > tbody > tr > td:not(.green_background):not(.red_background),
-      html.urppp-theme-dark .dataTable > tbody > tr > td:not(.green_background):not(.red_background),
-      html.urppp-theme-dark .table > tfoot > tr > td {
+      html.urppp-theme-dark .table > tbody > tr > td:not(.green_background):not(.red_background):where(:not([style*="background"])),
+      html.urppp-theme-dark .table > tbody > tr > th:where(:not([style*="background"])),
+      html.urppp-theme-dark .table-bordered > tbody > tr > td:not(.green_background):not(.red_background):where(:not([style*="background"])),
+      html.urppp-theme-dark .dataTable > tbody > tr > td:not(.green_background):not(.red_background):where(:not([style*="background"])),
+      html.urppp-theme-dark .table > tfoot > tr > td:where(:not([style*="background"])) {
         background: var(--surface) !important;
         background-color: var(--surface) !important;
         color: var(--text) !important;
@@ -1119,14 +1120,14 @@
         background-color: color-mix(in srgb, var(--bg) 70%, var(--surface)) !important;
         color: var(--text) !important;
       }
-      html.urppp-theme-dark .table-hover > tbody > tr:hover > td:not(.green_background):not(.red_background),
-      html.urppp-theme-dark .dataTable > tbody > tr:hover > td:not(.green_background):not(.red_background) {
+      html.urppp-theme-dark .table-hover > tbody > tr:hover > td:not(.green_background):not(.red_background):where(:not([style*="background"])),
+      html.urppp-theme-dark .dataTable > tbody > tr:hover > td:not(.green_background):not(.red_background):where(:not([style*="background"])) {
         background: var(--input-bg) !important;
         background-color: var(--input-bg) !important;
       }
       /* ACE 离开悬停时常把 td 写回 #fff：暗色下强制清掉 */
-      html.urppp-theme-dark .table-hover > tbody > tr:not(.urppp-notice-row).hover > td:not(.green_background):not(.red_background),
-      html.urppp-theme-dark .table-hover > tbody > tr:not(.urppp-notice-row) > td:not(.green_background):not(.red_background) {
+      html.urppp-theme-dark .table-hover > tbody > tr:not(.urppp-notice-row).hover > td:not(.green_background):not(.red_background):where(:not([style*="background"])),
+      html.urppp-theme-dark .table-hover > tbody > tr:not(.urppp-notice-row) > td:not(.green_background):not(.red_background):where(:not([style*="background"])) {
         background-color: var(--surface) !important;
       }
       html.urppp-theme-dark .table-striped > tbody > tr:nth-of-type(odd):not(.urppp-notice-row) > td:not(.green_background):not(.red_background) {
