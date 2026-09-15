@@ -956,7 +956,6 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       // 不再绑 PageLayoutReady 与 readyState：那两项量的是**站点页面**的首屏布局，
       // 而清爽外壳是插件自己的版面，等站点 load 与几何稳定只会白等一秒钟。
       const ready = timedOut || (!!window.__urpppCleanRenderReady
-        && !!window.__urpppCleanAnimationReady
         && (!mobile || !!window.__urpppMobileNavReady));
       if (!ready || window.__urpppCleanBootRevealQueued) return;
       window.__urpppCleanBootRevealQueued = true;

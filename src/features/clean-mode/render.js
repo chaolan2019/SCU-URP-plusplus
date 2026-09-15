@@ -385,6 +385,9 @@ export function createCleanModeRenderer({ state, deps }) {
     } else {
       state.uiReady = true;
       el.classList.remove('uc-settled');
+      // 首帧已经画出来了：先上报一次，让启动遮罩在入场动画**开始**时就能让开，
+      // 而不是等动画播完——那样遮罩盖住整个入场过程，用户只看到静止结果，白等一秒。
+      reportBootProgress();
       // 首次进入动画由 Web Animations 状态决定；启动遮罩由最终数据 DOM 与动画完成信号共同解除。
       const settle = () => {
         if (!state.open) return;

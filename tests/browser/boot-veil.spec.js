@@ -126,6 +126,51 @@ test('遮罩：清爽默认 + 缓存命中 + 接口很慢时，不等接口就�
   expect(elapsed).toBeLessThan(2500);
 });
 
+/*
+ * 线上还存在一个夹具原本没有的延迟：清爽外壳的入场动画。
+ * CleanRenderReady / CleanAnimationReady 都在 settle() 里置位，而 settle() 等动画播完，
+ * 于是遮罩盖住整个入场过程，用户只看到静止结果——实测 1420ms。
+ * 现在首帧一画出来就上报，遮罩在动画开始时就让开。
+ */
+test('遮罩：入场动画很长也不等它播完', async ({ page }) => {
+  const cacheEntry = (data) => JSON.stringify({ v: '2.0.2', ts: Date.now(), data });
+  await loadUrpFixture(page, {
+    fixture: 'home',
+    expectReady: false,
+    values: {
+      urppp_clean_default_v1: true,
+      urppp_clean_cache_schedule: cacheEntry({ courses: [{ name: '高数', room: 'A101', weeks: '1-16', weekday: 1, startNode: 1, endNode: 2 }] }),
+      urppp_clean_cache_scores: cacheEntry({ passing: [{ courses: [{ courseName: '高数', credit: 5, cj: '95' }] }], schemes: [] }),
+      urppp_clean_cache_profile: cacheEntry({ name: '测试同学' }),
+      urppp_clean_cache_roomcat: cacheEntry([{ name: 'A101' }]),
+    },
+    beforeUserscript: async (target) => {
+      await target.evaluate(() => {
+        window.GM_xmlhttpRequest = () => {};
+        window.fetch = () => new Promise(() => {});
+        // 给清爽外壳的子树挂一段 1500ms 的入场动画（有限次数，会被 getAnimations 捕获）
+        const style = document.createElement('style');
+        style.textContent = '@keyframes urppp-probe-in{from{opacity:0}to{opacity:1}}'
+          + '#urppp-clean-root *{animation:urppp-probe-in 1500ms linear 1}'
+          + '#urppp-boot-loader,#urppp-boot-loader *{animation:none!important}';
+        document.head.appendChild(style);
+      });
+    },
+  });
+
+  const started = Date.now();
+  await page.waitForFunction(() => document.body.classList.contains('urppp-ready'), { timeout: 8000 });
+  const elapsed = Date.now() - started;
+  const flags = await page.evaluate(() => ({
+    render: !!window.__urpppCleanRenderReady,
+    anim: !!window.__urpppCleanAnimationReady,
+  }));
+  console.log('ANIM_CASE ' + JSON.stringify({ elapsed, flags }));
+  // 注：夹具里的 settle() 路径与线上不完全一致，这条只能当上限守卫，不能当复现用例。
+  // 真正的验证靠线上那行「遮罩撤除」读数。
+  expect(elapsed).toBeLessThan(1000);
+});
+
 test('遮罩：清爽默认下用户一交互也立即交界面', async ({ page }) => {
   await loadUrpFixture(page, {
     fixture: 'home',
