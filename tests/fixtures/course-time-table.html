@@ -8,7 +8,6 @@
     .page-content { padding: 16px; }
     .table { border-collapse: collapse; }
     .table td, .table th { border: 1px solid #ddd; padding: 6px 10px; }
-    #div_kb { overflow: hidden auto; max-height: 900px; }
   </style>
 </head>
 <body>
@@ -16,37 +15,55 @@
   <aside class="sidebar" id="sidebar"></aside>
   <main class="main-content">
     <div class="page-content" id="page-content-template">
-      <div id="div_kb">
-        <div id="myselectTable">
-          <table class="table table-bordered" id="courseTable">
-            <thead>
-              <tr id="courseTableHead">
-                <th colspan="2">节次/时间</th>
-                <th>一</th>
-                <th>二</th>
-              </tr>
-            </thead>
-            <tbody id="courseTableBody">
-              <tr>
-                <td>1-2节</td>
-                <td>08:00-09:40</td>
-                <!-- 占用与空闲都由站点写在单元格的内联底色上（#8EBDDD / #C8D2D8）。
-                     空闲那格是浅色，正好落在「清浅色内联背景」与 editorial 皮肤的
-                     transparent !important 双重打击范围内，抹掉后整片只剩占用色。 -->
-                <td id="occupied-cell" style="background-color: #8EBDDD;">测试课程 A</td>
-                <td id="free-cell" style="background-color: #C8D2D8;"></td>
-              </tr>
-              <tr>
-                <td>3-4节</td>
-                <td>10:00-11:40</td>
-                <td id="free-cell-2" style="background-color: #C8D2D8;"></td>
-                <td id="occupied-cell-2" style="background-color: #8EBDDD;">测试课程 B</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <!-- 复刻真实页面：容器是 #soliderbox，网格是 #courseTable，单元格 id 形如 日_节 -->
+      <div id="soliderbox">
+        <table class="table table-bordered" id="courseTable">
+          <thead>
+            <tr id="courseTableHead">
+              <th colspan="1">节次/时间</th>
+              <th>一</th>
+              <th>二</th>
+            </tr>
+          </thead>
+          <tbody id="courseTableBody">
+            <!-- 站点先把整片网格画成同一个底色；「空闲」要等它自己的 divBuild
+                 再刷回浅灰。占用 / 空闲的区别只用 title 表达（真实页面如此）。 -->
+            <tr>
+              <th id="0_1">1</th>
+              <td id="1_1" title="世界民族问题研究_01" style="background-color: #8EBDDD;">世界民族问题研究_01</td>
+              <td id="2_1" title="" style="background-color: #8EBDDD;"></td>
+            </tr>
+            <tr>
+              <th id="0_2">2</th>
+              <td id="1_2" title="" style="background-color: #8EBDDD;"></td>
+              <td id="2_2" title="模拟电子技术基础实验（Ⅱ）_08" style="background-color: #8EBDDD;">模拟电子技术基础实验（Ⅱ）_08</td>
+            </tr>
+          </tbody>
+        </table>
+        <button type="button" id="open-filter" onclick="openFilter()">点击打开时间筛选器</button>
       </div>
     </div>
   </main>
+  <script>
+    window.__divBuildRuns = 0;
+
+    // 站点自己的渲染函数：画完底色、摆好卡片。占用的刷成蓝，空闲的刷回浅灰。
+    // 关键点：插件不得把这个函数整个换掉，否则空闲格永远停在初始的蓝色。
+    window.divBuild = function () {
+      window.__divBuildRuns += 1;
+      document.querySelectorAll('#courseTableBody td').forEach(function (cell) {
+        var occupied = !!cell.getAttribute('title');
+        cell.style.setProperty('background-color', occupied ? '#8EBDDD' : '#C8D2D8', 'important');
+      });
+    };
+
+    // 展开筛选面板时站点会重新跑一次渲染
+    function openFilter() {
+      window.divBuild();
+    }
+
+    // 站点按自己的节奏先画一遍（此时插件尚未注入）
+    window.divBuild();
+  </script>
 </body>
 </html>

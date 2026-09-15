@@ -1,5 +1,3 @@
-import { isLockedInlineBg } from '../inline-bg-guard/index.js';
-
 export function isLightInlineColor(value) {
   const color = String(value || '').trim().toLowerCase();
   if (!color || color === 'transparent' || color === 'inherit' || color === 'initial') return false;
@@ -15,8 +13,8 @@ export function isLightInlineColor(value) {
 
 export function scrubLightInlineBackground(element) {
   if (!element?.style) return;
-  // 站点自己写下的底色已被 inline-bg-guard 提权，任何清理都不许动它
-  if (isLockedInlineBg(element)) return;
+  // 站点用 !important 写下的底色是有意为之（网格靠它标占用 / 空闲），不清理
+  if (element.style.getPropertyPriority('background-color') === 'important') return;
   const inlineStyle = element.getAttribute('style') || '';
   if (!inlineStyle || !/background/i.test(inlineStyle)) return;
 

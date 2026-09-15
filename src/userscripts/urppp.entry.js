@@ -87,7 +87,6 @@ import scoreAnalysisStyles from '../styles/score-analysis.css';
 import mobileStyles from '../styles/mobile.css';
 import menuRecommendStyles from '../styles/menu-recommend.css';
 import { startLayerGuard } from '../features/layer-guard/index.js';
-import { startInlineBgGuard } from '../features/inline-bg-guard/index.js';
 import { installConfirmDialog } from '../features/confirm-dialog/index.js';
 import { createCleanModeState, resetCleanModeData } from '../features/clean-mode/state.js';
 import { createCleanModeDataLoader } from '../features/clean-mode/data.js';
@@ -111,11 +110,6 @@ import { createNavbarController } from '../features/navigation/navbar.js';
 
   // 与脚本头 @version 保持同步
   const URPPP_VERSION = '2.0.2';
-
-  // 站点用内联底色表达语义（选课页的时间筛选器靠它标「已占用 / 空闲」），
-  // 主题的任何覆盖或清理都会把它抹平。守护必须早于插件自己的主题逻辑装上：
-  // 一旦浅色先被清掉，记录里就没有可提权的值了。
-  startInlineBgGuard();
 
   // @match 需要覆盖 SCU 子域名以兼容脚本运行环境，但主站美化严格限定在两个旧版 URP 入口。
   // 其他 SCU 站点在任何 DOM/CSS/viewport 副作用发生前退出，避免被误套用整套教务美化。
@@ -3929,13 +3923,26 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       g.__urpppDivBuildPatched = true;
       const orig = g.divBuild;
       g.__urpppOriginalDivBuild = orig;
+      // 站点原函数内部可能又调到这个名字（已指向我们的包装），加个重入护栏
+      let building = false;
       g.divBuild = function () {
-        // 站点原逻辑用整页 offset，会把课先甩到右侧再被我们纠正 → 闪烁
-        // 直接走我们的相对 td 布局
+        if (building) return;
+        building = true;
+        // 站点原逻辑用整页 offset 摆位，中坚态会被画出来（课先甩到右侧）。
+        // 但不能因此把原函数整个丢掉：它还负责把空闲格刷回本色、写完卡片，
+        // 丢掉之后整片网格就只剩一个颜色（选课页的时间筛选器就是这样）。
+        // 做法是让它跑完，紧接着在同一次任务里纠正布局，中间不给绘制机会。
+        const host = document.getElementById('mycoursetable') || document.getElementById('soliderbox');
+        const previousVisibility = host ? host.style.visibility : '';
+        if (host) host.style.visibility = 'hidden';
+        try {
+          orig.apply(this, arguments);
+        } catch (_) { /* 站点逻辑失败也要继续纠正 */ }
         try {
           fixWeekScheduleLayout();
-        } catch (e) {
-          try { return orig.apply(this, arguments); } catch (_) { /* ignore */ }
+        } catch (_) { /* ignore */ } finally {
+          building = false;
+          if (host) host.style.visibility = previousVisibility;
         }
       };
       // jQuery resize 也会调 divBuild；保持函数名
