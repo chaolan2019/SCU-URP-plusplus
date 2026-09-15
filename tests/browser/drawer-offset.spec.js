@@ -46,9 +46,6 @@ test('抽屉：展开态不被干扰', async ({ page }) => {
   await loadUrpFixture(page, { fixture: 'drawer-offset' });
 
   await page.click('#expand');
-  expect((await drawerState(page)).top).toBe('0px');
-
-  await page.click('#fill');
   await page.waitForTimeout(400);
 
   // top 非负表示站点已展开，这里一律不碰

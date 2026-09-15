@@ -35,26 +35,30 @@
     </div>
   </main>
   <script>
-    // 复刻站点的约定：收起 = top 为面板高度的负值（载入时量一次，之后不再量）
+    // 复刻站点的约定：收起 = top 为面板高度的负值。
+    // 关键是它只在载入时量一次并记住，之后不再重新量。
+    var measured = 0;
+    function measure() { measured = document.getElementById('div_kbt').offsetHeight; }
     window.hideDrawer = function () {
-      var panel = document.getElementById('div_kbt');
-      panel.style.top = -panel.offsetHeight + 'px';
+      document.getElementById('div_kbt').style.top = -measured + 'px';
     };
     window.showDrawer = function () {
       document.getElementById('div_kbt').style.top = '0px';
     };
 
     document.getElementById('fill').onclick = function () {
-      // 查询后网格被填满，面板长高：追加若干行内容
+      // 查询：网格被填满，面板长高，而站点仍按载入时记住的旧高度重新收起
       var body = document.getElementById('courseTableBody');
       for (var i = 3; i <= 12; i++) {
         var row = document.createElement('tr');
         row.innerHTML = '<th>' + i + '</th><td>课程 ' + i + '</td><td></td>';
         body.appendChild(row);
       }
+      window.hideDrawer();
     };
     document.getElementById('expand').onclick = function () { window.showDrawer(); };
 
+    measure();
     window.hideDrawer();
   </script>
 </body>
