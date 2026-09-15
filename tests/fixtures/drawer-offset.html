@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>时间筛选器抽屉 fixture</title>
+  <style>
+    html, body { margin: 0; color: #393939; background: #fff; font: 14px Arial, sans-serif; }
+    .page-content { padding: 16px; }
+    #div_kb { position: relative; overflow: hidden auto; height: 300px; width: 600px; }
+    /* 站点自己的抽屉：绝对定位，靠内联 top 收起 / 展开 */
+    .div-kbt { width: 100%; position: absolute; top: 0; right: 0; box-sizing: border-box; background: #eef3f8; }
+    .div-kbt-trans { transition: top .2s ease; }
+    #courseTable { width: 100%; border-collapse: collapse; }
+    #courseTable td, #courseTable th { border: 1px solid #ddd; padding: 4px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar" id="navbar"></nav>
+  <aside class="sidebar" id="sidebar"></aside>
+  <main class="main-content">
+    <div class="page-content" id="page-content-template">
+      <div id="div_kb">
+        <div id="div_kbt" class="div-kbt div-kbt-trans" style="top: -120px;">
+          <table id="courseTable">
+            <thead><tr><th>节次/时间</th><th>一</th><th>二</th></tr></thead>
+            <tbody id="courseTableBody">
+              <tr><th>1</th><td></td><td></td></tr>
+              <tr><th>2</th><td></td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <button type="button" id="fill">模拟查询后填满网格</button>
+      <button type="button" id="expand">模拟展开抽屉</button>
+    </div>
+  </main>
+  <script>
+    // 复刻站点的约定：收起 = top 为面板高度的负值（载入时量一次，之后不再量）
+    window.hideDrawer = function () {
+      var panel = document.getElementById('div_kbt');
+      panel.style.top = -panel.offsetHeight + 'px';
+    };
+    window.showDrawer = function () {
+      document.getElementById('div_kbt').style.top = '0px';
+    };
+
+    document.getElementById('fill').onclick = function () {
+      // 查询后网格被填满，面板长高：追加若干行内容
+      var body = document.getElementById('courseTableBody');
+      for (var i = 3; i <= 12; i++) {
+        var row = document.createElement('tr');
+        row.innerHTML = '<th>' + i + '</th><td>课程 ' + i + '</td><td></td>';
+        body.appendChild(row);
+      }
+    };
+    document.getElementById('expand').onclick = function () { window.showDrawer(); };
+
+    window.hideDrawer();
+  </script>
+</body>
+</html>

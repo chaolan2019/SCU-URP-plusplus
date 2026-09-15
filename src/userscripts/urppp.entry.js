@@ -87,6 +87,7 @@ import scoreAnalysisStyles from '../styles/score-analysis.css';
 import mobileStyles from '../styles/mobile.css';
 import menuRecommendStyles from '../styles/menu-recommend.css';
 import { startLayerGuard } from '../features/layer-guard/index.js';
+import { startDrawerOffsetSync } from '../features/drawer-offset-sync/index.js';
 import { installConfirmDialog } from '../features/confirm-dialog/index.js';
 import { createCleanModeState, resetCleanModeData } from '../features/clean-mode/state.js';
 import { createCleanModeDataLoader } from '../features/clean-mode/data.js';
@@ -4738,6 +4739,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     beautifyCurriculumDrawer();
     bindTableWrapObserver();
     startLayerGuard();
+    startDrawerOffsetSync();
     installConfirmDialogWhenReady();
     // 首页进行组件级重构
     const pageContent = document.querySelector('.page-content');
