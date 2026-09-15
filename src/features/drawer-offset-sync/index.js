@@ -39,6 +39,14 @@ function createDrawerOffsetSync({ doc, ResizeObserverRef, MutationObserverRef })
     timer = setTimeout(settle, SETTLE_MS);
   }
 
+  // 高度变化：ResizeObserver 的回调发生在布局之后、绘制之前，
+  // 在这里直接改就等于这一帧从未露出过。不能等防抖，否则会先闪一下再收回。
+  function settleNow() {
+    clearTimeout(timer);
+    timer = 0;
+    settle();
+  }
+
   function bind() {
     const next = doc.getElementById(PANEL_ID);
     const container = doc.getElementById(CONTAINER_ID);
@@ -55,12 +63,12 @@ function createDrawerOffsetSync({ doc, ResizeObserverRef, MutationObserverRef })
     panel = next;
     if (observer) observer.disconnect();
     if (resizeObserver) resizeObserver.disconnect();
-    // 站点改位移：收起 / 展开都从这里经过
+    // 站点改位移：收起 / 展开都从这里经过，而且带过渡，等落定再动
     observer = new MutationObserverRef(schedule);
     observer.observe(panel, { attributes: true, attributeFilter: ['style'] });
     // 内容长高：查询后网格被填满就发生在这里
     if (typeof ResizeObserverRef === 'function') {
-      resizeObserver = new ResizeObserverRef(schedule);
+      resizeObserver = new ResizeObserverRef(settleNow);
       resizeObserver.observe(container);
       resizeObserver.observe(panel);
     }

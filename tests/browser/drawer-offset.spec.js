@@ -28,6 +28,12 @@ test('抽屉：内容长高后，收起位移被补齐到当前高度', async ({
   // 查询：网格被填满，面板长高，而站点不再重新量
   await page.click('#fill');
 
+  // 校正必须发生在布局后、绘制前，不能等防抖——否则会先闪一瞬再收回。
+  // 等到下一帧（rAF 在 ResizeObserver 之后、绘制之前）再读，值就该已经对了。
+  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => resolve())));
+  const rightAfter = await drawerState(page);
+  expect(Math.abs(rightAfter.offset + rightAfter.height)).toBeLessThan(1);
+
   await expect
     .poll(async () => {
       const now = await drawerState(page);
