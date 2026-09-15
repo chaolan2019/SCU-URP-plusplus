@@ -8,7 +8,6 @@
     .page-content { padding: 16px; }
     .table { border-collapse: collapse; }
     .table td, .table th { border: 1px solid #ddd; padding: 6px 10px; }
-    /* 复刻站点原始表现：占用时段由内联背景色标记 */
     #div_kb { overflow: hidden auto; max-height: 900px; }
   </style>
 </head>
@@ -31,9 +30,17 @@
               <tr>
                 <td>1-2节</td>
                 <td>08:00-09:40</td>
-                <!-- 已占用时段：靠内联背景色表达，插件不得覆盖 -->
-                <td id="occupied-cell" style="background-color: #5b7fa6;">测试课程 A</td>
-                <td id="free-cell"></td>
+                <!-- 占用与空闲都由站点写在单元格的内联底色上（#8EBDDD / #C8D2D8）。
+                     空闲那格是浅色，正好落在「清浅色内联背景」与 editorial 皮肤的
+                     transparent !important 双重打击范围内，抹掉后整片只剩占用色。 -->
+                <td id="occupied-cell" style="background-color: #8EBDDD;">测试课程 A</td>
+                <td id="free-cell" style="background-color: #C8D2D8;"></td>
+              </tr>
+              <tr>
+                <td>3-4节</td>
+                <td>10:00-11:40</td>
+                <td id="free-cell-2" style="background-color: #C8D2D8;"></td>
+                <td id="occupied-cell-2" style="background-color: #8EBDDD;">测试课程 B</td>
               </tr>
             </tbody>
           </table>
