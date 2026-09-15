@@ -13,8 +13,14 @@ import { loadUrpFixture } from './support/urp-fixture.js';
 function drawerState(page) {
   return page.evaluate(() => {
     const panel = document.getElementById('div_kbt');
-    if (!panel) return { top: null, height: 0, offset: NaN };
-    return { top: panel.style.top, height: panel.offsetHeight, offset: parseFloat(panel.style.top) };
+    if (!panel) return { top: null, height: 0, offset: NaN, rendered: NaN };
+    return {
+      top: panel.style.top,
+      height: panel.offsetHeight,
+      offset: parseFloat(panel.style.top),
+      // 计算值：过渡若在跑，它会停在中间值，那一帧就是在露
+      rendered: parseFloat(getComputedStyle(panel).top),
+    };
   });
 }
 
@@ -33,6 +39,8 @@ test('抽屉：点开面板后才渲染出来的抽屉，也会被接管并在�
   const rightAfter = await drawerState(page);
   expect(rightAfter.height).toBeGreaterThan(opened.height);
   expect(Math.abs(rightAfter.offset + rightAfter.height)).toBeLessThan(1);
+  // 写内联值不够：过渡会把中间态画出来。校正必须瞬发，计算值当帧就到最终值
+  expect(Math.abs(rightAfter.rendered + rightAfter.height)).toBeLessThan(1);
   // 诊断标记：校正确实跑过（挂在 DOM 上，沙箱 window 里的标志在页面控制台看不到）
   expect(await page.evaluate(() => document.documentElement.dataset.urpppDrawerFixed)).toBe('1');
 });

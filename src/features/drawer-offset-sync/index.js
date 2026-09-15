@@ -34,7 +34,14 @@ function createDrawerOffsetSync({ doc, ResizeObserverRef, MutationObserverRef })
     const height = panel.offsetHeight;
     // 高度还没量出来，或已经对齐
     if (!height || Math.abs(top + height) < 1) return false;
+    // 抽屉带 transition: top。只写内联值不够：过渡会从当时的计算值开始插值，
+    // 那一帧画出来的仍是旧位置（露出的那一截就是这么来的）。
+    // 所以校正要瞬发：停掉过渡、写入、强制一次重排、再恢复。
+    const previousTransition = panel.style.transition;
+    panel.style.transition = 'none';
     panel.style.top = `${-height}px`;
+    void panel.offsetHeight;
+    panel.style.transition = previousTransition;
     // 诊断用计数。用户脚本的 window 在页面控制台看不到（沙箱），
     // 所以写在 DOM 上：documentElement.dataset.urpppDrawerFixed
     const root = doc.documentElement;
