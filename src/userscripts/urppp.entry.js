@@ -950,7 +950,9 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       } catch (_) {}
       try { hideBootLoader(); } catch (_) {}
     };
-    ['visibilitychange', 'focus', 'pointerdown', 'keydown', 'wheel', 'scroll'].forEach((type) => {
+    // 只要**用户真的动手/看向页面**的事件。刻意不含 focus：
+    // 页面加载时浏览器自己就会给一次 focus，那不是用户意图——线上就是它一直在顶着撤遮罩。
+    ['visibilitychange', 'pointerdown', 'keydown', 'wheel', 'scroll'].forEach((type) => {
       window.addEventListener(type, revealOnUserIntent, { once: true, passive: true, capture: true });
     });
   } catch (_) {}
@@ -1019,7 +1021,12 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       const style = getComputedStyle(element);
       return [element.id || element.className || element.tagName, rect.left, rect.top, rect.width, rect.height, style.display, style.position].join(':');
     }).join('|');
-    let raf = 0;
+    // 这个判定**不能靠 requestAnimationFrame**：用户脚本的沙箱位于隐藏 iframe，
+    // 隐藏 iframe 拿不到渲染帧，rAF 永不触发——线上实测 stableStart 有值、stableEnd 永远没有，
+    // 即这条判定一直是死的（夹具里插件跑在页面上下文，所以从未暴露）。
+    // 定时器在沙箱里正常（实测 late=2ms），而它要判的是「布局静下来了吗」，不需要帧级精度。
+    const STABLE_TICK_MS = 50;
+    let tickTimer = 0;
     let previous = '';
     let stableFrames = 0;
     let finished = false;
@@ -1030,7 +1037,8 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       finished = true;
       window.__urpppVeilFinishAt = Math.round(performance.now());
       window.__urpppVeilFinishReason = reason || '-';
-      if (raf) cancelAnimationFrame(raf);
+      if (tickTimer) clearTimeout(tickTimer);
+      tickTimer = 0;
       if (deadline) clearTimeout(deadline);
       if (observer) observer.disconnect();
       if (resizeObserver) resizeObserver.disconnect();
@@ -1042,22 +1050,20 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     const LAYOUT_STABLE_CEILING_MS = 1500;
     let deadline = 0;
     const check = () => {
-      raf = 0;
-      // 不再因为「还没 complete」就断链：断链后只能靠下一次 DOM 变更唤醒，
-      // 页面安静时遮罩就会一直挂着。这里保持续跑，直到几何稳定或到上限。
-      // 而「未 loading」就够了：见下方 start() 的说明。
-      if (document.readyState === 'loading') { raf = requestAnimationFrame(check); return; }
+      tickTimer = 0;
+      // 保持续跑，直到几何稳定或到上限；用定时器而非 rAF（原因见上方注释）。
       const current = geometry();
       stableFrames = current === previous ? stableFrames + 1 : 0;
       previous = current;
       if (stableFrames >= 2) finish('stable');
-      else raf = requestAnimationFrame(check);
+      else scheduleTick();
     };
+    const scheduleTick = () => { if (!tickTimer) tickTimer = setTimeout(check, STABLE_TICK_MS); };
     const schedule = () => {
       // 不在这里清零：几何有没有变，交给 check 里的比较判定。
       // 旧写法是任何 class/style 变更都清零，而达标条件是「几何两帧不变」——
       // 两件事不是一回事：站点只要持续切类名（几何其实没动），计数就永远回零，遮罩永不撤。
-      if (!raf) raf = requestAnimationFrame(check);
+      scheduleTick();
     };
     const start = () => {
       if (finished) return;

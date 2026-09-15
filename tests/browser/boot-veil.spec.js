@@ -171,6 +171,31 @@ test('遮罩：入场动画很长也不等它播完', async ({ page }) => {
   expect(elapsed).toBeLessThan(1000);
 });
 
+test('遮罩：沙箱里 rAF 不触发时，几何判定仍要靠定时器完成（why=stable）', async ({ page }) => {
+  // 用户脚本沙箱位于隐藏 iframe，拿不到渲染帧，rAF 永不触发。
+  // 线上实测：stableStart 有值而 stableEnd 永远是空，说明判定一直是死的，
+  // 真正在撤遮罩的是交互兜底。这条把 rAF 置空复现那个环境。
+  await loadUrpFixture(page, {
+    fixture: 'home',
+    expectReady: false,
+    beforeUserscript: (target) => target.evaluate(() => {
+      window.requestAnimationFrame = () => 0;
+      window.cancelAnimationFrame = () => {};
+    }),
+  });
+
+  await page.waitForFunction(() => document.body.classList.contains('urppp-ready'), { timeout: 8000 });
+  const state = await page.evaluate(() => ({
+    start: window.__urpppVeilStartAt,
+    end: window.__urpppVeilFinishAt,
+    why: window.__urpppVeilFinishReason,
+  }));
+  // 旧实现在这里 why 是空的（判定从未结束），只有上限能救；现在应当由 stable 结束
+  expect(typeof state.start).toBe('number');
+  expect(state.why).toBe('stable');
+  expect(typeof state.end).toBe('number');
+});
+
 test('遮罩：清爽默认下用户一交互也立即交界面', async ({ page }) => {
   await loadUrpFixture(page, {
     fixture: 'home',
