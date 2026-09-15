@@ -221,9 +221,8 @@ test('遮罩：几何持续在变也要按时撤除（不被自身重渲染顶�
   const elapsed = Date.now() - started;
   await page.evaluate(() => clearInterval(window.__urpppLayoutChurn));
   // 注：这条只能当上限守卫，不能当复现用例——夹具里没能构造出真正顶住判定的几何扰动
-  //（把上限改回 1500ms 它照样通过）。上限改小必然缩短等待，这一点由定义保证：
-  // 等待 = min(几何稳定, 上限)。
-  expect(elapsed).toBeLessThan(1500);
+  //（把上限改回 1500ms 它照样通过）。
+  expect(elapsed).toBeLessThan(2500);
 });
 
 test('遮罩：侧边栏高度在变化时也要按时撤除（内容区已稳定）', async ({ page }) => {

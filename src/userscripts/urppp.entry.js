@@ -796,7 +796,11 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           + ', deadline=' + (window.__urpppVeilDeadlineFired ? 'yes' : 'no')
           + ', late=' + (window.__urpppVeilDeadlineLate == null ? '-' : window.__urpppVeilDeadlineLate + 'ms')
           + ', vis=' + document.visibilityState + ', focused=' + (document.hasFocus() ? 'yes' : 'no')
-          + ', rs=' + document.readyState + ')');
+          + ', rs=' + document.readyState
+          + ', bootAt=' + (window.__urpppVeilBootAt == null ? '-' : window.__urpppVeilBootAt)
+          + ', stableStart=' + (window.__urpppVeilStartAt == null ? '-' : window.__urpppVeilStartAt)
+          + ', stableEnd=' + (window.__urpppVeilFinishAt == null ? '-' : window.__urpppVeilFinishAt)
+          + ', why=' + (window.__urpppVeilFinishReason || '-') + ')');
       }
     } catch (_) {}
     try {
@@ -999,9 +1003,11 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     let finished = false;
     let observer = null;
     let resizeObserver = null;
-    const finish = () => {
+    const finish = (reason) => {
       if (finished) return;
       finished = true;
+      window.__urpppVeilFinishAt = Math.round(performance.now());
+      window.__urpppVeilFinishReason = reason || '-';
       if (raf) cancelAnimationFrame(raf);
       if (deadline) clearTimeout(deadline);
       if (observer) observer.disconnect();
@@ -1009,10 +1015,9 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       done();
     };
     // 上限：站点持续重排时也要把首屏交出去，不留无限期遮罩。
-    // 偏短是有意的：插件自己的首页重构与缓存重渲染也会持续改几何，
-    // 而这条判定只是防「掀遮罩时页面还在跳」，不该被插件自身的渲染顶住
-    //（线上实测：rs 已是 interactive，但拖到 922ms 才稳）。
-    const LAYOUT_STABLE_CEILING_MS = 300;
+    // 曾经把它收到 300ms，但线上读数反而从 922ms 变成 1070ms——上限只会把等待变短，
+    // 所以它根本不是约束。先退回 1500ms，等时间点读数出来再决定。
+    const LAYOUT_STABLE_CEILING_MS = 1500;
     let deadline = 0;
     const check = () => {
       raf = 0;
@@ -1023,7 +1028,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       const current = geometry();
       stableFrames = current === previous ? stableFrames + 1 : 0;
       previous = current;
-      if (stableFrames >= 2) finish();
+      if (stableFrames >= 2) finish('stable');
       else raf = requestAnimationFrame(check);
     };
     const schedule = () => {
@@ -1034,6 +1039,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     };
     const start = () => {
       if (finished) return;
+      window.__urpppVeilStartAt = Math.round(performance.now());
       try {
         observer = new MutationObserver(schedule);
         if (document.body) observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
@@ -1042,7 +1048,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
           targets().forEach((element) => resizeObserver.observe(element));
         }
       } catch (_) { /* geometry frames remain sufficient */ }
-      deadline = setTimeout(() => { if (!finished) finish(); }, LAYOUT_STABLE_CEILING_MS);
+      deadline = setTimeout(() => { if (!finished) finish('ceiling'); }, LAYOUT_STABLE_CEILING_MS);
       schedule();
     };
     // 从「文档解析完、外部资源还在加载」就开始观察，而不是等 load。
@@ -5532,11 +5538,14 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       try { document.body.classList.add('urppp-ready'); hideBootLoader(); } catch (_) {}
     };
     // load 后等待实际首屏几何稳定；移动端的导航转换和后续 DOM 改写也会触发观察器重新确认。
-    const hideAfterLayoutStable = () => waitForInitialLayoutStable(() => {
+    const hideAfterLayoutStable = () => {
+      window.__urpppVeilBootAt = Math.round(performance.now());
+      return waitForInitialLayoutStable(() => {
       window.__urpppPageLayoutReady = true;
       notifyCleanBootProgress();
       markReadyAndHide();
-    });
+      });
+    };
     hideAfterLayoutStable();
 
     console.log('[URP++] style applied apple-leaning');
