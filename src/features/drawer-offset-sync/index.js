@@ -61,7 +61,7 @@ function createDrawerOffsetSync({ doc, ResizeObserverRef, MutationObserverRef })
     }
   }
 
-  return { bind };
+  return { bind, settle };
 }
 
 export function startDrawerOffsetSync(options = {}) {
@@ -73,6 +73,8 @@ export function startDrawerOffsetSync(options = {}) {
       MutationObserverRef: options.MutationObserverRef || MutationObserver,
     });
   }
-  // 可重复调用：路由替换后重新绑定
+  // 可重复调用：路由替换后重新绑定；主题（尤其是暗色）落地后也会再叫一次，
+  // 因为挂上 urppp-theme-dark 会触发一次重排，而那次重排可能发生在站点量完高度之后
   win.__urpppDrawerOffsetSync.bind();
+  win.__urpppDrawerOffsetSync.settle();
 }

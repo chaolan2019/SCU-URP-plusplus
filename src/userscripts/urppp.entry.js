@@ -1519,6 +1519,9 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       }
     } catch (_) {}
     try { applySkinAttr(); } catch (_) {}
+    // 暗色是插件挂上 urppp-theme-dark 才生效的，那次重排可能晚于站点量高度，
+    // 这里再校正一次抽屉的收起位移
+    try { startDrawerOffsetSync(); } catch (_) {}
     try { syncNavbarThemeUI(); } catch (_) {}
     try { syncSettingsPanelUI(); } catch (_) {}
     try { scrubNoticeInlineBg(); } catch (_) {}
