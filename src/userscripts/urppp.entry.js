@@ -110,7 +110,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   'use strict';
 
   // 与脚本头 @version 保持同步
-  const URPPP_VERSION = '2.0.6';
+  const URPPP_VERSION = '2.0.7';
 
   // @match 需要覆盖 SCU 子域名以兼容脚本运行环境，但主站美化严格限定在两个旧版 URP 入口。
   // 其他 SCU 站点在任何 DOM/CSS/viewport 副作用发生前退出，避免被误套用整套教务美化。
