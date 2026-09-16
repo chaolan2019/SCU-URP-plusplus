@@ -68,7 +68,7 @@
       "type": "plugin",
       "name": "辅助插件",
       "description": "登录助手 / 评教 / 会话保持 / 2FA",
-      "version": "1.5.3",
+      "version": "1.5.4",
       "author": "Chao_Lan",
       "minAPP": "1.9.0",
       "entry": [

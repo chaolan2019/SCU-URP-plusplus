@@ -896,3 +896,48 @@
           font-size: 13px !important;
         }
       }
+
+      /*
+       * 移动端：弹层尺寸贴合视口。
+       *
+       * 站点的弹层尺寸是按桌面写死的（layui 的 area 选项），在手机上会超出屏幕，
+       * 关闭按钮与页内的「发送」都点不到。这里只收弹层自身的尺寸与定位，
+       * 不碰弹层内部页面的布局（那个页面是聊天式 flex 结构，自有滚动，布局由它自己决定，
+       * 夺走它反而不对）。
+       */
+      @media (max-width: 991px) {
+        .layui-layer.layui-layer-iframe,
+        .layui-layer.layui-layer-page {
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          height: 100dvh !important;
+          max-height: 100dvh !important;
+          /* internal.css 给弹层加了 1px 边框；不改 border-box 的话
+             这 2px 会叠在 100% 之外，手机上仍旧横向超出（实测 392 > 390）。 */
+          box-sizing: border-box !important;
+          margin: 0 !important;
+          border-radius: 0 !important;
+        }
+        .layui-layer-iframe > .layui-layer-content,
+        .layui-layer-page > .layui-layer-content {
+          height: calc(100dvh - 42px) !important;
+          max-height: calc(100dvh - 42px) !important;
+        }
+        /* 内容 iframe 由站点写死宽高，也要放开才能填满 */
+        .layui-layer-iframe > .layui-layer-content iframe {
+          width: 100% !important;
+          height: 100% !important;
+        }
+        /* 关闭按钮贴近右上角，避免躲在屏幕外 */
+        .layui-layer-iframe > .layui-layer-setwin,
+        .layui-layer-page > .layui-layer-setwin {
+          right: 6px !important;
+          top: 6px !important;
+        }
+        /* 对话框不动子布局，只限制不超出屏幕 */
+        .layui-layer.layui-layer-dialog {
+          max-width: calc(100vw - 24px) !important;
+        }
+      }

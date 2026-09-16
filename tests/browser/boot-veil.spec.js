@@ -1,5 +1,10 @@
 import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { loadUrpFixture } from './support/urp-fixture.js';
+
+// 缓存按脚本版本号校验；写死版本号会让版本一改就静默失效（断言变成假失败），所以从元数据读。
+const APP_VERSION = JSON.parse(readFileSync(new URL('../../src/metadata/urppp.json', import.meta.url), 'utf8')).version;
+const cacheEntry = (data) => JSON.stringify({ v: APP_VERSION, ts: Date.now(), data });
 
 /*
  * 遮罩的撤除判据是「首屏几何连续两帧不变」，观察器挂在 document.body 上。
@@ -94,7 +99,6 @@ test('遮罩：清爽默认 + 网络卡住时，遮罩仍在时限内撤除（�
  * 现在缓存命中即视为可撑起首屏，遮罩不再等接口。
  */
 test('遮罩：清爽默认 + 缓存命中 + 接口很慢时，不等接口就交界面', async ({ page }) => {
-  const cacheEntry = (data) => JSON.stringify({ v: '2.0.2', ts: Date.now(), data });
   await loadUrpFixture(page, {
     fixture: 'home',
     expectReady: false,
@@ -133,7 +137,6 @@ test('遮罩：清爽默认 + 缓存命中 + 接口很慢时，不等接口就�
  * 现在首帧一画出来就上报，遮罩在动画开始时就让开。
  */
 test('遮罩：入场动画很长也不等它播完', async ({ page }) => {
-  const cacheEntry = (data) => JSON.stringify({ v: '2.0.2', ts: Date.now(), data });
   await loadUrpFixture(page, {
     fixture: 'home',
     expectReady: false,
