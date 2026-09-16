@@ -1561,6 +1561,16 @@ import { createNavbarController } from '../features/navigation/navbar.js';
     }
   }
 
+  // 弹窗内层：宿主用 layui iframe 装的智能应用推荐页。它只是弹窗里的一页，只需要主题变量
+  // 与专属样式。实测里层会被注入 311KB CSS（含清爽模式/表格/导航/仪表盘）并发起 6 次
+  // 校历与商店目录请求，这些都在和它自己的首屏抢同一条主线程。
+  function isEmbeddedRecommendPage() {
+    try {
+      if (window.self === window.top) return false; // 直访保持原有完整路径
+    } catch (_) { /* 比较失败说明已身处子文档 */ }
+    return isMenuRecommendPage();
+  }
+
   function isFollowUseDynamic() {
     try { return !!GM_getValue(FOLLOW_DYNAMIC_KEY, false); } catch (_) { return false; }
   }
@@ -4756,8 +4766,11 @@ import { createNavbarController } from '../features/navigation/navbar.js';
       });
       document.querySelectorAll('.modal').forEach((m) => unlock(m));
       const sel = t.getAttribute && (t.getAttribute('data-target') || t.getAttribute('href') || '');
-      if (sel && sel.charAt(0) === '#') {
-        const m = document.querySelector(sel);
+      // 单独的 '#' 不是合法选择器。站内大量入口写成 <a href="#" onclick="...">（顶栏菜单推荐就是），
+      // hash 路由（#/x）与非法 id 同理：都当作没有锚点目标，不能让选择器语法错误打断整个点击处理。
+      if (sel && sel.length > 1 && sel.charAt(0) === '#') {
+        let m = null;
+        try { m = document.querySelector(sel); } catch (_) { /* 非法选择器：无目标 */ }
         if (m) unlock(m);
       }
     }, true);
@@ -5821,7 +5834,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
   // 启动时自动装载已缓存插件（含登录页：让辅助登录/2FA 在 id.scu 也生效）
   // 必须在 DOM 就绪后注入，避免辅助脚本在 body 未生成时读 DOM 报错
   (function bootstrapPlugins() {
-    const run = () => { try { pluginManager.bootFromCache('assist'); } catch (_) { /* ignore */ } };
+    const run = () => {
+      // 弹窗内层不装载辅助插件：那一帧只需渲染自己，登录/评教流程不可能在其中发生
+      if (isEmbeddedRecommendPage()) return;
+      try { pluginManager.bootFromCache('assist'); } catch (_) { /* ignore */ }
+    };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
     else run();
   })();
@@ -10271,20 +10288,34 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   window.__urpppCleanMode = cleanModeApi;
 
-  // 校历时间线：异步加载远程 JSON（多源回退 + GM 缓存 + 内置兜底），完成后刷新清爽模式渲染
-  try {
-    ensureCalendarData(() => {
-      try { if (window.__urpppCleanMode && window.__urpppCleanMode.refreshRender) window.__urpppCleanMode.refreshRender(); } catch (_) {}
-      try { if (window.__urpppCleanMode && window.__urpppCleanMode.refresh) window.__urpppCleanMode.refresh(); } catch (_) {}
-    });
-  } catch (_) {}
+  // 校历时间线：异步加载远程 JSON（多源回退 + GM 缓存 + 内置兜底），完成后刷新清爽模式渲染。
+  // 弹窗内层没有清爽模式，拉这一份数据只是白花三次请求。
+  if (!isEmbeddedRecommendPage()) {
+    try {
+      ensureCalendarData(() => {
+        try { if (window.__urpppCleanMode && window.__urpppCleanMode.refreshRender) window.__urpppCleanMode.refreshRender(); } catch (_) {}
+        try { if (window.__urpppCleanMode && window.__urpppCleanMode.refresh) window.__urpppCleanMode.refresh(); } catch (_) {}
+      });
+    } catch (_) {}
+  }
 
   // ============================================================
   // 初始化
   // ============================================================
 
+  // 弹窗内层的轻量启动。主题变量与专属样式在 DOMContentLoaded 之前已由入口尾部落好（防闪），
+  // 这里只补幂等项，然后立刻报到，让宿主的 layer-guard 尽早放行 iframe。
+  function initEmbeddedRecommend() {
+    try { applyTheme(getCurrent()); } catch (_) {}
+    try { applySkinAttr(); } catch (_) {}
+    try { ensureMenuRecommendStyles(); } catch (_) {}
+    try { document.body.classList.add('urppp-ready'); hideBootLoader(); } catch (_) {}
+  }
+
   function init() {
     if (!document.body) { setTimeout(init, 10); return; }
+    // 弹窗内层只走轻量路径：整套美化、特性路由与联网预加载在这里都是纯开销
+    if (isEmbeddedRecommendPage()) { initEmbeddedRecommend(); return; }
     const cleanBootRequired = isCleanDefault() && isHomePage() && !!window.__urpppCleanMode;
     if (cleanBootRequired) {
       // 在首屏美化开始前建立默认清爽启动状态，防止普通页面路径抢先解除遮罩。
@@ -10523,6 +10554,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
 
   // 自动检测更新：进入页面后延迟触发，避免抢首屏
   function scheduleAutoUpdateCheck() {
+    if (isEmbeddedRecommendPage()) return; // 弹窗内层不做联网检查
     setTimeout(() => { try { maybeAutoCheckUpdate(); } catch (_) {} }, 1800);
   }
 

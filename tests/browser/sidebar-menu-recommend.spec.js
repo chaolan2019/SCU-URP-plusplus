@@ -39,16 +39,18 @@ async function expectRecommendAfterDate(page) {
 }
 
 test('移动端侧边栏：菜单推荐紧跟当前日期，且能调到站点入口', async ({ page }) => {
-  await loadUrpFixture(page, { fixture: 'mobile-home', viewport: MOBILE });
+  const { pageErrors } = await loadUrpFixture(page, { fixture: 'mobile-home', viewport: MOBILE });
   await expectRecommendAfterDate(page);
   // 快捷区在抽屉里，先开抽屉
   await page.locator('#urppp-mobile-menu-button').click();
   await recommendLink(page).click();
   await expect.poll(() => page.evaluate(() => window.__urpppMenuRecommendCalls || 0)).toBeGreaterThan(0);
+  // 站点该入口写成 href="#"：单独的 '#' 不是合法选择器，不得因此在点击处理里报错
+  expect(pageErrors).toEqual([]);
 });
 
 test('清爽模式侧边栏：菜单推荐紧跟当前日期，且能调到站点入口', async ({ page }) => {
-  await loadUrpFixture(page, {
+  const { pageErrors } = await loadUrpFixture(page, {
     fixture: 'mobile-home',
     viewport: MOBILE,
     values: { urppp_clean_default_v1: true },
@@ -58,6 +60,26 @@ test('清爽模式侧边栏：菜单推荐紧跟当前日期，且能调到站�
   await page.locator('#uc-menu-toggle').click();
   await recommendLink(page).click();
   await expect.poll(() => page.evaluate(() => window.__urpppMenuRecommendCalls || 0)).toBeGreaterThan(0);
+  expect(pageErrors).toEqual([]);
+});
+
+test('点击 href="#" 的站点入口不应产生脚本错误', async ({ page }) => {
+  const { pageErrors } = await loadUrpFixture(page, { fixture: 'home' });
+  // 站点大量入口用 href="#" 承接内联 onclick，插件在那个点击监听里做锚点解锁
+  await page.evaluate(() => {
+    const a = document.createElement('a');
+    a.id = 'urppp-hash-anchor-probe';
+    a.setAttribute('href', '#');
+    a.textContent = '锚点入口';
+    document.body.appendChild(a);
+  });
+  await page.locator('#urppp-hash-anchor-probe').click();
+  // 顺带覆盖 hash 路由与非法 id：都不得抛选择器语法错误
+  for (const hash of ['#/route', '#!', '#a b']) {
+    await page.evaluate((value) => document.getElementById('urppp-hash-anchor-probe').setAttribute('href', value), hash);
+    await page.locator('#urppp-hash-anchor-probe').click();
+  }
+  expect(pageErrors).toEqual([]);
 });
 
 test('快捷区不会把用户菜单这类下拉项带进来', async ({ page }) => {
