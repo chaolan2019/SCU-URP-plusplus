@@ -26,7 +26,6 @@
 // @connect      cdn.jsdelivr.net
 // @connect      gitee.com
 // @connect      raw.giteeusercontent.com
-// @connect      api.yanjiangrd.site
 // @connect      *
 // @run-at       document-start
 // ==/UserScript==
