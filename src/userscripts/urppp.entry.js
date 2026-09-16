@@ -110,7 +110,7 @@ import { createNavbarController } from '../features/navigation/navbar.js';
   'use strict';
 
   // 与脚本头 @version 保持同步
-  const URPPP_VERSION = '2.0.5';
+  const URPPP_VERSION = '2.0.6';
 
   // @match 需要覆盖 SCU 子域名以兼容脚本运行环境，但主站美化严格限定在两个旧版 URP 入口。
   // 其他 SCU 站点在任何 DOM/CSS/viewport 副作用发生前退出，避免被误套用整套教务美化。
@@ -7501,7 +7501,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         }
         if (r.status === 'update') {
           let action = '';
-          if (r.id === 'assist' && pluginManager && pluginManager.loaded('assist')) {
+          if (r.id === 'assist' && pluginManager && pluginManager.api.loaded('assist')) {
             // 主插件装载式：提供「重新装载」按钮（重新下载注入）
             action = ' <a class="urppp-update-relaunch" href="javascript:void(0)" data-urppp-relaunch="assist" rel="nofollow">重新装载</a>';
           } else {
