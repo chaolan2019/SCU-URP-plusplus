@@ -7,6 +7,7 @@
   "match": [
     "http://zhjw.scu.edu.cn/*",
     "http://202.115.47.141/*",
+    "https://202.115.47.141/*",
     "https://id.scu.edu.cn/*",
     "https://*.scu.edu.cn/*"
   ],
@@ -17,7 +18,8 @@
     "GM_deleteValue",
     "GM_listValues",
     "unsafeWindow",
-    "GM_xmlhttpRequest"
+    "GM_xmlhttpRequest",
+    "GM_registerMenuCommand"
   ],
   "run-at": "document-start",
   "connect": [

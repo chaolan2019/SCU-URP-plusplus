@@ -101,10 +101,15 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
   function inject(code, id) {
     try {
       const js = stripMetadata(code);
-      const gmNames = ['GM_getValue', 'GM_setValue', 'GM_xmlhttpRequest', 'GM_registerMenuCommand', 'GM_addStyle', 'unsafeWindow'];
+      // 传给插件的 GM 能力：必须与 urppp.json 的 grant 对齐，
+      // 没 grant 的名字在这里只能是 undefined（typeof 守卫不报错，但能力静默失效）。
+      // GM_registerMenuCommand 曾漏 grant，导致插件形态下的辅助插件右键菜单命令全部不注册。
+      const gmNames = ['GM_getValue', 'GM_setValue', 'GM_deleteValue', 'GM_listValues', 'GM_xmlhttpRequest', 'GM_registerMenuCommand', 'GM_addStyle', 'unsafeWindow'];
       const gmValues = [
         typeof GM_getValue === 'function' ? GM_getValue : undefined,
         typeof GM_setValue === 'function' ? GM_setValue : undefined,
+        typeof GM_deleteValue === 'function' ? GM_deleteValue : undefined,
+        typeof GM_listValues === 'function' ? GM_listValues : undefined,
         typeof GM_xmlhttpRequest === 'function' ? GM_xmlhttpRequest : undefined,
         typeof GM_registerMenuCommand === 'function' ? GM_registerMenuCommand : undefined,
         typeof GM_addStyle === 'function' ? GM_addStyle : undefined,

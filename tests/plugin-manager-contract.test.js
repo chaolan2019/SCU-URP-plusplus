@@ -11,6 +11,7 @@ import { readFile } from 'node:fs/promises';
 
 const entryUrl = new URL('../src/userscripts/urppp.entry.js', import.meta.url);
 const managerUrl = new URL('../src/features/plugin-manager/index.js', import.meta.url);
+const metadataUrl = new URL('../src/metadata/urppp.json', import.meta.url);
 
 function keysOf(code, header) {
   const escaped = header.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -58,4 +59,31 @@ test('entry 调用的 pluginManager / authPlugin 成员必须真实存在于外�
   }
 
   assert.deepEqual(violations, [], `发现不存在的宿主成员调用：\n${violations.join('\n')}`);
+});
+
+// 宿主注入插件时，GM_* 是以形参形式传进去的（new Function(...gmNames, js)）。
+// 形参名没写进主脚本 @grant，它在宿主里就是 undefined：typeof 守卫不报错，
+// 插件的该能力静默失效。
+// GM_registerMenuCommand 就是这样漏的——插件形态下的辅助插件，那几条右键菜单命令
+// 一直没注册上，被插件自己的 try/catch 吞掉，页面上看不出任何异常。
+// 这类漏项靠 review 发现不了，所以钉成断言。
+function injectedGmNames(code) {
+  const block = /const gmNames = \[([\s\S]*?)\];/.exec(code);
+  assert.ok(block, '在 plugin-manager 里找不到 gmNames 列表');
+  return [...block[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+}
+
+test('注入给插件的 GM_* 形参必须都在主脚本 grant 里', async () => {
+  const [manager, metadataText] = await Promise.all([
+    readFile(managerUrl, 'utf8'),
+    readFile(metadataUrl, 'utf8'),
+  ]);
+  const granted = new Set(JSON.parse(metadataText).grant || []);
+
+  const missing = injectedGmNames(manager).filter((name) => !granted.has(name));
+  assert.deepEqual(
+    missing,
+    [],
+    `以下 GM 能力作为形参传给了插件，但主脚本没 grant，插件侧会静默失效：\n${missing.join('\n')}`,
+  );
 });
