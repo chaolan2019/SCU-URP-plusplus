@@ -521,5 +521,8 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
     openPluginStore: togglePluginStore,
     bootFromCache,
     register,
+    // 供本地导入复用：GM_* 必须以形参传入，
+    // 否则插件里的 GM_xmlhttpRequest 等是未声明标识符，GM 能力静默失效
+    inject,
   };
 }

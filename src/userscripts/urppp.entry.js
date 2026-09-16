@@ -6895,8 +6895,10 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const text = await f.text();
       file.value = '';
       try {
-        // 执行插件（IIFE），插件内部调用 window.__urpppPlugin.register 完成装载
-        (new Function(text))();
+        // 与插件管理器共用同一条注入路径：GM_* 必须作为形参传入。
+        // 早先这里直接 new Function(text)()，插件里的 GM_xmlhttpRequest 等成了
+        // 未声明标识符（typeof 得 undefined），GM 能力静默失效。
+        if (!pluginManager.inject(text, 'local')) throw new Error('插件注入失败，详见控制台');
       } catch (e) { toast('本地插件加载失败：' + (e && e.message ? e.message : e), 'error'); }
       try { fetchPluginManage(body.querySelector('#urppp-plugin-manage')); } catch (_) {}
     });
