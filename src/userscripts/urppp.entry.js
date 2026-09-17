@@ -42,6 +42,7 @@ import {
 import { buildSettingsPanelHtml } from '../features/settings/panel-template.js';
 import { createPluginManager } from '../features/plugin-manager/index.js';
 import { createDataApi } from '../features/plugin-manager/data-api.js';
+import { createActionApi } from '../features/plugin-manager/action-api.js';
 import { createJsonSettingsController } from '../features/settings/json-settings.js';
 import {
   DIRECT_EDIT_KEYS,
@@ -5834,11 +5835,19 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     // 依赖一律包成箭头函数：这些函数/const 在本文件里定义得更晚，直接引用会撞暂时性死区。
     data: createDataApi({
       loadSchedule: (...args) => loadScheduleCached(...args),
+      loadScores: (...args) => loadScoresCached(...args),
       normalizeScheduleDataForPage: (...args) => normalizeScheduleDataForPage(...args),
       schedulePlanCodeFromData: (...args) => schedulePlanCodeFromData(...args),
       ensureTermWeekResolved: (...args) => ensureTermWeekResolved(...args),
       getCurrentWeekNumber: (...args) => getCurrentWeekNumber(...args),
       readRememberedTermWeek: (...args) => readRememberedTermWeek(...args),
+    }),
+    // 动作：会产生副作用，插件必须自己先向用户确认
+    actions: createActionApi({
+      loadSchedule: (...args) => loadScheduleCached(...args),
+      exportIcs: (...args) => exportScheduleIcs(...args),
+      exportJson: (...args) => exportScheduleJson(...args),
+      exportPng: (...args) => exportSchedulePng(...args),
     }),
     uiDeps: { openSubpanel: (kind) => { if (kind === 'plugin-store') openStoreSubPanel('plugin'); } },
   });

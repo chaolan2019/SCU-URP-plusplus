@@ -63,6 +63,7 @@ function pickCourse(course) {
 export function createDataApi(deps) {
   const {
     loadSchedule,
+    loadScores,
     normalizeScheduleDataForPage,
     schedulePlanCodeFromData,
   } = deps || {};
@@ -109,6 +110,50 @@ export function createDataApi(deps) {
           },
           sections: Array.isArray(normalized.sections) ? normalized.sections : [],
           courses: courses.slice(0, MAX_COURSES).map(pickCourse),
+        };
+      } catch (error) {
+        return fail((error && error.message) || error);
+      }
+    },
+
+    /**
+     * 成绩：汇总（学分/绩点/均分）+ 按学期分组的课程。
+     * 只给模型用得上的字段；原始包里有评教链接、分组层级这类东西，插件不需要。
+     */
+    async scores() {
+      const fail = (error) => ({ error: String(error).slice(0, 200) });
+      try {
+        if (typeof loadScores !== 'function') return fail('这个版本的主脚本还没提供成绩读取');
+        const pack = await loadScores(false);
+        if (!pack) return fail('读不到成绩（可能是登录已过期）');
+        if (pack.error) return fail(pack.error);
+
+        const passing = Array.isArray(pack.passing) ? pack.passing[0] : null;
+        const list = (passing && Array.isArray(passing.courses)) ? passing.courses : [];
+        const groups = new Map();
+        list.forEach((course) => {
+          const term = String((course && course.term) || '未标学期');
+          if (!groups.has(term)) groups.set(term, []);
+          groups.get(term).push({
+            name: String((course && course.name) || ''),
+            credit: Number(course && course.credit) || 0,
+            score: String((course && course.score) || ''),
+            gpa: course && course.officialGpa != null ? Number(course.officialGpa) : null,
+            required: !!(course && course.required),
+            unevaluated: !!(course && course.unevaluated),
+          });
+        });
+        const summary = (passing && passing.summary) || null;
+        return {
+          summary: summary ? {
+            totalCredit: Number(summary.totalCredit) || 0,
+            avgGpa: Number(summary.avgGpa) || 0,
+            avgScore: Number(summary.avgScore) || 0,
+            requiredCredit: Number(summary.requiredCredit) || 0,
+            requiredGpa: Number(summary.requiredGpa) || 0,
+            count: Number(summary.count) || 0,
+          } : null,
+          terms: Array.from(groups.entries()).map(([term, courses]) => ({ term, courses })),
         };
       } catch (error) {
         return fail((error && error.message) || error);

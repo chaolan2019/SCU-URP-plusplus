@@ -16,7 +16,7 @@
 const STORAGE_PREFIX = 'urppp_plugin_';
 const PROTOCOL_VERSION = '1.0.0';
 
-export function createPluginManager({ GM, doc, hostInfo, uiDeps, data }) {
+export function createPluginManager({ GM, doc, hostInfo, uiDeps, data, actions }) {
   const {
     getValue = () => null,
     setValue = () => {},
@@ -321,8 +321,10 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps, data }) {
     // 宿主能力
     storage: () => getValue && ({ get: (k) => getValue(k), set: (k, v) => setValue(k, v) }),
     pluginStorage: (id) => storage()(id),
-    // 只读教务数据（课表/学期周次）。没传 data 时为 null，插件侧要自己判空
+    // 只读教务数据（课表/学期周次）与动作（导出等）。没传时为 null，插件侧要自己判空
     data: data || null,
+    // 动作会产生副作用（写文件、触发下载）：**调用前必须先取得用户确认**
+    actions: actions || null,
     request,
     addStyle: (css) => { try { addStyle && addStyle(css); } catch (_) { /* ignore */ } },
     log: (...a) => { /* eslint-disable-next-line no-console */ console.log('[URP++ plugin]', ...a); },

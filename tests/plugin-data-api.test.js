@@ -114,6 +114,49 @@ test('term()：周次三条来源依次兜底，并带上学期首周一', async
   assert.equal(out.firstMonday, '2026-08-31');
 });
 
+test('scores()：给模型用的汇总 + 按学期分组，只暴露约定字段', async () => {
+  const pack = {
+    passing: [{
+      title: '全部及格成绩',
+      summary: {
+        totalCredit: 88.5, avgGpa: 3.42, avgScore: 86.1,
+        requiredCredit: 60, requiredGpa: 3.2, count: 42,
+        extra: '不要',
+      },
+      courses: [
+        { name: '高等数学', credit: 5, score: '91', officialGpa: 4, required: true, term: '2025-2026 秋季', evalUrl: 'x' },
+        { name: '大学英语', credit: 3, score: '未评估', unevaluated: true, term: '2025-2026 秋季' },
+        { name: '体育', credit: 1, score: '85', term: '2025-2026 春季' },
+      ],
+    }],
+    error: '',
+  };
+  const api = createDataApi({ loadScores: async () => pack });
+  const out = await api.scores();
+
+  assert.equal(out.error, undefined);
+  assert.deepEqual(out.summary, {
+    totalCredit: 88.5, avgGpa: 3.42, avgScore: 86.1,
+    requiredCredit: 60, requiredGpa: 3.2, count: 42,
+  });
+  assert.deepEqual(out.terms.map((item) => item.term), ['2025-2026 秋季', '2025-2026 春季']);
+  assert.deepEqual(out.terms[0].courses[0], {
+    name: '高等数学', credit: 5, score: '91', gpa: 4, required: true, unevaluated: false,
+  });
+  // 未评估与缺失绩点都要如实保留，不能补 0 假装算过
+  assert.equal(out.terms[0].courses[1].unevaluated, true);
+  assert.equal(out.terms[0].courses[1].gpa, null);
+  // 原始包里的额外字段不泄漏到契约里
+  assert.equal(out.summary.extra, undefined);
+});
+
+test('scores()：读不到、报错、抛异常都回 { error }', async () => {
+  assert.ok((await createDataApi({}).scores()).error.includes('还没提供成绩读取'));
+  assert.ok((await createDataApi({ loadScores: async () => null }).scores()).error.includes('读不到成绩'));
+  assert.ok((await createDataApi({ loadScores: async () => ({ error: '登录超时' }) }).scores()).error.includes('登录超时'));
+  assert.ok((await createDataApi({ loadScores: async () => { throw new Error('炸了'); } }).scores()).error.includes('炸了'));
+});
+
 test('term()：拿不到课表时首周一留空，不影响周次', async () => {
   const { deps } = makeDeps({ loadSchedule: async () => { throw new Error('no'); } });
   const out = await createDataApi(deps).term();
