@@ -6902,7 +6902,14 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
         // 且注入后把代码落缓存，否则刷新页面插件就消失（此前就是这样）。
         const result = pluginManager.installLocal(text);
         if (!result || !result.ok) throw new Error('插件注入失败，详见控制台');
-        if (!result.ids.length) toast('插件代码已执行，但没有调用 register 注册自己，框架内无法缓存', 'error');
+        if (!result.ids.length) {
+          toast('插件代码已执行，但没有调用 register 注册自己，框架内无法缓存', 'error');
+        } else if (result.updated) {
+          // 已装过：新代码已落缓存，但当前页面跑的还是旧版本
+          toast('插件已更新并缓存，刷新页面后生效', 'info');
+        } else {
+          toast('插件已导入并缓存，下次进页会自动装载', 'info');
+        }
       } catch (e) { toast('本地插件加载失败：' + (e && e.message ? e.message : e), 'error'); }
       try { fetchPluginManage(body.querySelector('#urppp-plugin-manage')); } catch (_) {}
     });

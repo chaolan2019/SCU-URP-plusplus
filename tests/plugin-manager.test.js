@@ -41,14 +41,17 @@ function makeManager(gmOverride) {
 
 const PLUGIN_CODE = `// @version 1.2.3\nglobalThis.__testPluginRan = (globalThis.__testPluginRan || 0) + 1;`;
 
-test('register 注册插件并触发事件，重复注册幂等', () => {
+test('register 注册插件并触发事件；重复注册刷新元信息但不重复发事件', () => {
   const { api } = makeManager();
   const events = [];
   api.on('registered', (id) => events.push(id));
-  assert.equal(api.register({ id: 'a', name: '插件A', setup() {} }), true);
-  assert.equal(api.register({ id: 'a', name: '插件A2' }), true);
+  assert.equal(api.register({ id: 'a', name: '插件A', version: '1.0.0', setup() {} }), true);
+  assert.equal(api.register({ id: 'a', name: '插件A2', version: '2.0.0' }), true);
+  // 事件只发一次：补发会让监听者重复渲染一套 UI
   assert.deepEqual(events, ['a']);
-  assert.equal(api.get('a').name, '插件A');
+  // 但元信息要跟着更新，否则本地插件覆盖安装后名称/版本永远停在第一版
+  assert.equal(api.get('a').name, '插件A2');
+  assert.equal(api.get('a').version, '2.0.0');
   assert.equal(api.list().length, 1);
 });
 
@@ -171,6 +174,27 @@ test('installLocal 注入并落缓存，刷新后能自动装载', () => {
 
     // 下一次进页：bootAllCached 能把它枚举出来重装
     assert.ok(pm.bootAllCached().includes('local-x'));
+  } finally {
+    delete globalThis.unsafeWindow;
+  }
+});
+
+test('installLocal 支持覆盖安装：第二次仍命中 id、换新缓存并标记为更新', () => {
+  globalThis.unsafeWindow = {};
+  try {
+    const { pm, GM } = makeManager();
+    const v1 = "unsafeWindow.__urpppPlugin.register({ id: 'local-y', version: '1.0.0' });";
+    const first = pm.installLocal(v1);
+    assert.deepEqual(first.ids, ['local-y']);
+    assert.equal(first.updated, false);
+
+    // register 对同一 id 是幂等的，不能再用“注册表差集”找 id
+    const v2 = "unsafeWindow.__urpppPlugin.register({ id: 'local-y', version: '2.0.0' });";
+    const second = pm.installLocal(v2);
+    assert.deepEqual(second.ids, ['local-y'], '覆盖安装必须仍能命中 id');
+    assert.equal(second.updated, true);
+    assert.equal(GM.store.get('urppp_plugin_local-y_code'), v2, '缓存应换成新代码');
+    assert.equal(pm.api.get('local-y').version, '2.0.0', '元信息也应刷新');
   } finally {
     delete globalThis.unsafeWindow;
   }

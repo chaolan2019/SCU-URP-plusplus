@@ -139,9 +139,28 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
   function isEnabled(id) { const s = state.get(id); return !!s && s.enabled; }
 
   // ---- 注册（插件/主题统一入口） ----
+  // collecting 非空时，把本次 register 到的 id 收起来：
+  // 本地导入用它定位插件，不能用“注入前后的注册表差集”——
+  // register 对同 id 是幂等的，覆盖安装时差集恒为空，会被误判成“没注册自己”。
+  let collecting = null;
+
   function register(plugin) {
     if (!plugin || !plugin.id) return false;
-    if (registry.has(plugin.id) && registry.get(plugin.id).__urpppRegistered) return true; // 防重复注册
+    if (collecting) collecting.push(plugin.id);
+
+    const existed = registry.get(plugin.id);
+    if (existed && existed.__urpppRegistered) {
+      // 重复注册 = 更新：刷新元信息与版本，不重置装载状态
+      registry.set(plugin.id, Object.assign({}, existed, plugin, { __urpppRegistered: true }));
+      const s = state.get(plugin.id);
+      if (s) {
+        s.version = plugin.version || s.version;
+        state.set(plugin.id, s);
+      }
+      // 不再补发 registered：重复注册只是更新元信息，补发会让监听者重复渲染一套 UI
+      return true;
+    }
+
     const item = Object.assign({ type: 'plugin' }, plugin);
     item.__urpppRegistered = true;
     registry.set(plugin.id, item);
@@ -220,10 +239,19 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
   // 刷新后 bootFromCache 找不到代码，插件就“消失”了。
   // 插件在注入时自己 register，所以用注入前后的注册表差集找出它的 id。
   function installLocal(code) {
-    const before = new Set(registry.keys());
-    if (!inject(code, 'local')) return { ok: false, ids: [] };
-    const added = [...registry.keys()].filter((id) => !before.has(id));
-    added.forEach((id) => {
+    collecting = [];
+    let ok = false;
+    try {
+      ok = inject(code, 'local');
+    } finally {
+      // 不管成败都要收起收集器，否则后续 register 会被误记到这一次导入上
+    }
+    const ids = [...new Set(collecting || [])];
+    collecting = null;
+    if (!ok) return { ok: false, ids: [] };
+
+    const updated = ids.some((id) => !!getValue(`${STORAGE_PREFIX}${id}_code`));
+    ids.forEach((id) => {
       setValue(`${STORAGE_PREFIX}${id}_code`, code);
       setValue(`${STORAGE_PREFIX}${id}_enabled`, true);
       const s = state.get(id) || { loaded: false, enabled: true, version: '' };
@@ -234,7 +262,7 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
       state.set(id, s);
       emit('loaded', id);
     });
-    return { ok: true, ids: added };
+    return { ok: true, ids, updated };
   }
 
   // ---- 进页装载：把所有已缓存代码的插件都装起来 ----
