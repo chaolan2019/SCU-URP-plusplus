@@ -5823,6 +5823,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     GM: {
       getValue: typeof GM_getValue === 'function' ? GM_getValue : null,
       setValue: typeof GM_setValue === 'function' ? GM_setValue : null,
+      listValues: typeof GM_listValues === 'function' ? GM_listValues : null,
       xmlHttp: typeof GM_xmlhttpRequest === 'function' ? GM_xmlhttpRequest : null,
       addStyle: typeof GM_addStyle === 'function' ? GM_addStyle : null,
     },
@@ -5837,7 +5838,9 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     const run = () => {
       // 弹窗内层不装载辅助插件：那一帧只需渲染自己，登录/评教流程不可能在其中发生
       if (isEmbeddedRecommendPage()) return;
-      try { pluginManager.bootFromCache('assist'); } catch (_) { /* ignore */ }
+      // 装载所有已缓存代码的插件：本地导入与商店安装的都会自动回来。
+      // 此前写死 bootFromCache('assist')，其它插件刷新后就消失了。
+      try { pluginManager.bootAllCached(); } catch (_) { /* ignore */ }
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
     else run();
@@ -6895,10 +6898,11 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       const text = await f.text();
       file.value = '';
       try {
-        // 与插件管理器共用同一条注入路径：GM_* 必须作为形参传入。
-        // 早先这里直接 new Function(text)()，插件里的 GM_xmlhttpRequest 等成了
-        // 未声明标识符（typeof 得 undefined），GM 能力静默失效。
-        if (!pluginManager.inject(text, 'local')) throw new Error('插件注入失败，详见控制台');
+        // 与插件管理器共用同一条注入路径：GM_* 作为形参传入；
+        // 且注入后把代码落缓存，否则刷新页面插件就消失（此前就是这样）。
+        const result = pluginManager.installLocal(text);
+        if (!result || !result.ok) throw new Error('插件注入失败，详见控制台');
+        if (!result.ids.length) toast('插件代码已执行，但没有调用 register 注册自己，框架内无法缓存', 'error');
       } catch (e) { toast('本地插件加载失败：' + (e && e.message ? e.message : e), 'error'); }
       try { fetchPluginManage(body.querySelector('#urppp-plugin-manage')); } catch (_) {}
     });

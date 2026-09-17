@@ -20,6 +20,7 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
   const {
     getValue = () => null,
     setValue = () => {},
+    listValues = () => [],
     xmlHttp,
     addStyle,
   } = GM || {};
@@ -211,6 +212,47 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
     state.set(id, s);
     emit('loaded', id);
     return ok;
+  }
+
+  // ---- 本地导入：注入 + 落缓存，下次进页自动装载 ----
+  // 与商店安装同一条路，只是没有下载源。
+  // 此前入口只调用 inject(code, 'local')：插件当次能跑，但代码没落盘，
+  // 刷新后 bootFromCache 找不到代码，插件就“消失”了。
+  // 插件在注入时自己 register，所以用注入前后的注册表差集找出它的 id。
+  function installLocal(code) {
+    const before = new Set(registry.keys());
+    if (!inject(code, 'local')) return { ok: false, ids: [] };
+    const added = [...registry.keys()].filter((id) => !before.has(id));
+    added.forEach((id) => {
+      setValue(`${STORAGE_PREFIX}${id}_code`, code);
+      setValue(`${STORAGE_PREFIX}${id}_enabled`, true);
+      const s = state.get(id) || { loaded: false, enabled: true, version: '' };
+      s.loaded = true;
+      s.enabled = true;
+      s.code = code;
+      s.version = s.version || detectVersion(code);
+      state.set(id, s);
+      emit('loaded', id);
+    });
+    return { ok: true, ids: added };
+  }
+
+  // ---- 进页装载：把所有已缓存代码的插件都装起来 ----
+  // 此前入口写死 bootFromCache('assist')，于是本地导入或商店安装的其它插件都不会自动装载。
+  function bootAllCached() {
+    let ids = [];
+    try {
+      const keys = typeof listValues === 'function' ? listValues() : [];
+      const pattern = new RegExp(`^${STORAGE_PREFIX}(.+)_code$`);
+      keys.forEach((key) => {
+        const hit = pattern.exec(String(key));
+        if (hit && hit[1]) ids.push(hit[1]);
+      });
+    } catch (_) {
+      return [];
+    }
+    ids.forEach((id) => { bootFromCache(id); });
+    return ids;
   }
 
   function unregister(id) {
@@ -525,9 +567,8 @@ export function createPluginManager({ GM, doc, hostInfo, uiDeps }) {
     renderAssistUi,
     openPluginStore: togglePluginStore,
     bootFromCache,
+    bootAllCached,
+    installLocal,
     register,
-    // 供本地导入复用：GM_* 必须以形参传入，
-    // 否则插件里的 GM_xmlhttpRequest 等是未声明标识符，GM 能力静默失效
-    inject,
   };
 }

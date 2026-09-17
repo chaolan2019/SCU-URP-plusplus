@@ -9,6 +9,7 @@ function makeGM() {
     store,
     getValue: (k) => (store.has(k) ? store.get(k) : null),
     setValue: (k, v) => { store.set(k, v); },
+    listValues: () => Array.from(store.keys()),
     xmlHttp: null,
     addStyle: () => {},
   };
@@ -149,4 +150,47 @@ test('事件 on/emit 与取消订阅', () => {
 test('request 在 xmlHttp 缺失时拒绝', async () => {
   const { api } = makeManager();
   await assert.rejects(() => api.request('https://example.com/'), /不可用/);
+});
+
+// 本地导入的插件此前只被 inject 执行、代码不落缓存，刷新页面就消失。
+// 插件在注入时自己 register，所以管理器要用注入前后的注册表差集找出它的 id。
+test('installLocal 注入并落缓存，刷新后能自动装载', () => {
+  globalThis.unsafeWindow = {};
+  try {
+    const { pm, GM } = makeManager();
+    const code = 'unsafeWindow.__localRuns = (unsafeWindow.__localRuns || 0) + 1;'
+      + "unsafeWindow.__urpppPlugin.register({ id: 'local-x', version: '1.0.0' });";
+
+    const result = pm.installLocal(code);
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.ids, ['local-x']);
+    assert.equal(globalThis.unsafeWindow.__localRuns, 1, '代码应当被执行');
+    assert.equal(GM.store.get('urppp_plugin_local-x_code'), code, '代码应当落缓存');
+    assert.equal(GM.store.get('urppp_plugin_local-x_enabled'), true);
+    assert.equal(pm.api.get('local-x').version, '1.0.0');
+
+    // 下一次进页：bootAllCached 能把它枚举出来重装
+    assert.ok(pm.bootAllCached().includes('local-x'));
+  } finally {
+    delete globalThis.unsafeWindow;
+  }
+});
+
+test('bootAllCached 只装带代码缓存的插件，忽略无关键', () => {
+  globalThis.unsafeWindow = {};
+  try {
+    const { pm, GM } = makeManager();
+    GM.store.set('urppp_plugin_a_code', 'unsafeWindow.__a = 1;');
+    GM.store.set('urppp_plugin_b_code', 'unsafeWindow.__b = 1;');
+    GM.store.set('urppp_theme_css_x', 'body{}');   // 无关键，不能当插件
+    GM.store.set('urppp_plugin_c_enabled', true);  // 只有开关、没有代码
+
+    const ids = pm.bootAllCached().sort();
+    assert.deepEqual(ids, ['a', 'b']);
+    assert.equal(globalThis.unsafeWindow.__a, 1);
+    assert.equal(globalThis.unsafeWindow.__b, 1);
+    assert.equal(globalThis.unsafeWindow.__c, undefined);
+  } finally {
+    delete globalThis.unsafeWindow;
+  }
 });
