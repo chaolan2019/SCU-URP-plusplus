@@ -41,6 +41,7 @@ import {
 } from '../features/settings/panel-controller.js';
 import { buildSettingsPanelHtml } from '../features/settings/panel-template.js';
 import { createPluginManager } from '../features/plugin-manager/index.js';
+import { createDataApi } from '../features/plugin-manager/data-api.js';
 import { createJsonSettingsController } from '../features/settings/json-settings.js';
 import {
   DIRECT_EDIT_KEYS,
@@ -5829,6 +5830,16 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     },
     doc: document,
     hostInfo: { version: URPPP_VERSION },
+    // 只读数据接口：插件读课表/周次走这里，不另写一份解析（见 plugin-manager/data-api.js）。
+    // 依赖一律包成箭头函数：这些函数/const 在本文件里定义得更晚，直接引用会撞暂时性死区。
+    data: createDataApi({
+      loadSchedule: (...args) => loadScheduleCached(...args),
+      normalizeScheduleDataForPage: (...args) => normalizeScheduleDataForPage(...args),
+      schedulePlanCodeFromData: (...args) => schedulePlanCodeFromData(...args),
+      ensureTermWeekResolved: (...args) => ensureTermWeekResolved(...args),
+      getCurrentWeekNumber: (...args) => getCurrentWeekNumber(...args),
+      readRememberedTermWeek: (...args) => readRememberedTermWeek(...args),
+    }),
     uiDeps: { openSubpanel: (kind) => { if (kind === 'plugin-store') openStoreSubPanel('plugin'); } },
   });
 
