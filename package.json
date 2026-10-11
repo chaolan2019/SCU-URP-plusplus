@@ -14,7 +14,7 @@
     "check": "npm test && npm run build:check && node --check urppp.user.js && node --check urpppp.user.js"
   },
   "devDependencies": {
-    "@playwright/test": "^1.62.1",
+    "@playwright/test": "^1.64.0",
     "esbuild": "0.28.1",
     "jimp": "^1.6.1"
   },
