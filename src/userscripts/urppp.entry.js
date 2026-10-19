@@ -93,7 +93,7 @@ import { startDrawerOffsetSync } from '../features/drawer-offset-sync/index.js';
 import { installConfirmDialog } from '../features/confirm-dialog/index.js';
 import { createCleanModeState, resetCleanModeData } from '../features/clean-mode/state.js';
 import { createCleanModeDataLoader } from '../features/clean-mode/data.js';
-import { parseApplicationList } from '../features/clean-mode/applications.js';
+import { parseApplicationJson } from '../features/clean-mode/applications.js';
 import { createCleanModeRenderer } from '../features/clean-mode/render.js';
 import { createCleanModeUI } from '../features/clean-mode/ui.js';
 import { createCleanModeController } from '../features/clean-mode/controller.js';
@@ -9374,15 +9374,15 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     } catch (_) {}
   });
 
-  // 服务板块的申请类业务：站点把「申请中」直接渲染在 #apply_body（已关闭在 #close_body）。
-  // 一级页不是固定的四五个入口，业务随学期开放变化；写死必然过期（实测旧 ywid 已从 11082/11083 变成 11002/11003，
-  // 「免修申请」也落到了已关闭）。这里只取申请中，缓存到下一次进页。
+  // 服务板块的申请类业务：数据在 POST /student/application/index/showApplication 里。
+  // 页面自己的 #apply_body 是空的（内容全靠这个接口渲染），所以只能走接口。
+  // 返回的是全部业务，parseApplicationJson 照站点自己的规则分「申请中」。
   const loadApplicationsCached = withCleanCache('applications', async () => {
     try {
-      const html = await fetchText('/student/application/index');
-      const list = parseApplicationList(html);
+      const raw = await fetchText('/student/application/index/showApplication', { method: 'POST' });
+      const list = parseApplicationJson(raw);
       if (list.length) return list;
-      return { __empty: true, error: 'apply-body-empty' };
+      return { __empty: true, error: 'apply-list-empty' };
     } catch (e) { const msg = String(e && e.message || e); return { __error: msg, error: msg }; }
   }, (fresh) => {
     try {

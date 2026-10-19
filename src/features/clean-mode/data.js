@@ -4,10 +4,10 @@ export function createCleanModeDataLoader({ state, deps }) {
   let roomCatalogPromise = null; // 并发共享：进行中的加载 Promise，避免后来者拿到空数组后无人刷新弹窗
   let applicationsPromise = null;
 
-  // 服务板块的申请类业务：不阻塞主数据（拿不到就退化成单一入口），到了就重画
+  // 服务板块的申请类业务：每次进清爽模式都走一次 SWR（缓存先出、后台拉新），
+  // 这样站点那边开关了哪项业务，下次进来就能跟着变。
   async function ensureApplicationsLoaded(force) {
     if (typeof deps.loadApplications !== 'function') return state.applications || [];
-    if (!force && Array.isArray(state.applications) && state.applications.length) return state.applications;
     if (applicationsPromise) return applicationsPromise;
     applicationsPromise = (async () => {
       try {

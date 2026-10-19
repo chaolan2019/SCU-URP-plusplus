@@ -1,66 +1,72 @@
 /**
- * @file 可申请业务列表解析。
+ * @file 可申请业务：从站点接口取「申请中」的业务。
  *
- * 站点的「可申请业务」页把两类业务直接写在 HTML 里：
- *   - #apply_body  → 申请中（服务板块只认这一栏）
- *   - #close_body  → 已关闭（不得进服务板块）
+ * 数据源：POST /student/application/index/showApplication
+ *   → { status, data: { todate, list: [...], zzykgcount, xjydcount, jxjcount, ... } }
  *
- * 为什么不写死入口：业务随学期开放变化。2026-2027 秋实测线上是 7 项，
- * 其中「免修申请」已落到「已关闭」，而补办学生证/火车票优惠卡的 ywid
- * 也从旧代码里的 11082/11083 变成了 11002/11003——写死就是把人送进错的业务页。
+ * 注意：这个 list 是**全部业务**（含已关闭、含 url 为 null 的），页面上的
+ * 「申请中 / 已关闭」是站点 JS 自己分的。这里照抄站点那套判断，不另发明：
  *
- * 用正则而不是 DOMParser：这段逻辑要在 node 单测里跑，而且只需要取出 a[href]。
+ *   普通项：qyf=='1' 且 kssj <= todate <= jssj 且 kg=='1'
+ *           10006 / 10007 / 10012 不算业务入口（站点直接跳过）
+ *   10008：单独一条「辅修方案注册/注销」，判断同上
+ *   特殊项：转专业 / 异动 / 大类分流 / 专业分方向 / 奖学金 / 创新创业
+ *           由响应里的计数字段决定，出现即表示申请中
+ *
+ * 为什么不再从 HTML 里抠：那页 #apply_body 是空的，内容全靠这个接口渲染。
  */
 
-const APPLY_START = /id=["']apply_body["']/i;
-const APPLY_END = /id=["']close_body["']/i;
-
-function decodeEntities(text) {
-  return String(text || '')
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/g, "'");
-}
+/** 站点对这几个 id 不走普通业务入口 */
+const SKIP_IDS = new Set(['10006', '10007', '10012']);
+const SUBSIDIARY_ID = '10008';
 
 /**
- * @param {string} html 可申请业务页源码
- * @returns {Array<{title: string, href: string}>} 申请中的业务（可能为空）
+ * @param {string|object} raw 接口响应（文本或已解析对象）
+ * @returns {Array<{title: string, href: string}>} 申请中的业务
  */
-export function parseApplicationList(html) {
-  const text = String(html || '');
-  const startMatch = text.match(APPLY_START);
-  if (!startMatch) return [];
-  const rest = text.slice(startMatch.index);
-  const endMatch = rest.match(APPLY_END);
-  const scope = endMatch ? rest.slice(0, endMatch.index) : rest;
+export function parseApplicationJson(raw) {
+  let payload = raw;
+  if (typeof raw === 'string') {
+    try { payload = JSON.parse(raw); } catch (_) { return []; }
+  }
+  const data = payload && payload.data;
+  if (!data || !Array.isArray(data.list)) return [];
+
+  const todate = String(data.todate || '');
+  // 拿不到基准时间就无法判断开放窗口：宁可这一轮不出清单，也不把已关闭的混进来
+  if (!todate) return [];
 
   const list = [];
   const seen = new Set();
-  const re = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
-  let match = re.exec(scope);
-  while (match) {
-    const attrs = match[1] || '';
-    const href = (attrs.match(/href=["']([^"']+)["']/i) || [])[1] || '';
-    const titleAttr = decodeEntities((attrs.match(/title=["']([^"']*)["']/i) || [])[1] || '');
-    // <br> 是站点的排版换行：直接删掉，不要变成空格（"补办火车<br>票优惠卡"）
-    const inner = match[2]
-      .replace(/<br\s*\/?>/gi, '')
-      .replace(/<[^>]+>/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-    const label = (titleAttr || decodeEntities(inner)).replace(/\s+/g, ' ').trim();
-    const safeHref = String(href || '').trim();
-    if (label && safeHref && !/^javascript:/i.test(safeHref) && !/^#/.test(safeHref)) {
-      // 按文案去重：同一业务在页面上重复出现时只留一个（链接不同也不重复列）
-      if (!seen.has(label)) {
-        seen.add(label);
-        list.push({ title: label.slice(0, 24), href: safeHref });
-      }
-    }
-    match = re.exec(scope);
-  }
+  const push = (title, href) => {
+    const name = String(title || '').trim();
+    const url = String(href || '').trim();
+    if (!name || !url || /^javascript:/i.test(url) || seen.has(name)) return;
+    seen.add(name);
+    list.push({ title: name.slice(0, 24), href: url });
+  };
+
+  // 站点按学院/校区开关的特殊入口（SCU 的 schoolId 是 100006），计数大于 0 即申请中
+  if (Number(data.zzykgcount) === 1) push('转专业申请', '/student/ordertransfer/specialty/application/index');
+  if (Number(data.xjydcount) > 0) push('异动申请', '/student/personalManagement/studentChange/index');
+  if (Number(data.dlflkgcount) === 1 && Number(data.dlflcount) > 0) push('大类分流', '/student/personalManagement/largeClassDiversion/index');
+  if (Number(data.zyffxkgcount) === 1 && Number(data.dlflcount) > 0) push('专业分方向', '/student/personalManagement/majorsSplitOther/index');
+  if (Number(data.jxjcount) > 0) push('奖学金申请', '/student/personalManagement/individualApplication/scholarshipApplication/index');
+
+  data.list.forEach((item) => {
+    if (!item || String(item.qyf) !== '1') return;
+    const id = String(item.id || '');
+    const isSubsidiary = id === SUBSIDIARY_ID;
+    if (!isSubsidiary && SKIP_IDS.has(id)) return;
+    const title = isSubsidiary ? '辅修方案注册/注销' : String(item.ywsm || '');
+    const active = String(item.kssj || '') <= todate
+      && String(item.jssj || '') >= todate
+      && String(item.kg) === '1';
+    if (active) push(title, item.url);
+  });
+
+  // 站点把「创新/创业」放在列表之后追加，顺序也照样对齐
+  if (Number(data.xsdkffcount) > 0) push('创新/创业', '/students/studentsInnovation/apply/countindex');
+
   return list;
 }

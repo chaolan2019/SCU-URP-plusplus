@@ -190,13 +190,10 @@ export function createCleanModeRenderer({ state, deps }) {
       { t: '教学评估', i: 'eval', h: '/student/teachingEvaluation/newEvaluation/index' },
       { t: '培养方案', i: 'plan', h: '/student/integratedQuery/planCompletion/index' },
     ];
-    // 申请类业务不写死：站点「可申请业务 → 申请中」是什么就列什么，已关闭的不进服务板块。
-    // 清单没拿到时只留一个入口——绝不回退到写死的旧条目，那些 ywid 会随学期变动，点进去是错的业务。
-    const apps = Array.isArray(state.applications) ? state.applications : null;
-    const applyItems = apps && apps.length
-      ? apps.map((item) => ({ t: item.title, i: 'apply', h: item.href }))
-      : [{ t: '可申请业务', i: 'apply', h: '/student/application/index' }];
-    const all = items.concat(applyItems);
+    // 申请类业务不写死：站点「可申请业务 → 申请中」有几项就列几张卡，已关闭的不进服务板块。
+    // 清单没拿到时就不列申请项（不拿一个“总入口”充数——那不是用户要的东西）
+    const apps = Array.isArray(state.applications) ? state.applications : [];
+    const all = items.concat(apps.map((item) => ({ t: item.title, i: 'apply', h: item.href })));
     return `<div class="uc-services">${all.map((item) => `
       <button type="button" class="uc-svc" data-action="${item.a || ''}" data-href="${item.h || ''}">
         ${deps.ico(item.i)}<strong>${deps.escapeHtml(item.t)}</strong>

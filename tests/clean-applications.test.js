@@ -1,57 +1,74 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseApplicationList } from '../src/features/clean-mode/applications.js';
+import { parseApplicationJson } from '../src/features/clean-mode/applications.js';
 
-// 夹具照抄 2026-2027 秋线上页面的真实结构：#apply_body = 申请中，#close_body = 已关闭
-const PAGE = `
-<div class="tab-content" id="tab_content">
-  <div id="apply_body" class="tab-pane fade active in">
-    <a href="/student/ordertransfer/specialty/application/index" class="btn btn-app btn-info" style="font-size: 14px;">转专业申请</a>
-    <a title="补办火车票优惠卡" href="/student/personalManagement/individualApplication/routineWork/busSection/index?ywid=11003" class="btn btn-app btn-info ">补办火车<br>票优惠卡</a>
-    <a title="补办学生证" href="/student/personalManagement/individualApplication/routineWork/busSection/index?ywid=11002" class="btn btn-app btn-info ">补办学生证</a>
-    <a title="替代课申请" href="/student/personalManagement/personalApplication/curriculumReplacement/index">替代课申请</a>
-    <a href="javascript:void(0);">不该出现</a>
-    <a href="#">也不该出现</a>
-    <a href="/dup">替代课申请</a>
-  </div>
-  <div id="close_body" class="tab-pane fade">
-    <a title="免修申请" href="/student/personalManagement/individualApplication/exemptionApplication/index">免修申请</a>
-    <a title="奖学金申请" href="/student/personalManagement/individualApplication/scholarshipApplication/index">奖学金申请</a>
-  </div>
-</div>`;
+// 字段与取值照抄 2026-2027 秋线上响应（todate=2026-10-19 23:55:40）
+function payload(overrides = {}) {
+  return {
+    status: 200,
+    msg: 'OK',
+    data: Object.assign({
+      todate: '20261019235540',
+      zzykgcount: 1,
+      xjydcount: 0,
+      dlflkgcount: 0,
+      dlflcount: 0,
+      zyffxkgcount: 0,
+      jxjcount: 0,
+      xsdkffcount: 1,
+      list: [
+        { id: '11003', ywsm: '补办火车票优惠卡', url: '/student/personalManagement/individualApplication/routineWork/busSection/index?ywid=11003', qyf: '1', kg: '1', kssj: '20240408102100', jssj: '20340412102100' },
+        { id: '11002', ywsm: '补办学生证', url: '/student/personalManagement/individualApplication/routineWork/busSection/index?ywid=11002', qyf: '1', kg: '1', kssj: '20240306163000', jssj: '20340307163000' },
+        { id: '10008', ywsm: '辅修方案注册申请', url: '/student/rollManagement/minorProgramRegistration/index', qyf: '1', kg: '1', kssj: '20240101000000', jssj: '20240131000000' },
+        { id: '10053', ywsm: '复学选课申请', url: '/student/application/chooseCourseAfterResumeSchooling/index', qyf: '1', kg: '1', kssj: '20250101000000', jssj: '20250301000000' },
+        { id: '10006', ywsm: '辅修方案注销', url: null, qyf: '1', kg: '1', kssj: '20240101000000', jssj: '20340101000000' },
+        { id: '10018', ywsm: '免修申请', url: '/student/personalManagement/individualApplication/exemptionApplication/index', qyf: '1', kg: '0', kssj: '20240101000000', jssj: '20340101000000' },
+        { id: '10020', ywsm: '已停用业务', url: '/student/stopped/index', qyf: '0', kg: '1', kssj: '20240101000000', jssj: '20340101000000' },
+      ],
+    }, overrides),
+  };
+}
 
-test('parseApplicationList：只取申请中，已关闭的不进来', () => {
-  const list = parseApplicationList(PAGE);
-  const titles = list.map((item) => item.title);
-  assert.deepEqual(titles, ['转专业申请', '补办火车票优惠卡', '补办学生证', '替代课申请']);
-  assert.ok(!titles.includes('免修申请'), '已关闭的业务不得进入服务板块');
-  assert.ok(!titles.includes('奖学金申请'));
+test('只取申请中：已关闭、kg=0、qyf=0 都不进来', () => {
+  const titles = parseApplicationJson(payload()).map((item) => item.title);
+  assert.deepEqual(titles, ['转专业申请', '补办火车票优惠卡', '补办学生证', '创新/创业']);
+  assert.ok(!titles.includes('复学选课申请'));
+  assert.ok(!titles.includes('免修申请'));
+  assert.ok(!titles.includes('已停用业务'));
 });
 
-test('parseApplicationList：title 属性优先，<br> 不留下空格', () => {
-  const list = parseApplicationList(PAGE);
-  const card = list.find((item) => item.title === '补办学生证');
-  assert.equal(card.href, '/student/personalManagement/individualApplication/routineWork/busSection/index?ywid=11002');
-  // <br> 版本的文案靠 title 拿到，不会变成「补办火车 票优惠卡」
-  assert.ok(list.some((item) => item.title === '补办火车票优惠卡'));
-  assert.ok(!list.some((item) => /票 优惠卡/.test(item.title)));
+test('特殊入口由计数字段决定，为 0 时不出现在服务板块', () => {
+  const titles = parseApplicationJson(payload({
+    zzykgcount: 0, xsdkffcount: 0, jxjcount: 1, dlflkgcount: 1, dlflcount: 1,
+  })).map((item) => item.title);
+  assert.ok(!titles.includes('转专业申请'));
+  assert.ok(!titles.includes('创新/创业'));
+  assert.ok(titles.includes('奖学金申请'));
+  assert.ok(titles.includes('大类分流'));
 });
 
-test('parseApplicationList：跳过 javascript: 与 # 链接', () => {
-  const list = parseApplicationList(PAGE);
-  assert.ok(list.every((item) => !/^javascript:/i.test(item.href)));
-  assert.ok(list.every((item) => item.href !== '#'));
+test('10008 单独成条：开放时显示「辅修方案注册/注销」', () => {
+  const data = payload();
+  data.data.list = data.data.list.map((item) => (item.id === '10008'
+    ? Object.assign({}, item, { kssj: '20240101000000', jssj: '20340101000000' })
+    : item));
+  const titles = parseApplicationJson(data).map((item) => item.title);
+  assert.ok(titles.includes('辅修方案注册/注销'));
+  assert.ok(!titles.includes('辅修方案注册申请'));
 });
 
-test('parseApplicationList：页面没有 apply_body 时返回空数组', () => {
-  assert.deepEqual(parseApplicationList('<html><body>请先登录</body></html>'), []);
-  assert.deepEqual(parseApplicationList(''), []);
+test('没有 todate 时不出清单（不猜开放状态）', () => {
+  assert.deepEqual(parseApplicationJson(payload({ todate: '' })), []);
+  assert.deepEqual(parseApplicationJson(payload({ todate: undefined })), []);
 });
 
-test('parseApplicationList：已关闭栏在申请中栏之前时不会串味', () => {
-  const swapped = `
-    <div id="close_body"><a href="/closed">已关闭业务</a></div>
-    <div id="apply_body"><a href="/open">申请中业务</a></div>`;
-  const list = parseApplicationList(swapped);
-  assert.deepEqual(list.map((item) => item.title), ['申请中业务']);
+test('响应不是 JSON 或结构不对时返回空数组', () => {
+  assert.deepEqual(parseApplicationJson('<html>请先登录</html>'), []);
+  assert.deepEqual(parseApplicationJson('{"status":200,"data":null}'), []);
+  assert.deepEqual(parseApplicationJson(''), []);
+});
+
+test('字符串响应与对象响应结果一致（插件拿到的是文本）', () => {
+  const data = payload();
+  assert.deepEqual(parseApplicationJson(JSON.stringify(data)), parseApplicationJson(data));
 });
