@@ -120,3 +120,31 @@ test('scheduleRender coalesces into a single frame while open', () => {
   renderer.scheduleRender();
   state.open = false;
 });
+
+test('services：申请类业务走动态清单，不再列出写死的旧入口', () => {
+  const { state, renderer } = rendererFixture();
+  state.applications = [
+    { title: '转专业申请', href: '/student/ordertransfer/specialty/application/index' },
+    { title: '补办学生证', href: '/student/personalManagement/individualApplication/routineWork/busSection/index?ywid=11002' },
+  ];
+  const html = renderer.servicesHtml();
+  // 固定项仍在
+  assert.match(html, /空闲教室/);
+  assert.match(html, /教学评估/);
+  assert.match(html, /培养方案/);
+  // 动态项来自清单，ywid 用的是线上值
+  assert.match(html, /转专业申请/);
+  assert.match(html, /ywid=11002/);
+  assert.doesNotMatch(html, /ywid=1108[23]/);
+  // 已关闭的免修申请不得作为服务出现
+  assert.doesNotMatch(html, /免修申请/);
+});
+
+test('services：清单未就绪时只留一个入口，不回退到写死的业务', () => {
+  const { state, renderer } = rendererFixture();
+  state.applications = null;
+  const html = renderer.servicesHtml();
+  assert.match(html, /可申请业务/);
+  assert.match(html, /data-href="\/student\/application\/index"/);
+  assert.doesNotMatch(html, /补办学生证|火车票优惠卡|替代课申请|免修申请/);
+});

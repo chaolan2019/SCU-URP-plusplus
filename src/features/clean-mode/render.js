@@ -184,18 +184,22 @@ export function createCleanModeRenderer({ state, deps }) {
   }
 
   function servicesHtml() {
+    // 固定项：这些不是「业务申请」，与站点开放情况无关
     const items = [
       { t: '空闲教室', i: 'room', a: 'room' },
       { t: '教学评估', i: 'eval', h: '/student/teachingEvaluation/newEvaluation/index' },
       { t: '培养方案', i: 'plan', h: '/student/integratedQuery/planCompletion/index' },
-      { t: '补办学生证', i: 'apply', h: '/student/personalManagement/individualApplication/routineWork/busSection/index?ywid=11082' },
-      { t: '免修申请', i: 'apply', h: '/student/personalManagement/individualApplication/exemptionApplication/index' },
-      { t: '替代课申请', i: 'apply', h: '/student/personalManagement/personalApplication/curriculumReplacement/index' },
-      { t: '火车票优惠卡', i: 'apply', h: '/student/personalManagement/individualApplication/routineWork/busSection/index?ywid=11083' },
     ];
-    return `<div class="uc-services">${items.map((item) => `
+    // 申请类业务不写死：站点「可申请业务 → 申请中」是什么就列什么，已关闭的不进服务板块。
+    // 清单没拿到时只留一个入口——绝不回退到写死的旧条目，那些 ywid 会随学期变动，点进去是错的业务。
+    const apps = Array.isArray(state.applications) ? state.applications : null;
+    const applyItems = apps && apps.length
+      ? apps.map((item) => ({ t: item.title, i: 'apply', h: item.href }))
+      : [{ t: '可申请业务', i: 'apply', h: '/student/application/index' }];
+    const all = items.concat(applyItems);
+    return `<div class="uc-services">${all.map((item) => `
       <button type="button" class="uc-svc" data-action="${item.a || ''}" data-href="${item.h || ''}">
-        ${deps.ico(item.i)}<strong>${item.t}</strong>
+        ${deps.ico(item.i)}<strong>${deps.escapeHtml(item.t)}</strong>
       </button>`).join('')}</div>`;
   }
 
@@ -431,5 +435,6 @@ export function createCleanModeRenderer({ state, deps }) {
     roomPickerHtml,
     scheduleRender,
     scoreSectionHtml,
+    servicesHtml,
   };
 }

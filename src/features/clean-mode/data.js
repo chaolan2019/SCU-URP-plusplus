@@ -2,6 +2,28 @@ import { resetCleanModeData } from './state.js';
 
 export function createCleanModeDataLoader({ state, deps }) {
   let roomCatalogPromise = null; // 并发共享：进行中的加载 Promise，避免后来者拿到空数组后无人刷新弹窗
+  let applicationsPromise = null;
+
+  // 服务板块的申请类业务：不阻塞主数据（拿不到就退化成单一入口），到了就重画
+  async function ensureApplicationsLoaded(force) {
+    if (typeof deps.loadApplications !== 'function') return state.applications || [];
+    if (!force && Array.isArray(state.applications) && state.applications.length) return state.applications;
+    if (applicationsPromise) return applicationsPromise;
+    applicationsPromise = (async () => {
+      try {
+        const fresh = await deps.loadApplications(force);
+        if (Array.isArray(fresh) && fresh.length) state.applications = fresh;
+      } catch (error) {
+        console.warn('[URP++] applications', error);
+      } finally {
+        applicationsPromise = null;
+        try { deps.scheduleRender(); } catch (_) { /* ignore */ }
+      }
+      return state.applications || [];
+    })();
+    return applicationsPromise;
+  }
+
   async function ensureRoomCatalogLoaded(force) {
     if (!force && state.catalog && state.catalog.length) return state.catalog;
     if (state.loading.room && roomCatalogPromise) return roomCatalogPromise;
@@ -51,6 +73,8 @@ export function createCleanModeDataLoader({ state, deps }) {
       if (!state.weekLocked && termWeek >= 1) state.viewWeek = termWeek;
     } catch (_) { /* ignore */ }
     deps.render();
+    // 申请业务清单独立拉取：失败不影响主页，也不拖慢遮罩撤除
+    void ensureApplicationsLoaded(force);
     await Promise.all([
       (async () => {
         try {
@@ -117,5 +141,5 @@ export function createCleanModeDataLoader({ state, deps }) {
     } catch (_) { /* ignore */ }
   }
 
-  return { ensureRoomCatalogLoaded, loadAll };
+  return { ensureApplicationsLoaded, ensureRoomCatalogLoaded, loadAll };
 }

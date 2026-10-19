@@ -93,6 +93,7 @@ import { startDrawerOffsetSync } from '../features/drawer-offset-sync/index.js';
 import { installConfirmDialog } from '../features/confirm-dialog/index.js';
 import { createCleanModeState, resetCleanModeData } from '../features/clean-mode/state.js';
 import { createCleanModeDataLoader } from '../features/clean-mode/data.js';
+import { parseApplicationList } from '../features/clean-mode/applications.js';
 import { createCleanModeRenderer } from '../features/clean-mode/render.js';
 import { createCleanModeUI } from '../features/clean-mode/ui.js';
 import { createCleanModeController } from '../features/clean-mode/controller.js';
@@ -9292,6 +9293,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     if (!d || typeof d !== 'object' || d.__empty || d.__error) return false;
     if (kind === 'profile') return !!(d.name && d.name !== '同学'); // 姓名解析失败时俽1载入兜底名，视为无效
     if (kind === 'roomcat') return Array.isArray(d) && d.length > 0;
+    if (kind === 'applications') return Array.isArray(d) && d.length > 0;
     if (Array.isArray(d.courses) && d.courses.length) return true; // 课表
     const pc = d.passing &&
  d.passing[0] && Array.isArray(d.passing[0].courses) ? d.passing[0].courses.length : 0; // 成绩壳内真实课程数
@@ -9369,6 +9371,24 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
     try {
       if (state.catalog && state.catalog.length) return;
       if (Array.isArray(fresh)) { state.catalog = fresh; scheduleRender(); }
+    } catch (_) {}
+  });
+
+  // 服务板块的申请类业务：站点把「申请中」直接渲染在 #apply_body（已关闭在 #close_body）。
+  // 一级页不是固定的四五个入口，业务随学期开放变化；写死必然过期（实测旧 ywid 已从 11082/11083 变成 11002/11003，
+  // 「免修申请」也落到了已关闭）。这里只取申请中，缓存到下一次进页。
+  const loadApplicationsCached = withCleanCache('applications', async () => {
+    try {
+      const html = await fetchText('/student/application/index');
+      const list = parseApplicationList(html);
+      if (list.length) return list;
+      return { __empty: true, error: 'apply-body-empty' };
+    } catch (e) { const msg = String(e && e.message || e); return { __error: msg, error: msg }; }
+  }, (fresh) => {
+    try {
+      if (!Array.isArray(fresh) || !fresh.length) return;
+      state.applications = fresh;
+      scheduleRender();
     } catch (_) {}
   });
 
@@ -10234,6 +10254,7 @@ setTimeout(() => document.querySelectorAll('table').forEach((tb) => { if (isBusi
       enrichScoresWithEvaluation,
       getCurrentWeekNumber,
       loadClassroomCatalog: loadRoomCatCached,
+      loadApplications: loadApplicationsCached,
       loadProfile: loadProfileCached,
       loadSchedule: loadScheduleCached,
       loadScores: loadScoresCached,

@@ -394,7 +394,7 @@ export function createCleanModeUI({ state, deps }) {
         <table class="uc-table" id="uc-score-table"><thead><tr><th>课程</th><th>属性</th><th>学分</th><th>成绩</th><th>绩点</th></tr></thead>
         <tbody>${rows || '<tr><td colspan="5">暂无数据</td></tr>'}</tbody></table>
         <div class="uc-select-box" id="uc-select-box"></div>
-      </div>`, `<div id="uc-calc">已选 0 门</div><button type="button" class="uc-btn" id="uc-clear">清空</button>`);
+      </div>`, `<div id="uc-calc">已选 0 门</div><button type="button" class="uc-btn" id="uc-credible" data-href="/student/integratedQuery/scoreQuery/credibleReportCard/index">可信证明</button><button type="button" class="uc-btn" id="uc-clear">清空</button>`);
     const modalTitle = document.querySelector('#uc-modal-title');
     if (modalTitle) {
       if (kind === 'scheme') modalTitle.setAttribute('data-urppp-private', 'organization');

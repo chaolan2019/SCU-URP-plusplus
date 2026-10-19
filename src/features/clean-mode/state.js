@@ -6,6 +6,7 @@ export function createCleanModeState() {
     profile: null,
     schedule: null,
     scores: null,
+    applications: null, // 申请中的业务（服务板块动态来源，随站点清单变化）
     catalog: null,
     occupancy: null,
     currentBuilding: null,
@@ -28,6 +29,7 @@ export function resetCleanModeData(state) {
   state.profile = null;
   state.schedule = null;
   state.scores = null;
+  state.applications = null;
   state.catalog = null;
   state.occupancy = null;
   state._termWeekResolved = false;
